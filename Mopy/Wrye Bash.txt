@@ -734,7 +734,6 @@ The following commands are available by right clicking on the column header of t
 * __Availability__
   * __Avoid at Startup:__ Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you'll should Enable this.
   * __Enabled:__ This enables/disables Bain itself. Preferred setting: Enabled (checked).
-  * __Show Replacers Tab:__ (Only if the Replacers Tab is enabled in bash.ini) If checked, will cause the Replacers tab to appear.
   * __Auto-Anneal:__ Toggles the auto-anneal process on/off. Preferred setting: enabled.
   * __Auto-Anneal/Install Wizard:__ Toggles whether or not to automatically install/anneal a package when finished with its wizard. (Available only if Wizard Install system is active)
   * __Auto-Refresh Projects:__ Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
@@ -756,8 +755,7 @@ The following commands are available by right clicking on the column header of t
   * __Skip LOD Normals:__ If checked, landscape LOD normals will be skipped.
 
 == Replacers Tab ==============================================================
-**The Replacers Tab has now been replaced by the [[#|Installers Tab]].** If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
-__As of version 295:__ The Replacers tab has been removed entirely.
+**As of version 295, the Replacers Tab has removed and superseded by the [[#|Installers Tab]].**
 
 === Textures BSA
 If you're currently using the Textures BSA facility, you should switch to using the newer BSA Redirection method instead.
@@ -2420,7 +2418,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini).
   * Assorted tweakers:
     * New tweak: Skyrim-style Weapons.
+    * New tweak: Short grass.
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
+    * PBash 'Default icons' tweak fixed.
     * VORB tweak now assigns special skeletons correctly.
     * Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash.
   * Names tweaker:

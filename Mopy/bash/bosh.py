@@ -25701,6 +25701,94 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_ShortGrass(MultiTweakItem):
+    """Lower the height of all plants in the game, including Shivering Isles."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Short Grass"),
+            _('Lower the height of all plants in the game, including Shivering Isles.'),
+            'ShortGrass',
+            ('1.0', '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreGras,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreGras,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.GRAS
+        id_records = patchBlock.id_records
+        for record in modFile.GRAS.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.heightRange != 0:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.GRAS.records:
+            if record.heightRange != 0:
+                record.heightRange = 0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Short Grass'))
+        log(_('* Grass Tweaked: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            
+class CBash_AssortedTweak_ShortGrass(CBash_MultiTweakItem):
+    """Lower the height of all plants in the game, including Shivering Isles."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Short Grass')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_("Short Grass"),
+            _('Lower the height of all plants in the game, including Shivering Isles.'),
+            'ShortGrass',
+            ('1.0', '1.0'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['GRAS']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.heightRange != 0:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.heightRange = 0
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Short Grass'))
+        log(_('* Grass Tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
 #info: 'itemType','chargeAmount','enchantCost'
@@ -25873,127 +25961,129 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         for type in self.activeTypes:
             if type not in patchFile.tops: continue
             for record in patchFile.tops[type].records:
+                if getattr(record, 'iconPath', None): continue
+                if getattr(record, 'maleIconPath', None): continue
+                if getattr(record, 'femaleIconPath', None): continue
                 changed = False
-                try:
-                    if record.icon: continue
-                except:
-                    try:
-                        if record.maleIcon or record.femaleIcon: continue
-                        if record.flags.notPlayable: continue
-                    except: continue
                 if type == 'ALCH':
-                    record.icon = r"Clutter\Potions\IconPotion01.dds"
+                    record.iconPath = r"Clutter\Potions\IconPotion01.dds"
                     changed = True
                 elif type == 'AMMO':
-                    record.icon = r"Weapons\IronArrow.dds"
+                    record.iconPath = r"Weapons\IronArrow.dds"
                     changed = True
                 elif type == 'APPA':
-                    record.icon = r"Clutter\IconMortarPestle.dds"
+                    record.iconPath = r"Clutter\IconMortarPestle.dds"
                     changed = True
                 elif type == 'AMMO':
-                    record.icon = r"Weapons\IronArrow.dds"
+                    record.iconPath = r"Weapons\IronArrow.dds"
                     changed = True
                 elif type == 'ARMO':
+                    if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIcon = r"Armor\Iron\M\Cuirass.dds"
-                        record.femaleIcon = r"Armor\Iron\F\Cuirass.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Cuirass.dds"
+                        record.femaleIconPath = r"Armor\Iron\F\Cuirass.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIcon = r"Armor\Iron\M\Greaves.dds"
-                        record.femaleIcon = r"Armor\Iron\F\Greaves.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Greaves.dds"
+                        record.femaleIconPath = r"Armor\Iron\F\Greaves.dds"
                         changed = True
                     elif record.flags.head != 0 or record.flags.hair != 0:
-                        record.maleIcon = r"Armor\Iron\M\Helmet.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Helmet.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIcon = r"Armor\Iron\M\Gauntlets.dds"
-                        record.femaleIcon = r"Armor\Iron\F\Gauntlets.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Gauntlets.dds"
+                        record.femaleIconPath = r"Armor\Iron\F\Gauntlets.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIcon = r"Armor\Iron\M\Boots.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Boots.dds"
                         changed = True
                     elif record.flags.shield != 0:
-                        record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Shield.dds"
                         changed = True
                     else: #Default icon, probably a token or somesuch
-                        record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Shield.dds"
                         changed = True
                 elif type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
-                    record.icon = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
+                    record.iconPath = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
                     changed = True
                 elif type == 'CLOT':
+                    if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIcon = r"Clothes\MiddleClass\01\M\Shirt.dds"
-                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Shirt.dds"
+                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Shirt.dds"
+                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Shirt.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIcon = r"Clothes\MiddleClass\01\M\Pants.dds"
-                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Pants.dds"
+                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Pants.dds"
+                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Pants.dds"
                         changed = True
                     elif record.flags.head or record.flags.hair:
-                        record.maleIcon = r"Clothes\MythicDawnrobe\hood.dds"
+                        record.maleIconPath = r"Clothes\MythicDawnrobe\hood.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIcon = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
+                        record.maleIconPath = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIcon = r"Clothes\MiddleClass\01\M\Shoes.dds"
-                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Shoes.dds"
+                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Shoes.dds"
+                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Shoes.dds"
                         changed = True
                     elif record.flags.leftRing or record.flags.rightRing:
-                        record.maleIcon = r"Clothes\Ring\RingNovice.dds"
+                        record.maleIconPath = r"Clothes\Ring\RingNovice.dds"
                         changed = True
                     else: #amulet
-                        record.maleIcon = r"Clothes\Amulet\AmuletSilver.dds"
+                        record.maleIconPath = r"Clothes\Amulet\AmuletSilver.dds"
                         changed = True
                 elif type == 'FACT':
                     #todo
-                    changed = True
+                    #changed = True
+                    pass
                 elif type == 'INGR':
-                    record.icon = r"Clutter\IconSeeds.dds"
+                    record.iconPath = r"Clutter\IconSeeds.dds"
                     changed = True
                 elif type == 'KEYM':
-                    record.icon = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
+                    record.iconPath = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
                     changed = True
                 elif type == 'LIGH':
-                    record.icon = r"Lights\IconTorch02.dds"
+                    if not record.flags.canTake: continue
+                    record.iconPath = r"Lights\IconTorch02.dds"
                     changed = True
                 elif type == 'MISC':
-                    record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+                    record.iconPath = r"Clutter\Soulgems\AzurasStar.dds"
                     changed = True
                 elif type == 'QUST':
                     if not record.stages: continue
-                    record.icon = r"Quest\icon_miscellaneous.dds"
+                    record.iconPath = r"Quest\icon_miscellaneous.dds"
                     changed = True
                 elif type == 'SGST':
-                    record.icon = r"IconSigilStone.dds"
+                    record.iconPath = r"IconSigilStone.dds"
                     changed = True
                 elif type == 'SLGM':
-                    record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+                    record.iconPath = r"Clutter\Soulgems\AzurasStar.dds"
                     changed = True
                 elif type == 'WEAP':
-                    if record.type == 0:
-                        record.icon = r"Weapons\IronDagger.dds"
-                    elif record.type == 1:
-                        record.icon = r"Weapons\IronClaymore.dds"
-                    elif record.type == 2:
-                        record.icon = r"Weapons\IronMace.dds"
-                    elif record.type == 3:
-                        record.icon = r"Weapons\IronBattleAxe.dds"
-                    elif record.type == 4:
-                        record.icon = r"Weapons\Staff.dds"
-                    elif record.type == 5:
-                        record.icon = r"Weapons\IronBow.dds"
+                    if record.weaponType == 0:
+                        record.iconPath = r"Weapons\IronDagger.dds"
+                    elif record.weaponType == 1:
+                        record.iconPath = r"Weapons\IronClaymore.dds"
+                    elif record.weaponType == 2:
+                        record.iconPath = r"Weapons\IronMace.dds"
+                    elif record.weaponType == 3:
+                        record.iconPath = r"Weapons\IronBattleAxe.dds"
+                    elif record.weaponType == 4:
+                        record.iconPath = r"Weapons\Staff.dds"
+                    elif record.weaponType == 5:
+                        record.iconPath = r"Weapons\IronBow.dds"
                     else: #Should never reach this point
-                        record.icon = r"Weapons\IronDagger.dds"
+                        record.iconPath = r"Weapons\IronDagger.dds"
                     changed = True
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                if changed:
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log.setHeader(_('=== Default Icons'))
+        log(_('* Default Icons set: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -26554,6 +26644,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_StaffWeight(),
         AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         AssortedTweak_WindSpeed(),
+        AssortedTweak_ShortGrass(),
         AssortedTweak_HarvestChance(),
         AssortedTweak_IngredientWeight(),
         AssortedTweak_ArrowWeight(),
@@ -26630,6 +26721,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         CBash_AssortedTweak_HarvestChance(),
         CBash_AssortedTweak_WindSpeed(),
+        CBash_AssortedTweak_ShortGrass(),
         CBash_AssortedTweak_IngredientWeight(),
         CBash_AssortedTweak_ArrowWeight(),
         CBash_AssortedTweak_ScriptEffectSilencer(),
