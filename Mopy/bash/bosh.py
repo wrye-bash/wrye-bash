@@ -18986,6 +18986,7 @@ class MultiTweakItem:
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
         if self.key in configs:
+            self._isNew = False
             self.isEnabled,value = configs[self.key]
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
@@ -18995,8 +18996,13 @@ class MultiTweakItem:
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
         else:
+            self._isNew = True
             if self.default:
                 self.chosen = self.default
+
+    def isNew(self):
+        """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
+        return getattr(self, "_isNew", False)
 
     def getListLabel(self):
         """Returns label to be used in list"""
@@ -19040,6 +19046,7 @@ class CBash_MultiTweakItem:
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
         if self.key in configs:
+            self._isNew = False
             self.isEnabled,value = configs[self.key]
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
@@ -19049,8 +19056,13 @@ class CBash_MultiTweakItem:
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
         else:
+            self._isNew = True
             if self.default:
                 self.chosen = self.default
+
+    def isNew(self):
+        """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
+        return getattr(self, "_isNew", False)
 
     def getListLabel(self):
         """Returns label to be used in list"""
