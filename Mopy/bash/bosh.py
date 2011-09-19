@@ -33642,6 +33642,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
         'R.Description': ('text',),
         }
+    formIDAttrs = ['hairs','maleVoice','femaleVoice',]
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -33655,7 +33656,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.isActive = bool(srcs)
         if not self.isActive: return
         self.racesPatched = set()
-        self.id_tag_values = {}
+        self.fid_attr_value = {}
 
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -33670,14 +33671,20 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         """Records information needed to apply the patch."""
         recordId = record.fid
         for bashKey in bashTags & self.autoKey:
+            attrs = self.tag_attrs[bashKey]
             if bashKey == 'Hair':
-                #Using sets would make this clearer, and probably faster (though speed isn't a concern)
-                #So this is a bit convoluted, but makes the apply section work without special casing this tag
-                #Hairs should perhaps have it's own patcher, but...
-                allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
-                allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0] and hair[0])
+                hairs = self.fid_attr_value.setdefault(recordId,{}).get('hairs', [])
+                hairs.extend([hair for hair in record.hairs if hair not in hairs and hair[0] is not None and hair[0] in self.patchFile.loadSet])
+                attr_value = {'hairs':hairs}
             else:
-                self.id_tag_values.setdefault(recordId,{})[bashKey] = map(record.__getattribute__,self.tag_attrs[bashKey])
+                attr_value = record.ConflictDetails(attrs)
+                for attr, value in attr_value.iteritems():
+                    if attr in self.formIDAttrs:
+                        if value[0] is None or value[0] not in self.patchFile.loadSet:
+                            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                            return
+            self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -33693,20 +33700,14 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                     self.scan(mod,conflict,tags)
             else: break
         recordId = record.fid
-        if(recordId in self.id_tag_values):
-            allAttrs = []
-            prevValues = []
-            recValues = []
-            for bashKey in self.tag_attrs:
-                attrs = self.tag_attrs[bashKey]
-                allAttrs += attrs
-                tagValues = map(record.__getattribute__,attrs)
-                prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
-                recValues += tagValues
-            if recValues != prevValues:
+        prev_attr_value = self.fid_attr_value.get(recordId,None)
+        if prev_attr_value:
+            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
+            if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    map(override.__setattr__, allAttrs, prevValues)
+                    for attr, value in prev_attr_value.iteritems():
+                        setattr(override,attr,value)
                     self.racesPatched.add(record.eid)
                     record.UnloadRecord()
                     record._ModID, record._RecordID = override._ModID, override._RecordID
