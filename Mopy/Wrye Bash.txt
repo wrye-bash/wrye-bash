@@ -40,10 +40,10 @@ In particular, see:
 * Pacific Morrowind: New imports, exports, tweaks, etc.
 * Lojack: Wizard based install system, Ini tab, etc.
 * myk002: Project management, Asynchronous installer tab, etc.
+* Waruddar: Extensive additions/improvements/fixes, primary author of CBash
 
 === Past Authors
 * **Wrye**: Monkey God of Modding!
-* Waruddar: Extensive additions/improvements/fixes, primary author of CBash
 * Ralgor: Cell support and Import Cells.
 * Raziel23x: new tweaks etc.
 * Haama: OBSE cofile definitions, various fixes, improvements etc
@@ -548,7 +548,7 @@ Bain will skip over (never install) certain types of files in the package.
 === OBSE Plugin Installation
 Due to the (theoretical but potentially significant) dangers of installing executable files the only type that can be installed are OBSE plugin dll/x files. 
 * __Enabling OBSE dll/x plugin installation__
-  * Format archive with OBSE dlls so that the dll(s) are located in <optional subpackage>\obse\plugins\ or a subfolder therein.
+  * Format archive with OBSE dlls so that the dll(s) are located in &lt;optional subpackage&gt;\obse\plugins\ or a subfolder therein.
   * In BAIN deselect __Skip OBSE Plugins__ in the package header menu.
   * Select install on the package and confirm or block each dll/x - you only have to do it once per dll/version.
 * __Saving/Editing allowed/disallowed OBSE plugin dlls list__
@@ -872,6 +872,7 @@ These are the commands for the context menu for the mods list. (You'll get this 
 
 === Load Lists
 * Aside from using checkboxes to select and unselect mods, you can also use load lists. These are accessed through the column context menu, and work in the same way at the [[#|Load Masters]] command.
+* __All:__ Activates all mods.
 * __None:__ Deactivates all mods.
 * __Save List...__ Saves your currently activated mods to a new load list.
 * __Edit Lists...__ Allows you to delete and rename previously defined load lists.
@@ -923,7 +924,7 @@ These are the commands found on context menu for mods...
   * **Revert to Snapshot** Reverts the file to a selected snapshot.
 
 === Add Master
-* Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.
+* Adds specified masters to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.
 * **Warning:** For advanced modders only. You should only use this if you know exactly what you're doing.
 
 === Decompile All
@@ -2020,7 +2021,7 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 
 === Tweak File Commands
 * __Apply:__ Applies the INI Tweak to Ovlivion.ini
-* __Copy to new Tweak:__ Creates a new tweak file that tweaks the same settings as the selected file, but uses the values of the target INI instead of the selected tweak.
+* __Create Tweak with current settings:__ Creates a new tweak file that tweaks the same settings as the selected file, but uses the current values of the target INI.
 * __List Errors:__ If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini
 * __Open:__ Open the tweak file for editing.
 * __Delete:__ Delete the tweak file.
@@ -2403,7 +2404,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda]
+=== 295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]
+* Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs.  It's community members like you that help Wrye Bash succeed!
 * First-run Usability Improvements:
   * Default options and widget sizes have been revamped for a smoother first-time experience
   * More startup errors are shown in a popup messagebox instead of just being dumped to the log
@@ -2445,6 +2447,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Bugfixes from valda and bluesky404
 * Added activation status as a new mods column/sort option.
 * New mod commands:
+  * [[#LoadLists|Load All]] will activate all mods (up to 255 of them, at least)
   * [[#|Create BOSS Report]] will automatically gather the information you need to report a mod to the BOSS thread.
   * [[#|Copy Mod Info]] will automatically gather the displayed info on a mod.
   * Ghost will ghost just the selected mod(s) 
@@ -2478,6 +2481,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 * Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 * [[#Custombuttons|Custom launcher buttons]] now support launching of msi created shortcuts.
 * Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
+* CBash no longer causes random occurances of googly eyes
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records

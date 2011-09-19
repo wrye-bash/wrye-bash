@@ -252,7 +252,7 @@ class API_FIELDS(object):
                  'FORMID', 'MGEFCODE', 'ACTORVALUE', 'FORMID_OR_UINT32',
                  'FORMID_OR_FLOAT32', 'UINT8_OR_UINT32', 'FORMID_OR_STRING',
                  'UNKNOWN_OR_FORMID_OR_UINT32', 'UNKNOWN_OR_SINT32',
-                 'UNKNOWN_OR_UINT32_FLAG', 'MGEFCODE_OR_UINT32',
+                 'UNKNOWN_OR_UINT32_FLAG', 'MGEFCODE_OR_CHAR4',
                  'FORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32',
                  'RESOLVED_MGEFCODE', 'STATIC_MGEFCODE', 'RESOLVED_ACTORVALUE',
                  'STATIC_ACTORVALUE', 'CHAR', 'CHAR4', 'STRING', 'ISTRING',
@@ -577,10 +577,16 @@ class FormID(object):
         return hash(self.formID)
 
     def __eq__(self, x):
-        return x[1] == self.formID[1] and x[0] == self.formID[0]
+        try:
+            return x[1] == self.formID[1] and x[0] == self.formID[0]
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        return x[1] != self.formID[1] or x[0] != self.formID[0]
+        try:
+            return x[1] != self.formID[1] or x[0] != self.formID[0]
+        except TypeError:
+            return False
 
     def __getitem__(self, x):
         if x == 0: return self.formID[0]
@@ -837,7 +843,7 @@ class ActorValue(object):
                 self.actorValue = ActorValue.UnvalidatedActorValue(str(master), objectID)
             else:
                 if objectID < 0x800:
-                    self.actorValue = ActorValue.RawActorValue(master, objectID) #Static ActorValue. No resolution takes place.
+                    self.actorValue = ActorValue.RawActorValue(objectID) #Static ActorValue. No resolution takes place.
                 else:
                     masterstr = _CGetLongIDName(master, objectID, 0)
                     if masterstr:
@@ -851,10 +857,16 @@ class ActorValue(object):
         return hash(self.actorValue)
 
     def __eq__(self, x):
-        return x[1] == self.actorValue[1] and x[0] == self.actorValue[0]
+        try:
+            return x[1] == self.actorValue[1] and x[0] == self.actorValue[0]
+        except TypeError:
+            return False
 
     def __ne__(self, other):
-        return x[1] != self.actorValue[1] or x[0] != self.actorValue[0]
+        try:
+            return x[1] != self.actorValue[1] or x[0] != self.actorValue[0]
+        except TypeError:
+            return False
 
     def __getitem__(self, x):
         if x == 0: return self.actorValue[0]
@@ -1108,12 +1120,13 @@ class MGEFCode(object):
 
     def __init__(self, master, objectID=None):
         """Initializes an OBME MGEFCode from these possible inputs:
-           CBash MGEFCode  = (int(RecordID)   , int(MGEFCode)) Internal use by CBash / cint only!
-           Long MGEFCode   = (string(ModName) , int(ObjectID))
-           MGEFCode        = (MGEFCode()      , None)
-           Raw MGEFCode    = (int(MGEFCode)   , None)
-           Raw MGEFCode    = (string(MGEFCode), None)
-           Empty MGEFCode  = (None            , None))"""
+           CBash MGEFCode     = (int(RecordID)   , int(MGEFCode)) Internal use by CBash / cint only!
+           CBash Raw MGEFCode = (int(RecordID)   , string(MGEFCode)) Internal use by CBash / cint only!
+           Long MGEFCode      = (string(ModName) , int(ObjectID))
+           MGEFCode           = (MGEFCode()      , None)
+           Raw MGEFCode       = (int(MGEFCode)   , None)
+           Raw MGEFCode       = (string(MGEFCode), None)
+           Empty MGEFCode     = (None            , None))"""
 
         if objectID is None:
             if isinstance(master, MGEFCode): #initialize from MGEFCode
@@ -1123,7 +1136,9 @@ class MGEFCode(object):
             else:
                 self.mgefCode = MGEFCode.RawMGEFCode(master)
         else:
-            if isinstance(master, (basestring, Path)):
+            if isinstance(objectID, basestring):
+                self.mgefCode = MGEFCode.RawMGEFCode(objectID)
+            elif isinstance(master, (basestring, Path)):
                 self.mgefCode = MGEFCode.UnvalidatedMGEFCode(str(master), objectID)
             else:
                 if objectID < 0x80000000:
@@ -1141,7 +1156,10 @@ class MGEFCode(object):
         return hash(self.mgefCode)
 
     def __eq__(self, x):
-        return x[1] == self.mgefCode[1] and x[0] == self.mgefCode[0]
+        try:
+            return x[1] == self.mgefCode[1] and x[0] == self.mgefCode[0]
+        except TypeError:
+            return False
 
     def __ne__(self, other):
         return x[1] != self.mgefCode[1] or x[0] != self.mgefCode[0]
@@ -1688,8 +1706,7 @@ class CBashMGEFCODE(object):
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else:
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortMGEFCode(instance))), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortMGEFCode(instance))), 0)
 
 class CBashFORMIDARRAY(object):
     def __init__(self, FieldID):
@@ -1792,7 +1809,7 @@ class CBashFORMID_OR_UINT32_ARRAY(object):
                     value = value.GetShortFormID(instance)
                 _CSetField(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(value)), IsFormID)
 
-class CBashMGEFCODE_OR_UINT32_ARRAY(object):
+class CBashMGEFCODE_ARRAY(object):
     def __init__(self, FieldID, Size=None):
         self._FieldID = FieldID
         self._Size = Size
@@ -1805,10 +1822,10 @@ class CBashMGEFCODE_OR_UINT32_ARRAY(object):
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
             for x in range(numRecords):
                 type = _CGetFieldAttribute(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, 2)
-                if type == API_FIELDS.UINT32:
-                    values.append(cRecords.contents[x])
-                elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
-                    values.append(MGEFCode(instance._RecordID, cRecords.contents[x]))
+                value = cRecords.contents[x]
+                if type == API_FIELDS.CHAR4:
+                    value = cast(byref(value), POINTER(c_char * 4)).contents.value
+                values.append(MGEFCode(instance._RecordID, value))
         return values
 
     def __set__(self, instance, nValue):
@@ -1816,10 +1833,8 @@ class CBashMGEFCODE_OR_UINT32_ARRAY(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            #They are either all MGEFCodes or all UINT32's, so it can be set in one operation
-            if len(nValue):
-                if isinstance(nValue[0], MGEFCode):
-                    nValue = [x.GetShortMGEFCode(instance) for x in nValue]
+            if length:
+                nValue = [x.GetShortMGEFCode(instance) for x in nValue]                    
             else:
                 nValue = []
             cRecords = (c_ulong * length)(*nValue)
@@ -2129,27 +2144,23 @@ class CBashUNKNOWN_OR_FORMID_OR_UINT32_LIST(object):
                     nValue = nValue.GetShortFormID(instance)
                 _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
-class CBashMGEFCODE_OR_UINT32_LIST(object):
+class CBashMGEFCODE_LIST(object):
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
-        _CGetField.restype = POINTER(c_ulong)
+        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
+        if type == API_FIELDS.CHAR4:
+            _CGetField.restype = POINTER(c_char * 4)
+        elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
+            _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue):
-            type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-            if type == API_FIELDS.UINT32:
-                return retValue.contents.value
-            elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
-                return MGEFCode(instance._RecordID, retValue.contents.value)
+        if retValue: return MGEFCode(instance._RecordID, retValue.contents.value)
         return None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else:
-            if isinstance(nValue, MGEFCode):
-                nValue = nValue.GetShortMGEFCode(instance)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortMGEFCode(instance))), 0)
 
 class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
     def __init__(self, ListFieldID):
@@ -2174,11 +2185,11 @@ class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-            if type == API_FIELDS.FORMID and isinstance(nValue, FormID):
+            if type == API_FIELDS.FORMID:
                 nValue = nValue.GetShortFormID(instance)
-            elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE) and isinstance(nValue, MGEFCode):
+            elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
                 nValue = nValue.GetShortMGEFCode(instance)
-            elif type in (API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE) and isinstance(nValue, ActorValue):
+            elif type in (API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE):
                 nValue = nValue.GetShortActorValue(instance)
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
@@ -2860,19 +2871,29 @@ class VarX3(ListX3Component):
 
 class Effect(ListComponent):
     ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
-    name0 = CBashMGEFCODE_OR_UINT32_LIST(1)
-    name = CBashMGEFCODE_OR_UINT32_LIST(2)
+    name0 = CBashMGEFCODE_LIST(1)
+    name = CBashMGEFCODE_LIST(2)
     magnitude = CBashGeneric_LIST(3, c_ulong)
     area = CBashGeneric_LIST(4, c_ulong)
     duration = CBashGeneric_LIST(5, c_ulong)
     rangeType = CBashGeneric_LIST(6, c_ulong)
     actorValue = CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(7) #OBME
     script = CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(8) #OBME
-    school = CBashGeneric_LIST(9, c_ulong)
-    visual = CBashMGEFCODE_OR_UINT32_LIST(10) #OBME
+    schoolType = CBashGeneric_LIST(9, c_ulong)
+    visual = CBashMGEFCODE_LIST(10) #OBME
     flags = CBashGeneric_LIST(11, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(12, 3)
     full = CBashSTRING_LIST(13) #OBME
+    IsHostile = CBashBasicFlag('flags', 0x01)
+    IsSelf = CBashBasicType('rangeType', 0, 'IsTouch')
+    IsTouch = CBashBasicType('rangeType', 1, 'IsSelf')
+    IsTarget = CBashBasicType('rangeType', 2, 'IsSelf')
+    IsAlteration = CBashBasicType('schoolType', 0, 'IsConjuration')
+    IsConjuration = CBashBasicType('schoolType', 1, 'IsAlteration')
+    IsDestruction = CBashBasicType('schoolType', 2, 'IsAlteration')
+    IsIllusion = CBashBasicType('schoolType', 3, 'IsAlteration')
+    IsMysticism = CBashBasicType('schoolType', 4, 'IsAlteration')
+    IsRestoration = CBashBasicType('schoolType', 5, 'IsAlteration')
     ##OBME Fields. Setting any of the below fields will make the mod require JRoush's OBME plugin for OBSE
     ##To see if OBME is in use, check the recordVersion field for a non-None value
     recordVersion = CBashGeneric_LIST(14, c_ubyte) #OBME
@@ -2890,10 +2911,6 @@ class Effect(ListComponent):
     baseCost = CBashFLOAT32_LIST(24) #OBME
     resistAV = CBashACTORVALUE_LIST(25) #OBME
     reserved2 = CBashUINT8ARRAY_LIST(26, 0x10) #OBME
-    IsHostile = CBashBasicFlag('flags', 0x01)
-    IsSelf = CBashBasicType('rangeType', 0, 'IsTouch')
-    IsTouch = CBashBasicType('rangeType', 1, 'IsSelf')
-    IsTarget = CBashBasicType('rangeType', 2, 'IsSelf')
     ##OBME Fields. Setting any of the below fields will make the mod require JRoush's OBME plugin for OBSE
     ##To see if OBME is in use, check the recordVersion field for a non-None value
     IsUsingHostileOverride = CBashBasicFlag('efixOverrides', 0x00000001) #OBME
@@ -2942,7 +2959,7 @@ class Effect(ListComponent):
     IsExplodesWithForceOverride = CBashBasicFlag('efixFlags', 0x20000000) #OBME
     IsHiddenOverride = CBashBasicFlag('efixFlags', 0x40000000) #OBME
     exportattrs = copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
-                 'actorValue', 'script', 'school', 'visual', 'IsHostile',
+                 'actorValue', 'script', 'schoolType', 'visual', 'IsHostile',
                  'full']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
@@ -9433,10 +9450,10 @@ class FnvCELLRecord(FnvBaseRecord):
             return (blockNum, subBlockNum)
         #--Exterior cell
         else:
-            blockX = int(math.floor(self.posX or 0 / 8.0))
-            blockY = int(math.floor(self.posY or 0 / 8.0))
-            subblockX = int(math.floor(blockX / 4.0))
-            subblockY = int(math.floor(blockY / 4.0))
+            subblockX = int(math.floor((self.posX or 0) / 8.0))
+            subblockY = int(math.floor((self.posY or 0) / 8.0))
+            blockX = int(math.floor(subblockX / 4.0))
+            blockY = int(math.floor(subblockY / 4.0))
             return ((blockX, blockY), (subblockX, subblockY))
 
     class SwappedImpact(ListComponent):
@@ -12002,10 +12019,10 @@ class ObCELLRecord(ObBaseRecord):
             return (blockNum, subBlockNum)
         #--Exterior cell
         else:
-            blockX = int(math.floor(self.posX or 0 / 8.0))
-            blockY = int(math.floor(self.posY or 0 / 8.0))
-            subblockX = int(math.floor(blockX / 4.0))
-            subblockY = int(math.floor(blockY / 4.0))
+            subblockX = int(math.floor((self.posX or 0) / 8.0))
+            subblockY = int(math.floor((self.posY or 0) / 8.0))
+            blockX = int(math.floor(subblockX / 4.0))
+            blockY = int(math.floor(subblockY / 4.0))
             return ((blockX, blockY), (subblockX, subblockY))
 
     full = CBashSTRING(5)
@@ -13164,7 +13181,7 @@ class ObMGEFRecord(ObBaseRecord):
     flags = CBashGeneric(11, c_ulong)
     baseCost = CBashFLOAT32(12)
     associated = CBashFORMID(13)
-    school = CBashGeneric(14, c_long)
+    schoolType = CBashGeneric(14, c_ulong)
     ##0xFFFFFFFF is None for resistValue
     resistValue = CBashGeneric(15, c_ulong)
     numCounters = CBashGeneric(16, c_ushort)
@@ -13179,7 +13196,13 @@ class ObMGEFRecord(ObBaseRecord):
     areaSound = CBashFORMID(25)
     cefEnchantment = CBashFLOAT32(26)
     cefBarter = CBashFLOAT32(27)
-    counterEffects = CBashMGEFCODE_OR_UINT32_ARRAY(28)
+    counterEffects = CBashMGEFCODE_ARRAY(28)
+    IsAlteration = CBashBasicType('schoolType', 0, 'IsConjuration')
+    IsConjuration = CBashBasicType('schoolType', 1, 'IsAlteration')
+    IsDestruction = CBashBasicType('schoolType', 2, 'IsAlteration')
+    IsIllusion = CBashBasicType('schoolType', 3, 'IsAlteration')
+    IsMysticism = CBashBasicType('schoolType', 4, 'IsAlteration')
+    IsRestoration = CBashBasicType('schoolType', 5, 'IsAlteration')
     #Note: the vanilla code discards mod changes to most flag bits
     #  only those listed as changeable below may be edited by non-obme mods
     # comments garnered from JRoush's OBME
@@ -13264,7 +13287,7 @@ class ObMGEFRecord(ObBaseRecord):
     IsHidden = CBashBasicFlag('OBMEFlags', 0x40000000) #OBME
     copyattrs = ObBaseRecord.baseattrs + ['full', 'text', 'iconPath', 'modPath',
                                           'modb', 'modt_p', 'flags', 'baseCost',
-                                          'associated', 'school', 'resistValue',
+                                          'associated', 'schoolType', 'resistValue',
                                           'numCounters', 'light', 'projectileSpeed',
                                           'effectShader', 'enchantEffect',
                                           'castingSound', 'boltSound', 'hitSound',
@@ -13272,7 +13295,7 @@ class ObMGEFRecord(ObBaseRecord):
                                           'counterEffects']
     exportattrs = ObBaseRecord.baseattrs + ['full', 'text', 'iconPath', 'modPath',
                                           'modb', 'flags', 'baseCost',
-                                          'associated', 'school', 'resistValue',
+                                          'associated', 'schoolType', 'resistValue',
                                           'numCounters', 'light', 'projectileSpeed',
                                           'effectShader', 'enchantEffect',
                                           'castingSound', 'boltSound', 'hitSound',
@@ -14767,13 +14790,13 @@ class ObModFile(object):
     def Unload(self):
         _CUnloadMod(self._ModID)
 
-    def save(self, CloseCollection=True, CleanMasters=True):
+    def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
         flags = 0
         if(CleanMasters):
             flags |= 0x00000001
         if(CloseCollection):
             flags |= 0x00000002
-        return _CSaveMod(self._ModID, c_ulong(flags))
+        return _CSaveMod(self._ModID, c_ulong(flags), DestinationName)
 
     @property
     def TES4(self):
@@ -15275,13 +15298,13 @@ class FnvModFile(object):
     def Unload(self):
         _CUnloadMod(self._ModID)
 
-    def save(self, CloseCollection=True, CleanMasters=True):
+    def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
         flags = 0
         if(CleanMasters):
             flags |= 0x00000001
         if(CloseCollection):
             flags |= 0x00000002
-        return _CSaveMod(self._ModID, c_ulong(flags))
+        return _CSaveMod(self._ModID, c_ulong(flags), DestinationName)
 
     @property
     def TES4(self):
@@ -16028,7 +16051,7 @@ class ObCollection:
     def DeleteAllCollections():
         return _CDeleteAllCollections()
 
-    def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Saveable=True, LoadMasters=True, Flags=0x00000079):
+    def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Saveable=True, LoadMasters=True, Flags=None):
 ##        //MinLoad and FullLoad are exclusive
 ##        // If both are set, FullLoad takes priority
 ##        // If neither is set, the mod isn't loaded
@@ -16075,8 +16098,7 @@ class ObCollection:
 ##        //Only the following combinations are tested:
 ##        // Normal:  (fIsMinLoad or fIsFullLoad) + fIsInLoadOrder + fIsSaveable + fIsAddMasters + fIsLoadMasters
 ##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
-##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIsExtendedConflicts
-
+##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters + fIsExtendedConflicts
         fIsMinLoad             = 0x00000001
         fIsFullLoad            = 0x00000002
         fIsSkipNewRecords      = 0x00000004
@@ -16091,10 +16113,24 @@ class ObCollection:
         fIsIgnoreExisting      = 0x00000800
         fIsIgnoreAbsentMasters = 0x00001000
 
-        if IgnoreExisting:
-            Flags |= fIsIgnoreExisting
-        else:
-            Flags &= ~fIsIgnoreExisting
+        if Flags is None:
+            Flags = fIsMinLoad | fIsInLoadOrder | fIsSaveable | fIsAddMasters | fIsLoadMasters
+
+            if IgnoreExisting:
+                Flags |= fIsIgnoreExisting
+            else:
+                Flags &= ~fIsIgnoreExisting
+
+            if Saveable:
+                Flags |= fIsSaveable
+            else:
+                Flags &= ~fIsSaveable
+
+            if LoadMasters:
+                Flags |= fIsLoadMasters
+            else:
+                Flags &= ~fIsLoadMasters
+
         if NoLoad:
             Flags &= ~fIsFullLoad
             Flags &= ~fIsMinLoad
@@ -16104,16 +16140,6 @@ class ObCollection:
         else:
             Flags |= fIsFullLoad
             Flags &= ~fIsMinLoad
-
-        if Saveable:
-            Flags |= fIsSaveable
-        else:
-            Flags &= ~fIsSaveable
-
-        if LoadMasters:
-            Flags |= fIsLoadMasters
-        else:
-            Flags &= ~fIsLoadMasters
 
         _CAddMod(self._CollectionID, str(FileName), Flags)
         return None
@@ -16169,7 +16195,7 @@ class ObCollection:
         return sum([mod.UpdateReferences(OldFormIDs, NewFormIDs) for mod in self.LoadOrderMods])
 
     def ClearReferenceLog(self):
-        return _CGetRecordUpdatedReferences(0, self._CollectionID)
+        return _CGetRecordUpdatedReferences(self._CollectionID, 0)
 
     def Debug_DumpModFiles(self):
         value = _("Collection (%08X) contains the following modfiles:\n") % (self._CollectionID,)

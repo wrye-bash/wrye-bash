@@ -110,6 +110,7 @@ modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
 iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
+trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
@@ -6280,7 +6281,7 @@ class SaveFile:
                             for i in range(numElements):
                                 if keyType == 1:
                                     key, = unpack('=d',8)
-                                    keyStr = '%d' % key
+                                    keyStr = '%f' % key
                                 elif keyType == 3:
                                     keyLen, = unpack('=H',2)
                                     key = ins.read(keyLen)
@@ -6290,7 +6291,7 @@ class SaveFile:
                                 dataType, = unpack('=B',1)
                                 if dataType == 1:
                                     data, = unpack('=d',8)
-                                    dataStr = '%d' % data
+                                    dataStr = '%f' % data
                                 elif dataType == 2:
                                     data, = unpack('=I',4)
                                     dataStr = '%08X' % data
@@ -8239,6 +8240,53 @@ class BSAInfo(FileInfo):
         self.setmtime(mtime)
 
 #------------------------------------------------------------------------------
+class TrackedFileInfos(DataDict):
+    """Similar to FileInfos, but doesn't use a PickleDict to save information
+       about the tracked files at all."""
+    def __init__(self,factory=FileInfo):
+        self.factory = factory
+        self.data = {}
+        self.corrupted = {}
+
+    def refreshFile(self,fileName):
+        try:
+            fileInfo = self.factory('',fileName)
+            fileInfo.isGhost = not fileName.exists() and (fileName+'.ghost').exists()
+            fileInfo.getHeader()
+            self.data[fileName] = fileInfo
+        except FileError, error:
+            self.corrupted[fileName] = error.message
+            self.data.pop(fileName,None)
+            raise
+
+    def refresh(self):
+        data = self.data
+        changed = set()
+        for name in data.keys():
+            fileInfo = self.factory('',name)
+            if not fileInfo.sameAs(data[name]):
+                errorMsg = fileInfo.getHeaderError()
+                if errorMsg:
+                    self.corrupted[name] = errorMsg
+                    data.pop(name,None)
+                else:
+                    data[name] = fileInfo
+                    self.corrupted.pop(name,None)
+                changed.add(name)
+        return changed
+
+    def track(self,fileName):
+        self.refreshFile(fileName)
+
+    def untrack(self,fileName):
+        self.data.pop(fileName,None)
+        self.corrupted.pop(fileName,None)
+
+    def clear(self):
+        self.data = {}
+        self.corrupted = {}
+
+#------------------------------------------------------------------------------
 class FileInfos(DataDict):
     def __init__(self,dir,factory=FileInfo):
         """Init with specified directory and specified factory type."""
@@ -8969,6 +9017,7 @@ class ModInfos(FileInfos):
         Either for all mods in the data folder or if specified for one specific mod.
         """
         tagList = _('=== Current Bash Tags:\n')
+        tagList += '[spoiler][xml]'
         if modList:
             for modInfo in modList:
                 tagList += '\n* ' + modInfo.name.s + '\n'
@@ -8980,11 +9029,12 @@ class ModInfos(FileInfos):
                     if configHelpers.getBashTags(modInfo.name):
                         tagList += _('  * From BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += _('  * Removed by  BOSS Masterlist and or userlist:) ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
+                        tagList += _('  * Removed by BOSS Masterlist and or userlist:) ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
                     tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
                 else: tagList += _('    No tags')
         else:
-            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.name.s.lower(), y.name.s.lower())):
+            # sort output by load order
+            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.mtime, y.mtime)):
                 if modInfo.getBashTags():
                     tagList += '\n* ' + modInfo.name.s + '\n'
                     if modInfos.table.getItem(modInfo.name,'bashTags',''):
@@ -8996,6 +9046,7 @@ class ModInfos(FileInfos):
                     if configHelpers.getBashRemoveTags(modInfo.name):
                         tagList += _('  * Removed by BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
                     tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
+        tagList += '[/xml][/spoiler]'
         return tagList
 
     #--Mod Specific ----------------------------------------------------------
@@ -10252,6 +10303,7 @@ class Installer(object):
     docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls','.xlsx','.ods','.odp','.ppt','.pptx'))
     imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
+    commonlyEditedExts = scriptExts | set(('.xml',))
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
@@ -10734,6 +10786,12 @@ class Installer(object):
                     dest = 'Docs\\'+file
                 elif fileExt in imageExts:
                     dest = 'Docs\\'+file
+            if fileExt in Installer.commonlyEditedExts:
+                if trackedInfos is not None:
+                    # The 'INI Tweaks' directory is already tracked by INIInfos,
+                    # But INIInfos wont update the Installers Tab UI on changes.
+                    track = dirs['mods'].join(dest)
+                    trackedInfos.track(track)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
@@ -10939,9 +10997,20 @@ class InstallerConverter(object):
             raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
         ins = cStringIO.StringIO(Encode(ins))
         setter = object.__setattr__
-        map(self.__setattr__, self.persistBCF, cPickle.load(ins))
+        # translate data types to new hierarchy
+        class _Translator:
+            def __init__(self, streamToWrap):
+                self._stream = streamToWrap
+            def read(self, numBytes):
+                return self._translate(self._stream.read(numBytes))
+            def readline(self):
+                return self._translate(self._stream.readline())
+            def _translate(self, s):
+                return re.sub('^(bolt|bosh)$', r'bash.\1', s)
+        translator = _Translator(ins)
+        map(self.__setattr__, self.persistBCF, cPickle.load(translator))
         if fullLoad:
-            map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(ins))
+            map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
         ins.close()
 
     def save(self, destInstaller):
@@ -11315,7 +11384,12 @@ class InstallerArchive(Installer):
             ins = listArchiveContents(archive.s)
         else:
             command = r'"%s" l -slt "%s"' % (exe7z, archive.s)
-            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            try:
+                ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            except WindowsError as e:
+                errorMessage = _("%s: Unable to process archive '%s' with the command: '%s'.") % (e,archive.s,command)
+                deprint(errorMessage)
+                raise InstallerArchiveError(errorMessage)
             ins = stringBuffer(ins)
         fail = False
         try:
@@ -12357,7 +12431,7 @@ class InstallersData(bolt.TankData, DataDict):
                 destFiles &= installer.missingFiles
             if destFiles:
                 for file in destFiles:
-                    if file.cext == '.ini':
+                    if file.cext == '.ini' and not file.head.cs == 'ini tweaks':
                         oldCrc = self.data_sizeCrcDate.get(file,(None,None,None))[1]
                         newCrc = installer.data_sizeCrc.get(file,(None,None))[1]
                         if oldCrc is not None and newCrc is not None:
@@ -18312,6 +18386,16 @@ class CBash_PatchFile(ObModFile):
     def buildPatch(self,progress):
         """Scans load+merge mods."""
         if not len(self.loadMods): return
+        typeOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
+                     'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
+                     'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
+                     'LIGH','MISC','STAT','GRAS','TREE','FLOR','FURN',
+                     'WEAP','AMMO','FACT','LVLC','LVLI','LVSP','NPC_',
+                     'CREA','CONT','SLGM','KEYM','ALCH','SBSP','SGST',
+                     'WTHR','QUST','IDLE','PACK','CSTY','LSCR','ANIO',
+                     'WATR','EFSH','CLMT','REGN','ACHRS','ACRES',
+                     'REFRS','PGRDS','LANDS','ROADS','INFOS','CELL',
+                     'CELLS','DIAL','WRLD']
         iiModeSet = set(('InventOnly','IIM'))
         levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
@@ -18416,7 +18500,9 @@ class CBash_PatchFile(ObModFile):
             pstate = 0
             subProgress = SubProgress(progress,index)
             subProgress.setFull(max(len(type_patchers),1))
-            for type, patchers in type_patchers.iteritems():
+            for type in typeOrder:
+                patchers = type_patchers.get(type, None)
+                if patchers is None: continue
                 iiFilter = IIMSet and not (iiMode or type in levelLists)
                 #Filter the used patchers as needed
                 if iiMode:
@@ -19406,7 +19492,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
                 'CLOT','CONT','DOOR','INGR','LIGH','MISC',
                 'FLOR','FURN','WEAP','AMMO','NPC_','CREA',
                 'LVLC','SLGM','KEYM','ALCH','SGST','LVLI',
-                'WTHR','CLMT','REGN','CELL','WRLD','ACHRS',
+                'WTHR','CLMT','REGN','CELLS','WRLD','ACHRS',
                 'ACRES','REFRS','DIAL','INFOS','QUST','IDLE',
                 'PACK','LSCR','LVSP','ANIO','WATR']
 
@@ -22687,11 +22773,11 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return ["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH",
-                "SPEL","BSGN","ACTI","APPA","ARMO","BOOK","CLOT",
-                "CONT","DOOR","INGR","LIGH","MISC","FLOR","FURN",
-                "WEAP","AMMO","NPC_","CREA","SLGM","KEYM","ALCH",
-                "SGST","WRLD","CELL","DIAL","QUST"]
+        return ['CLAS','FACT','HAIR','EYES','RACE','MGEF','ENCH',
+                'SPEL','BSGN','ACTI','APPA','ARMO','BOOK','CLOT',
+                'CONT','DOOR','INGR','LIGH','MISC','FLOR','FURN',
+                'WEAP','AMMO','NPC_','CREA','SLGM','KEYM','ALCH',
+                'SGST','WRLD','CELLS','DIAL','QUST']
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -24653,11 +24739,16 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
         self.defaultEnabled = True
 
     def getTypes(self):
-        return ['CELL'] #or 'CELLS' to also affect worldspaces. Don't think it's a problem in those cells though.
+        return ['CELLS'] #or 'CELL', but we want this patcher to run in the same
+                         #group as the CellImporter, so we'll have to skip
+                         #worldspaces.  It shouldn't be a problem in those CELLs.
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
+        if record.Parent:
+            # It's a CELL that showed up because we said 'CELLS' instead of 'CELL'
+            return
         if not (record.fogNear or record.fogFar or record.fogClip):
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -29456,7 +29547,7 @@ class CBash_NamesTweak_Dwarven(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
                 'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
@@ -29779,7 +29870,7 @@ class CBash_NamesTweak_Dwarfs(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
                 'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
@@ -30056,7 +30147,7 @@ class CBash_NamesTweak_staffs(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELL','CLAS','CLOT','CONT','CREA','DOOR',
+                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
                 'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
@@ -33613,6 +33704,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         self.femaleHairs = set()
         self.id_meshes = {}
         self.id_eyes = {}
+        self.srcEyes = {}
         self.eye_meshes = {}
         self.finishedOnce = False
 
@@ -33638,12 +33730,15 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             return
         elif record._Type == 'EYES':
             self.eyeNames.update({record.fid:record.full})
+            self.srcEyes.setdefault(modFile.GName,set()).add(record.fid)
             return
         eye_meshes = self.eye_meshes
+        srcEyes = self.srcEyes.get(modFile.GName,set())
         curEyes = set(record.eyes)
         eyePaths = (record.rightEye.modPath, record.leftEye.modPath)
         for eye in curEyes:
-            if eye not in eye_meshes:
+            # only map eyes that are (re)defined in this mod
+            if eye not in eye_meshes or eye in srcEyes:
                 eye_meshes[eye] = eyePaths
         if modFile.GName in self.srcs and self.autoKey & bashTags:
             allEyes = self.id_eyes.setdefault(recordId,set())

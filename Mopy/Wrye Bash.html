@@ -260,10 +260,10 @@
 <p class="list-1">&bull;&nbsp;  Pacific Morrowind: New imports, exports, tweaks, etc.</p>
 <p class="list-1">&bull;&nbsp;  Lojack: Wizard based install system, Ini tab, etc.</p>
 <p class="list-1">&bull;&nbsp;  myk002: Project management, Asynchronous installer tab, etc.</p>
+<p class="list-1">&bull;&nbsp;  Waruddar: Extensive additions/improvements/fixes, primary author of CBash</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='PastAuthors'>Past Authors</a></h3>
 <p class="list-1">&bull;&nbsp;  <i><b>Wrye</b></i>: Monkey God of Modding!</p>
-<p class="list-1">&bull;&nbsp;  Waruddar: Extensive additions/improvements/fixes, primary author of CBash</p>
 <p class="list-1">&bull;&nbsp;  Ralgor: Cell support and Import Cells.</p>
 <p class="list-1">&bull;&nbsp;  Raziel23x: new tweaks etc.</p>
 <p class="list-1">&bull;&nbsp;  Haama: OBSE cofile definitions, various fixes, improvements etc</p>
@@ -783,7 +783,7 @@
 <p>Due to the (theoretical but potentially significant) dangers of installing executable files the only type that can be installed are OBSE plugin dll/x files. 
 </p>
 <p class="list-1">&bull;&nbsp;  <b>Enabling OBSE dll/x plugin installation</b></p>
-  <p class="list-2">&bull;&nbsp;  Format archive with OBSE dlls so that the dll(s) are located in <optional subpackage>\obse\plugins\ or a subfolder therein.</p>
+  <p class="list-2">&bull;&nbsp;  Format archive with OBSE dlls so that the dll(s) are located in &lt;optional subpackage&gt;\obse\plugins\ or a subfolder therein.</p>
   <p class="list-2">&bull;&nbsp;  In BAIN deselect <b>Skip OBSE Plugins</b> in the package header menu.</p>
   <p class="list-2">&bull;&nbsp;  Select install on the package and confirm or block each dll/x - you only have to do it once per dll/version.</p>
 <p class="list-1">&bull;&nbsp;  <b>Saving/Editing allowed/disallowed OBSE plugin dlls list</b></p>
@@ -1120,6 +1120,7 @@
   <p class="empty">&nbsp;</p>
 <h3><a id='LoadLists'>Load Lists</a></h3>
 <p class="list-1">&bull;&nbsp;  Aside from using checkboxes to select and unselect mods, you can also use load lists. These are accessed through the column context menu, and work in the same way at the <a href="#LoadMasters">Load Masters</a> command.</p>
+<p class="list-1">&bull;&nbsp;  <b>All:</b> Activates all mods.</p>
 <p class="list-1">&bull;&nbsp;  <b>None:</b> Deactivates all mods.</p>
 <p class="list-1">&bull;&nbsp;  <b>Save List...</b> Saves your currently activated mods to a new load list.</p>
 <p class="list-1">&bull;&nbsp;  <b>Edit Lists...</b> Allows you to delete and rename previously defined load lists.</p>
@@ -1172,7 +1173,7 @@
   <p class="list-2">&bull;&nbsp;  <i><b>Revert to Snapshot</b></i> Reverts the file to a selected snapshot.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='AddMaster'>Add Master</a></h3>
-<p class="list-1">&bull;&nbsp;  Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.</p>
+<p class="list-1">&bull;&nbsp;  Adds specified masters to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Warning:</b></i> For advanced modders only. You should only use this if you know exactly what you're doing.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='DecompileAll'>Decompile All</a></h3>
@@ -2290,7 +2291,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="empty">&nbsp;</p>
 <h3><a id='TweakFileCommands'>Tweak File Commands</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Apply:</b> Applies the INI Tweak to Ovlivion.ini</p>
-<p class="list-1">&bull;&nbsp;  <b>Copy to new Tweak:</b> Creates a new tweak file that tweaks the same settings as the selected file, but uses the values of the target INI instead of the selected tweak.</p>
+<p class="list-1">&bull;&nbsp;  <b>Create Tweak with current settings:</b> Creates a new tweak file that tweaks the same settings as the selected file, but uses the current values of the target INI.</p>
 <p class="list-1">&bull;&nbsp;  <b>List Errors:</b> If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini</p>
 <p class="list-1">&bull;&nbsp;  <b>Open:</b> Open the tweak file for editing.</p>
 <p class="list-1">&bull;&nbsp;  <b>Delete:</b> Delete the tweak file.</p>
@@ -2693,7 +2694,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-<h3><a id='_295XXXX2011bluesky404Gratis_monstaLojackmyk002PacificMorrowindvalda'>295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda]</a></h3>
+<h3><a id='_295XXXX2011bluesky404Gratis_monstaLojackmyk002PacificMorrowindvaldaWaruddar'>295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]</a></h3>
 <p class="list-1">&bull;&nbsp;  First-run Usability Improvements:</p>
   <p class="list-2">&bull;&nbsp;  Default options and widget sizes have been revamped for a smoother first-time experience</p>
   <p class="list-2">&bull;&nbsp;  More startup errors are shown in a popup messagebox instead of just being dumped to the log</p>
@@ -2702,22 +2703,23 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory</p>
 <p class="list-1">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
   <p class="list-2">&bull;&nbsp;  Usability improvements:</p>
-    <p class="list-3">&bull;&nbsp;  Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog</p>
-    <p class="list-3">&bull;&nbsp;  Corresponding patchers will be automatically enabled and bolded</p>
-    <p class="list-3">&bull;&nbsp;  If you would rather do things manually, you can turn the new autocheck behavior off in the ini</p>
-    <p class="list-3">&bull;&nbsp;  When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on &#150; not controlled by the ini)</p>
+    <p class="list-3">&bull;&nbsp;  Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog.</p>
+    <p class="list-3">&bull;&nbsp;  Corresponding patchers will be automatically enabled and bolded.</p>
+    <p class="list-3">&bull;&nbsp;  If you would rather do things manually, you can turn the new autocheck behavior off in the ini.</p>
+    <p class="list-3">&bull;&nbsp;  When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on &#150; not controlled by the ini).</p>
   <p class="list-2">&bull;&nbsp;  Assorted tweakers:</p>
     <p class="list-3">&bull;&nbsp;  New tweak: Skyrim-style Weapons.</p>
     <p class="list-3">&bull;&nbsp;  CBash 'Magic: Script Effect Silencer' tweak fixed.</p>
-    <p class="list-3">&bull;&nbsp;  VORB tweak now assigns special skeletons correctly</p>
-    <p class="list-3">&bull;&nbsp;  Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash</p>
+    <p class="list-3">&bull;&nbsp;  VORB tweak now assigns special skeletons correctly.</p>
+    <p class="list-3">&bull;&nbsp;  Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash.</p>
   <p class="list-2">&bull;&nbsp;  Names tweaker:</p>
-    <p class="list-3">&bull;&nbsp;  New tweak: Proper English Names: Staffs -> Staves</p>
-    <p class="list-3">&bull;&nbsp;  New tweak: Proper English Names: Dwarfs -> Dwarves</p>
+    <p class="list-3">&bull;&nbsp;  New tweak: Proper English Names: Staffs -> Staves.</p>
+    <p class="list-3">&bull;&nbsp;  New tweak: Proper English Names: Dwarfs -> Dwarves.</p>
     <p class="list-3">&bull;&nbsp;  Updated NPC/Guard names csvs. (Contributed by Gratis_monsta)</p>
   <p class="list-2">&bull;&nbsp;  Updated Assorted to Cobl.csv for Replace Form IDs. (Contributed by Gratis_monsta)</p>
-  <p class="list-2">&bull;&nbsp;  Merge Patcher no longer merges in script records that depend on missing masters</p>
-  <p class="list-2">&bull;&nbsp;  Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported</p>
+  <p class="list-2">&bull;&nbsp;  Merge Patcher no longer merges in script records that depend on missing masters.</p>
+  <p class="list-2">&bull;&nbsp;  Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported.</p>
+  <p class="list-2">&bull;&nbsp;  Revert to Default option added; just reverts the patch config to default.</p>
   <p class="list-2">&bull;&nbsp;  Settings tweaker:</p>
     <p class="list-3">&bull;&nbsp;  New tweaks:</p>
       <p class="list-4">&bull;&nbsp;  AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).</p>
@@ -2734,6 +2736,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  Bugfixes from valda and bluesky404</p>
 <p class="list-1">&bull;&nbsp;  Added activation status as a new mods column/sort option.</p>
 <p class="list-1">&bull;&nbsp;  New mod commands:</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#LoadLists">Load All</a> will activate all mods (up to 255 of them, at least)</p>
   <p class="list-2">&bull;&nbsp;  <a href="#CreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.</p>
   <p class="list-2">&bull;&nbsp;  <a href="#CopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.</p>
   <p class="list-2">&bull;&nbsp;  Ghost will ghost just the selected mod(s) </p>
@@ -2741,7 +2744,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   <p class="list-2">&bull;&nbsp;  File-><a href="#CreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.</p>
   <p class="list-2">&bull;&nbsp;  File-><a href="#NewBashedPatch">New Bashed Patch</a> will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)</p>
   <p class="list-2">&bull;&nbsp;  Mods Tab-><a href="#CleanDummyMasters">Clean Dummy Masters</a> will delete any empty plugins created using the <a href="#CreateDummyMasters">Create Dummy Masters</a> command.</p>
-<p class="list-1">&bull;&nbsp;  Add Master command can now add multiple masters in one go</p>
+<p class="list-1">&bull;&nbsp;  Add Master command can now add multiple masters in one go.</p>
 <p class="list-1">&bull;&nbsp;  Fixed Settings backup files should have WB version in their names.</p>
 <p class="list-1">&bull;&nbsp;  Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.</p>
 <p class="list-1">&bull;&nbsp;  Replacers tab and associated code totally removed.</p>
@@ -2767,6 +2770,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <p class="list-1">&bull;&nbsp;  Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).</p>
 <p class="list-1">&bull;&nbsp;  <a href="#Custombuttons">Custom launcher buttons</a> now support launching of msi created shortcuts.</p>
 <p class="list-1">&bull;&nbsp;  Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).</p>
+<p class="list-1">&bull;&nbsp;  CBash no longer causes random occurances of googly eyes</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='_2942182011Lojackmyk002PacificMorrowind'>294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]</a></h3>
 <p class="list-1">&bull;&nbsp;  Small fix to the Python race patcher for dremora records</p>
