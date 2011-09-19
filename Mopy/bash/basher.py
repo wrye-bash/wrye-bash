@@ -6882,6 +6882,8 @@ class TweakPatcher(Patcher):
     def SetItems(self):
         """Set item to specified set of items."""
         self.gList.Clear()
+        isFirstLoad = self._GetIsFirstLoad()
+        patcherBold = False
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith('Custom'):
@@ -6891,6 +6893,14 @@ class TweakPatcher(Patcher):
                     label += ' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
             self.gList.Insert(label,index)
             self.gList.Check(index,tweak.isEnabled)
+            if not isFirstLoad and tweak.isNew():
+                # indicate that this is a new item by bolding it and its parent patcher
+                font = self.gConfigPanel.GetFont()
+                font.SetWeight(wx.FONTWEIGHT_BOLD)
+                self.gList.SetItemFont(index, font)
+                patcherBold = True
+        if patcherBold:
+            self._BoldPatcherLabel()
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
