@@ -4832,7 +4832,6 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
-        self.Layout()
         deprint(_("Wrye Bash in %s Mode") % (['ANSI','Unicode'][bolt.bUseUnicode]))
         if bolt.bUseUnicode:
             wxver = wx.version()
@@ -6028,16 +6027,20 @@ class PatchDialog(wx.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
-        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
-        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
+        cancelButton = button(self,id=wx.ID_CANCEL,label=_('Cancel'))
         self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
         self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import Patch Configuration'),onClick=self.ImportConfig)
         self.gPatchers = wx.CheckListBox(self,-1,choices=patcherNames,style=wx.LB_SINGLE)
+        self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export'),onClick=self.ExportConfig)
+        self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import'),onClick=self.ImportConfig)
+        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
+        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
-        self.gTipText = staticText(self,'')
+        self.defaultTipText = _('New items are displayed in bold')
+        self.gTipText = staticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
         self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
@@ -6057,9 +6060,9 @@ class PatchDialog(wx.Dialog):
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gExportConfig,0,wx.LEFT,4),
                 (self.gImportConfig,0,wx.LEFT,4),
+                (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gRevertToDefault,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
             (hSizer(
@@ -6067,7 +6070,7 @@ class PatchDialog(wx.Dialog):
                 self.gExecute,
                 (self.gSelectAll,0,wx.LEFT,4),
                 (self.gDeselectAll,0,wx.LEFT,4),
-                (button(self,id=wx.ID_CANCEL,label=_('Cancel')),0,wx.LEFT,4),
+                (cancelButton,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
@@ -6076,7 +6079,8 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
             gConfigSizer.Show(gConfigPanel,False)
-        self.ShowPatcher(self.patchers[0])
+        self.gPatchers.Select(1)
+        self.ShowPatcher(self.patchers[1])
         self.SetOkEnable()
 
     #--Core -------------------------------
@@ -6468,7 +6472,7 @@ class PatchDialog(wx.Dialog):
                 self.mouseItem = mouseItem
                 self.MouseEnteredItem(mouseItem)
         elif event.Leaving():
-            self.gTipText.SetLabel('')
+            self.gTipText.SetLabel(self.defaultTipText)
             self.mouseItem = -1
         event.Skip()
 
@@ -6480,7 +6484,7 @@ class PatchDialog(wx.Dialog):
             tip = patcherClass.tip or re.sub(r'\..*','.',patcherClass.text.split('\n')[0])
             self.gTipText.SetLabel(tip)
         else:
-            self.gTipText.SetLabel('')
+            self.gTipText.SetLabel(self.defaultTipText)
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
@@ -6882,6 +6886,8 @@ class TweakPatcher(Patcher):
     def SetItems(self):
         """Set item to specified set of items."""
         self.gList.Clear()
+        isFirstLoad = self._GetIsFirstLoad()
+        patcherBold = False
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith('Custom'):
@@ -6891,6 +6897,14 @@ class TweakPatcher(Patcher):
                     label += ' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
             self.gList.Insert(label,index)
             self.gList.Check(index,tweak.isEnabled)
+            if not isFirstLoad and tweak.isNew():
+                # indicate that this is a new item by bolding it and its parent patcher
+                font = self.gConfigPanel.GetFont()
+                font.SetWeight(wx.FONTWEIGHT_BOLD)
+                self.gList.SetItemFont(index, font)
+                patcherBold = True
+        if patcherBold:
+            self._BoldPatcherLabel()
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
