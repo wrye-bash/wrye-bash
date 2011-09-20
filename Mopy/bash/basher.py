@@ -6037,7 +6037,7 @@ class PatchDialog(wx.Dialog):
         self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
-        self.defaultTipText = _('New items are displayed in bold')
+        self.defaultTipText = _('Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = staticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
