@@ -22298,20 +22298,19 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #--Source mod?
         masters = record.History()
         if not masters: return
-        masterEntries = []
-        for masterEntry in masters:
-            masterEntries.extend(masterEntry.items_list)
         entries = record.items_list
-        masterItems = set(item for item,count in masterEntries)
-        modItems = set(item for item,count in entries)
-        removeItems = masterItems - modItems
-        addItems = modItems - masterItems
-        addEntries = [(item,count) for item,count in entries if item in addItems]
+        modItems = set((item,count) for item,count in entries)
+        masterEntries = []
         id_deltas = self.id_deltas
         fid = record.fid
-        deltas = id_deltas.get(fid)
-        if deltas is None: deltas = id_deltas[fid] = []
-        deltas.append((removeItems,addEntries))
+        for masterEntry in masters:
+            masterItems = set((item,count) for item,count in masterEntry.items_list)
+            removeItems = masterItems - modItems
+            addItems = modItems - masterItems
+            if len(removeItems) or len(addItems):
+                deltas = id_deltas.get(fid)
+                if deltas is None: deltas = id_deltas[fid] = []
+                deltas.append((set((item for item,count in removeItems)),addItems))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -22342,7 +22341,6 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                     record = conflicts[1]
 
         removable = set(entry.item for entry in record.items)
-        changed = False
         items = record.items_list
         for removeItems,addEntries in reversed(deltas):
             if removeItems:
@@ -22350,14 +22348,13 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 if not removeItems.issubset(removable): continue
                 items = [(item,count) for item,count in items if item not in removeItems]
                 removable -= removeItems
-                changed = True
             if addEntries:
                 current = set(item for item,count in items)
                 for item,count in addEntries:
                     if item not in current:
                         items.append((item,count))
-                        changed = True
-        if changed:
+
+        if len(items) != len(record.items_list) or set((item,count) for item,count in record.items_list) != set((item,count) for item,count in items):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 try:
@@ -33642,7 +33639,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
         'R.Description': ('text',),
         }
-    formIDAttrs = ['hairs','maleVoice','femaleVoice',]
+    formIDAttrs = ['maleVoice','femaleVoice',]
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -33678,12 +33675,12 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                 attr_value = {'hairs':hairs}
             else:
                 attr_value = record.ConflictDetails(attrs)
-                for attr, value in attr_value.iteritems():
-                    if attr in self.formIDAttrs:
-                        if value[0] is None or value[0] not in self.patchFile.loadSet:
-                            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                            return
+                for attr in self.formIDAttrs:
+                    value = attr_value.get(attr)
+                    if value and (value[0] is None or value[0] not in self.patchFile.loadSet):
+                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                        return
             self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
 
     def apply(self,modFile,record,bashTags):
