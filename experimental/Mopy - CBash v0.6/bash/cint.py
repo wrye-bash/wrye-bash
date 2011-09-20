@@ -11023,7 +11023,7 @@ class ObBaseRecord(object):
     def History(self):
         cRecordIDs = (c_ulong * 257)() #just allocate enough for the max number + size
         numRecords = _CGetRecordHistory(self._RecordID, byref(cRecordIDs))
-        return [self.__class__(self._RecordID, cRecordIDs[x]) for x in range(0, numRecords)]
+        return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.

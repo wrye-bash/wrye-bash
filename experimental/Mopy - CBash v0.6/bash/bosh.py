@@ -21628,20 +21628,19 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #--Source mod?
         masters = record.History()
         if not masters: return
+        entries = record.items_list
+        modItems = set((item,count) for item,count in entries if item.ValidateFormID(self.patchFile))
         masterEntries = []
-        for masterEntry in masters:
-            masterEntries.extend([(item,count) for item,count in masterEntry.items if item.ValidateFormID(self.patchFile)])
-        entries = [(item,count) for item,count in record.items if item.ValidateFormID(self.patchFile)]
-        masterItems = set(item for item,count in masterEntries)
-        modItems = set(item for item,count in entries)
-        removeItems = masterItems - modItems
-        addItems = modItems - masterItems
-        addEntries = [(item,count) for item,count in entries if item in addItems]
         id_deltas = self.id_deltas
         fid = record.fid
-        deltas = id_deltas.get(fid)
-        if deltas is None: deltas = id_deltas[fid] = []
-        deltas.append((removeItems,addEntries))
+        for masterEntry in masters:
+            masterItems = set((item,count) for item,count in masterEntry.items_list if item.ValidateFormID(self.patchFile))
+            removeItems = masterItems - modItems
+            addItems = modItems - masterItems
+            if len(removeItems) or len(addItems):
+                deltas = id_deltas.get(fid)
+                if deltas is None: deltas = id_deltas[fid] = []
+                deltas.append((set((item for item,count in removeItems)),addItems))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -21661,8 +21660,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 else:
                     record = conflicts[1]
 
-        removable = set(item for item,count in record.items if item.ValidateFormID(self.patchFile))
-        changed = False
+        removable = set(entry.item for entry in record.items)
         items = record.items_list
         for removeItems,addEntries in reversed(deltas):
             if removeItems:
@@ -21670,14 +21668,14 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 if not removeItems.issubset(removable): continue
                 items = [(item,count) for item,count in items if item not in removeItems]
                 removable -= removeItems
-                changed = True
             if addEntries:
                 current = set(item for item,count in items)
                 for item,count in addEntries:
                     if item not in current:
                         items.append((item,count))
-                        changed = True
-        if changed:
+
+
+        if len(items) != len(record.items_list) or set((item,count) for item,count in record.items_list) != set((item,count) for item,count in items):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.items_list = items
