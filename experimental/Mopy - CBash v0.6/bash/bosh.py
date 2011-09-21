@@ -13381,7 +13381,7 @@ class CBash_EditorIds:
                 if newEid and newEid != oldEid:
                     record.eid = newEid
                     if record.eid == newEid: #Can silently fail if a record keyed by editorID (GMST,MGEF) already has the value
-                        changed.append((oldEid,newEid))
+                        changed.append((oldEid or '',newEid or ''))
         #--Update scripts
         old_new = dict(self.old_new)
         old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
@@ -13970,11 +13970,11 @@ class CBash_FullNames:
             return
 
         changed = {}
-        for type in self.types:
-            fid_name = group_fid_name.get(type,None)
+        for group in self.types:
+            fid_name = group_fid_name.get(group,None)
             if not fid_name: continue
             fid_name = FormID.FilterValidDict(fid_name, modFile, True, False)
-            for record in getattr(modFile,type):
+            for record in getattr(modFile,group):
                 fid = record.fid
                 full = record.full
                 eid,newFull = fid_name.get(fid,(0,0))
@@ -14228,7 +14228,7 @@ class UsesEffectsMixin(object):
         5 : 'Restoration',}
     schoolTypeName_Number = dict([(y.lower(),x) for x,y in schoolTypeNumber_Name.iteritems() if x is not None])
 
-    def readEffects(self, _effects, doCBash):
+    def readEffects(self, _effects, aliases, doCBash):
         schoolTypeName_Number = UsesEffectsMixin.schoolTypeName_Number
         recipientTypeName_Number = UsesEffectsMixin.recipientTypeName_Number
         actorValueName_Number = UsesEffectsMixin.actorValueName_Number
@@ -14415,7 +14415,7 @@ class SigilStoneDetails(UsesEffectsMixin):
             uses = _coerce(uses, int)
             value = _coerce(value, int)
             weight = _coerce(weight, float)
-            effects = self.readEffects(fields[12:], False)
+            effects = self.readEffects(fields[12:], aliases, False)
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
         ins.close()
 
@@ -14517,7 +14517,7 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
             uses = _coerce(uses, int)
             value = _coerce(value, int)
             weight = _coerce(weight, float)
-            effects = self.readEffects(fields[12:])
+            effects = self.readEffects(fields[12:], aliases, True)
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
         ins.close()
     
@@ -15993,7 +15993,7 @@ class SpellRecords(UsesEffectsMixin):
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
 
-                effects = self.readEffects(fields, False)
+                effects = self.readEffects(fields, aliases, False)
                 fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
         finally:
             ins.close()
@@ -16138,7 +16138,7 @@ class CBash_SpellRecords(UsesEffectsMixin):
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
 
-                effects = self.readEffects(fields, True)
+                effects = self.readEffects(fields, aliases, True)
                 fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
         finally:
             ins.close()
@@ -16256,7 +16256,7 @@ class IngredientDetails(UsesEffectsMixin):
             iconPath = _coerce(iconPath, str, AllowNone=True)
             value = _coerce(value, int)
             weight = _coerce(weight, float)
-            effects = self.readEffects(fields[11:], False)
+            effects = self.readEffects(fields[11:], aliases, False)
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
         ins.close()
 
@@ -16355,7 +16355,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
             iconPath = _coerce(iconPath, str, AllowNone=True)
             value = _coerce(value, int)
             weight = _coerce(weight, float)
-            effects = self.readEffects(fields[12:], True)
+            effects = self.readEffects(fields[11:], aliases, True)
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
         ins.close()
 

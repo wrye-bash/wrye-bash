@@ -576,15 +576,15 @@ class FormID(object):
     def __hash__(self):
         return hash(self.formID)
 
-    def __eq__(self, x):
+    def __eq__(self, other):
         try:
-            return x[1] == self.formID[1] and x[0] == self.formID[0]
+            return other[1] == self.formID[1] and other[0] == self.formID[0]
         except TypeError:
             return False
 
     def __ne__(self, other):
         try:
-            return x[1] != self.formID[1] or x[0] != self.formID[0]
+            return other[1] != self.formID[1] or other[0] != self.formID[0]
         except TypeError:
             return False
 
@@ -856,15 +856,15 @@ class ActorValue(object):
     def __hash__(self):
         return hash(self.actorValue)
 
-    def __eq__(self, x):
+    def __eq__(self, other):
         try:
-            return x[1] == self.actorValue[1] and x[0] == self.actorValue[0]
+            return other[1] == self.actorValue[1] and other[0] == self.actorValue[0]
         except TypeError:
             return False
 
     def __ne__(self, other):
         try:
-            return x[1] != self.actorValue[1] or x[0] != self.actorValue[0]
+            return other[1] != self.actorValue[1] or other[0] != self.actorValue[0]
         except TypeError:
             return False
 
@@ -1155,14 +1155,14 @@ class MGEFCode(object):
     def __hash__(self):
         return hash(self.mgefCode)
 
-    def __eq__(self, x):
+    def __eq__(self, other):
         try:
-            return x[1] == self.mgefCode[1] and x[0] == self.mgefCode[0]
+            return other[1] == self.mgefCode[1] and other[0] == self.mgefCode[0]
         except TypeError:
             return False
 
     def __ne__(self, other):
-        return x[1] != self.mgefCode[1] or x[0] != self.mgefCode[0]
+        return other[1] != self.mgefCode[1] or other[0] != self.mgefCode[0]
 
     def __getitem__(self, x):
         if x == 0: return self.mgefCode[0]
@@ -1238,8 +1238,12 @@ def ValidateList(Elements, Target):
     isValid = True
     for element in Elements:
         if not isValid: return isValid
-        if isinstance(element, (FormID, ActorValue, MGEFCode)):
-            isValid = element.Validate(Target)
+        if isinstance(element, FormID):
+            isValid = element.ValidateFormID(Target)
+        elif isinstance(element, ActorValue):
+            isValid = element.ValidateActorValue(Target)
+        elif isinstance(element, MGEFCode):
+            isValid = element.ValidateMGEFCode(Target)
         elif isinstance(element, (tuple, list)):
             isValid = ValidateList(element, Target)
     return isValid
@@ -1250,12 +1254,20 @@ def ValidateDict(Elements, Target):
        Returns true if all of the FormIDs/ActorValues/MGEFCodes in the dict are valid."""
     isValid = True
     for key, value in Elements.iteritems():
-        if isinstance(key, (FormID, ActorValue, MGEFCode)):
-            isValid = key.Validate(Target)
+        if isinstance(key, FormID):
+            isValid = key.ValidateFormID(Target)
+        elif isinstance(key, ActorValue):
+            isValid = key.ValidateActorValue(Target)
+        elif isinstance(key, MGEFCode):
+            isValid = key.ValidateMGEFCode(Target)
         if not isValid: return isValid
-        
-        if isinstance(value, (FormID, ActorValue, MGEFCode)):
-            isValid = value.Validate(Target)
+
+        if isinstance(value, FormID):
+            isValid = value.ValidateFormID(Target)
+        elif isinstance(value, ActorValue):
+            isValid = value.ValidateActorValue(Target)
+        elif isinstance(value, MGEFCode):
+            isValid = value.ValidateMGEFCode(Target)
         if not isValid: return isValid
         
         if isinstance(key, tuple):

@@ -16641,7 +16641,7 @@ class CBash_IngredientDetails:
             value = _coerce(value, int)
             weight = _coerce(weight, float)
             effects = []
-            _effects = fields[12:]
+            _effects = fields[11:]
             while len(_effects) >= 13:
                 _effect, _effects = _effects[1:13], _effects[13:]
                 name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
