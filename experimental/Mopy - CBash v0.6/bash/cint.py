@@ -16107,10 +16107,15 @@ class ObCollection:
 ##        // If it is true, it forces IsAddMasters to be false.
 ##        // Allows mods not in load order to copy records
 ##
+##        //SkipAllRecords causes all records to be ignored when loading. TrackNewTypes still works, but that's all.
+##        // Vastly decreases load time per mod.
+##        // Use it when you want to check for new record types, but don't care about the actual records.
+##
 ##        //Only the following combinations are tested:
 ##        // Normal:  (fIsMinLoad or fIsFullLoad) + fIsInLoadOrder + fIsSaveable + fIsAddMasters + fIsLoadMasters
 ##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
 ##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters + fIsExtendedConflicts
+
         fIsMinLoad             = 0x00000001
         fIsFullLoad            = 0x00000002
         fIsSkipNewRecords      = 0x00000004
@@ -16124,6 +16129,7 @@ class ObCollection:
         fIsFixupPlaceables     = 0x00000400
         fIsIgnoreExisting      = 0x00000800
         fIsIgnoreAbsentMasters = 0x00001000
+        fIsSkipAllRecords      = 0x00002000
 
         if Flags is None:
             Flags = fIsMinLoad | fIsInLoadOrder | fIsSaveable | fIsAddMasters | fIsLoadMasters

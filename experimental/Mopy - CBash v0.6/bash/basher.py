@@ -9815,8 +9815,8 @@ class Mods_LoadList:
         """Select all mods."""
         modInfos = bosh.modInfos
         try:
-            # first select the bashed patch(es) and their masters
-            for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in ('BASHED PATCH','BASHED LISTS')]:
+            # then activate mods that are not tagged NoMerge or Deactivate or Filter
+            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags() and "Filter" not in modInfos[modName].getBashTags()]:
                 if not modInfos.isSelected(bashedPatch):
                     modInfos.select(bashedPatch)
             # then activate mods that are not tagged NoMerge or Deactivate
@@ -9826,6 +9826,7 @@ class Mods_LoadList:
             # then activate as many of the remaining mods as we can
             for mod in modInfos.mergeable:
                 if "Deactivate" in modInfos[mod].getBashTags(): continue
+                if "Filter" in modInfos[mod].getBashTags(): continue
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
         except bosh.PluginsFullError:
@@ -11654,12 +11655,16 @@ class Mod_MarkMergeable(Link):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         for fileName in map(GPath,self.data):
-            if bosh.reOblivion.match(fileName.s): continue
+            if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
             fileInfo = bosh.modInfos[fileName]
-            if self.doCBash:
+
+            if fileName == "Oscuro's_Oblivion_Overhaul.esp":
+                canMerge = _("\n.    Marked non-mergeable at request of mod author.")
+            elif self.doCBash:
                 canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
             else:
                 canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+
             if canMerge == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)
