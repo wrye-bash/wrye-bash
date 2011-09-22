@@ -9818,13 +9818,14 @@ class Mods_LoadList:
             for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in ('BASHED PATCH','BASHED LISTS')]:
                 if not modInfos.isSelected(bashedPatch):
                     modInfos.select(bashedPatch)
-            # then activate mods that are not tagged NoMerge or Deactivate
-            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags()]:
+            # then activate mods that are not tagged NoMerge or Deactivate or Filter
+            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags() and "Filter" not in modInfos[modName].getBashTags()]:
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
             # then activate as many of the remaining mods as we can
             for mod in modInfos.mergeable:
                 if "Deactivate" in modInfos[mod].getBashTags(): continue
+                if "Filter" in modInfos[mod].getBashTags(): continue
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
         except bosh.PluginsFullError:
