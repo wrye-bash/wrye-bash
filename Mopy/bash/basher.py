@@ -11652,10 +11652,14 @@ class Mod_MarkMergeable(Link):
         for fileName in map(GPath,self.data):
             if bosh.reOblivion.match(fileName.s): continue
             fileInfo = bosh.modInfos[fileName]
-            if not self.doCBash:
+
+            if fileName == "Oscuro's_Oblivion_Overhaul.esp":
+                canMerge = _("\n.    Marked non-mergeable at request of mod author.")
+            elif not self.doCBash:
                 canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
             else:
                 canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+
             if canMerge == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)
