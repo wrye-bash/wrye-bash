@@ -17844,7 +17844,7 @@ class PatchFile(ModFile):
     def modIsMergeable(modInfo,progress=None,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
-        if reEsmExt.search(modInfo.name.s):
+        if modInfo.isEsm():
             if not verbose: return False
             reasons += _("\n.    Is esm.")
         #--Bashed Patch
@@ -17852,13 +17852,15 @@ class PatchFile(ModFile):
             if not verbose: return False
             reasons += _("\n.    Is Bashed Patch.")
 
-        #--Bsa?
-        reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
-        for file in modInfos.dir.list():
-            if reBsa.match(file.s):
-                if not verbose: return False
+        #--Bsa / voice?
+        if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
+            if not verbose: return False
+            hasBsa, hasVoices = modInfo.hasResources()
+            if hasBsa:
                 reasons += _("\n.    Has BSA archive.")
-                break
+            if hasVoices:
+                reasons += _("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s
+
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
             if not verbose: return False
@@ -18152,20 +18154,24 @@ class CBash_PatchFile(ObModFile):
     @staticmethod
     def modIsMergeableNoLoad(modInfo,verbose=False):
         reasons = ''
-        if reEsmExt.search(modInfo.name.s):
+
+        if modInfo.isEsm():
             if not verbose: return False
             reasons += _("\n.    Is esm.")
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
             if not verbose: return False
             reasons += _("\n.    Is Bashed Patch.")
-        #--Bsa?
-        reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
-        for file in modInfos.dir.list():
-            if reBsa.match(file.s):
-                if not verbose: return False
+
+        #--Bsa / voice?
+        if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
+            if not verbose: return False
+            hasBsa, hasVoices = modInfo.hasResources()
+            if hasBsa:
                 reasons += _("\n.    Has BSA archive.")
-                break
+            if hasVoices:
+                reasons += _("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s
+
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         tags = modInfos[modInfo.name].getBashTags()
         if 'NoMerge' in tags:
