@@ -10421,7 +10421,9 @@ class Settings_CheckForUpdates(Link):
         result = pool.apply_async(f, args)
         prevTime = time.time()
         try:
-            with balt.Progress('Check for updates...','Contacting TESNexus...',abort=True) as progress:
+            with balt.Progress(_('Check for updates...'),
+                               _('Contacting TESNexus...'),
+                               abort=True) as progress:
                 progress.setFull(10)
                 while not result.ready():
                     currTime = time.time()
