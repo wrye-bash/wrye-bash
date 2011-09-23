@@ -422,7 +422,7 @@ The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButt
 * __Colors:__ Brings up the [[#|Colors Dialog]].
 
 === Colors Dialog
-<img src="bash/images/WryeBash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
+<img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
 The Colors Dialog allows you to customize what colors Wrye Bash uses in the UI to communicate various bits of information.  This is for example, the text color of ESMs, mergeable plugins, etc.  This dialog only allows you to configure the custom colors, as everything else uses your OS's default colors.  If you want to change those, you'll have to do it through your OS's color configuration.
 
 __The Controls__
