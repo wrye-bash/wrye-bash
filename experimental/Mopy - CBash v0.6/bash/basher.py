@@ -6030,8 +6030,6 @@ class PatchDialog(wx.Dialog):
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
         cancelButton = button(self,id=wx.ID_CANCEL,label=_('Cancel'))
-        self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
-        self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import Patch Configuration'),onClick=self.ImportConfig)
         self.gPatchers = wx.CheckListBox(self,-1,choices=patcherNames,style=wx.LB_SINGLE)
         self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export'),onClick=self.ExportConfig)
         self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import'),onClick=self.ImportConfig)
@@ -6181,7 +6179,7 @@ class PatchDialog(wx.Dialog):
                             statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
                     except bosh.PluginsFullError:
                         balt.showError(self,_("Unable to add mod %s because load list is full." )
-                            % (fileName.s,))
+                            % (patchName.s,))
                     modList.RefreshUI()
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
@@ -9815,12 +9813,12 @@ class Mods_LoadList:
         """Select all mods."""
         modInfos = bosh.modInfos
         try:
-            # then activate mods that are not tagged NoMerge or Deactivate or Filter
-            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags() and "Filter" not in modInfos[modName].getBashTags()]:
+            # first select the bashed patch(es) and their masters
+            for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in ('BASHED PATCH','BASHED LISTS')]:
                 if not modInfos.isSelected(bashedPatch):
                     modInfos.select(bashedPatch)
-            # then activate mods that are not tagged NoMerge or Deactivate
-            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags()]:
+            # then activate mods that are not tagged NoMerge or Deactivate or Filter
+            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags() and "Filter" not in modInfos[modName].getBashTags()]:
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
             # then activate as many of the remaining mods as we can
