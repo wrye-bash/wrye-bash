@@ -37,7 +37,7 @@ class TestPanel(wx.Panel):
         self._initialTest = True
         self._knownGoodInst = 1
         # initial value is approximate number of instructions it takes to quiesce the UI
-        self._knownBadInst = 2200000
+        self._knownBadInst = 4400000
         self._crashed = False
         self._runWryeBashFn = runWryeBashFn
         self._runOblivionFn = runOblivionFn

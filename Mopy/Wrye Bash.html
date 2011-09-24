@@ -647,7 +647,7 @@
 <p class="list-1">&bull;&nbsp;  <b>Colors:</b> Brings up the <a href="#ColorsDialog">Colors Dialog</a>.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='ColorsDialog'>Colors Dialog</a></h3>
-<p><img src="bash/images/WryeBash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
+<p><img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
 </p>
 <p>The Colors Dialog allows you to customize what colors Wrye Bash uses in the UI to communicate various bits of information.  This is for example, the text color of ESMs, mergeable plugins, etc.  This dialog only allows you to configure the custom colors, as everything else uses your OS's default colors.  If you want to change those, you'll have to do it through your OS's color configuration.
 </p>
@@ -977,7 +977,6 @@
 <p class="list-1">&bull;&nbsp;  <b>Availability</b></p>
   <p class="list-2">&bull;&nbsp;  <b>Avoid at Startup:</b> Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you'll should Enable this.</p>
   <p class="list-2">&bull;&nbsp;  <b>Enabled:</b> This enables/disables Bain itself. Preferred setting: Enabled (checked).</p>
-  <p class="list-2">&bull;&nbsp;  <b>Show Replacers Tab:</b> (Only if the Replacers Tab is enabled in bash.ini) If checked, will cause the Replacers tab to appear.</p>
   <p class="list-2">&bull;&nbsp;  <b>Auto-Anneal:</b> Toggles the auto-anneal process on/off. Preferred setting: enabled.</p>
   <p class="list-2">&bull;&nbsp;  <b>Auto-Anneal/Install Wizard:</b> Toggles whether or not to automatically install/anneal a package when finished with its wizard. (Available only if Wizard Install system is active)</p>
   <p class="list-2">&bull;&nbsp;  <b>Auto-Refresh Projects:</b> Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.</p>
@@ -999,9 +998,7 @@
   <p class="list-2">&bull;&nbsp;  <b>Skip LOD Normals:</b> If checked, landscape LOD normals will be skipped.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='ReplacersTab'>Replacers Tab</a></h2>
-<p><i><b>The Replacers Tab has now been replaced by the <a href="#InstallersTab">Installers Tab</a>.</b></i> If you're currently using Replacers, you should move them to the Packages directory (preferably after converting them to archives).
-</p>
-<p><b>As of version 295:</b> The Replacers tab has been removed entirely.
+<p><i><b>As of version 295, the Replacers Tab has removed and superseded by the <a href="#InstallersTab">Installers Tab</a>.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
 <h3><a id='TexturesBSA'>Textures BSA</a></h3>
@@ -1979,6 +1976,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class="list-2">&bull;&nbsp;  The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.</p>
 <p class="list-1">&bull;&nbsp;  <b>Skyrim-style Weapons:</b></p>
   <p class="list-2">&bull;&nbsp;  Sets all one handed weapons as blades, two handed weapons as blunt.</p>
+<p class="list-1">&bull;&nbsp;  <b>Uniform Groundcover:</b></p>
+  <p class="list-2">&bull;&nbsp;  Eliminates the random variation in groundcover (grass, vines, shrubs, etc).  Tall groundcover will still be taller than short groundcover, but there will be less variation in size. May help on lower end machines.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='TweakClothes'>Tweak Clothes</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b> This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated &#150; however your tastes may vary.</p>
@@ -2695,6 +2694,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 </p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_295XXXX2011bluesky404Gratis_monstaLojackmyk002PacificMorrowindvaldaWaruddar'>295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]</a></h3>
+<p class="list-1">&bull;&nbsp;  Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs.  It's community members like you that help Wrye Bash succeed!</p>
 <p class="list-1">&bull;&nbsp;  First-run Usability Improvements:</p>
   <p class="list-2">&bull;&nbsp;  Default options and widget sizes have been revamped for a smoother first-time experience</p>
   <p class="list-2">&bull;&nbsp;  More startup errors are shown in a popup messagebox instead of just being dumped to the log</p>
@@ -2709,7 +2709,9 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     <p class="list-3">&bull;&nbsp;  When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on &#150; not controlled by the ini).</p>
   <p class="list-2">&bull;&nbsp;  Assorted tweakers:</p>
     <p class="list-3">&bull;&nbsp;  New tweak: Skyrim-style Weapons.</p>
+    <p class="list-3">&bull;&nbsp;  New tweak: Uniform Groundcover.</p>
     <p class="list-3">&bull;&nbsp;  CBash 'Magic: Script Effect Silencer' tweak fixed.</p>
+    <p class="list-3">&bull;&nbsp;  PBash 'Default icons' tweak fixed.</p>
     <p class="list-3">&bull;&nbsp;  VORB tweak now assigns special skeletons correctly.</p>
     <p class="list-3">&bull;&nbsp;  Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash.</p>
   <p class="list-2">&bull;&nbsp;  Names tweaker:</p>

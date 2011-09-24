@@ -4832,7 +4832,6 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
-        self.Layout()
         deprint(_("Wrye Bash in %s Mode") % (['ANSI','Unicode'][bolt.bUseUnicode]))
         if bolt.bUseUnicode:
             wxver = wx.version()
@@ -6028,16 +6027,18 @@ class PatchDialog(wx.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_('Build Patch'),onClick=self.Execute)
-        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
-        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_('Deselect All'),onClick=self.DeselectAll)
-        self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export Patch Configuration'),onClick=self.ExportConfig)
-        self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import Patch Configuration'),onClick=self.ImportConfig)
+        cancelButton = button(self,id=wx.ID_CANCEL,label=_('Cancel'))
         self.gPatchers = wx.CheckListBox(self,-1,choices=patcherNames,style=wx.LB_SINGLE)
+        self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_('Export'),onClick=self.ExportConfig)
+        self.gImportConfig = button(self,id=wx.ID_OPEN,label=_('Import'),onClick=self.ImportConfig)
+        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_('Revert To Saved'),onClick=self.RevertConfig)
+        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_('Revert To Default'),onClick=self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
-        self.gTipText = staticText(self,'')
+        self.defaultTipText = _('Items that are new since the last time this patch was built are displayed in bold')
+        self.gTipText = staticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
         self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
@@ -6057,9 +6058,9 @@ class PatchDialog(wx.Dialog):
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gExportConfig,0,wx.LEFT,4),
                 (self.gImportConfig,0,wx.LEFT,4),
+                (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gRevertToDefault,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
             (hSizer(
@@ -6067,7 +6068,7 @@ class PatchDialog(wx.Dialog):
                 self.gExecute,
                 (self.gSelectAll,0,wx.LEFT,4),
                 (self.gDeselectAll,0,wx.LEFT,4),
-                (button(self,id=wx.ID_CANCEL,label=_('Cancel')),0,wx.LEFT,4),
+                (cancelButton,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
@@ -6076,7 +6077,8 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
             gConfigSizer.Show(gConfigPanel,False)
-        self.ShowPatcher(self.patchers[0])
+        self.gPatchers.Select(1)
+        self.ShowPatcher(self.patchers[1])
         self.SetOkEnable()
 
     #--Core -------------------------------
@@ -6105,6 +6107,7 @@ class PatchDialog(wx.Dialog):
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(' '*60+'\n'), abort=True)
         ###Remove from Bash after CBash integrated
+        patchFile = None
         if self.doCBash:
             try:
                 from datetime import timedelta
@@ -6130,7 +6133,6 @@ class PatchDialog(wx.Dialog):
                 progress.setCancel(False)
                 progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.save()
-                patchFile.Current.Close()
                 patchTime = fullName.mtime
                 try:
                     patchName.untemp()
@@ -6177,7 +6179,7 @@ class PatchDialog(wx.Dialog):
                             statusBar.SetText(_("Masters Activated: ") + `len(changedFiles)-1`)
                     except bosh.PluginsFullError:
                         balt.showError(self,_("Unable to add mod %s because load list is full." )
-                            % (fileName.s,))
+                            % (patchName.s,))
                     modList.RefreshUI()
             except bosh.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
@@ -6191,6 +6193,10 @@ class PatchDialog(wx.Dialog):
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 raise
             finally:
+                try:
+                    patchFile.Current.Close()
+                except:
+                    pass
                 progress.Destroy()
         else:
             try:
@@ -6468,7 +6474,7 @@ class PatchDialog(wx.Dialog):
                 self.mouseItem = mouseItem
                 self.MouseEnteredItem(mouseItem)
         elif event.Leaving():
-            self.gTipText.SetLabel('')
+            self.gTipText.SetLabel(self.defaultTipText)
             self.mouseItem = -1
         event.Skip()
 
@@ -6480,7 +6486,7 @@ class PatchDialog(wx.Dialog):
             tip = patcherClass.tip or re.sub(r'\..*','.',patcherClass.text.split('\n')[0])
             self.gTipText.SetLabel(tip)
         else:
-            self.gTipText.SetLabel('')
+            self.gTipText.SetLabel(self.defaultTipText)
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
@@ -6882,6 +6888,8 @@ class TweakPatcher(Patcher):
     def SetItems(self):
         """Set item to specified set of items."""
         self.gList.Clear()
+        isFirstLoad = self._GetIsFirstLoad()
+        patcherBold = False
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith('Custom'):
@@ -6891,6 +6899,14 @@ class TweakPatcher(Patcher):
                     label += ' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
             self.gList.Insert(label,index)
             self.gList.Check(index,tweak.isEnabled)
+            if not isFirstLoad and tweak.isNew():
+                # indicate that this is a new item by bolding it and its parent patcher
+                font = self.gConfigPanel.GetFont()
+                font.SetWeight(wx.FONTWEIGHT_BOLD)
+                self.gList.SetItemFont(index, font)
+                patcherBold = True
+        if patcherBold:
+            self._BoldPatcherLabel()
 
     def OnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
@@ -9805,13 +9821,14 @@ class Mods_LoadList:
             for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in ('BASHED PATCH','BASHED LISTS')]:
                 if not modInfos.isSelected(bashedPatch):
                     modInfos.select(bashedPatch)
-            # then activate mods that are not tagged NoMerge or Deactivate
-            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags()]:
+            # then activate mods that are not tagged NoMerge or Deactivate or Filter
+            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and "Deactivate" not in modInfos[modName].getBashTags() and "Filter" not in modInfos[modName].getBashTags()]:
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
             # then activate as many of the remaining mods as we can
             for mod in modInfos.mergeable:
                 if "Deactivate" in modInfos[mod].getBashTags(): continue
+                if "Filter" in modInfos[mod].getBashTags(): continue
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod)
         except bosh.PluginsFullError:
@@ -10623,14 +10640,14 @@ class MasterList_CleanMasters(Link):
             return
         modInfo = self.window.fileInfo
         path = modInfo.getPath()
-        collection = ObCollection(ModsPath=bosh.dirs['mods'].s)
-        collection.addMod(path.stail)
-        collection.load()
-        modFile = collection.LookupModFile(path.stail)
-        oldMasters = modFile.TES4.masters
-        cleaned = modFile.CleanMasters()
 
-        try:
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(path.stail)
+            Current.load()
+            modFile = collection.LookupModFile(path.stail)
+            oldMasters = modFile.TES4.masters
+            cleaned = modFile.CleanMasters()
+
             if cleaned:
                 newMasters = modFile.TES4.masters
                 removed = [GPath(x) for x in oldMasters if x not in newMasters]
@@ -10660,8 +10677,6 @@ class MasterList_CleanMasters(Link):
                     print _('toRemove:'), toRemove
             else:
                 balt.showOk(self.window,_("No Masters to clean."),_("Clean Masters"))
-        finally:
-            collection.Close()
 
 #------------------------------------------------------------------------------
 class Mod_AddMaster(Link):
@@ -11640,12 +11655,16 @@ class Mod_MarkMergeable(Link):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         for fileName in map(GPath,self.data):
-            if bosh.reOblivion.match(fileName.s): continue
+            if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
             fileInfo = bosh.modInfos[fileName]
-            if self.doCBash:
+
+            if fileName == "Oscuro's_Oblivion_Overhaul.esp":
+                canMerge = _("\n.    Marked non-mergeable at request of mod author.")
+            elif self.doCBash:
                 canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
             else:
                 canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+
             if canMerge == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)

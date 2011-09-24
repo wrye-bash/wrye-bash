@@ -576,15 +576,15 @@ class FormID(object):
     def __hash__(self):
         return hash(self.formID)
 
-    def __eq__(self, x):
+    def __eq__(self, other):
         try:
-            return x[1] == self.formID[1] and x[0] == self.formID[0]
+            return other[1] == self.formID[1] and other[0] == self.formID[0]
         except TypeError:
             return False
 
     def __ne__(self, other):
         try:
-            return x[1] != self.formID[1] or x[0] != self.formID[0]
+            return other[1] != self.formID[1] or other[0] != self.formID[0]
         except TypeError:
             return False
 
@@ -856,15 +856,15 @@ class ActorValue(object):
     def __hash__(self):
         return hash(self.actorValue)
 
-    def __eq__(self, x):
+    def __eq__(self, other):
         try:
-            return x[1] == self.actorValue[1] and x[0] == self.actorValue[0]
+            return other[1] == self.actorValue[1] and other[0] == self.actorValue[0]
         except TypeError:
             return False
 
     def __ne__(self, other):
         try:
-            return x[1] != self.actorValue[1] or x[0] != self.actorValue[0]
+            return other[1] != self.actorValue[1] or other[0] != self.actorValue[0]
         except TypeError:
             return False
 
@@ -1155,14 +1155,14 @@ class MGEFCode(object):
     def __hash__(self):
         return hash(self.mgefCode)
 
-    def __eq__(self, x):
+    def __eq__(self, other):
         try:
-            return x[1] == self.mgefCode[1] and x[0] == self.mgefCode[0]
+            return other[1] == self.mgefCode[1] and other[0] == self.mgefCode[0]
         except TypeError:
             return False
 
     def __ne__(self, other):
-        return x[1] != self.mgefCode[1] or x[0] != self.mgefCode[0]
+        return other[1] != self.mgefCode[1] or other[0] != self.mgefCode[0]
 
     def __getitem__(self, x):
         if x == 0: return self.mgefCode[0]
@@ -1238,8 +1238,12 @@ def ValidateList(Elements, Target):
     isValid = True
     for element in Elements:
         if not isValid: return isValid
-        if isinstance(element, (FormID, ActorValue, MGEFCode)):
-            isValid = element.Validate(Target)
+        if isinstance(element, FormID):
+            isValid = element.ValidateFormID(Target)
+        elif isinstance(element, ActorValue):
+            isValid = element.ValidateActorValue(Target)
+        elif isinstance(element, MGEFCode):
+            isValid = element.ValidateMGEFCode(Target)
         elif isinstance(element, (tuple, list)):
             isValid = ValidateList(element, Target)
     return isValid
@@ -1250,12 +1254,20 @@ def ValidateDict(Elements, Target):
        Returns true if all of the FormIDs/ActorValues/MGEFCodes in the dict are valid."""
     isValid = True
     for key, value in Elements.iteritems():
-        if isinstance(key, (FormID, ActorValue, MGEFCode)):
-            isValid = key.Validate(Target)
+        if isinstance(key, FormID):
+            isValid = key.ValidateFormID(Target)
+        elif isinstance(key, ActorValue):
+            isValid = key.ValidateActorValue(Target)
+        elif isinstance(key, MGEFCode):
+            isValid = key.ValidateMGEFCode(Target)
         if not isValid: return isValid
-        
-        if isinstance(value, (FormID, ActorValue, MGEFCode)):
-            isValid = value.Validate(Target)
+
+        if isinstance(value, FormID):
+            isValid = value.ValidateFormID(Target)
+        elif isinstance(value, ActorValue):
+            isValid = value.ValidateActorValue(Target)
+        elif isinstance(value, MGEFCode):
+            isValid = value.ValidateMGEFCode(Target)
         if not isValid: return isValid
         
         if isinstance(key, tuple):
@@ -3110,9 +3122,9 @@ class FnvBaseRecord(object):
         return _CGetRecordUpdatedReferences(0, self._RecordID)
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -11010,9 +11022,9 @@ class ObBaseRecord(object):
         return _CGetRecordUpdatedReferences(0, self._RecordID)
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -11023,7 +11035,7 @@ class ObBaseRecord(object):
     def History(self):
         cRecordIDs = (c_ulong * 257)() #just allocate enough for the max number + size
         numRecords = _CGetRecordHistory(self._RecordID, byref(cRecordIDs))
-        return [self.__class__(self._RecordID, cRecordIDs[x]) for x in range(0, numRecords)]
+        return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.
@@ -14760,9 +14772,9 @@ class ObModFile(object):
         return []
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -15268,9 +15280,9 @@ class FnvModFile(object):
         return []
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -16026,6 +16038,12 @@ class ObCollection:
         self.LoadOrderMods = []
         self.AllMods = []
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.Close()
+
     def __eq__(self, other):
         if type(other) is type(self):
             return self._CollectionID == other._CollectionID
@@ -16095,10 +16113,15 @@ class ObCollection:
 ##        // If it is true, it forces IsAddMasters to be false.
 ##        // Allows mods not in load order to copy records
 ##
+##        //SkipAllRecords causes all records to be ignored when loading. TrackNewTypes still works, but that's all.
+##        // Vastly decreases load time per mod.
+##        // Use it when you want to check for new record types, but don't care about the actual records.
+##
 ##        //Only the following combinations are tested:
 ##        // Normal:  (fIsMinLoad or fIsFullLoad) + fIsInLoadOrder + fIsSaveable + fIsAddMasters + fIsLoadMasters
 ##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
 ##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters + fIsExtendedConflicts
+
         fIsMinLoad             = 0x00000001
         fIsFullLoad            = 0x00000002
         fIsSkipNewRecords      = 0x00000004
@@ -16112,6 +16135,7 @@ class ObCollection:
         fIsFixupPlaceables     = 0x00000400
         fIsIgnoreExisting      = 0x00000800
         fIsIgnoreAbsentMasters = 0x00001000
+        fIsSkipAllRecords      = 0x00002000
 
         if Flags is None:
             Flags = fIsMinLoad | fIsInLoadOrder | fIsSaveable | fIsAddMasters | fIsLoadMasters
@@ -16191,8 +16215,8 @@ class ObCollection:
     def LookupModFileLoadOrder(self, ModName):
         return _CGetModLoadOrderByName(self._CollectionID, str(ModName))
 
-    def UpdateReferences(self, OldFormIDs, NewFormIDs):
-        return sum([mod.UpdateReferences(OldFormIDs, NewFormIDs) for mod in self.LoadOrderMods])
+    def UpdateReferences(self, Old_NewFormIDs):
+        return sum([mod.UpdateReferences(Old_NewFormIDs) for mod in self.LoadOrderMods])
 
     def ClearReferenceLog(self):
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)

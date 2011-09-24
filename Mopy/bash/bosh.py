@@ -16641,7 +16641,7 @@ class CBash_IngredientDetails:
             value = _coerce(value, int)
             weight = _coerce(weight, float)
             effects = []
-            _effects = fields[12:]
+            _effects = fields[11:]
             while len(_effects) >= 13:
                 _effect, _effects = _effects[1:13], _effects[13:]
                 name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
@@ -17844,7 +17844,7 @@ class PatchFile(ModFile):
     def modIsMergeable(modInfo,progress=None,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
-        if reEsmExt.search(modInfo.name.s):
+        if modInfo.isEsm():
             if not verbose: return False
             reasons += _("\n.    Is esm.")
         #--Bashed Patch
@@ -17852,13 +17852,15 @@ class PatchFile(ModFile):
             if not verbose: return False
             reasons += _("\n.    Is Bashed Patch.")
 
-        #--Bsa?
-        reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
-        for file in modInfos.dir.list():
-            if reBsa.match(file.s):
-                if not verbose: return False
+        #--Bsa / voice?
+        if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
+            if not verbose: return False
+            hasBsa, hasVoices = modInfo.hasResources()
+            if hasBsa:
                 reasons += _("\n.    Has BSA archive.")
-                break
+            if hasVoices:
+                reasons += _("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s
+
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
             if not verbose: return False
@@ -18152,20 +18154,24 @@ class CBash_PatchFile(ObModFile):
     @staticmethod
     def modIsMergeableNoLoad(modInfo,verbose=False):
         reasons = ''
-        if reEsmExt.search(modInfo.name.s):
+
+        if modInfo.isEsm():
             if not verbose: return False
             reasons += _("\n.    Is esm.")
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
             if not verbose: return False
             reasons += _("\n.    Is Bashed Patch.")
-        #--Bsa?
-        reBsa = re.compile(re.escape(modInfo.name.sroot)+'.*bsa$',re.I)
-        for file in modInfos.dir.list():
-            if reBsa.match(file.s):
-                if not verbose: return False
+
+        #--Bsa / voice?
+        if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
+            if not verbose: return False
+            hasBsa, hasVoices = modInfo.hasResources()
+            if hasBsa:
                 reasons += _("\n.    Has BSA archive.")
-                break
+            if hasVoices:
+                reasons += _("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s
+
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         tags = modInfos[modInfo.name].getBashTags()
         if 'NoMerge' in tags:
@@ -18986,6 +18992,7 @@ class MultiTweakItem:
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
         if self.key in configs:
+            self._isNew = False
             self.isEnabled,value = configs[self.key]
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
@@ -18995,8 +19002,13 @@ class MultiTweakItem:
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
         else:
+            self._isNew = True
             if self.default:
                 self.chosen = self.default
+
+    def isNew(self):
+        """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
+        return getattr(self, "_isNew", False)
 
     def getListLabel(self):
         """Returns label to be used in list"""
@@ -19040,6 +19052,7 @@ class CBash_MultiTweakItem:
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
         if self.key in configs:
+            self._isNew = False
             self.isEnabled,value = configs[self.key]
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
@@ -19049,8 +19062,13 @@ class CBash_MultiTweakItem:
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
         else:
+            self._isNew = True
             if self.default:
                 self.chosen = self.default
+
+    def isNew(self):
+        """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
+        return getattr(self, "_isNew", False)
 
     def getListLabel(self):
         """Returns label to be used in list"""
@@ -22286,20 +22304,19 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #--Source mod?
         masters = record.History()
         if not masters: return
-        masterEntries = []
-        for masterEntry in masters:
-            masterEntries.extend(masterEntry.items_list)
         entries = record.items_list
-        masterItems = set(item for item,count in masterEntries)
-        modItems = set(item for item,count in entries)
-        removeItems = masterItems - modItems
-        addItems = modItems - masterItems
-        addEntries = [(item,count) for item,count in entries if item in addItems]
+        modItems = set((item,count) for item,count in entries)
+        masterEntries = []
         id_deltas = self.id_deltas
         fid = record.fid
-        deltas = id_deltas.get(fid)
-        if deltas is None: deltas = id_deltas[fid] = []
-        deltas.append((removeItems,addEntries))
+        for masterEntry in masters:
+            masterItems = set((item,count) for item,count in masterEntry.items_list)
+            removeItems = masterItems - modItems
+            addItems = modItems - masterItems
+            if len(removeItems) or len(addItems):
+                deltas = id_deltas.get(fid)
+                if deltas is None: deltas = id_deltas[fid] = []
+                deltas.append((set((item for item,count in removeItems)),addItems))
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -22330,7 +22347,6 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                     record = conflicts[1]
 
         removable = set(entry.item for entry in record.items)
-        changed = False
         items = record.items_list
         for removeItems,addEntries in reversed(deltas):
             if removeItems:
@@ -22338,14 +22354,13 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 if not removeItems.issubset(removable): continue
                 items = [(item,count) for item,count in items if item not in removeItems]
                 removable -= removeItems
-                changed = True
             if addEntries:
                 current = set(item for item,count in items)
                 for item,count in addEntries:
                     if item not in current:
                         items.append((item,count))
-                        changed = True
-        if changed:
+
+        if len(items) != len(record.items_list) or set((item,count) for item,count in record.items_list) != set((item,count) for item,count in items):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 try:
@@ -25701,6 +25716,94 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_UniformGroundcover(MultiTweakItem):
+    """Eliminates random variation in groundcover."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_("Uniform Groundcover"),
+            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            'UniformGroundcover',
+            ('1.0', '1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return (MreGras,)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return (MreGras,)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.GRAS
+        id_records = patchBlock.id_records
+        for record in modFile.GRAS.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.heightRange != 0:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.GRAS.records:
+            if record.heightRange != 0:
+                record.heightRange = 0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(_('=== Uniform Groundcover'))
+        log(_('* Grasses Normalized: %d') % (sum(count.values()),))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            
+class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
+    """Eliminates random variation in groundcover."""
+    scanOrder = 32
+    editOrder = 32
+    name = _('Uniform Groundcover')
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_("Uniform Groundcover"),
+            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            'UniformGroundcover',
+            ('1.0', '1.0'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['GRAS']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.heightRange != 0:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.heightRange = 0
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._ModID, record._RecordID = override._ModID, override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(_('=== Uniform Groundcover'))
+        log(_('* Grasses Normalized: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+#------------------------------------------------------------------------------
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
 #info: 'itemType','chargeAmount','enchantCost'
@@ -25873,127 +25976,129 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         for type in self.activeTypes:
             if type not in patchFile.tops: continue
             for record in patchFile.tops[type].records:
+                if getattr(record, 'iconPath', None): continue
+                if getattr(record, 'maleIconPath', None): continue
+                if getattr(record, 'femaleIconPath', None): continue
                 changed = False
-                try:
-                    if record.icon: continue
-                except:
-                    try:
-                        if record.maleIcon or record.femaleIcon: continue
-                        if record.flags.notPlayable: continue
-                    except: continue
                 if type == 'ALCH':
-                    record.icon = r"Clutter\Potions\IconPotion01.dds"
+                    record.iconPath = r"Clutter\Potions\IconPotion01.dds"
                     changed = True
                 elif type == 'AMMO':
-                    record.icon = r"Weapons\IronArrow.dds"
+                    record.iconPath = r"Weapons\IronArrow.dds"
                     changed = True
                 elif type == 'APPA':
-                    record.icon = r"Clutter\IconMortarPestle.dds"
+                    record.iconPath = r"Clutter\IconMortarPestle.dds"
                     changed = True
                 elif type == 'AMMO':
-                    record.icon = r"Weapons\IronArrow.dds"
+                    record.iconPath = r"Weapons\IronArrow.dds"
                     changed = True
                 elif type == 'ARMO':
+                    if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIcon = r"Armor\Iron\M\Cuirass.dds"
-                        record.femaleIcon = r"Armor\Iron\F\Cuirass.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Cuirass.dds"
+                        record.femaleIconPath = r"Armor\Iron\F\Cuirass.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIcon = r"Armor\Iron\M\Greaves.dds"
-                        record.femaleIcon = r"Armor\Iron\F\Greaves.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Greaves.dds"
+                        record.femaleIconPath = r"Armor\Iron\F\Greaves.dds"
                         changed = True
                     elif record.flags.head != 0 or record.flags.hair != 0:
-                        record.maleIcon = r"Armor\Iron\M\Helmet.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Helmet.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIcon = r"Armor\Iron\M\Gauntlets.dds"
-                        record.femaleIcon = r"Armor\Iron\F\Gauntlets.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Gauntlets.dds"
+                        record.femaleIconPath = r"Armor\Iron\F\Gauntlets.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIcon = r"Armor\Iron\M\Boots.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Boots.dds"
                         changed = True
                     elif record.flags.shield != 0:
-                        record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Shield.dds"
                         changed = True
                     else: #Default icon, probably a token or somesuch
-                        record.maleIcon = r"Armor\Iron\M\Shield.dds"
+                        record.maleIconPath = r"Armor\Iron\M\Shield.dds"
                         changed = True
                 elif type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
-                    record.icon = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
+                    record.iconPath = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
                     changed = True
                 elif type == 'CLOT':
+                    if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIcon = r"Clothes\MiddleClass\01\M\Shirt.dds"
-                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Shirt.dds"
+                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Shirt.dds"
+                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Shirt.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIcon = r"Clothes\MiddleClass\01\M\Pants.dds"
-                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Pants.dds"
+                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Pants.dds"
+                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Pants.dds"
                         changed = True
                     elif record.flags.head or record.flags.hair:
-                        record.maleIcon = r"Clothes\MythicDawnrobe\hood.dds"
+                        record.maleIconPath = r"Clothes\MythicDawnrobe\hood.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIcon = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
+                        record.maleIconPath = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIcon = r"Clothes\MiddleClass\01\M\Shoes.dds"
-                        record.femaleIcon = r"Clothes\MiddleClass\01\F\Shoes.dds"
+                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Shoes.dds"
+                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Shoes.dds"
                         changed = True
                     elif record.flags.leftRing or record.flags.rightRing:
-                        record.maleIcon = r"Clothes\Ring\RingNovice.dds"
+                        record.maleIconPath = r"Clothes\Ring\RingNovice.dds"
                         changed = True
                     else: #amulet
-                        record.maleIcon = r"Clothes\Amulet\AmuletSilver.dds"
+                        record.maleIconPath = r"Clothes\Amulet\AmuletSilver.dds"
                         changed = True
                 elif type == 'FACT':
                     #todo
-                    changed = True
+                    #changed = True
+                    pass
                 elif type == 'INGR':
-                    record.icon = r"Clutter\IconSeeds.dds"
+                    record.iconPath = r"Clutter\IconSeeds.dds"
                     changed = True
                 elif type == 'KEYM':
-                    record.icon = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
+                    record.iconPath = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
                     changed = True
                 elif type == 'LIGH':
-                    record.icon = r"Lights\IconTorch02.dds"
+                    if not record.flags.canTake: continue
+                    record.iconPath = r"Lights\IconTorch02.dds"
                     changed = True
                 elif type == 'MISC':
-                    record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+                    record.iconPath = r"Clutter\Soulgems\AzurasStar.dds"
                     changed = True
                 elif type == 'QUST':
                     if not record.stages: continue
-                    record.icon = r"Quest\icon_miscellaneous.dds"
+                    record.iconPath = r"Quest\icon_miscellaneous.dds"
                     changed = True
                 elif type == 'SGST':
-                    record.icon = r"IconSigilStone.dds"
+                    record.iconPath = r"IconSigilStone.dds"
                     changed = True
                 elif type == 'SLGM':
-                    record.icon = r"Clutter\Soulgems\AzurasStar.dds"
+                    record.iconPath = r"Clutter\Soulgems\AzurasStar.dds"
                     changed = True
                 elif type == 'WEAP':
-                    if record.type == 0:
-                        record.icon = r"Weapons\IronDagger.dds"
-                    elif record.type == 1:
-                        record.icon = r"Weapons\IronClaymore.dds"
-                    elif record.type == 2:
-                        record.icon = r"Weapons\IronMace.dds"
-                    elif record.type == 3:
-                        record.icon = r"Weapons\IronBattleAxe.dds"
-                    elif record.type == 4:
-                        record.icon = r"Weapons\Staff.dds"
-                    elif record.type == 5:
-                        record.icon = r"Weapons\IronBow.dds"
+                    if record.weaponType == 0:
+                        record.iconPath = r"Weapons\IronDagger.dds"
+                    elif record.weaponType == 1:
+                        record.iconPath = r"Weapons\IronClaymore.dds"
+                    elif record.weaponType == 2:
+                        record.iconPath = r"Weapons\IronMace.dds"
+                    elif record.weaponType == 3:
+                        record.iconPath = r"Weapons\IronBattleAxe.dds"
+                    elif record.weaponType == 4:
+                        record.iconPath = r"Weapons\Staff.dds"
+                    elif record.weaponType == 5:
+                        record.iconPath = r"Weapons\IronBow.dds"
                     else: #Should never reach this point
-                        record.icon = r"Weapons\IronDagger.dds"
+                        record.iconPath = r"Weapons\IronDagger.dds"
                     changed = True
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                if changed:
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log.setHeader(_('=== Default Icons'))
+        log(_('* Default Icons set: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -26554,6 +26659,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_StaffWeight(),
         AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         AssortedTweak_WindSpeed(),
+        AssortedTweak_UniformGroundcover(),
         AssortedTweak_HarvestChance(),
         AssortedTweak_IngredientWeight(),
         AssortedTweak_ArrowWeight(),
@@ -26630,6 +26736,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         CBash_AssortedTweak_HarvestChance(),
         CBash_AssortedTweak_WindSpeed(),
+        CBash_AssortedTweak_UniformGroundcover(),
         CBash_AssortedTweak_IngredientWeight(),
         CBash_AssortedTweak_ArrowWeight(),
         CBash_AssortedTweak_ScriptEffectSilencer(),
@@ -30711,11 +30818,10 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
-        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -30773,12 +30879,11 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
         self.mod_count = {}
-        self.defaultEnabled = True
 
     def getTypes(self):
         return ['NPC_']
@@ -31591,7 +31696,6 @@ class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
-    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         VORB_NPCSkeletonPatcher(),
         MAONPCSkeletonPatcher(),
@@ -31639,7 +31743,6 @@ class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
-    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         CBash_VORB_NPCSkeletonPatcher(),
         CBash_MAONPCSkeletonPatcher(),
@@ -33538,6 +33641,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
         'R.Description': ('text',),
         }
+    formIDAttrs = ['maleVoice','femaleVoice',]
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -33551,7 +33655,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.isActive = bool(srcs)
         if not self.isActive: return
         self.racesPatched = set()
-        self.id_tag_values = {}
+        self.fid_attr_value = {}
 
     def initData(self,type_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -33566,14 +33670,20 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         """Records information needed to apply the patch."""
         recordId = record.fid
         for bashKey in bashTags & self.autoKey:
+            attrs = self.tag_attrs[bashKey]
             if bashKey == 'Hair':
-                #Using sets would make this clearer, and probably faster (though speed isn't a concern)
-                #So this is a bit convoluted, but makes the apply section work without special casing this tag
-                #Hairs should perhaps have it's own patcher, but...
-                allHairs = self.id_tag_values.setdefault(recordId,{}).setdefault(bashKey,[[]])
-                allHairs[0] += (hair for hair in record.hairs if hair not in allHairs[0] and hair[0])
+                hairs = self.fid_attr_value.setdefault(recordId,{}).get('hairs', [])
+                hairs.extend([hair for hair in record.hairs if hair not in hairs and hair[0] is not None and hair[0] in self.patchFile.loadSet])
+                attr_value = {'hairs':hairs}
             else:
-                self.id_tag_values.setdefault(recordId,{})[bashKey] = map(record.__getattribute__,self.tag_attrs[bashKey])
+                attr_value = record.ConflictDetails(attrs)
+                for attr in self.formIDAttrs:
+                    value = attr_value.get(attr)
+                    if value and (value[0] is None or value[0] not in self.patchFile.loadSet):
+                        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                        mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                        return
+            self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -33589,20 +33699,14 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                     self.scan(mod,conflict,tags)
             else: break
         recordId = record.fid
-        if(recordId in self.id_tag_values):
-            allAttrs = []
-            prevValues = []
-            recValues = []
-            for bashKey in self.tag_attrs:
-                attrs = self.tag_attrs[bashKey]
-                allAttrs += attrs
-                tagValues = map(record.__getattribute__,attrs)
-                prevValues += self.id_tag_values[recordId].get(bashKey, tagValues)
-                recValues += tagValues
-            if recValues != prevValues:
+        prev_attr_value = self.fid_attr_value.get(recordId,None)
+        if prev_attr_value:
+            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
+            if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    map(override.__setattr__, allAttrs, prevValues)
+                    for attr, value in prev_attr_value.iteritems():
+                        setattr(override,attr,value)
                     self.racesPatched.add(record.eid)
                     record.UnloadRecord()
                     record._ModID, record._RecordID = override._ModID, override._RecordID
