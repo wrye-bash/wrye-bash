@@ -3122,9 +3122,9 @@ class FnvBaseRecord(object):
         return _CGetRecordUpdatedReferences(0, self._RecordID)
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -11022,9 +11022,9 @@ class ObBaseRecord(object):
         return _CGetRecordUpdatedReferences(0, self._RecordID)
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -14772,9 +14772,9 @@ class ObModFile(object):
         return []
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -15280,9 +15280,9 @@ class FnvModFile(object):
         return []
 
     def UpdateReferences(self, Old_NewFormIDs):
-        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True)
+        Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if length != len(Old_NewFormIDs):
+        if not length:
             return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
@@ -16038,6 +16038,12 @@ class ObCollection:
         self.LoadOrderMods = []
         self.AllMods = []
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.Close()
+
     def __eq__(self, other):
         if type(other) is type(self):
             return self._CollectionID == other._CollectionID
@@ -16209,8 +16215,8 @@ class ObCollection:
     def LookupModFileLoadOrder(self, ModName):
         return _CGetModLoadOrderByName(self._CollectionID, str(ModName))
 
-    def UpdateReferences(self, OldFormIDs, NewFormIDs):
-        return sum([mod.UpdateReferences(OldFormIDs, NewFormIDs) for mod in self.LoadOrderMods])
+    def UpdateReferences(self, Old_NewFormIDs):
+        return sum([mod.UpdateReferences(Old_NewFormIDs) for mod in self.LoadOrderMods])
 
     def ClearReferenceLog(self):
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)

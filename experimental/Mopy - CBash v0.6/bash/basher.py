@@ -6107,6 +6107,7 @@ class PatchDialog(wx.Dialog):
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(' '*60+'\n'), abort=True)
         ###Remove from Bash after CBash integrated
+        patchFile = None
         if self.doCBash:
             try:
                 from datetime import timedelta
@@ -6132,7 +6133,6 @@ class PatchDialog(wx.Dialog):
                 progress.setCancel(False)
                 progress(1.0,patchName.s+_('\nSaving...'))
                 patchFile.save()
-                patchFile.Current.Close()
                 patchTime = fullName.mtime
                 try:
                     patchName.untemp()
@@ -6193,6 +6193,10 @@ class PatchDialog(wx.Dialog):
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 raise
             finally:
+                try:
+                    patchFile.Current.Close()
+                except:
+                    pass
                 progress.Destroy()
         else:
             try:
@@ -10636,14 +10640,14 @@ class MasterList_CleanMasters(Link):
             return
         modInfo = self.window.fileInfo
         path = modInfo.getPath()
-        collection = ObCollection(ModsPath=bosh.dirs['mods'].s)
-        collection.addMod(path.stail)
-        collection.load()
-        modFile = collection.LookupModFile(path.stail)
-        oldMasters = modFile.TES4.masters
-        cleaned = modFile.CleanMasters()
 
-        try:
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(path.stail)
+            Current.load()
+            modFile = collection.LookupModFile(path.stail)
+            oldMasters = modFile.TES4.masters
+            cleaned = modFile.CleanMasters()
+
             if cleaned:
                 newMasters = modFile.TES4.masters
                 removed = [GPath(x) for x in oldMasters if x not in newMasters]
@@ -10673,8 +10677,6 @@ class MasterList_CleanMasters(Link):
                     print _('toRemove:'), toRemove
             else:
                 balt.showOk(self.window,_("No Masters to clean."),_("Clean Masters"))
-        finally:
-            collection.Close()
 
 #------------------------------------------------------------------------------
 class Mod_AddMaster(Link):

@@ -12841,75 +12841,73 @@ class CBash_ActorFactions:
         """Imports faction data from specified mod."""
         group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,self.fid_eid,self.gotFactions
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False)
-        Current.load()
-        try:
-            importFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ActorFactions:readFromMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False)
+            Current.load()
+            try:
+                importFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ActorFactions:readFromMod"
+                print error[0]
+                return
 
-        for modFile in Current.LoadOrderMods:
-            modName = modFile.GName
-            if modName in gotFactions: continue
-            for record in modFile.FACT:
-                fid_eid[record.fid] = record.eid
-            if modFile != importFile: continue
-            types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
-            for group,block in types.iteritems():
-                fid_factions = group_fid_factions[group]
-                for record in block:
-                    fid = record.fid
-                    factions = record.factions_list
-                    if factions:
-                        fid_eid[fid] = record.eid
-                        fid_factions[fid] = factions
-            modFile.Unload()
-            gotFactions.add(modName)
-        Current.Close()
+            for modFile in Current.LoadOrderMods:
+                modName = modFile.GName
+                if modName in gotFactions: continue
+                for record in modFile.FACT:
+                    fid_eid[record.fid] = record.eid
+                if modFile != importFile: continue
+                types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
+                for group,block in types.iteritems():
+                    fid_factions = group_fid_factions[group]
+                    for record in block:
+                        fid = record.fid
+                        factions = record.factions_list
+                        if factions:
+                            fid_eid[fid] = record.eid
+                            fid_factions[fid] = factions
+                modFile.Unload()
+                gotFactions.add(modName)
 
     def writeToMod(self,modInfo):
         """Exports faction data to specified mod."""
         group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ActorFactions:writeToMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ActorFactions:writeToMod"
+                print error[0]
+                return
 
-        changed = {'CREA':0,'NPC_':0}
-        types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
-        for group,block in types.iteritems():
-            fid_factions = group_fid_factions.get(group,None)
-            if fid_factions is not None:
-                fid_factions = FormID.FilterValidDict(fid_factions, modFile, True, False)
-                for record in block:
-                    fid = record.fid
-                    if fid not in fid_factions: continue
-                    newFactions = set([(faction, rank) for faction, rank in fid_factions[fid] if faction.ValidateFormID(modFile)])
-                    curFactions = set([(faction, rank) for faction, rank in record.factions_list if faction.ValidateFormID(modFile)])
-                    changes = newFactions - curFactions
-                    if not changes: continue
-                    for faction,rank in changes:
-                        for entry in record.factions:
-                            if entry.faction == faction:
+            changed = {'CREA':0,'NPC_':0}
+            types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
+            for group,block in types.iteritems():
+                fid_factions = group_fid_factions.get(group,None)
+                if fid_factions is not None:
+                    fid_factions = FormID.FilterValidDict(fid_factions, modFile, True, False)
+                    for record in block:
+                        fid = record.fid
+                        if fid not in fid_factions: continue
+                        newFactions = set([(faction, rank) for faction, rank in fid_factions[fid] if faction.ValidateFormID(modFile)])
+                        curFactions = set([(faction, rank) for faction, rank in record.factions_list if faction.ValidateFormID(modFile)])
+                        changes = newFactions - curFactions
+                        if not changes: continue
+                        for faction,rank in changes:
+                            for entry in record.factions:
+                                if entry.faction == faction:
+                                    entry.rank = rank
+                                    break
+                            else:
+                                entry = record.create_faction()
+                                entry.faction = faction
                                 entry.rank = rank
-                                break
-                        else:
-                            entry = record.create_faction()
-                            entry.faction = faction
-                            entry.rank = rank
-                    changed[group] += 1
-        #--Done
-        if sum(changed.values()): modFile.save()
-        Current.Close()
-        return changed
+                        changed[group] += 1
+            #--Done
+            if sum(changed.values()): modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
@@ -13080,48 +13078,46 @@ class CBash_ActorLevels:
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
         mod_fid_levels, gotLevels = self.mod_fid_levels, self.gotLevels
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod('Oblivion.esm', Saveable=False)
-        Current.addMod(modInfo.getPath().stail, Saveable=False)
-        Current.load()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod('Oblivion.esm', Saveable=False)
+            Current.addMod(modInfo.getPath().stail, Saveable=False)
+            Current.load()
 
-        for modFile in Current.LoadOrderMods:
-            modName = modFile.GName
-            if modName in gotLevels: continue
-            fid_levels = mod_fid_levels.setdefault(modName, {})
-            for record in modFile.NPC_:
-                fid_levels[record.fid] = (record.eid, record.IsPCLevelOffset and 1 or 0, record.level, record.calcMin, record.calcMax)
-            modFile.Unload()
-            gotLevels.add(modName)
-        Current.Close()
+            for modFile in Current.LoadOrderMods:
+                modName = modFile.GName
+                if modName in gotLevels: continue
+                fid_levels = mod_fid_levels.setdefault(modName, {})
+                for record in modFile.NPC_:
+                    fid_levels[record.fid] = (record.eid, record.IsPCLevelOffset and 1 or 0, record.level, record.calcMin, record.calcMax)
+                modFile.Unload()
+                gotLevels.add(modName)
 
     def writeToMod(self,modInfo):
         """Exports actor levels to specified mod."""
         mod_fid_levels = self.mod_fid_levels
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ActorLevels:writeToMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ActorLevels:writeToMod"
+                print error[0]
+                return
 
-        changed = 0
-        fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath('Unknown'),None))
-        if fid_levels:
-            for record in modFile.NPC_:
-                fid = record.fid
-                if fid not in fid_levels: continue
-                eid, isOffset, level, calcMin, calcMax = fid_levels[fid]
-                if((record.level, record.calcMin, record.calcMax) != (level, calcMin, calcMax)):
-                    (record.level, record.calcMin, record.calcMax) = (level, calcMin, calcMax)
-                    changed += 1
-        #--Done
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+            changed = 0
+            fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath('Unknown'),None))
+            if fid_levels:
+                for record in modFile.NPC_:
+                    fid = record.fid
+                    if fid not in fid_levels: continue
+                    eid, isOffset, level, calcMin, calcMax = fid_levels[fid]
+                    if((record.level, record.calcMin, record.calcMax) != (level, calcMin, calcMax)):
+                        (record.level, record.calcMin, record.calcMax) = (level, calcMin, calcMax)
+                        changed += 1
+            #--Done
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports NPC level data from specified text file."""
@@ -13339,57 +13335,57 @@ class CBash_EditorIds:
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
         group_fid_eid,groups = self.group_fid_eid,self.groups
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_EditorIds:readFromMod"
-            print error[0]
-            return
 
-        for group in groups:
-            fid_eid = group_fid_eid.setdefault(group[:4], {})
-            for record in getattr(modFile, group):
-                eid = record.eid
-                if eid: fid_eid[record.fid] = eid
-            modFile.Unload()
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_EditorIds:readFromMod"
+                print error[0]
+                return
+
+            for group in groups:
+                fid_eid = group_fid_eid.setdefault(group[:4], {})
+                for record in getattr(modFile, group):
+                    eid = record.eid
+                    if eid: fid_eid[record.fid] = eid
+                modFile.Unload()
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
         group_fid_eid = self.group_fid_eid
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_EditorIds:writeToMod"
-            print error[0]
-            return
 
-        changed = []
-        for group,block in modFile.aggregates.iteritems():
-            fid_eid = group_fid_eid.get(group[:4],None)
-            if not fid_eid: continue
-            for record in block:
-                fid = record.fid
-                newEid = fid_eid.get(fid)
-                oldEid = record.eid
-                if newEid and newEid != oldEid:
-                    record.eid = newEid
-                    if record.eid == newEid: #Can silently fail if a record keyed by editorID (GMST,MGEF) already has the value
-                        changed.append((oldEid or '',newEid or ''))
-        #--Update scripts
-        old_new = dict(self.old_new)
-        old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
-        changed.extend(self.changeScripts(modFile,old_new))
-        #--Done
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_EditorIds:writeToMod"
+                print error[0]
+                return
+
+            changed = []
+            for group,block in modFile.aggregates.iteritems():
+                fid_eid = group_fid_eid.get(group[:4],None)
+                if not fid_eid: continue
+                for record in block:
+                    fid = record.fid
+                    newEid = fid_eid.get(fid)
+                    oldEid = record.eid
+                    if newEid and newEid != oldEid:
+                        record.eid = newEid
+                        if record.eid == newEid: #Can silently fail if a record keyed by editorID (GMST,MGEF) already has the value
+                            changed.append((oldEid or '',newEid or ''))
+            #--Update scripts
+            old_new = dict(self.old_new)
+            old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+            changed.extend(self.changeScripts(modFile,old_new))
+            #--Done
+            if changed: modFile.save()
+            return changed
 
     def changeScripts(self,modFile,old_new):
         """Changes scripts in modfile according to changed."""
@@ -13593,33 +13589,32 @@ class CBash_FactionRelations:
         """Imports faction relations from specified mod."""
         fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,self.fid_eid,self.gotFactions
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False)
-        Current.load()
-        try:
-            importFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_FactionRelations:readFromMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False)
+            Current.load()
+            try:
+                importFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_FactionRelations:readFromMod"
+                print error[0]
+                return
 
-        for modFile in Current.LoadOrderMods:
-            modName = modFile.GName
-            if modName in gotFactions: continue
-            if modFile == importFile:
-                for record in modFile.FACT:
-                    fid = record.fid
-                    fid_eid[fid] = record.eid
-                    relations = record.relations_list
-                    if relations:
-                        faction_mod = fid_faction_mod.setdefault(fid,{})
-                        faction_mod.update(relations)
-            else:
-                for record in modFile.FACT:
-                    fid_eid[record.fid] = record.eid
-            modFile.Unload()
-            gotFactions.add(modName)
-        Current.Close()
+            for modFile in Current.LoadOrderMods:
+                modName = modFile.GName
+                if modName in gotFactions: continue
+                if modFile == importFile:
+                    for record in modFile.FACT:
+                        fid = record.fid
+                        fid_eid[fid] = record.eid
+                        relations = record.relations_list
+                        if relations:
+                            faction_mod = fid_faction_mod.setdefault(fid,{})
+                            faction_mod.update(relations)
+                else:
+                    for record in modFile.FACT:
+                        fid_eid[record.fid] = record.eid
+                modFile.Unload()
+                gotFactions.add(modName)
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
@@ -13641,39 +13636,39 @@ class CBash_FactionRelations:
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
         fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_FactionRelations:writeToMod"
-            print error[0]
-            return
 
-        changed = 0
-        for record in modFile.FACT:
-            fid = record.fid
-            if fid not in fid_faction_mod: continue
-            faction_mod = FormID.FilterValidDict(fid_faction_mod[fid], modFile, True, False)
-            newRelations = set([(faction, mod) for faction, mod in FormID.FilterValidDict(faction_mod, modFile, True, False).iteritems()])
-            curRelations = set([(faction, mod) for faction, mod in record.relations_list if faction.ValidateFormID(modFile)])
-            changes = newRelations - curRelations
-            if not changes: continue
-            for faction,mod in changes:
-                for entry in record.relations:
-                    if entry.faction == faction:
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_FactionRelations:writeToMod"
+                print error[0]
+                return
+
+            changed = 0
+            for record in modFile.FACT:
+                fid = record.fid
+                if fid not in fid_faction_mod: continue
+                faction_mod = FormID.FilterValidDict(fid_faction_mod[fid], modFile, True, False)
+                newRelations = set([(faction, mod) for faction, mod in FormID.FilterValidDict(faction_mod, modFile, True, False).iteritems()])
+                curRelations = set([(faction, mod) for faction, mod in record.relations_list if faction.ValidateFormID(modFile)])
+                changes = newRelations - curRelations
+                if not changes: continue
+                for faction,mod in changes:
+                    for entry in record.relations:
+                        if entry.faction == faction:
+                            entry.mod = mod
+                            break
+                    else:
+                        entry = record.create_relation()
+                        entry.faction = faction
                         entry.mod = mod
-                        break
-                else:
-                    entry = record.create_relation()
-                    entry.faction = faction
-                    entry.mod = mod
-            changed += 1
-        #--Done
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+                changed += 1
+            #--Done
+            if changed: modFile.save()
+            return changed
 
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
@@ -13802,27 +13797,27 @@ class CBash_FidReplacer:
         old_new = dict((oldId, newId) for oldId, newId in old_new.iteritems() if oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
         old_count = {}
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        for newId in set(old_new.values()):
-            Current.addMod(modInfos[newId[0]].getPath().stail, Saveable=False)
-        Current.addMod(modInfo.getPath().stail)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_FidReplacer:updateMod"
-            print error[0]
-            return
 
-        counts = modFile.UpdateReferences(old_new)
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            for newId in set(old_new.values()):
+                Current.addMod(modInfos[newId[0]].getPath().stail, Saveable=False)
+            Current.addMod(modInfo.getPath().stail)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_FidReplacer:updateMod"
+                print error[0]
+                return
+            print Current.Debug_DumpModFiles()
+            counts = modFile.UpdateReferences(old_new)
 
-        #--Done
-        if not sum(counts): return False
-        modFile.save()
-        Current.Close()
-        entries = [(count,old_eid[oldId],new_eid[newId]) for count, oldId, newId in zip(counts, old_new.keys(), old_new.values())]
-        entries.sort(key=itemgetter(1))
-        return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
+            #--Done
+            if not sum(counts): return False
+            modFile.save()
+            entries = [(count,old_eid[oldId],new_eid[newId]) for count, oldId, newId in zip(counts, old_new.keys(), old_new.values())]
+            entries.sort(key=itemgetter(1))
+            return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
 
 #------------------------------------------------------------------------------
 class FullNames:
@@ -13935,55 +13930,55 @@ class CBash_FullNames:
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
         group_fid_name = self.group_fid_name
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_FullNames:readFromMod"
-            print error[0]
-            return
 
-        for group in self.types:
-            fid_name = group_fid_name.setdefault(group[:4],{})
-            for record in getattr(modFile,group):
-                if(hasattr(record, 'full')):
-                    full = record.full or (group == 'LIGH' and 'NO NAME')
-                    eid = record.eid
-                    if eid and full:
-                        fid_name[record.fid] = (eid,full)
-            modFile.Unload()
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_FullNames:readFromMod"
+                print error[0]
+                return
+
+            for group in self.types:
+                fid_name = group_fid_name.setdefault(group[:4],{})
+                for record in getattr(modFile,group):
+                    if(hasattr(record, 'full')):
+                        full = record.full or (group == 'LIGH' and 'NO NAME')
+                        eid = record.eid
+                        if eid and full:
+                            fid_name[record.fid] = (eid,full)
+                modFile.Unload()
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         group_fid_name = self.group_fid_name
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_FullNames:writeToMod"
-            print error[0]
-            return
 
-        changed = {}
-        for group in self.types:
-            fid_name = group_fid_name.get(group,None)
-            if not fid_name: continue
-            fid_name = FormID.FilterValidDict(fid_name, modFile, True, False)
-            for record in getattr(modFile,group):
-                fid = record.fid
-                full = record.full
-                eid,newFull = fid_name.get(fid,(0,0))
-                if newFull and newFull not in (full,'NO NAME'):
-                    record.full = newFull
-                    changed[eid] = (full,newFull)
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_FullNames:writeToMod"
+                print error[0]
+                return
+
+            changed = {}
+            for group in self.types:
+                fid_name = group_fid_name.get(group,None)
+                if not fid_name: continue
+                fid_name = FormID.FilterValidDict(fid_name, modFile, True, False)
+                for record in getattr(modFile,group):
+                    fid = record.fid
+                    full = record.full
+                    eid,newFull = fid_name.get(fid,(0,0))
+                    if newFull and newFull not in (full,'NO NAME'):
+                        record.full = newFull
+                        changed[eid] = (full,newFull)
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
@@ -14068,55 +14063,53 @@ class CBash_MapMarkers:
         """Imports type_id_name from specified mod."""
         fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_MapMarkers:readFromMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_MapMarkers:readFromMod"
+                print error[0]
+                return
 
-        for record in modFile.REFRS:
-            if record.base == markerFid:
-                fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
-            record.UnloadRecord()
-        Current.Close()
+            for record in modFile.REFRS:
+                if record.base == markerFid:
+                    fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
+                record.UnloadRecord()
 
     def writeToMod(self,modInfo):
         """Imports type_id_name to specified mod."""
         fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
         changed = []
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_MapMarkers:writeToMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_MapMarkers:writeToMod"
+                print error[0]
+                return
 
-        fid_markerdata = FormID.FilterValidDict(fid_markerdata, modFile, True, False)
-        for record in modFile.REFRS:
-            fid = record.fid
-            if not fid in fid_markerdata or record.base != markerFid:
-                record.UnloadRecord()
-                continue
-            oldValues = [getattr(record, attr) for attr in attrs]
-            newValues = fid_markerdata[fid]
-            if oldValues == newValues:
-                record.UnloadRecord()
-                continue
-            changed.append(oldValues[0]) #eid
-            for attr, value in zip(attrs, newValues):
-                setattr(record, attr, value)
+            fid_markerdata = FormID.FilterValidDict(fid_markerdata, modFile, True, False)
+            for record in modFile.REFRS:
+                fid = record.fid
+                if not fid in fid_markerdata or record.base != markerFid:
+                    record.UnloadRecord()
+                    continue
+                oldValues = [getattr(record, attr) for attr in attrs]
+                newValues = fid_markerdata[fid]
+                if oldValues == newValues:
+                    record.UnloadRecord()
+                    continue
+                changed.append(oldValues[0]) #eid
+                for attr, value in zip(attrs, newValues):
+                    setattr(record, attr, value)
 
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
@@ -14173,20 +14166,19 @@ class CBash_CellBlockInfo:
         """Imports type_id_name from specified mod."""
         celldata = self.celldata
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_CellBlockInfo:readFromMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_CellBlockInfo:readFromMod"
+                print error[0]
+                return
 
-        for record in modFile.CELLS:
-            celldata[record.eid] = record.bsb
-            record.UnloadRecord()
-        Current.Close()
+            for record in modFile.CELLS:
+                celldata[record.eid] = record.bsb
+                record.UnloadRecord()
 
     def writeToText(self,textPath):
         """Exports markers to specified text file."""
@@ -14452,50 +14444,49 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats = self.fid_stats
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_SigilStoneDetails:readFromMod"
-            print error[0]
-            return
 
-        for record in modFile.SGST:
-            fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath,
-                                     record.script, record.uses, record.value, record.weight, record.effects_list]
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_SigilStoneDetails:readFromMod"
+                print error[0]
+                return
+
+            for record in modFile.SGST:
+                fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath,
+                                         record.script, record.uses, record.value, record.weight, record.effects_list]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
         changed = []
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_SigilStoneDetails:writeToMod"
-            print error[0]
-            return
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_SigilStoneDetails:writeToMod"
+                print error[0]
+                return
 
-        fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
-        for record in modFile.SGST:
-            newStats = fid_stats.get(record.fid, None)
-            if not newStats: continue
-            if not ValidateList(newStats, modFile): continue
-            oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script,
-                        record.uses, record.value, record.weight, record.effects_list]
-            if oldStats != newStats:
-                changed.append(oldStats[0]) #eid
-                record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, effects = newStats
-                record.effects_list = effects
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+            fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
+            for record in modFile.SGST:
+                newStats = fid_stats.get(record.fid, None)
+                if not newStats: continue
+                if not ValidateList(newStats, modFile): continue
+                oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script,
+                            record.uses, record.value, record.weight, record.effects_list]
+                if oldStats != newStats:
+                    changed.append(oldStats[0]) #eid
+                    record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, effects = newStats
+                    record.effects_list = effects
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
@@ -14805,49 +14796,49 @@ class CBash_ItemStats:
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ItemStats:readFromMod"
-            print error[0]
-            return
 
-        for group, attrs in self.class_attrs.iteritems():
-            for record in getattr(modFile,group):
-                class_fid_attr_value[group].setdefault(record.fid, {}).update(zip(attrs,map(record.__getattribute__,attrs)))
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ItemStats:readFromMod"
+                print error[0]
+                return
+
+            for group, attrs in self.class_attrs.iteritems():
+                for record in getattr(modFile,group):
+                    class_fid_attr_value[group].setdefault(record.fid, {}).update(zip(attrs,map(record.__getattribute__,attrs)))
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ItemStats:writeToMod"
-            print error[0]
-            return
 
-        changed = {} #--changed[modName] = numChanged
-        for group, fid_attr_value in class_fid_attr_value.iteritems():
-            attrs = self.class_attrs[group]
-            fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
-            for fid, attr_value in fid_attr_value.iteritems():
-                record = modFile.LookupRecord(fid)
-                if record and record._Type == group:
-                    oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
-                    if oldValues != attr_value:
-                        for attr, value in attr_value.iteritems():
-                            setattr(record,attr,value)
-                        changed[fid[0]] = 1 + changed.get(fid[0],0)
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ItemStats:writeToMod"
+                print error[0]
+                return
+
+            changed = {} #--changed[modName] = numChanged
+            for group, fid_attr_value in class_fid_attr_value.iteritems():
+                attrs = self.class_attrs[group]
+                fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
+                for fid, attr_value in fid_attr_value.iteritems():
+                    record = modFile.LookupRecord(fid)
+                    if record and record._Type == group:
+                        oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
+                        if oldValues != attr_value:
+                            for attr, value in attr_value.iteritems():
+                                setattr(record,attr,value)
+                            changed[fid[0]] = 1 + changed.get(fid[0],0)
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
@@ -15046,47 +15037,47 @@ class CBash_ItemPrices:
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ItemPrices:readFromMod"
-            print error[0]
-            return
 
-        for group, fid_stats in class_fid_stats.iteritems():
-            for record in getattr(modFile,group):
-                fid_stats[record.fid] = map(record.__getattribute__,attrs)
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ItemPrices:readFromMod"
+                print error[0]
+                return
+
+            for group, fid_stats in class_fid_stats.iteritems():
+                for record in getattr(modFile,group):
+                    fid_stats[record.fid] = map(record.__getattribute__,attrs)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ItemPrices:writeToMod"
-            print error[0]
-            return
 
-        changed = {} #--changed[modName] = numChanged
-        for group, fid_stats in class_fid_stats.iteritems():
-            fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
-            for fid, stats in fid_stats.iteritems():
-                record = modFile.LookupRecord(fid)
-                if record and record._Type == group:
-                    value = stats[0]
-                    if record.value != value:
-                        record.value = value
-                        changed[fid[0]] = changed.get(fid[0],0) + 1
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ItemPrices:writeToMod"
+                print error[0]
+                return
+
+            changed = {} #--changed[modName] = numChanged
+            for group, fid_stats in class_fid_stats.iteritems():
+                fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
+                for fid, stats in fid_stats.iteritems():
+                    record = modFile.LookupRecord(fid)
+                    if record and record._Type == group:
+                        value = stats[0]
+                        if record.value != value:
+                            record.value = value
+                            changed[fid[0]] = changed.get(fid[0],0) + 1
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
@@ -15376,54 +15367,54 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         class_fid_values = self.class_fid_values
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_CompleteItemData:readFromMod"
-            print error[0]
-            return
 
-        for group in pickupables:
-            for record in getattr(modFile,group):
-                values = ExtractExportList(record)
-                print values
-                print
-                print
-                class_fid_values.setdefault(group,{})[record.fid] = values
-                break
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_CompleteItemData:readFromMod"
+                print error[0]
+                return
+
+            for group in pickupables:
+                for record in getattr(modFile,group):
+                    values = ExtractExportList(record)
+                    print values
+                    print
+                    print
+                    class_fid_values.setdefault(group,{})[record.fid] = values
+                    break
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_CompleteItemData:writeToMod"
-            print error[0]
-            return
 
-        changed = {} #--changed[modName] = numChanged
-        for group, fid_attr_value in class_fid_attr_value.iteritems():
-            attrs = self.class_attrs[group]
-            fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
-            for fid, attr_value in fid_attr_value.iteritems():
-                record = modFile.LookupRecord(fid)
-                if record and record._Type == group:
-                    if not ValidateDict(attr_value, modFile): continue
-                    oldValues = map(record.__getattribute__,attrs)
-                    if oldValues != attr_value:
-                        map(record.__setattr__,attrs, attr_value)
-                        changed[fid[0]] = 1 + changed.get(fid[0],0)
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_CompleteItemData:writeToMod"
+                print error[0]
+                return
+
+            changed = {} #--changed[modName] = numChanged
+            for group, fid_attr_value in class_fid_attr_value.iteritems():
+                attrs = self.class_attrs[group]
+                fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
+                for fid, attr_value in fid_attr_value.iteritems():
+                    record = modFile.LookupRecord(fid)
+                    if record and record._Type == group:
+                        if not ValidateDict(attr_value, modFile): continue
+                        oldValues = map(record.__getattribute__,attrs)
+                        if oldValues != attr_value:
+                            map(record.__setattr__,attrs, attr_value)
+                            changed[fid[0]] = 1 + changed.get(fid[0],0)
+            if changed: modFile.save()
+            return changed
 
     def readEffectsFromText(self, fields):
         effects = []
@@ -15724,65 +15715,65 @@ class CBash_ScriptText:
     def readFromMod(self, modInfo, file):
         """Reads stats from specified mod."""
         eid_data = self.eid_data
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ScriptText:readFromMod"
-            print error[0]
-            return
 
-        progress = balt.Progress(_("Export Scripts"))
-        try:
-            records = modFile.SCPT
-            y = len(records)
-            z = 0
-            for record in records:
-                z += 1
-                progress((0.5/y*z),_("Reading scripts in %s.") % (file))
-                eid_data[record.eid] = (record.scriptText, record.fid)
-        finally: #just to ensure the progress bar gets destroyed
-            progress = progress.Destroy()
-            Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ScriptText:readFromMod"
+                print error[0]
+                return
+
+            progress = balt.Progress(_("Export Scripts"))
+            try:
+                records = modFile.SCPT
+                y = len(records)
+                z = 0
+                for record in records:
+                    z += 1
+                    progress((0.5/y*z),_("Reading scripts in %s.") % (file))
+                    eid_data[record.eid] = (record.scriptText, record.fid)
+            finally: #just to ensure the progress bar gets destroyed
+                progress = progress.Destroy()
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
         eid_data = self.eid_data
         changed = []
         added = []
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_ScriptText:writeToMod"
-            print error[0]
-            return
 
-        for record in modFile.SCPT:
-            eid = record.eid
-            data = eid_data.get(eid,None)
-            if data is not None:
-                newText, longid = data
-                oldText = record.scriptText
-                if oldText != newText:
-                    record.scriptText = newText
-                    changed.append(eid)
-                del eid_data[eid]
-        if makeNew and eid_data:
-            for eid, data in eid_data.iteritems():
-                newText, longid = data
-                newScript = modFile.create_SCPT()
-                if newScript is not None:
-                    newScript.eid = eid
-                    newScript.scriptText = newText
-                    added.append(eid)
-        if changed or added: modFile.save()
-        Current.Close()
-        return (changed, added)
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_ScriptText:writeToMod"
+                print error[0]
+                return
+
+            for record in modFile.SCPT:
+                eid = record.eid
+                data = eid_data.get(eid,None)
+                if data is not None:
+                    newText, longid = data
+                    oldText = record.scriptText
+                    if oldText != newText:
+                        record.scriptText = newText
+                        changed.append(eid)
+                    del eid_data[eid]
+            if makeNew and eid_data:
+                for eid, data in eid_data.iteritems():
+                    newText, longid = data
+                    newScript = modFile.create_SCPT()
+                    if newScript is not None:
+                        newScript.eid = eid
+                        newScript.scriptText = newText
+                        added.append(eid)
+            if changed or added: modFile.save()
+            return (changed, added)
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
@@ -16062,47 +16053,47 @@ class CBash_SpellRecords(UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats, attrs = self.fid_stats, self.attrs
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_SpellRecords:readFromMod"
-            print error[0]
-            return
 
-        for record in modFile.SPEL:
-            fid_stats[record.fid] = map(record.__getattribute__, attrs)
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_SpellRecords:readFromMod"
+                print error[0]
+                return
+
+            for record in modFile.SPEL:
+                fid_stats[record.fid] = map(record.__getattribute__, attrs)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats, attrs = self.fid_stats, self.attrs
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_SpellRecords:writeToMod"
-            print error[0]
-            return
 
-        changed = []
-        for record in modFile.SPEL:
-            newStats = fid_stats.get(record.fid, None)
-            if not newStats: continue
-            if not ValidateList(newStats, modFile): continue
-            oldStats = map(record.__getattribute__,attrs)
-            if oldStats != newStats:
-                changed.append(oldStats[0]) #eid
-                map(record.__setattr__,attrs,newStats)
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_SpellRecords:writeToMod"
+                print error[0]
+                return
 
-        #--Done
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+            changed = []
+            for record in modFile.SPEL:
+                newStats = fid_stats.get(record.fid, None)
+                if not newStats: continue
+                if not ValidateList(newStats, modFile): continue
+                oldStats = map(record.__getattribute__,attrs)
+                if oldStats != newStats:
+                    changed.append(oldStats[0]) #eid
+                    map(record.__setattr__,attrs,newStats)
+
+            #--Done
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
@@ -16294,47 +16285,46 @@ class CBash_IngredientDetails(UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats = self.fid_stats
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_IngredientDetails:readFromMod"
-            print error[0]
-            return
 
-        for record in modFile.INGR:
-            fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
-        Current.Close()
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_IngredientDetails:readFromMod"
+                print error[0]
+                return
+
+            for record in modFile.INGR:
+                fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
         changed = []
 
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        Current.addMod(modInfo.getPath().stail, LoadMasters=False)
-        Current.load()
-        try:
-            modFile = Current.LookupModFile(modInfo.getPath().stail)
-        except KeyError, error:
-            print "CBash_IngredientDetails:writeToMod"
-            print error[0]
-            return
-        fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
-        for record in modFile.INGR:
-            newStats = fid_stats.get(record.fid, None)
-            if not newStats: continue
-            if not ValidateList(newStats, modFile): continue
-            oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
-            if oldStats != newStats:
-                changed.append(oldStats[0]) #eid
-                record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, effects = newStats
-                record.effects_list = effects
-        if changed: modFile.save()
-        Current.Close()
-        return changed
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+            try:
+                modFile = Current.LookupModFile(modInfo.getPath().stail)
+            except KeyError, error:
+                print "CBash_IngredientDetails:writeToMod"
+                print error[0]
+                return
+            fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
+            for record in modFile.INGR:
+                newStats = fid_stats.get(record.fid, None)
+                if not newStats: continue
+                if not ValidateList(newStats, modFile): continue
+                oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
+                if oldStats != newStats:
+                    changed.append(oldStats[0]) #eid
+                    record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, effects = newStats
+                    record.effects_list = effects
+            if changed: modFile.save()
+            return changed
 
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
@@ -17071,21 +17061,6 @@ class ModCleaner:
             ModCleaner._clean_Python(cleaners,what,progress)
 
     @staticmethod
-    def _loadCollection(mods):
-        # mods = list(ModInfo's) or list(ModCleaner's)
-        Current = ObCollection(ModsPath=dirs['mods'].s)
-        for mod in mods:
-            if isinstance(mod,ModCleaner):
-                modInfo = mod.modInfo
-            else:
-                modInfo = mod
-            if len(modInfo.masterNames) == 0: continue
-            path = modInfo.getPath()
-            Current.addMod(path.stail)
-        Current.load()
-        return Current
-
-    @staticmethod
     def _scan_CBash(modInfos,what,progress):
         """Scan multiple mods for problems"""
         if what & ModCleaner.ALL:
@@ -17098,47 +17073,54 @@ class ModCleaner:
             else:
                 progress(0,_('Loading...'))
             #--Load
-            Current = ModCleaner._loadCollection(modInfos)
-            #--Scan
-            progress.setFull(max(len(modInfos),1))
-            ret = []
-            for i,modInfo in enumerate(modInfos):
-                progress(i,_('Scanning...') + '\n' + modInfo.name.s)
-                udr = set()
-                itm = set()
-                fog = set()
-                if len(modInfo.masterNames) > 0:
+            with ObCollection(ModsPath=dirs['mods'].s) as Current:
+                for mod in modInfos:
+                    if isinstance(mod,ModCleaner):
+                        modInfo = mod.modInfo
+                    else:
+                        modInfo = mod
+                    if len(modInfo.masterNames) == 0: continue
                     path = modInfo.getPath()
-                    modFile = Current.LookupModFile(path.stail)
-                    blocks = []
-                    if doUDR:
-                        blocks += ['ACRES', 'ACHRS', 'REFRS']
-                    if doFog:
-                        blocks += ['CELL']
-                    subprogress1 = SubProgress(progress,i,i+1)
-                    subprogress1.setFull(max(len(blocks),1))
-                    #--Scan ITM
-                    if doITM:
-                        itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
-                    for j,block in enumerate(blocks.values()):
-                        subprogress1(j)
-                        subprogress2 = SubProgress(subprogress1,j,j+1)
-                        subprogress2.setFull(max(len(block),1))
-                        for k,record in enumerate(getattr(modFile, block)):
-                            subprogress2(k)
-                            fid = record.fid
-                            #--Scan UDR
-                            if doUDR and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
-                                udr.add(fid)
-                            #--Scan fog
-                            if doFog and record._Type == 'CELL':
-                                if not (record.fogNear or record.fogFar or record.fogClip):
-                                    fog.add(fid)
-                            record.UnloadRecord()
-                ret.append((udr,itm,fog))
-            #--Unload
-            Current.Close()
-            return ret
+                    Current.addMod(path.stail)
+                Current.load()
+                #--Scan
+                progress.setFull(max(len(modInfos),1))
+                ret = []
+                for i,modInfo in enumerate(modInfos):
+                    progress(i,_('Scanning...') + '\n' + modInfo.name.s)
+                    udr = set()
+                    itm = set()
+                    fog = set()
+                    if len(modInfo.masterNames) > 0:
+                        path = modInfo.getPath()
+                        modFile = Current.LookupModFile(path.stail)
+                        blocks = []
+                        if doUDR:
+                            blocks += ['ACRES', 'ACHRS', 'REFRS']
+                        if doFog:
+                            blocks += ['CELL']
+                        subprogress1 = SubProgress(progress,i,i+1)
+                        subprogress1.setFull(max(len(blocks),1))
+                        #--Scan ITM
+                        if doITM:
+                            itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
+                        for j,block in enumerate(blocks.values()):
+                            subprogress1(j)
+                            subprogress2 = SubProgress(subprogress1,j,j+1)
+                            subprogress2.setFull(max(len(block),1))
+                            for k,record in enumerate(getattr(modFile, block)):
+                                subprogress2(k)
+                                fid = record.fid
+                                #--Scan UDR
+                                if doUDR and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
+                                    udr.add(fid)
+                                #--Scan fog
+                                if doFog and record._Type == 'CELL':
+                                    if not (record.fogNear or record.fogFar or record.fogClip):
+                                        fog.add(fid)
+                                record.UnloadRecord()
+                    ret.append((udr,itm,fog))
+                return ret
         else:
             return [(set(),set(),set()) for x in range(len(modInfos))]
 
@@ -17204,48 +17186,56 @@ class ModCleaner:
                 progress(0,_('Loading...')+'\n'+cleaners[0].modInfo.name.s)
             else:
                 progress(0,_('Loading...'))
-            #--Load
-            Current = ModCleaner._loadCollection(cleaners)
-            #--Clean
-            for i,cleaner in enumerate(cleaners):
-                progress(i,_('Cleaning...') + '\n' + cleaner.modInfo.name.s)
-                path = cleaner.modInfo.getPath()
-                modFile = Current.LookupModFile(path.stail)
-                changed = False
-                total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
-                recordNum = 0
-                subprogress = SubProgress(progress,i,i+1)
-                subprogress.setFull(max(total,1))
-                if doUDR:
-                    for fid in cleaner.udr:
-                        subprogress(recordNum)
-                        recordNum += 1
-                        record = modFile.LookupRecord(fid)
-                        if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
-                            changed = True
-                            record.IsDeleted = False
-                            record.IsIgnored = True
-                if doFog:
-                    for fid in cleaner.fog:
-                        subprogress(recordNum)
-                        recordNum += 1
-                        record = modFile.LookupRecord(fid)
-                        if record and record._Type == 'CELL':
-                            if not (record.fogNear or record.fogFar or record.fogClip):
-                                record.fogNear = 0.0001
+
+            with ObCollection(ModsPath=dirs['mods'].s) as Current:
+                for mod in modInfos:
+                    if isinstance(mod,ModCleaner):
+                        modInfo = mod.modInfo
+                    else:
+                        modInfo = mod
+                    if len(modInfo.masterNames) == 0: continue
+                    path = modInfo.getPath()
+                    Current.addMod(path.stail)
+                Current.load()
+                #--Clean
+                for i,cleaner in enumerate(cleaners):
+                    progress(i,_('Cleaning...') + '\n' + cleaner.modInfo.name.s)
+                    path = cleaner.modInfo.getPath()
+                    modFile = Current.LookupModFile(path.stail)
+                    changed = False
+                    total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
+                    recordNum = 0
+                    subprogress = SubProgress(progress,i,i+1)
+                    subprogress.setFull(max(total,1))
+                    if doUDR:
+                        for fid in cleaner.udr:
+                            subprogress(recordNum)
+                            recordNum += 1
+                            record = modFile.LookupRecord(fid)
+                            if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
                                 changed = True
-                if doITM:
-                    for fid in cleaner.itm:
-                        subprogress(recordNum)
-                        recordNum += 1
-                        record = modFile.LookupRecord(fid)
-                        if record:
-                            record.DeleteRecord()
-                            changed = True
-                #--Save
-                if changed:
-                    modFile.save(False)
-            Current.Close()
+                                record.IsDeleted = False
+                                record.IsIgnored = True
+                    if doFog:
+                        for fid in cleaner.fog:
+                            subprogress(recordNum)
+                            recordNum += 1
+                            record = modFile.LookupRecord(fid)
+                            if record and record._Type == 'CELL':
+                                if not (record.fogNear or record.fogFar or record.fogClip):
+                                    record.fogNear = 0.0001
+                                    changed = True
+                    if doITM:
+                        for fid in cleaner.itm:
+                            subprogress(recordNum)
+                            recordNum += 1
+                            record = modFile.LookupRecord(fid)
+                            if record:
+                                record.DeleteRecord()
+                                changed = True
+                    #--Save
+                    if changed:
+                        modFile.save(False)
 
     @staticmethod
     def _clean_Python(cleaners,what,progress):
@@ -17505,7 +17495,7 @@ class PatchFile(ModFile):
         return None
 
     @staticmethod
-    def modIsMergeable(modInfo,progress=None,verbose=True):
+    def modIsMergeable(modInfo,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
         
@@ -17817,43 +17807,42 @@ class CBash_PatchFile(ObModFile):
         return False
 
     @staticmethod
-    def modIsMergeableNoLoad(modInfo,verbose=False):
-        reasons = ''
+    def modIsMergeableNoLoad(modInfo,verbose):
+        reasons = []
 
         if modInfo.isEsm():
             if not verbose: return False
-            reasons += _("\n.    Is esm.")
+            reasons.append(_("\n.    Is esm."))
         #--Bashed Patch
         if modInfo.header.author == "BASHED PATCH":
             if not verbose: return False
-            reasons += _("\n.    Is Bashed Patch.")
+            reasons.append(_("\n.    Is Bashed Patch."))
 
         #--Bsa / voice?
         if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
             if not verbose: return False
             hasBsa, hasVoices = modInfo.hasResources()
             if hasBsa:
-                reasons += _("\n.    Has BSA archive.")
+                reasons.append(_("\n.    Has BSA archive."))
             if hasVoices:
-                reasons += _("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s
+                reasons.append(_("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s)
 
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         tags = modInfos[modInfo.name].getBashTags()
         if 'NoMerge' in tags:
             if not verbose: return False
-            reasons += _("\n.    Has 'NoMerge' tag.")
+            reasons += reasons.append(_("\n.    Has 'NoMerge' tag."))
         if reasons: return reasons
         return True
 
     @staticmethod
-    def modIsMergeableLoad(modInfo,verbose=False,modFile=None):
+    def modIsMergeableLoad(modInfo,verbose):
         allowMissingMasters = set(['Filter','IIM','InventOnly'])
         tags = modInfos[modInfo.name].getBashTags()
-        reasons = ''
+        reasons = []
+
         #--Load test
-        Current = None
-        if modFile is None:
-            Current = ObCollection(ModsPath=dirs['mods'].s)
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
             #MinLoad, InLoadOrder, AddMasters, TrackNewTypes, SkipAllRecords
             Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
             Current.load()
@@ -17864,74 +17853,60 @@ class CBash_PatchFile(ObModFile):
                 print error[0]
                 return
 
-        missingMasters = []
-        nonActiveMasters = []
-        masters = modFile.TES4.masters
-        for master in masters:
-            master = GPath(master)
-            if not tags & allowMissingMasters:
-                if master not in modInfos:
-                    if not verbose:
-                        if Current is not None: Current.Close()
-                        return False
-                    missingMasters.append(master.s)
-                elif not modInfos.isSelected(master):
-                    if not verbose:
-                        if Current is not None: Current.Close()
-                        return False
-                    nonActiveMasters.append(master.s)
-        #--masters not present in mod list?
-        if len(missingMasters):
-            if not verbose:
-                if Current is not None: Current.Close()
-                return False
-            reasons += (_("\n.    Masters missing: \n    * ") + '\n    * '.join(sorted(missingMasters)))
-        if len(nonActiveMasters):
-            if not verbose:
-                if Current is not None: Current.Close()
-                return False
-            reasons += (_("\n.    Masters not active: \n    * ") + '\n    * '.join(sorted(nonActiveMasters)))
-        #--Empty mod
-        if modFile.IsEmpty():
-            if not verbose:
-                if Current is not None: Current.Close()
-                return False
-            reasons += _("\n.    Empty mod.")
-        #--New record
-        else:
-            if not tags & allowMissingMasters:
-                newblocks = modFile.GetNewRecordTypes()
-                if newblocks:
-                    if not verbose:
-                        if Current is not None: Current.Close()
-                        return False
-                    reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
-        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
-        if dependent:
-            if not verbose:
-                if Current is not None: Current.Close()
-                return False
-            reasons += (_("\n.    Is a master of non-mergeable mod(s): ") + ', '.join(sorted(dependent))+'.')
-        if Current is not None: Current.Close()
-        if reasons: return reasons
-        return True
+            missingMasters = []
+            nonActiveMasters = []
+            masters = modFile.TES4.masters
+            for master in masters:
+                master = GPath(master)
+                if not tags & allowMissingMasters:
+                    if master not in modInfos:
+                        if not verbose: return False
+                        missingMasters.append(master.s)
+                    elif not modInfos.isSelected(master):
+                        if not verbose: return False
+                        nonActiveMasters.append(master.s)
+            #--masters not present in mod list?
+            if len(missingMasters):
+                if not verbose: return False
+                reasons.append(_("\n.    Masters missing: \n    * %s") % ('\n    * '.join(sorted(missingMasters))))
+            if len(nonActiveMasters):
+                if not verbose: return False
+                reasons.append(_("\n.    Masters not active: \n    * %s") % ('\n    * '.join(sorted(nonActiveMasters))))
+            #--Empty mod
+            if modFile.IsEmpty():
+                if not verbose: return False
+                reasons.append(_("\n.    Empty mod."))
+            #--New record
+            else:
+                if not tags & allowMissingMasters:
+                    newblocks = modFile.GetNewRecordTypes()
+                    if newblocks:
+                        if not verbose: return False
+                        reasons.append(_("\n.    New record(s) in block(s): %s.") % (', '.join(sorted(newblocks))))
+            dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
+            if dependent:
+                if not verbose: return False
+                reasons.append(_("\n.    Is a master of non-mergeable mod(s): %s.") % (', '.join(sorted(dependent))))
+            if reasons: return reasons
+            return True
 
     @staticmethod
-    def modIsMergeable(modInfo,progress=None,verbose=True,modFile=None):
+    def modIsMergeable(modInfo,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         canmerge = CBash_PatchFile.modIsMergeableNoLoad(modInfo, verbose)
-        if not verbose:
+        if verbose:
+            loadreasons = CBash_PatchFile.modIsMergeableLoad(modInfo, verbose)
+            reasons = []
+            if canmerge != True:
+                reasons = canmerge
+            if loadreasons != True:
+                reasons.extend(loadreasons)
+            if reasons: return ''.join(reasons)
+            return True
+        else:
             if canmerge == True:
-                return CBash_PatchFile.modIsMergeableLoad(modInfo, verbose, modFile)
+                return CBash_PatchFile.modIsMergeableLoad(modInfo, verbose)
             return False
-        loadreasons = CBash_PatchFile.modIsMergeableLoad(modInfo, verbose, modFile)
-        reasons = ''
-        if canmerge != True:
-            reasons = canmerge
-        if loadreasons != True:
-            reasons += loadreasons
-        if reasons: return reasons
-        return True
 
     #--Instance
     def __init__(self, patchName, patchers):
