@@ -1,9 +1,11 @@
 Continuing from the [topic=]previous thread[/topic]...
 
-Wrye Bash is a multi-featured mod and savegame management tool for Oblivion written in the Python programming language.  Its primary purpose is to enable you to play your game with multiple mods that would not otherwise work well together (due to the way the mod system works, this is true for most mods that exist).
-
-Its two best-known features are the Bashed Patch, which allows you to enable multiple overlapping mod plugins and have them work together sensibly, and the BAIN installation framework, an easy-to-use interface for installing and uninstalling mods that automatically heals your game data when multiple mods try to install the same files.  Related to and beyond these, it also has many capabilities targeted at mod creators and power users.
-
+[b]What does Wrye Bash do?[/b]
+[list]
+[*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
+[*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"
+[*]It allows you to exceed the 255 mod threshold by automatically merging mods for you
+[/list]
 [b]FAQ[/b]:
 [spoiler][list=1][*]What the heck do all these acronyms mean?
 Yeah, to save typing, we often sling around terminology that can be confusing to newcomers. Here's a quick rundown of what we mean:[list][*][b]WB[/b]: Wrye Bash.  Written in Python.
@@ -18,7 +20,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [/list][b]At this stage CBash still has a few bugs, though, and is in BETA.[/b]
 [*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
 [*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
-[*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Written in Python. Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
+[*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
 [/list]
 [/spoiler]
 
@@ -96,54 +98,82 @@ Rinse and repeat when a new svn comes out.
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 [b]Changelog for Latest Version[/b]:
-=== 294 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda][spoiler][list]
-[*] Program-wide Changes:[list]
-  [*] Wrye Bash has a new directory layout!  Now the Mopy directory just contains important files that you can run.  All other files have been moved into subdirectories.
-  [*] If manually updating, please delete the old Mopy directory before copying the new one in to get rid of the old files
-  [*] Your configuration will get converted to a new format on first load which will not be readable by older versions of Wrye Bash, so be sure to back up your settings when you upgrade so they will be available if you ever need to downgrade again
-  [*] Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
-  [*] Installer checks Python 2.7x first and foremost and if no python versions detected provides links/downloads python 2.7.2 and compatible extensions.[/list]
-[*] Bashed Patch:[list]
-  [*] Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
-  [*] All multitweakers with choices now autoselect the default value if not user selected.
-  [*] Race Patcher:[list]
-    [*] Added Npc.HairOnly, Npc.EyesOnly tags
-    [*] Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
-[/list]  [*] Fixed revert to saved configs (CBash).
-  [*] All multitweakers modified to accept custom arguments (if not a on or off type thing).
-  [*] Tweak settings Patcher:[list]
-    [*] Added a whole bunch of tweaks:[list]
-      [*] Drag: Max Moveable Weight tweak.
-      [*] Msg: Auto Saving.
-      [*] Msg: Harvest Failure.
-      [*] Msg: Harvest Success.
-      [*] Msg: Horse Stabled.
-      [*] Msg: Loading Area.
-      [*] Msg: No Fast Travel.
-      [*] Msg: Not Enough Charge.
-      [*] Msg: Quick Load.
-[/list]    [*] Typo fix for the custom option of Compass: POI Recognition.
-[/list]  [*] Fixed Harvest Chance tweaker adjusts nirnroots when it shouldn't (since they are a quest plant).
-  [*] Fixed Factions, AI, Global, GMST and LL patchers not ignoring unchanged records.
-  [*] Fixed Actors.ACBS merging flags when it shouldn't be
-  [*] Fixed CBash patcher not cleaning unused masters
-  [*] CBash no longer gives GMSTs and MGEFs new FormIDs[/list]
-[*] Unicode Mode:[list]
-  [*] More bugfixes from valda
-  [*] Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.[/list]
-[*] Saves Tab:[list]
-  [*] Added ability to export screenshot from savegame.[/list]
-[*] BAIN:[list]
-  [*] List Esp/ms command added to esp/m pane r-click menu.
-  [*] Open at Google regex improved so better automatic search terms.
-  [*] New Uninstall All command.
-  [*] New Clean Data command
-  [*] Fixed markers disappearing on edit
-  [*] Fixed a processing error when subpackages have ampersands in their names[/list]
-[*] Bugs fixed (General):[list]
-  [*] Fixed corrupted size saved when maximizing a Wizard.
-  [*] Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.
-  [*] Fixed fatal error if BashSettings.dat is corrupted (try backup/new settings file).
-  [*] Export Stats (CBash)
-  [*] Fixed compatibility with BOSS 1.8[/list]
-[/list][/spoiler]
+=== 295 BETA [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar][spoiler][list]
+[*]Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs. It's community members like you that help Wrye Bash succeed!
+[*]First-run Usability Improvements:[list]
+  [*]Default options and widget sizes have been revamped for a smoother first-time experience
+  [*]More startup errors are shown in a popup messagebox instead of just being dumped to the log
+  [*]Default window sizes have been increased so you can actually see their contents on first load
+  [*]Debug .bat file now works for all supported Python versions and all Python installation paths instead of being hardcoded to look for c:/Python27
+  [*]Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory[/list]
+[*]Bashed Patch:[list]
+  [*]Usability improvements:[list]
+    [*]Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog.
+    [*]Corresponding patchers will be automatically enabled and bolded.
+    [*]If you would rather do things manually, you can turn the new autocheck behavior off in the ini.
+    [*]When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on – not controlled by the ini).[/list]
+  [*]Assorted tweakers:[list]
+    [*]New tweak: Skyrim-style Weapons.
+    [*]New tweak: Uniform Groundcover.
+    [*]CBash 'Magic: Script Effect Silencer' tweak fixed.
+    [*]PBash 'Default icons' tweak fixed.
+    [*]VORB tweak now assigns special skeletons correctly.
+    [*]Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash.[/list]
+  [*]Names tweaker:[list]
+    [*]New tweak: Proper English Names: Staffs -> Staves.
+    [*]New tweak: Proper English Names: Dwarfs -> Dwarves.
+    [*]Updated NPC/Guard names csvs. (Contributed by Gratis_monsta)[/list]
+  [*]Updated Assorted to Cobl.csv for Replace Form IDs. (Contributed by Gratis_monsta)
+  [*]Merge Patcher no longer merges in script records that depend on missing masters.
+  [*]Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported.
+  [*]Revert to Default option added; just reverts the patch config to default.
+  [*]Settings tweaker:[list]
+    [*]AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
+    [*]Leveled Creature Max level difference[/list]
+  [*]BAIN:[list]
+    [*]Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
+    [*]BAIN Wizards: Updated the EditINI function to allow comments.
+    [*]Installer->open readme command added.
+    [*]Modified Clean Data command so that it doesn't remove DLC content or Wrye Bash-related files
+    [*]It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
+    [*]Don't reset subpackage selections if a wizard is started but canceled
+    [*]Speed improvement; readonly status for files in the data folder only changed if/when needed. (and removed bClearRO option from ini since it'll only occur on individual files/subfolder and only if needed now)[/list]
+  [*]Unicode Mode:[list]
+    [*]Bugfixes from valda and bluesky404[/list]
+  [*]Added activation status as a new mods column/sort option.
+  [*]New mod commands:[list]
+    [*]Load All will activate all mods (up to 255 of them, at least)
+    [*]Create BOSS Report will automatically gather the information you need to report a mod to the BOSS thread.
+    [*]Copy Mod Info will automatically gather the displayed info on a mod.
+    [*]Ghost will ghost just the selected mod(s)
+    [*]Export Patch Config... exports the selected patch's configuration to a file.
+    [*]File->Create Dummy Masters will generate empty plugins for each missing master a plugin has. This is useful for loading a Filter patch in TES4Edit.
+    [*]File->New Bashed Patch will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
+    [*]Mods Tab->Clean Dummy Masters will delete any empty plugins created using the Create Dummy Masters command.[/list]
+  [*]Add Master command can now add multiple masters in one go.
+  [*]Fixed Settings backup files should have WB version in their names.
+  [*]Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
+  [*]Replacers tab and associated code totally removed.
+  [*]BALO is now officially deprecated, having been entirely superseded by BOSS. If you are still using it, please consider using BOSS instead.
+  [*]Fixed CBash crash while scanning for dirty edits on some plugins
+  [*]Fixed launching of bashmon
+  [*]Startup:[list]
+    [*]Fixed startup processing so you can in one startup both backup and restore settings.
+    [*]Added -L/--Language as cmdline options to set Wrye Bash's language.[/list]
+  [*]Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).
+  [*]Ini Tab -> list active ini's command added.
+  [*]ModChecker:[list]
+    [*]Fixed default size to be wide enough to display all buttons.
+    [*]Added option to toggle display of CRCs for mods in the mod list.
+    [*]Added option to toggle display of version numbers for mods in the mod list.
+    [*]Display note if no dirty mods are found (so that users know that it did successfully check and isn't malfunctioning).[/list]
+  [*]List Mods: crc display is off by default and added code to enable crc display if 'c' is pressed.
+  [*]Most untranslatable strings adjusted to be translatable (adds more than 240 strings that can now be translated).
+  [*]UI components in the Mods and Saves Tabs are now resizable
+  [*]Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
+  [*]Fixed progress bar disappearing for some people while loading the installers tab
+  [*]UI colors are now customizable with the Colors Dialog. This allows you to change what colors Wrye Bash uses for various informational purposes. This only configures the custom colors that Wrye Bash uses. Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
+  [*]Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
+  [*]Custom launcher buttons now support launching of msi created shortcuts.
+  [*]Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
+  [*]CBash no longer causes random occurances of googly eyes[/list][/spoiler]
