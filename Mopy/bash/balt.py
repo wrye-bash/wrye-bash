@@ -993,6 +993,10 @@ class Picture(wx.Window):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bitmap = None
         if background is not None:
+            if isinstance(background, tuple):
+                background = wx.Colour(background)
+            if isinstance(background, wx.Colour):
+                background = wx.Brush(background)
             self.background = background
         else:
             self.background = wx.Brush(self.GetBackgroundColour())
@@ -1000,6 +1004,14 @@ class Picture(wx.Window):
         #--Events
         self.Bind(wx.EVT_PAINT,self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.OnSize()
+
+    def SetBackground(self,background):
+        if isinstance(background,tuple):
+            background = wx.Colour(background)
+        if isinstance(background,wx.Colour):
+            background = wx.Brush(background)
+        self.background = background
         self.OnSize()
 
     def SetBitmap(self,bitmap):
