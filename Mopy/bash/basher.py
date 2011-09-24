@@ -3279,8 +3279,23 @@ class InstallersList(balt.Tank):
         """Double click, open the installer."""
         (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
         if hitItem < 0: return
-        path = self.data.dir.join(self.GetItem(hitItem))
-        if path.exists(): path.start()
+        item = self.GetItem(hitItem)
+        if isinstance(self.data[item],bosh.InstallerMarker):
+            # Double click on a Marker, select all items below
+            # it in install order, up to the next Marker
+            sorted = self.data.getSorted('order',False,False)
+            item = self.data[item]
+            for nextItem in sorted[item.order+1:]:
+                installer = self.data[nextItem]
+                if isinstance(installer,bosh.InstallerMarker):
+                    break
+                itemDex = self.GetIndex(nextItem)
+                self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,
+                                        wx.LIST_STATE_SELECTED)
+        else:
+            path = self.data.dir.join(self.GetItem(hitItem))
+            if path.exists(): path.start()
+        event.Skip()
 
     def OnLeftDown(self,event):
         """Left click, do stuff; currently nothing."""
