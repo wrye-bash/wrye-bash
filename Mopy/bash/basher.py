@@ -15903,16 +15903,26 @@ def InitStatusBar():
                 else:
                     # Use the default icon for that file type
                     try:
-                        import win32api
-                        import win32con
-                        icon_path = win32api.RegQueryValue(
-                            win32con.HKEY_CLASSES_ROOT,
-                            path.cext
-                            )
-                        filedata = win32api.RegQueryValue(
-                            win32con.HKEY_CLASSES_ROOT,
-                            '%s\\DefaultIcon' % icon_path
-                            )
+                        import _winreg
+                        if path.isdir():
+                            # Special handling of the Folder icon
+                            folderkey = _winreg.OpenKey(
+                                _winreg.HKEY_CLASSES_ROOT,
+                                'Folder')
+                            iconkey = _winreg.OpenKey(
+                                folderkey,
+                                'DefaultIcon')
+                            filedata = _winreg.EnumValue(
+                                iconkey,0)
+                            filedata = filedata[1]
+                            filedata = re.sub('%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I)
+                        else:
+                            icon_path = _winreg.QueryValue(
+                                _winreg.HKEY_CLASSES_ROOT,
+                                path.cext)
+                            filedata = _winreg.QueryValue(
+                                _winreg.HKEY_CLASSES_ROOT,
+                                '%s\\DefaultIcon' % icon_path)
                         icon,idex = filedata.split(',')
                         if not os.path.isabs(icon):
                             # Get the correct path to the dll
