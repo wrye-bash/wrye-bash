@@ -4819,6 +4819,21 @@ class BashNotebook(wx.Notebook):
         self.Bind(wx.EVT_LEFT_DOWN, self.OnBeginDrag)
         self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
         self.Bind(wx.EVT_MOTION, self.OnMotion)
+        #--Setup Popup menu for Right Click on a Tab
+        self.Bind(wx.EVT_CONTEXT_MENU, self.DoTabMenu)
+
+    def DoTabMenu(self,event):
+        pos = event.GetPosition()
+        pos = self.ScreenToClient(pos)
+        tabId = self.HitTest(pos)
+        if tabId != wx.NOT_FOUND:
+            menu = Links()
+            for key in settings['bash.tabs.order']:
+                canDisable = bool(key != 'Mods')
+                menu.append(Settings_Tab(key,canDisable))
+            menu.PopupMenu(self,bashFrame,None)
+        else:
+            event.Skip()
 
     def OnBeginDrag(self,event):
         """Left click down: begin dragging Tab."""
