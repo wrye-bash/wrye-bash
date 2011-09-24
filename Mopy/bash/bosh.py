@@ -30818,11 +30818,10 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
-        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -30880,12 +30879,11 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
         self.mod_count = {}
-        self.defaultEnabled = True
 
     def getTypes(self):
         return ['NPC_']
@@ -31698,7 +31696,6 @@ class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
-    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         VORB_NPCSkeletonPatcher(),
         MAONPCSkeletonPatcher(),
@@ -31746,7 +31743,6 @@ class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
-    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         CBash_VORB_NPCSkeletonPatcher(),
         CBash_MAONPCSkeletonPatcher(),
