@@ -1717,6 +1717,8 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
   * The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.
 * __Skyrim-style Weapons:__
   * Sets all one handed weapons as blades, two handed weapons as blunt.
+* __Uniform Groundcover:__
+  * Eliminates the random variation in groundcover (grass, vines, shrubs, etc).  Tall groundcover will still be taller than short groundcover, but there will be less variation in size. May help on lower end machines.
 
 === Tweak Clothes
 * __Overview:__ This allows you tweak clothes in several ways. Note that some of these have are not recommended for reasons stated -- however your tastes may vary.
@@ -2418,7 +2420,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on -- not controlled by the ini).
   * Assorted tweakers:
     * New tweak: Skyrim-style Weapons.
-    * New tweak: Short grass.
+    * New tweak: Uniform Groundcover.
     * CBash 'Magic: Script Effect Silencer' tweak fixed.
     * PBash 'Default icons' tweak fixed.
     * VORB tweak now assigns special skeletons correctly.

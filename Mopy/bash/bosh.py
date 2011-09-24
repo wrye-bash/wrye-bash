@@ -25716,14 +25716,14 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ShortGrass(MultiTweakItem):
-    """Lower the height of all plants in the game, including Shivering Isles."""
+class AssortedTweak_UniformGroundcover(MultiTweakItem):
+    """Eliminates random variation in groundcover."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Short Grass"),
-            _('Lower the height of all plants in the game, including Shivering Isles.'),
-            'ShortGrass',
+        MultiTweakItem.__init__(self,_("Uniform Groundcover"),
+            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            'UniformGroundcover',
             ('1.0', '1.0'),
             )
 
@@ -25759,22 +25759,22 @@ class AssortedTweak_ShortGrass(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Short Grass'))
-        log(_('* Grass Tweaked: %d') % (sum(count.values()),))
+        log.setHeader(_('=== Uniform Groundcover'))
+        log(_('* Grasses Normalized: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
             
-class CBash_AssortedTweak_ShortGrass(CBash_MultiTweakItem):
-    """Lower the height of all plants in the game, including Shivering Isles."""
+class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
+    """Eliminates random variation in groundcover."""
     scanOrder = 32
     editOrder = 32
-    name = _('Short Grass')
+    name = _('Uniform Groundcover')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Short Grass"),
-            _('Lower the height of all plants in the game, including Shivering Isles.'),
-            'ShortGrass',
+        CBash_MultiTweakItem.__init__(self,_("Uniform Groundcover"),
+            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            'UniformGroundcover',
             ('1.0', '1.0'),
             )
         self.mod_count = {}
@@ -25798,8 +25798,8 @@ class CBash_AssortedTweak_ShortGrass(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Short Grass'))
-        log(_('* Grass Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(_('=== Uniform Groundcover'))
+        log(_('* Grasses Normalized: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -26659,7 +26659,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_StaffWeight(),
         AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         AssortedTweak_WindSpeed(),
-        AssortedTweak_ShortGrass(),
+        AssortedTweak_UniformGroundcover(),
         AssortedTweak_HarvestChance(),
         AssortedTweak_IngredientWeight(),
         AssortedTweak_ArrowWeight(),
@@ -26736,7 +26736,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         CBash_AssortedTweak_HarvestChance(),
         CBash_AssortedTweak_WindSpeed(),
-        CBash_AssortedTweak_ShortGrass(),
+        CBash_AssortedTweak_UniformGroundcover(),
         CBash_AssortedTweak_IngredientWeight(),
         CBash_AssortedTweak_ArrowWeight(),
         CBash_AssortedTweak_ScriptEffectSilencer(),
