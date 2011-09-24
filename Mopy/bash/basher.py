@@ -176,6 +176,21 @@ colorInfo = {
     'installers.bkgd.dirty': (_('Dirty Installer'),
                               _('Tabs: Installers\n\nThis is the background color used for an installer that is configured in a "dirty" manner.  This means changes have been made to its configuration, and an Anneal or Install needs to be performed to make the install match what is configured.'),
                               ),
+    'screens.bkgd.image': (_('Screenshot Background'),
+                           _('Tabs: Saves, Screens\n\nThis is the background color used for images.'),
+                           ),
+    }
+
+#--Information about the various Tabs
+tabInfo = {
+    # InternalName: [className, title, instance]
+    'Installers': ['InstallersPanel', _("Installers"), None],
+    'Mods': ['ModPanel', _("Mods"), None],
+    'Saves': ['SavePanel', _("Saves"), None],
+    'INI Edits': ['INIPanel', _("INI Edits"), None],
+    'Screenshots': ['ScreensPanel', _("Screenshots"), None],
+    'PM Archive':['MessagePanel', _("PM Archive"), None],
+    'People':['PeoplePanel', _("People"), None],
     }
 
 #--Load config/defaults
@@ -215,6 +230,8 @@ settingDefaults = {
         'installers.bkgd.skipped':      (0xE0, 0xE0, 0xE0),
         'installers.bkgd.outOfOrder':   (0xDF, 0xDF, 0xDF),
         'installers.bkgd.dirty':        (0xFF, 0xBB, 0x33),
+        #--Screens Tab
+        'screens.bkgd.image':           (0x64, 0x64, 0x64),
         },
     #--BSA Redirection
     'bash.bsaRedirection':True,
@@ -224,6 +241,25 @@ settingDefaults = {
             GPath('Oblivion.esm'),
             ],
         },
+    #--Wrye Bash: Tabs
+    'bash.tabs': {
+        'Installers': True,
+        'Mods': True,
+        'Saves': True,
+        'INI Edits': True,
+        'Screenshots': True,
+        'PM Archive': False,
+        'People': False,
+        },
+    'bash.tabs.order': [
+        'Installers',
+        'Mods',
+        'Saves',
+        'INI Edits',
+        'Screenshots',
+        'PM Archive',
+        'People',
+        ],
     #--Wrye Bash: Statistics
     'bash.fileStats.cols': ['Type','Count','Size'],
     'bash.fileStats.sort': 'Type',
@@ -2719,7 +2755,7 @@ class SaveDetails(SashPanel):
         self.playerInfo = staticText(top," \n \n ")
         self.gCoSaves = staticText(top,'--\n--')
         #--Picture
-        self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN ) #--Native: 256x192
+        self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
         subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
@@ -2917,6 +2953,7 @@ class SavePanel(SashPanel):
 
     def RefreshUIColors(self):
         self.saveDetails.SetFile()
+        self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
 
     def SetStatusCount(self):
         """Sets mod count in last field."""
@@ -3979,7 +4016,7 @@ class ScreensPanel(NotebookPanel):
         global screensList
         screensList = ScreensList(left)
         screensList.SetSizeHints(100,100)
-        screensList.picture = balt.Picture(right,256,192)
+        screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         self.list = screensList
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
@@ -3987,6 +4024,9 @@ class ScreensPanel(NotebookPanel):
         #left.SetSizer(hSizer((screensList,1,wx.GROW),((10,0),0)))
         right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
+
+    def RefreshUIColors(self):
+        screensList.picture.SetBackground(colors['screens.bkgd.image'])
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -4740,28 +4780,124 @@ class BashNotebook(wx.Notebook):
     def __init__(self, parent, id):
         wx.Notebook.__init__(self, parent, id)
         #--Pages
-        self.AddPage(InstallersPanel(self),_("Installers"))
-        iInstallers = self.GetPageCount()-1
-        self.AddPage(ModPanel(self),_("Mods"))
-        iMods = self.GetPageCount()-1
-        #self.AddPage(BSAPanel(self),_("BSAs"))
-        self.AddPage(SavePanel(self),_("Saves"))
-        self.AddPage(INIPanel(self),_("INI Edits"))
-        self.AddPage(ScreensPanel(self),_("Screenshots"))
-        if re.match('win',sys.platform):
+        # Ensure the 'Mods' tab is always shown
+        if 'Mods' not in settings['bash.tabs.order']:
+            settings['bash.tabs.order'] = ['Mods']+settings['bash.tabs.order']
+        for page in settings['bash.tabs.order']:
+            enabled = settings['bash.tabs'].get(page,False)
+            if not enabled: continue
+            className,title,item = tabInfo.get(page,[None,None,None])
+            if title is None: continue
+            panel = globals().get(className,None)
+            if panel is None: continue
+            # Some page specific stuff
+            if page == 'Installers': iInstallers = self.GetPageCount()
+            elif page == 'Mods': iMods = self.GetPageCount()
+            # Add the page
             try:
-                self.AddPage(MessagePanel(self),_("PM Archive"))
-            except ImportError:
-                if bolt.deprintOn:
-                    print _("PM Archive panel disabled due to Import Error (most likely comtypes)")
-        self.AddPage(PeoplePanel(self),_("People"))
-        #self.AddPage(ModBasePanel(self),_("ModBase"))
+                item = panel(self)
+                self.AddPage(item,title)
+                tabInfo[page][2] = item
+            except Exception, e:
+                if isinstance(e, ImportError):
+                    if page == 'PM Archive':
+                        deprint(_("%s panel disabled due to Import Error (most likely comtypes)") % title)
+                        continue
+                if page == 'Mods':
+                    deprint(_("Fatal error constructing '%s' panel.") % title)
+                    raise
+                deprint(_("Error constructing '%s' panel.") % title)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Selection
         pageIndex = min(settings['bash.page'],self.GetPageCount()-1)
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
+        #--Setup draggable Tabs
+        self.dragging = wx.NOT_FOUND
+        self.justSwapped = wx.NOT_FOUND
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnBeginDrag)
+        self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
+        self.Bind(wx.EVT_MOTION, self.OnMotion)
+
+    def OnBeginDrag(self,event):
+        """Left click down: begin dragging Tab."""
+        self.dragging = self.HitTest(event.GetPosition())
+        if self.dragging != wx.NOT_FOUND:
+            # Or maybe wx.CURSOR_SIZEWE
+            self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+            self.CaptureMouse()
+        event.Skip()
+
+    def OnEndDrag(self,event):
+        """Left click up: finished dragging Tab."""
+        if self.dragging != wx.NOT_FOUND:
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.dragging = wx.NOT_FOUND
+            self.justSwapped = wx.NOT_FOUND
+            self.ReleaseMouse()
+        event.Skip()
+
+    def OnMotion(self,event):
+        """During the dragging event."""
+        if self.dragging != wx.NOT_FOUND:
+            tabId = self.HitTest(event.GetPosition())
+            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.dragging[0]):
+                self.justSwapped = wx.NOT_FOUND
+            else:
+                if self.justSwapped == tabId[0]:
+                    # Don't swap, we just swapped with it
+                    return
+                # Time to swap tabs!
+                newPos = tabId[0]
+                oldPos = self.dragging[0]
+                removeTitle = self.GetPageText(oldPos)
+                self.justSwapped = oldPos
+                self.dragging = tabId[:]
+                if newPos < oldPos:
+                    # Moving left
+                    leftPos,rightPos = newPos,oldPos
+                    addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(newPos,oldPos)]
+                    addPages.reverse()
+                    num = oldPos - newPos
+                    for i in range(num):
+                        self.RemovePage(newPos)
+                    for page,title in addPages:
+                        self.InsertPage(newPos+1,page,title)
+                else:
+                    # Moving right
+                    leftPos,rightPos = oldPos,newPos
+                    delta = newPos - oldPos
+                    addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(oldPos+1,newPos+1)]
+                    addPages.reverse()
+                    num = newPos - oldPos
+                    for i in range(num):
+                        self.RemovePage(oldPos+1)
+                    for page,title in addPages:
+                        self.InsertPage(oldPos,page,title)
+                # Update the settings
+                oldOrder = settings['bash.tabs.order']
+                for removeKey in oldOrder:
+                    if tabInfo[removeKey][1] == removeTitle:
+                        break
+                oldOrder.remove(removeKey)
+                if newPos == 0:
+                    # Moved to the front
+                    newOrder = [removeKey]+oldOrder
+                elif newPos == self.GetPageCount() - 1:
+                    # Moved to the end
+                    newOrder = oldOrder+[removeKey]
+                else:
+                    # Moved somewhere in the middle
+                    beforeTitle = self.GetPageText(newPos+1)
+                    for beforeKey in oldOrder:
+                        if tabInfo[beforeKey][1] == beforeTitle:
+                            break
+                    beforeIndex = oldOrder.index(beforeKey)
+                    newOrder = oldOrder[:beforeIndex]+[removeKey]+oldOrder[beforeIndex:]
+                settings['bash.tabs.order'] = newOrder
+        else:
+            event.Skip()
 
     def OnShowPage(self,event):
         """Call page's OnShow command."""
@@ -10518,6 +10654,65 @@ class Settings_CheckForUpdates(Link):
         if msg:
             if balt.askYes(self.window,msg,title):
                 os.startfile('http://www.tesnexus.com/downloads/file.php?id=%i'%WBFileId)
+
+#------------------------------------------------------------------------------
+class Settings_Tab(Link):
+    """Handle hiding/unhiding tabs."""
+    def __init__(self,tabKey,canDisable=True):
+        Link.__init__(self)
+        self.tabKey = tabKey
+        self.enabled = canDisable
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        className,title,item = tabInfo.get(self.tabKey,[None,None,None])
+        if title is None: return
+        help = _("Show/Hide the %s Tab.") % title
+        check = settings['bash.tabs'][self.tabKey]
+        menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_CHECK,help=help)
+        menu.AppendItem(menuItem)
+        menuItem.Check(check)
+        menuItem.Enable(self.enabled)
+
+    def Execute(self,event):
+        if settings['bash.tabs'][self.tabKey]:
+            # It was enabled, disable it.
+            iMods = None
+            iInstallers = None
+            iDelete = None
+            for i in range(bashFrame.notebook.GetPageCount()):
+                pageTitle = bashFrame.notebook.GetPageText(i)
+                if pageTitle == tabInfo['Mods'][1]:
+                    iMods = i
+                elif pageTitle == tabInfo['Installers'][1]:
+                    iInstallers = i
+                if pageTitle == tabInfo[self.tabKey][1]:
+                    iDelete = i
+            if iDelete == bashFrame.notebook.GetSelection():
+                # We're deleting the current page...
+                if ((iDelete == 0 and iInstallers == 1) or
+                    (iDelete - 1 == iInstallers)):
+                    # The auto-page change will change to
+                    # the 'Installers' tab.  Change to the
+                    # 'Mods' tab instead.
+                    bashFrame.notebook.SetSelection(iMods)
+            page = bashFrame.notebook.GetPage(iDelete)
+            bashFrame.notebook.RemovePage(iDelete)
+            page.Show(False)
+        else:
+            # It was disabled, enable it
+            insertAt = 0
+            for i,key in enumerate(settings['bash.tabs.order']):
+                if key == self.tabKey: break
+                if settings['bash.tabs'][key]:
+                    insertAt = i+1
+            className,title,panel = tabInfo[self.tabKey]
+            if not panel:
+                panel = globals()[className](bashFrame.notebook)
+                tabInfo[self.tabKey][2] = panel
+            bashFrame.notebook.InsertPage(insertAt,panel,title)
+        settings['bash.tabs'][self.tabKey] ^= True
+        settings.setChanged('bash.tabs')
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -16502,6 +16697,12 @@ def InitSettingsLinks():
     #--Color config
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_Colors())
+    if True:
+        tabsMenu = MenuLink(_('Tabs'))
+        for key in settings['bash.tabs.order']:
+            canDisable = bool(key != 'Mods')
+            tabsMenu.links.append(Settings_Tab(key,canDisable))
+        SettingsMenu.append(tabsMenu)
     SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
