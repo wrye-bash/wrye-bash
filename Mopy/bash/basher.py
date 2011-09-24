@@ -4809,7 +4809,7 @@ class BashNotebook(wx.Notebook):
                 deprint(_("Error constructing '%s' panel.") % title)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Selection
-        pageIndex = min(settings['bash.page'],self.GetPageCount()-1)
+        pageIndex = max(min(settings['bash.page'],self.GetPageCount()-1),0)
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
@@ -5015,7 +5015,9 @@ class BashFrame(wx.Frame):
     def SetStatusCount(self):
         """Sets the status bar count field. Actual work is done by current panel."""
         if hasattr(self,'notebook'): #--Hack to get around problem with screens tab.
-            self.notebook.GetPage(self.notebook.GetSelection()).SetStatusCount()
+            selection = self.notebook.GetSelection()
+            selection = max(min(selection,self.notebook.GetPageCount()),0)
+            self.notebook.GetPage(selection).SetStatusCount()
 
     #--Events ---------------------------------------------
     def RefreshData(self, event=None):
@@ -10710,7 +10712,10 @@ class Settings_Tab(Link):
             if not panel:
                 panel = globals()[className](bashFrame.notebook)
                 tabInfo[self.tabKey][2] = panel
-            bashFrame.notebook.InsertPage(insertAt,panel,title)
+            if insertAt > bashFrame.notebook.GetPageCount():
+                bashFrame.notebook.AddPage(panel,title)
+            else:
+                bashFrame.notebook.InsertPage(insertAt,panel,title)
         settings['bash.tabs'][self.tabKey] ^= True
         settings.setChanged('bash.tabs')
 
