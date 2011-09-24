@@ -11987,7 +11987,7 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.save()
             self.hasChanged = False
 
-    def getSorted(self,column,reverse):
+    def getSorted(self,column,reverse,sortSpecial=True):
         """Returns items sorted according to column and reverse."""
         data = self.data
         items = data.keys()
@@ -12004,12 +12004,13 @@ class InstallersData(bolt.TankData, DataDict):
                 getter = lambda x: object.__getattribute__(data[x],attr)
             items.sort(key=getter,reverse=reverse)
         #--Special sorters
-        if settings['bash.installers.sortStructure']:
-            items.sort(key=lambda x: data[x].type)
-        if settings['bash.installers.sortActive']:
-            items.sort(key=lambda x: not data[x].isActive)
-        if settings['bash.installers.sortProjects']:
-            items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
+        if sortSpecial:
+            if settings['bash.installers.sortStructure']:
+                items.sort(key=lambda x: data[x].type)
+            if settings['bash.installers.sortActive']:
+                items.sort(key=lambda x: not data[x].isActive)
+            if settings['bash.installers.sortProjects']:
+                items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
         return items
 
     #--Item Info
