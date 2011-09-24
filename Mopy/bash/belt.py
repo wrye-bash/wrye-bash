@@ -1246,7 +1246,7 @@ class WryeParser(ScriptParser.Parser):
             #next 'EndWhile' towards THIS one
             self.PushFlow('While', False, ['While', 'EndWhile'])
             return
-        self.PushFlow('While', bActive, ['While', 'EndWhile'], cLine=self.cLine, expr=args)
+        self.PushFlow('While', bActive, ['While', 'EndWhile'], cLine=self.cLine-1)
     def kwdContinue(self):
         #Find the next up While or For statement to continue from
         index = self.LenFlow()-1
@@ -1267,12 +1267,8 @@ class WryeParser(ScriptParser.Parser):
         flow = self.PeekFlow()
         if iType == 'While':
             # Continue a While loop
-            if self.ExecuteTokens(flow.expr):
-                #Still an active loop, so jump back to the top,
-                self.cLine = flow.cLine
-            else:
-                #Inactive now, so skip to after the EndWhile,
-                self.PeekFlow().active = False
+            self.cLine = flow.cLine
+            self.PopFlow()
         else:
             # Continue a For loop
             if flow.ForType == 0:
@@ -1298,16 +1294,9 @@ class WryeParser(ScriptParser.Parser):
         if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
             error(UNEXPECTED % 'EndWhile')
         #Re-evaluate the while loop's expression, if needed
-        if self.PeekFlow().active:
-            bActive = self.ExecuteTokens(self.PeekFlow().expr)
-            if not bActive:
-                #While loop is done
-                self.PopFlow()
-            else:
-                #Still need to execute the while loop
-                self.cLine = self.PeekFlow().cLine
-        else:
-            self.PopFlow()
+        flow = self.PopFlow()
+        if flow.active:
+            self.cLine = flow.cLine
 
     def kwdFor(self, *args):
         if self.LenFlow() > 0 and self.PeekFlow().type == 'For' and not self.PeekFlow().active:
