@@ -81,6 +81,18 @@ defSize = wx.DefaultSize
 
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
+def fonts():
+    font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    try:
+        font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
+        font_italic.SetStyle(wx.FONTSTYLE_SLANT)
+    except: #OLD wxpython!
+        font_bold.SetWeight(wx.BOLD)
+        font_italic.SetStyle(wx.SLANT)
+    return (font_default, font_bold, font_italic)
+        
 # Settings --------------------------------------------------------------------
 _settings = {} #--Using applications should override this.
 sizes = {} #--Using applications should override this.
