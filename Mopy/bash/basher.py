@@ -4949,10 +4949,10 @@ class BashStatusBar(wx.StatusBar):
             gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
             if gButton:
                 self.buttons.append(gButton)
-                #--Required Events for DnD reordering
-                gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
-                gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
-                gButton.Bind(wx.EVT_MOTION, self.OnDrag)
+                #--Required Events for DnD reordering (oops, not ready yet)
+                #gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
+                #gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
+                #gButton.Bind(wx.EVT_MOTION, self.OnDrag)
         self.SetStatusWidths([self.size*len(self.buttons),-1,130])
         self.SetSize((-1, self.size))
         self.GetParent().SendSizeEvent()
