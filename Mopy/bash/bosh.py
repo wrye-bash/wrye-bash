@@ -34864,7 +34864,6 @@ def initDefaultSettings():
     inisettings['ShowModelingToolLaunchers'] = True
     inisettings['ShowAudioToolLaunchers'] = True
     inisettings['7zExtraCompressionArguments'] = ''
-    inisettings['IconSize'] = '16'
     inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
@@ -34884,8 +34883,6 @@ def initOptions(bashIni):
         for defaultKey,defaultValue in settingsDict.iteritems():
             settingType = type(defaultValue)
             readKey = type_key[settingType] + defaultKey
-            if defaultKey == 'IconSize': #Hack to support misnamed variable
-                readKey = 'iIconSize'
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
 
     # if bash.ini exists update the settings from there:
