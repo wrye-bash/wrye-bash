@@ -662,6 +662,7 @@ bashBlue = None
 bashDocBrowser = None
 bashMonkey = None
 
+fonts = None
 # Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
@@ -1759,16 +1760,10 @@ class ModList(List):
         elif checkMark == 3: mouseText += _("Imported into Bashed Patch.  ")
 
         #should mod be deactivated
-        try:
-            if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
-                item.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_SLANT, wx.FONTWEIGHT_NORMAL))
-            else:
-                item.SetFont(wx.Font(8, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        except: # In case using a much older wxPython that didn't yet have the font family globals named nicely:
-            if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
-                item.SetFont(wx.Font(8, wx.NORMAL, wx.SLANT, wx.NORMAL))
-            else:
-                item.SetFont(wx.Font(8, wx.NORMAL, wx.NORMAL, wx.NORMAL))
+        if 'Deactivate' in bosh.modInfos[fileName].getBashTags():
+            item.SetFont(fonts[2])
+        else:
+            item.SetFont(fonts[0])
         #--Text BG
         if fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
@@ -5969,11 +5964,13 @@ class BashApp(wx.App):
 
     def InitResources(self):
         """Init application resources."""
-        global bashBlue, bashRed, bashDocBrowser, bashMonkey
+        global bashBlue, bashRed, bashDocBrowser, bashMonkey, fonts
         bashBlue = bashBlue.GetIconBundle()
         bashRed = bashRed.GetIconBundle()
         bashDocBrowser = bashDocBrowser.GetIconBundle()
         bashMonkey = bashMonkey.GetIconBundle()
+        fonts = balt.fonts()
+        
 
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
