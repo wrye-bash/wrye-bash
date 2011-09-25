@@ -3591,11 +3591,12 @@ class InstallersPanel(SashTankPanel):
             del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
-        if bosh.iniInfos.refresh():
-            #iniList->INIPanel.splitter.left->INIPanel.splitter->INIPanel
-            iniList.GetParent().GetParent().GetParent().RefreshUI('ALL')
-        else:
-            iniList.GetParent().GetParent().GetParent().RefreshUI('TARGETS')
+        if iniList is not None:
+            if bosh.iniInfos.refresh():
+                #iniList->INIPanel.splitter.left->INIPanel.splitter->INIPanel
+                iniList.GetParent().GetParent().GetParent().RefreshUI('ALL')
+            else:
+                iniList.GetParent().GetParent().GetParent().RefreshUI('TARGETS')
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
