@@ -496,53 +496,54 @@ def perfTest():
 @mainfunc
 def makeOOO_NoGuildOwnership():
     bosh.initBosh()
-    Current = bosh.Collection(ModsPath=bosh.dirs['mods'].s)
-    modFile = Current.addMod("Oscuro's_Oblivion_Overhaul.esp")
-    destFile = Current.addMod("OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
-    Current.minimalLoad(LoadMasters=True)
-    guildCells = set([0x0002C178,0x00003AAC,0x00030534,0x0000A2BC,0x00027D58,
-                      0x0003E0E4,0x00086588,0x0002C179,0x000855AD,0x0002CA2F,
-                      0x0002FF4F,0x0002CDBD,0x00030535,0x0002D155,0x00000885,
-                      0x0003E0E5,0x0002C17A,0x0004F8C8,0x00032F02,0x000235DE,
-                      0x00000ADE,0x00000D9A,0x00006917,0x000855A5,0x00003AAF,
-                      0x000260CD,0x000855A6,0x0002D068,0x0001C92A,0x00051B8E,
-                      0x0002C172,0x0002D626,0x0003ABDD,0x00051B8F,0x0001C93F,
-                      0x0002E545,0x0003ABDE,0x000855A8,0x000097B4,0x00051B90,
-                      0x00033370,0x0002C174,0x0000691B,0x000855A9,0x000097B5,
-                      0x0000A2B9,0x000302ED,0x0002C175,0x0008440C,0x00049CF8,
-                      0x000097B6,0x0004EA5A,0x0002C176,0x0008440D,0x00049CF9,
-                      0x00027D57,0x000308CB,0x00030425,0x0002CFD7,0x0003E0E3,
-                      0x0002C177])
-    guildFactions = set([0x00022296,0x0002228F])
-    changed = {}
+    import cint
+    with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+        modFile = Current.addMod("Oscuro's_Oblivion_Overhaul.esp")
+        destFile = Current.addMod("OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
+        Current.load()
+        guildCells = set([0x0002C178,0x00003AAC,0x00030534,0x0000A2BC,0x00027D58,
+                          0x0003E0E4,0x00086588,0x0002C179,0x000855AD,0x0002CA2F,
+                          0x0002FF4F,0x0002CDBD,0x00030535,0x0002D155,0x00000885,
+                          0x0003E0E5,0x0002C17A,0x0004F8C8,0x00032F02,0x000235DE,
+                          0x00000ADE,0x00000D9A,0x00006917,0x000855A5,0x00003AAF,
+                          0x000260CD,0x000855A6,0x0002D068,0x0001C92A,0x00051B8E,
+                          0x0002C172,0x0002D626,0x0003ABDD,0x00051B8F,0x0001C93F,
+                          0x0002E545,0x0003ABDE,0x000855A8,0x000097B4,0x00051B90,
+                          0x00033370,0x0002C174,0x0000691B,0x000855A9,0x000097B5,
+                          0x0000A2B9,0x000302ED,0x0002C175,0x0008440C,0x00049CF8,
+                          0x000097B6,0x0004EA5A,0x0002C176,0x0008440D,0x00049CF9,
+                          0x00027D57,0x000308CB,0x00030425,0x0002CFD7,0x0003E0E3,
+                          0x0002C177])
+        guildFactions = set([0x00022296,0x0002228F])
+        changed = {}
+    
+        for record in modFile.CELL:
+            if record.fid in guildCells:
+                print record.eid
+                for refr in record.REFR:
+                    if refr.owner in guildFactions:
+                        base = Current.LookupRecords(refr.base)
+                        try:
+                            base = base[0]
+                        except:
+                            continue
+                        if base._Type in bosh.pickupables:
+                            if base._Type == 'LIGH':
+                                if not base.IsCanTake: continue
+                            if base._Type == 'BOOK':
+                                if base.IsFixed: continue
+                            if destFile.HasRecord(record.fid) is None:
+                                #Copy the winning version of the parent over if it isn't in the patch
+                                record.CopyAsOverride(destFile)
+                            override = refr.CopyAsOverride(destFile)
+                            if override:
+                                override.owner = None
+                                override.rank = None
+                                override.globalVariable = None
+                                changed[base._Type] = changed.get(base._Type,0) + 1
+        print changed
+        if sum(changed.values()): destFile.save()
 
-    for record in modFile.CELL:
-        if record.fid in guildCells:
-            print record.eid
-            for refr in record.REFR:
-                if refr.owner in guildFactions:
-                    base = Current.LookupRecords(refr.base)
-                    try:
-                        base = base[0]
-                    except:
-                        continue
-                    if base._Type in bosh.pickupables:
-                        if base._Type == 'LIGH':
-                            if not base.IsCanTake: continue
-                        if base._Type == 'BOOK':
-                            if base.IsFixed: continue
-                        if destFile.HasRecord(record.fid) is None:
-                            #Copy the winning version of the parent over if it isn't in the patch
-                            record.CopyAsOverride(destFile)
-                        override = refr.CopyAsOverride(destFile)
-                        if override:
-                            override.owner = None
-                            override.rank = None
-                            override.globalVariable = None
-                            changed[base._Type] = changed.get(base._Type,0) + 1
-    print changed
-    if sum(changed.values()): destFile.safeCloseSave()
-    del Current
 @mainfunc
 def bsaReport(fileName,printAll='False'):
     printAll = eval(printAll)
@@ -1005,19 +1006,19 @@ def dumpLSCR(fileName='Oblivion.esm'):
     fileName = GPath(fileName)
     #--Load up in CBash
     import cint
-    collection = cint.ObCollection(ModsPath=bosh.dirs['mods'].s)
-    collection.addMod(fileName.stail)
-    collection.load()
-    modFile = collection.LookupModFile(fileName.stail)
-    #--Dump the info
-    outFile = GPath(fileName.root+'.csv')
-    with outFile.open('w') as file:
-        count = 0
-        file.write('"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
-        for lscr in modFile.LSCR:
-            file.write('"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
-            count += 1
-        print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
+    with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+        Current.addMod(fileName.stail)
+        Current.load()
+        modFile = Current.LookupModFile(fileName.stail)
+        #--Dump the info
+        outFile = GPath(fileName.root+'.csv')
+        with outFile.open('w') as file:
+            count = 0
+            file.write('"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
+            for lscr in modFile.LSCR:
+                file.write('"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
+                count += 1
+            print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 @mainfunc
 def createLSCR(*args):
@@ -1258,111 +1259,111 @@ def createLSCR(*args):
     for master in data.missingMasters:
         print "WARNING: Expected master file '%s' is not present.  Applicable data from those records cannot be verified and/or copied." % (master.stail)
     #--Now do the mod creation
-    collection = cint.ObCollection(ModsPath=bosh.dirs['mods'].s)
-    for master in data.masters:
-        collection.addMod(master.stail)
-    collection.addMod(modName.stail,IgnoreExisting=True)
-    collection.load()
-    modFile = collection.LookupModFile(modName.stail)
-    # Create overrides for each fid
-    extraDDS = set()
-    extraDESC = set()
-    for fid,eid in data.fids_eids:
-        if fid[0] not in data.masters:
-            print "WARNING: LSCR record '%s' master is missing.  Data from the original record cannot be copied." % (fid[0].s)
-            # Missing master, so "create new" record instead
-            record = modFile.create_LSCR(fid)
-            #--EditorID
-            if eid is not None:
-                record.eid = eid
-            #--Texture
-            icon = data.getNextDDS()
-            if icon:
-                record.iconPath = icon.s
-            #--Description
-            text = data.getNextDESC()
-            if text:
-                record.text = text
-            #--LNAM
-            for lnam in data.LNAM:
-                loc = record.create_location()
-                loc.direct = lnam
-            #--Did this record have reused DESC/DDS's?
-            if data.allDDS: extraDDS.add(fid)
-            if data.allDESC: extraDESC.add(fid)
-        else:
-            # Master is present, so create by override
-            masterFile = collection.LookupModFile(fid[0].stail)
-            record = masterFile.LookupRecord(fid)
-            if not record:
-                print "WARNING: Could not locate record %s in master file '%s'." % (fid,fid[0].stail)
-                continue
-            if record._Type != 'LSCR':
-                print 'WARNING: Record %s is not a Loading Screen, skipping!' % (fid)
-                continue
-            override = record.CopyAsOverride(modFile)
-            if not override:
-                print 'WARNING: Error copying record %s into the mod.' % (fid)
-                continue
-            #--EditorID
-            if eid is not None:
-                override.eid = eid
-            #--Texture
-            icon = data.getNextDDS()
-            if icon:
-                override.iconPath = icon.s
-            #--Description
-            text = data.getNextDESC()
-            if text:
-                override.text = text
-            elif opts.removeDESC:
-                override.text = ' '
-            #--LNAM
-            if opts.keepEmptyLnam and len(override.locations_list) == 0:
-                pass
-            else:
-                if opts.clearLNAM:
-                    override.locations = None
-                for lnam in data.LNAM:
-                    loc = override.create_location()
-                    loc.direct = lnam
-            if data.allDDS: extraDDS.add(fid)
-            if data.allDESC: extraDESC.add(fid)
-    # Use any left over DDS's as new records
-    if not data.allDDS:
-        for dds in data.DDS:
-            record = modFile.create_LSCR()
-            #--Texture
-            record.iconPath = dds.s
-            #--Description
-            text = data.getNextDESC()
-            if text:
-                record.text = text
-            #--LNAM
-            for lnam in data.LNAM:
-                loc = record.create_location()
-                loc.direct = lnam
-            if data.allDESC: extraDESC.add(record.fid)
-    modFile.save()
-    print
-    print 'Operation complete.'
-    if len(data.fids_eids) > 0:
+    with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
         for master in data.masters:
-            fids = [x for x in data.fids_eids if x[0][0] == master]
-            num = len(fids)
-            print "Created %i override records for '%s'." % (num, master.s)
-    if len(data.DDS) + len(data.usedDDS) > len(data.fids_eids):
-        print 'Created %i new records.' % (len(data.DDS) + len(data.usedDDS) - len(data.fids_eids))
-    if extraDESC:
-        if data.reuse:
-            print "More records were made than DESC subrecords were available.  %i records reused another record's DESC." % (len(extraDESC))
-        else:
-            print "WARNING: More records were made than DESC subrecords were available.  %i records have no DESC subrecord." % (len(extraDESC))
-    if extraDDS:
-        if data.reuse:
-            print "More records were made than textures were available.  %i records reused another record's texture." % (len(extraDDS))
-        else:
-            print "WARNING: More records were made than textures were available.  %i records have no texture." % (len(extraDDS))
+            Current.addMod(master.stail)
+        Current.addMod(modName.stail,IgnoreExisting=True)
+        Current.load()
+        modFile = Current.LookupModFile(modName.stail)
+        # Create overrides for each fid
+        extraDDS = set()
+        extraDESC = set()
+        for fid,eid in data.fids_eids:
+            if fid[0] not in data.masters:
+                print "WARNING: LSCR record '%s' master is missing.  Data from the original record cannot be copied." % (fid[0].s)
+                # Missing master, so "create new" record instead
+                record = modFile.create_LSCR(fid)
+                #--EditorID
+                if eid is not None:
+                    record.eid = eid
+                #--Texture
+                icon = data.getNextDDS()
+                if icon:
+                    record.iconPath = icon.s
+                #--Description
+                text = data.getNextDESC()
+                if text:
+                    record.text = text
+                #--LNAM
+                for lnam in data.LNAM:
+                    loc = record.create_location()
+                    loc.direct = lnam
+                #--Did this record have reused DESC/DDS's?
+                if data.allDDS: extraDDS.add(fid)
+                if data.allDESC: extraDESC.add(fid)
+            else:
+                # Master is present, so create by override
+                masterFile = Current.LookupModFile(fid[0].stail)
+                record = masterFile.LookupRecord(fid)
+                if not record:
+                    print "WARNING: Could not locate record %s in master file '%s'." % (fid,fid[0].stail)
+                    continue
+                if record._Type != 'LSCR':
+                    print 'WARNING: Record %s is not a Loading Screen, skipping!' % (fid)
+                    continue
+                override = record.CopyAsOverride(modFile)
+                if not override:
+                    print 'WARNING: Error copying record %s into the mod.' % (fid)
+                    continue
+                #--EditorID
+                if eid is not None:
+                    override.eid = eid
+                #--Texture
+                icon = data.getNextDDS()
+                if icon:
+                    override.iconPath = icon.s
+                #--Description
+                text = data.getNextDESC()
+                if text:
+                    override.text = text
+                elif opts.removeDESC:
+                    override.text = ' '
+                #--LNAM
+                if opts.keepEmptyLnam and len(override.locations_list) == 0:
+                    pass
+                else:
+                    if opts.clearLNAM:
+                        override.locations = None
+                    for lnam in data.LNAM:
+                        loc = override.create_location()
+                        loc.direct = lnam
+                if data.allDDS: extraDDS.add(fid)
+                if data.allDESC: extraDESC.add(fid)
+        # Use any left over DDS's as new records
+        if not data.allDDS:
+            for dds in data.DDS:
+                record = modFile.create_LSCR()
+                #--Texture
+                record.iconPath = dds.s
+                #--Description
+                text = data.getNextDESC()
+                if text:
+                    record.text = text
+                #--LNAM
+                for lnam in data.LNAM:
+                    loc = record.create_location()
+                    loc.direct = lnam
+                if data.allDESC: extraDESC.add(record.fid)
+        modFile.save()
+        print
+        print 'Operation complete.'
+        if len(data.fids_eids) > 0:
+            for master in data.masters:
+                fids = [x for x in data.fids_eids if x[0][0] == master]
+                num = len(fids)
+                print "Created %i override records for '%s'." % (num, master.s)
+        if len(data.DDS) + len(data.usedDDS) > len(data.fids_eids):
+            print 'Created %i new records.' % (len(data.DDS) + len(data.usedDDS) - len(data.fids_eids))
+        if extraDESC:
+            if data.reuse:
+                print "More records were made than DESC subrecords were available.  %i records reused another record's DESC." % (len(extraDESC))
+            else:
+                print "WARNING: More records were made than DESC subrecords were available.  %i records have no DESC subrecord." % (len(extraDESC))
+        if extraDDS:
+            if data.reuse:
+                print "More records were made than textures were available.  %i records reused another record's texture." % (len(extraDDS))
+            else:
+                print "WARNING: More records were made than textures were available.  %i records have no texture." % (len(extraDDS))
 
 # Temp ------------------------------------------------------------------------
 """Very temporary functions."""
