@@ -9559,16 +9559,9 @@ class ConfigHelpers:
         #<1.6   = 0
         if dirs['app'].join('BOSS//BOSS.exe').exists():
             self.bossVersion = 2
-            try:
-                import win32api
-                info = win32api.GetFileVersionInfo(dirs['app'].join('BOSS','BOSS.exe').s, '\\')
-                ms = info['FileVersionMS']
-                ls = info['FileVersionLS']
-                version = (win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), win32api.LOWORD(ls))
-                if version >= (1,8,0,0):
-                    self.bossVersion = 3
-            except:
-                pass
+            version = dirs['app'].join('BOSS','BOSS.exe').version
+            if version >= (1,8,0,0):
+                self.bossVersion = 3
             self.bossMasterPath = dirs['app'].join('BOSS','masterlist.txt')
             self.bossUserPath = dirs['app'].join('BOSS','userlist.txt')
         else:
@@ -17987,7 +17980,7 @@ class CBash_PatchFile(ObModFile):
                      'WATR','EFSH','CLMT','REGN','ACHRS','ACRES',
                      'REFRS','PGRDS','LANDS','ROADS','INFOS','CELL',
                      'CELLS','DIAL','WRLD']
-        
+
         iiModeSet = set(('InventOnly','IIM'))
         levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
@@ -29088,7 +29081,7 @@ class NamesTweaker(MultiTweaker):
             _("Proper English Names: Dwarfs -> Dwarves"),
             _('Rename any thing that is named X Dwarfs Dwarfs X to Dwarven X/X Dwarven to follow proper English better.'),
             'Dwarfs',
-            (('Proper Engilsh Names: Dwarfs -> Dwarves',  'Dwarves'),
+            (('Proper Engilsh Names: Dwarfs -> Dwarves'),  'Dwarves'),
             ),
         TextReplacer(r'\b(s|S)(?:taffs)\b',
             r'\1taves',
