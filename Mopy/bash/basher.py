@@ -5263,7 +5263,7 @@ class ListBoxes(wx.Dialog):
                 checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
                 for i in xrange(len(items)):
                     checks.Check(i,True)
-            if liststyle == 'list':
+            elif liststyle == 'list':
                 checks = wx.ListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
             else:
                 checks = wx.TreeCtrl(self,wx.ID_ANY,size=(150,200),style=wx.TR_DEFAULT_STYLE|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HIDE_ROOT)
