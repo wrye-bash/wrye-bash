@@ -1102,6 +1102,19 @@ class Path(object):
             deprint(_("Unable to set modified time of %s - probably a unicode error") % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
+    @property
+    def version(self):
+        """File version (exe/dll) embeded in the file properties (windows only)."""
+        try:
+            import win32api
+            info = win32api.GetFileVersionInfo(self.s,'\\')
+            ms = info['FileVersionMS']
+            ls = info['FileVersionLS']
+            version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
+        except:
+            version = (0,0,0,0)
+        return version
+
     #--crc
     @property
     def crc(self):
