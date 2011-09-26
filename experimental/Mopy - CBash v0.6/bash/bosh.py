@@ -11987,7 +11987,7 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.save()
             self.hasChanged = False
 
-    def getSorted(self,column,reverse):
+    def getSorted(self,column,reverse,sortSpecial=True):
         """Returns items sorted according to column and reverse."""
         data = self.data
         items = data.keys()
@@ -12004,12 +12004,13 @@ class InstallersData(bolt.TankData, DataDict):
                 getter = lambda x: object.__getattribute__(data[x],attr)
             items.sort(key=getter,reverse=reverse)
         #--Special sorters
-        if settings['bash.installers.sortStructure']:
-            items.sort(key=lambda x: data[x].type)
-        if settings['bash.installers.sortActive']:
-            items.sort(key=lambda x: not data[x].isActive)
-        if settings['bash.installers.sortProjects']:
-            items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
+        if sortSpecial:
+            if settings['bash.installers.sortStructure']:
+                items.sort(key=lambda x: data[x].type)
+            if settings['bash.installers.sortActive']:
+                items.sort(key=lambda x: not data[x].isActive)
+            if settings['bash.installers.sortProjects']:
+                items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
         return items
 
     #--Item Info
@@ -13809,7 +13810,7 @@ class CBash_FidReplacer:
                 print "CBash_FidReplacer:updateMod"
                 print error[0]
                 return
-            print Current.Debug_DumpModFiles()
+
             counts = modFile.UpdateReferences(old_new)
 
             #--Done
@@ -17104,7 +17105,7 @@ class ModCleaner:
                         #--Scan ITM
                         if doITM:
                             itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
-                        for j,block in enumerate(blocks.values()):
+                        for j,block in enumerate(blocks):
                             subprogress1(j)
                             subprogress2 = SubProgress(subprogress1,j,j+1)
                             subprogress2.setFull(max(len(block),1))
@@ -17958,7 +17959,6 @@ class CBash_PatchFile(ObModFile):
     def mergeModFile(self,modFile,progress,doFilter,iiMode):
         """Copies contents of modFile into self."""
         mergeIds = self.mergeIds
-        loadSet = self.loadSet
         badForm = FormID(GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
         for blockType, block in modFile.aggregates.iteritems():
             iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
@@ -17968,8 +17968,8 @@ class CBash_PatchFile(ObModFile):
                 #--Include this record?
                 if record.IsWinning():
                     if doFilter:
-                        if not record.fid[0] in loadSet: continue
-                        if not record.mergeFilter(loadSet): continue
+                        if not record.fid.ValidateFormID(self): continue
+                        if not record.mergeFilter(self): continue
                     override = record.CopyAsOverride(self, UseWinningParents=True)
                     if override:
                         mergeIds.add(override.fid)
@@ -18064,7 +18064,7 @@ class CBash_PatchFile(ObModFile):
             del mod_patchers
         else:
             mod_apply = []
-            
+
         numFinishers = 0
         for type, patchers in type_patchers.iteritems():
             for patcher in patchers:
@@ -18099,8 +18099,8 @@ class CBash_PatchFile(ObModFile):
 
             if not isScanned:
                 for patcher in mod_apply:
-                    patcher(modFile, record, bashTags)
-                
+                    patcher(modFile, bashTags)
+
             pstate = 0
             subProgress = SubProgress(progress,index)
             subProgress.setFull(max(len(type_patchers),1))
@@ -18128,8 +18128,8 @@ class CBash_PatchFile(ObModFile):
                     #(i.e. len(conflicts) will never equal 1)
                     #The winning record is at position 0, and the last record is the one most overridden
                     if doFilter:
-                        if not record.fid[0] in self.loadSet: continue
-                        record.mergeFilter(self.loadSet)
+                        if not record.fid.ValidateFormID(self): continue
+                        record.mergeFilter(self)
 
                     if iiFilter:
                         #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
@@ -19090,7 +19090,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         self.old_new = fidReplacer.old_new
         self.old_eid.update(fidReplacer.old_eid)
         self.new_eid.update(fidReplacer.new_eid)
-        self.isActive = bool(old_new)
+        self.isActive = bool(self.old_new)
         if not self.isActive: return
 
         for type in self.getTypes():
@@ -19107,12 +19107,12 @@ class CBash_UpdateReferences(CBash_ListPatcher):
                 'PACK','LSCR','LVSP','ANIO','WATR']
 
     #--Patch Phase ------------------------------------------------------------
-    def mod_apply(self,modFile,record,bashTags):
+    def mod_apply(self,modFile,bashTags):
         """Changes the mod in place without copying any records."""
         counts = modFile.UpdateReferences(self.old_new)
         #--Done
-        if not sum(counts): return False
-        self.mod_count_old_new[modFile.GName] = [(count,self.old_eid[old_newId[0]],self.new_eid[old_newId[1]]) for count, old_newId in zip(counts, self.old_new.iteritems())]
+        if sum(counts):
+            self.mod_count_old_new[modFile.GName] = [(count,self.old_eid[old_newId[0]],self.new_eid[old_newId[1]]) for count, old_newId in zip(counts, self.old_new.iteritems())]
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -20875,12 +20875,12 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
         if(fid in self.csvId_factions):
-            newFactions = set([(faction,rank) for faction, rank in self.csvId_factions[fid].iteritems() if faction.ValidateFormID(self.patchFile)])
+            newFactions = set([(faction,rank) for faction, rank in self.csvId_factions[fid] if faction.ValidateFormID(self.patchFile)])
         elif(fid in self.id_factions):
             newFactions = set([(faction,rank) for faction, rank in self.id_factions[fid].iteritems() if faction.ValidateFormID(self.patchFile)])
         else:
             return
-        curFactions = set([(faction[0],faction[1]) for faction in record.factions_list if faction.ValidateFormID(self.patchFile)])
+        curFactions = set([(faction[0],faction[1]) for faction in record.factions_list if faction[0].ValidateFormID(self.patchFile)])
         changed = newFactions - curFactions
         removed = curFactions - newFactions
         if changed or removed:
@@ -21260,7 +21260,8 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         script = record.ConflictDetails(('script',))
         if script:
-            if record.script.ValidateFormID(self.patchFile):
+            script = script['script']
+            if script.ValidateFormID(self.patchFile):
                 # Only save if different from the master record
                 if record.GetParentMod().GName != record.fid[0]:
                     history = record.History()
@@ -21268,7 +21269,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
                         masterRecord = history[0]
                         if masterRecord.GetParentMod().GName == record.fid[0] and masterRecord.script == record.script:
                             return # Same
-                self.id_script[record.fid] = script['script']
+                self.id_script[record.fid] = script
             else:
                 #Ignore the record. Another option would be to just ignore the invalid formIDs
                 mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
@@ -22281,7 +22282,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
             return
         face = record.ConflictDetails(attrs)
             
-        if ValidateDict(face):
+        if ValidateDict(face, self.patchFile):
             fid = record.fid
             # Only save if different from the master record
             if record.GetParentMod().GName != fid[0]:
@@ -24946,14 +24947,14 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ShortGrass(MultiTweakItem):
-    """Lower the height of all plants in the game, including Shivering Isles."""
+class AssortedTweak_UniformGroundcover(MultiTweakItem):
+    """Eliminates random variation in groundcover."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Short Grass"),
-            _('Lower the height of all plants in the game, including Shivering Isles.'),
-            'ShortGrass',
+        MultiTweakItem.__init__(self,_("Uniform Groundcover"),
+            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            'UniformGroundcover',
             ('1.0', '1.0'),
             )
 
@@ -24989,22 +24990,22 @@ class AssortedTweak_ShortGrass(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Short Grass'))
-        log(_('* Grass Tweaked: %d') % (sum(count.values()),))
+        log.setHeader(_('=== Uniform Groundcover'))
+        log(_('* Grasses Normalized: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
             
-class CBash_AssortedTweak_ShortGrass(CBash_MultiTweakItem):
-    """Lower the height of all plants in the game, including Shivering Isles."""
+class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
+    """Eliminates random variation in groundcover."""
     scanOrder = 32
     editOrder = 32
-    name = _('Short Grass')
+    name = _('Uniform Groundcover')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Short Grass"),
-            _('Lower the height of all plants in the game, including Shivering Isles.'),
-            'ShortGrass',
+        CBash_MultiTweakItem.__init__(self,_("Uniform Groundcover"),
+            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            'UniformGroundcover',
             ('1.0', '1.0'),
             )
         self.mod_count = {}
@@ -25028,8 +25029,8 @@ class CBash_AssortedTweak_ShortGrass(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Short Grass'))
-        log(_('* Grass Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(_('=== Uniform Groundcover'))
+        log(_('* Grasses Normalized: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25895,7 +25896,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_StaffWeight(),
         AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         AssortedTweak_WindSpeed(),
-        AssortedTweak_ShortGrass(),
+        AssortedTweak_UniformGroundcover(),
         AssortedTweak_HarvestChance(),
         AssortedTweak_IngredientWeight(),
         AssortedTweak_ArrowWeight(),
@@ -25972,7 +25973,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
         CBash_AssortedTweak_HarvestChance(),
         CBash_AssortedTweak_WindSpeed(),
-        CBash_AssortedTweak_ShortGrass(),
+        CBash_AssortedTweak_UniformGroundcover(),
         CBash_AssortedTweak_IngredientWeight(),
         CBash_AssortedTweak_ArrowWeight(),
         CBash_AssortedTweak_ScriptEffectSilencer(),
@@ -28224,6 +28225,7 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
                 if index == 0:
                     if effect.script:
                         schoolType = effect.schoolType
+                        print schoolType
                     else:
                         schoolType = mgef_school.get(effectId,6)
                 #--Non-hostile effect?
@@ -28241,6 +28243,8 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
             if record.IsFood:
                 newFull = '.' + newFull
             else:
+                print record.fid
+                print schoolType
                 label = ('','X')[isPoison] + 'ACDIMRU'[schoolType]
                 newFull = self.format % label + newFull
 
@@ -28904,50 +28908,50 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
         reMatch = re.compile(self.reMatch)
         changed = False
         if hasattr(record, 'full'):
-            changed = self.reMatch.search(record.full or '')
+            changed = reMatch.search(record.full or '')
         if not changed:
             if hasattr(record, 'effects'):
                 Effects = record.effects
                 for effect in Effects:
-                    changed = self.reMatch.search(effect.full or '')
+                    changed = reMatch.search(effect.full or '')
                     if changed: break
         if not changed:
             if hasattr(record, 'text'):
-                changed = self.reMatch.search(record.text or '')
+                changed = reMatch.search(record.text or '')
         if not changed:
             if hasattr(record, 'description'):
-                changed = self.reMatch.search(record.description or '')
+                changed = reMatch.search(record.description or '')
         if not changed:
             if record._Type == 'GMST' and record.eid[0] == 's':
-                changed = self.reMatch.search(record.value or '')
+                changed = reMatch.search(record.value or '')
         if not changed:
             if hasattr(record, 'stages'):
                 Stages = record.stages
                 for stage in Stages:
                     for entry in stage.entries:
-                        changed = self.reMatch.search(entry.text or '')
+                        changed = reMatch.search(entry.text or '')
                         if changed: break
 ##                        compiled = entry.compiled_p
 ##                        if compiled:
-##                            changed = self.reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
+##                            changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
 ##                            if changed: break
-##                        changed = self.reMatch.search(entry.scriptText or '')
+##                        changed = reMatch.search(entry.scriptText or '')
 ##                        if changed: break
 ##        if not changed:
 ##            if hasattr(record, 'scriptText'):
-##                changed = self.reMatch.search(record.scriptText or '')
+##                changed = reMatch.search(record.scriptText or '')
 ##                if not changed:
 ##                    compiled = record.compiled_p
-##                    changed = self.reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
+##                    changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
         if not changed:
             if record._Type == 'SKIL':
-                changed = self.reMatch.search(record.apprentice or '')
+                changed = reMatch.search(record.apprentice or '')
                 if not changed:
-                    changed = self.reMatch.search(record.journeyman or '')
+                    changed = reMatch.search(record.journeyman or '')
                 if not changed:
-                    changed = self.reMatch.search(record.expert or '')
+                    changed = reMatch.search(record.expert or '')
                 if not changed:
-                    changed = self.reMatch.search(record.master or '')
+                    changed = reMatch.search(record.master or '')
 
         #Could support DIAL/INFO as well, but skipping since they're often voiced as well
         if changed:
@@ -28956,29 +28960,29 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
                 if hasattr(override, 'full'):
                     newString = override.full
                     if newString:
-                        override.full = self.reMatch.sub(self.reReplace, newString)
+                        override.full = reMatch.sub(self.reReplace, newString)
 
                 if hasattr(override, 'effects'):
                     Effects = override.effects
                     for effect in Effects:
                         newString = effect.full
                         if newString:
-                            effect.full = self.reMatch.sub(self.reReplace, newString)
+                            effect.full = reMatch.sub(self.reReplace, newString)
 
                 if hasattr(override, 'text'):
                     newString = override.text
                     if newString:
-                        override.text = self.reMatch.sub(self.reReplace, newString)
+                        override.text = reMatch.sub(self.reReplace, newString)
 
                 if hasattr(override, 'description'):
                     newString = override.description
                     if newString:
-                        override.description = self.reMatch.sub(self.reReplace, newString)
+                        override.description = reMatch.sub(self.reReplace, newString)
 
                 if override._Type == 'GMST' and override.eid[0] == 's':
                     newString = override.value
                     if newString:
-                        override.value = self.reMatch.sub(self.reReplace, newString)
+                        override.value = reMatch.sub(self.reReplace, newString)
 
                 if hasattr(override, 'stages'):
                     Stages = override.stages
@@ -28986,47 +28990,47 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
                         for entry in stage.entries:
                             newString = entry.text
                             if newString:
-                                entry.text = self.reMatch.sub(self.reReplace, newString)
+                                entry.text = reMatch.sub(self.reReplace, newString)
 ##                            newString = entry.compiled_p
 ##                            if newString:
 ##                                nSize = len(newString)
-##                                newString = self.reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
+##                                newString = reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
 ##                                nSize = len(newString)
 ##                                entry.compiled_p = struct.unpack('B' * nSize, newString)
 ##                                entry.compiledSize = nSize
 ##                            newString = entry.scriptText
 ##                            if newString:
-##                                entry.scriptText = self.reMatch.sub(self.reReplace, newString)
+##                                entry.scriptText = reMatch.sub(self.reReplace, newString)
 ##
 
 ##                if hasattr(override, 'scriptText'):
 ##                    newString = override.compiled_p
 ##                    if newString:
 ##                        nSize = len(newString)
-##                        newString = self.reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
+##                        newString = reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
 ##                        nSize = len(newString)
 ##                        override.compiled_p = struct.unpack('B' * nSize, newString)
 ##                        override.compiledSize = nSize
 ##                    newString = override.scriptText
 ##                    if newString:
-##                        override.scriptText = self.reMatch.sub(self.reReplace, newString)
+##                        override.scriptText = reMatch.sub(self.reReplace, newString)
 
                 if override._Type == 'SKIL':
                     newString = override.apprentice
                     if newString:
-                        override.apprentice = self.reMatch.sub(self.reReplace, newString)
+                        override.apprentice = reMatch.sub(self.reReplace, newString)
 
                     newString = override.journeyman
                     if newString:
-                        override.journeyman = self.reMatch.sub(self.reReplace, newString)
+                        override.journeyman = reMatch.sub(self.reReplace, newString)
 
                     newString = override.expert
                     if newString:
-                        override.expert = self.reMatch.sub(self.reReplace, newString)
+                        override.expert = reMatch.sub(self.reReplace, newString)
 
                     newString = override.master
                     if newString:
-                        override.master = self.reMatch.sub(self.reReplace, newString)
+                        override.master = reMatch.sub(self.reReplace, newString)
 
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
@@ -29536,11 +29540,10 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
-        self.defaultEnabled = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -29598,12 +29601,11 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids bug if an NPC is a beast race but has the regular skeleton.nif selected.'),
+            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             'Vanilla Skeleton',
             ('1.0',  '1.0'),
             )
         self.mod_count = {}
-        self.defaultEnabled = True
 
     def getTypes(self):
         return ['NPC_']
@@ -30413,7 +30415,6 @@ class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
-    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         VORB_NPCSkeletonPatcher(),
         MAONPCSkeletonPatcher(),
@@ -30461,7 +30462,6 @@ class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _('Tweak Actors')
     text = _("Tweak NPC and Creatures records in specified ways.")
-    defaultConfig = {'isEnabled':True}
     tweaks = sorted([
         CBash_VORB_NPCSkeletonPatcher(),
         CBash_MAONPCSkeletonPatcher(),
@@ -33561,7 +33561,6 @@ def initDefaultSettings():
     inisettings['ShowModelingToolLaunchers'] = True
     inisettings['ShowAudioToolLaunchers'] = True
     inisettings['7zExtraCompressionArguments'] = ''
-    inisettings['IconSize'] = '16'
     inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
@@ -33581,8 +33580,6 @@ def initOptions(bashIni):
         for defaultKey,defaultValue in settingsDict.iteritems():
             settingType = type(defaultValue)
             readKey = type_key[settingType] + defaultKey
-            if defaultKey == 'IconSize': #Hack to support misnamed variable
-                readKey = 'iIconSize'
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
 
     # if bash.ini exists update the settings from there:

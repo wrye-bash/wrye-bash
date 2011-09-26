@@ -29,18 +29,15 @@ class CBashError(Exception):
         return repr(self.value)
 
 def ZeroIsErrorCheck(result, function, cArguments, *args):
-    if result == 0:
-        raise CBashError("Function returned an error code.")
+    if result == 0: raise CBashError("Function returned an error code.")
     return result
 
 def NegativeIsErrorCheck(result, function, cArguments, *args):
-    if result < 0:
-        raise CBashError("Function returned an error code.")
+    if result < 0: raise CBashError("Function returned an error code.")
     return result
 
 def PositiveIsErrorCheck(result, function, cArguments, *args):
-    if result > 0:
-        raise CBashError("Function returned an error code.")
+    if result > 0: raise CBashError("Function returned an error code.")
     return result
 
 CBash = None
@@ -161,7 +158,7 @@ if(CBash):
     _CGetModNumOrphans.errcheck = NegativeIsErrorCheck
     _CGetModOrphansFormIDs = CBash.GetModOrphansFormIDs
     _CGetModOrphansFormIDs.errcheck = NegativeIsErrorCheck
-    
+
     _CGetLongIDName = CBash.GetLongIDName
     _CMakeShortFormID = CBash.MakeShortFormID
     _CCreateRecord = CBash.CreateRecord
@@ -275,61 +272,43 @@ class ISTRING(str):
     """Case insensitive strings class. Performs like str except comparisons are case insensitive."""
 
     def __eq__(self, other):
-        try:
-            return self.lower() == other.lower()
-        except AttributeError:
-            return False
+        try: return self.lower() == other.lower()
+        except AttributeError: return False
 
     def __lt__(self, other):
-        try:
-            return self.lower() < other.lower()
-        except AttributeError:
-            return False
+        try: return self.lower() < other.lower()
+        except AttributeError: return False
 
     def __le__(self, other):
-        try:
-            return self.lower() <= other.lower()
-        except AttributeError:
-            return False
+        try: return self.lower() <= other.lower()
+        except AttributeError: return False
 
     def __gt__(self, other):
-        try:
-            return self.lower() > other.lower()
-        except AttributeError:
-            return False
+        try: return self.lower() > other.lower()
+        except AttributeError: return False
 
     def __ne__(self, other):
-        try:
-            return self.lower() != other.lower()
-        except AttributeError:
-            return False
+        try: return self.lower() != other.lower()
+        except AttributeError: return False
 
     def __ge__(self, other):
-        try:
-            return self.lower() >= other.lower()
-        except AttributeError:
-            return False
+        try: return self.lower() >= other.lower()
+        except AttributeError: return False
 
     def __cmp__(self, other):
-        try:
-            return cmp(self.lower(), other.lower())
-        except AttributeError:
-            return False
+        try: return cmp(self.lower(), other.lower())
+        except AttributeError: return False
 
     def __hash__(self):
         return hash(self.lower())
 
     def __contains__(self, other):
-        try:
-            return other.lower() in self.lower()
-        except AttributeError:
-            return False
+        try: return other.lower() in self.lower()
+        except AttributeError: return False
 
     def count(self, other, *args):
-        try:
-            return str.count(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return 0
+        try: return str.count(self.lower(), other.lower(), *args)
+        except AttributeError: return 0
 
     def endswith(self, other, *args):
         try:
@@ -339,32 +318,23 @@ class ISTRING(str):
                         return True
                 return False
             return str.endswith(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return False
+        except AttributeError: return False
 
     def find(self, other, *args):
-        try:
-            return str.find(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return -1
+        try: return str.find(self.lower(), other.lower(), *args)
+        except AttributeError: return -1
 
     def index(self, other, *args):
-        try:
-            return str.index(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return ValueError
+        try: return str.index(self.lower(), other.lower(), *args)
+        except AttributeError: return ValueError
 
     def rfind(self, other, *args):
-        try:
-            return str.rfind(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return -1
+        try: return str.rfind(self.lower(), other.lower(), *args)
+        except AttributeError: return -1
 
     def rindex(self, other, *args):
-        try:
-            return str.rindex(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return ValueError
+        try: return str.rindex(self.lower(), other.lower(), *args)
+        except AttributeError: return ValueError
 
     def startswith(self, other, *args):
         try:
@@ -374,13 +344,14 @@ class ISTRING(str):
                         return True
                 return False
             return str.startswith(self.lower(), other.lower(), *args)
-        except AttributeError:
-            return False
+        except AttributeError: return False
 
 class FormID(object):
+    __slots__ = ['formID']
     """Represents a FormID"""
 
     class UnvalidatedFormID(object):
+        __slots__ = ['master','objectID']
         """Represents an unchecked FormID. This the most common case by far.
 
            These occur when:
@@ -398,8 +369,7 @@ class FormID(object):
             return hash((str(self.master), self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return self.master
-            return int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "UnvalidatedFormID('%s', 0x%06X)" % (str(self.master), int(self.objectID & 0x00FFFFFFL))
@@ -408,21 +378,18 @@ class FormID(object):
             """Unvalidated FormIDs have to be tested for each destination collection
                A FormID is valid if its master is part of the destination collection"""
             targetID = target.GetParentCollection()._CollectionID
-            master = str(self.master)
-            retValue = _CGetModIDByName(targetID, master)
-            if retValue:
-                return FormID.ValidFormID(self.master, self.objectID, _CMakeShortFormID(retValue, self.objectID , 0), targetID)
-            return self
+            modID = _CGetModIDByName(targetID, str(self.master))
+            return FormID.ValidFormID(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 0), targetID) if modID else self
 
         def GetShortFormID(self, target):
             """Tries to resolve the formID for the given target.
                This should only get called if the FormID isn't validated prior to it being used by CBash."""
             formID = self.Validate(target)
-            if isinstance(formID, FormID.ValidFormID):
-                return formID.shortID
+            if isinstance(formID, FormID.ValidFormID): return formID.shortID
             raise TypeError(_("Attempted to set an invalid formID"))
 
     class InvalidFormID(object):
+        __slots__ = ['objectID']
         """Represents an unsafe FormID.
            The FormIDs ModIndex won't properly match with the Collection's Load Order,
            so using it would cause the wrong record to become referenced.
@@ -440,8 +407,7 @@ class FormID(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return None
-            return int(self.objectID & 0x00FFFFFFL)
+            return None if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "InvalidFormID(None, 0x%06X)" % (self.objectID,)
@@ -455,6 +421,7 @@ class FormID(object):
             raise TypeError(_("Attempted to set an invalid formID"))
 
     class ValidFormID(object):
+        __slots__ = ['master','objectID','shortID','_CollectionID']
         """Represents a safe FormID.
 
            These occur when an unvalidated FormID is validated for a specific record.
@@ -470,8 +437,7 @@ class FormID(object):
             return hash((str(self.master), self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return self.master
-            return int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "ValidFormID('%s', 0x%06X)" % (str(self.master), int(self.objectID & 0x00FFFFFFL))
@@ -479,21 +445,18 @@ class FormID(object):
         def Validate(self, target):
             """This FormID has already been validated for a specific collection.
                It must be revalidated if the target being used doesn't match the earlier validation."""
-            if target.GetParentCollection()._CollectionID == self._CollectionID:
-                return self
-            return FormID.UnvalidatedFormID(self.master, self.objectID).Validate(target)
+            return self if target.GetParentCollection()._CollectionID == self._CollectionID else FormID.UnvalidatedFormID(self.master, self.objectID).Validate(target)
 
         def GetShortFormID(self, target):
             """This FormID has already been resolved for a specific record.
                It must be re-resolved if the target being used doesn't match the earlier validation."""
-            if target.GetParentCollection()._CollectionID == self._CollectionID:
-                return self.shortID
+            if target.GetParentCollection()._CollectionID == self._CollectionID: return self.shortID
             test = FormID.UnvalidatedFormID(self.master, self.objectID).Validate(target)
-            if isinstance(test, FormID.ValidFormID):
-                return test.shortID
+            if isinstance(test, FormID.ValidFormID): return test.shortID
             raise TypeError(_("Attempted to set an invalid formID"))
 
     class EmptyFormID(ValidFormID):
+        __slots__ = []
         """Represents an empty FormID.
 
            These occur when a particular field isn't set, or is set to 0.
@@ -519,9 +482,10 @@ class FormID(object):
 
         def GetShortFormID(self, target):
             """An empty FormID is always valid, so it isn't resolved. That's why it subclasses ValidFormID."""
-            return 0
+            return None
 
     class RawFormID(ValidFormID):
+        __slots__ = ['shortID']
         """Represents a non-checkable FormID. Should rarely be used due to safety issues.
            This class should never be instantiated except by class FormID(object)."""
 
@@ -532,8 +496,7 @@ class FormID(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            if x == 0: return self.shortID >> 24
-            return int(self.shortID & 0x00FFFFFFL)
+            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "RawFormID(0x%08X)" % (self.shortID,)
@@ -553,61 +516,32 @@ class FormID(object):
            FormID       = (FormID()        , None)
            Raw FormID   = (int(FormID)     , None)
            Empty FormID = (None            , None)"""
-
-        if objectID is None:
-            if isinstance(master, FormID):
-                self.formID = master.formID
-            elif master is None:
-                self.formID = FormID.EmptyFormID()
-            else:
-                self.formID = FormID.RawFormID(master)
-        else:
-            if isinstance(master, (basestring, Path)):
-                self.formID = FormID.UnvalidatedFormID(str(master), objectID)
-            else:
-                masterstr = _CGetLongIDName(master, objectID, 0)
-                if masterstr:
-                    #CBash FormID, pre-validated for its source collection
-                    self.formID = FormID.ValidFormID(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master))
-                else:
-                    #CBash FormID, pre-invalidated for all collections
-                    self.formID = FormID.InvalidFormID(objectID)
+        self.formID = FormID.EmptyFormID() if master is None else master.formID if isinstance(master, FormID) else FormID.RawFormID(master) if objectID is None else FormID.UnvalidatedFormID(str(master), objectID) if isinstance(master, (basestring, Path)) else None
+        if self.formID is None:
+            masterstr = _CGetLongIDName(master, objectID, 0)
+            self.formID = FormID.ValidFormID(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else FormID.InvalidFormID(objectID)
 
     def __hash__(self):
         return hash(self.formID)
 
     def __eq__(self, other):
-        try:
-            return other[1] == self.formID[1] and other[0] == self.formID[0]
-        except TypeError:
-            return False
+        if other is None and isinstance(self.formID, FormID.EmptyFormID): return True
+        try: return other[1] == self.formID[1] and other[0] == self.formID[0]
+        except TypeError: return False
 
     def __ne__(self, other):
-        try:
-            return other[1] != self.formID[1] or other[0] != self.formID[0]
-        except TypeError:
-            return False
+        try: return other[1] != self.formID[1] or other[0] != self.formID[0]
+        except TypeError: return False
+
+    def __nonzero__(self):
+        return not isinstance(self.formID, (FormID.EmptyFormID, FormID.InvalidFormID))
 
     def __getitem__(self, x):
-        if x == 0: return self.formID[0]
-        return self.formID[1]
+        return self.formID[0] if x == 0 else self.formID[1]
 
     def __setitem__(self, x, nValue):
-        if x == 0:
-            if nValue is None:
-                self.formID = FormID.EmptyFormID()
-            elif isinstance(nValue, basestring):
-                self.formID = FormID.UnvalidatedFormID(nValue, self.formID[1])
-            else:
-                self.formID = FormID.RawFormID(nValue)
-        else:
-            if nValue is None:
-                if self.formID[0] is None:
-                    self.formID = FormID.EmptyFormID()
-                else:
-                    self.formID = FormID.RawFormID(self.formID[0])
-            else:
-                self.formID = FormID.UnvalidatedFormID(self.formID[0], nValue)
+        if x == 0: self.formID = FormID.EmptyFormID() if nValue is None else FormID.UnvalidatedFormID(nValue, self.formID[1]) if isinstance(nValue, basestring) else FormID.RawFormID(nValue)
+        else: self.formID = FormID.UnvalidatedFormID(self.formID[0], nValue) if nValue is not None else FormID.EmptyFormID() if self.formID[0] is None else FormID.RawFormID(self.formID[0])
 
     def __len__(self):
         return 2
@@ -627,18 +561,13 @@ class FormID(object):
     def FilterValidDict(formIDs, target, KeysAreFormIDs, ValuesAreFormIDs, AsShort=False):
         if KeysAreFormIDs:
             if ValuesAreFormIDs:
-                if AsShort:
-                    return dict([(key.GetShortFormID(target), value.GetShortFormID(target)) for key, value in formIDs.iteritems() if key.ValidateFormID(target) and value.ValidateFormID(target)])
-                return dict([(key, value) for key, value in formIDs.iteritems() if key.ValidateFormID(target) and value.ValidateFormID(target)])                
-            else:
-                if AsShort:
-                    return dict([(key.GetShortFormID(target), value) for key, value in formIDs.iteritems() if key.ValidateFormID(target)])
-                return dict([(key, value) for key, value in formIDs.iteritems() if key.ValidateFormID(target)])
-        else:
-            if ValuesAreFormIDs:
-                if AsShort:
-                    return dict([(key, value.GetShortFormID(target)) for key, value in formIDs.iteritems() if value.ValidateFormID(target)])
-                return dict([(key, value) for key, value in formIDs.iteritems() if value.ValidateFormID(target)])                
+                if AsShort: return dict([(key.GetShortFormID(target), value.GetShortFormID(target)) for key, value in formIDs.iteritems() if key.ValidateFormID(target) and value.ValidateFormID(target)])
+                return dict([(key, value) for key, value in formIDs.iteritems() if key.ValidateFormID(target) and value.ValidateFormID(target)])
+            if AsShort: return dict([(key.GetShortFormID(target), value) for key, value in formIDs.iteritems() if key.ValidateFormID(target)])
+            return dict([(key, value) for key, value in formIDs.iteritems() if key.ValidateFormID(target)])
+        if ValuesAreFormIDs:
+            if AsShort: return dict([(key, value.GetShortFormID(target)) for key, value in formIDs.iteritems() if value.ValidateFormID(target)])
+            return dict([(key, value) for key, value in formIDs.iteritems() if value.ValidateFormID(target)])
         return formIDs
 
     def ValidateFormID(self, target):
@@ -653,10 +582,12 @@ class FormID(object):
         return self.formID.GetShortFormID(target)
 
 class ActorValue(object):
+    __slots__ = ['actorValue']
     """Represents an OBME ActorValue. It is mostly identical to a FormID in resolution.
        The difference lay in that it is only resolved if the value is >= 0x800"""
 
     class UnvalidatedActorValue(object):
+        __slots__ = ['master','objectID']
         """Represents an unchecked ActorValue. This the most common case by far.
 
            These occur when:
@@ -673,8 +604,7 @@ class ActorValue(object):
             return hash((str(self.master), self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return self.master
-            return int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "UnvalidatedActorValue('%s', 0x%06X)" % (str(self.master), int(self.objectID & 0x00FFFFFFL))
@@ -685,21 +615,18 @@ class ActorValue(object):
 
                Resolved Actor Value's are not formIDs, but can be treated as such for resolution."""
             targetID = target.GetParentCollection()._CollectionID
-            master = str(self.master)
-            retValue = _CGetModIDByName(targetID, master)
-            if retValue:
-                return ActorValue.ValidActorValue(self.master, self.objectID, _CMakeShortFormID(retValue, self.objectID , 0), targetID)
-            return self
+            modID = _CGetModIDByName(targetID, str(self.master))
+            return ActorValue.ValidActorValue(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 0), targetID) if modID else self
 
         def GetShortActorValue(self, target):
             """Tries to resolve the ActorValue for the given record.
                This should only get called if the ActorValue isn't validated prior to it being used by CBash."""
             actorValue = self.Validate(target)
-            if isinstance(actorValue, ActorValue.ValidActorValue):
-                return actorValue.shortID
+            if isinstance(actorValue, ActorValue.ValidActorValue): return actorValue.shortID
             raise TypeError(_("Attempted to set an invalid actorValue"))
 
     class InvalidActorValue(object):
+        __slots__ = ['objectID']
         """Represents an unsafe ActorValue.
            The ActorValues ModIndex won't properly match with the Collection's Load Order,
            so using it would cause the wrong record to become referenced.
@@ -716,8 +643,7 @@ class ActorValue(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return None
-            return int(self.objectID & 0x00FFFFFFL)
+            return None if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "InvalidActorValue(None, 0x%06X)" % (self.objectID,)
@@ -731,6 +657,7 @@ class ActorValue(object):
             raise TypeError(_("Attempted to set an invalid actorValue"))
 
     class ValidActorValue(object):
+        __slots__ = ['master','objectID','shortID','_CollectionID']
         """Represents a safe ActorValue.
 
            These occur when an unvalidated ActorValue is validated for a specific record.
@@ -745,8 +672,7 @@ class ActorValue(object):
             return hash((str(self.master), self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return self.master
-            return int(self.objectID & 0x00FFFFFFL)
+            return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "ValidActorValue('%s', 0x%06X)" % (str(self.master), int(self.objectID & 0x00FFFFFFL))
@@ -754,21 +680,18 @@ class ActorValue(object):
         def Validate(self, target):
             """This ActorValue has already been validated for a specific record.
                It must be revalidated if the record being used doesn't match the earlier validation."""
-            if target.GetParentCollection()._CollectionID == self._CollectionID:
-                return self
-            return ActorValue.UnvalidatedFormID(self.master, self.objectID).Validate(target)
+            return self if target.GetParentCollection()._CollectionID == self._CollectionID else ActorValue.UnvalidatedActorValue(self.master, self.objectID).Validate(target)
 
         def GetShortActorValue(self, target):
             """This ActorValue has already been resolved for a specific record.
                It must be re-resolved if the record being used doesn't match the earlier validation."""
-            if target.GetParentCollection()._CollectionID == self._CollectionID:
-                return self.shortID
+            if target.GetParentCollection()._CollectionID == self._CollectionID: return self.shortID
             test = ActorValue.UnvalidatedActorValue(self.master, self.objectID).Validate(target)
-            if isinstance(test, ActorValue.ValidActorValue):
-                return test.shortID
+            if isinstance(test, ActorValue.ValidActorValue): return test.shortID
             raise TypeError(_("Attempted to set an invalid actorValue"))
 
     class EmptyActorValue(ValidActorValue):
+        __slots__ = []
         """Represents an empty ActorValue.
 
            These occur when a particular field isn't set, or is set to 0.
@@ -793,9 +716,10 @@ class ActorValue(object):
 
         def GetShortActorValue(self, target):
             """An empty ActorValue isn't resolved, because it's always valid. That's why it subclasses ValidActorValue."""
-            return 0
+            return None
 
     class RawActorValue(ValidActorValue):
+        __slots__ = ['shortID']
         """Represents a non-checked ActorValue. It is either a static ActorValue, or a non-checkable ActorValue.
            Raw ActorValues < 0x800 (static) are safe since they aren't resolved,
            but raw values >= 0x800 should rarely be used due to safety issues.
@@ -808,8 +732,7 @@ class ActorValue(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            if x == 0: return self.shortID >> 24
-            return int(self.shortID & 0x00FFFFFFL)
+            return self.shortID >> 24 if x == 0 else int(self.shortID & 0x00FFFFFFL)
 
         def __repr__(self):
             return "RawActorValue(0x%08X)" % (self.shortID,)
@@ -830,67 +753,34 @@ class ActorValue(object):
            ActorValue        = (ActorValue()    , None)
            Raw ActorValue    = (int(ActorValue) , None)
            Empty ActorValue  = (None            , None))"""
-
-        if objectID is None:
-            if isinstance(master, ActorValue): #initialize from ActorValue
-                self.actorValue = master.actorValue
-            elif master is None:
-                self.actorValue = ActorValue.EmptyActorValue()
-            else:
-                self.actorValue = ActorValue.RawActorValue(master)
-        else:
-            if isinstance(master, (basestring, Path)):
-                self.actorValue = ActorValue.UnvalidatedActorValue(str(master), objectID)
-            else:
-                if objectID < 0x800:
-                    self.actorValue = ActorValue.RawActorValue(objectID) #Static ActorValue. No resolution takes place.
-                else:
-                    masterstr = _CGetLongIDName(master, objectID, 0)
-                    if masterstr:
-                        #CBash ActorValue, pre-validated for its source collection
-                        self.actorValue = ActorValue.ValidActorValue(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master))
-                    else:
-                        #CBash ActorValue, pre-invalidated for all collections
-                        self.actorValue = ActorValue.InvalidActorValue(objectID)
+        self.actorValue = ActorValue.EmptyActorValue() if master is None else master.actorValue if isinstance(master, ActorValue) else ActorValue.RawActorValue(master) if objectID is None else ActorValue.UnvalidatedActorValue(str(master), objectID) if isinstance(master, (basestring, Path)) else ActorValue.RawActorValue(objectID) if objectID < 0x800 else None
+        if self.actorValue is None:
+            masterstr = _CGetLongIDName(master, objectID, 0)
+            self.actorValue = ActorValue.ValidActorValue(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else ActorValue.InvalidActorValue(objectID)
 
     def __hash__(self):
         return hash(self.actorValue)
 
     def __eq__(self, other):
-        try:
-            return other[1] == self.actorValue[1] and other[0] == self.actorValue[0]
-        except TypeError:
-            return False
+        if other is None and isinstance(self.actorValue, ActorValue.EmptyActorValue): return True
+        try: return other[1] == self.actorValue[1] and other[0] == self.actorValue[0]
+        except TypeError: return False
 
     def __ne__(self, other):
-        try:
-            return other[1] != self.actorValue[1] or other[0] != self.actorValue[0]
-        except TypeError:
-            return False
+        try: return other[1] != self.actorValue[1] or other[0] != self.actorValue[0]
+        except TypeError: return False
+
+    def __nonzero__(self):
+        return not isinstance(self.actorValue, (ActorValue.EmptyActorValue, ActorValue.InvalidActorValue))
 
     def __getitem__(self, x):
-        if x == 0: return self.actorValue[0]
-        return self.actorValue[1]
+        return self.actorValue[0] if x == 0 else self.actorValue[1]
 
     def __setitem__(self, x, nValue):
-        if x == 0:
-            if nValue is None:
-                self.actorValue = ActorValue.EmptyActorValue()
-            elif isinstance(nValue, basestring):
-                self.actorValue = ActorValue.UnvalidatedActorValue(nValue, self.actorValue[1])
-            else:
-                self.actorValue = ActorValue.RawActorValue(nValue)
+        if x == 0: self.actorValue = ActorValue.EmptyActorValue() if nValue is None else ActorValue.UnvalidatedActorValue(nValue, self.actorValue[1]) if isinstance(nValue, basestring) else ActorValue.RawActorValue(nValue)
         else:
-            if nValue is None:
-                if self.actorValue[0] is None:
-                    self.actorValue = ActorValue.EmptyActorValue()
-                else:
-                    self.actorValue = ActorValue.RawActorValue(self.actorValue[0])
-            else:
-                if nValue < 0x800:
-                    self.actorValue = ActorValue.RawActorValue(nValue)
-                else:
-                    self.actorValue = ActorValue.UnvalidatedActorValue(self.actorValue[0], nValue)
+            if nValue is None: self.actorValue = ActorValue.EmptyActorValue() if self.actorValue[0] is None else ActorValue.RawActorValue(self.actorValue[0])
+            else: self.actorValue = ActorValue.RawActorValue(nValue) if nValue < 0x800 else ActorValue.UnvalidatedActorValue(self.actorValue[0], nValue)
 
     def __len__(self):
         return 2
@@ -910,20 +800,15 @@ class ActorValue(object):
     def FilterValidDict(actorValues, target, KeysAreActorValues, ValuesAreActorValues, AsShort=False):
         if KeysAreActorValues:
             if ValuesAreActorValues:
-                if AsShort:
-                    return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
-                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])                
-            else:
-                if AsShort:
-                    return dict([(key.GetShortActorValue(target), value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
-                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
-        else:
-            if ValuesAreActorValues:
-                if AsShort:
-                    return dict([(key, value.GetShortActorValue(target)) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
-                return dict([(key, value) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])                
+                if AsShort: return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+            if AsShort: return dict([(key.GetShortActorValue(target), value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
+            return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
+        if ValuesAreActorValues:
+            if AsShort: return dict([(key, value.GetShortActorValue(target)) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
+            return dict([(key, value) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
         return actorValues
-    
+
     def ValidateActorValue(self, target):
         """Tests whether the ActorValue is valid for the destination target.
            The test result is saved, so work isn't duplicated if ActorValues are first
@@ -936,11 +821,13 @@ class ActorValue(object):
         return self.actorValue.GetShortActorValue(target)
 
 class MGEFCode(object):
+    __slots__ = ['mgefCode']
     """Represents an OBME MGEFCode. It is mostly identical to a FormID in resolution.
        The difference lay in that it is only resolved if the value is >= 0x80000000,
        and that the ModIndex is in the lower bits."""
 
     class UnvalidatedMGEFCode(object):
+        __slots__ = ['master','objectID']
         """Represents an unchecked MGEFCode. This the most common case by far.
 
            These occur when:
@@ -957,8 +844,7 @@ class MGEFCode(object):
             return hash((str(self.master), self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return self.master
-            return int(self.objectID & 0xFFFFFF00L)
+            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
             return "UnvalidatedMGEFCode('%s', 0x%06X)" % (str(self.master), int(self.objectID & 0xFFFFFF00L))
@@ -969,21 +855,18 @@ class MGEFCode(object):
 
                Resolved MGEFCode's are not formIDs, but can be treated as such for resolution."""
             targetID = target.GetParentCollection()._CollectionID
-            master = str(self.master)
-            retValue = _CGetModIDByName(targetID, master)
-            if retValue:
-                return MGEFCode.ValidMGEFCode(self.master, self.objectID, _CMakeShortFormID(retValue, self.objectID , 1), targetID)
-            return self
+            modID = _CGetModIDByName(targetID, str(self.master))
+            return MGEFCode.ValidMGEFCode(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 1), targetID) if modID else self
 
         def GetShortMGEFCode(self, target):
             """Tries to resolve the MGEFCode for the given record.
                This should only get called if the MGEFCode isn't validated prior to it being used by CBash."""
             mgefCode = self.Validate(target)
-            if isinstance(mgefCode, MGEFCode.ValidMGEFCode):
-                return mgefCode.shortID
+            if isinstance(mgefCode, MGEFCode.ValidMGEFCode): return mgefCode.shortID
             raise TypeError(_("Attempted to set an invalid mgefCode"))
 
     class InvalidMGEFCode(object):
+        __slots__ = ['objectID']
         """Represents an unsafe MGEFCode.
            The MGEFCodes ModIndex won't properly match with the Collection's Load Order,
            so using it would cause the wrong record to become referenced.
@@ -1000,8 +883,7 @@ class MGEFCode(object):
             return hash((None, self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return None
-            return int(self.objectID & 0xFFFFFF00L)
+            return None if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
             return "InvalidMGEFCode(None, 0x%06X)" % (self.objectID,)
@@ -1015,6 +897,7 @@ class MGEFCode(object):
             raise TypeError(_("Attempted to set an invalid mgefCode"))
 
     class ValidMGEFCode(object):
+        __slots__ = ['master','objectID','shortID','_CollectionID']
         """Represents a safe MGEFCode.
 
            These occur when an unvalidated MGEFCode is validated for a specific record.
@@ -1029,8 +912,7 @@ class MGEFCode(object):
             return hash((str(self.master), self.objectID))
 
         def __getitem__(self, x):
-            if x == 0: return self.master
-            return int(self.objectID & 0xFFFFFF00L)
+            return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
             return "ValidMGEFCode('%s', 0x%06X)" % (str(self.master), int(self.objectID & 0xFFFFFF00L))
@@ -1038,21 +920,18 @@ class MGEFCode(object):
         def Validate(self, target):
             """This MGEFCode has already been validated for a specific record.
                It must be revalidated if the record being used doesn't match the earlier validation."""
-            if target.GetParentCollection()._CollectionID == self._CollectionID:
-                return self
-            return MGEFCode.UnvalidatedFormID(self.master, self.objectID).Validate(target)
+            return self if target.GetParentCollection()._CollectionID == self._CollectionID else MGEFCode.UnvalidatedMGEFCode(self.master, self.objectID).Validate(target)
 
         def GetShortMGEFCode(self, target):
             """This MGEFCode has already been resolved for a specific record.
                It must be re-resolved if the record being used doesn't match the earlier validation."""
-            if target.GetParentCollection()._CollectionID == self._CollectionID:
-                return self.shortID
+            if target.GetParentCollection()._CollectionID == self._CollectionID: return self.shortID
             test = MGEFCode.UnvalidatedMGEFCode(self.master, self.objectID).Validate(target)
-            if isinstance(test, MGEFCode.ValidMGEFCode):
-                return test.shortID
+            if isinstance(test, MGEFCode.ValidMGEFCode): return test.shortID
             raise TypeError(_("Attempted to set an invalid mgefCode"))
 
     class EmptyMGEFCode(ValidMGEFCode):
+        __slots__ = []
         """Represents an empty MGEFCode.
 
            These occur when a particular field isn't set, or is set to 0.
@@ -1077,9 +956,10 @@ class MGEFCode(object):
 
         def GetShortMGEFCode(self, target):
             """An empty MGEFCode isn't resolved, because it's always valid. That's why it subclasses ValidMGEFCode."""
-            return 0
+            return None
 
     class RawMGEFCode(ValidMGEFCode):
+        __slots__ = ['shortID']
         """Represents a non-checked MGEFCode. It is either a static MGEFCode, or a non-checkable MGEFCode.
            Raw MGEFCodes < 0x80000000 (static) are safe since they aren't resolved,
            but raw values >= 0x80000000 should rarely be used due to safety issues.
@@ -1096,15 +976,10 @@ class MGEFCode(object):
             return hash((self.shortID, None))
 
         def __getitem__(self, x):
-            if isinstance(self.shortID, basestring):
-                return self.shortID
-            if x == 0: return self.shortID >> 24
-            return int(self.shortID & 0xFFFFFF00L)
+            return self.shortID if isinstance(self.shortID, basestring) else self.shortID >> 24 if x == 0 else int(self.shortID & 0xFFFFFF00L)
 
         def __repr__(self):
-            if isinstance(self.shortID, basestring):
-                return "RawMGEFCode(%s)" % (self.shortID,)
-            return "RawMGEFCode(0x%08X)" % (self.shortID,)
+            return "RawMGEFCode(%s)" % (self.shortID,) if isinstance(self.shortID, basestring) else "RawMGEFCode(0x%08X)" % (self.shortID,)
 
         def Validate(self, target):
             """No validation is possible. It is impossible to tell what collection the value came from."""
@@ -1113,9 +988,7 @@ class MGEFCode(object):
         def GetShortMGEFCode(self, target):
             """The raw MGEFCode isn't resolved, so it's always valid. That's why it subclasses ValidMGEFCode.
                If it is using a 4 character sequence, it needs to be cast as a 32 bit integer."""
-            if isinstance(self.shortID, basestring):
-                return cast(self.shortID, POINTER(c_ulong)).contents.value
-            return self.shortID
+            return cast(self.shortID, POINTER(c_ulong)).contents.value if isinstance(self.shortID, basestring) else self.shortID
 
 
     def __init__(self, master, objectID=None):
@@ -1127,66 +1000,33 @@ class MGEFCode(object):
            Raw MGEFCode       = (int(MGEFCode)   , None)
            Raw MGEFCode       = (string(MGEFCode), None)
            Empty MGEFCode     = (None            , None))"""
-
-        if objectID is None:
-            if isinstance(master, MGEFCode): #initialize from MGEFCode
-                self.mgefCode = master.mgefCode
-            elif master is None:
-                self.mgefCode = MGEFCode.EmptyMGEFCode()
-            else:
-                self.mgefCode = MGEFCode.RawMGEFCode(master)
-        else:
-            if isinstance(objectID, basestring):
-                self.mgefCode = MGEFCode.RawMGEFCode(objectID)
-            elif isinstance(master, (basestring, Path)):
-                self.mgefCode = MGEFCode.UnvalidatedMGEFCode(str(master), objectID)
-            else:
-                if objectID < 0x80000000:
-                    self.mgefCode = MGEFCode.RawMGEFCode(master, objectID) #Static MGEFCode. No resolution takes place.
-                else:
-                    masterstr = _CGetLongIDName(master, objectID, 1)
-                    if masterstr:
-                        #CBash MGEFCode, pre-validated for its source collection
-                        self.mgefCode = MGEFCode.ValidMGEFCode(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master))
-                    else:
-                        #CBash MGEFCode, pre-invalidated for all collections
-                        self.mgefCode = MGEFCode.InvalidMGEFCode(objectID)
+        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(str(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(master, objectID) if objectID < 0x80000000 else None
+        if self.mgefCode is None:
+            masterstr = _CGetLongIDName(master, objectID, 1)
+            self.mgefCode = MGEFCode.ValidMGEFCode(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else MGEFCode.InvalidMGEFCode(objectID)
 
     def __hash__(self):
         return hash(self.mgefCode)
 
     def __eq__(self, other):
-        try:
-            return other[1] == self.mgefCode[1] and other[0] == self.mgefCode[0]
-        except TypeError:
-            return False
+        if other is None and isinstance(self.mgefCode, MGEFCode.EmptyMGEFCode): return True
+        try: return other[1] == self.mgefCode[1] and other[0] == self.mgefCode[0]
+        except TypeError: return False
 
     def __ne__(self, other):
         return other[1] != self.mgefCode[1] or other[0] != self.mgefCode[0]
 
+    def __nonzero__(self):
+        return not isinstance(self.mgefCode, (MGEFCode.EmptyMGEFCode, MGEFCode.InvalidMGEFCode))
+
     def __getitem__(self, x):
-        if x == 0: return self.mgefCode[0]
-        return self.mgefCode[1]
+        return self.mgefCode[0] if x == 0 else self.mgefCode[1]
 
     def __setitem__(self, x, nValue):
-        if x == 0:
-            if nValue is None:
-                self.mgefCode = MGEFCode.EmptyMGEFCode()
-            elif isinstance(nValue, basestring):
-                self.mgefCode = MGEFCode.UnvalidatedMGEFCode(nValue, self.mgefCode[1])
-            else:
-                self.mgefCode = MGEFCode.RawMGEFCode(nValue)
+        if x == 0: self.mgefCode = MGEFCode.EmptyMGEFCode() if nValue is None else MGEFCode.UnvalidatedMGEFCode(nValue, self.mgefCode[1]) if isinstance(nValue, basestring) else MGEFCode.RawMGEFCode(nValue)
         else:
-            if nValue is None:
-                if self.mgefCode[0] is None:
-                    self.mgefCode = MGEFCode.EmptyMGEFCode()
-                else:
-                    self.mgefCode = MGEFCode.RawMGEFCode(self.mgefCode[0])
-            else:
-                if nValue < 0x80000000:
-                    self.mgefCode = MGEFCode.RawMGEFCode(nValue)
-                else:
-                    self.mgefCode = MGEFCode.UnvalidatedMGEFCode(self.mgefCode[0], nValue)
+            if nValue is None: self.mgefCode = MGEFCode.EmptyMGEFCode() if self.mgefCode[0] is None else MGEFCode.RawMGEFCode(self.mgefCode[0])
+            else: self.mgefCode = MGEFCode.RawMGEFCode(nValue) if nValue < 0x80000000 else MGEFCode.UnvalidatedMGEFCode(self.mgefCode[0], nValue)
 
     def __len__(self):
         return 2
@@ -1206,20 +1046,15 @@ class MGEFCode(object):
     def FilterValidDict(mgefCodes, target, KeysAreMGEFCodes, ValuesAreMGEFCodes, AsShort=False):
         if KeysAreMGEFCodes:
             if ValuesAreMGEFCodes:
-                if AsShort:
-                    return dict([(key.GetShortMGEFCode(target), value.GetShortFormID(target)) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target) and value.ValidateMGEFCode(target)])
-                return dict([(key, value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target) and value.ValidateMGEFCode(target)])                
-            else:
-                if AsShort:
-                    return dict([(key.GetShortMGEFCode(target), value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target)])
-                return dict([(key, value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target)])
-        else:
-            if ValuesAreMGEFCodes:
-                if AsShort:
-                    return dict([(key, value.GetShortMGEFCode(target)) for key, value in mgefCodes.iteritems() if value.ValidateMGEFCode(target)])
-                return dict([(key, value) for key, value in mgefCodes.iteritems() if value.ValidateMGEFCode(target)])                
+                if AsShort: return dict([(key.GetShortMGEFCode(target), value.GetShortFormID(target)) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target) and value.ValidateMGEFCode(target)])
+                return dict([(key, value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target) and value.ValidateMGEFCode(target)])
+            if AsShort: return dict([(key.GetShortMGEFCode(target), value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target)])
+            return dict([(key, value) for key, value in mgefCodes.iteritems() if key.ValidateMGEFCode(target)])
+        if ValuesAreMGEFCodes:
+            if AsShort: return dict([(key, value.GetShortMGEFCode(target)) for key, value in mgefCodes.iteritems() if value.ValidateMGEFCode(target)])
+            return dict([(key, value) for key, value in mgefCodes.iteritems() if value.ValidateMGEFCode(target)])
         return mgefCodes
-    
+
     def ValidateMGEFCode(self, target):
         """Tests whether the MGEFCode is valid for the destination RecordID.
            The test result is saved, so work isn't duplicated if MGEFCodes are first
@@ -1231,57 +1066,32 @@ class MGEFCode(object):
         """Resolves the various MGEFCode classes to a single 32-bit value used by CBash"""
         return self.mgefCode.GetShortMGEFCode(target)
 
-def ValidateList(Elements, Target):
+def ValidateList(Elements, target):
     """Convenience function to ensure that a tuple/list of values is valid for the destination.
        Supports nested tuple/list values.
        Returns true if all of the FormIDs/ActorValues/MGEFCodes in the tuple/list are valid."""
-    isValid = True
     for element in Elements:
-        if not isValid: return isValid
-        if isinstance(element, FormID):
-            isValid = element.ValidateFormID(Target)
-        elif isinstance(element, ActorValue):
-            isValid = element.ValidateActorValue(Target)
-        elif isinstance(element, MGEFCode):
-            isValid = element.ValidateMGEFCode(Target)
-        elif isinstance(element, (tuple, list)):
-            isValid = ValidateList(element, Target)
-    return isValid
+        if isinstance(element, FormID) and not element.ValidateFormID(target): return False
+        elif isinstance(element, ActorValue) and not element.ValidateActorValue(target): return False
+        elif isinstance(element, MGEFCode) and not element.ValidateMGEFCode(target): return False
+        elif isinstance(element, (tuple, list)) and not ValidateList(element, target): return False
+    return True
 
-def ValidateDict(Elements, Target):
+def ValidateDict(Elements, target):
     """Convenience function to ensure that a dict is valid for the destination.
        Supports nested dictionaries, and tuple/list values.
        Returns true if all of the FormIDs/ActorValues/MGEFCodes in the dict are valid."""
-    isValid = True
     for key, value in Elements.iteritems():
-        if isinstance(key, FormID):
-            isValid = key.ValidateFormID(Target)
-        elif isinstance(key, ActorValue):
-            isValid = key.ValidateActorValue(Target)
-        elif isinstance(key, MGEFCode):
-            isValid = key.ValidateMGEFCode(Target)
-        if not isValid: return isValid
-
-        if isinstance(value, FormID):
-            isValid = value.ValidateFormID(Target)
-        elif isinstance(value, ActorValue):
-            isValid = value.ValidateActorValue(Target)
-        elif isinstance(value, MGEFCode):
-            isValid = value.ValidateMGEFCode(Target)
-        if not isValid: return isValid
-        
-        if isinstance(key, tuple):
-            isValid = ValidateList(key, Target)
-        if not isValid: return isValid
-        
-        if isinstance(value, (tuple, list)):
-            isValid = ValidateList(value, Target)
-        if not isValid: return isValid
-        
-        if isinstance(value, dict):
-            isValid = ValidateDict(value, Target)
-        if not isValid: return isValid
-    return isValid
+        if isinstance(key, FormID) and not key.ValidateFormID(target): return False
+        elif isinstance(key, ActorValue) and not key.ValidateActorValue(target): return False
+        elif isinstance(key, MGEFCode) and not key.ValidateMGEFCode(target): return False
+        elif isinstance(value, FormID) and not value.ValidateFormID(target): return False
+        elif isinstance(value, ActorValue) and not value.ValidateActorValue(target): return False
+        elif isinstance(value, MGEFCode) and not value.ValidateMGEFCode(target): return False
+        elif isinstance(key, tuple) and not ValidateList(key, target): return False
+        elif isinstance(value, (tuple, list)) and not ValidateList(value, target): return False
+        elif isinstance(value, dict) and not ValidateDict(value, target): return False
+    return True
 
 def getattr_deep(obj, attr):
     return reduce(getattr, attr.split('.'), obj)
@@ -1299,14 +1109,13 @@ def SetCopyList(oElements, nValues):
             setattr(oElement, attr, nValue)
 
 def ExtractExportList(Element):
-    try:
-        return [tuple(ExtractExportList(listElement) if hasattr(listElement, 'exportattrs') else getattr(listElement, attr) for attr in listElement.exportattrs) for listElement in Element]
-    except TypeError:
-        return [tuple(ExtractExportList(getattr(Element, attr)) if hasattr(getattr(Element, attr), 'exportattrs') else getattr(Element, attr) for attr in Element.exportattrs)]
+    try: return [tuple(ExtractExportList(listElement) if hasattr(listElement, 'exportattrs') else getattr(listElement, attr) for attr in listElement.exportattrs) for listElement in Element]
+    except TypeError: return [tuple(ExtractExportList(getattr(Element, attr)) if hasattr(getattr(Element, attr), 'exportattrs') else getattr(Element, attr) for attr in Element.exportattrs)]
 
 # Classes
 # Any level Descriptors
 class CBashAlias(object):
+    __slots__ = ['_AttrName']
     def __init__(self, AttrName):
         self._AttrName = AttrName
 
@@ -1317,25 +1126,21 @@ class CBashAlias(object):
         setattr(instance, self._AttrName, nValue)
 
 class CBashGrouped(object):
+    __slots__ = ['_FieldID','_Type','_AsList']
     def __init__(self, FieldID, Type, AsList=False):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._AsList = AsList
+        self._FieldID, self._Type, self._AsList = FieldID, Type, AsList
 
     def __get__(self, instance, owner):
         oElement = self._Type(instance._RecordID, self._FieldID)
-        if(self._AsList): return tuple([getattr(oElement, attr) for attr in oElement.copyattrs])
-        return oElement
+        return tuple([getattr(oElement, attr) for attr in oElement.copyattrs]) if self._AsList else oElement
 
     def __set__(self, instance, nElement):
         oElement = self._Type(instance._RecordID, self._FieldID)
-        if nElement is None: nValueList = tuple([None for attr in oElement.copyattrs])
-        elif isinstance(nElement, tuple): nValueTuple = nElement
-        else: nValueTuple = tuple([getattr(nElement, attr) for attr in nElement.copyattrs])
-        for nValue, attr in zip(nValueTuple, oElement.copyattrs):
+        for nValue, attr in zip(nElement if isinstance(nElement, tuple) else tuple([None for attr in oElement.copyattrs]) if nElement is None else tuple([getattr(nElement, attr) for attr in nElement.copyattrs]), oElement.copyattrs):
             setattr(oElement, attr, nValue)
 
 class CBashJunk(object):
+    __slots__ = []
     def __init__(self, FieldID):
         pass
 
@@ -1346,129 +1151,103 @@ class CBashJunk(object):
         pass
 
 class CBashBasicFlag(object):
+    __slots__ = ['_AttrName','_Value']
     def __init__(self, AttrName, Value):
-        self._AttrName = AttrName
-        self._Value = Value
+        self._AttrName, self._Value = AttrName, Value
 
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        if field is None: return None
-        return (field & self._Value) != 0
+        return None if field is None else (field & self._Value) != 0
 
     def __set__(self, instance, nValue):
         field = getattr(instance, self._AttrName, None)
-        if nValue:
-            if field: field |= self._Value
-            else: field = self._Value
-            setattr(instance, self._AttrName, field)
-        elif field:
-            field &= ~self._Value
-            setattr(instance, self._AttrName, field)
+        setattr(instance, self._AttrName, field & ~self._Value if field and not nValue else field | self._Value if field else self._Value)
 
 class CBashInvertedFlag(object):
+    __slots__ = ['_AttrName']
     def __init__(self, AttrName):
         self._AttrName = AttrName
 
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        if field is None: return None
-        return not field
+        return None if field is None else not field
 
     def __set__(self, instance, nValue):
         setattr(instance, self._AttrName, not nValue)
 
 class CBashBasicType(object):
+    __slots__ = ['_AttrName','_Value','_DefaultFieldName']
     def __init__(self, AttrName, value, default):
-        self._AttrName = AttrName
-        self._Value = value
-        self._DefaultFieldName = default
+        self._AttrName, self._Value, self._DefaultFieldName = AttrName, value, default
 
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        if field is None: return None
-        return field == self._Value
+        return None if field is None else field == self._Value
 
     def __set__(self, instance, nValue):
-        if nValue: setattr(instance, self._AttrName, self._Value)
-        else: setattr(instance, self._DefaultFieldName, True)
+        setattr(instance, self._AttrName if nValue else self._DefaultFieldName, self._Value if nValue else True)
 
 class CBashMaskedType(object):
+    __slots__ = ['_AttrName','_TypeMask','_Value','_DefaultFieldName']
     def __init__(self, AttrName, typeMask, value, default):
-        self._AttrName = AttrName
-        self._TypeMask = typeMask
-        self._Value = value
-        self._DefaultFieldName = default
+        self._AttrName, self._TypeMask, self._Value, self._DefaultFieldName = AttrName, typeMask, value & typeMask, default
 
     def __get__(self, instance, owner):
         field = getattr(instance, self._AttrName, None)
-        if field is None: return None
-        return (field & self._TypeMask) == self._Value
+        return None if field is None else (field & self._TypeMask) == self._Value
 
     def __set__(self, instance, nValue):
-        if nValue:
-            field = getattr(instance, self._AttrName, 0)
-            field &= ~self._TypeMask
-            field |= (self._Value & self._TypeMask)
-            setattr(instance, self._AttrName, field)
-        elif getattr(instance, self._AttrName, None): setattr(instance, self._DefaultFieldName, True)
+        setattr(instance, self._AttrName if nValue else self._DefaultFieldName, (getattr(instance, self._AttrName, 0) & ~self._TypeMask) | self._Value if nValue else True)
 
 # Grouped Top Descriptors
 class CBashGeneric_GROUP(object):
+    __slots__ = ['_FieldID','_Type','_ResType']
     def __init__(self, FieldID, Type):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._ResType = POINTER(Type)
+        self._FieldID, self._Type, self._ResType = FieldID, Type, POINTER(Type)
 
     def __get__(self, instance, owner):
-        FieldID = self._FieldID + instance._FieldID
         _CGetField.restype = self._ResType
-        retValue = _CGetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return retValue.contents.value
-        return None
+        retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
-        FieldID = self._FieldID + instance._FieldID
-        if nValue is None: _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, byref(self._Type(nValue)), 0)
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, byref(self._Type(nValue)), 0)
 
 class CBashFORMID_GROUP(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        return FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)
 
     def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortFormID(instance)
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortFormID(instance))), 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue), 0))
 
 class CBashFORMID_OR_UINT32_ARRAY_GROUP(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
         FieldID = self._FieldID + instance._FieldID
-        values = []
         numRecords = _CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = (c_ulong * numRecords)()
             _CGetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            for x in range(numRecords):
-                type = _CGetFieldAttribute(instance._RecordID, FieldID, x, 1, 0, 0, 0, 0, 2)
-                if type == API_FIELDS.UINT32:
-                    values.append(cRecords[x])
-                elif type == API_FIELDS.FORMID:
-                    values.append(FormID(instance._RecordID, cRecords[x]))
-        return values
+            return [FormID(instance._RecordID, cRecord) if _CGetFieldAttribute(instance._RecordID, FieldID, x, 1, 0, 0, 0, 0, 2) == API_FIELDS.FORMID else cRecord for x, cRecord in enumerate(cRecords)]
+        return []
 
     def __set__(self, instance, nValue):
         FieldID = self._FieldID + instance._FieldID
-        if nValue is None: _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
         else:
+            nValue = [x for x in nValue if x is not None or (isinstance(x, FormID) and x.GetShortFormID(instance) is not None)]
             length = len(nValue)
             if self._Size and length != self._Size: return
             #Each element can be either a formID or UINT32, so they have to be set separately
@@ -1477,187 +1256,144 @@ class CBashFORMID_OR_UINT32_ARRAY_GROUP(object):
             for x, value in enumerate(nValue):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, FormID)
-                if IsFormID:
-                    value = value.GetShortFormID(instance)
-                _CSetField(instance._RecordID, FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(value)), IsFormID)
+                _CSetField(instance._RecordID, FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(value.GetShortFormID(instance) if IsFormID else value)), IsFormID)
 
 class CBashUINT8ARRAY_GROUP(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
-        FieldID = self._FieldID + instance._FieldID
-        numRecords = _CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1)
+        numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
-            _CGetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
-        FieldID = self._FieldID + instance._FieldID
-        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
             cRecords = (c_ubyte * length)(*nValue)
-            _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
 
 class CBashFLOAT32_GROUP(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
-        FieldID = self._FieldID + instance._FieldID
         _CGetField.restype = POINTER(c_float)
-        retValue = _CGetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
+        retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return round(retValue.contents.value,6) if retValue else None
 
     def __set__(self, instance, nValue):
-        FieldID = self._FieldID + instance._FieldID
-        if nValue is None: _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
 
 class CBashSTRING_GROUP(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
-        FieldID = self._FieldID + instance._FieldID
         _CGetField.restype = c_char_p
-        retValue = _CGetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return retValue
-        return None
+        retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return retValue if retValue else None
 
     def __set__(self, instance, nValue):
-        FieldID = self._FieldID + instance._FieldID
-        if nValue is None: _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashISTRING_GROUP(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
-        FieldID = self._FieldID + instance._FieldID
         _CGetField.restype = c_char_p
-        retValue = _CGetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return ISTRING(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
-        FieldID = self._FieldID + instance._FieldID
-        if nValue is None: _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashLIST_GROUP(object):
+    __slots__ = ['_FieldID','_Type','_AsList']
     def __init__(self, FieldID, Type, AsList=False):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._AsList = AsList
+        self._FieldID, self._Type, self._AsList = FieldID, Type, AsList
 
     def __get__(self, instance, owner):
         FieldID = self._FieldID + instance._FieldID
-        numElements = _CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1)
-        oElements = [self._Type(instance._RecordID, FieldID, x) for x in range(0, numElements)]
-        if(self._AsList): return ExtractCopyList(oElements)
-        return oElements
+        return ExtractCopyList([self._Type(instance._RecordID, FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
         FieldID = self._FieldID + instance._FieldID
-        if nElements is None or not len(nElements):
-            _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
+        if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nElements)
-            if isinstance(nElements[0], tuple): nValues = nElements
-            else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
-            numElements = _CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1)
-            oElements = [self._Type(instance._RecordID, FieldID, x) for x in range(0, numElements)]
-            SetCopyList(oElements, nValues)
+            SetCopyList([self._Type(instance._RecordID, FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
 
 # Top level Descriptors
 class CBashLIST(object):
+    __slots__ = ['_FieldID','_Type','_AsList']
     def __init__(self, FieldID, Type, AsList=False):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._AsList = AsList
+        self._FieldID, self._Type, self._AsList = FieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        numElements = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
-        oElements = [self._Type(instance._RecordID, self._FieldID, x) for x in range(0, numElements)]
-        if(self._AsList): return ExtractCopyList(oElements)
-        return oElements
+        return ExtractCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
-        if nElements is None or not len(nElements):
-            _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nElements)
-            if isinstance(nElements[0], tuple): nValues = nElements
-            else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
-            numElements = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
-            oElements = [self._Type(instance._RecordID, self._FieldID, x) for x in range(0, numElements)]
-            SetCopyList(oElements, nValues)
+            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
 
 class CBashUNKNOWN_OR_GENERIC(object):
+    __slots__ = ['_FieldID','_Type','_ResType']
     def __init__(self, FieldID, Type):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._ResType = POINTER(Type)
+        self._FieldID, self._Type, self._ResType = FieldID, Type, POINTER(Type)
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
-        if type != API_FIELDS.UNKNOWN:
-            _CGetField.restype = self._ResType
-            retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-            if(retValue): return retValue.contents.value
-        return None
+        if _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.UNKNOWN: return None
+        _CGetField.restype = self._ResType
+        retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
-        type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
-        if type != API_FIELDS.UNKNOWN:
-            if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-            else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(self._Type(nValue)), 0)
+        if _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.UNKNOWN: return
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(self._Type(nValue)), 0)
 
 class CBashXSED(object):
+    __slots__ = ['_FieldID','_AsOffset','_ResType']
     """To delete the field, you have to set the current accessor to None."""
     def __init__(self, FieldID, AsOffset=False):
-        self._FieldID = FieldID
-        self._AsOffset = AsOffset
+        self._FieldID, self._AsOffset = FieldID, AsOffset
+        self._ResType = POINTER(c_ubyte) if AsOffset else POINTER(c_ulong)
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
-        if self._AsOffset:
-            if type == API_FIELDS.UINT32: return None #Mismatched variables
-            _CGetField.restype = POINTER(c_ubyte)
-        else:
-            if type == API_FIELDS.UINT8: return None #Mismatched variables
-            _CGetField.restype = POINTER(c_ulong)
+        if (_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) != API_FIELDS.UINT32) != self._AsOffset: return None
+        _CGetField.restype = self._ResType
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return retValue.contents.value
-        return None
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
-        type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
         if nValue is None:
-            if self._AsOffset:
-                if type == API_FIELDS.UINT32: return #Mismatched variables
-            else:
-                if type == API_FIELDS.UINT8: return #Mismatched variables
+            if (_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) != API_FIELDS.UINT32) != self._AsOffset: return
             _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else:
-            if self._AsOffset: nValue = c_ubyte(nValue)
-            else: nValue = c_ulong(nValue)
-            #Borrowing ArraySize to flag if the new value is an offset
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(nValue), c_bool(self._AsOffset))
+        #Borrowing ArraySize to flag if the new value is an offset
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ubyte(nValue) if self._AsOffset else c_ulong(nValue)), c_bool(self._AsOffset))
 
 class CBashISTRINGARRAY(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
@@ -1666,61 +1402,61 @@ class CBashISTRINGARRAY(object):
         if(numRecords > 0):
             cRecords = (POINTER(c_char_p) * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [ISTRING(string_at(cRecords[x])) for x in range(0, numRecords)]
+            return [ISTRING(string_at(cRecords[x])) for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nValue)
-            cRecords = (c_char_p * length)(*nValue)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_char_p * length)(*nValue)), length)
 
 class CBashGeneric(object):
+    __slots__ = ['_FieldID','_Type','_ResType']
     def __init__(self, FieldID, Type):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._ResType = POINTER(Type)
+        self._FieldID, self._Type, self._ResType = FieldID, Type, POINTER(Type)
 
     def __get__(self, instance, owner):
         _CGetField.restype = self._ResType
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return retValue.contents.value
-        return None
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(self._Type(nValue)), 0)
 
 class CBashFORMID(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        return FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)
 
     def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortFormID(instance)
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortFormID(instance))), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashMGEFCODE(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
-        _CGetField.restype = POINTER(c_ulong)
+        _CGetField.restype = POINTER(c_char * 4) if _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.CHAR4 else POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return MGEFCode(instance._RecordID, retValue.contents.value)
-        return None
+        return MGEFCode(instance._RecordID, retValue.contents.value) if retValue else MGEFCode(None,None)
 
     def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortMGEFCode(instance)
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortMGEFCode(instance))), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashFORMIDARRAY(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
@@ -1729,86 +1465,65 @@ class CBashFORMIDARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(0, numRecords)]
+            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
+            nValue = [x.GetShortFormID(instance) for x in nValue if x.GetShortFormID(instance) is not None]
             length = len(nValue)
-            nValue = [x.GetShortFormID(instance) for x in nValue]
-            cRecords = (c_ulong * length)(*nValue)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_ulong * length)(*nValue)), length)
 
 class CBashFORMID_OR_UINT32(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue):
-            type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
-            if type == API_FIELDS.UINT32:
-                return retValue.contents.value
-            elif type == API_FIELDS.FORMID:
-                return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID else retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
+        nValue = nValue.GetShortFormID(instance) if isinstance(nValue, FormID) else nValue
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else:
-            if isinstance(nValue, FormID):
-                nValue = nValue.GetShortFormID(instance)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashFORMID_OR_STRING(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
-        if type == API_FIELDS.FORMID:
-            _CGetField.restype = POINTER(c_ulong)
-            retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-            if retValue: return FormID(instance._RecordID, retValue.contents.value)
-        elif type == API_FIELDS.STRING:
-            _CGetField.restype = c_char_p
-            retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-            if retValue: return retValue
-        return None
+        IsFormID = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID
+        _CGetField.restype = POINTER(c_ulong) if IsFormID else c_char_p
+        retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else retValue if retValue else None
 
     def __set__(self, instance, nValue):
+        IsFormID = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID
+        nValue = None if nValue is None else nValue.GetShortFormID(instance) if IsFormID else nValue
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else:
-            type = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2)
-            if type == API_FIELDS.FORMID:
-                _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortFormID(instance))), 0)
-            elif type == API_FIELDS.STRING:
-                _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)) if IsFormID else str(nValue), 0)
 
 class CBashFORMID_OR_UINT32_ARRAY(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
-        values = []
         numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = (c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            for x in range(numRecords):
-                type = _CGetFieldAttribute(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, 2)
-                if type == API_FIELDS.UINT32:
-                    values.append(cRecords[x])
-                elif type == API_FIELDS.FORMID:
-                    values.append(FormID(instance._RecordID, cRecords[x]))
-        return values
+            return [FormID(instance._RecordID, cRecord) if _CGetFieldAttribute(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, 2) == API_FIELDS.FORMID else cRecord for x, cRecord in enumerate(cRecords)]
+        return []
 
     def __set__(self, instance, nValue):
-        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
+            nValue = [x for x in nValue if x is not None or (isinstance(x, FormID) and x.GetShortFormID(instance) is not None)]
             length = len(nValue)
             if self._Size and length != self._Size: return
             #Each element can be either a formID or UINT32, so they have to be set separately
@@ -1817,52 +1532,40 @@ class CBashFORMID_OR_UINT32_ARRAY(object):
             for x, value in enumerate(nValue):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, FormID)
-                if IsFormID:
-                    value = value.GetShortFormID(instance)
-                _CSetField(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(value)), IsFormID)
+                _CSetField(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, byref(c_ulong(value.GetShortFormID(instance) if IsFormID else value)), IsFormID)
 
 class CBashMGEFCODE_ARRAY(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
-        values = []
         numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            for x in range(numRecords):
-                type = _CGetFieldAttribute(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, 2)
-                value = cRecords.contents[x]
-                if type == API_FIELDS.CHAR4:
-                    value = cast(byref(value), POINTER(c_char * 4)).contents.value
-                values.append(MGEFCode(instance._RecordID, value))
-        return values
+            return [MGEFCode(instance._RecordID, cast(POINTER(c_ulong)(c_ulong(cRecords.contents[x])), POINTER(c_char * 4)).contents.value if _CGetFieldAttribute(instance._RecordID, self._FieldID, x, 1, 0, 0, 0, 0, 2) == API_FIELDS.CHAR4 else cRecords.contents[x]) for x in range(numRecords)]
+        return []
 
     def __set__(self, instance, nValue):
-        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
+            nValue = [x.GetShortMGEFCode(instance) for x in nValue if x.GetShortMGEFCode(instance) is not None]
             length = len(nValue)
             if self._Size and length != self._Size: return
-            if length:
-                nValue = [x.GetShortMGEFCode(instance) for x in nValue]                    
-            else:
-                nValue = []
-            cRecords = (c_ulong * length)(*nValue)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_ulong * length)(*nValue)), length)
 
 class CBashUINT8ARRAY(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1870,20 +1573,19 @@ class CBashUINT8ARRAY(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_ubyte * length)(*nValue)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_ubyte * length)(*nValue)), length)
 
 class CBashUINT32ARRAY(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1891,20 +1593,19 @@ class CBashUINT32ARRAY(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_ulong * length)(*nValue)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_ulong * length)(*nValue)), length)
 
 class CBashSINT16ARRAY(object):
+    __slots__ = ['_FieldID','_Size']
     def __init__(self, FieldID, Size=None):
-        self._FieldID = FieldID
-        self._Size = Size
+        self._FieldID, self._Size = FieldID, Size
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_short * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1912,78 +1613,70 @@ class CBashSINT16ARRAY(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_short * length)(*nValue)
-            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_short * length)(*nValue)), length)
 
 class CBashFLOAT32(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_float)
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
+        return round(retValue.contents.value,6) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
 
 class CBashDEGREES(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_float)
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue):
-            try:
-                return round(math.degrees(retValue.contents.value),6)
-            except TypeError:
-                return None
-        return None
+        return round(math.degrees(retValue.contents.value),6) if retValue else None
 
     def __set__(self, instance, nValue):
-        try:
-            nValue = math.radians(nValue)
-        except TypeError:
-            nValue = None
+        try: nValue = math.radians(nValue)
+        except TypeError: nValue = None
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
 
 class CBashSTRING(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return retValue
-        return None
+        return retValue if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashISTRING(object):
+    __slots__ = ['_FieldID']
     def __init__(self, FieldID):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        return ISTRING(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, str(nValue), 0)
 
-
 class CBashRECORDARRAY(object):
+    __slots__ = ['_Type','_TypeName']
     def __init__(self, Type, TypeName):
-        self._Type = Type
-        self._TypeName = cast(TypeName, POINTER(c_ulong)).contents.value
+        self._Type, self._TypeName = Type, cast(TypeName, POINTER(c_ulong)).contents.value
 
     def __get__(self, instance, owner):
         numRecords = _CGetNumRecords(instance._ModID, self._TypeName)
@@ -1997,37 +1690,22 @@ class CBashRECORDARRAY(object):
         return
 
 class CBashSUBRECORD(object):
+    __slots__ = ['_FieldID','_Type','_TypeName']
     def __init__(self, FieldID, Type, TypeName):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._TypeName = TypeName
-        self._ResType = c_ulong
+        self._FieldID, self._Type, self._TypeName = FieldID, Type, cast(TypeName, POINTER(c_ulong)).contents.value
 
     def __get__(self, instance, owner):
-        _CGetField.restype = self._ResType
+        _CGetField.restype = c_ulong
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return self._Type(retValue)
-        return None
+        return self._Type(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
-        _CGetField.restype = self._ResType
-        retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): oSubRecord = self._Type(retValue)
-        else: oSubRecord = None
-        if nSubRecord is None and oSubRecord is not None: oSubRecord.DeleteRecord()
-        else:
-            if oSubRecord is None:
-                RecordID = _CCreateRecord(instance.GetParentMod()._ModID, self._TypeName, 0, 0, instance._RecordID, c_ulong(self._CopyFlags))
-                if(RecordID): oSubRecord = self._Type(RecordID)
-            if oSubRecord is None:
-                return
-            SetCopyList(oSubRecord, ExtractCopyList(nSubRecord))
+        return
 
 class CBashSUBRECORDARRAY(object):
-    def __init__(self, FieldID, Type, TypeName):
-        self._FieldID = FieldID
-        self._Type = Type
-        self._TypeName = TypeName
+    __slots__ = ['_FieldID','_Type']
+    def __init__(self, FieldID, Type, TypeName): #TypeName not currently used
+        self._FieldID, self._Type = FieldID, Type
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
@@ -2042,76 +1720,67 @@ class CBashSUBRECORDARRAY(object):
 
 # ListX1 Descriptors
 class CBashLIST_LIST(object):
+    __slots__ = ['_ListFieldID','_Type','_AsList']
     def __init__(self, ListFieldID, Type, AsList=False):
-        self._ListFieldID = ListFieldID
-        self._Type = Type
-        self._AsList = AsList
+        self._ListFieldID, self._Type, self._AsList = ListFieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        numElements = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1)
-        oElements = [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(0, numElements)]
-        if(self._AsList): return ExtractCopyList(oElements)
-        return oElements
+        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
-        if nElements is None or not len(nElements):
-            _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
+        if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             length = len(nElements)
-            if isinstance(nElements[0], tuple): nValues = nElements
-            else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0, c_long(length))
-            numElements = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1)
-            oElements = [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(0, numElements)]
-            SetCopyList(oElements, nValues)
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
 
 class CBashGeneric_LIST(object):
+    __slots__ = ['_ListFieldID','_Type','_ResType']
     def __init__(self, ListFieldID, Type):
-        self._ListFieldID = ListFieldID
-        self._Type = Type
-        self._ResType = POINTER(Type)
+        self._ListFieldID, self._Type, self._ResType = ListFieldID, Type, POINTER(Type)
 
     def __get__(self, instance, owner):
         _CGetField.restype = self._ResType
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return retValue.contents.value
-        return None
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(self._Type(nValue)), 0)
 
 class CBashFORMID_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        return FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)
 
     def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortFormID(instance)
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortFormID(instance))), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashACTORVALUE_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return ActorValue(instance._RecordID, retValue.contents.value)
-        return None
+        return ActorValue(instance._RecordID, retValue.contents.value) if retValue else ActorValue(None,None)
 
     def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortActorValue(instance)
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else:
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortActorValue(instance))), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashFORMIDARRAY_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
@@ -2120,102 +1789,78 @@ class CBashFORMIDARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(0, numRecords)]
+            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
+            nValue = [x.GetShortFormID(instance) for x in nValue if x.GetShortFormID(instance) is not None]
             length = len(nValue)
-            nValue = [x.GetShortFormID(instance) for x in nValue]
-            cRecords = (c_ulong * length)(*nValue)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref((c_ulong * length)(*nValue)), length)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-        if type != API_FIELDS.UNKNOWN:
-            _CGetField.restype = POINTER(c_ulong)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-            if(retValue):
-                if type == API_FIELDS.UINT32:
-                    return retValue.contents.value
-                elif type == API_FIELDS.FORMID:
-                    return FormID(instance._RecordID, retValue.contents.value)
-        return None
-
-    def __set__(self, instance, nValue):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-        if type != API_FIELDS.UNKNOWN:
-            if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-            else:
-                if type == API_FIELDS.FORMID:
-                    nValue = nValue.GetShortFormID(instance)
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
-
-class CBashMGEFCODE_LIST(object):
-    def __init__(self, ListFieldID):
-        self._ListFieldID = ListFieldID
-
-    def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-        if type == API_FIELDS.CHAR4:
-            _CGetField.restype = POINTER(c_char * 4)
-        elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
-            _CGetField.restype = POINTER(c_ulong)
-        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if retValue: return MGEFCode(instance._RecordID, retValue.contents.value)
-        return None
-
-    def __set__(self, instance, nValue):
-        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue.GetShortMGEFCode(instance))), 0)
-
-class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
-    def __init__(self, ListFieldID):
-        self._ListFieldID = ListFieldID
-
-    def __get__(self, instance, owner):
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return None
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue):
-            type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-            if type == (API_FIELDS.UINT32):
-                return retValue.contents.value
-            elif type == API_FIELDS.FORMID:
-                return FormID(instance._RecordID, retValue.contents.value)
-            elif type in (API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE):
-                return ActorValue(instance._RecordID, retValue.contents.value)
-            elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
-                return MGEFCode(instance._RecordID, retValue.contents.value)
-        return None
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if fieldtype == API_FIELDS.FORMID else retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return
+        nValue = None if nValue is None else nValue.GetShortFormID(instance) if fieldtype == API_FIELDS.FORMID else nValue
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else:
-            type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
-            if type == API_FIELDS.FORMID:
-                nValue = nValue.GetShortFormID(instance)
-            elif type in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE):
-                nValue = nValue.GetShortMGEFCode(instance)
-            elif type in (API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE):
-                nValue = nValue.GetShortActorValue(instance)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
+
+class CBashMGEFCODE_LIST(object):
+    __slots__ = ['_ListFieldID']
+    def __init__(self, ListFieldID):
+        self._ListFieldID = ListFieldID
+
+    def __get__(self, instance, owner):
+        _CGetField.restype = POINTER(c_char * 4) if _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2) == API_FIELDS.CHAR4 else POINTER(c_ulong)
+        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
+        return MGEFCode(instance._RecordID, retValue.contents.value) if retValue else MGEFCode(None,None)
+
+    def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortMGEFCode(instance)
+        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
+
+class CBashFORMID_OR_MGEFCODE_OR_ACTORVALUE_OR_UINT32_LIST(object):
+    __slots__ = ['_ListFieldID']
+    def __init__(self, ListFieldID):
+        self._ListFieldID = ListFieldID
+
+    def __get__(self, instance, owner):
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
+        _CGetField.restype = POINTER(c_char * 4) if fieldtype == API_FIELDS.CHAR4 else POINTER(c_ulong)
+        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if fieldtype == API_FIELDS.FORMID else (ActorValue(instance._RecordID, retValue.contents.value) if retValue else ActorValue(None,None)) if fieldtype in (API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE) else (MGEFCode(instance._RecordID, retValue.contents.value) if retValue else MGEFCode(None,None)) if fieldtype in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE) else retValue.contents.value if retValue else None
+
+    def __set__(self, instance, nValue):
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 2)
+        nValue = None if nValue is None else nValue.GetShortFormID(instance) if fieldtype == API_FIELDS.FORMID else nValue.GetShortActorValue(instance) if fieldtype in (API_FIELDS.STATIC_ACTORVALUE, API_FIELDS.RESOLVED_ACTORVALUE) else nValue.GetShortMGEFCode(instance) if fieldtype in (API_FIELDS.STATIC_MGEFCODE, API_FIELDS.RESOLVED_MGEFCODE) else nValue
+        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashUINT8ARRAY_LIST(object):
+    __slots__ = ['_ListFieldID','_Size']
     def __init__(self, ListFieldID, Size=None):
-        self._ListFieldID = ListFieldID
-        self._Size = Size
+        self._ListFieldID, self._Size = ListFieldID, Size
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2223,50 +1868,45 @@ class CBashUINT8ARRAY_LIST(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_ubyte * length)(*nValue)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref((c_ubyte * length)(*nValue)), length)
 
 class CBashUINT32ARRAY_LIST(object):
+    __slots__ = ['_ListFieldID','_Size']
     def __init__(self, ListFieldID, Size=None):
-        self._ListFieldID = ListFieldID
-        self._Size = Size
+        self._ListFieldID, self._Size = ListFieldID, Size
+
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
+
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_ulong * length)(*nValue)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref((c_ulong * length)(*nValue)), length)
 
 class CBashFORMID_OR_UINT32_ARRAY_LIST(object):
+    __slots__ = ['_ListFieldID','_Size']
     def __init__(self, ListFieldID, Size=None):
-        self._ListFieldID = ListFieldID
-        self._Size = Size
+        self._ListFieldID, self._Size = ListFieldID, Size
 
     def __get__(self, instance, owner):
-        values = []
         numRecords = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1)
         if(numRecords > 0):
             cRecords = (c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            for x in range(numRecords):
-                type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x, 1, 0, 0, 2)
-                if type == API_FIELDS.UINT32:
-                    values.append(cRecords[x])
-                elif type == API_FIELDS.FORMID:
-                    values.append(FormID(instance._RecordID, cRecords[x]))
-        return values
+            return [FormID(instance._RecordID, cRecord) if _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x, 1, 0, 0, 2) == API_FIELDS.FORMID else cRecord for x, cRecord in enumerate(cRecords)]
+        return []
 
     def __set__(self, instance, nValue):
-        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
+            nValue = [x for x in nValue if x is not None or (isinstance(x, FormID) and x.GetShortFormID(instance) is not None)]
             length = len(nValue)
             if self._Size and length != self._Size: return
             #Each element can be either a formID or UINT32, so they have to be set separately
@@ -2275,47 +1915,45 @@ class CBashFORMID_OR_UINT32_ARRAY_LIST(object):
             for x, value in enumerate(nValue):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, FormID)
-                if IsFormID:
-                    value = value.GetShortFormID(instance)
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x, 1, 0, 0, byref(c_ulong(value)), IsFormID)
+                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x, 1, 0, 0, byref(c_ulong(value.GetShortFormID(instance) if IsFormID else value)), IsFormID)
 
 class CBashFLOAT32_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_float)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
+        return round(retValue.contents.value,6) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
 
 class CBashSTRING_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return retValue
-        return None
+        return retValue if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, str(nValue), 0)
 
 class CBashISTRING_LIST(object):
+    __slots__ = ['_ListFieldID']
     def __init__(self, ListFieldID):
         self._ListFieldID = ListFieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        return ISTRING(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
@@ -2323,93 +1961,76 @@ class CBashISTRING_LIST(object):
 
 # ListX2 Descriptors
 class CBashLIST_LISTX2(object):
+    __slots__ = ['_ListX2FieldID','_Type','_AsList']
     def __init__(self, ListX2FieldID, Type, AsList=False):
-        self._ListX2FieldID = ListX2FieldID
-        self._Type = Type
-        self._AsList = AsList
+        self._ListX2FieldID, self._Type, self._AsList = ListX2FieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        numElements = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1)
-        oElements = [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(0, numElements)]
-        if(self._AsList): return ExtractCopyList(oElements)
-        return oElements
+        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
-        if nElements is None or not len(nElements):
-            _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
+        if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else:
             length = len(nElements)
-            if isinstance(nElements[0], tuple): nValues = nElements
-            else: nValues = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0, c_long(length))
-            numElements = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1)
-            oElements = [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(0, numElements)]
-            SetCopyList(oElements, nValues)
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
 
 class CBashGeneric_LISTX2(object):
+    __slots__ = ['_ListX2FieldID','_Type','_ResType']
     def __init__(self, ListX2FieldID, Type):
-        self._ListX2FieldID = ListX2FieldID
-        self._Type = Type
-        self._ResType = POINTER(Type)
+        self._ListX2FieldID, self._Type, self._ResType = ListX2FieldID, Type, POINTER(Type)
 
     def __get__(self, instance, owner):
         _CGetField.restype = self._ResType
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue): return retValue.contents.value
-        return None
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(self._Type(nValue)), 0)
 
 class CBashFLOAT32_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_float)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
+        return round(retValue.contents.value,6) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_float(round(nValue,6))), 0)
 
 class CBashDEGREES_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_float)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue):
-            try:
-                return round(math.degrees(retValue.contents.value),6)
-            except TypeError:
-                return None
-        return None
+        return round(math.degrees(retValue.contents.value),6) if retValue else None
 
     def __set__(self, instance, nValue):
-        try:
-            nValue = math.radians(nValue)
-        except TypeError:
-            nValue = None
+        try: nValue = math.radians(nValue)
+        except TypeError: nValue = None
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_float(round(nValue,6))), 0)
 
 class CBashUINT8ARRAY_LISTX2(object):
+    __slots__ = ['_ListX2FieldID','_Size']
     def __init__(self, ListX2FieldID, Size=None):
-        self._ListX2FieldID = ListX2FieldID
-        self._Size = Size
+        self._ListX2FieldID, self._Size = ListX2FieldID, Size
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2417,31 +2038,25 @@ class CBashUINT8ARRAY_LISTX2(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_ubyte * length)(*nValue)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(cRecords), length)
+            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref((c_ubyte * length)(*nValue)), length)
 
 class CBashFORMID_OR_UINT32_ARRAY_LISTX2(object):
+    __slots__ = ['_ListX2FieldID','_Size']
     def __init__(self, ListX2FieldID, Size=None):
-        self._ListX2FieldID = ListX2FieldID
-        self._Size = Size
+        self._ListX2FieldID, self._Size = ListX2FieldID, Size
 
     def __get__(self, instance, owner):
-        values = []
         numRecords = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1)
         if(numRecords > 0):
             cRecords = (c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(cRecords))
-            for x in range(numRecords):
-                type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, 2)
-                if type == API_FIELDS.UINT32:
-                    values.append(cRecords[x])
-                elif type == API_FIELDS.FORMID:
-                    values.append(FormID(instance._RecordID, cRecords[x]))
-        return values
+            return [FormID(instance._RecordID, cRecord) if _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, 2) == API_FIELDS.FORMID else cRecord for x, cRecord in enumerate(cRecords)]
+        return []
 
     def __set__(self, instance, nValue):
-        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else:
+            nValue = [x for x in nValue if x is not None or (isinstance(x, FormID) and x.GetShortFormID(instance) is not None)]
             length = len(nValue)
             if self._Size and length != self._Size: return
             #Each element can be either a formID or UINT32, so they have to be set separately
@@ -2450,138 +2065,114 @@ class CBashFORMID_OR_UINT32_ARRAY_LISTX2(object):
             for x, value in enumerate(nValue):
                 #Borrowing ArraySize to flag if the new value is a formID
                 IsFormID = isinstance(value, FormID)
-                if IsFormID:
-                    value = value.GetShortFormID(instance)
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, byref(c_ulong(value)), IsFormID)
+                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x, 1, byref(c_ulong(value.GetShortFormID(instance) if IsFormID else value)), IsFormID)
 
 class CBashFORMID_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue): return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        return FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)
 
     def __set__(self, instance, nValue):
+        nValue = None if nValue is None else nValue.GetShortFormID(instance)
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(nValue.GetShortFormID(instance))), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(nValue)), 0)
 
 class CBashFORMID_OR_FLOAT32_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
-        if type == API_FIELDS.FLOAT32:
-            _CGetField.restype = POINTER(c_float)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-            if(retValue): return round(retValue.contents.value,6)
-        else:
-            _CGetField.restype = POINTER(c_ulong)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-            if(retValue): return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        IsFormID = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2) == API_FIELDS.FORMID
+        _CGetField.restype = POINTER(c_ulong) if IsFormID else POINTER(c_float)
+        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else round(retValue.contents.value,6) if retValue else None
 
     def __set__(self, instance, nValue):
+        IsFormID = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2) == API_FIELDS.FORMID
+        try: nValue = None if nValue is None else nValue.GetShortFormID(instance) if IsFormID else float(round(nValue,6))
+        except TypeError: nValue = None
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else:
-            type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
-            if type == API_FIELDS.FLOAT32:
-                try:
-                    value = float(nValue)
-                except TypeError:
-                    return
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_float(round(value,6))), 0)
-            else:
-                try:
-                    value = nValue.GetShortFormID(instance)
-                except TypeError:
-                    return
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(value)), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(nValue)) if IsFormID else byref(nValue), 0)
 
 class CBashSTRING_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue): return retValue
-        return None
+        return retValue if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, str(nValue), 0)
 
 class CBashISTRING_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        return ISTRING(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, str(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX2(object):
+    __slots__ = ['_ListX2FieldID']
     def __init__(self, ListX2FieldID):
         self._ListX2FieldID = ListX2FieldID
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
-        if type != API_FIELDS.UNKNOWN:
-            _CGetField.restype = POINTER(c_ulong)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-            if(retValue):
-                if type == API_FIELDS.UINT32:
-                    return retValue.contents.value
-                elif type == API_FIELDS.FORMID:
-                    return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return None
+        _CGetField.restype = POINTER(c_ulong)
+        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if fieldtype == API_FIELDS.FORMID else retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
-        if type != API_FIELDS.UNKNOWN:
-            if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-            else:
-                if type == API_FIELDS.FORMID:
-                    nValue = nValue.GetShortFormID(instance)
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(nValue)), 0)
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return
+        nValue = None if nValue is None else nValue.GetShortFormID(instance) if fieldtype == API_FIELDS.FORMID else nValue
+        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(c_ulong(nValue)), 0)
 
 # ListX3 Descriptors
 class CBashGeneric_LISTX3(object):
+    __slots__ = ['_ListX3FieldID','_Type','_ResType']
     def __init__(self, ListX3FieldID, Type):
-        self._ListX3FieldID = ListX3FieldID
-        self._Type = Type
-        self._ResType = POINTER(Type)
+        self._ListX3FieldID, self._Type, self._ResType = ListX3FieldID, Type, POINTER(Type)
 
     def __get__(self, instance, owner):
         _CGetField.restype = self._ResType
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        if(retValue): return retValue.contents.value
-        return None
+        return retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(self._Type(nValue)), 0)
 
 class CBashUINT8ARRAY_LISTX3(object):
+    __slots__ = ['_ListX3FieldID','_Size']
     def __init__(self, ListX3FieldID, Size=None):
-        self._ListX3FieldID = ListX3FieldID
-        self._Size = Size
+        self._ListX3FieldID, self._Size = ListX3FieldID, Size
 
     def __get__(self, instance, owner):
         numRecords = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 1)
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(cRecords))
-            return [cRecords.contents[x] for x in range(0, numRecords)]
+            return [cRecords.contents[x] for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2589,163 +2180,138 @@ class CBashUINT8ARRAY_LISTX3(object):
         else:
             length = len(nValue)
             if self._Size and length != self._Size: return
-            cRecords = (c_ubyte * length)(*nValue)
-            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(cRecords), length)
+            _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref((c_ubyte * length)(*nValue)), length)
 
 class CBashFORMID_OR_FLOAT32_LISTX3(object):
+    __slots__ = ['_ListX3FieldID']
     def __init__(self, ListX3FieldID):
         self._ListX3FieldID = ListX3FieldID
+
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
-        if type == API_FIELDS.FLOAT32:
-            _CGetField.restype = POINTER(c_float)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-            if(retValue): return round(retValue.contents.value,6)
-        else:
-            _CGetField.restype = POINTER(c_ulong)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-            if(retValue): return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        IsFormID = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2) == API_FIELDS.FORMID
+        _CGetField.restype = POINTER(c_ulong) if IsFormID else POINTER(c_float)
+        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else round(retValue.contents.value,6) if retValue else None
+
     def __set__(self, instance, nValue):
+        IsFormID = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2) == API_FIELDS.FORMID
+        try: nValue = None if nValue is None else nValue.GetShortFormID(instance) if IsFormID else float(round(nValue,6))
+        except TypeError: nValue = None
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
-        else:
-            type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
-            if type == API_FIELDS.FLOAT32:
-                try:
-                    value = float(nValue)
-                except TypeError:
-                    return
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_float(round(value,6))), 0)
-            else:
-                try:
-                    value = nValue.GetShortFormID(instance)
-                except TypeError:
-                    return
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_ulong(value)), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_ulong(nValue)) if IsFormID else byref(nValue), 0)
 
 class CBashFLOAT32_LISTX3(object):
+    __slots__ = ['_ListX3FieldID']
     def __init__(self, ListX3FieldID):
         self._ListX3FieldID = ListX3FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = POINTER(c_float)
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        if(retValue): return round(retValue.contents.value,6)
-        return None
+        return round(retValue.contents.value,6) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_float(round(nValue,6))), 0)
 
 class CBashSTRING_LISTX3(object):
+    __slots__ = ['_ListX3FieldID']
     def __init__(self, ListX3FieldID):
         self._ListX3FieldID = ListX3FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        if(retValue): return retValue
-        return None
+        return retValue if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, str(nValue), 0)
 
 class CBashISTRING_LISTX3(object):
+    __slots__ = ['_ListX3FieldID']
     def __init__(self, ListX3FieldID):
         self._ListX3FieldID = ListX3FieldID
 
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        return ISTRING(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
         else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, str(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX3(object):
+    __slots__ = ['_ListX3FieldID']
     def __init__(self, ListX3FieldID):
         self._ListX3FieldID = ListX3FieldID
 
     def __get__(self, instance, owner):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
-        if type != API_FIELDS.UNKNOWN:
-            _CGetField.restype = POINTER(c_ulong)
-            retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-            if(retValue):
-                if type == API_FIELDS.UINT32:
-                    return retValue.contents.value
-                elif type == API_FIELDS.FORMID:
-                    return FormID(instance._RecordID, retValue.contents.value)
-        return None
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return None
+        _CGetField.restype = POINTER(c_ulong)
+        retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if fieldtype == API_FIELDS.FORMID else retValue.contents.value if retValue else None
 
     def __set__(self, instance, nValue):
-        type = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
-        if type != API_FIELDS.UNKNOWN:
-            if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
-            else:
-                if type == API_FIELDS.FORMID:
-                    nValue = nValue.GetShortFormID(instance)
-                _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_ulong(nValue)), 0)
+        fieldtype = _CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return
+        nValue = None if nValue is None else nValue.GetShortFormID(instance) if fieldtype == API_FIELDS.FORMID else nValue
+        if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(c_ulong(nValue)), 0)
 
 #Record accessors
 #--Accessor Components
 class BaseComponent(object):
+    __slots__ = ['_RecordID','_FieldID']
     def __init__(self, RecordID, FieldID):
-        self._RecordID = RecordID
-        self._FieldID = FieldID
+        self._RecordID, self._FieldID = RecordID, FieldID
 
     def GetParentCollection(self):
         return ObCollection(_CGetCollectionIDByRecordID(self._RecordID))
 
 class ListComponent(object):
+    __slots__ = ['_RecordID','_FieldID','_ListIndex']
     def __init__(self, RecordID, FieldID, ListIndex):
-        self._RecordID = RecordID
-        self._FieldID = FieldID
-        self._ListIndex = ListIndex
+        self._RecordID, self._FieldID, self._ListIndex = RecordID, FieldID, ListIndex
 
     def GetParentCollection(self):
         return ObCollection(_CGetCollectionIDByRecordID(self._RecordID))
 
 class ListX2Component(object):
+    __slots__ = ['_RecordID','_FieldID','_ListIndex','_ListFieldID','_ListX2Index']
     def __init__(self, RecordID, FieldID, ListIndex, ListFieldID, ListX2Index):
-        self._RecordID = RecordID
-        self._FieldID = FieldID
-        self._ListIndex = ListIndex
-        self._ListFieldID = ListFieldID
-        self._ListX2Index = ListX2Index
+        self._RecordID, self._FieldID, self._ListIndex, self._ListFieldID, self._ListX2Index = RecordID, FieldID, ListIndex, ListFieldID, ListX2Index
 
     def GetParentCollection(self):
         return ObCollection(_CGetCollectionIDByRecordID(self._RecordID))
 
 class ListX3Component(object):
+    __slots__ = ['_RecordID','_FieldID','_ListIndex','_ListFieldID','_ListX2Index','_ListX2FieldID','_ListX3Index']
     def __init__(self, RecordID, FieldID, ListIndex, ListFieldID, ListX2Index, ListX2FieldID, ListX3Index):
-        self._RecordID = RecordID
-        self._FieldID = FieldID
-        self._ListIndex = ListIndex
-        self._ListFieldID = ListFieldID
-        self._ListX2Index = ListX2Index
-        self._ListX2FieldID = ListX2FieldID
-        self._ListX3Index = ListX3Index
+        self._RecordID, self._FieldID, self._ListIndex, self._ListFieldID, self._ListX2Index, self._ListX2FieldID, self._ListX3Index = RecordID, FieldID, ListIndex, ListFieldID, ListX2Index, ListX2FieldID, ListX3Index
 
     def GetParentCollection(self):
         return ObCollection(_CGetCollectionIDByRecordID(self._RecordID))
 
 class Model(BaseComponent):
+    __slots__ = []
     modPath = CBashISTRING_GROUP(0)
     modb = CBashFLOAT32_GROUP(1)
     modt_p = CBashUINT8ARRAY_GROUP(2)
     copyattrs = ['modPath', 'modb', 'modt_p']
-    exportattrs = ['modPath', 'modb']#, 'modt_p']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class Item(ListComponent):
+    __slots__ = []
     item = CBashFORMID_LIST(1)
     count = CBashGeneric_LIST(2, c_long)
     exportattrs = copyattrs = ['item', 'count']
 
 class FNVItem(ListComponent):
+    __slots__ = []
     item = CBashFORMID_LIST(1)
     count = CBashGeneric_LIST(2, c_long)
     owner = CBashFORMID_LIST(3)
@@ -2755,6 +2321,7 @@ class FNVItem(ListComponent):
                                'globalOrRank', 'condition']
 
 class Condition(ListComponent):
+    __slots__ = []
     operType = CBashGeneric_LIST(1, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(2, 3)
     compValue = CBashFLOAT32_LIST(3)
@@ -2774,6 +2341,7 @@ class Condition(ListComponent):
     exportattrs = copyattrs = ['operType', 'compValue', 'ifunc', 'param1', 'param2']
 
 class FNVCondition(ListComponent):
+    __slots__ = []
     operType = CBashGeneric_LIST(1, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(2, 3)
     compValue = CBashFLOAT32_LIST(3)
@@ -2800,6 +2368,7 @@ class FNVCondition(ListComponent):
                                'param2', 'runOn', 'reference']
 
 class FNVConditionX2(ListX2Component):
+    __slots__ = []
     operType = CBashGeneric_LISTX2(1, c_ubyte)
     unused1 = CBashUINT8ARRAY_LISTX2(2, 3)
     compValue = CBashFORMID_OR_FLOAT32_LISTX2(3)
@@ -2826,6 +2395,7 @@ class FNVConditionX2(ListX2Component):
                                'param2', 'runOn', 'reference']
 
 class FNVConditionX3(ListX3Component):
+    __slots__ = []
     operType = CBashGeneric_LISTX3(1, c_ubyte)
     unused1 = CBashUINT8ARRAY_LISTX3(2, 3)
     compValue = CBashFORMID_OR_FLOAT32_LISTX3(3)
@@ -2852,6 +2422,7 @@ class FNVConditionX3(ListX3Component):
                                'param2', 'runOn', 'reference']
 
 class Var(ListComponent):
+    __slots__ = []
     index = CBashGeneric_LIST(1, c_ulong)
     unused1 = CBashUINT8ARRAY_LIST(2, 12)
     flags = CBashGeneric_LIST(3, c_ubyte)
@@ -2862,6 +2433,7 @@ class Var(ListComponent):
     exportattrs = copyattrs = ['index', 'flags', 'name']
 
 class VarX2(ListX2Component):
+    __slots__ = []
     index = CBashGeneric_LISTX2(1, c_ulong)
     unused1 = CBashUINT8ARRAY_LISTX2(2, 12)
     flags = CBashGeneric_LISTX2(3, c_ubyte)
@@ -2872,6 +2444,7 @@ class VarX2(ListX2Component):
     exportattrs = copyattrs = ['index', 'flags', 'name']
 
 class VarX3(ListX3Component):
+    __slots__ = []
     index = CBashGeneric_LISTX3(1, c_ulong)
     unused1 = CBashUINT8ARRAY_LISTX3(2, 12)
     flags = CBashGeneric_LISTX3(3, c_ubyte)
@@ -2882,6 +2455,7 @@ class VarX3(ListX3Component):
     exportattrs = copyattrs = ['index', 'flags', 'name']
 
 class Effect(ListComponent):
+    __slots__ = []
     ##name0 and name are both are always the same value, so setting one will set both. They're basically aliases
     name0 = CBashMGEFCODE_LIST(1)
     name = CBashMGEFCODE_LIST(2)
@@ -2971,16 +2545,20 @@ class Effect(ListComponent):
     IsExplodesWithForceOverride = CBashBasicFlag('efixFlags', 0x20000000) #OBME
     IsHiddenOverride = CBashBasicFlag('efixFlags', 0x40000000) #OBME
     exportattrs = copyattrs = ['name', 'magnitude', 'area', 'duration', 'rangeType',
-                 'actorValue', 'script', 'schoolType', 'visual', 'IsHostile',
-                 'full']
+                               'actorValue', 'script', 'schoolType', 'visual', 'IsHostile',
+                               'full']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
                                  'efitParamInfo', 'efixParamInfo',
                                  'reserved1', 'iconPath', 'efixOverrides',
                                  'efixFlags', 'baseCost', 'resistAV',
                                  'reserved2']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('reserved1')
+    exportattrsOBME.remove('reserved2')
 
 class FNVEffect(ListComponent):
+    __slots__ = []
     effect = CBashFORMID_LIST(1)
     magnitude = CBashGeneric_LIST(2, c_ulong)
     area = CBashGeneric_LIST(3, c_ulong)
@@ -3003,17 +2581,20 @@ class FNVEffect(ListComponent):
                                'rangeType', 'actorValue', 'conditions_list']
 
 class Faction(ListComponent):
+    __slots__ = []
     faction = CBashFORMID_LIST(1)
     rank = CBashGeneric_LIST(2, c_ubyte)
     unused1 = CBashUINT8ARRAY_LIST(3, 3)
     exportattrs = copyattrs = ['faction', 'rank']
 
 class Relation(ListComponent):
+    __slots__ = []
     faction = CBashFORMID_LIST(1)
     mod = CBashGeneric_LIST(2, c_long)
     exportattrs = copyattrs = ['faction', 'mod']
 
 class FNVRelation(ListComponent):
+    __slots__ = []
     faction = CBashFORMID_LIST(1)
     mod = CBashGeneric_LIST(2, c_long)
     groupReactionType = CBashGeneric_LIST(3, c_ulong)
@@ -3025,13 +2606,16 @@ class FNVRelation(ListComponent):
     exportattrs = copyattrs = ['faction', 'mod', 'groupReactionType']
 
 class FNVAltTexture(ListComponent):
+    __slots__ = []
     name = CBashSTRING_LIST(1)
     texture = CBashFORMID_LIST(2)
     index = CBashGeneric_LIST(3, c_long)
     exportattrs = copyattrs = ['name', 'texture', 'index']
 
 class FNVDestructable(BaseComponent):
+    __slots__ = []
     class Stage(ListComponent):
+        __slots__ = []
         health = CBashGeneric_LIST(1, c_ubyte)
         index = CBashGeneric_LIST(2, c_ubyte)
         stage = CBashGeneric_LIST(3, c_ubyte)
@@ -3046,10 +2630,12 @@ class FNVDestructable(BaseComponent):
         IsCapDamage = CBashBasicFlag('flags', 0x01)
         IsDisable = CBashBasicFlag('flags', 0x02)
         IsDestroy = CBashBasicFlag('flags', 0x04)
-        exportattrs = copyattrs = ['health', 'index', 'stage',
-                                   'flags', 'dps', 'explosion',
-                                   'debris', 'debrisCount',
-                                   'modPath', 'modt_p']
+        copyattrs = ['health', 'index', 'stage',
+                     'flags', 'dps', 'explosion',
+                     'debris', 'debrisCount',
+                     'modPath', 'modt_p']
+        exportattrs = copyattrs[:]
+        exportattrs.remove('modt_p')
 
     health = CBashGeneric_GROUP(0, c_long)
     count = CBashGeneric_GROUP(1, c_ubyte)
@@ -3067,6 +2653,7 @@ class FNVDestructable(BaseComponent):
     exportattrs = copyattrs = ['health', 'count', 'flags', 'stages_list']
 
 class WorldModel(BaseComponent):
+    __slots__ = []
     modPath = CBashISTRING_GROUP(0)
     modt_p = CBashUINT8ARRAY_GROUP(1)
 
@@ -3078,9 +2665,11 @@ class WorldModel(BaseComponent):
     altTextures = CBashLIST_GROUP(2, FNVAltTexture)
     altTextures_list = CBashLIST_GROUP(2, FNVAltTexture, True)
     copyattrs = ['modPath', 'modt_p', 'altTextures_list']
-    exportattrs = ['modPath', 'altTextures_list']#, 'modt_p']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class PGRP(ListComponent):
+    __slots__ = []
     x = CBashFLOAT32_LIST(1)
     y = CBashFLOAT32_LIST(2)
     z = CBashFLOAT32_LIST(3)
@@ -3091,14 +2680,13 @@ class PGRP(ListComponent):
 #--Accessors
 #--Fallout New Vegas
 class FnvBaseRecord(object):
+    __slots__ = ['_RecordID']
     _Type = 'BASE'
     def __init__(self, RecordID):
         self._RecordID = RecordID
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return self._RecordID == other._RecordID
-        return False
+        return self._RecordID == other._RecordID if type(other) is type(self) else False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -3124,8 +2712,7 @@ class FnvBaseRecord(object):
     def UpdateReferences(self, Old_NewFormIDs):
         Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if not length:
-            return []
+        if not length: return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
@@ -3135,7 +2722,7 @@ class FnvBaseRecord(object):
     def History(self):
         cRecordIDs = (c_ulong * 257)() #just allocate enough for the max number + size
         numRecords = _CGetRecordHistory(self._RecordID, byref(cRecordIDs))
-        return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
+        return [self.__class__(cRecordIDs[x]) for x in range(numRecords)]
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.
@@ -3148,7 +2735,7 @@ class FnvBaseRecord(object):
         if(numRecords > 1):
             cRecordIDs = (c_ulong * numRecords)()
             numRecords = _CGetRecordConflicts(self._RecordID, byref(cRecordIDs), c_ulong(GetExtendedConflicts))
-            return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
+            return [self.__class__(cRecordIDs[x]) for x in range(numRecords)]
         return []
 
     def ConflictDetails(self, attrs=None):
@@ -3158,10 +2745,8 @@ class FnvBaseRecord(object):
              different, then all sub items are reported.  This allows grouping of dependant
              items."""
         conflicting = {}
-        if attrs is None:
-            attrs = self.copyattrs
-        if not attrs:
-            return conflicting
+        if attrs is None: attrs = self.copyattrs
+        if not attrs: return conflicting
 
         parentRecords = self.History()
         if parentRecords:
@@ -3179,8 +2764,7 @@ class FnvBaseRecord(object):
                             if not conflict and self_value != reduce(getattr, subattr.split('.'), parentRecord):
                                 conflict = True
                             subconflicting.update([(subattr,self_value)])
-                        if conflict:
-                            conflicting.update(subconflicting)
+                        if conflict: conflicting.update(subconflicting)
         else: #is the first instance of the record
             for attr in attrs:
                 if isinstance(attr, basestring):
@@ -3198,7 +2782,7 @@ class FnvBaseRecord(object):
 
         return conflicting
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
         for a list record, items coming from mods not in the modSet could be
@@ -3209,85 +2793,47 @@ class FnvBaseRecord(object):
         should be returned."""
         return True
 
-    def CopyAsOverride(self, target, UseWinningParents=False, CopyFlags=0):
-        if hasattr(self, '_ParentID'):
-            if isinstance(target, FnvModFile):
-                DestParentID = self._ParentID
-                DestModID = target._ModID
-            else:
-                DestParentID = target._RecordID
-                DestModID = target.GetParentMod()._ModID
-        else:
-            DestParentID = 0
-            DestModID = target._ModID
-
+    def CopyAsOverride(self, target, UseWinningParents=False):
         ##Record Creation Flags
         ##SetAsOverride       = 0x00000001
         ##CopyWinningParent   = 0x00000002
-        #Set SetAsOverride
-        CopyFlags |= 0x00000001
-        if UseWinningParents:
-            CopyFlags |= 0x00000002
-        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, 0, 0, c_ulong(CopyFlags))
-        #Clear SetAsOverride
-        CopyFlags &= ~0x00000001
-        if(RecordID): return self.__class__(RecordID)
-        return None
+        DestParentID, DestModID = (0, target._ModID) if not hasattr(self, '_ParentID') else (self._ParentID, target._ModID) if isinstance(target, FnvModFile) else (target._RecordID, target.GetParentMod()._ModID)
+        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, 0, 0, c_ulong(0x00000003 if UseWinningParents else 0x00000001))
+        return self.__class__(RecordID) if RecordID else None
 
-    def CopyAsNew(self, target, UseWinningParents=False, RecordFormID=0, CopyFlags=0):
-        if hasattr(self, '_ParentID'):
-            if isinstance(target, FnvModFile):
-                DestParentID = self._ParentID
-                DestModID = target._ModID
-            else:
-                DestParentID = target._RecordID
-                DestModID = target.GetParentMod()._ModID
-        else:
-            DestParentID = 0
-            DestModID = target._ModID
-
-        if RecordFormID:
-            RecordFormID = RecordFormID.GetShortFormID(target)
+    def CopyAsNew(self, target, UseWinningParents=False, RecordFormID=0):
         ##Record Creation Flags
         ##SetAsOverride       = 0x00000001
         ##CopyWinningParent   = 0x00000002
-        #Clear SetAsOverride in case it was set
-        CopyFlags &= ~0x00000001
-        if UseWinningParents:
-            CopyFlags |= 0x00000002
-        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, RecordFormID, 0, c_ulong(CopyFlags))
-        if(RecordID): return self.__class__(RecordID)
-        return None
+        DestParentID, DestModID = (0, target._ModID) if not hasattr(self, '_ParentID') else (self._ParentID, target._ModID) if isinstance(target, FnvModFile) else (target._RecordID, target.GetParentMod()._ModID)
+        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, RecordFormID.GetShortFormID(target) if RecordFormID else 0, 0, c_ulong(0x00000002 if UseWinningParents else 0))
+        return self.__class__(RecordID) if RecordID else None
 
     @property
     def Parent(self):
-        RecordID = getattr(self, '_ParentID', 0)
+        RecordID = getattr(self, '_ParentID', None)
         if RecordID:
-            testRecord = FnvBaseRecord(RecordID)
-            RecordType = fnv_type_record[testRecord.recType]
-            if RecordType:
-                return RecordType(RecordID)
+            _CGetFieldAttribute.restype = (c_char * 4)
+            retValue = _CGetFieldAttribute(RecordID, 0, 0, 0, 0, 0, 0, 0, 0)
+            _CGetFieldAttribute.restype = c_ulong
+            return fnv_type_record[retValue.value](RecordID)
         return None
 
     @property
     def recType(self):
         _CGetFieldAttribute.restype = (c_char * 4)
-        retValue = _CGetFieldAttribute(self._RecordID, 0, 0, 0, 0, 0, 0, 0, 0)
+        retValue = _CGetFieldAttribute(self._RecordID, 0, 0, 0, 0, 0, 0, 0, 0).value
         _CGetFieldAttribute.restype = c_ulong
-        if(retValue and retValue.value != ''): return retValue.value
-        return None
+        return retValue
 
     flags1 = CBashGeneric(1, c_ulong)
 
     def get_fid(self):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return FormID(self._RecordID, retValue.contents.value)
-        return None
+        return FormID(self._RecordID, retValue.contents.value) if retValue else FormID(None,None)
     def set_fid(self, nValue):
-        if nValue is None: nValue = 0
-        else: nValue = nValue.GetShortFormID(self)
-        _CSetIDFields(self._RecordID, nValue, self.eid or 0)
+        _CSetIDFields(self._RecordID, 0 if nValue is None else nValue.GetShortFormID(self), self.eid or 0)
     fid = property(get_fid, set_fid)
 
     versionControl1 = CBashUINT8ARRAY(3, 4)
@@ -3297,11 +2843,9 @@ class FnvBaseRecord(object):
     def get_eid(self):
         _CGetField.restype = c_char_p
         retValue = _CGetField(self._RecordID, 4, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        return ISTRING(retValue) if retValue else None
     def set_eid(self, nValue):
-        if nValue is None or not len(nValue): nValue = 0
-        else: nValue = str(nValue)
+        nValue = 0 if nValue is None or not len(nValue) else str(nValue)
         _CGetField.restype = POINTER(c_ulong)
         _CSetIDFields(self._RecordID, _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0).contents.value, nValue)
     eid = property(get_eid, set_eid)
@@ -3345,6 +2889,7 @@ class FnvBaseRecord(object):
     baseattrs = ['flags1', 'versionControl1', 'formVersion', 'versionControl2', 'eid']
 
 class FnvTES4Record(object):
+    __slots__ = ['_RecordID']
     _Type = 'TES4'
     def __init__(self, RecordID):
         self._RecordID = RecordID
@@ -3386,6 +2931,7 @@ class FnvTES4Record(object):
                  'author', 'description', 'masters', 'overrides', 'screenshot_p']
 
 class FnvACHRRecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -3393,12 +2939,15 @@ class FnvACHRRecord(FnvBaseRecord):
 
     _Type = 'ACHR'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
@@ -3500,24 +3049,13 @@ class FnvACHRRecord(FnvBaseRecord):
                                            'parent', 'parentFlags', 'emittance',
                                            'boundRef', 'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'levelMod',
-                                             'merchantContainer', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvACRERecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -3525,12 +3063,15 @@ class FnvACRERecord(FnvBaseRecord):
 
     _Type = 'ACRE'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
@@ -3634,24 +3175,13 @@ class FnvACRERecord(FnvBaseRecord):
                                            'parent', 'parentFlags', 'emittance',
                                            'boundRef', 'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'levelMod', 'owner',
-                                             'rank', 'merchantContainer', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvREFRRecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -3659,17 +3189,21 @@ class FnvREFRRecord(FnvBaseRecord):
 
     _Type = 'REFR'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
 
     class ReflRefr(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
 
@@ -3977,48 +3511,18 @@ class FnvREFRRecord(FnvBaseRecord):
                                            'occPlaneLeft', 'occPlaneBottom', 'occPlaneTop',
                                            'lod1', 'lod2', 'lod3', 'ignoredBySandbox',
                                            'scale', 'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs',
-                                             'compiledSize', 'lastIndex', 'scriptType',
-                                             'scriptFlags', 'scriptText',
-                                             'vars_list', 'references', 'topic', 'levelMod',
-                                             'owner', 'rank', 'count', 'radius', 'health',
-                                             'radiation', 'charge', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startRed', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt', 'parent',
-                                             'parentFlags', 'emittance', 'boundRef',
-                                             'primitiveX', 'primitiveY', 'primitiveZ',
-                                             'primitiveRed', 'primitiveGreen', 'primitiveBlue',
-                                             'primitiveUnknown', 'primitiveType',
-                                             'collisionType', 'extentX', 'extentY', 'extentZ',
-                                             'destinationFid', 'destinationPosX',
-                                             'destinationPosY', 'destinationPosZ',
-                                             'destinationRotX', 'destinationRotY',
-                                             'destinationRotZ', 'destinationFlags',
-                                             'markerFlags', 'markerFull', 'markerType',
-                                             'markerReputation', 'audioLocation',
-                                             'audioUnknown1', 'audioUnknown2',
-                                             'target', 'rangeRadius',
-                                             'rangeType', 'staticPercentage', 'positionReference',
-                                             'lockLevel', 'lockKey', 'lockFlags', 'lockUnknown1',
-                                             'ammo', 'ammoCount', 'reflrefrs_list', 'litWaters',
-                                             'actionFlags', 'navMesh', 'navUnknown1',
-                                             'portalLinkedRoom1', 'portalLinkedRoom2',
-                                             'portalWidth', 'portalHeight', 'portalPosX',
-                                             'portalPosY', 'portalPosZ', 'portalQ1', 'portalQ2',
-                                             'portalQ3', 'portalQ4', 'seed', 'roomCount',
-                                             'roomUnknown1', 'rooms', 'occPlaneWidth',
-                                             'occPlaneHeight', 'occPlanePosX', 'occPlanePosY',
-                                             'occPlanePosZ', 'occPlaneQ1', 'occPlaneQ2',
-                                             'occPlaneQ3', 'occPlaneQ4', 'occPlaneRight',
-                                             'occPlaneLeft', 'occPlaneBottom', 'occPlaneTop',
-                                             'lod1', 'lod2', 'lod3', 'ignoredBySandbox',
-                                             'scale', 'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xsrf_p', 'xsrd_p', 'audioBnam_p', 'audioFull_p', 'rclr_p',  'xrgd_p', 'xrgb_p','compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xsrf_p')
+    exportattrs.remove('xsrd_p')
+    exportattrs.remove('audioBnam_p')
+    exportattrs.remove('audioFull_p')
+    exportattrs.remove('rclr_p')
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvPGRERecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4026,17 +3530,21 @@ class FnvPGRERecord(FnvBaseRecord):
 
     _Type = 'PGRE'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
 
     class ReflRefr(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
 
@@ -4150,25 +3658,13 @@ class FnvPGRERecord(FnvBaseRecord):
                                            'boundRef', 'reflrefrs_list',
                                            'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'owner',
-                                             'rank', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'reflrefrs_list',
-                                             'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvPMISRecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4176,17 +3672,21 @@ class FnvPMISRecord(FnvBaseRecord):
 
     _Type = 'PMIS'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
 
     class ReflRefr(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
 
@@ -4300,25 +3800,13 @@ class FnvPMISRecord(FnvBaseRecord):
                                            'boundRef', 'reflrefrs_list',
                                            'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'owner',
-                                             'rank', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'reflrefrs_list',
-                                             'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvPBEARecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4326,17 +3814,21 @@ class FnvPBEARecord(FnvBaseRecord):
 
     _Type = 'PBEA'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
 
     class ReflRefr(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
 
@@ -4450,25 +3942,13 @@ class FnvPBEARecord(FnvBaseRecord):
                                            'boundRef', 'reflrefrs_list',
                                            'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'owner',
-                                             'rank', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'reflrefrs_list',
-                                             'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvPFLARecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4476,17 +3956,21 @@ class FnvPFLARecord(FnvBaseRecord):
 
     _Type = 'PFLA'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
 
     class ReflRefr(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
 
@@ -4600,25 +4084,13 @@ class FnvPFLARecord(FnvBaseRecord):
                                            'boundRef', 'reflrefrs_list',
                                            'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'owner',
-                                             'rank', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'reflrefrs_list',
-                                             'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvPCBERecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4626,17 +4098,21 @@ class FnvPCBERecord(FnvBaseRecord):
 
     _Type = 'PCBE'
     class Decal(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         unknown1 = CBashUINT8ARRAY_LIST(2, 24)
         copyattrs = ['reference', 'unknown1']
-        exportattrs = ['reference']#, 'unknown1'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
 
     class ParentRef(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         delay = CBashFLOAT32_LIST(2)
         exportattrs = copyattrs = ['reference', 'delay']
 
     class ReflRefr(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
 
@@ -4750,25 +4226,13 @@ class FnvPCBERecord(FnvBaseRecord):
                                            'boundRef', 'reflrefrs_list',
                                            'ignoredBySandbox', 'scale',
                                            'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['base', 'encounterZone',
-                                             'idleTime', 'idle', 'numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText', 'vars_list',
-                                             'references', 'topic', 'owner',
-                                             'rank', 'count',
-                                             'radius', 'health', 'decals_list',
-                                             'linkedReference',
-                                             'startRed', 'startGreen', 'startBlue',
-                                             'endRed', 'endGreen', 'endBlue',
-                                             'activateParentFlags',
-                                             'activateParentRefs_list', 'prompt',
-                                             'parent', 'parentFlags', 'emittance',
-                                             'boundRef', 'reflrefrs_list',
-                                             'ignoredBySandbox', 'scale',
-                                             'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']# 'xrgd_p', 'xrgb_p', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('xrgb_p')
+    exportattrs.remove('compiled_p')
 
 class FnvNAVMRecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4776,6 +4240,7 @@ class FnvNAVMRecord(FnvBaseRecord):
 
     _Type = 'NAVM'
     class Vertex(ListComponent):
+        __slots__ = []
         x = CBashFLOAT32_LIST(1)
         y = CBashFLOAT32_LIST(2)
         z = CBashFLOAT32_LIST(3)
@@ -4783,6 +4248,7 @@ class FnvNAVMRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['x', 'y', 'z']
 
     class Triangle(ListComponent):
+        __slots__ = []
         vertex1 = CBashGeneric_LIST(1, c_short)
         vertex2 = CBashGeneric_LIST(2, c_short)
         vertex3 = CBashGeneric_LIST(3, c_short)
@@ -4826,6 +4292,7 @@ class FnvNAVMRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['vertex1', 'vertex2', 'vertex3', 'edge1', 'edge2', 'edge3', 'flags']
 
     class Door(ListComponent):
+        __slots__ = []
         door = CBashFORMID_LIST(1)
         unknown1 = CBashGeneric_LIST(2, c_ushort)
         unused1 = CBashUINT8ARRAY_LIST(3, 2)
@@ -4833,6 +4300,7 @@ class FnvNAVMRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['door', 'unknown1']
 
     class Connection(ListComponent):
+        __slots__ = []
         unknown1 = CBashUINT8ARRAY_LIST(1)
         mesh = CBashFORMID_LIST(2)
         triangle = CBashGeneric_LIST(3, c_ushort)
@@ -4885,14 +4353,11 @@ class FnvNAVMRecord(FnvBaseRecord):
                                            'vertices_list', 'triangles_list',
                                            'unknown1', 'doors_list', 'nvgd_p',
                                            'connections_list']
-    exportattrs = FnvBaseRecord.baseattrs + ['version', 'cell', 'numVertices',
-                                             'numTriangles', 'numConnections',
-                                             'numUnknown', 'numDoors',
-                                             'vertices_list', 'triangles_list',
-                                             'unknown1', 'doors_list',
-                                             'connections_list']# 'nvgd_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('nvgd_p')
 
 class FnvLANDRecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -4900,22 +4365,26 @@ class FnvLANDRecord(FnvBaseRecord):
 
     _Type = 'LAND'
     class Normal(ListX2Component):
+        __slots__ = []
         x = CBashGeneric_LISTX2(1, c_ubyte)
         y = CBashGeneric_LISTX2(2, c_ubyte)
         z = CBashGeneric_LISTX2(3, c_ubyte)
         exportattrs = copyattrs = ['x', 'y', 'z']
 
     class Height(ListX2Component):
+        __slots__ = []
         height = CBashGeneric_LISTX2(1, c_byte)
         exportattrs = copyattrs = ['height']
 
     class Color(ListX2Component):
+        __slots__ = []
         red = CBashGeneric_LISTX2(1, c_ubyte)
         green = CBashGeneric_LISTX2(2, c_ubyte)
         blue = CBashGeneric_LISTX2(3, c_ubyte)
         exportattrs = copyattrs = ['red', 'green', 'blue']
 
     class BaseTexture(ListComponent):
+        __slots__ = []
         texture = CBashFORMID_LIST(1)
         quadrant = CBashGeneric_LIST(2, c_byte)
         unused1 = CBashUINT8ARRAY_LIST(3, 1)
@@ -4923,7 +4392,9 @@ class FnvLANDRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['texture', 'quadrant', 'layer']
 
     class AlphaLayer(ListComponent):
+        __slots__ = []
         class Opacity(ListX2Component):
+            __slots__ = []
             position = CBashGeneric_LISTX2(1, c_ushort)
             unused1 = CBashUINT8ARRAY_LISTX2(2, 2)
             opacity = CBashFLOAT32_LISTX2(3)
@@ -4943,10 +4414,12 @@ class FnvLANDRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['texture', 'quadrant', 'layer', 'opacities_list']
 
     class VertexTexture(ListComponent):
+        __slots__ = []
         texture = CBashFORMID_LIST(1)
         exportattrs = copyattrs = ['texture']
 
     class Position(ListX2Component):
+        __slots__ = []
         height = CBashFLOAT32_LISTX2(1)
         normalX = CBashGeneric_LISTX2(2, c_ubyte)
         normalY = CBashGeneric_LISTX2(3, c_ubyte)
@@ -4972,15 +4445,15 @@ class FnvLANDRecord(FnvBaseRecord):
         alphaLayer8Texture = CBashFORMID_LISTX2(23)
         alphaLayer8Opacity = CBashFLOAT32_LISTX2(24)
         exportattrs = copyattrs = ['height', 'normalX', 'normalY', 'normalZ',
-                     'red', 'green', 'blue', 'baseTexture',
-                     'alphaLayer1Texture', 'alphaLayer1Opacity',
-                     'alphaLayer2Texture', 'alphaLayer2Opacity',
-                     'alphaLayer3Texture', 'alphaLayer3Opacity',
-                     'alphaLayer4Texture', 'alphaLayer4Opacity',
-                     'alphaLayer5Texture', 'alphaLayer5Opacity',
-                     'alphaLayer6Texture', 'alphaLayer6Opacity',
-                     'alphaLayer7Texture', 'alphaLayer7Opacity',
-                     'alphaLayer8Texture', 'alphaLayer8Opacity']
+                                   'red', 'green', 'blue', 'baseTexture',
+                                   'alphaLayer1Texture', 'alphaLayer1Opacity',
+                                   'alphaLayer2Texture', 'alphaLayer2Opacity',
+                                   'alphaLayer3Texture', 'alphaLayer3Opacity',
+                                   'alphaLayer4Texture', 'alphaLayer4Opacity',
+                                   'alphaLayer5Texture', 'alphaLayer5Opacity',
+                                   'alphaLayer6Texture', 'alphaLayer6Opacity',
+                                   'alphaLayer7Texture', 'alphaLayer7Opacity',
+                                   'alphaLayer8Texture', 'alphaLayer8Opacity']
 
     data_p = CBashUINT8ARRAY(7)
 
@@ -4988,11 +4461,8 @@ class FnvLANDRecord(FnvBaseRecord):
         return [[self.Normal(self._RecordID, 8, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_normals(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.normals
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.normals, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
     normals = property(get_normals, set_normals)
     def get_normals_list(self):
         return [ExtractCopyList([self.Normal(self._RecordID, 8, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
@@ -5005,11 +4475,9 @@ class FnvLANDRecord(FnvBaseRecord):
         return [[self.Height(self._RecordID, 10, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_heights(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.heights
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.heights, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
+
     heights = property(get_heights, set_heights)
     def get_heights_list(self):
         return [ExtractCopyList([self.Height(self._RecordID, 10, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
@@ -5021,11 +4489,9 @@ class FnvLANDRecord(FnvBaseRecord):
         return [[self.Color(self._RecordID, 12, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_colors(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.colors
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.colors, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
+
     colors = property(get_colors, set_colors)
     def get_colors_list(self):
         return [ExtractCopyList([self.Color(self._RecordID, 12, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
@@ -5057,23 +4523,20 @@ class FnvLANDRecord(FnvBaseRecord):
         return [[self.Position(self._RecordID, 16, row, 0, column) for column in range(0,33)] for row in range(0,33)]
     def set_Positions(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.Positions
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.Positions, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
     Positions = property(get_Positions, set_Positions)
     def get_Positions_list(self):
         return [ExtractCopyList([self.Position(self._RecordID, 16, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
     Positions_list = property(get_Positions_list, set_Positions)
     copyattrs = FnvBaseRecord.baseattrs + ['data_p', 'normals_list', 'heights_list', 'heightOffset',
-                                        'colors_list', 'baseTextures_list', 'alphaLayers_list',
-                                        'vertexTextures_list']
-    exportattrs = FnvBaseRecord.baseattrs + ['normals_list', 'heights_list', 'heightOffset',
-                                        'colors_list', 'baseTextures_list', 'alphaLayers_list',
-                                        'vertexTextures_list'] #'data_p',
+                                           'colors_list', 'baseTextures_list', 'alphaLayers_list',
+                                           'vertexTextures_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('data_p')
 
 class FnvINFORecord(FnvBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -5081,6 +4544,7 @@ class FnvINFORecord(FnvBaseRecord):
 
     _Type = 'INFO'
     class Response(ListComponent):
+        __slots__ = []
         emotionType = CBashGeneric_LIST(1, c_ulong)
         emotionValue = CBashGeneric_LIST(2, c_long)
         unused1 = CBashUINT8ARRAY_LIST(3, 4)
@@ -5110,6 +4574,7 @@ class FnvINFORecord(FnvBaseRecord):
                                    'editNotes', 'speakerAnim', 'listenerAnim']
 
     class InfoScript(BaseComponent):
+        __slots__ = []
         unused1 = CBashUINT8ARRAY_GROUP(0, 4)
         numRefs = CBashGeneric_GROUP(1, c_ulong)
         compiledSize = CBashGeneric_GROUP(2, c_ulong)
@@ -5135,9 +4600,8 @@ class FnvINFORecord(FnvBaseRecord):
         copyattrs = ['numRefs', 'compiledSize', 'lastIndex',
                      'scriptType', 'scriptFlags', 'compiled_p',
                      'scriptText', 'vars_list', 'references']
-        exportattrs = ['numRefs', 'compiledSize', 'lastIndex',
-                       'scriptType', 'scriptFlags',
-                       'scriptText', 'vars_list', 'references']#'compiled_p',
+        exportattrs = copyattrs[:]
+        exportattrs.remove('compiled_p')
 
     dialType = CBashGeneric(7, c_ubyte)
     nextSpeaker = CBashGeneric(8, c_ubyte)
@@ -5215,37 +4679,24 @@ class FnvINFORecord(FnvBaseRecord):
                                                          'actorValueOrPerk', 'challengeType']
 
 class FnvGMSTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'GMST'
     def get_value(self):
-        rFormat = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 2)
-        if(rFormat == API_FIELDS.UNKNOWN):
-            return None
-        elif(rFormat == API_FIELDS.SINT32):
-            _CGetField.restype = POINTER(c_long)
-            retValue = _CGetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 0)
-            if(retValue): return retValue.contents.value
-        elif(rFormat == API_FIELDS.FLOAT32):
-            _CGetField.restype = POINTER(c_float)
-            retValue = _CGetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 0)
-            if(retValue): return round(retValue.contents.value,6)
-        elif(rFormat == API_FIELDS.STRING):
-            _CGetField.restype = c_char_p
-            return _CGetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 0)
-        return None
+        fieldtype = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return None
+        _CGetField.restype = POINTER(c_long) if fieldtype == API_FIELDS.SINT32 else POINTER(c_float) if fieldtype == API_FIELDS.FLOAT32 else c_char_p
+        retValue = _CGetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 0)
+        return (retValue if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
     def set_value(self, nValue):
         if nValue is None: _CDeleteField(self._RecordID, 7, 0, 0, 0, 0, 0, 0)
         else:
-            rFormat = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 2)
-            if(rFormat == API_FIELDS.SINT32 and type(nValue) is int):
-                _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)), 0)
-            elif(rFormat == API_FIELDS.FLOAT32 == 10 and type(nValue) is float):
-                _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
-            elif(rFormat == API_FIELDS.STRING and isinstance(nValue, basestring)):
-                _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, nValue, 0)
+            fieldtype = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 2)
+            _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else str(nValue), 0)
     value = property(get_value, set_value)
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['value']
 
 class FnvTXSTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'TXST'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -5290,18 +4741,12 @@ class FnvTXSTRecord(FnvBaseRecord):
                                            'decalPasses', 'decalFlags', 'decalUnused1',
                                            'decalRed', 'decalGreen', 'decalBlue',
                                            'decalUnused2', 'flags']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2', 'baseImageOrTransparencyPath',
-                                             'normalMapOrSpecularPath', 'envMapMaskOrUnkPath', 'glowMapOrUnusedPath',
-                                             'parallaxMapOrUnusedPath', 'envMapOrUnusedPath', 'decalMinWidth',
-                                             'decalMaxWidth', 'decalMinHeight', 'decalMaxHeight',
-                                             'decalDepth', 'decalShininess', 'decalScale',
-                                             'decalPasses', 'decalFlags',
-                                             'decalRed', 'decalGreen', 'decalBlue',
-                                             'flags'] # 'decalUnused1','decalUnused2',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('decalUnused1')
+    exportattrs.remove('decalUnused2')
 
 class FnvMICNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MICN'
     iconPath = CBashISTRING(7)
     smallIconPath = CBashISTRING(8)
@@ -5309,6 +4754,7 @@ class FnvMICNRecord(FnvBaseRecord):
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['iconPath', 'smallIconPath']
 
 class FnvGLOBRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'GLOB'
     format = CBashGeneric(7, c_char)
     value = CBashFLOAT32(8)
@@ -5316,6 +4762,7 @@ class FnvGLOBRecord(FnvBaseRecord):
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['format', 'value']
 
 class FnvCLASRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CLAS'
     full = CBashSTRING(7)
     description = CBashSTRING(8)
@@ -5362,8 +4809,10 @@ class FnvCLASRecord(FnvBaseRecord):
                                                          'intelligence', 'agility', 'luck']
 
 class FnvFACTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'FACT'
     class Rank(ListComponent):
+        __slots__ = []
         rank = CBashGeneric_LIST(1, c_long)
         male = CBashSTRING_LIST(2)
         female = CBashSTRING_LIST(3)
@@ -5398,9 +4847,10 @@ class FnvFACTRecord(FnvBaseRecord):
     IsTrackCrime = CBashBasicFlag('flags', 0x0100)
     IsAllowSell = CBashBasicFlag('flags', 0x0200)
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'relations_list', 'flags',
-                                        'crimeGoldMultiplier', 'ranks_list', 'reputation']
+                                                         'crimeGoldMultiplier', 'ranks_list', 'reputation']
 
 class FnvHDPTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'HDPT'
     full = CBashSTRING(7)
     modPath = CBashISTRING(8)
@@ -5424,11 +4874,14 @@ class FnvHDPTRecord(FnvBaseRecord):
     IsTorso = CBashBasicFlag('modelFlags', 0x02)
     IsRightHand = CBashBasicFlag('modelFlags', 0x04)
     IsLeftHand = CBashBasicFlag('modelFlags', 0x08)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                                         'modt_p', 'altTextures_list',
-                                                         'modelFlags', 'flags', 'parts']
+    copyattrs = FnvBaseRecord.baseattrs + ['full', 'modPath', 'modb',
+                                           'modt_p', 'altTextures_list',
+                                           'modelFlags', 'flags', 'parts']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvHAIRRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'HAIR'
     full = CBashSTRING(7)
     modPath = CBashISTRING(8)
@@ -5457,11 +4910,14 @@ class FnvHAIRRecord(FnvBaseRecord):
     IsTorso = CBashBasicFlag('modelFlags', 0x02)
     IsRightHand = CBashBasicFlag('modelFlags', 0x04)
     IsLeftHand = CBashBasicFlag('modelFlags', 0x08)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                                         'modt_p', 'altTextures_list',
-                                                         'modelFlags', 'iconPath', 'flags']
+    copyattrs = FnvBaseRecord.baseattrs + ['full', 'modPath', 'modb',
+                                           'modt_p', 'altTextures_list',
+                                           'modelFlags', 'iconPath', 'flags']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvEYESRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'EYES'
     full = CBashSTRING(7)
     iconPath = CBashISTRING(8)
@@ -5475,8 +4931,10 @@ class FnvEYESRecord(FnvBaseRecord):
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'iconPath', 'flags']
 
 class FnvRACERecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'RACE'
     class RaceModel(BaseComponent):
+        __slots__ = []
         modPath = CBashISTRING_GROUP(0)
         modb = CBashFLOAT32_GROUP(1)
         modt_p = CBashUINT8ARRAY_GROUP(2)
@@ -5498,8 +4956,8 @@ class FnvRACERecord(FnvBaseRecord):
         IsLeftHand = CBashBasicFlag('flags', 0x08)
         copyattrs = ['modPath', 'modb', 'modt_p', 'altTextures_list',
                      'flags', 'iconPath', 'smallIconPath']
-        exportattrs = ['modPath', 'modb', 'altTextures_list',
-                     'flags', 'iconPath', 'smallIconPath']#, 'modt_p']
+        exportattrs = copyattrs[:]
+        exportattrs.remove('modt_p')
 
     full = CBashSTRING(7)
     description = CBashSTRING(8)
@@ -5627,39 +5085,50 @@ class FnvRACERecord(FnvBaseRecord):
 
     IsPlayable = CBashBasicFlag('flags', 0x00000001)
     IsChild = CBashBasicFlag('flags', 0x00000004)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'description',
-                                        'relations_list', 'skill1', 'skill1Boost',
-                                        'skill2', 'skill2Boost', 'skill3',
-                                        'skill3Boost', 'skill4', 'skill4Boost',
-                                        'skill5', 'skill5Boost', 'skill6',
-                                        'skill6Boost', 'skill7', 'skill7Boost',
-                                        'maleHeight', 'femaleHeight',
-                                        'maleWeight', 'femaleWeight', 'flags',
-                                        'older', 'younger',
-                                        'maleVoice', 'femaleVoice',
-                                        'defaultHairMale', 'defaultHairFemale',
-                                        'defaultHairMaleColor', 'defaultHairFemaleColor',
-                                        'mainClamp', 'faceClamp', 'attr_p',
-                                        'maleHead_list', 'maleEars_list',
-                                        'maleMouth_list', 'maleTeethLower_list',
-                                        'maleTeethUpper_list', 'maleTongue_list',
-                                        'maleLeftEye_list', 'maleRightEye_list',
-                                        'femaleHead_list', 'femaleEars_list',
-                                        'femaleMouth_list', 'femaleTeethLower_list',
-                                        'femaleTeethUpper_list', 'femaleTongue_list',
-                                        'femaleLeftEye_list', 'femaleRightEye_list',
-                                        'maleUpperBody_list', 'maleLeftHand_list',
-                                        'maleRightHand_list', 'maleUpperBodyTexture_list',
-                                        'femaleUpperBody_list', 'femaleLeftHand_list',
-                                        'femaleRightHand_list',
-                                        'femaleUpperBodyTexture_list',
-                                        'hairs', 'eyes',
-                                        'maleFggs_p', 'maleFgga_p', 'maleFgts_p',
-                                        'maleSnam_p',
-                                        'femaleFggs_p', 'femaleFgga_p', 'femaleFgts_p',
-                                        'femaleSnam_p']
+    copyattrs = FnvBaseRecord.baseattrs + ['full', 'description',
+                                           'relations_list', 'skill1', 'skill1Boost',
+                                           'skill2', 'skill2Boost', 'skill3',
+                                           'skill3Boost', 'skill4', 'skill4Boost',
+                                           'skill5', 'skill5Boost', 'skill6',
+                                           'skill6Boost', 'skill7', 'skill7Boost',
+                                           'maleHeight', 'femaleHeight',
+                                           'maleWeight', 'femaleWeight', 'flags',
+                                           'older', 'younger',
+                                           'maleVoice', 'femaleVoice',
+                                           'defaultHairMale', 'defaultHairFemale',
+                                           'defaultHairMaleColor', 'defaultHairFemaleColor',
+                                           'mainClamp', 'faceClamp', 'attr_p',
+                                           'maleHead_list', 'maleEars_list',
+                                           'maleMouth_list', 'maleTeethLower_list',
+                                           'maleTeethUpper_list', 'maleTongue_list',
+                                           'maleLeftEye_list', 'maleRightEye_list',
+                                           'femaleHead_list', 'femaleEars_list',
+                                           'femaleMouth_list', 'femaleTeethLower_list',
+                                           'femaleTeethUpper_list', 'femaleTongue_list',
+                                           'femaleLeftEye_list', 'femaleRightEye_list',
+                                           'maleUpperBody_list', 'maleLeftHand_list',
+                                           'maleRightHand_list', 'maleUpperBodyTexture_list',
+                                           'femaleUpperBody_list', 'femaleLeftHand_list',
+                                           'femaleRightHand_list',
+                                           'femaleUpperBodyTexture_list',
+                                           'hairs', 'eyes',
+                                           'maleFggs_p', 'maleFgga_p', 'maleFgts_p',
+                                           'maleSnam_p',
+                                           'femaleFggs_p', 'femaleFgga_p', 'femaleFgts_p',
+                                           'femaleSnam_p']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('attr_p')
+    exportattrs.remove('maleFggs_p')
+    exportattrs.remove('maleFgga_p')
+    exportattrs.remove('maleFgts_p')
+    exportattrs.remove('maleSnam_p')
+    exportattrs.remove('femaleFggs_p')
+    exportattrs.remove('femaleFgga_p')
+    exportattrs.remove('femaleFgts_p')
+    exportattrs.remove('femaleSnam_p')
 
 class FnvSOUNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'SOUN'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -5703,16 +5172,11 @@ class FnvSOUNRecord(FnvBaseRecord):
                                            'staticAtten', 'stopTime', 'startTime',
                                            'attenCurve', 'reverb', 'priority',
                                            'x', 'y']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                           'boundX2', 'boundY2', 'boundZ2', 'soundPath',
-                                           'chance', 'minDistance', 'maxDistance',
-                                           'freqAdjustment', 'flags',
-                                           'staticAtten', 'stopTime', 'startTime',
-                                           'attenCurve', 'reverb', 'priority',
-                                           'x', 'y'] # 'unused1',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('unused1')
 
 class FnvASPCRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ASPC'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -5772,6 +5236,7 @@ class FnvASPCRecord(FnvBaseRecord):
                                                          'environmentType', 'spaceType']
 
 class FnvMGEFRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MGEF'
     full = CBashSTRING(7)
     description = CBashSTRING(8)
@@ -5857,31 +5322,28 @@ class FnvMGEFRecord(FnvBaseRecord):
     IsLimbCondition = CBashBasicType('archType', 35, 'IsValueModifier')
     IsTurbo = CBashBasicType('archType', 36, 'IsValueModifier')
     copyattrs = FnvBaseRecord.baseattrs + ['full', 'description', 'iconPath', 'smallIconPath',
-                                                         'modPath', 'modb', 'modt_p', 'altTextures_list',
-                                                         'modelFlags', 'flags', 'baseCostUnused', 'associated',
-                                                         'schoolUnused', 'resistType', 'numCounters', 'unused1',
-                                                         'light', 'projectileSpeed', 'effectShader', 'displayShader',
-                                                         'effectSound', 'boltSound', 'hitSound', 'areaSound',
-                                                         'cefEnchantmentUnused', 'cefBarterUnused', 'archType', 'actorValue']
-    exportattrs = FnvBaseRecord.baseattrs + ['full', 'description', 'iconPath', 'smallIconPath',
-                                             'modPath', 'modb', 'altTextures_list',
-                                             'modelFlags', 'flags', 'associated',
-                                             'resistType', 'numCounters',
-                                             'light', 'projectileSpeed', 'effectShader', 'displayShader',
-                                             'effectSound', 'boltSound', 'hitSound', 'areaSound',
-                                             'archType', 'actorValue'] #'modt_p', 'baseCostUnused', 'schoolUnused', 'unused1', 'cefEnchantmentUnused', 'cefBarterUnused',
+                                           'modPath', 'modb', 'modt_p', 'altTextures_list',
+                                           'modelFlags', 'flags', 'baseCostUnused', 'associated',
+                                           'schoolUnused', 'resistType', 'numCounters', 'unused1',
+                                           'light', 'projectileSpeed', 'effectShader', 'displayShader',
+                                           'effectSound', 'boltSound', 'hitSound', 'areaSound',
+                                           'cefEnchantmentUnused', 'cefBarterUnused', 'archType', 'actorValue']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('baseCostUnused')
+    exportattrs.remove('schoolUnused')
+    exportattrs.remove('unused1')
+    exportattrs.remove('cefEnchantmentUnused')
+    exportattrs.remove('cefBarterUnused')
 
 class FnvSCPTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'SCPT'
-    def mergeFilter(self, modSet):
+    def mergeFilter(self, target):
         """Filter references that don't come from the specified modSet.
            Since we can't actually do this for SCPT records, return False if
            any references are to mods not in modSet."""
-        for ref in self.references:
-            if not isinstance(ref,FormID):
-                continue
-            if ref[0] not in modSet: return False
-        return True
+        return ValidateList(self.references, target)
 
     unused1 = CBashUINT8ARRAY(7, 4)
     numRefs = CBashGeneric(8, c_ulong)
@@ -5910,12 +5372,12 @@ class FnvSCPTRecord(FnvBaseRecord):
                                            'lastIndex', 'scriptType', 'scriptFlags',
                                            'compiled_p', 'scriptText',
                                            'vars_list', 'references']
-    exportattrs = FnvBaseRecord.baseattrs + ['numRefs', 'compiledSize',
-                                             'lastIndex', 'scriptType', 'scriptFlags',
-                                             'scriptText',
-                                             'vars_list', 'references'] #'unused1', 'compiled_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('unused1')
+    exportattrs.remove('compiled_p')
 
 class FnvLTEXRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LTEX'
     iconPath = CBashISTRING(7)
     smallIconPath = CBashISTRING(8)
@@ -5963,6 +5425,7 @@ class FnvLTEXRecord(FnvBaseRecord):
                                                          'specularExponent', 'grasses']
 
 class FnvENCHRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ENCH'
     full = CBashSTRING(7)
     itemType = CBashGeneric(8, c_ulong)
@@ -5984,10 +5447,14 @@ class FnvENCHRecord(FnvBaseRecord):
     IsHideEffect = CBashBasicFlag('flags', 0x04)
     IsWeapon = CBashBasicType('itemType', 2, 'IsApparel')
     IsApparel = CBashBasicType('itemType', 3, 'IsWeapon')
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'itemType', 'chargeAmountUnused',
-                                                         'enchantCostUnused', 'flags', 'effects_list']
+    copyattrs = FnvBaseRecord.baseattrs + ['full', 'itemType', 'chargeAmountUnused',
+                                           'enchantCostUnused', 'flags', 'effects_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('chargeAmountUnused')
+    exportattrs.remove('enchantCostUnused')
 
 class FnvSPELRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'SPEL'
     full = CBashSTRING(7)
     spellType = CBashGeneric(8, c_ulong)
@@ -6023,10 +5490,14 @@ class FnvSPELRecord(FnvBaseRecord):
     IsAbility = CBashBasicType('spellType', 4, 'IsActorEffect')
     IsPoison = CBashBasicType('spellType', 5, 'IsActorEffect')
     IsAddiction = CBashBasicType('spellType', 10, 'IsActorEffect')
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'spellType', 'costUnused',
-                                                         'levelTypeUnused', 'flags', 'effects_list']
+    copyattrs = FnvBaseRecord.baseattrs + ['full', 'spellType', 'costUnused',
+                                           'levelTypeUnused', 'flags', 'effects_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('costUnused')
+    exportattrs.remove('levelTypeUnused')
 
 class FnvACTIRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ACTI'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6062,16 +5533,19 @@ class FnvACTIRecord(FnvBaseRecord):
     IsTorso = CBashBasicFlag('modelFlags', 0x02)
     IsRightHand = CBashBasicFlag('modelFlags', 0x04)
     IsLeftHand = CBashBasicFlag('modelFlags', 0x08)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                                         'boundX2', 'boundY2', 'boundZ2',
-                                                         'full', 'modPath', 'modb', 'modt_p',
-                                                         'altTextures_list', 'modelFlags',
-                                                         'script', 'destructable_list',
-                                                         'loopSound', 'actSound',
-                                                         'radioTemplate', 'radioStation',
-                                                         'water', 'prompt']
+    copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
+                                           'boundX2', 'boundY2', 'boundZ2',
+                                           'full', 'modPath', 'modb', 'modt_p',
+                                           'altTextures_list', 'modelFlags',
+                                           'script', 'destructable_list',
+                                           'loopSound', 'actSound',
+                                           'radioTemplate', 'radioStation',
+                                           'water', 'prompt']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvTACTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'TACT'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6104,16 +5578,20 @@ class FnvTACTRecord(FnvBaseRecord):
     IsTorso = CBashBasicFlag('modelFlags', 0x02)
     IsRightHand = CBashBasicFlag('modelFlags', 0x04)
     IsLeftHand = CBashBasicFlag('modelFlags', 0x08)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                                         'boundX2', 'boundY2', 'boundZ2',
-                                                         'full', 'modPath', 'modb', 'modt_p',
-                                                         'altTextures_list', 'modelFlags',
-                                                         'script', 'destructable_list',
-                                                         'loopSound', 'voice', 'radioTemplate']
+    copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
+                                           'boundX2', 'boundY2', 'boundZ2',
+                                           'full', 'modPath', 'modb', 'modt_p',
+                                           'altTextures_list', 'modelFlags',
+                                           'script', 'destructable_list',
+                                           'loopSound', 'voice', 'radioTemplate']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvTERMRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'TERM'
     class Menu(ListComponent):
+        __slots__ = []
         text = CBashSTRING_LIST(1)
         resultText = CBashSTRING_LIST(2)
         flags = CBashGeneric_LIST(3, c_ubyte)
@@ -6159,12 +5637,8 @@ class FnvTERMRecord(FnvBaseRecord):
                      'scriptType', 'scriptFlags', 'compiled_p',
                      'scriptText', 'vars_list',
                      'references', 'conditions_list',]
-        exportattrs = ['text', 'resultText', 'flags',
-                       'displayNote', 'subMenu', 'numRefs',
-                       'compiledSize', 'lastIndex',
-                       'scriptType', 'scriptFlags',
-                       'scriptText', 'vars_list',
-                       'references', 'conditions_list',] # 'compiled_p',
+        exportattrs = copyattrs[:]
+        exportattrs.remove('compiled_p')
 
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6240,18 +5714,14 @@ class FnvTERMRecord(FnvBaseRecord):
                                            'description', 'loopSound',
                                            'passNote', 'difficultyType',
                                            'flags', 'serverType', 'menus_list']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'script', 'destructable_list',
-                                             'description', 'loopSound',
-                                             'passNote', 'difficultyType',
-                                             'flags', 'serverType', 'menus_list'] # 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvARMORecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ARMO'
     class BipedModel(BaseComponent):
+        __slots__ = []
         modPath = CBashISTRING_GROUP(0)
         modt_p = CBashUINT8ARRAY_GROUP(1)
 
@@ -6270,9 +5740,11 @@ class FnvARMORecord(FnvBaseRecord):
         IsLeftHand = CBashBasicFlag('flags', 0x08)
         copyattrs = ['modPath', 'modt_p', 'altTextures_list',
                      'flags']
-        exportattrs = ['modPath', 'altTextures_list', 'flags']#, 'modt_p']
+        exportattrs = copyattrs[:]
+        exportattrs.remove('modt_p')
 
     class Sound(ListComponent):
+        __slots__ = []
         sound = CBashFORMID_LIST(1)
         chance = CBashGeneric_LIST(2, c_ubyte)
         unused1 = CBashUINT8ARRAY_LIST(3, 3)
@@ -6402,6 +5874,7 @@ class FnvARMORecord(FnvBaseRecord):
                                                          'sounds_list', 'soundsTemplate']
 
 class FnvBOOKRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'BOOK'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6449,21 +5922,16 @@ class FnvBOOKRecord(FnvBaseRecord):
                                            'script', 'description',
                                            'destructable_list', 'flags',
                                            'teaches', 'value', 'weight']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'description',
-                                             'destructable_list', 'flags',
-                                             'teaches', 'value', 'weight'] # 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvCONTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CONT'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters items."""
-        self.items = [x for x in self.items if x.item[0] in modSet]
+        self.items = [x for x in self.items if x.item.ValidateFormID(target)]
         return True
 
     boundX1 = CBashGeneric(7, c_short)
@@ -6516,18 +5984,12 @@ class FnvCONTRecord(FnvBaseRecord):
                                            'script', 'items_list',
                                            'destructable_list', 'flags',
                                            'weight', 'openSound',
-                                           'closeSound', 'loopSound', ]
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'script', 'items_list',
-                                             'destructable_list', 'flags',
-                                             'weight', 'openSound',
-                                             'closeSound', 'loopSound', ] #'modt_p',
-
+                                           'closeSound', 'loopSound',]
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvDOORRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'DOOR'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6566,22 +6028,18 @@ class FnvDOORRecord(FnvBaseRecord):
     IsHidden = CBashBasicFlag('flags', 0x04)
     IsMinimalUse = CBashBasicFlag('flags', 0x08)
     IsSlidingDoor = CBashBasicFlag('flags', 0x10)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                                         'boundX2', 'boundY2', 'boundZ2',
-                                                         'full', 'modPath', 'modb', 'modt_p',
-                                                         'altTextures_list', 'modelFlags',
-                                                         'script', 'destructable_list',
-                                                         'openSound', 'closeSound',
-                                                         'loopSound', 'flags']
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                                         'boundX2', 'boundY2', 'boundZ2',
-                                                         'full', 'modPath', 'modb',
-                                                         'altTextures_list', 'modelFlags',
-                                                         'script', 'destructable_list',
-                                                         'openSound', 'closeSound',
-                                                         'loopSound', 'flags'] #'modt_p',
+    copyattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
+                                           'boundX2', 'boundY2', 'boundZ2',
+                                           'full', 'modPath', 'modb', 'modt_p',
+                                           'altTextures_list', 'modelFlags',
+                                           'script', 'destructable_list',
+                                           'openSound', 'closeSound',
+                                           'loopSound', 'flags']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvINGRRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'INGR'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6631,16 +6089,11 @@ class FnvINGRRecord(FnvBaseRecord):
                                            'script', 'equipmentType',
                                            'weight', 'value', 'flags',
                                            'effects_list']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'equipmentType',
-                                             'weight', 'value', 'flags',
-                                             'effects_list'] # 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvLIGHRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LIGH'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6702,17 +6155,11 @@ class FnvLIGHRecord(FnvBaseRecord):
                                            'red', 'green', 'blue',
                                            'flags', 'falloff', 'fov',
                                            'value', 'weight', 'fade', 'sound']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'duration', 'radius',
-                                             'red', 'green', 'blue',
-                                             'flags', 'falloff', 'fov',
-                                             'value', 'weight', 'fade', 'sound']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvMISCRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MISC'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6757,16 +6204,11 @@ class FnvMISCRecord(FnvBaseRecord):
                                            'script', 'destructable_list',
                                            'pickupSound', 'dropSound',
                                            'value', 'weight', 'loopSound']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'destructable_list',
-                                             'pickupSound', 'dropSound',
-                                             'value', 'weight', 'loopSound']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvSTATRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'STAT'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6809,17 +6251,17 @@ class FnvSTATRecord(FnvBaseRecord):
                                            'boundX2', 'boundY2', 'boundZ2',
                                            'modPath', 'modb', 'modt_p',
                                            'altTextures_list', 'modelFlags',
-                                           'passSound', 'loopSound', ]
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'passSound', 'loopSound', ]#, 'modt_p'
+                                           'passSound', 'loopSound',]
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvSCOLRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'SCOL'
     class Static(ListComponent):
+        __slots__ = []
         class Placement(ListX2Component):
+            __slots__ = []
             posX = CBashFLOAT32_LISTX2(1)
             posY = CBashFLOAT32_LISTX2(2)
             posZ = CBashFLOAT32_LISTX2(3)
@@ -6881,13 +6323,11 @@ class FnvSCOLRecord(FnvBaseRecord):
                                            'modPath', 'modb', 'modt_p',
                                            'altTextures_list', 'modelFlags',
                                            'statics_list']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'statics_list']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvMSTTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MSTT'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6924,14 +6364,12 @@ class FnvMSTTRecord(FnvBaseRecord):
                                            'altTextures_list', 'modelFlags',
                                            'destructable_list', 'data_p',
                                            'sound']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'destructable_list',
-                                             'sound']# 'modt_p', 'data_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('data_p')
 
 class FnvPWATRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'PWAT'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -6982,14 +6420,12 @@ class FnvPWATRecord(FnvBaseRecord):
                                            'boundX2', 'boundY2', 'boundZ2',
                                            'modPath', 'modb', 'modt_p',
                                            'altTextures_list',
-                                           'modelFlags', 'flags', 'water', ]
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'modPath', 'modb',
-                                             'altTextures_list',
-                                             'modelFlags', 'flags', 'water', ]# 'modt_p',
+                                           'modelFlags', 'flags', 'water']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvGRASRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'GRAS'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7043,17 +6479,11 @@ class FnvGRASRecord(FnvBaseRecord):
                                            'posRange', 'heightRange',
                                            'colorRange', 'wavePeriod',
                                            'flags']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'density', 'minSlope', 'maxSlope',
-                                             'waterDistance', 'waterOp',
-                                             'posRange', 'heightRange',
-                                             'colorRange', 'wavePeriod',
-                                             'flags']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvTREERecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'TREE'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7097,19 +6527,11 @@ class FnvTREERecord(FnvBaseRecord):
                                            'shadowRadius', 'rockSpeed',
                                            'rustleSpeed', 'widthBill',
                                            'heightBill']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'speedTree', 'curvature',
-                                             'minAngle', 'maxAngle',
-                                             'branchDim', 'leafDim',
-                                             'shadowRadius', 'rockSpeed',
-                                             'rustleSpeed', 'widthBill',
-                                             'heightBill']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvFURNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'FURN'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7174,14 +6596,11 @@ class FnvFURNRecord(FnvBaseRecord):
                                            'altTextures_list', 'modelFlags',
                                            'script', 'destructable_list',
                                            'flags']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'script', 'destructable_list',
-                                             'flags']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvWEAPRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'WEAP'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7568,56 +6987,16 @@ class FnvWEAPRecord(FnvBaseRecord):
                                            'vatsEffect', 'vatsSkill', 'vatsDamageMult', 'AP',
                                            'silenceType', 'modRequiredType',
                                            'soundLevelType']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath', 'script',
-                                             'effect', 'chargeAmount', 'ammo',
-                                             'destructable_list', 'repairList',
-                                             'equipmentType', 'modelList',
-                                             'pickupSound', 'dropSound', 'shell_list',
-                                             'scope_list', 'scopeEffect', 'world_list',
-                                             'vatsName', 'weaponNode', 'model1Path',
-                                             'model2Path', 'model12Path', 'model3Path',
-                                             'model13Path', 'model23Path',
-                                             'model123Path', 'impact', 'model',
-                                             'model1', 'model2', 'model12', 'model3',
-                                             'model13', 'model23', 'model123', 'mod1',
-                                             'mod2', 'mod3', 'sound3D', 'soundDist',
-                                             'sound2D', 'sound3DLoop', 'soundMelee',
-                                             'soundBlock', 'soundIdle', 'soundEquip',
-                                             'soundUnequip', 'soundMod3D',
-                                             'soundModDist', 'soundMod2D', 'value',
-                                             'health', 'weight', 'damage', 'clipSize',
-                                             'animType', 'animMult', 'reach', 'flags',
-                                             'gripAnim', 'ammoUse', 'reloadAnim',
-                                             'minSpread', 'spread', 'unknown1',
-                                             'sightFOV', 'unknown2', 'projectile',
-                                             'VATSHitChance', 'attackAnim',
-                                             'projectileCount', 'weaponAV',
-                                             'minRange', 'maxRange', 'onHit',
-                                             'extraFlags', 'animAttackMult',
-                                             'fireRate', 'overrideAP', 'leftRumble',
-                                             'timeRumble', 'overrideDamageToWeapon',
-                                             'reloadTime', 'jamTime', 'aimArc',
-                                             'skill', 'rumbleType',
-                                             'rumbleWavelength', 'limbDamageMult',
-                                             'resistType', 'sightUsage',
-                                             'semiFireDelayMin', 'semiFireDelayMax',
-                                             'unknown3', 'effectMod1', 'effectMod2',
-                                             'effectMod3', 'valueAMod1', 'valueAMod2',
-                                             'valueAMod3', 'overridePwrAtkAnim',
-                                             'strengthReq', 'unknown4',
-                                             'reloadAnimMod', 'unknown5', 'regenRate',
-                                             'killImpulse', 'valueBMod1', 'valueBMod2',
-                                             'valueBMod3', 'skillReq', 'critDamage',
-                                             'critMult', 'critFlags', 'critEffect',
-                                             'vatsEffect', 'vatsSkill', 'vatsDamageMult', 'AP',
-                                             'silenceType', 'modRequiredType',
-                                             'soundLevelType']#'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('unknown1')
+    exportattrs.remove('unknown2')
+    exportattrs.remove('unknown3')
+    exportattrs.remove('unknown4')
+    exportattrs.remove('unknown5')
 
 class FnvAMMORecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'AMMO'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7681,25 +7060,16 @@ class FnvAMMORecord(FnvBaseRecord):
                                            'weight', 'consumedAmmo',
                                            'consumedPercentage', 'shortName',
                                            'abbreviation', 'effects']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath', 'script',
-                                             'destructable_list', 'pickupSound',
-                                             'dropSound', 'speed', 'flags',
-                                             'value', 'clipRounds',
-                                             'projectilesPerShot', 'projectile',
-                                             'weight', 'consumedAmmo',
-                                             'consumedPercentage', 'shortName',
-                                             'abbreviation', 'effects']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvNPC_Record(FnvBaseRecord):
+    __slots__ = []
     _Type = 'NPC_'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters items."""
-        self.items = [x for x in self.items if x.item[0] in modSet]
+        self.items = [x for x in self.items if x.item.ValidateFormID(target)]
         return True
 
     boundX1 = CBashGeneric(7, c_short)
@@ -7931,52 +7301,26 @@ class FnvNPC_Record(FnvBaseRecord):
                                            'combatStyle', 'impactType', 'fggs_p',
                                            'fgga_p', 'fgts_p', 'unknown',
                                            'height', 'weight']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'flags', 'fatigue', 'barterGold',
-                                             'level', 'calcMin', 'calcMax',
-                                             'speedMult', 'karma', 'dispBase',
-                                             'templateFlags', 'factions_list',
-                                             'deathItem', 'voice', 'template',
-                                             'race', 'actorEffects', 'unarmedEffect',
-                                             'unarmedAnim', 'destructable_list',
-                                             'script', 'items_list', 'aggression',
-                                             'confidence', 'energyLevel',
-                                             'responsibility', 'mood',
-                                             'services', 'trainSkill', 'trainLevel',
-                                             'assistance', 'aggroFlags',
-                                             'aggroRadius', 'aiPackages', 'iclass',
-                                             'baseHealth', 'strength', 'perception',
-                                             'endurance', 'charisma', 'intelligence',
-                                             'agility', 'luck', 'barter', 'bigGuns',
-                                             'energy', 'explosives', 'lockpick',
-                                             'medicine', 'melee', 'repair',
-                                             'science', 'guns', 'sneak', 'speech',
-                                             'survival', 'unarmed', 'barterBoost',
-                                             'bigGunsBoost', 'energyBoost',
-                                             'explosivesBoost', 'lockpickBoost',
-                                             'medicineBoost', 'meleeBoost',
-                                             'repairBoost', 'scienceBoost',
-                                             'gunsBoost', 'sneakBoost', 'speechBoost',
-                                             'survivalBoost', 'unarmedBoost',
-                                             'headParts', 'hair', 'hairLength', 'eyes',
-                                             'hairRed', 'hairGreen', 'hairBlue',
-                                             'combatStyle', 'impactType',
-                                             'unknown',
-                                             'height', 'weight']# 'fggs_p', 'fgga_p', 'fgts_p',  'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('fggs_p')
+    exportattrs.remove('fgga_p')
+    exportattrs.remove('fgts_p')
+    exportattrs.remove('unknown')
 
 class FnvCREARecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CREA'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters items."""
-        self.items = [x for x in self.items if x.item[0] in modSet]
+        self.items = [x for x in self.items if x.item.ValidateFormID(target)]
         return True
 
     class SoundType(ListComponent):
+        __slots__ = []
         class Sound(ListX2Component):
+            __slots__ = []
             sound = CBashFORMID_LISTX2(1)
             chance = CBashGeneric_LISTX2(2, c_ubyte)
             exportattrs = copyattrs = ['sound', 'chance']
@@ -8391,46 +7735,20 @@ class FnvCREARecord(FnvBaseRecord):
                                            'inheritsSoundsFrom',
                                            'soundTypes_list', 'impactData',
                                            'meleeList']
-    exportattrs  = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                              'boundX2', 'boundY2', 'boundZ2',
-                                              'full', 'modPath', 'modb',
-                                              'altTextures_list', 'modelFlags',
-                                              'actorEffects', 'unarmedEffect',
-                                              'unarmedAnim', 'bodyParts',
-                                              'flags', 'fatigue', 'barterGold',
-                                              'level', 'calcMin', 'calcMax',
-                                              'speedMult', 'karma', 'dispBase',
-                                              'templateFlags', 'factions_list',
-                                              'deathItem', 'voice', 'template',
-                                              'destructable_list', 'script',
-                                              'items_list', 'aggression',
-                                              'confidence', 'energyLevel',
-                                              'responsibility', 'mood',
-                                              'services', 'trainSkill',
-                                              'trainLevel', 'assistance',
-                                              'aggroFlags', 'aggroRadius',
-                                              'aiPackages', 'animations',
-                                              'creatureType', 'combat', 'magic',
-                                              'stealth', 'health', 'attackDamage',
-                                              'strength', 'perception',
-                                              'endurance', 'charisma',
-                                              'intelligence', 'agility', 'luck',
-                                              'attackReach', 'combatStyle',
-                                              'partData', 'turningSpeed',
-                                              'baseScale', 'footWeight',
-                                              'impactType', 'soundLevel',
-                                              'inheritsSoundsFrom',
-                                              'soundTypes_list', 'impactData',
-                                              'meleeList']# 'modt_p', 'nift_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('nift_p')
 
 class FnvLVLCRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LVLC'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
         return True
 
     class Entry(ListComponent):
+        __slots__ = []
         level = CBashGeneric_LIST(1, c_short)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         listId = CBashFORMID_LIST(3)
@@ -8484,21 +7802,19 @@ class FnvLVLCRecord(FnvBaseRecord):
                                            'entries_list', 'modPath',
                                            'modb', 'modt_p',
                                            'altTextures_list', 'modelFlags']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'chanceNone', 'flags',
-                                             'entries_list', 'modPath',
-                                             'modb',
-                                             'altTextures_list', 'modelFlags']#'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvLVLNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LVLN'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
         return True
 
     class Entry(ListComponent):
+        __slots__ = []
         level = CBashGeneric_LIST(1, c_short)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         listId = CBashFORMID_LIST(3)
@@ -8552,14 +7868,11 @@ class FnvLVLNRecord(FnvBaseRecord):
                                            'entries_list', 'modPath',
                                            'modb', 'modt_p',
                                            'altTextures_list', 'modelFlags']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'chanceNone', 'flags',
-                                             'entries_list', 'modPath',
-                                             'modb',
-                                             'altTextures_list', 'modelFlags']#'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvKEYMRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'KEYM'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -8604,16 +7917,11 @@ class FnvKEYMRecord(FnvBaseRecord):
                                            'script', 'destructable_list',
                                            'pickupSound', 'dropSound',
                                            'value', 'weight', 'loopSound']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'destructable_list',
-                                             'pickupSound', 'dropSound',
-                                             'value', 'weight', 'loopSound']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvALCHRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ALCH'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -8695,18 +8003,11 @@ class FnvALCHRecord(FnvBaseRecord):
                                            'addictionChance', 'consumeSound',
                                            'effects_list', 'destructable_list',
                                            'pickupSound', 'dropSound']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'equipmentType', 'weight',
-                                             'value', 'flags', 'withdrawalEffect',
-                                             'addictionChance', 'consumeSound',
-                                             'effects_list', 'destructable_list',
-                                             'pickupSound', 'dropSound']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvIDLMRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IDLM'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -8727,6 +8028,7 @@ class FnvIDLMRecord(FnvBaseRecord):
                                                          'animations']
 
 class FnvNOTERecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'NOTE'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -8774,16 +8076,11 @@ class FnvNOTERecord(FnvBaseRecord):
                                            'pickupSound', 'dropSound',
                                            'noteType', 'quests', 'texturePath',
                                            'textOrTopic', 'sound']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'pickupSound', 'dropSound',
-                                             'noteType', 'quests', 'texturePath',
-                                             'textOrTopic', 'sound']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvCOBJRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'COBJ'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -8823,15 +8120,11 @@ class FnvCOBJRecord(FnvBaseRecord):
                                            'iconPath', 'smallIconPath',
                                            'script', 'pickupSound',
                                            'dropSound', 'value', 'weight']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'iconPath', 'smallIconPath',
-                                             'script', 'pickupSound',
-                                             'dropSound', 'value', 'weight']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvPROJRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'PROJ'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -8925,33 +8218,20 @@ class FnvPROJRecord(FnvBaseRecord):
                                            'rotY', 'rotZ', 'bouncyMult',
                                            'modelPath', 'nam2_p',
                                            'soundLevel']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'destructable_list', 'flags',
-                                             'projType', 'gravity', 'speed',
-                                             'range', 'light', 'flash',
-                                             'tracerChance',
-                                             'altExplProximityTrigger',
-                                             'altExplProximityTimer',
-                                             'explosion', 'sound',
-                                             'flashDuration', 'fadeDuration',
-                                             'impactForce', 'soundCountdown',
-                                             'soundDisable',
-                                             'defaultWeaponSource', 'rotX',
-                                             'rotY', 'rotZ', 'bouncyMult',
-                                             'modelPath',
-                                             'soundLevel']# 'nam2_p', 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('nam2_p')
 
 class FnvLVLIRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LVLI'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
         return True
 
     class Entry(ListComponent):
+        __slots__ = []
         level = CBashGeneric_LIST(1, c_short)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         listId = CBashFORMID_LIST(3)
@@ -8989,8 +8269,10 @@ class FnvLVLIRecord(FnvBaseRecord):
                                                          'globalId', 'entries_list']
 
 class FnvWTHRRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'WTHR'
     class WTHRColor(BaseComponent):
+        __slots__ = []
         riseRed = CBashGeneric_GROUP(0, c_ubyte)
         riseGreen = CBashGeneric_GROUP(1, c_ubyte)
         riseBlue = CBashGeneric_GROUP(2, c_ubyte)
@@ -9025,6 +8307,7 @@ class FnvWTHRRecord(FnvBaseRecord):
                                    'midnightRed', 'midnightGreen', 'midnightBlue']
 
     class Sound(ListComponent):
+        __slots__ = []
         sound = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
         IsDefault = CBashBasicType('type', 0, 'IsPrecip')
@@ -9155,34 +8438,18 @@ class FnvWTHRRecord(FnvBaseRecord):
                                            'boltFrequency', 'weatherType',
                                            'boltRed', 'boltGreen', 'boltBlue',
                                            'sounds_list']
-    exportattrs = FnvBaseRecord.baseattrs + ['sunriseImageSpace', 'dayImageSpace',
-                                             'sunsetImageSpace', 'nightImageSpace',
-                                             'unknown1ImageSpace', 'unknown2ImageSpace',
-                                             'cloudLayer0Path', 'cloudLayer1Path',
-                                             'cloudLayer2Path', 'cloudLayer3Path',
-                                             'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'unknown1', 'layer0Speed', 'layer1Speed',
-                                             'layer2Speed', 'layer3Speed',
-                                             'upperSky_list', 'fog_list',
-                                             'lowerClouds_list', 'ambient_list',
-                                             'sunlight_list', 'sun_list', 'stars_list',
-                                             'lowerSky_list', 'horizon_list',
-                                             'upperClouds_list', 'fogDayNear',
-                                             'fogDayFar', 'fogNightNear',
-                                             'fogNightFar', 'fogDayPower',
-                                             'fogNightPower', 'windSpeed',
-                                             'lowerCloudSpeed', 'upperCloudSpeed',
-                                             'transDelta', 'sunGlare', 'sunDamage',
-                                             'rainFadeIn', 'rainFadeOut',
-                                             'boltFadeIn', 'boltFadeOut',
-                                             'boltFrequency', 'weatherType',
-                                             'boltRed', 'boltGreen', 'boltBlue',
-                                             'sounds_list']# 'modt_p', 'pnam_p', 'inam_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('pnam_p')
+    exportattrs.remove('inam_p')
+    exportattrs.remove('unknown1ImageSpace')
+    exportattrs.remove('unknown2ImageSpace')
 
 class FnvCLMTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CLMT'
     class Weather(ListComponent):
+        __slots__ = []
         weather = CBashFORMID_LIST(1)
         chance = CBashGeneric_LIST(2, c_long)
         globalId = CBashFORMID_LIST(3)
@@ -9228,24 +8495,21 @@ class FnvCLMTRecord(FnvBaseRecord):
                                            'riseEnd', 'setBegin',
                                            'setEnd', 'volatility',
                                            'phaseLength']
-    exportattrs = FnvBaseRecord.baseattrs + ['weathers_list', 'sunPath',
-                                             'glarePath', 'modPath',
-                                             'modb',
-                                             'altTextures_list',
-                                             'modelFlags', 'riseBegin',
-                                             'riseEnd', 'setBegin',
-                                             'setEnd', 'volatility',
-                                             'phaseLength']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvREGNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'REGN'
     class Area(ListComponent):
+        __slots__ = []
         class Point(ListX2Component):
+            __slots__ = []
             posX = CBashFLOAT32_LISTX2(1)
             posY = CBashFLOAT32_LISTX2(2)
             exportattrs = copyattrs = ['posX', 'posY']
 
-        edgeFalloff = CBashFORMID_LIST(1)
+        edgeFalloff = CBashGeneric_LIST(1, c_ulong)
 
         def create_point(self):
             length = _CGetFieldAttribute(self._RecordID, self._FieldID, self._ListIndex, 2, 0, 0, 0, 0, 1)
@@ -9257,7 +8521,9 @@ class FnvREGNRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['edgeFalloff', 'points_list']
 
     class Entry(ListComponent):
+        __slots__ = []
         class Object(ListX2Component):
+            __slots__ = []
             objectId = CBashFORMID_LISTX2(1)
             parentIndex = CBashGeneric_LISTX2(2, c_ushort)
             unused1 = CBashUINT8ARRAY_LISTX2(3, 2)
@@ -9286,18 +8552,25 @@ class FnvREGNRecord(FnvBaseRecord):
             IsZVariance = CBashBasicFlag('flags', 0x00000020)
             IsTree = CBashBasicFlag('flags', 0x00000040)
             IsHugeRock = CBashBasicFlag('flags', 0x00000080)
-            exportattrs = copyattrs = ['objectId', 'parentIndex', 'density', 'clustering',
+            copyattrs = ['objectId', 'parentIndex', 'density', 'clustering',
                          'minSlope', 'maxSlope', 'flags', 'radiusWRTParent',
                          'radius', 'unk1', 'maxHeight', 'sink', 'sinkVar',
                          'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
                          'unk2']
+            exportattrs = copyattrs[:]
+            exportattrs.remove('unk1')
+            exportattrs.remove('unk2')
 
         class Grass(ListX2Component):
+            __slots__ = []
             grass = CBashFORMID_LISTX2(1)
             unk1 = CBashUINT8ARRAY_LISTX2(2, 4)
-            exportattrs = copyattrs = ['grass', 'unk1']
+            copyattrs = ['grass', 'unk1']
+            exportattrs = copyattrs[:]
+            exportattrs.remove('unk1')
 
         class Sound(ListX2Component):
+            __slots__ = []
             sound = CBashFORMID_LISTX2(1)
             flags = CBashGeneric_LISTX2(2, c_ulong)
             chance = CBashGeneric_LISTX2(3, c_ulong)
@@ -9308,6 +8581,7 @@ class FnvREGNRecord(FnvBaseRecord):
             exportattrs = copyattrs = ['sound', 'flags', 'chance']
 
         class Weather(ListX2Component):
+            __slots__ = []
             weather = CBashFORMID_LISTX2(1)
             chance = CBashGeneric_LISTX2(2, c_ulong)
             globalId = CBashFORMID_LISTX2(1)
@@ -9402,8 +8676,10 @@ class FnvREGNRecord(FnvBaseRecord):
                                                          'entries_list']
 
 class FnvNAVIRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'NAVI'
     class _NVMI(ListComponent):
+        __slots__ = []
         unknown1 = CBashUINT8ARRAY_LIST(1, 4)
         mesh = CBashFORMID_LIST(2)
         location = CBashFORMID_LIST(3)
@@ -9412,16 +8688,22 @@ class FnvNAVIRecord(FnvBaseRecord):
         unknown2_p = CBashUINT8ARRAY_LIST(6)
         copyattrs = ['unknown1', 'mesh', 'location',
                      'xGrid', 'yGrid', 'unknown2_p']
-        exportattrs = ['mesh', 'location',
-                       'xGrid', 'yGrid']#'unknown1', 'unknown2_p'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
+        exportattrs.remove('unknown2_p')
 
     class _NVCI(ListComponent):
+        __slots__ = []
         unknown1 = CBashFORMID_LIST(1)
         unknown2 = CBashFORMIDARRAY_LIST(2)
         unknown3 = CBashFORMIDARRAY_LIST(3)
         doors = CBashFORMIDARRAY_LIST(4)
-        exportattrs = copyattrs = ['unknown1', 'unknown2',
-                                   'unknown3', 'doors']
+        copyattrs = ['unknown1', 'unknown2',
+                     'unknown3', 'doors']
+        exportattrs = copyattrs[:]
+        exportattrs.remove('unknown1')
+        exportattrs.remove('unknown2')
+        exportattrs.remove('unknown3')
 
     version = CBashGeneric(7, c_ulong)
 
@@ -9443,6 +8725,7 @@ class FnvNAVIRecord(FnvBaseRecord):
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['version', 'NVMI_list', 'NVCI_list']
 
 class FnvCELLRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CELL'
     @property
     def _ParentID(self):
@@ -9457,18 +8740,15 @@ class FnvCELLRecord(FnvBaseRecord):
         #--Interior cell
         if self.IsInterior:
             ObjectID = self.fid[1]
-            blockNum = ObjectID % 10
-            subBlockNum = (ObjectID / 10) % 10
-            return (blockNum, subBlockNum)
+            return (ObjectID % 10, (ObjectID / 10) % 10)
         #--Exterior cell
         else:
             subblockX = int(math.floor((self.posX or 0) / 8.0))
             subblockY = int(math.floor((self.posY or 0) / 8.0))
-            blockX = int(math.floor(subblockX / 4.0))
-            blockY = int(math.floor(subblockY / 4.0))
-            return ((blockX, blockY), (subblockX, subblockY))
+            return ((int(math.floor(subblockX / 4.0)), int(math.floor(subblockY / 4.0))), (subblockX, subblockY))
 
     class SwappedImpact(ListComponent):
+        __slots__ = []
         material = CBashGeneric_LIST(1, c_ulong)
         oldImpact = CBashFORMID_LIST(2)
         newImpact = CBashFORMID_LIST(3)
@@ -9546,62 +8826,52 @@ class FnvCELLRecord(FnvBaseRecord):
     music = CBashFORMID(56)
     def create_ACHR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvACHRRecord(RecordID)
-        return None
+        return FnvACHRRecord(RecordID) if RecordID else None
     ACHR = CBashSUBRECORDARRAY(57, FnvACHRRecord, "ACHR")
 
     def create_ACRE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvACRERecord(RecordID)
-        return None
+        return FnvACRERecord(RecordID) if RecordID else None
     ACRE = CBashSUBRECORDARRAY(58, FnvACRERecord, "ACRE")
 
     def create_REFR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvREFRRecord(RecordID)
-        return None
+        return FnvREFRRecord(RecordID) if RecordID else None
     REFR = CBashSUBRECORDARRAY(59, FnvREFRRecord, "REFR")
 
     def create_PGRE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvPGRERecord(RecordID)
-        return None
+        return FnvPGRERecord(RecordID) if RecordID else None
     PGRE = CBashSUBRECORDARRAY(60, FnvPGRERecord, "PGRE")
 
     def create_PMIS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PMIS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvPMISRecord(RecordID)
-        return None
+        return FnvPMISRecord(RecordID) if RecordID else None
     PMIS = CBashSUBRECORDARRAY(61, FnvPMISRecord, "PMIS")
 
     def create_PBEA(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PBEA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvPBEARecord(RecordID)
-        return None
+        return FnvPBEARecord(RecordID) if RecordID else None
     PBEA = CBashSUBRECORDARRAY(62, FnvPBEARecord, "PBEA")
 
     def create_PFLA(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PFLA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvPFLARecord(RecordID)
-        return None
+        return FnvPFLARecord(RecordID) if RecordID else None
     PFLA = CBashSUBRECORDARRAY(63, FnvPFLARecord, "PFLA")
 
     def create_PCBE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PCBE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvPCBERecord(RecordID)
-        return None
+        return FnvPCBERecord(RecordID) if RecordID else None
     PCBE = CBashSUBRECORDARRAY(64, FnvPCBERecord, "PCBE")
 
     def create_NAVM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("NAVM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvNAVMRecord(RecordID)
-        return None
+        return FnvNAVMRecord(RecordID) if RecordID else None
     NAVM = CBashSUBRECORDARRAY(65, FnvNAVMRecord, "NAVM")
 
     def create_LAND(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvLANDRecord(RecordID)
-        return None
+        return FnvLANDRecord(RecordID) if RecordID else None
     LAND = CBashSUBRECORD(66, FnvLANDRecord, "LAND")
 
 
@@ -9640,22 +8910,15 @@ class FnvCELLRecord(FnvBaseRecord):
                                            'waterNoisePath', 'regions', 'imageSpace', 'xcet_p',
                                            'encounterZone', 'climate', 'water', 'owner',
                                            'rank', 'acousticSpace', 'xcmt_p', 'music']
-    exportattrs = FnvBaseRecord.baseattrs + ['full', 'flags', 'posX', 'posY', 'quadFlags',
-                                             'ambientRed', 'ambientGreen', 'ambientBlue',
-                                             'directionalRed', 'directionalGreen', 'directionalBlue',
-                                             'fogRed', 'fogGreen', 'fogBlue',
-                                             'fogNear', 'fogFar', 'directionalXY', 'directionalZ',
-                                             'directionalFade', 'fogClip', 'fogPower', 'concSolid',
-                                             'concBroken', 'metalSolid', 'metalHollow', 'metalSheet',
-                                             'wood', 'sand', 'dirt', 'grass', 'water',
-                                             'lightTemplate', 'lightFlags', 'waterHeight',
-                                             'waterNoisePath', 'regions', 'imageSpace',
-                                             'encounterZone', 'climate', 'water', 'owner',
-                                             'rank', 'acousticSpace', 'music']# 'xcet_p', 'xcmt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xcet_p')
+    exportattrs.remove('xcmt_p')
 
 class FnvWRLDRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'WRLD'
     class SwappedImpact(ListComponent):
+        __slots__ = []
         material = CBashGeneric_LIST(1, c_ulong)
         oldImpact = CBashFORMID_LIST(2)
         newImpact = CBashFORMID_LIST(3)
@@ -9726,14 +8989,12 @@ class FnvWRLDRecord(FnvBaseRecord):
 
     def create_WorldCELL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvCELLRecord(RecordID)
-        return None
+        return FnvCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(49, FnvCELLRecord, "WCEL")
  ##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvCELLRecord(RecordID)
-        return None
+        return FnvCELLRecord(RecordID) if RecordID else None
     CELLS = CBashSUBRECORDARRAY(50, FnvCELLRecord, "CELL")
 
 
@@ -9770,32 +9031,22 @@ class FnvWRLDRecord(FnvBaseRecord):
                                            'metalHollow', 'metalSheet', 'wood',
                                            'sand', 'dirt', 'grass', 'water',
                                            'ofst_p']
-
-    exportattrs = FnvBaseRecord.baseattrs + ['full', 'encounterZone', 'parent',
-                                             'parentFlags', 'climate', 'water',
-                                             'lodWater', 'lodWaterHeight',
-                                             'defaultLandHeight',
-                                             'defaultWaterHeight', 'iconPath',
-                                             'smallIconPath', 'dimX', 'dimY',
-                                             'NWCellX', 'NWCellY', 'SECellX',
-                                             'SECellY', 'mapScale', 'xCellOffset',
-                                             'yCellOffset', 'imageSpace', 'flags',
-                                             'xMinObjBounds', 'yMinObjBounds',
-                                             'xMaxObjBounds', 'yMaxObjBounds',
-                                             'music', 'canopyShadowPath',
-                                             'waterNoisePath',
-                                             'swappedImpacts_list', 'concSolid',
-                                             'concBroken', 'metalSolid',
-                                             'metalHollow', 'metalSheet', 'wood',
-                                             'sand', 'dirt', 'grass', 'water']#,'ofst_p'
+    exportattrs = copyattrs[:]
+    exportattrs.remove('ofst_p')
 
 class FnvDIALRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'DIAL'
     class Quest(ListComponent):
+        __slots__ = []
         class QuestUnknown(ListX2Component):
+            __slots__ = []
             unknownId = CBashFORMID_LISTX2(1)
             unknown = CBashGeneric_LISTX2(2, c_long)
-            exportattrs = copyattrs = ['unknownId', 'unknown']
+            copyattrs = ['unknownId', 'unknown']
+            exportattrs = copyattrs[:]
+            exportattrs.remove('unknownId')
+            exportattrs.remove('unknown')
 
         quest = CBashFORMID_LIST(1)
 
@@ -9830,8 +9081,7 @@ class FnvDIALRecord(FnvBaseRecord):
     flags = CBashGeneric(13, c_ubyte)
     def create_INFO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return FnvINFORecord(RecordID)
-        return None
+        return FnvINFORecord(RecordID) if RecordID else None
     INFO = CBashSUBRECORDARRAY(14, FnvINFORecord, "INFO")
 
 
@@ -9846,19 +9096,22 @@ class FnvDIALRecord(FnvBaseRecord):
     IsService = CBashBasicType('dialType', 5, 'IsTopic')
     IsMisc = CBashBasicType('dialType', 6, 'IsTopic')
     IsRadio = CBashBasicType('dialType', 7, 'IsTopic')
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['quests_list', 'removedQuests_list',
-                                                         'full', 'priority', 'unknown',
-                                                         'dialType', 'flags']
+    copyattrs = FnvBaseRecord.baseattrs + ['quests_list', 'removedQuests_list',
+                                           'full', 'priority', 'unknown',
+                                           'dialType', 'flags']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('unknown')
 
 class FnvQUSTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'QUST'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.conditions = [x for x in self.conditions if (
-            (not isinstance(x.param1,FormID) or x.param1[0] in modSet)
+            (not isinstance(x.param1,FormID) or x.param1.ValidateFormID(target))
             and
-            (not isinstance(x.param2,FormID) or x.param2[0] in modSet)
+            (not isinstance(x.param2,FormID) or x.param2.ValidateFormID(target))
             )]
         #for target in self.targets_list:
         #    target.conditions = [x for x in target.conditions_list if (
@@ -9869,7 +9122,9 @@ class FnvQUSTRecord(FnvBaseRecord):
         return True
 
     class Stage(ListComponent):
+        __slots__ = []
         class Entry(ListX2Component):
+            __slots__ = []
             flags = CBashGeneric_LISTX2(1, c_ubyte)
 
             def create_condition(self):
@@ -9913,12 +9168,8 @@ class FnvQUSTRecord(FnvBaseRecord):
                          'compiled_p', 'scriptText',
                          'vars_list', 'references',
                          'nextQuest']
-            exportattrs = ['flags', 'conditions_list', 'text',
-                           'numRefs', 'compiledSize',
-                           'lastIndex', 'scriptType', 'flags',
-                           'scriptText',
-                           'vars_list', 'references',
-                           'nextQuest']#'compiled_p',
+            exportattrs = copyattrs[:]
+            exportattrs.remove('compiled_p')
 
         stage = CBashGeneric_LIST(1, c_short)
 
@@ -9932,7 +9183,9 @@ class FnvQUSTRecord(FnvBaseRecord):
         exportattrs = copyattrs = ['stage', 'entries_list']
 
     class Objective(ListComponent):
+        __slots__ = []
         class Target(ListX2Component):
+            __slots__ = []
             targetId = CBashFORMID_LISTX2(1)
             flags = CBashGeneric_LISTX2(2, c_ubyte)
             unused1 = CBashUINT8ARRAY_LISTX2(3, 3)
@@ -10002,6 +9255,7 @@ class FnvQUSTRecord(FnvBaseRecord):
                                                          'stages_list', 'objectives_list']
 
 class FnvIDLERecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IDLE'
     modPath = CBashISTRING(7)
     modb = CBashFLOAT32(8)
@@ -10054,16 +9308,14 @@ class FnvIDLERecord(FnvBaseRecord):
                                            'group', 'minLooping',
                                            'maxLooping', 'replayDelay',
                                            'flags']
-    exportattrs = FnvBaseRecord.baseattrs + ['modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'conditions_list', 'animations',
-                                             'group', 'minLooping',
-                                             'maxLooping', 'replayDelay',
-                                             'flags']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvPACKRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'PACK'
     class PackScript(BaseComponent):
+        __slots__ = []
         idle = CBashFORMID_GROUP(0)
         unused1 = CBashUINT8ARRAY_GROUP(1, 4)
         numRefs = CBashGeneric_GROUP(2, c_ulong)
@@ -10092,10 +9344,8 @@ class FnvPACKRecord(FnvBaseRecord):
                      'lastIndex', 'scriptType', 'scriptFlags',
                      'compiled_p', 'scriptText',
                      'vars_list', 'references', 'topic']
-        exportattrs = ['idle', 'numRefs', 'compiledSize',
-                       'lastIndex', 'scriptType', 'scriptFlags',
-                       'scriptText',
-                       'vars_list', 'references', 'topic']#'compiled_p',
+        exportattrs = copyattrs[:]
+        exportattrs.remove('compiled_p')
 
     flags = CBashGeneric(7, c_ulong)
     aiType = CBashGeneric(8, c_ubyte)
@@ -10293,26 +9543,31 @@ class FnvPACKRecord(FnvBaseRecord):
 
     IsConversation = CBashBasicType('dialType', 0, 'IsSayTo')
     IsSayTo = CBashBasicType('dialType', 1, 'IsConversation')
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['flags', 'aiType', 'behaviorFlags',
-                                                         'specificFlags', 'loc1Type', 'loc1Id',
-                                                         'loc1Radius', 'loc2Type', 'loc2Id',
-                                                         'loc2Radius', 'month', 'day', 'date',
-                                                         'time', 'duration', 'target1Type',
-                                                         'target1Id', 'target1CountOrDistance',
-                                                         'target1Unknown', 'conditions_list',
-                                                         'idleAnimFlags', 'idleAnimCount',
-                                                         'idleTimer', 'animations',
-                                                         'escortDistance', 'combatStyle',
-                                                         'followTriggerRadius', 'patrolType',
-                                                         'weaponFlags', 'fireRate', 'fireType',
-                                                         'burstNum', 'minShots', 'maxShots',
-                                                         'minPause', 'maxPause', 'target2Type',
-                                                         'target2Id', 'target2CountOrDistance',
-                                                         'target2Unknown', 'FOV', 'topic',
-                                                         'dialFlags', 'dialType', 'dialUnknown',
-                                                         'begin_list', 'end_list', 'change_list']
+    copyattrs = FnvBaseRecord.baseattrs + ['flags', 'aiType', 'behaviorFlags',
+                                           'specificFlags', 'loc1Type', 'loc1Id',
+                                           'loc1Radius', 'loc2Type', 'loc2Id',
+                                           'loc2Radius', 'month', 'day', 'date',
+                                           'time', 'duration', 'target1Type',
+                                           'target1Id', 'target1CountOrDistance',
+                                           'target1Unknown', 'conditions_list',
+                                           'idleAnimFlags', 'idleAnimCount',
+                                           'idleTimer', 'animations',
+                                           'escortDistance', 'combatStyle',
+                                           'followTriggerRadius', 'patrolType',
+                                           'weaponFlags', 'fireRate', 'fireType',
+                                           'burstNum', 'minShots', 'maxShots',
+                                           'minPause', 'maxPause', 'target2Type',
+                                           'target2Id', 'target2CountOrDistance',
+                                           'target2Unknown', 'FOV', 'topic',
+                                           'dialFlags', 'dialType', 'dialUnknown',
+                                           'begin_list', 'end_list', 'change_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('target1Unknown')
+    exportattrs.remove('target2Unknown')
+    exportattrs.remove('dialUnknown')
 
 class FnvCSTYRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CSTY'
     dodgeChance = CBashGeneric(7, c_ubyte)
     lrChance = CBashGeneric(8, c_ubyte)
@@ -10425,8 +9680,10 @@ class FnvCSTYRecord(FnvBaseRecord):
                                                          'semiAutoFireDelayMultMax']
 
 class FnvLSCRRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LSCR'
     class Location(ListComponent):
+        __slots__ = []
         direct = CBashFORMID_LIST(1)
         indirect = CBashFORMID_LIST(2)
         gridY = CBashGeneric_LIST(3, c_short)
@@ -10449,6 +9706,7 @@ class FnvLSCRRecord(FnvBaseRecord):
                                                          'locations_list', 'screentype']
 
 class FnvANIORecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ANIO'
     modPath = CBashISTRING(7)
     modb = CBashFLOAT32(8)
@@ -10466,11 +9724,11 @@ class FnvANIORecord(FnvBaseRecord):
     copyattrs = FnvBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p',
                                            'altTextures_list',
                                            'modelFlags', 'animation']
-    exportattrs = FnvBaseRecord.baseattrs + ['modPath', 'modb',
-                                             'altTextures_list',
-                                             'modelFlags', 'animation']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvWATRRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'WATR'
     full = CBashSTRING(7)
     noisePath = CBashISTRING(8)
@@ -10543,29 +9801,35 @@ class FnvWATRRecord(FnvBaseRecord):
     underWater = CBashFORMID(75)
     IsCausesDamage = CBashBasicFlag('flags', 0x01)
     IsReflective = CBashBasicFlag('flags', 0x02)
-    exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['full', 'noisePath', 'opacity', 'flags',
-                                                         'material', 'sound', 'effect', 'damage',
-                                                         'unknown1', 'unknown2', 'unknown3', 'unknown4',
-                                                         'sunPower', 'reflectAmt', 'fresnelAmt',
-                                                         'fogNear', 'fogFar',
-                                                         'shallowRed', 'shallowGreen', 'shallowBlue',
-                                                         'deepRed', 'deepGreen', 'deepBlue',
-                                                         'reflRed', 'reflGreen', 'reflBlue',
-                                                         'rainForce', 'rainVelocity', 'rainFalloff',
-                                                         'rainDampner', 'dispSize', 'dispForce',
-                                                         'dispVelocity', 'dispFalloff', 'dispDampner',
-                                                         'rainSize', 'normalsNoiseScale',
-                                                         'noise1Direction', 'noise2Direction', 'noise3Direction',
-                                                         'noise1Speed', 'noise2Speed', 'noise3Speed',
-                                                         'normalsFalloffStart', 'normalsFalloffEnd',
-                                                         'fogAmt', 'normalsUVScale', 'underFogAmt', 'underFogNear',
-                                                         'underFogFar', 'distAmt', 'shininess', 'hdrMult',
-                                                         'lightRadius', 'lightBright',
-                                                         'noise1UVScale', 'noise2UVScale', 'noise3UVScale',
-                                                         'noise1AmpScale', 'noise2AmpScale', 'noise3AmpScale',
-                                                         'dayWater', 'nightWater', 'underWater']
+    copyattrs = FnvBaseRecord.baseattrs + ['full', 'noisePath', 'opacity', 'flags',
+                                           'material', 'sound', 'effect', 'damage',
+                                           'unknown1', 'unknown2', 'unknown3', 'unknown4',
+                                           'sunPower', 'reflectAmt', 'fresnelAmt',
+                                           'fogNear', 'fogFar',
+                                           'shallowRed', 'shallowGreen', 'shallowBlue',
+                                           'deepRed', 'deepGreen', 'deepBlue',
+                                           'reflRed', 'reflGreen', 'reflBlue',
+                                           'rainForce', 'rainVelocity', 'rainFalloff',
+                                           'rainDampner', 'dispSize', 'dispForce',
+                                           'dispVelocity', 'dispFalloff', 'dispDampner',
+                                           'rainSize', 'normalsNoiseScale',
+                                           'noise1Direction', 'noise2Direction', 'noise3Direction',
+                                           'noise1Speed', 'noise2Speed', 'noise3Speed',
+                                           'normalsFalloffStart', 'normalsFalloffEnd',
+                                           'fogAmt', 'normalsUVScale', 'underFogAmt', 'underFogNear',
+                                           'underFogFar', 'distAmt', 'shininess', 'hdrMult',
+                                           'lightRadius', 'lightBright',
+                                           'noise1UVScale', 'noise2UVScale', 'noise3UVScale',
+                                           'noise1AmpScale', 'noise2AmpScale', 'noise3AmpScale',
+                                           'dayWater', 'nightWater', 'underWater']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('unknown1')
+    exportattrs.remove('unknown2')
+    exportattrs.remove('unknown3')
+    exportattrs.remove('unknown4')
 
 class FnvEFSHRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'EFSH'
     fillPath = CBashISTRING(7)
     particlePath = CBashISTRING(8)
@@ -10709,6 +9973,7 @@ class FnvEFSHRecord(FnvBaseRecord):
                                                          'addonScaleInTime', 'addonScaleOutTime']
 
 class FnvEXPLRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'EXPL'
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -10772,20 +10037,14 @@ class FnvEXPLRecord(FnvBaseRecord):
                                            'impactDataSet', 'sound2',
                                            'radLevel', 'radTime',
                                            'radRadius', 'soundLevel', 'impact']
-    exportattrs = FnvBaseRecord.baseattrs + ['boundX1', 'boundY1', 'boundZ1',
-                                             'boundX2', 'boundY2', 'boundZ2',
-                                             'full', 'modPath', 'modb',
-                                             'altTextures_list', 'modelFlags',
-                                             'effect', 'imageSpace', 'force',
-                                             'damage', 'radius', 'light',
-                                             'sound1', 'flags', 'ISRadius',
-                                             'impactDataSet', 'sound2',
-                                             'radLevel', 'radTime',
-                                             'radRadius', 'soundLevel', 'impact']# 'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class FnvDEBRRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'DEBR'
     class DebrisModel(ListComponent):
+        __slots__ = []
         percentage = CBashGeneric_LIST(1, c_ubyte)
         modPath = CBashISTRING_LIST(2)
         flags = CBashGeneric_LIST(3, c_ubyte)
@@ -10793,7 +10052,8 @@ class FnvDEBRRecord(FnvBaseRecord):
 
         IsHasCollisionData = CBashBasicFlag('flags', 0x01)
         copyattrs = ['percentage', 'modPath', 'flags', 'modt_p']
-        exportattrs = ['percentage', 'modPath', 'flags']#, 'modt_p'
+        exportattrs = copyattrs[:]
+        exportattrs.remove('modt_p')
 
     def create_model(self):
         length = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 1)
@@ -10805,200 +10065,236 @@ class FnvDEBRRecord(FnvBaseRecord):
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['models_list']
 
 class FnvIMGSRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IMGS'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvIMADRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IMAD'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvFLSTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'FLST'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvPERKRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'PERK'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvBPTDRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'BPTD'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvADDNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ADDN'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvAVIFRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'AVIF'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvRADSRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'RADS'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCAMSRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CAMS'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCPTHRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CPTH'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvVTYPRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'VTYP'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvIPCTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IPCT'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvIPDSRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IPDS'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvARMARecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ARMA'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvECZNRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ECZN'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvMESGRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MESG'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvRGDLRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'RGDL'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvDOBJRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'DOBJ'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvLGTMRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LGTM'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvMUSCRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MUSC'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvIMODRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'IMOD'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvREPURecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'REPU'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvRCPERecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'RCPE'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvRCCTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'RCCT'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCHIPRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CHIP'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCSNORecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CSNO'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvLSCTRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'LSCT'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvMSETRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'MSET'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvALOCRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'ALOC'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCHALRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CHAL'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvAMEFRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'AMEF'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCCRDRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CCRD'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCMNYRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CMNY'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvCDCKRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'CDCK'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvDEHYRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'DEHY'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvHUNGRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'HUNG'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 class FnvSLPDRecord(FnvBaseRecord):
+    __slots__ = []
     _Type = 'SLPD'
 
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + []
 
 #--Oblivion
 class ObBaseRecord(object):
+    __slots__ = ['_RecordID']
     _Type = 'BASE'
     def __init__(self, RecordID):
         self._RecordID = RecordID
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return self._RecordID == other._RecordID
-        return False
+        return self._RecordID == other._RecordID if type(other) is type(self) else False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -11024,8 +10320,7 @@ class ObBaseRecord(object):
     def UpdateReferences(self, Old_NewFormIDs):
         Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if not length:
-            return []
+        if not length: return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
@@ -11035,7 +10330,7 @@ class ObBaseRecord(object):
     def History(self):
         cRecordIDs = (c_ulong * 257)() #just allocate enough for the max number + size
         numRecords = _CGetRecordHistory(self._RecordID, byref(cRecordIDs))
-        return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
+        return [self.__class__(cRecordIDs[x]) for x in range(numRecords)]
 
     def IsWinning(self, GetExtendedConflicts=False):
         """Returns true if the record is the last to load.
@@ -11048,7 +10343,7 @@ class ObBaseRecord(object):
         if(numRecords > 1):
             cRecordIDs = (c_ulong * numRecords)()
             numRecords = _CGetRecordConflicts(self._RecordID, byref(cRecordIDs), c_ulong(GetExtendedConflicts))
-            return [self.__class__(cRecordIDs[x]) for x in range(0, numRecords)]
+            return [self.__class__(cRecordIDs[x]) for x in range(numRecords)]
         return []
 
     def ConflictDetails(self, attrs=None):
@@ -11058,10 +10353,8 @@ class ObBaseRecord(object):
              different, then all sub items are reported.  This allows grouping of dependant
              items."""
         conflicting = {}
-        if attrs is None:
-            attrs = self.copyattrs
-        if not attrs:
-            return conflicting
+        if attrs is None: attrs = self.copyattrs
+        if not attrs: return conflicting
 
         parentRecords = self.History()
         if parentRecords:
@@ -11098,7 +10391,7 @@ class ObBaseRecord(object):
 
         return conflicting
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
         for a list record, items coming from mods not in the modSet could be
@@ -11109,84 +10402,47 @@ class ObBaseRecord(object):
         should be returned."""
         return True
 
-    def CopyAsOverride(self, target, UseWinningParents=False, CopyFlags=0):
-        if hasattr(self, '_ParentID'):
-            if isinstance(target, ObModFile):
-                DestParentID = self._ParentID
-                DestModID = target._ModID
-            else:
-                DestParentID = target._RecordID
-                DestModID = target.GetParentMod()._ModID
-        else:
-            DestParentID = 0
-            DestModID = target._ModID
-
+    def CopyAsOverride(self, target, UseWinningParents=False):
         ##Record Creation Flags
         ##SetAsOverride       = 0x00000001
         ##CopyWinningParent   = 0x00000002
-        #Set SetAsOverride
-        CopyFlags |= 0x00000001
-        if UseWinningParents:
-            CopyFlags |= 0x00000002
-        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, 0, 0, c_ulong(CopyFlags))
-        #Clear SetAsOverride
-        CopyFlags &= ~0x00000001
-        if(RecordID): return self.__class__(RecordID)
-        return None
+        DestParentID, DestModID = (0, target._ModID) if not hasattr(self, '_ParentID') else (self._ParentID, target._ModID) if isinstance(target, ObModFile) else (target._RecordID, target.GetParentMod()._ModID)
+        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, 0, 0, c_ulong(0x00000003 if UseWinningParents else 0x00000001))
+        return self.__class__(RecordID) if RecordID else None
 
-    def CopyAsNew(self, target, UseWinningParents=False, RecordFormID=0, CopyFlags=0):
-        if hasattr(self, '_ParentID'):
-            if isinstance(target, ObModFile):
-                DestParentID = self._ParentID
-                DestModID = target._ModID
-            else:
-                DestParentID = target._RecordID
-                DestModID = target.GetParentMod()._ModID
-        else:
-            DestParentID = 0
-            DestModID = target._ModID
-        if RecordFormID:
-            RecordFormID = RecordFormID.GetShortFormID(target)
+    def CopyAsNew(self, target, UseWinningParents=False, RecordFormID=0):
         ##Record Creation Flags
         ##SetAsOverride       = 0x00000001
         ##CopyWinningParent   = 0x00000002
-        #Clear SetAsOverride in case it was set
-        CopyFlags &= ~0x00000001
-        if UseWinningParents:
-            CopyFlags |= 0x00000002
-        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, RecordFormID, 0, c_ulong(CopyFlags))
-        if(RecordID): return self.__class__(RecordID)
-        return None
+        DestParentID, DestModID = (0, target._ModID) if not hasattr(self, '_ParentID') else (self._ParentID, target._ModID) if isinstance(target, ObModFile) else (target._RecordID, target.GetParentMod()._ModID)
+        RecordID = _CCopyRecord(self._RecordID, DestModID, DestParentID, RecordFormID.GetShortFormID(target) if RecordFormID else 0, 0, c_ulong(0x00000002 if UseWinningParents else 0))
+        return self.__class__(RecordID) if RecordID else None
 
     @property
     def Parent(self):
-        RecordID = getattr(self, '_ParentID', 0)
+        RecordID = getattr(self, '_ParentID', None)
         if RecordID:
-            testRecord = ObBaseRecord(RecordID)
-            RecordType = type_record[testRecord.recType]
-            if RecordType:
-                return RecordType(RecordID)
+            _CGetFieldAttribute.restype = (c_char * 4)
+            retValue = _CGetFieldAttribute(RecordID, 0, 0, 0, 0, 0, 0, 0, 0)
+            _CGetFieldAttribute.restype = c_ulong
+            return type_record[retValue.value](RecordID)
         return None
 
     @property
     def recType(self):
         _CGetFieldAttribute.restype = (c_char * 4)
-        retValue = _CGetFieldAttribute(self._RecordID, 0, 0, 0, 0, 0, 0, 0, 0)
+        retValue = _CGetFieldAttribute(self._RecordID, 0, 0, 0, 0, 0, 0, 0, 0).value
         _CGetFieldAttribute.restype = c_ulong
-        if(retValue and retValue.value != ''): return retValue.value
-        return None
+        return retValue
 
     flags1 = CBashGeneric(1, c_ulong)
 
     def get_fid(self):
         _CGetField.restype = POINTER(c_ulong)
         retValue = _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return FormID(self._RecordID, retValue.contents.value)
-        return None
+        return FormID(self._RecordID, retValue.contents.value) if retValue else FormID(None,None)
     def set_fid(self, nValue):
-        if nValue is None: nValue = 0
-        else: nValue = nValue.GetShortFormID(self)
-        _CSetIDFields(self._RecordID, nValue, self.eid or 0)
+        _CSetIDFields(self._RecordID, 0 if nValue is None else nValue.GetShortFormID(self), self.eid or 0)
     fid = property(get_fid, set_fid)
 
     flags2 = CBashGeneric(3, c_ulong)
@@ -11194,11 +10450,9 @@ class ObBaseRecord(object):
     def get_eid(self):
         _CGetField.restype = c_char_p
         retValue = _CGetField(self._RecordID, 4, 0, 0, 0, 0, 0, 0, 0)
-        if(retValue): return ISTRING(retValue)
-        return None
+        return ISTRING(retValue) if retValue else None
     def set_eid(self, nValue):
-        if nValue is None or not len(nValue): nValue = 0
-        else: nValue = str(nValue)
+        nValue = 0 if nValue is None or not len(nValue) else str(nValue)
         _CGetField.restype = POINTER(c_ulong)
         _CSetIDFields(self._RecordID, _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0).contents.value, nValue)
     eid = property(get_eid, set_eid)
@@ -11220,6 +10474,7 @@ class ObBaseRecord(object):
     baseattrs = ['flags1', 'flags2', 'eid']
 
 class ObTES4Record(object):
+    __slots__ = ['_RecordID']
     _Type = 'TES4'
     def __init__(self, RecordID):
         self._RecordID = RecordID
@@ -11253,40 +10508,29 @@ class ObTES4Record(object):
     DATA = CBashJunk(13)
     IsESM = CBashBasicFlag('flags1', 0x00000001)
     exportattrs = copyattrs = ['flags1', 'flags2', 'version', 'numRecords', 'nextObject',
-                 'author', 'description', 'masters']
+                               'author', 'description', 'masters']
 
 class ObGMSTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'GMST'
     def get_value(self):
-        rFormat = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 2)
-        if(rFormat == API_FIELDS.UNKNOWN):
-            return None
-        elif(rFormat == API_FIELDS.SINT32):
-            _CGetField.restype = POINTER(c_long)
-            retValue = _CGetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 0)
-            if(retValue): return retValue.contents.value
-        elif(rFormat == API_FIELDS.FLOAT32):
-            _CGetField.restype = POINTER(c_float)
-            retValue = _CGetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 0)
-            if(retValue): return round(retValue.contents.value,6)
-        elif(rFormat == API_FIELDS.STRING):
-            _CGetField.restype = c_char_p
-            return _CGetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 0)
-        return None
+        fieldtype = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 2)
+        if fieldtype == API_FIELDS.UNKNOWN: return None
+        _CGetField.restype = POINTER(c_long) if fieldtype == API_FIELDS.SINT32 else POINTER(c_float) if fieldtype == API_FIELDS.FLOAT32 else c_char_p
+        retValue = _CGetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 0)
+        return (retValue if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
     def set_value(self, nValue):
         if nValue is None: _CDeleteField(self._RecordID, 5, 0, 0, 0, 0, 0, 0)
         else:
-            rFormat = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 2)
-            if(rFormat == API_FIELDS.SINT32 and type(nValue) is int):
-                _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)), 0)
-            elif(rFormat == API_FIELDS.FLOAT32 == 10 and type(nValue) is float):
-                _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_float(round(nValue,6))), 0)
-            elif(rFormat == API_FIELDS.STRING and isinstance(nValue, basestring)):
-                _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, nValue, 0)
+            fieldtype = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 2)
+            try: _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_long(int(nValue))) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else str(nValue), 0)
+            except TypeError: return
+            except ValueError: return
     value = property(get_value, set_value)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['value']
 
 class ObACHRRecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11317,15 +10561,16 @@ class ObACHRRecord(ObBaseRecord):
     rotZ_degrees = CBashDEGREES(23)
     IsOppositeParent = CBashBasicFlag('parentFlags', 0x00000001)
     copyattrs = ObBaseRecord.baseattrs + ['base', 'unknownXPCIFormID', 'unknownXPCIString',
-                                        'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
-                                        'merchantContainer', 'horse', 'xrgd_p', 'scale',
-                                        'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
-    exportattrs = ObBaseRecord.baseattrs + ['base', 'unknownXPCIFormID', 'unknownXPCIString',
-                                        'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
-                                        'merchantContainer', 'horse', 'scale',
-                                        'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ'] #'xrgd_p',
+                                          'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
+                                          'merchantContainer', 'horse', 'xrgd_p', 'scale',
+                                          'posX', 'posY', 'posZ', 'rotX', 'rotY', 'rotZ']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
+    exportattrs.remove('unknownXPCIFormID')
+    exportattrs.remove('unknownXPCIString')
 
 class ObACRERecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11355,15 +10600,14 @@ class ObACRERecord(ObBaseRecord):
     rotZ_degrees = CBashDEGREES(22)
     IsOppositeParent = CBashBasicFlag('parentFlags', 0x00000001)
     copyattrs = ObBaseRecord.baseattrs + ['base', 'owner', 'rank', 'globalVariable',
-                                        'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
-                                        'xrgd_p', 'scale', 'posX', 'posY', 'posZ', 'rotX',
-                                        'rotY', 'rotZ']
-    exportattrs = ObBaseRecord.baseattrs + ['base', 'owner', 'rank', 'globalVariable',
-                                        'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
-                                        'scale', 'posX', 'posY', 'posZ', 'rotX',
-                                        'rotY', 'rotZ'] #'xrgd_p',
+                                          'lod1', 'lod2', 'lod3', 'parent', 'parentFlags',
+                                          'xrgd_p', 'scale', 'posX', 'posY', 'posZ', 'rotX',
+                                          'rotY', 'rotZ']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('xrgd_p')
 
 class ObREFRRecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11450,21 +10694,22 @@ class ObREFRRecord(ObBaseRecord):
     IsGreaterSoul = CBashBasicType('soulType', 4, 'IsNoSoul')
     IsGrandSoul = CBashBasicType('soulType', 5, 'IsNoSoul')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['base', 'destination',
-                                        'destinationPosX', 'destinationPosY',
-                                        'destinationPosZ', 'destinationRotX',
-                                        'destinationRotY', 'destinationRotZ',
-                                        'lockLevel', 'lockKey', 'lockFlags',
-                                        'owner', 'rank',
-                                        'globalVariable', 'parent',
-                                        'parentFlags', 'target', 'seed',
-                                        'seed_as_offset', 'lod1', 'lod2', 'lod3',
-                                        'charge', 'health','levelMod','actionFlags',
-                                        'count', 'markerFlags', 'markerName',
-                                        'markerType', 'scale','soulType',
-                                        'posX', 'posY', 'posZ', 'rotX',
-                                        'rotY', 'rotZ']
+                                                        'destinationPosX', 'destinationPosY',
+                                                        'destinationPosZ', 'destinationRotX',
+                                                        'destinationRotY', 'destinationRotZ',
+                                                        'lockLevel', 'lockKey', 'lockFlags',
+                                                        'owner', 'rank',
+                                                        'globalVariable', 'parent',
+                                                        'parentFlags', 'target', 'seed',
+                                                        'seed_as_offset', 'lod1', 'lod2', 'lod3',
+                                                        'charge', 'health','levelMod','actionFlags',
+                                                        'count', 'markerFlags', 'markerName',
+                                                        'markerType', 'scale','soulType',
+                                                        'posX', 'posY', 'posZ', 'rotX',
+                                                        'rotY', 'rotZ']
 
 class ObINFORecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11472,6 +10717,7 @@ class ObINFORecord(ObBaseRecord):
 
     _Type = 'INFO'
     class Response(ListComponent):
+        __slots__ = []
         emotionType = CBashGeneric_LIST(1, c_ulong)
         emotionValue = CBashGeneric_LIST(2, c_long)
         unused1 = CBashUINT8ARRAY_LIST(3, 4)
@@ -11538,19 +10784,16 @@ class ObINFORecord(ObBaseRecord):
     IsRandomEnd = CBashBasicFlag('flags', 0x00000020)
     IsRunForRumors = CBashBasicFlag('flags', 0x00000040)
     copyattrs = ObBaseRecord.baseattrs + ['dialType', 'flags', 'quest', 'topic',
-                                        'prevInfo', 'addTopics', 'responses_list',
-                                        'conditions_list', 'choices', 'linksFrom',
-                                        'numRefs', 'compiledSize', 'lastIndex',
-                                        'scriptType', 'compiled_p', 'scriptText',
-                                        'references']
-    exportattrs = ObBaseRecord.baseattrs + ['dialType', 'flags', 'quest', 'topic',
-                                        'prevInfo', 'addTopics', 'responses_list',
-                                        'conditions_list', 'choices', 'linksFrom',
-                                        'numRefs', 'compiledSize', 'lastIndex',
-                                        'scriptType', 'scriptText',
-                                        'references'] #'compiled_p',
+                                          'prevInfo', 'addTopics', 'responses_list',
+                                          'conditions_list', 'choices', 'linksFrom',
+                                          'numRefs', 'compiledSize', 'lastIndex',
+                                          'scriptType', 'compiled_p', 'scriptText',
+                                          'references']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('compiled_p')
 
 class ObLANDRecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11558,22 +10801,26 @@ class ObLANDRecord(ObBaseRecord):
 
     _Type = 'LAND'
     class Normal(ListX2Component):
+        __slots__ = []
         x = CBashGeneric_LISTX2(1, c_ubyte)
         y = CBashGeneric_LISTX2(2, c_ubyte)
         z = CBashGeneric_LISTX2(3, c_ubyte)
         exportattrs = copyattrs = ['x', 'y', 'z']
 
     class Height(ListX2Component):
+        __slots__ = []
         height = CBashGeneric_LISTX2(1, c_byte)
         exportattrs = copyattrs = ['height']
 
     class Color(ListX2Component):
+        __slots__ = []
         red = CBashGeneric_LISTX2(1, c_ubyte)
         green = CBashGeneric_LISTX2(2, c_ubyte)
         blue = CBashGeneric_LISTX2(3, c_ubyte)
         exportattrs = copyattrs = ['red', 'green', 'blue']
 
     class BaseTexture(ListComponent):
+        __slots__ = []
         texture = CBashFORMID_LIST(1)
         quadrant = CBashGeneric_LIST(2, c_byte)
         unused1 = CBashUINT8ARRAY_LIST(3, 1)
@@ -11581,7 +10828,9 @@ class ObLANDRecord(ObBaseRecord):
         exportattrs = copyattrs = ['texture', 'quadrant', 'layer']
 
     class AlphaLayer(ListComponent):
+        __slots__ = []
         class Opacity(ListX2Component):
+            __slots__ = []
             position = CBashGeneric_LISTX2(1, c_ushort)
             unused1 = CBashUINT8ARRAY_LISTX2(2, 2)
             opacity = CBashFLOAT32_LISTX2(3)
@@ -11601,10 +10850,12 @@ class ObLANDRecord(ObBaseRecord):
         exportattrs = copyattrs = ['texture', 'quadrant', 'layer', 'opacities_list']
 
     class VertexTexture(ListComponent):
+        __slots__ = []
         texture = CBashFORMID_LIST(1)
         exportattrs = copyattrs = ['texture']
 
     class Position(ListX2Component):
+        __slots__ = []
         height = CBashFLOAT32_LISTX2(1)
         normalX = CBashGeneric_LISTX2(2, c_ubyte)
         normalY = CBashGeneric_LISTX2(3, c_ubyte)
@@ -11630,15 +10881,15 @@ class ObLANDRecord(ObBaseRecord):
         alphaLayer8Texture = CBashFORMID_LISTX2(23)
         alphaLayer8Opacity = CBashFLOAT32_LISTX2(24)
         exportattrs = copyattrs = ['height', 'normalX', 'normalY', 'normalZ',
-                     'red', 'green', 'blue', 'baseTexture',
-                     'alphaLayer1Texture', 'alphaLayer1Opacity',
-                     'alphaLayer2Texture', 'alphaLayer2Opacity',
-                     'alphaLayer3Texture', 'alphaLayer3Opacity',
-                     'alphaLayer4Texture', 'alphaLayer4Opacity',
-                     'alphaLayer5Texture', 'alphaLayer5Opacity',
-                     'alphaLayer6Texture', 'alphaLayer6Opacity',
-                     'alphaLayer7Texture', 'alphaLayer7Opacity',
-                     'alphaLayer8Texture', 'alphaLayer8Opacity']
+                                   'red', 'green', 'blue', 'baseTexture',
+                                   'alphaLayer1Texture', 'alphaLayer1Opacity',
+                                   'alphaLayer2Texture', 'alphaLayer2Opacity',
+                                   'alphaLayer3Texture', 'alphaLayer3Opacity',
+                                   'alphaLayer4Texture', 'alphaLayer4Opacity',
+                                   'alphaLayer5Texture', 'alphaLayer5Opacity',
+                                   'alphaLayer6Texture', 'alphaLayer6Opacity',
+                                   'alphaLayer7Texture', 'alphaLayer7Opacity',
+                                   'alphaLayer8Texture', 'alphaLayer8Opacity']
 
     data_p = CBashUINT8ARRAY(5)
 
@@ -11646,11 +10897,8 @@ class ObLANDRecord(ObBaseRecord):
         return [[self.Normal(self._RecordID, 6, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_normals(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.normals
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.normals, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
     normals = property(get_normals, set_normals)
     def get_normals_list(self):
         return [ExtractCopyList([self.Normal(self._RecordID, 6, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
@@ -11663,11 +10911,9 @@ class ObLANDRecord(ObBaseRecord):
         return [[self.Height(self._RecordID, 8, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_heights(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.heights
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.heights, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
+
     heights = property(get_heights, set_heights)
     def get_heights_list(self):
         return [ExtractCopyList([self.Height(self._RecordID, 8, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
@@ -11679,11 +10925,9 @@ class ObLANDRecord(ObBaseRecord):
         return [[self.Color(self._RecordID, 10, x, 0, y) for y in range(0,33)] for x in range(0,33)]
     def set_colors(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.colors
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.colors, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
+
     colors = property(get_colors, set_colors)
     def get_colors_list(self):
         return [ExtractCopyList([self.Color(self._RecordID, 10, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
@@ -11715,23 +10959,20 @@ class ObLANDRecord(ObBaseRecord):
         return [[self.Position(self._RecordID, 14, row, 0, column) for column in range(0,33)] for row in range(0,33)]
     def set_Positions(self, nElements):
         if nElements is None or len(nElements) != 33: return
-        if isinstance(nElements[0], tuple): nValues = nElements
-        else: nValues = [ExtractCopyList(nElements[x]) for x in range(0,33)]
-        oElements = self.Positions
-        for x in range(0,33):
-            SetCopyList(oElements[x], nValues[x])
+        for oElement, nElement in zip(self.Positions, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
+            SetCopyList(oElement, nElement)
     Positions = property(get_Positions, set_Positions)
     def get_Positions_list(self):
         return [ExtractCopyList([self.Position(self._RecordID, 14, x, 0, y) for y in range(0,33)]) for x in range(0,33)]
     Positions_list = property(get_Positions_list, set_Positions)
     copyattrs = ObBaseRecord.baseattrs + ['data_p', 'normals_list', 'heights_list', 'heightOffset',
-                                        'colors_list', 'baseTextures_list', 'alphaLayers_list',
-                                        'vertexTextures_list']
-    exportattrs = ObBaseRecord.baseattrs + ['normals_list', 'heights_list', 'heightOffset',
-                                        'colors_list', 'baseTextures_list', 'alphaLayers_list',
-                                        'vertexTextures_list'] #'data_p',
+                                          'colors_list', 'baseTextures_list', 'alphaLayers_list',
+                                          'vertexTextures_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('data_p')
 
 class ObPGRDRecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11739,6 +10980,7 @@ class ObPGRDRecord(ObBaseRecord):
 
     _Type = 'PGRD'
     class PGRI(ListComponent):
+        __slots__ = []
         point = CBashGeneric_LIST(1, c_ushort)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         x = CBashFLOAT32_LIST(3)
@@ -11747,6 +10989,7 @@ class ObPGRDRecord(ObBaseRecord):
         exportattrs = copyattrs = ['point', 'x', 'y', 'z']
 
     class PGRL(ListComponent):
+        __slots__ = []
         reference = CBashFORMID_LIST(1)
         points = CBashUINT32ARRAY_LIST(2)
         exportattrs = copyattrs = ['reference', 'points']
@@ -11778,11 +11021,13 @@ class ObPGRDRecord(ObBaseRecord):
     pgrl_list = CBashLIST(10, PGRL, True)
 
     copyattrs = ObBaseRecord.baseattrs + ['count', 'pgrp_list', 'pgag_p', 'pgrr_p',
-                                        'pgri_list', 'pgrl_list']
-    exportattrs = ObBaseRecord.baseattrs + ['count', 'pgrp_list',
-                                        'pgri_list', 'pgrl_list'] # 'pgag_p', 'pgrr_p',
+                                          'pgri_list', 'pgrl_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('pgag_p')
+    exportattrs.remove('pgrr_p')
 
 class ObROADRecord(ObBaseRecord):
+    __slots__ = []
     @property
     def _ParentID(self):
         _CGetField.restype = c_ulong
@@ -11790,6 +11035,7 @@ class ObROADRecord(ObBaseRecord):
 
     _Type = 'ROAD'
     class PGRR(ListComponent):
+        __slots__ = []
         x = CBashFLOAT32_LIST(1)
         y = CBashFLOAT32_LIST(2)
         z = CBashFLOAT32_LIST(3)
@@ -11812,6 +11058,7 @@ class ObROADRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['pgrp_list', 'pgrr_list']
 
 class ObACTIRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'ACTI'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -11820,10 +11067,12 @@ class ObACTIRecord(ObBaseRecord):
     script = CBashFORMID(9)
     sound = CBashFORMID(10)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'script',
-                                        'sound']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'script', 'sound'] #'modt_p',
+                                          'sound']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObALCHRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'ALCH'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -11855,16 +11104,20 @@ class ObALCHRecord(ObBaseRecord):
     reserved = CBashUINT8ARRAY(20, 0x1C) #OBME
     datx_p = CBashUINT8ARRAY(21, 0x20) #OBME
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'script', 'weight',
-                                        'value', 'flags', 'effects_list']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'script', 'weight',
-                                        'value', 'flags', 'effects_list'] # 'modt_p',
+                                          'iconPath', 'script', 'weight',
+                                          'value', 'flags', 'effects_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved'] #, 'datx_p'
+                                 'reserved','datx_p']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('modt_p')
+    exportattrsOBME.remove('reserved')
+    exportattrsOBME.remove('datx_p')
 
 class ObAMMORecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'AMMO'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -11884,25 +11137,25 @@ class ObAMMORecord(ObBaseRecord):
     IsNormal = CBashInvertedFlag('IsNotNormal')
     IsNormalWeapon = CBashAlias('IsNormal')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'enchantment',
-                                        'enchantPoints', 'speed', 'flags',
-                                        'value', 'weight', 'damage']
-
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'enchantment',
-                                        'enchantPoints', 'speed', 'flags',
-                                        'value', 'weight', 'damage'] # 'modt_p',
+                                          'iconPath', 'enchantment',
+                                          'enchantPoints', 'speed', 'flags',
+                                          'value', 'weight', 'damage']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObANIORecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'ANIO'
     modPath = CBashISTRING(5)
     modb = CBashFLOAT32(6)
     modt_p = CBashUINT8ARRAY(7)
     animationId = CBashFORMID(8)
     copyattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p', 'animationId']
-    exportattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'animationId'] #'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObAPPARecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'APPA'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -11919,13 +11172,13 @@ class ObAPPARecord(ObBaseRecord):
     IsCalcinator = CBashBasicType('apparatus', 2, 'IsMortarPestle')
     IsRetort = CBashBasicType('apparatus', 3, 'IsMortarPestle')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'script', 'apparatusType',
-                                        'value', 'weight', 'quality']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'script', 'apparatusType',
-                                        'value', 'weight', 'quality'] # 'modt_p',
+                                          'iconPath', 'script', 'apparatusType',
+                                          'value', 'weight', 'quality']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObARMORecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'ARMO'
     full = CBashSTRING(5)
     script = CBashFORMID(6)
@@ -11972,11 +11225,12 @@ class ObARMORecord(ObBaseRecord):
     IsPlayable = CBashInvertedFlag('IsNonPlayable')
     IsHeavyArmor = CBashBasicFlag('flags', 0x00800000)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'script', 'enchantment', 'enchantPoints',
-                                        'flags', 'maleBody_list', 'maleWorld_list', 'maleIconPath',
-                                        'femaleBody_list', 'femaleWorld_list', 'femaleIconPath',
-                                        'strength', 'value', 'health', 'weight']
+                                                        'flags', 'maleBody_list', 'maleWorld_list', 'maleIconPath',
+                                                        'femaleBody_list', 'femaleWorld_list', 'femaleIconPath',
+                                                        'strength', 'value', 'health', 'weight']
 
 class ObBOOKRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'BOOK'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -11995,15 +11249,14 @@ class ObBOOKRecord(ObBaseRecord):
     IsFixed = CBashBasicFlag('flags', 0x00000002)
     IsCantBeTaken = CBashAlias('IsFixed')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'text', 'script',
-                                        'enchantment', 'enchantPoints',
-                                        'flags', 'teaches', 'value', 'weight']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'text', 'script',
-                                        'enchantment', 'enchantPoints',
-                                        'flags', 'teaches', 'value', 'weight'] # 'modt_p',
+                                          'iconPath', 'text', 'script',
+                                          'enchantment', 'enchantPoints',
+                                          'flags', 'teaches', 'value', 'weight']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObBSGNRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'BSGN'
     full = CBashSTRING(5)
     iconPath = CBashISTRING(6)
@@ -12012,6 +11265,7 @@ class ObBSGNRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'iconPath', 'text', 'spells']
 
 class ObCELLRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CELL'
     @property
     def _ParentID(self):
@@ -12026,16 +11280,12 @@ class ObCELLRecord(ObBaseRecord):
         #--Interior cell
         if self.IsInterior:
             ObjectID = self.fid[1]
-            blockNum = ObjectID % 10
-            subBlockNum = (ObjectID / 10) % 10
-            return (blockNum, subBlockNum)
+            return (ObjectID % 10, (ObjectID / 10) % 10)
         #--Exterior cell
         else:
             subblockX = int(math.floor((self.posX or 0) / 8.0))
             subblockY = int(math.floor((self.posY or 0) / 8.0))
-            blockX = int(math.floor(subblockX / 4.0))
-            blockY = int(math.floor(subblockY / 4.0))
-            return ((blockX, blockY), (subblockX, subblockY))
+            return ((int(math.floor(subblockX / 4.0)), int(math.floor(subblockY / 4.0))), (subblockX, subblockY))
 
     full = CBashSTRING(5)
     flags = CBashGeneric(6, c_ubyte)
@@ -12069,32 +11319,27 @@ class ObCELLRecord(ObBaseRecord):
     water = CBashFORMID(34)
     def create_ACHR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObACHRRecord(RecordID)
-        return None
+        return ObACHRRecord(RecordID) if RecordID else None
     ACHR = CBashSUBRECORDARRAY(35, ObACHRRecord, "ACHR")
 
     def create_ACRE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObACRERecord(RecordID)
-        return None
+        return ObACRERecord(RecordID) if RecordID else None
     ACRE = CBashSUBRECORDARRAY(36, ObACRERecord, "ACRE")
 
     def create_REFR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObREFRRecord(RecordID)
-        return None
+        return ObREFRRecord(RecordID) if RecordID else None
     REFR = CBashSUBRECORDARRAY(37, ObREFRRecord, "REFR")
 
     def create_PGRD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObPGRDRecord(RecordID)
-        return None
+        return ObPGRDRecord(RecordID) if RecordID else None
     PGRD = CBashSUBRECORD(38, ObPGRDRecord, "PGRD")
 
     def create_LAND(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObLANDRecord(RecordID)
-        return None
+        return ObLANDRecord(RecordID) if RecordID else None
     LAND = CBashSUBRECORD(39, ObLANDRecord, "LAND")
 
     IsInterior = CBashBasicFlag('flags', 0x00000001)
@@ -12108,14 +11353,15 @@ class ObCELLRecord(ObBaseRecord):
     IsPublic = CBashBasicType('music', 1, 'IsDefault')
     IsDungeon = CBashBasicType('music', 2, 'IsDefault')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'flags', 'ambientRed', 'ambientGreen', 'ambientBlue',
-                                        'directionalRed', 'directionalGreen', 'directionalBlue',
-                                        'fogRed', 'fogGreen', 'fogBlue', 'fogNear', 'fogFar',
-                                        'directionalXY', 'directionalZ', 'directionalFade', 'fogClip',
-                                        'musicType', 'owner', 'rank', 'globalVariable',
-                                        'climate', 'waterHeight', 'regions', 'posX', 'posY',
-                                        'water']
+                                                        'directionalRed', 'directionalGreen', 'directionalBlue',
+                                                        'fogRed', 'fogGreen', 'fogBlue', 'fogNear', 'fogFar',
+                                                        'directionalXY', 'directionalZ', 'directionalFade', 'fogClip',
+                                                        'musicType', 'owner', 'rank', 'globalVariable',
+                                                        'climate', 'waterHeight', 'regions', 'posX', 'posY',
+                                                        'water']
 
 class ObCLASRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CLAS'
     full = CBashSTRING(5)
     description = CBashSTRING(6)
@@ -12152,17 +11398,19 @@ class ObCLASRecord(ObBaseRecord):
     IsServicesRecharge = CBashBasicFlag('services', 0x00010000)
     IsServicesRepair = CBashBasicFlag('services', 0x00020000)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'description', 'iconPath', 'primary1',
-                                        'primary2', 'specialization', 'major1',
-                                        'major2', 'major3', 'major4', 'major5',
-                                        'major6', 'major7', 'flags', 'services',
-                                        'trainSkill', 'trainLevel']
+                                                        'primary2', 'specialization', 'major1',
+                                                        'major2', 'major3', 'major4', 'major5',
+                                                        'major6', 'major7', 'flags', 'services',
+                                                        'trainSkill', 'trainLevel']
 
 class ObCLMTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CLMT'
     class Weather(ListComponent):
+        __slots__ = []
         weather = CBashFORMID_LIST(1)
         chance = CBashGeneric_LIST(2, c_long)
-        copyattrs = ['weather', 'chance']
+        exportattrs = copyattrs = ['weather', 'chance']
 
     def create_weather(self):
         length = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 1)
@@ -12183,13 +11431,13 @@ class ObCLMTRecord(ObBaseRecord):
     volatility = CBashGeneric(15, c_ubyte)
     phaseLength = CBashGeneric(16, c_ubyte)
     copyattrs = ObBaseRecord.baseattrs + ['weathers_list', 'sunPath', 'glarePath', 'modPath',
-                                        'modb', 'modt_p', 'riseBegin', 'riseEnd',
-                                        'setBegin', 'setEnd', 'volatility', 'phaseLength']
-    exportattrs = ObBaseRecord.baseattrs + ['weathers_list', 'sunPath', 'glarePath', 'modPath',
-                                        'modb', 'riseBegin', 'riseEnd',
-                                        'setBegin', 'setEnd', 'volatility', 'phaseLength'] #'modt_p',
+                                          'modb', 'modt_p', 'riseBegin', 'riseEnd',
+                                          'setBegin', 'setEnd', 'volatility', 'phaseLength']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObCLOTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CLOT'
     full = CBashSTRING(5)
     script = CBashFORMID(6)
@@ -12232,21 +11480,18 @@ class ObCLOTRecord(ObBaseRecord):
     IsHideAmulets = CBashBasicFlag('flags', 0x00020000)
     IsNonPlayable = CBashBasicFlag('flags', 0x00400000)
     IsPlayable = CBashInvertedFlag('IsNonPlayable')
-    copyattrs = ObBaseRecord.baseattrs + ['full', 'script', 'enchantment',
-                                        'enchantPoints', 'flags', 'maleBody_list', 'maleWorld_list',
-                                        'maleIconPath', 'femaleBody_list', 'femaleWorld_list',
-                                        'femaleIconPath', 'value', 'weight']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'script', 'enchantment',
-                                        'enchantPoints', 'flags', 'maleBody', 'maleWorld',
-                                        'maleIconPath', 'femaleBody', 'femaleWorld',
-                                        'femaleIconPath', 'value', 'weight']
+    exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'script', 'enchantment',
+                                                        'enchantPoints', 'flags', 'maleBody_list', 'maleWorld_list',
+                                                        'maleIconPath', 'femaleBody_list', 'femaleWorld_list',
+                                                        'femaleIconPath', 'value', 'weight']
 
 class ObCONTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CONT'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters items."""
-        self.items = [x for x in self.items if x.item[0] in modSet]
+        self.items = [x for x in self.items if x.item.ValidateFormID(target)]
         return True
 
     full = CBashSTRING(5)
@@ -12268,24 +11513,24 @@ class ObCONTRecord(ObBaseRecord):
     soundClose = CBashFORMID(14)
     IsRespawn = CBashBasicFlag('flags', 0x00000001)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'script', 'items_list', 'flags', 'weight',
-                                        'soundOpen', 'soundClose']
-
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'script', 'items_list', 'flags', 'weight',
-                                        'soundOpen', 'soundClose'] # 'modt_p',
+                                          'script', 'items_list', 'flags', 'weight',
+                                          'soundOpen', 'soundClose']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObCREARecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CREA'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters spells, factions and items."""
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
-        self.items = [x for x in self.items if x.item[0] in modSet]
+        self.spells = [x for x in self.spells if x.ValidateFormID(target)]
+        self.factions = [x for x in self.factions if x.faction.ValidateFormID(target)]
+        self.items = [x for x in self.items if x.item.ValidateFormID(target)]
         return True
 
     class Sound(ListComponent):
+        __slots__ = []
         soundType = CBashGeneric_LIST(1, c_ulong)
         sound = CBashFORMID_LIST(2)
         chance = CBashGeneric_LIST(3, c_ubyte)
@@ -12430,37 +11675,26 @@ class ObCREARecord(ObBaseRecord):
     IsGreaterSoul = CBashBasicType('soulType', 4, 'IsNoSoul')
     IsGrandSoul = CBashBasicType('soulType', 5, 'IsNoSoul')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'spells',
-                                        'bodyParts', 'nift_p', 'flags', 'baseSpell',
-                                        'fatigue', 'barterGold', 'level', 'calcMin',
-                                        'calcMax', 'factions_list', 'deathItem',
-                                        'script', 'items_list', 'aggression', 'confidence',
-                                        'energyLevel', 'responsibility', 'services',
-                                        'trainSkill', 'trainLevel', 'aiPackages',
-                                        'animations', 'creatureType', 'combat', 'magic',
-                                        'stealth', 'soulType', 'health', 'attackDamage',
-                                        'strength', 'intelligence', 'willpower', 'agility',
-                                        'speed', 'endurance', 'personality', 'luck',
-                                        'attackReach', 'combatStyle', 'turningSpeed',
-                                        'baseScale', 'footWeight',
-                                        'inheritsSoundsFrom', 'bloodSprayPath',
-                                        'bloodDecalPath', 'sounds_list']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'spells',
-                                        'bodyParts', 'flags', 'baseSpell',
-                                        'fatigue', 'barterGold', 'level', 'calcMin',
-                                        'calcMax', 'factions_list', 'deathItem',
-                                        'script', 'items_list', 'aggression', 'confidence',
-                                        'energyLevel', 'responsibility', 'services',
-                                        'trainSkill', 'trainLevel', 'aiPackages',
-                                        'animations', 'creatureType', 'combat', 'magic',
-                                        'stealth', 'soulType', 'health', 'attackDamage',
-                                        'strength', 'intelligence', 'willpower', 'agility',
-                                        'speed', 'endurance', 'personality', 'luck',
-                                        'attackReach', 'combatStyle', 'turningSpeed',
-                                        'baseScale', 'footWeight',
-                                        'inheritsSoundsFrom', 'bloodSprayPath',
-                                        'bloodDecalPath', 'sounds_list'] #'modt_p', 'nift_p',
+                                          'bodyParts', 'nift_p', 'flags', 'baseSpell',
+                                          'fatigue', 'barterGold', 'level', 'calcMin',
+                                          'calcMax', 'factions_list', 'deathItem',
+                                          'script', 'items_list', 'aggression', 'confidence',
+                                          'energyLevel', 'responsibility', 'services',
+                                          'trainSkill', 'trainLevel', 'aiPackages',
+                                          'animations', 'creatureType', 'combat', 'magic',
+                                          'stealth', 'soulType', 'health', 'attackDamage',
+                                          'strength', 'intelligence', 'willpower', 'agility',
+                                          'speed', 'endurance', 'personality', 'luck',
+                                          'attackReach', 'combatStyle', 'turningSpeed',
+                                          'baseScale', 'footWeight',
+                                          'inheritsSoundsFrom', 'bloodSprayPath',
+                                          'bloodDecalPath', 'sounds_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('nift_p')
 
 class ObCSTYRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'CSTY'
     dodgeChance = CBashGeneric(5, c_ubyte)
     lrChance = CBashGeneric(6, c_ubyte)
@@ -12536,22 +11770,23 @@ class ObCSTYRecord(ObBaseRecord):
     IsMeleeAlertOK = CBashBasicFlag('flagsA', 0x00000080)
     IsDoNotAcquire = CBashBasicFlag('flagsB', 0x00000001)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['dodgeChance', 'lrChance', 'lrTimerMin', 'lrTimerMax',
-                                        'forTimerMin', 'forTimerMax', 'backTimerMin',
-                                        'backTimerMax', 'idleTimerMin', 'idleTimerMax',
-                                        'blkChance', 'atkChance', 'atkBRecoil', 'atkBUnc',
-                                        'atkBh2h', 'pAtkChance', 'pAtkBRecoil', 'pAtkBUnc',
-                                        'pAtkNormal', 'pAtkFor', 'pAtkBack', 'pAtkL', 'pAtkR',
-                                        'holdTimerMin', 'holdTimerMax', 'flagsA', 'acroDodge',
-                                        'rMultOpt', 'rMultMax', 'mDistance', 'rDistance',
-                                        'buffStand', 'rStand', 'groupStand', 'rushChance',
-                                        'rushMult', 'flagsB', 'dodgeFMult', 'dodgeFBase',
-                                        'encSBase', 'encSMult', 'dodgeAtkMult', 'dodgeNAtkMult',
-                                        'dodgeBAtkMult', 'dodgeBNAtkMult', 'dodgeFAtkMult',
-                                        'dodgeFNAtkMult', 'blockMult', 'blockBase', 'blockAtkMult',
-                                        'blockNAtkMult', 'atkMult', 'atkBase', 'atkAtkMult',
-                                        'atkNAtkMult', 'atkBlockMult', 'pAtkFBase', 'pAtkFMult']
+                                                        'forTimerMin', 'forTimerMax', 'backTimerMin',
+                                                        'backTimerMax', 'idleTimerMin', 'idleTimerMax',
+                                                        'blkChance', 'atkChance', 'atkBRecoil', 'atkBUnc',
+                                                        'atkBh2h', 'pAtkChance', 'pAtkBRecoil', 'pAtkBUnc',
+                                                        'pAtkNormal', 'pAtkFor', 'pAtkBack', 'pAtkL', 'pAtkR',
+                                                        'holdTimerMin', 'holdTimerMax', 'flagsA', 'acroDodge',
+                                                        'rMultOpt', 'rMultMax', 'mDistance', 'rDistance',
+                                                        'buffStand', 'rStand', 'groupStand', 'rushChance',
+                                                        'rushMult', 'flagsB', 'dodgeFMult', 'dodgeFBase',
+                                                        'encSBase', 'encSMult', 'dodgeAtkMult', 'dodgeNAtkMult',
+                                                        'dodgeBAtkMult', 'dodgeBNAtkMult', 'dodgeFAtkMult',
+                                                        'dodgeFNAtkMult', 'blockMult', 'blockBase', 'blockAtkMult',
+                                                        'blockNAtkMult', 'atkMult', 'atkBase', 'atkAtkMult',
+                                                        'atkNAtkMult', 'atkBlockMult', 'pAtkFBase', 'pAtkFMult']
 
 class ObDIALRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'DIAL'
     quests = CBashFORMIDARRAY(5)
     removedQuests = CBashFORMIDARRAY(6)
@@ -12559,8 +11794,7 @@ class ObDIALRecord(ObBaseRecord):
     dialType = CBashGeneric(8, c_ubyte)
     def create_INFO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObINFORecord(RecordID)
-        return None
+        return ObINFORecord(RecordID) if RecordID else None
     INFO = CBashSUBRECORDARRAY(9, ObINFORecord, "INFO")
 
     IsTopic = CBashBasicType('dialType', 0, 'IsConversation')
@@ -12571,9 +11805,10 @@ class ObDIALRecord(ObBaseRecord):
     IsService = CBashBasicType('dialType', 5, 'IsTopic')
     IsMisc = CBashBasicType('dialType', 6, 'IsTopic')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['quests', 'removedQuests',
-                                        'full', 'dialType']
+                                                        'full', 'dialType']
 
 class ObDOORRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'DOOR'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12590,15 +11825,14 @@ class ObDOORRecord(ObBaseRecord):
     IsHidden = CBashBasicFlag('flags', 0x00000004)
     IsMinimalUse = CBashBasicFlag('flags', 0x00000008)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'script', 'soundOpen',
-                                        'soundClose', 'soundLoop',
-                                        'flags', 'destinations']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'script', 'soundOpen',
-                                        'soundClose', 'soundLoop',
-                                        'flags', 'destinations'] # 'modt_p',
+                                          'script', 'soundOpen',
+                                          'soundClose', 'soundLoop',
+                                          'flags', 'destinations']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObEFSHRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'EFSH'
     fillTexturePath = CBashISTRING(5)
     particleTexturePath = CBashISTRING(6)
@@ -12683,20 +11917,21 @@ class ObEFSHRecord(ObBaseRecord):
     IsMemSkinOnly = CBashBasicFlag('flags', 0x00000020)
     IsMembraneShaderSkinOnly = CBashAlias('IsMemSkinOnly')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['fillTexturePath', 'particleTexturePath', 'flags', 'memSBlend', 'memBlendOp',
-                                        'memZFunc', 'fillRed', 'fillGreen', 'fillBlue', 'fillAIn', 'fillAFull',
-                                        'fillAOut', 'fillAPRatio', 'fillAAmp', 'fillAFreq', 'fillAnimSpdU',
-                                        'fillAnimSpdV', 'edgeOff', 'edgeRed', 'edgeGreen', 'edgeBlue', 'edgeAIn',
-                                        'edgeAFull', 'edgeAOut', 'edgeAPRatio', 'edgeAAmp', 'edgeAFreq',
-                                        'fillAFRatio', 'edgeAFRatio', 'memDBlend', 'partSBlend', 'partBlendOp',
-                                        'partZFunc', 'partDBlend', 'partBUp', 'partBFull', 'partBDown',
-                                        'partBFRatio', 'partBPRatio', 'partLTime', 'partLDelta', 'partNSpd',
-                                        'partNAcc', 'partVel1', 'partVel2', 'partVel3', 'partAcc1', 'partAcc2',
-                                        'partAcc3', 'partKey1', 'partKey2', 'partKey1Time', 'partKey2Time',
-                                        'key1Red', 'key1Green', 'key1Blue', 'key2Red', 'key2Green', 'key2Blue',
-                                        'key3Red', 'key3Green', 'key3Blue', 'key1A', 'key2A', 'key3A',
-                                        'key1Time', 'key2Time', 'key3Time']
+                                                        'memZFunc', 'fillRed', 'fillGreen', 'fillBlue', 'fillAIn', 'fillAFull',
+                                                        'fillAOut', 'fillAPRatio', 'fillAAmp', 'fillAFreq', 'fillAnimSpdU',
+                                                        'fillAnimSpdV', 'edgeOff', 'edgeRed', 'edgeGreen', 'edgeBlue', 'edgeAIn',
+                                                        'edgeAFull', 'edgeAOut', 'edgeAPRatio', 'edgeAAmp', 'edgeAFreq',
+                                                        'fillAFRatio', 'edgeAFRatio', 'memDBlend', 'partSBlend', 'partBlendOp',
+                                                        'partZFunc', 'partDBlend', 'partBUp', 'partBFull', 'partBDown',
+                                                        'partBFRatio', 'partBPRatio', 'partLTime', 'partLDelta', 'partNSpd',
+                                                        'partNAcc', 'partVel1', 'partVel2', 'partVel3', 'partAcc1', 'partAcc2',
+                                                        'partAcc3', 'partKey1', 'partKey2', 'partKey1Time', 'partKey2Time',
+                                                        'key1Red', 'key1Green', 'key1Blue', 'key2Red', 'key2Green', 'key2Blue',
+                                                        'key3Red', 'key3Green', 'key3Blue', 'key1A', 'key2A', 'key3A',
+                                                        'key1Time', 'key2Time', 'key3Time']
 
 class ObENCHRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'ENCH'
     full = CBashSTRING(5)
     itemType = CBashGeneric(6, c_ulong)
@@ -12727,12 +11962,16 @@ class ObENCHRecord(ObBaseRecord):
     reserved = CBashUINT8ARRAY(16, 0x1C)
     datx_p = CBashUINT8ARRAY(17, 0x20)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'itemType', 'chargeAmount',
-                                        'enchantCost', 'flags', 'effects_list']
+                                                        'enchantCost', 'flags', 'effects_list']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved'] #, 'datx_p'
+                                 'reserved', 'datx_p']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('reserved')
+    exportattrsOBME.remove('datx_p')
 
 class ObEYESRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'EYES'
     full = CBashSTRING(5)
     iconPath = CBashISTRING(6)
@@ -12741,8 +11980,10 @@ class ObEYESRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'iconPath', 'flags']
 
 class ObFACTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'FACT'
     class Rank(ListComponent):
+        __slots__ = []
         rank = CBashGeneric_LIST(1, c_long)
         male = CBashSTRING_LIST(2)
         female = CBashSTRING_LIST(3)
@@ -12772,9 +12013,10 @@ class ObFACTRecord(ObBaseRecord):
     IsEvil = CBashBasicFlag('flags', 0x00000002)
     IsSpecialCombat = CBashBasicFlag('flags', 0x00000004)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'relations_list', 'flags',
-                                        'crimeGoldMultiplier', 'ranks_list']
+                                                        'crimeGoldMultiplier', 'ranks_list']
 
 class ObFLORRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'FLOR'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12787,13 +12029,13 @@ class ObFLORRecord(ObBaseRecord):
     fall = CBashGeneric(13, c_ubyte)
     winter = CBashGeneric(14, c_ubyte)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'script', 'ingredient', 'spring',
-                                        'summer', 'fall', 'winter']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'script', 'ingredient', 'spring',
-                                        'summer', 'fall', 'winter'] # 'modt_p',
+                                          'script', 'ingredient', 'spring',
+                                          'summer', 'fall', 'winter']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObFURNRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'FURN'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12834,17 +12076,19 @@ class ObFURNRecord(ObBaseRecord):
     IsSitAnim = CBashMaskedType('flags', 0xC0000000, 0x40000000, 'IsSleepAnim')
     IsSleepAnim = CBashMaskedType('flags', 0xC0000000, 0x80000000, 'IsSitAnim')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'modt_p', 'script', 'flags']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'script', 'flags'] #'modt_p',
+                                          'modt_p', 'script', 'flags']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObGLOBRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'GLOB'
     format = CBashGeneric(5, c_char)
     value = CBashFLOAT32(6)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['format', 'value']
 
 class ObGRASRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'GRAS'
     modPath = CBashISTRING(5)
     modb = CBashFLOAT32(6)
@@ -12869,15 +12113,14 @@ class ObGRASRecord(ObBaseRecord):
     IsFitSlope = CBashBasicFlag('flags', 0x00000004)
     IsFitToSlope = CBashAlias('IsFitSlope')
     copyattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p', 'density',
-                                        'minSlope', 'maxSlope', 'waterDistance',
-                                        'waterOp', 'posRange', 'heightRange',
-                                        'colorRange', 'wavePeriod', 'flags']
-    exportattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'density',
-                                        'minSlope', 'maxSlope', 'waterDistance',
-                                        'waterOp', 'posRange', 'heightRange',
-                                        'colorRange', 'wavePeriod', 'flags'] #'modt_p',
+                                          'minSlope', 'maxSlope', 'waterDistance',
+                                          'waterOp', 'posRange', 'heightRange',
+                                          'colorRange', 'wavePeriod', 'flags']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObHAIRRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'HAIR'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12892,11 +12135,12 @@ class ObHAIRRecord(ObBaseRecord):
     IsFemale = CBashInvertedFlag('IsNotFemale')
     IsFixedColor = CBashBasicFlag('flags', 0x00000008)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'modt_p', 'iconPath', 'flags']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'flags'] #'modt_p',
+                                          'modt_p', 'iconPath', 'flags']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObIDLERecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'IDLE'
     modPath = CBashISTRING(5)
     modb = CBashFLOAT32(6)
@@ -12922,11 +12166,12 @@ class ObIDLERecord(ObBaseRecord):
     IsNotReturnFile = CBashBasicFlag('group', 0x80)
     IsReturnFile = CBashInvertedFlag('IsNotReturnFile')
     copyattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p',
-                                        'conditions_list', 'group', 'parent', 'prevId']
-    exportattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'conditions_list',
-                                            'group', 'parent', 'prevId'] # 'modt_p',
+                                          'conditions_list', 'group', 'parent', 'prevId']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObINGRRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'INGR'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12958,16 +12203,20 @@ class ObINGRRecord(ObBaseRecord):
     reserved = CBashUINT8ARRAY(20, 0x1C)
     datx_p = CBashUINT8ARRAY(21, 0x20)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
-                                        'script', 'weight', 'value', 'flags',
-                                        'effects_list']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
-                                        'script', 'weight', 'value', 'flags',
-                                        'effects_list'] #'modt_p',
+                                          'script', 'weight', 'value', 'flags',
+                                          'effects_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved'] #, 'datx_p'
+                                 'reserved', 'datx_p']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('modt_p')
+    exportattrsOBME.remove('reserved')
+    exportattrsOBME.remove('datx_p')
 
 class ObKEYMRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'KEYM'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12978,11 +12227,12 @@ class ObKEYMRecord(ObBaseRecord):
     value = CBashGeneric(11, c_long)
     weight = CBashFLOAT32(12)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
-                                        'script', 'value', 'weight']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
-                                        'script', 'value', 'weight'] #'modt_p',
+                                          'script', 'value', 'weight']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObLIGHRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'LIGH'
     modPath = CBashISTRING(5)
     modb = CBashFLOAT32(6)
@@ -13014,17 +12264,17 @@ class ObLIGHRecord(ObBaseRecord):
     IsSpotLight = CBashBasicFlag('flags', 0x00000200)
     IsSpotShadow = CBashBasicFlag('flags', 0x00000400)
     copyattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p', 'script', 'full',
-                                        'iconPath', 'duration', 'radius', 'red',
-                                        'green', 'blue', 'flags', 'falloff', 'fov',
-                                        'value', 'weight', 'fade', 'sound']
-    exportattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'script', 'full',
-                                        'iconPath', 'duration', 'radius', 'red',
-                                        'green', 'blue', 'flags', 'falloff', 'fov',
-                                        'value', 'weight', 'fade', 'sound'] #'modt_p',
+                                          'iconPath', 'duration', 'radius', 'red',
+                                          'green', 'blue', 'flags', 'falloff', 'fov',
+                                          'value', 'weight', 'fade', 'sound']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObLSCRRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'LSCR'
     class Location(ListComponent):
+        __slots__ = []
         direct = CBashFORMID_LIST(1)
         indirect = CBashFORMID_LIST(2)
         gridY = CBashGeneric_LIST(3, c_short)
@@ -13044,6 +12294,7 @@ class ObLSCRRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['iconPath', 'text', 'locations_list']
 
 class ObLTEXRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'LTEX'
     iconPath = CBashISTRING(5)
     types = CBashGeneric(6, c_ubyte)
@@ -13083,11 +12334,13 @@ class ObLTEXRecord(ObBaseRecord):
     IsSnowStairs = CBashBasicType('types', 29, 'IsDirt')
     IsElevator = CBashBasicType('types', 30, 'IsDirt')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['iconPath', 'types', 'friction', 'restitution',
-                                        'specular', 'grass']
+                                                        'specular', 'grass']
 
 class ObLVLCRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'LVLC'
     class Entry(ListComponent):
+        __slots__ = []
         level = CBashGeneric_LIST(1, c_short)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         listId = CBashFORMID_LIST(3)
@@ -13095,9 +12348,9 @@ class ObLVLCRecord(ObBaseRecord):
         unused2 = CBashUINT8ARRAY_LIST(5, 2)
         exportattrs = copyattrs = ['level', 'listId', 'count']
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
         return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
@@ -13116,11 +12369,13 @@ class ObLVLCRecord(ObBaseRecord):
     IsCalcForEachItem = CBashBasicFlag('flags', 0x00000002)
     IsUseAllSpells = CBashBasicFlag('flags', 0x00000004)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['chanceNone', 'flags', 'script',
-                                        'template', 'entries_list']
+                                                        'template', 'entries_list']
 
 class ObLVLIRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'LVLI'
     class Entry(ListComponent):
+        __slots__ = []
         level = CBashGeneric_LIST(1, c_short)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         listId = CBashFORMID_LIST(3)
@@ -13128,9 +12383,9 @@ class ObLVLIRecord(ObBaseRecord):
         unused2 = CBashUINT8ARRAY_LIST(5, 2)
         exportattrs = copyattrs = ['level', 'listId', 'count']
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
         return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
@@ -13151,8 +12406,10 @@ class ObLVLIRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['chanceNone', 'flags', 'entries_list']
 
 class ObLVSPRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'LVSP'
     class Entry(ListComponent):
+        __slots__ = []
         level = CBashGeneric_LIST(1, c_short)
         unused1 = CBashUINT8ARRAY_LIST(2, 2)
         listId = CBashFORMID_LIST(3)
@@ -13160,9 +12417,9 @@ class ObLVSPRecord(ObBaseRecord):
         unused2 = CBashUINT8ARRAY_LIST(5, 2)
         exportattrs = copyattrs = ['level', 'listId', 'count']
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
         return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
@@ -13183,6 +12440,7 @@ class ObLVSPRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['chanceNone', 'flags', 'entries_list']
 
 class ObMGEFRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'MGEF'
     full = CBashSTRING(5)
     text = CBashSTRING(6)
@@ -13253,18 +12511,14 @@ class ObMGEFRecord(ObBaseRecord):
     def get_IsSprayType(self):
         return self.flags != None and not self.IsFogType and (self.flags & 0x02000000) != 0
     def set_IsSprayType(self, nValue):
-        if nValue:
-            self.flags &= ~0x06000000
-            self.flags |= 0x02000000
+        if nValue: self.flags = (self.flags & ~0x06000000) | 0x02000000
         elif self.IsSprayType: self.IsBallType = True
     IsSprayType = property(get_IsSprayType, set_IsSprayType)  #Changeable
 
     def get_IsBoltType(self):
         return self.flags != None and not self.IsFogType and (self.flags & 0x04000000) != 0
     def set_IsBoltType(self, nValue):
-        if nValue:
-            self.flags &= ~0x06000000
-            self.flags |= 0x04000000
+        if nValue: self.flags = (self.flags & ~0x06000000) | 0x04000000
         elif self.IsBoltType: self.IsBallType = True
     IsBoltType = property(get_IsBoltType, set_IsBoltType)  #Changeable
 
@@ -13305,21 +12559,21 @@ class ObMGEFRecord(ObBaseRecord):
                                           'castingSound', 'boltSound', 'hitSound',
                                           'areaSound', 'cefEnchantment', 'cefBarter',
                                           'counterEffects']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'text', 'iconPath', 'modPath',
-                                          'modb', 'flags', 'baseCost',
-                                          'associated', 'schoolType', 'resistValue',
-                                          'numCounters', 'light', 'projectileSpeed',
-                                          'effectShader', 'enchantEffect',
-                                          'castingSound', 'boltSound', 'hitSound',
-                                          'areaSound', 'cefEnchantment', 'cefBarter',
-                                          'counterEffects'] #'modt_p',
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
                                  'mgefParamAInfo', 'mgefParamBInfo',
                                  'reserved1', 'handlerCode', 'OBMEFlags',
-                                 'mgefParamB', 'reserved2', 'mgefCode'] #, 'datx_p'
+                                 'mgefParamB', 'reserved2', 'mgefCode', 'datx_p']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('modt_p')
+    exportattrsOBME.remove('reserved1')
+    exportattrsOBME.remove('reserved2')
+    exportattrsOBME.remove('datx_p')
 
 class ObMISCRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'MISC'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -13330,18 +12584,19 @@ class ObMISCRecord(ObBaseRecord):
     value = CBashGeneric(11, c_long)
     weight = CBashFLOAT32(12)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p', 'iconPath',
-                                        'script', 'value', 'weight']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'iconPath',
-                                        'script', 'value', 'weight'] #'modt_p',
+                                          'script', 'value', 'weight']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObNPC_Record(ObBaseRecord):
+    __slots__ = []
     _Type = 'NPC_'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters spells, factions and items."""
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
-        self.items = [x for x in self.items if x.item[0] in modSet]
+        self.spells = [x for x in self.spells if x.ValidateFormID(target)]
+        self.factions = [x for x in self.factions if x.faction.ValidateFormID(target)]
+        self.items = [x for x in self.items if x.item.ValidateFormID(target)]
         return True
 
     full = CBashSTRING(5)
@@ -13458,51 +12713,35 @@ class ObNPC_Record(ObBaseRecord):
     IsServicesRecharge = CBashBasicFlag('services', 0x00010000)
     IsServicesRepair = CBashBasicFlag('services', 0x00020000)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'flags', 'baseSpell', 'fatigue',
-                                        'barterGold', 'level', 'calcMin',
-                                        'calcMax', 'factions_list', 'deathItem',
-                                        'race', 'spells', 'script',
-                                        'items_list', 'aggression', 'confidence',
-                                        'energyLevel', 'responsibility',
-                                        'services', 'trainSkill', 'trainLevel',
-                                        'aiPackages', 'animations', 'iclass',
-                                        'armorer', 'athletics', 'blade',
-                                        'block', 'blunt', 'h2h', 'heavyArmor',
-                                        'alchemy', 'alteration', 'conjuration',
-                                        'destruction', 'illusion', 'mysticism',
-                                        'restoration', 'acrobatics', 'lightArmor',
-                                        'marksman', 'mercantile', 'security',
-                                        'sneak', 'speechcraft', 'health',
-                                        'strength', 'intelligence', 'willpower',
-                                        'agility', 'speed', 'endurance',
-                                        'personality', 'luck', 'hair',
-                                        'hairLength', 'eye', 'hairRed',
-                                        'hairGreen', 'hairBlue', 'combatStyle',
-                                        'fggs_p', 'fgga_p', 'fgts_p', 'fnam']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'flags', 'baseSpell', 'fatigue',
-                                        'barterGold', 'level', 'calcMin',
-                                        'calcMax', 'factions_list', 'deathItem',
-                                        'race', 'spells', 'script',
-                                        'items_list', 'aggression', 'confidence',
-                                        'energyLevel', 'responsibility',
-                                        'services', 'trainSkill', 'trainLevel',
-                                        'aiPackages', 'animations', 'iclass',
-                                        'armorer', 'athletics', 'blade',
-                                        'block', 'blunt', 'h2h', 'heavyArmor',
-                                        'alchemy', 'alteration', 'conjuration',
-                                        'destruction', 'illusion', 'mysticism',
-                                        'restoration', 'acrobatics', 'lightArmor',
-                                        'marksman', 'mercantile', 'security',
-                                        'sneak', 'speechcraft', 'health',
-                                        'strength', 'intelligence', 'willpower',
-                                        'agility', 'speed', 'endurance',
-                                        'personality', 'luck', 'hair',
-                                        'hairLength', 'eye', 'hairRed',
-                                        'hairGreen', 'hairBlue', 'combatStyle',
-                                        'fnam'] # 'modt_p', 'fggs_p', 'fgga_p', 'fgts_p',
+                                          'flags', 'baseSpell', 'fatigue',
+                                          'barterGold', 'level', 'calcMin',
+                                          'calcMax', 'factions_list', 'deathItem',
+                                          'race', 'spells', 'script',
+                                          'items_list', 'aggression', 'confidence',
+                                          'energyLevel', 'responsibility',
+                                          'services', 'trainSkill', 'trainLevel',
+                                          'aiPackages', 'animations', 'iclass',
+                                          'armorer', 'athletics', 'blade',
+                                          'block', 'blunt', 'h2h', 'heavyArmor',
+                                          'alchemy', 'alteration', 'conjuration',
+                                          'destruction', 'illusion', 'mysticism',
+                                          'restoration', 'acrobatics', 'lightArmor',
+                                          'marksman', 'mercantile', 'security',
+                                          'sneak', 'speechcraft', 'health',
+                                          'strength', 'intelligence', 'willpower',
+                                          'agility', 'speed', 'endurance',
+                                          'personality', 'luck', 'hair',
+                                          'hairLength', 'eye', 'hairRed',
+                                          'hairGreen', 'hairBlue', 'combatStyle',
+                                          'fggs_p', 'fgga_p', 'fgts_p', 'fnam']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
+    exportattrs.remove('fggs_p')
+    exportattrs.remove('fgga_p')
+    exportattrs.remove('fgts_p')
 
 class ObPACKRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'PACK'
     flags = CBashGeneric(5, c_ulong)
     aiType = CBashGeneric(6, c_ubyte)
@@ -13569,31 +12808,35 @@ class ObPACKRecord(ObBaseRecord):
     IsTargetObjectID = CBashBasicType('locType', 1, 'IsTargetReference')
     IsTargetObjectType = CBashBasicType('locType', 2, 'IsTargetReference')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['flags', 'aiType', 'locType', 'locId',
-                                        'locRadius', 'month', 'day', 'date', 'time',
-                                        'duration', 'targetType', 'targetId',
-                                        'targetCount', 'conditions_list']
+                                                        'locRadius', 'month', 'day', 'date', 'time',
+                                                        'duration', 'targetType', 'targetId',
+                                                        'targetCount', 'conditions_list']
 
 class ObQUSTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'QUST'
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.conditions = [x for x in self.conditions if (
-            (not isinstance(x.param1,FormID) or x.param1[0] in modSet)
+            (not isinstance(x.param1,FormID) or x.param1.ValidateFormID(target))
             and
-            (not isinstance(x.param2,FormID) or x.param2[0] in modSet)
+            (not isinstance(x.param2,FormID) or x.param2.ValidateFormID(target))
             )]
         #for target in self.targets_list:
         #    target.conditions = [x for x in target.conditions_list if (
-        #        (not isinstance(x.param1,FormID) or x.param1[0] in modSet)
+        #        (not isinstance(x.param1,FormID) or x.param1.ValidateFormID(target))
         #        and
-        #        (not isinstance(x.param2,FormID) or x.param2[0] in modSet)
+        #        (not isinstance(x.param2,FormID) or x.param2.ValidateFormID(target))
         #        )]
         return True
 
     class Stage(ListComponent):
+        __slots__ = []
         class Entry(ListX2Component):
+            __slots__ = []
             class ConditionX3(ListX3Component):
+                __slots__ = []
                 operType = CBashGeneric_LISTX3(1, c_ubyte)
                 unused1 = CBashUINT8ARRAY_LISTX3(2, 3)
                 compValue = CBashFLOAT32_LISTX3(3)
@@ -13611,7 +12854,7 @@ class ObQUSTRecord(ObBaseRecord):
                 IsRunOnTarget = CBashBasicFlag('operType', 0x02)
                 IsUseGlobal = CBashBasicFlag('operType', 0x04)
                 exportattrs = copyattrs = ['operType', 'compValue', 'ifunc', 'param1',
-                             'param2']
+                                           'param2']
 
             flags = CBashGeneric_LISTX2(1, c_ubyte)
 
@@ -13638,9 +12881,8 @@ class ObQUSTRecord(ObBaseRecord):
             copyattrs = ['flags', 'conditions_list', 'text', 'numRefs', 'compiledSize',
                          'lastIndex', 'scriptType', 'compiled_p', 'scriptText',
                          'references']
-            exportattrs = ['flags', 'conditions_list', 'text', 'numRefs', 'compiledSize',
-                         'lastIndex', 'scriptType', 'scriptText',
-                         'references'] #'compiled_p',
+            exportattrs = copyattrs[:]
+            exportattrs.remove('compiled_p')
 
         stage = CBashGeneric_LIST(1, c_ushort)
 
@@ -13654,7 +12896,9 @@ class ObQUSTRecord(ObBaseRecord):
         exportattrs = copyattrs = ['stage', 'entries_list']
 
     class Target(ListComponent):
+        __slots__ = []
         class ConditionX2(ListX2Component):
+            __slots__ = []
             operType = CBashGeneric_LISTX2(1, c_ubyte)
             unused1 = CBashUINT8ARRAY_LISTX2(2, 3)
             compValue = CBashFLOAT32_LISTX2(3)
@@ -13672,7 +12916,7 @@ class ObQUSTRecord(ObBaseRecord):
             IsRunOnTarget = CBashBasicFlag('operType', 0x02)
             IsUseGlobal = CBashBasicFlag('operType', 0x04)
             exportattrs = copyattrs = ['operType', 'compValue', 'ifunc', 'param1',
-                         'param2']
+                                       'param2']
 
         targetId = CBashFORMID_LIST(1)
         flags = CBashGeneric_LIST(2, c_ubyte)
@@ -13719,18 +12963,21 @@ class ObQUSTRecord(ObBaseRecord):
     IsRepeatedTopics = CBashBasicFlag('flags', 0x00000004)
     IsRepeatedStages = CBashBasicFlag('flags', 0x00000008)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['script', 'full', 'iconPath',
-                                        'flags', 'priority', 'conditions_list',
-                                        'stages_list', 'targets_list']
+                                                        'flags', 'priority', 'conditions_list',
+                                                        'stages_list', 'targets_list']
 
 class ObRACERecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'RACE'
     class RaceModel(BaseComponent):
+        __slots__ = []
         modPath = CBashISTRING_GROUP(0)
         modb = CBashFLOAT32_GROUP(1)
         iconPath = CBashISTRING_GROUP(2)
         modt_p = CBashUINT8ARRAY_GROUP(3)
         copyattrs = ['modPath', 'modb', 'iconPath', 'modt_p']
-        exportattrs = ['modPath', 'modb', 'iconPath']#, 'modt_p']
+        exportattrs = copyattrs[:]
+        exportattrs.remove('modt_p')
 
     full = CBashSTRING(5)
     text = CBashSTRING(6)
@@ -13837,71 +13084,49 @@ class ObRACERecord(ObBaseRecord):
     snam_p = CBashUINT8ARRAY(109, 2)
     IsPlayable = CBashBasicFlag('flags', 0x00000001)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'text', 'spells',
-                                        'relations_list', 'skill1', 'skill1Boost',
-                                        'skill2', 'skill2Boost', 'skill3',
-                                        'skill3Boost', 'skill4', 'skill4Boost',
-                                        'skill5', 'skill5Boost', 'skill6',
-                                        'skill6Boost', 'skill7', 'skill7Boost',
-                                        'maleHeight', 'femaleHeight',
-                                        'maleWeight', 'femaleWeight', 'flags',
-                                        'maleVoice', 'femaleVoice',
-                                        'defaultHairMale',
-                                        'defaultHairFemale',
-                                        'defaultHairColor', 'mainClamp',
-                                        'faceClamp', 'maleStrength',
-                                        'maleIntelligence', 'maleAgility',
-                                        'maleSpeed', 'maleEndurance',
-                                        'malePersonality', 'maleLuck',
-                                        'femaleStrength', 'femaleIntelligence',
-                                        'femaleWillpower', 'femaleAgility',
-                                        'femaleSpeed', 'femaleEndurance',
-                                        'femalePersonality', 'femaleLuck',
-                                        'head_list', 'maleEars_list', 'femaleEars_list',
-                                        'mouth_list', 'teethLower_list', 'teethUpper_list',
-                                        'tongue_list', 'leftEye_list', 'rightEye_list',
-                                        'maleTail_list', 'maleUpperBodyPath',
-                                        'maleLowerBodyPath', 'maleHandPath',
-                                        'maleFootPath', 'maleTailPath',
-                                        'femaleTail_list', 'femaleUpperBodyPath',
-                                        'femaleLowerBodyPath', 'femaleHandPath',
-                                        'femaleFootPath', 'femaleTailPath',
-                                        'hairs', 'eyes', 'fggs_p',
-                                        'fgga_p', 'fgts_p', 'snam_p']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'text', 'spells',
-                                        'relations_list', 'skill1', 'skill1Boost',
-                                        'skill2', 'skill2Boost', 'skill3',
-                                        'skill3Boost', 'skill4', 'skill4Boost',
-                                        'skill5', 'skill5Boost', 'skill6',
-                                        'skill6Boost', 'skill7', 'skill7Boost',
-                                        'maleHeight', 'femaleHeight',
-                                        'maleWeight', 'femaleWeight', 'flags',
-                                        'maleVoice', 'femaleVoice',
-                                        'defaultHairMale',
-                                        'defaultHairFemale',
-                                        'defaultHairColor', 'mainClamp',
-                                        'faceClamp', 'maleStrength',
-                                        'maleIntelligence', 'maleAgility',
-                                        'maleSpeed', 'maleEndurance',
-                                        'malePersonality', 'maleLuck',
-                                        'femaleStrength', 'femaleIntelligence',
-                                        'femaleWillpower', 'femaleAgility',
-                                        'femaleSpeed', 'femaleEndurance',
-                                        'femalePersonality', 'femaleLuck',
-                                        'head_list', 'maleEars_list', 'femaleEars_list',
-                                        'mouth_list', 'teethLower_list', 'teethUpper_list',
-                                        'tongue_list', 'leftEye_list', 'rightEye_list',
-                                        'maleTail_list', 'maleUpperBodyPath',
-                                        'maleLowerBodyPath', 'maleHandPath',
-                                        'maleFootPath', 'maleTailPath',
-                                        'femaleTail_list', 'femaleUpperBodyPath',
-                                        'femaleLowerBodyPath', 'femaleHandPath',
-                                        'femaleFootPath', 'femaleTailPath',
-                                        'hairs', 'eyes'] # 'fggs_p','fgga_p', 'fgts_p', 'snam_p'
+                                          'relations_list', 'skill1', 'skill1Boost',
+                                          'skill2', 'skill2Boost', 'skill3',
+                                          'skill3Boost', 'skill4', 'skill4Boost',
+                                          'skill5', 'skill5Boost', 'skill6',
+                                          'skill6Boost', 'skill7', 'skill7Boost',
+                                          'maleHeight', 'femaleHeight',
+                                          'maleWeight', 'femaleWeight', 'flags',
+                                          'maleVoice', 'femaleVoice',
+                                          'defaultHairMale',
+                                          'defaultHairFemale',
+                                          'defaultHairColor', 'mainClamp',
+                                          'faceClamp', 'maleStrength',
+                                          'maleIntelligence', 'maleAgility',
+                                          'maleSpeed', 'maleEndurance',
+                                          'malePersonality', 'maleLuck',
+                                          'femaleStrength', 'femaleIntelligence',
+                                          'femaleWillpower', 'femaleAgility',
+                                          'femaleSpeed', 'femaleEndurance',
+                                          'femalePersonality', 'femaleLuck',
+                                          'head_list', 'maleEars_list', 'femaleEars_list',
+                                          'mouth_list', 'teethLower_list', 'teethUpper_list',
+                                          'tongue_list', 'leftEye_list', 'rightEye_list',
+                                          'maleTail_list', 'maleUpperBodyPath',
+                                          'maleLowerBodyPath', 'maleHandPath',
+                                          'maleFootPath', 'maleTailPath',
+                                          'femaleTail_list', 'femaleUpperBodyPath',
+                                          'femaleLowerBodyPath', 'femaleHandPath',
+                                          'femaleFootPath', 'femaleTailPath',
+                                          'hairs', 'eyes', 'fggs_p',
+                                          'fgga_p', 'fgts_p', 'snam_p']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('fggs_p')
+    exportattrs.remove('fgga_p')
+    exportattrs.remove('fgts_p')
+    exportattrs.remove('snam_p')
 
 class ObREGNRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'REGN'
     class Area(ListComponent):
+        __slots__ = []
         class Point(ListX2Component):
+            __slots__ = []
             posX = CBashFLOAT32_LISTX2(1)
             posY = CBashFLOAT32_LISTX2(2)
             exportattrs = copyattrs = ['posX', 'posY']
@@ -13918,7 +13143,9 @@ class ObREGNRecord(ObBaseRecord):
         exportattrs = copyattrs = ['edgeFalloff', 'points_list']
 
     class Entry(ListComponent):
+        __slots__ = []
         class Object(ListX2Component):
+            __slots__ = []
             objectId = CBashFORMID_LISTX2(1)
             parentIndex = CBashGeneric_LISTX2(2, c_ushort)
             unused1 = CBashUINT8ARRAY_LISTX2(3, 2)
@@ -13947,18 +13174,25 @@ class ObREGNRecord(ObBaseRecord):
             IsZVariance = CBashBasicFlag('flags', 0x00000020)
             IsTree = CBashBasicFlag('flags', 0x00000040)
             IsHugeRock = CBashBasicFlag('flags', 0x00000080)
-            exportattrs = copyattrs = ['objectId', 'parentIndex', 'density', 'clustering',
+            copyattrs = ['objectId', 'parentIndex', 'density', 'clustering',
                          'minSlope', 'maxSlope', 'flags', 'radiusWRTParent',
                          'radius', 'unk1', 'maxHeight', 'sink', 'sinkVar',
                          'sizeVar', 'angleVarX', 'angleVarY', 'angleVarZ',
                          'unk2']
+            exportattrs = copyattrs[:]
+            exportattrs.remove('unk1')
+            exportattrs.remove('unk2')
 
         class Grass(ListX2Component):
+            __slots__ = []
             grass = CBashFORMID_LISTX2(1)
             unk1 = CBashUINT8ARRAY_LISTX2(2, 4)
-            exportattrs = copyattrs = ['grass', 'unk1']
+            copyattrs = ['grass', 'unk1']
+            exportattrs = copyattrs[:]
+            exportattrs.remove('unk1')
 
         class Sound(ListX2Component):
+            __slots__ = []
             sound = CBashFORMID_LISTX2(1)
             flags = CBashGeneric_LISTX2(2, c_ulong)
             chance = CBashGeneric_LISTX2(3, c_ulong)
@@ -13969,6 +13203,7 @@ class ObREGNRecord(ObBaseRecord):
             exportattrs = copyattrs = ['sound', 'flags', 'chance']
 
         class Weather(ListX2Component):
+            __slots__ = []
             weather = CBashFORMID_LISTX2(1)
             chance = CBashGeneric_LISTX2(2, c_ulong)
             exportattrs = copyattrs = ['weather', 'chance']
@@ -14022,7 +13257,7 @@ class ObREGNRecord(ObBaseRecord):
         IsDungeon = CBashBasicType('musicType', 2, 'IsDefault')
         IsOverride = CBashBasicFlag('flags', 0x00000001)
         exportattrs = copyattrs = ['entryType', 'flags', 'priority', 'objects_list', 'mapName',
-                     'iconPath', 'grasses_list', 'musicType', 'sounds_list', 'weathers_list']
+                                   'iconPath', 'grasses_list', 'musicType', 'sounds_list', 'weathers_list']
 
     iconPath = CBashISTRING(5)
     mapRed = CBashGeneric(6, c_ubyte)
@@ -14046,10 +13281,11 @@ class ObREGNRecord(ObBaseRecord):
     entries_list = CBashLIST(12, Entry, True)
 
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['iconPath', 'mapRed', 'mapGreen',
-                                        'mapBlue', 'worldspace', 'areas_list',
-                                        'entries_list']
+                                                        'mapBlue', 'worldspace', 'areas_list',
+                                                        'entries_list']
 
 class ObSBSPRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SBSP'
     sizeX = CBashFLOAT32(5)
     sizeY = CBashFLOAT32(6)
@@ -14057,16 +13293,13 @@ class ObSBSPRecord(ObBaseRecord):
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['sizeX', 'sizeY', 'sizeZ']
 
 class ObSCPTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SCPT'
-    def mergeFilter(self, modSet):
+    def mergeFilter(self, target):
         """Filter references that don't come from the specified modSet.
            Since we can't actually do this for SCPT records, return False if
            any references are to mods not in modSet."""
-        for ref in self.references:
-            if not isinstance(ref,FormID):
-                continue
-            if ref[0] not in modSet: return False
-        return True
+        return ValidateList(self.references, target)
 
     unused1 = CBashUINT8ARRAY(5, 2)
     numRefs = CBashGeneric(6, c_ulong)
@@ -14089,13 +13322,13 @@ class ObSCPTRecord(ObBaseRecord):
     IsQuest = CBashBasicType('scriptType', 0x00000001, 'IsObject')
     IsMagicEffect = CBashBasicType('scriptType', 0x00000100, 'IsObject')
     copyattrs = ObBaseRecord.baseattrs + ['numRefs', 'compiledSize', 'lastIndex',
-                                        'scriptType', 'compiled_p', 'scriptText',
-                                        'vars_list', 'references']
-    exportattrs = ObBaseRecord.baseattrs + ['numRefs', 'compiledSize', 'lastIndex',
-                                        'scriptType', 'scriptText',
-                                        'vars_list', 'references'] #'compiled_p',
+                                          'scriptType', 'compiled_p', 'scriptText',
+                                          'vars_list', 'references']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('compiled_p')
 
 class ObSGSTRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SGST'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -14123,16 +13356,20 @@ class ObSGSTRecord(ObBaseRecord):
     reserved = CBashUINT8ARRAY(19, 0x1C)
     datx_p = CBashUINT8ARRAY(20, 0x20)
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'script', 'effects_list',
-                                        'uses', 'value', 'weight']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'script', 'effects_list',
-                                        'uses', 'value', 'weight'] # 'modt_p',
+                                          'iconPath', 'script', 'effects_list',
+                                          'uses', 'value', 'weight']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved'] #, 'datx_p'
+                                 'reserved', 'datx_p']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('modt_p')
+    exportattrsOBME.remove('reserved')
+    exportattrsOBME.remove('datx_p')
 
 class ObSKILRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SKIL'
     skill = CBashGeneric(5, c_long)
     description = CBashSTRING(6)
@@ -14147,11 +13384,12 @@ class ObSKILRecord(ObBaseRecord):
     expert = CBashSTRING(15)
     master = CBashSTRING(16)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['skill', 'description', 'iconPath',
-                                        'action', 'attribute', 'specialization',
-                                        'use0', 'use1', 'apprentice',
-                                        'journeyman', 'expert', 'master']
+                                                        'action', 'attribute', 'specialization',
+                                                        'use0', 'use1', 'apprentice',
+                                                        'journeyman', 'expert', 'master']
 
 class ObSLGMRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SLGM'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -14176,13 +13414,13 @@ class ObSLGMRecord(ObBaseRecord):
     IsGreaterCapacity = CBashBasicType('capacityType', 4, 'IsNoCapacity')
     IsGrandCapacity = CBashBasicType('capacityType', 5, 'IsNoCapacity')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'script', 'value',
-                                        'weight', 'soulType', 'capacityType']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'script', 'value',
-                                        'weight', 'soulType', 'capacityType'] # 'modt_p',
+                                          'iconPath', 'script', 'value',
+                                          'weight', 'soulType', 'capacityType']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObSOUNRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SOUN'
     soundPath = CBashISTRING(5)
     minDistance = CBashGeneric(6, c_ubyte)
@@ -14203,10 +13441,11 @@ class ObSOUNRecord(ObBaseRecord):
     Is2D = CBashBasicFlag('flags', 0x00000040)
     Is360LFE = CBashBasicFlag('flags', 0x00000080)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['soundPath', 'minDistance', 'maxDistance',
-                                        'freqAdjustment', 'flags', 'staticAtten',
-                                        'stopTime', 'startTime']
+                                                        'freqAdjustment', 'flags', 'staticAtten',
+                                                        'stopTime', 'startTime']
 
 class ObSPELRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'SPEL'
     full = CBashSTRING(5)
     spellType = CBashGeneric(6, c_ulong)
@@ -14253,20 +13492,26 @@ class ObSPELRecord(ObBaseRecord):
     reserved = CBashUINT8ARRAY(16, 0x1C)
     datx_p = CBashUINT8ARRAY(17, 0x20)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'spellType', 'cost',
-                                        'levelType', 'flags', 'effects_list']
+                                                        'levelType', 'flags', 'effects_list']
     copyattrsOBME = copyattrs + ['recordVersion', 'betaVersion',
                                  'minorVersion', 'majorVersion',
-                                 'reserved'] #, 'datx_p'
+                                 'reserved', 'datx_p']
+    exportattrsOBME = copyattrsOBME[:]
+    exportattrsOBME.remove('reserved')
+    exportattrsOBME.remove('datx_p')
 
 class ObSTATRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'STAT'
     modPath = CBashISTRING(5)
     modb = CBashFLOAT32(6)
     modt_p = CBashUINT8ARRAY(7)
     copyattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p']
-    exportattrs = ObBaseRecord.baseattrs + ['modPath', 'modb']#, 'modt_p']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObTREERecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'TREE'
     modPath = CBashISTRING(5)
     modb = CBashFLOAT32(6)
@@ -14284,17 +13529,15 @@ class ObTREERecord(ObBaseRecord):
     widthBill = CBashFLOAT32(18)
     heightBill = CBashFLOAT32(19)
     copyattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'modt_p', 'iconPath',
-                                        'speedTree', 'curvature', 'minAngle',
-                                        'maxAngle', 'branchDim', 'leafDim',
-                                        'shadowRadius', 'rockSpeed',
-                                        'rustleSpeed', 'widthBill', 'heightBill']
-    exportattrs = ObBaseRecord.baseattrs + ['modPath', 'modb', 'iconPath',
-                                        'speedTree', 'curvature', 'minAngle',
-                                        'maxAngle', 'branchDim', 'leafDim',
-                                        'shadowRadius', 'rockSpeed',
-                                        'rustleSpeed', 'widthBill', 'heightBill'] #'modt_p',
+                                          'speedTree', 'curvature', 'minAngle',
+                                          'maxAngle', 'branchDim', 'leafDim',
+                                          'shadowRadius', 'rockSpeed',
+                                          'rustleSpeed', 'widthBill', 'heightBill']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObWATRRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'WATR'
     texturePath = CBashISTRING(5)
     opacity = CBashGeneric(6, c_ubyte)
@@ -14344,20 +13587,21 @@ class ObWATRRecord(ObBaseRecord):
     IsCausesDmg = CBashAlias('IsCausesDamage')
     IsReflective = CBashBasicFlag('flags', 0x00000002)
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['texturePath', 'opacity', 'flags', 'materialPath',
-                                        'sound', 'windVelocity', 'windDirection',
-                                        'waveAmp', 'waveFreq', 'sunPower',
-                                        'reflectAmt', 'fresnelAmt', 'xSpeed',
-                                        'ySpeed', 'fogNear', 'fogFar',
-                                        'shallowRed', 'shallowGreen', 'shallowBlue',
-                                        'deepRed', 'deepGreen', 'deepBlue',
-                                        'reflRed', 'reflGreen', 'reflBlue',
-                                        'blend', 'rainForce', 'rainVelocity',
-                                        'rainFalloff', 'rainDampner', 'rainSize',
-                                        'dispForce', 'dispVelocity', 'dispFalloff',
-                                        'dispDampner', 'dispSize', 'damage',
-                                        'dayWater', 'nightWater', 'underWater']
+                                                        'sound', 'windVelocity', 'windDirection',
+                                                        'waveAmp', 'waveFreq', 'sunPower',
+                                                        'reflectAmt', 'fresnelAmt', 'xSpeed',
+                                                        'ySpeed', 'fogNear', 'fogFar',
+                                                        'shallowRed', 'shallowGreen', 'shallowBlue',
+                                                        'deepRed', 'deepGreen', 'deepBlue',
+                                                        'reflRed', 'reflGreen', 'reflBlue',
+                                                        'blend', 'rainForce', 'rainVelocity',
+                                                        'rainFalloff', 'rainDampner', 'rainSize',
+                                                        'dispForce', 'dispVelocity', 'dispFalloff',
+                                                        'dispDampner', 'dispSize', 'damage',
+                                                        'dayWater', 'nightWater', 'underWater']
 
 class ObWEAPRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'WEAP'
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -14386,17 +13630,15 @@ class ObWEAPRecord(ObBaseRecord):
     IsNormalWeapon = CBashInvertedFlag('IsNotNormalWeapon')
     IsNormal = CBashAlias('IsNormalWeapon')
     copyattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb', 'modt_p',
-                                        'iconPath', 'script', 'enchantment',
-                                        'enchantPoints', 'weaponType',
-                                        'speed', 'reach', 'flags', 'value',
-                                        'health', 'weight', 'damage']
-    exportattrs = ObBaseRecord.baseattrs + ['full', 'modPath', 'modb',
-                                        'iconPath', 'script', 'enchantment',
-                                        'enchantPoints', 'weaponType',
-                                        'speed', 'reach', 'flags', 'value',
-                                        'health', 'weight', 'damage'] # 'modt_p',
+                                          'iconPath', 'script', 'enchantment',
+                                          'enchantPoints', 'weaponType',
+                                          'speed', 'reach', 'flags', 'value',
+                                          'health', 'weight', 'damage']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 class ObWRLDRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'WRLD'
     full = CBashSTRING(5)
     parent = CBashFORMID(6)
@@ -14418,20 +13660,17 @@ class ObWRLDRecord(ObBaseRecord):
     ofst_p = CBashUINT8ARRAY(22)
     def create_ROAD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ROAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObROADRecord(RecordID)
-        return None
+        return ObROADRecord(RecordID) if RecordID else None
     ROAD = CBashSUBRECORD(23, ObROADRecord, "ROAD")
 
     def create_WorldCELL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObCELLRecord(RecordID)
-        return None
+        return ObCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(24, ObCELLRecord, "WCEL")
  ##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
-        if(RecordID): return ObCELLRecord(RecordID)
-        return None
+        return ObCELLRecord(RecordID) if RecordID else None
     CELLS = CBashSUBRECORDARRAY(25, ObCELLRecord, "CELL")
 
     IsSmallWorld = CBashBasicFlag('flags', 0x00000001)
@@ -14444,13 +13683,15 @@ class ObWRLDRecord(ObBaseRecord):
     IsPublic = CBashBasicType('musicType', 1, 'IsDefault')
     IsDungeon = CBashBasicType('musicType', 2, 'IsDefault')
     exportattrs = copyattrs = ObBaseRecord.baseattrs + ['full', 'parent', 'climate', 'water', 'mapPath',
-                                        'dimX', 'dimY', 'NWCellX', 'NWCellY', 'SECellX',
-                                        'SECellY', 'flags', 'xMinObjBounds', 'yMinObjBounds',
-                                        'xMaxObjBounds', 'yMaxObjBounds', 'musicType', 'ROAD', 'WorldCELL'] #'ofst_p',
+                                                        'dimX', 'dimY', 'NWCellX', 'NWCellY', 'SECellX',
+                                                        'SECellY', 'flags', 'xMinObjBounds', 'yMinObjBounds',
+                                                        'xMaxObjBounds', 'yMaxObjBounds', 'musicType', 'ROAD', 'WorldCELL'] #'ofst_p',
 
 class ObWTHRRecord(ObBaseRecord):
+    __slots__ = []
     _Type = 'WTHR'
     class WTHRColor(BaseComponent):
+        __slots__ = []
         riseRed = CBashGeneric_GROUP(0, c_ubyte)
         riseGreen = CBashGeneric_GROUP(1, c_ubyte)
         riseBlue = CBashGeneric_GROUP(2, c_ubyte)
@@ -14468,11 +13709,12 @@ class ObWTHRRecord(ObBaseRecord):
         nightBlue = CBashGeneric_GROUP(14, c_ubyte)
         unused4 = CBashUINT8ARRAY_GROUP(15, 1)
         exportattrs = copyattrs = ['riseRed', 'riseGreen', 'riseBlue',
-                     'dayRed', 'dayGreen', 'dayBlue',
-                     'setRed', 'setGreen', 'setBlue',
-                     'nightRed', 'nightGreen', 'nightBlue']
+                                   'dayRed', 'dayGreen', 'dayBlue',
+                                   'setRed', 'setGreen', 'setBlue',
+                                   'nightRed', 'nightGreen', 'nightBlue']
 
     class Sound(ListComponent):
+        __slots__ = []
         sound = CBashFORMID_LIST(1)
         type = CBashGeneric_LIST(2, c_ulong)
         IsDefault = CBashBasicType('type', 0, 'IsPrecip')
@@ -14568,35 +13810,22 @@ class ObWTHRRecord(ObBaseRecord):
     IsUnk1 = CBashBasicFlag('weatherType', 0x40)
     IsUnk2 = CBashBasicFlag('weatherType', 0x80)
     copyattrs = ObBaseRecord.baseattrs + ['lowerLayerPath', 'upperLayerPath', 'modPath',
-                                        'modb', 'modt_p', 'upperSky_list', 'fog_list',
-                                        'lowerClouds_list', 'ambient_list', 'sunlight_list',
-                                        'sun_list', 'stars_list', 'lowerSky_list', 'horizon_list',
-                                        'upperClouds_list', 'fogDayNear', 'fogDayFar',
-                                        'fogNightNear', 'fogNightFar', 'eyeAdaptSpeed',
-                                        'blurRadius', 'blurPasses', 'emissiveMult',
-                                        'targetLum', 'upperLumClamp', 'brightScale',
-                                        'brightClamp', 'lumRampNoTex', 'lumRampMin',
-                                        'lumRampMax', 'sunlightDimmer', 'grassDimmer',
-                                        'treeDimmer', 'windSpeed', 'lowerCloudSpeed',
-                                        'upperCloudSpeed', 'transDelta', 'sunGlare',
-                                        'sunDamage', 'rainFadeIn', 'rainFadeOut',
-                                        'boltFadeIn', 'boltFadeOut', 'boltFrequency',
-                                        'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list']
-    exportattrs = ObBaseRecord.baseattrs + ['lowerLayerPath', 'upperLayerPath', 'modPath',
-                                        'modb', 'upperSky_list', 'fog_list',
-                                        'lowerClouds_list', 'ambient_list', 'sunlight_list',
-                                        'sun_list', 'stars_list', 'lowerSky_list', 'horizon_list',
-                                        'upperClouds_list', 'fogDayNear', 'fogDayFar',
-                                        'fogNightNear', 'fogNightFar', 'eyeAdaptSpeed',
-                                        'blurRadius', 'blurPasses', 'emissiveMult',
-                                        'targetLum', 'upperLumClamp', 'brightScale',
-                                        'brightClamp', 'lumRampNoTex', 'lumRampMin',
-                                        'lumRampMax', 'sunlightDimmer', 'grassDimmer',
-                                        'treeDimmer', 'windSpeed', 'lowerCloudSpeed',
-                                        'upperCloudSpeed', 'transDelta', 'sunGlare',
-                                        'sunDamage', 'rainFadeIn', 'rainFadeOut',
-                                        'boltFadeIn', 'boltFadeOut', 'boltFrequency',
-                                        'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list'] #'modt_p',
+                                          'modb', 'modt_p', 'upperSky_list', 'fog_list',
+                                          'lowerClouds_list', 'ambient_list', 'sunlight_list',
+                                          'sun_list', 'stars_list', 'lowerSky_list', 'horizon_list',
+                                          'upperClouds_list', 'fogDayNear', 'fogDayFar',
+                                          'fogNightNear', 'fogNightFar', 'eyeAdaptSpeed',
+                                          'blurRadius', 'blurPasses', 'emissiveMult',
+                                          'targetLum', 'upperLumClamp', 'brightScale',
+                                          'brightClamp', 'lumRampNoTex', 'lumRampMin',
+                                          'lumRampMax', 'sunlightDimmer', 'grassDimmer',
+                                          'treeDimmer', 'windSpeed', 'lowerCloudSpeed',
+                                          'upperCloudSpeed', 'transDelta', 'sunGlare',
+                                          'sunDamage', 'rainFadeIn', 'rainFadeOut',
+                                          'boltFadeIn', 'boltFadeOut', 'boltFrequency',
+                                          'weatherType', 'boltRed', 'boltGreen', 'boltBlue', 'sounds_list']
+    exportattrs = copyattrs[:]
+    exportattrs.remove('modt_p')
 
 #Helper functions
 validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
@@ -14691,13 +13920,12 @@ fnv_type_record = dict([('BASE',FnvBaseRecord),(None,None),('',None),
                         ('HUNG',FnvHUNGRecord),('SLPD',FnvSLPDRecord),])
 
 class ObModFile(object):
+    __slots__ = ['_ModID']
     def __init__(self, ModID):
         self._ModID = ModID
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return self._ModID == other._ModID
-        return False
+        return self._ModID == other._ModID if type(other) is type(self) else False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -14719,33 +13947,20 @@ class ObModFile(object):
 
     def HasRecord(self, RecordIdentifier):
         if not RecordIdentifier: return False
-        if isinstance(RecordIdentifier, basestring):
-            _FormID = 0
-            _EditorID = RecordIdentifier
-        else:
-            _FormID = RecordIdentifier.GetShortFormID(self)
-            _EditorID = 0
-        if not (_EditorID or _FormID): return False
-        if _CGetRecordID(self._ModID, _FormID, _EditorID):
-            return True
-        return False
+        formID, editorID = (0, RecordIdentifier) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        if not (formID or editorID): return False
+        return bool(_CGetRecordID(self._ModID, formID, editorID))
 
     def LookupRecord(self, RecordIdentifier):
         if not RecordIdentifier: return None
-        if isinstance(RecordIdentifier, basestring):
-            _FormID = 0
-            _EditorID = RecordIdentifier
-        else:
-            _FormID = RecordIdentifier.GetShortFormID(self)
-            _EditorID = 0
-        if not (_EditorID or _FormID): return None
-        RecordID = _CGetRecordID(self._ModID, _FormID, _EditorID)
+        formID, editorID = (0, RecordIdentifier) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        if not (formID or editorID): return None
+        RecordID = _CGetRecordID(self._ModID, formID, editorID)
         if RecordID:
             _CGetFieldAttribute.restype = (c_char * 4)
             RecordType = type_record[_CGetFieldAttribute(RecordID, 0, 0, 0, 0, 0, 0, 0, 0).value]
             _CGetFieldAttribute.restype = c_ulong
-            if RecordType:
-                return RecordType(RecordID)
+            return RecordType(RecordID)
         return None
 
     def IsEmpty(self):
@@ -14774,8 +13989,7 @@ class ObModFile(object):
     def UpdateReferences(self, Old_NewFormIDs):
         Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if not length:
-            return []
+        if not length: return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
@@ -14803,352 +14017,290 @@ class ObModFile(object):
         _CUnloadMod(self._ModID)
 
     def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
-        flags = 0
-        if(CleanMasters):
-            flags |= 0x00000001
-        if(CloseCollection):
-            flags |= 0x00000002
-        return _CSaveMod(self._ModID, c_ulong(flags), DestinationName)
+        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), DestinationName)
 
     @property
     def TES4(self):
-        RecordID = _CGetRecordID(self._ModID, 0, 0)
-        return ObTES4Record(RecordID)
+        return ObTES4Record(_CGetRecordID(self._ModID, 0, 0))
 
     def create_GMST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObGMSTRecord(RecordID)
-        return None
+        return ObGMSTRecord(RecordID) if RecordID else None
     GMST = CBashRECORDARRAY(ObGMSTRecord, 'GMST')
 
     def create_GLOB(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObGLOBRecord(RecordID)
-        return None
+        return ObGLOBRecord(RecordID) if RecordID else None
     GLOB = CBashRECORDARRAY(ObGLOBRecord, 'GLOB')
 
     def create_CLAS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCLASRecord(RecordID)
-        return None
+        return ObCLASRecord(RecordID) if RecordID else None
     CLAS = CBashRECORDARRAY(ObCLASRecord, 'CLAS')
 
     def create_FACT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObFACTRecord(RecordID)
-        return None
+        return ObFACTRecord(RecordID) if RecordID else None
     FACT = CBashRECORDARRAY(ObFACTRecord, 'FACT')
 
     def create_HAIR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObHAIRRecord(RecordID)
-        return None
+        return ObHAIRRecord(RecordID) if RecordID else None
     HAIR = CBashRECORDARRAY(ObHAIRRecord, 'HAIR')
 
     def create_EYES(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObEYESRecord(RecordID)
-        return None
+        return ObEYESRecord(RecordID) if RecordID else None
     EYES = CBashRECORDARRAY(ObEYESRecord, 'EYES')
 
     def create_RACE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObRACERecord(RecordID)
-        return None
+        return ObRACERecord(RecordID) if RecordID else None
     RACE = CBashRECORDARRAY(ObRACERecord, 'RACE')
 
     def create_SOUN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSOUNRecord(RecordID)
-        return None
+        return ObSOUNRecord(RecordID) if RecordID else None
     SOUN = CBashRECORDARRAY(ObSOUNRecord, 'SOUN')
 
     def create_SKIL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SKIL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSKILRecord(RecordID)
-        return None
+        return ObSKILRecord(RecordID) if RecordID else None
     SKIL = CBashRECORDARRAY(ObSKILRecord, 'SKIL')
 
     def create_MGEF(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObMGEFRecord(RecordID)
-        return None
+        return ObMGEFRecord(RecordID) if RecordID else None
     MGEF = CBashRECORDARRAY(ObMGEFRecord, 'MGEF')
 
     def create_SCPT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSCPTRecord(RecordID)
-        return None
+        return ObSCPTRecord(RecordID) if RecordID else None
     SCPT = CBashRECORDARRAY(ObSCPTRecord, 'SCPT')
 
     def create_LTEX(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObLTEXRecord(RecordID)
-        return None
+        return ObLTEXRecord(RecordID) if RecordID else None
     LTEX = CBashRECORDARRAY(ObLTEXRecord, 'LTEX')
 
     def create_ENCH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObENCHRecord(RecordID)
-        return None
+        return ObENCHRecord(RecordID) if RecordID else None
     ENCH = CBashRECORDARRAY(ObENCHRecord, 'ENCH')
 
     def create_SPEL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSPELRecord(RecordID)
-        return None
+        return ObSPELRecord(RecordID) if RecordID else None
     SPEL = CBashRECORDARRAY(ObSPELRecord, 'SPEL')
 
     def create_BSGN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("BSGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObBSGNRecord(RecordID)
-        return None
+        return ObBSGNRecord(RecordID) if RecordID else None
     BSGN = CBashRECORDARRAY(ObBSGNRecord, 'BSGN')
 
     def create_ACTI(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObACTIRecord(RecordID)
-        return None
+        return ObACTIRecord(RecordID) if RecordID else None
     ACTI = CBashRECORDARRAY(ObACTIRecord, 'ACTI')
 
     def create_APPA(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("APPA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObAPPARecord(RecordID)
-        return None
+        return ObAPPARecord(RecordID) if RecordID else None
     APPA = CBashRECORDARRAY(ObAPPARecord, 'APPA')
 
     def create_ARMO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObARMORecord(RecordID)
-        return None
+        return ObARMORecord(RecordID) if RecordID else None
     ARMO = CBashRECORDARRAY(ObARMORecord, 'ARMO')
 
     def create_BOOK(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObBOOKRecord(RecordID)
-        return None
+        return ObBOOKRecord(RecordID) if RecordID else None
     BOOK = CBashRECORDARRAY(ObBOOKRecord, 'BOOK')
 
     def create_CLOT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CLOT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCLOTRecord(RecordID)
-        return None
+        return ObCLOTRecord(RecordID) if RecordID else None
     CLOT = CBashRECORDARRAY(ObCLOTRecord, 'CLOT')
 
     def create_CONT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCONTRecord(RecordID)
-        return None
+        return ObCONTRecord(RecordID) if RecordID else None
     CONT = CBashRECORDARRAY(ObCONTRecord, 'CONT')
 
     def create_DOOR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObDOORRecord(RecordID)
-        return None
+        return ObDOORRecord(RecordID) if RecordID else None
     DOOR = CBashRECORDARRAY(ObDOORRecord, 'DOOR')
 
     def create_INGR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObINGRRecord(RecordID)
-        return None
+        return ObINGRRecord(RecordID) if RecordID else None
     INGR = CBashRECORDARRAY(ObINGRRecord, 'INGR')
 
     def create_LIGH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObLIGHRecord(RecordID)
-        return None
+        return ObLIGHRecord(RecordID) if RecordID else None
     LIGH = CBashRECORDARRAY(ObLIGHRecord, 'LIGH')
 
     def create_MISC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObMISCRecord(RecordID)
-        return None
+        return ObMISCRecord(RecordID) if RecordID else None
     MISC = CBashRECORDARRAY(ObMISCRecord, 'MISC')
 
     def create_STAT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSTATRecord(RecordID)
-        return None
+        return ObSTATRecord(RecordID) if RecordID else None
     STAT = CBashRECORDARRAY(ObSTATRecord, 'STAT')
 
     def create_GRAS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObGRASRecord(RecordID)
-        return None
+        return ObGRASRecord(RecordID) if RecordID else None
     GRAS = CBashRECORDARRAY(ObGRASRecord, 'GRAS')
 
     def create_TREE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObTREERecord(RecordID)
-        return None
+        return ObTREERecord(RecordID) if RecordID else None
     TREE = CBashRECORDARRAY(ObTREERecord, 'TREE')
 
     def create_FLOR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("FLOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObFLORRecord(RecordID)
-        return None
+        return ObFLORRecord(RecordID) if RecordID else None
     FLOR = CBashRECORDARRAY(ObFLORRecord, 'FLOR')
 
     def create_FURN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObFURNRecord(RecordID)
-        return None
+        return ObFURNRecord(RecordID) if RecordID else None
     FURN = CBashRECORDARRAY(ObFURNRecord, 'FURN')
 
     def create_WEAP(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObWEAPRecord(RecordID)
-        return None
+        return ObWEAPRecord(RecordID) if RecordID else None
     WEAP = CBashRECORDARRAY(ObWEAPRecord, 'WEAP')
 
     def create_AMMO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObAMMORecord(RecordID)
-        return None
+        return ObAMMORecord(RecordID) if RecordID else None
     AMMO = CBashRECORDARRAY(ObAMMORecord, 'AMMO')
 
     def create_NPC_(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObNPC_Record(RecordID)
-        return None
+        return ObNPC_Record(RecordID) if RecordID else None
     NPC_ = CBashRECORDARRAY(ObNPC_Record, 'NPC_')
 
     def create_CREA(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCREARecord(RecordID)
-        return None
+        return ObCREARecord(RecordID) if RecordID else None
     CREA = CBashRECORDARRAY(ObCREARecord, 'CREA')
 
     def create_LVLC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObLVLCRecord(RecordID)
-        return None
+        return ObLVLCRecord(RecordID) if RecordID else None
     LVLC = CBashRECORDARRAY(ObLVLCRecord, 'LVLC')
 
     def create_SLGM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SLGM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSLGMRecord(RecordID)
-        return None
+        return ObSLGMRecord(RecordID) if RecordID else None
     SLGM = CBashRECORDARRAY(ObSLGMRecord, 'SLGM')
 
     def create_KEYM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObKEYMRecord(RecordID)
-        return None
+        return ObKEYMRecord(RecordID) if RecordID else None
     KEYM = CBashRECORDARRAY(ObKEYMRecord, 'KEYM')
 
     def create_ALCH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObALCHRecord(RecordID)
-        return None
+        return ObALCHRecord(RecordID) if RecordID else None
     ALCH = CBashRECORDARRAY(ObALCHRecord, 'ALCH')
 
     def create_SBSP(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SBSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSBSPRecord(RecordID)
-        return None
+        return ObSBSPRecord(RecordID) if RecordID else None
     SBSP = CBashRECORDARRAY(ObSBSPRecord, 'SBSP')
 
     def create_SGST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SGST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObSGSTRecord(RecordID)
-        return None
+        return ObSGSTRecord(RecordID) if RecordID else None
     SGST = CBashRECORDARRAY(ObSGSTRecord, 'SGST')
 
     def create_LVLI(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObLVLIRecord(RecordID)
-        return None
+        return ObLVLIRecord(RecordID) if RecordID else None
     LVLI = CBashRECORDARRAY(ObLVLIRecord, 'LVLI')
 
     def create_WTHR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObWTHRRecord(RecordID)
-        return None
+        return ObWTHRRecord(RecordID) if RecordID else None
     WTHR = CBashRECORDARRAY(ObWTHRRecord, 'WTHR')
 
     def create_CLMT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCLMTRecord(RecordID)
-        return None
+        return ObCLMTRecord(RecordID) if RecordID else None
     CLMT = CBashRECORDARRAY(ObCLMTRecord, 'CLMT')
 
     def create_REGN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObREGNRecord(RecordID)
-        return None
+        return ObREGNRecord(RecordID) if RecordID else None
     REGN = CBashRECORDARRAY(ObREGNRecord, 'REGN')
 
     def create_WRLD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObWRLDRecord(RecordID)
-        return None
+        return ObWRLDRecord(RecordID) if RecordID else None
     WRLD = CBashRECORDARRAY(ObWRLDRecord, 'WRLD')
 
     def create_CELL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCELLRecord(RecordID)
-        return None
+        return ObCELLRecord(RecordID) if RecordID else None
     CELL = CBashRECORDARRAY(ObCELLRecord, 'CELL')
 
     def create_DIAL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObDIALRecord(RecordID)
-        return None
+        return ObDIALRecord(RecordID) if RecordID else None
     DIAL = CBashRECORDARRAY(ObDIALRecord, 'DIAL')
 
     def create_QUST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObQUSTRecord(RecordID)
-        return None
+        return ObQUSTRecord(RecordID) if RecordID else None
     QUST = CBashRECORDARRAY(ObQUSTRecord, 'QUST')
 
     def create_IDLE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObIDLERecord(RecordID)
-        return None
+        return ObIDLERecord(RecordID) if RecordID else None
     IDLE = CBashRECORDARRAY(ObIDLERecord, 'IDLE')
 
     def create_PACK(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObPACKRecord(RecordID)
-        return None
+        return ObPACKRecord(RecordID) if RecordID else None
     PACK = CBashRECORDARRAY(ObPACKRecord, 'PACK')
 
     def create_CSTY(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObCSTYRecord(RecordID)
-        return None
+        return ObCSTYRecord(RecordID) if RecordID else None
     CSTY = CBashRECORDARRAY(ObCSTYRecord, 'CSTY')
 
     def create_LSCR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObLSCRRecord(RecordID)
-        return None
+        return ObLSCRRecord(RecordID) if RecordID else None
     LSCR = CBashRECORDARRAY(ObLSCRRecord, 'LSCR')
 
     def create_LVSP(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LVSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObLVSPRecord(RecordID)
-        return None
+        return ObLVSPRecord(RecordID) if RecordID else None
     LVSP = CBashRECORDARRAY(ObLVSPRecord, 'LVSP')
 
     def create_ANIO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObANIORecord(RecordID)
-        return None
+        return ObANIORecord(RecordID) if RecordID else None
     ANIO = CBashRECORDARRAY(ObANIORecord, 'ANIO')
 
     def create_WATR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObWATRRecord(RecordID)
-        return None
+        return ObWATRRecord(RecordID) if RecordID else None
     WATR = CBashRECORDARRAY(ObWATRRecord, 'WATR')
 
     def create_EFSH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return ObEFSHRecord(RecordID)
-        return None
+        return ObEFSHRecord(RecordID) if RecordID else None
     EFSH = CBashRECORDARRAY(ObEFSHRecord, 'EFSH')
 
     ##Aggregate properties. Useful for iterating through all records without going through the parent records.
@@ -15199,13 +14351,12 @@ class ObModFile(object):
                      ("ANIO", self.ANIO),("WATR", self.WATR),("EFSH", self.EFSH)))
 
 class FnvModFile(object):
+    __slots__ = ['_ModID']
     def __init__(self, ModID):
         self._ModID = ModID
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return self._ModID == other._ModID
-        return False
+        return self._ModID == other._ModID if type(other) is type(self) else False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -15227,33 +14378,20 @@ class FnvModFile(object):
 
     def HasRecord(self, RecordIdentifier):
         if not RecordIdentifier: return False
-        if isinstance(RecordIdentifier, basestring):
-            _FormID = 0
-            _EditorID = RecordIdentifier
-        else:
-            _FormID = RecordIdentifier.GetShortFormID(self)
-            _EditorID = 0
-        if not (_EditorID or _FormID): return False
-        if _CGetRecordID(self._ModID, _FormID, _EditorID):
-            return True
-        return False
+        formID, editorID = (0, RecordIdentifier) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        if not (formID or editorID): return False
+        return bool(_CGetRecordID(self._ModID, formID, editorID))
 
     def LookupRecord(self, RecordIdentifier):
         if not RecordIdentifier: return None
-        if isinstance(RecordIdentifier, basestring):
-            _FormID = 0
-            _EditorID = RecordIdentifier
-        else:
-            _FormID = RecordIdentifier.GetShortFormID(self)
-            _EditorID = 0
-        if not (_EditorID or _FormID): return None
-        RecordID = _CGetRecordID(self._ModID, _FormID, _EditorID)
+        formID, editorID = (0, RecordIdentifier) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        if not (formID or editorID): return None
+        RecordID = _CGetRecordID(self._ModID, formID, editorID)
         if RecordID:
             _CGetFieldAttribute.restype = (c_char * 4)
             RecordType = fnv_type_record[_CGetFieldAttribute(RecordID, 0, 0, 0, 0, 0, 0, 0, 0).value]
             _CGetFieldAttribute.restype = c_ulong
-            if RecordType:
-                return RecordType(RecordID)
+            return RecordType(RecordID)
         return None
 
     def IsEmpty(self):
@@ -15282,8 +14420,7 @@ class FnvModFile(object):
     def UpdateReferences(self, Old_NewFormIDs):
         Old_NewFormIDs = FormID.FilterValidDict(Old_NewFormIDs, self, True, True, AsShort=True)
         length = len(Old_NewFormIDs)
-        if not length:
-            return []
+        if not length: return []
         OldFormIDs = (c_ulong * length)(*Old_NewFormIDs.keys())
         NewFormIDs = (c_ulong * length)(*Old_NewFormIDs.values())
         Changes = (c_ulong * length)()
@@ -15311,622 +14448,515 @@ class FnvModFile(object):
         _CUnloadMod(self._ModID)
 
     def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
-        flags = 0
-        if(CleanMasters):
-            flags |= 0x00000001
-        if(CloseCollection):
-            flags |= 0x00000002
-        return _CSaveMod(self._ModID, c_ulong(flags), DestinationName)
+        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), DestinationName)
 
     @property
     def TES4(self):
-        RecordID = _CGetRecordID(self._ModID, 0, 0)
-        return FnvTES4Record(RecordID)
+        return FnvTES4Record(_CGetRecordID(self._ModID, 0, 0))
 
     def create_GMST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvGMSTRecord(RecordID)
-        return None
+        return FnvGMSTRecord(RecordID) if RecordID else None
     GMST = CBashRECORDARRAY(FnvGMSTRecord, 'GMST')
 
     def create_TXST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("TXST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvTXSTRecord(RecordID)
-        return None
+        return FnvTXSTRecord(RecordID) if RecordID else None
     TXST = CBashRECORDARRAY(FnvTXSTRecord, 'TXST')
 
     def create_MICN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MICN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMICNRecord(RecordID)
-        return None
+        return FnvMICNRecord(RecordID) if RecordID else None
     MICN = CBashRECORDARRAY(FnvMICNRecord, 'MICN')
 
     def create_GLOB(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvGLOBRecord(RecordID)
-        return None
+        return FnvGLOBRecord(RecordID) if RecordID else None
     GLOB = CBashRECORDARRAY(FnvGLOBRecord, 'GLOB')
 
     def create_CLAS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCLASRecord(RecordID)
-        return None
+        return FnvCLASRecord(RecordID) if RecordID else None
     CLAS = CBashRECORDARRAY(FnvCLASRecord, 'CLAS')
 
     def create_FACT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvFACTRecord(RecordID)
-        return None
+        return FnvFACTRecord(RecordID) if RecordID else None
     FACT = CBashRECORDARRAY(FnvFACTRecord, 'FACT')
 
     def create_HDPT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("HDPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvHDPTRecord(RecordID)
-        return None
+        return FnvHDPTRecord(RecordID) if RecordID else None
     HDPT = CBashRECORDARRAY(FnvHDPTRecord, 'HDPT')
 
     def create_HAIR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvHAIRRecord(RecordID)
-        return None
+        return FnvHAIRRecord(RecordID) if RecordID else None
     HAIR = CBashRECORDARRAY(FnvHAIRRecord, 'HAIR')
 
     def create_EYES(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvEYESRecord(RecordID)
-        return None
+        return FnvEYESRecord(RecordID) if RecordID else None
     EYES = CBashRECORDARRAY(FnvEYESRecord, 'EYES')
 
     def create_RACE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvRACERecord(RecordID)
-        return None
+        return FnvRACERecord(RecordID) if RecordID else None
     RACE = CBashRECORDARRAY(FnvRACERecord, 'RACE')
 
     def create_SOUN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvSOUNRecord(RecordID)
-        return None
+        return FnvSOUNRecord(RecordID) if RecordID else None
     SOUN = CBashRECORDARRAY(FnvSOUNRecord, 'SOUN')
 
     def create_ASPC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ASPC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvASPCRecord(RecordID)
-        return None
+        return FnvASPCRecord(RecordID) if RecordID else None
     ASPC = CBashRECORDARRAY(FnvASPCRecord, 'ASPC')
 
     def create_MGEF(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMGEFRecord(RecordID)
-        return None
+        return FnvMGEFRecord(RecordID) if RecordID else None
     MGEF = CBashRECORDARRAY(FnvMGEFRecord, 'MGEF')
 
     def create_SCPT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvSCPTRecord(RecordID)
-        return None
+        return FnvSCPTRecord(RecordID) if RecordID else None
     SCPT = CBashRECORDARRAY(FnvSCPTRecord, 'SCPT')
 
     def create_LTEX(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLTEXRecord(RecordID)
-        return None
+        return FnvLTEXRecord(RecordID) if RecordID else None
     LTEX = CBashRECORDARRAY(FnvLTEXRecord, 'LTEX')
 
     def create_ENCH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvENCHRecord(RecordID)
-        return None
+        return FnvENCHRecord(RecordID) if RecordID else None
     ENCH = CBashRECORDARRAY(FnvENCHRecord, 'ENCH')
 
     def create_SPEL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvSPELRecord(RecordID)
-        return None
+        return FnvSPELRecord(RecordID) if RecordID else None
     SPEL = CBashRECORDARRAY(FnvSPELRecord, 'SPEL')
 
     def create_ACTI(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvACTIRecord(RecordID)
-        return None
+        return FnvACTIRecord(RecordID) if RecordID else None
     ACTI = CBashRECORDARRAY(FnvACTIRecord, 'ACTI')
 
     def create_TACT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("TACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvTACTRecord(RecordID)
-        return None
+        return FnvTACTRecord(RecordID) if RecordID else None
     TACT = CBashRECORDARRAY(FnvTACTRecord, 'TACT')
 
     def create_TERM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("TERM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvTERMRecord(RecordID)
-        return None
+        return FnvTERMRecord(RecordID) if RecordID else None
     TERM = CBashRECORDARRAY(FnvTERMRecord, 'TERM')
 
     def create_ARMO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvARMORecord(RecordID)
-        return None
+        return FnvARMORecord(RecordID) if RecordID else None
     ARMO = CBashRECORDARRAY(FnvARMORecord, 'ARMO')
 
     def create_BOOK(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvBOOKRecord(RecordID)
-        return None
+        return FnvBOOKRecord(RecordID) if RecordID else None
     BOOK = CBashRECORDARRAY(FnvBOOKRecord, 'BOOK')
 
     def create_CONT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCONTRecord(RecordID)
-        return None
+        return FnvCONTRecord(RecordID) if RecordID else None
     CONT = CBashRECORDARRAY(FnvCONTRecord, 'CONT')
 
     def create_DOOR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvDOORRecord(RecordID)
-        return None
+        return FnvDOORRecord(RecordID) if RecordID else None
     DOOR = CBashRECORDARRAY(FnvDOORRecord, 'DOOR')
 
     def create_INGR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvINGRRecord(RecordID)
-        return None
+        return FnvINGRRecord(RecordID) if RecordID else None
     INGR = CBashRECORDARRAY(FnvINGRRecord, 'INGR')
 
     def create_LIGH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLIGHRecord(RecordID)
-        return None
+        return FnvLIGHRecord(RecordID) if RecordID else None
     LIGH = CBashRECORDARRAY(FnvLIGHRecord, 'LIGH')
 
     def create_MISC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMISCRecord(RecordID)
-        return None
+        return FnvMISCRecord(RecordID) if RecordID else None
     MISC = CBashRECORDARRAY(FnvMISCRecord, 'MISC')
 
     def create_STAT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvSTATRecord(RecordID)
-        return None
+        return FnvSTATRecord(RecordID) if RecordID else None
     STAT = CBashRECORDARRAY(FnvSTATRecord, 'STAT')
 
     def create_SCOL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SCOL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvSCOLRecord(RecordID)
-        return None
+        return FnvSCOLRecord(RecordID) if RecordID else None
     SCOL = CBashRECORDARRAY(FnvSCOLRecord, 'SCOL')
 
     def create_MSTT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MSTT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMSTTRecord(RecordID)
-        return None
+        return FnvMSTTRecord(RecordID) if RecordID else None
     MSTT = CBashRECORDARRAY(FnvMSTTRecord, 'MSTT')
 
     def create_PWAT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("PWAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvPWATRecord(RecordID)
-        return None
+        return FnvPWATRecord(RecordID) if RecordID else None
     PWAT = CBashRECORDARRAY(FnvPWATRecord, 'PWAT')
 
     def create_GRAS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvGRASRecord(RecordID)
-        return None
+        return FnvGRASRecord(RecordID) if RecordID else None
     GRAS = CBashRECORDARRAY(FnvGRASRecord, 'GRAS')
 
     def create_TREE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvTREERecord(RecordID)
-        return None
+        return FnvTREERecord(RecordID) if RecordID else None
     TREE = CBashRECORDARRAY(FnvTREERecord, 'TREE')
 
     def create_FURN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvFURNRecord(RecordID)
-        return None
+        return FnvFURNRecord(RecordID) if RecordID else None
     FURN = CBashRECORDARRAY(FnvFURNRecord, 'FURN')
 
     def create_WEAP(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvWEAPRecord(RecordID)
-        return None
+        return FnvWEAPRecord(RecordID) if RecordID else None
     WEAP = CBashRECORDARRAY(FnvWEAPRecord, 'WEAP')
 
     def create_AMMO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvAMMORecord(RecordID)
-        return None
+        return FnvAMMORecord(RecordID) if RecordID else None
     AMMO = CBashRECORDARRAY(FnvAMMORecord, 'AMMO')
 
     def create_NPC_(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvNPC_Record(RecordID)
-        return None
+        return FnvNPC_Record(RecordID) if RecordID else None
     NPC_ = CBashRECORDARRAY(FnvNPC_Record, 'NPC_')
 
     def create_CREA(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCREARecord(RecordID)
-        return None
+        return FnvCREARecord(RecordID) if RecordID else None
     CREA = CBashRECORDARRAY(FnvCREARecord, 'CREA')
 
     def create_LVLC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLVLCRecord(RecordID)
-        return None
+        return FnvLVLCRecord(RecordID) if RecordID else None
     LVLC = CBashRECORDARRAY(FnvLVLCRecord, 'LVLC')
 
     def create_LVLN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LVLN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLVLNRecord(RecordID)
-        return None
+        return FnvLVLNRecord(RecordID) if RecordID else None
     LVLN = CBashRECORDARRAY(FnvLVLNRecord, 'LVLN')
 
     def create_KEYM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvKEYMRecord(RecordID)
-        return None
+        return FnvKEYMRecord(RecordID) if RecordID else None
     KEYM = CBashRECORDARRAY(FnvKEYMRecord, 'KEYM')
 
     def create_ALCH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvALCHRecord(RecordID)
-        return None
+        return FnvALCHRecord(RecordID) if RecordID else None
     ALCH = CBashRECORDARRAY(FnvALCHRecord, 'ALCH')
 
     def create_IDLM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IDLM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIDLMRecord(RecordID)
-        return None
+        return FnvIDLMRecord(RecordID) if RecordID else None
     IDLM = CBashRECORDARRAY(FnvIDLMRecord, 'IDLM')
 
     def create_NOTE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("NOTE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvNOTERecord(RecordID)
-        return None
+        return FnvNOTERecord(RecordID) if RecordID else None
     NOTE = CBashRECORDARRAY(FnvNOTERecord, 'NOTE')
 
     def create_COBJ(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("COBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCOBJRecord(RecordID)
-        return None
+        return FnvCOBJRecord(RecordID) if RecordID else None
     COBJ = CBashRECORDARRAY(FnvCOBJRecord, 'COBJ')
 
     def create_PROJ(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("PROJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvPROJRecord(RecordID)
-        return None
+        return FnvPROJRecord(RecordID) if RecordID else None
     PROJ = CBashRECORDARRAY(FnvPROJRecord, 'PROJ')
 
     def create_LVLI(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLVLIRecord(RecordID)
-        return None
+        return FnvLVLIRecord(RecordID) if RecordID else None
     LVLI = CBashRECORDARRAY(FnvLVLIRecord, 'LVLI')
 
     def create_WTHR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvWTHRRecord(RecordID)
-        return None
+        return FnvWTHRRecord(RecordID) if RecordID else None
     WTHR = CBashRECORDARRAY(FnvWTHRRecord, 'WTHR')
 
     def create_CLMT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCLMTRecord(RecordID)
-        return None
+        return FnvCLMTRecord(RecordID) if RecordID else None
     CLMT = CBashRECORDARRAY(FnvCLMTRecord, 'CLMT')
 
     def create_REGN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvREGNRecord(RecordID)
-        return None
+        return FnvREGNRecord(RecordID) if RecordID else None
     REGN = CBashRECORDARRAY(FnvREGNRecord, 'REGN')
 
     def create_NAVI(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("NAVI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvNAVIRecord(RecordID)
-        return None
+        return FnvNAVIRecord(RecordID) if RecordID else None
     NAVI = CBashRECORDARRAY(FnvNAVIRecord, 'NAVI')
 
     def create_CELL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCELLRecord(RecordID)
-        return None
+        return FnvCELLRecord(RecordID) if RecordID else None
     CELL = CBashRECORDARRAY(FnvCELLRecord, 'CELL')
 
     def create_WRLD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvWRLDRecord(RecordID)
-        return None
+        return FnvWRLDRecord(RecordID) if RecordID else None
     WRLD = CBashRECORDARRAY(FnvWRLDRecord, 'WRLD')
 
     def create_DIAL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvDIALRecord(RecordID)
-        return None
+        return FnvDIALRecord(RecordID) if RecordID else None
     DIAL = CBashRECORDARRAY(FnvDIALRecord, 'DIAL')
 
     def create_QUST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvQUSTRecord(RecordID)
-        return None
+        return FnvQUSTRecord(RecordID) if RecordID else None
     QUST = CBashRECORDARRAY(FnvQUSTRecord, 'QUST')
 
     def create_IDLE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIDLERecord(RecordID)
-        return None
+        return FnvIDLERecord(RecordID) if RecordID else None
     IDLE = CBashRECORDARRAY(FnvIDLERecord, 'IDLE')
 
     def create_PACK(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvPACKRecord(RecordID)
-        return None
+        return FnvPACKRecord(RecordID) if RecordID else None
     PACK = CBashRECORDARRAY(FnvPACKRecord, 'PACK')
 
     def create_CSTY(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCSTYRecord(RecordID)
-        return None
+        return FnvCSTYRecord(RecordID) if RecordID else None
     CSTY = CBashRECORDARRAY(FnvCSTYRecord, 'CSTY')
 
     def create_LSCR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLSCRRecord(RecordID)
-        return None
+        return FnvLSCRRecord(RecordID) if RecordID else None
     LSCR = CBashRECORDARRAY(FnvLSCRRecord, 'LSCR')
 
     def create_ANIO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvANIORecord(RecordID)
-        return None
+        return FnvANIORecord(RecordID) if RecordID else None
     ANIO = CBashRECORDARRAY(FnvANIORecord, 'ANIO')
 
     def create_WATR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvWATRRecord(RecordID)
-        return None
+        return FnvWATRRecord(RecordID) if RecordID else None
     WATR = CBashRECORDARRAY(FnvWATRRecord, 'WATR')
 
     def create_EFSH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvEFSHRecord(RecordID)
-        return None
+        return FnvEFSHRecord(RecordID) if RecordID else None
     EFSH = CBashRECORDARRAY(FnvEFSHRecord, 'EFSH')
 
     def create_EXPL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("EXPL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvEXPLRecord(RecordID)
-        return None
+        return FnvEXPLRecord(RecordID) if RecordID else None
     EXPL = CBashRECORDARRAY(FnvEXPLRecord, 'EXPL')
 
     def create_DEBR(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DEBR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvDEBRRecord(RecordID)
-        return None
+        return FnvDEBRRecord(RecordID) if RecordID else None
     DEBR = CBashRECORDARRAY(FnvDEBRRecord, 'DEBR')
 
     def create_IMGS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IMGS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIMGSRecord(RecordID)
-        return None
+        return FnvIMGSRecord(RecordID) if RecordID else None
     IMGS = CBashRECORDARRAY(FnvIMGSRecord, 'IMGS')
 
     def create_IMAD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IMAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIMADRecord(RecordID)
-        return None
+        return FnvIMADRecord(RecordID) if RecordID else None
     IMAD = CBashRECORDARRAY(FnvIMADRecord, 'IMAD')
 
     def create_FLST(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("FLST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvFLSTRecord(RecordID)
-        return None
+        return FnvFLSTRecord(RecordID) if RecordID else None
     FLST = CBashRECORDARRAY(FnvFLSTRecord, 'FLST')
 
     def create_PERK(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("PERK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvPERKRecord(RecordID)
-        return None
+        return FnvPERKRecord(RecordID) if RecordID else None
     PERK = CBashRECORDARRAY(FnvPERKRecord, 'PERK')
 
     def create_BPTD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("BPTD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvBPTDRecord(RecordID)
-        return None
+        return FnvBPTDRecord(RecordID) if RecordID else None
     BPTD = CBashRECORDARRAY(FnvBPTDRecord, 'BPTD')
 
     def create_ADDN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ADDN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvADDNRecord(RecordID)
-        return None
+        return FnvADDNRecord(RecordID) if RecordID else None
     ADDN = CBashRECORDARRAY(FnvADDNRecord, 'ADDN')
 
     def create_AVIF(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("AVIF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvAVIFRecord(RecordID)
-        return None
+        return FnvAVIFRecord(RecordID) if RecordID else None
     AVIF = CBashRECORDARRAY(FnvAVIFRecord, 'AVIF')
 
     def create_RADS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("RADS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvRADSRecord(RecordID)
-        return None
+        return FnvRADSRecord(RecordID) if RecordID else None
     RADS = CBashRECORDARRAY(FnvRADSRecord, 'RADS')
 
     def create_CAMS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CAMS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCAMSRecord(RecordID)
-        return None
+        return FnvCAMSRecord(RecordID) if RecordID else None
     CAMS = CBashRECORDARRAY(FnvCAMSRecord, 'CAMS')
 
     def create_CPTH(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CPTH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCPTHRecord(RecordID)
-        return None
+        return FnvCPTHRecord(RecordID) if RecordID else None
     CPTH = CBashRECORDARRAY(FnvCPTHRecord, 'CPTH')
 
     def create_VTYP(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("VTYP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvVTYPRecord(RecordID)
-        return None
+        return FnvVTYPRecord(RecordID) if RecordID else None
     VTYP = CBashRECORDARRAY(FnvVTYPRecord, 'VTYP')
 
     def create_IPCT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IPCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIPCTRecord(RecordID)
-        return None
+        return FnvIPCTRecord(RecordID) if RecordID else None
     IPCT = CBashRECORDARRAY(FnvIPCTRecord, 'IPCT')
 
     def create_IPDS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IPDS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIPDSRecord(RecordID)
-        return None
+        return FnvIPDSRecord(RecordID) if RecordID else None
     IPDS = CBashRECORDARRAY(FnvIPDSRecord, 'IPDS')
 
     def create_ARMA(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ARMA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvARMARecord(RecordID)
-        return None
+        return FnvARMARecord(RecordID) if RecordID else None
     ARMA = CBashRECORDARRAY(FnvARMARecord, 'ARMA')
 
     def create_ECZN(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ECZN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvECZNRecord(RecordID)
-        return None
+        return FnvECZNRecord(RecordID) if RecordID else None
     ECZN = CBashRECORDARRAY(FnvECZNRecord, 'ECZN')
 
     def create_MESG(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MESG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMESGRecord(RecordID)
-        return None
+        return FnvMESGRecord(RecordID) if RecordID else None
     MESG = CBashRECORDARRAY(FnvMESGRecord, 'MESG')
 
     def create_RGDL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("RGDL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvRGDLRecord(RecordID)
-        return None
+        return FnvRGDLRecord(RecordID) if RecordID else None
     RGDL = CBashRECORDARRAY(FnvRGDLRecord, 'RGDL')
 
     def create_DOBJ(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DOBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvDOBJRecord(RecordID)
-        return None
+        return FnvDOBJRecord(RecordID) if RecordID else None
     DOBJ = CBashRECORDARRAY(FnvDOBJRecord, 'DOBJ')
 
     def create_LGTM(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LGTM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLGTMRecord(RecordID)
-        return None
+        return FnvLGTMRecord(RecordID) if RecordID else None
     LGTM = CBashRECORDARRAY(FnvLGTMRecord, 'LGTM')
 
     def create_MUSC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MUSC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMUSCRecord(RecordID)
-        return None
+        return FnvMUSCRecord(RecordID) if RecordID else None
     MUSC = CBashRECORDARRAY(FnvMUSCRecord, 'MUSC')
 
     def create_IMOD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("IMOD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvIMODRecord(RecordID)
-        return None
+        return FnvIMODRecord(RecordID) if RecordID else None
     IMOD = CBashRECORDARRAY(FnvIMODRecord, 'IMOD')
 
     def create_REPU(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("REPU", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvREPURecord(RecordID)
-        return None
+        return FnvREPURecord(RecordID) if RecordID else None
     REPU = CBashRECORDARRAY(FnvREPURecord, 'REPU')
 
     def create_RCPE(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("RCPE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvRCPERecord(RecordID)
-        return None
+        return FnvRCPERecord(RecordID) if RecordID else None
     RCPE = CBashRECORDARRAY(FnvRCPERecord, 'RCPE')
 
     def create_RCCT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("RCCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvRCCTRecord(RecordID)
-        return None
+        return FnvRCCTRecord(RecordID) if RecordID else None
     RCCT = CBashRECORDARRAY(FnvRCCTRecord, 'RCCT')
 
     def create_CHIP(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CHIP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCHIPRecord(RecordID)
-        return None
+        return FnvCHIPRecord(RecordID) if RecordID else None
     CHIP = CBashRECORDARRAY(FnvCHIPRecord, 'CHIP')
 
     def create_CSNO(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CSNO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCSNORecord(RecordID)
-        return None
+        return FnvCSNORecord(RecordID) if RecordID else None
     CSNO = CBashRECORDARRAY(FnvCSNORecord, 'CSNO')
 
     def create_LSCT(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("LSCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvLSCTRecord(RecordID)
-        return None
+        return FnvLSCTRecord(RecordID) if RecordID else None
     LSCT = CBashRECORDARRAY(FnvLSCTRecord, 'LSCT')
 
     def create_MSET(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("MSET", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvMSETRecord(RecordID)
-        return None
+        return FnvMSETRecord(RecordID) if RecordID else None
     MSET = CBashRECORDARRAY(FnvMSETRecord, 'MSET')
 
     def create_ALOC(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("ALOC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvALOCRecord(RecordID)
-        return None
+        return FnvALOCRecord(RecordID) if RecordID else None
     ALOC = CBashRECORDARRAY(FnvALOCRecord, 'ALOC')
 
     def create_CHAL(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CHAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCHALRecord(RecordID)
-        return None
+        return FnvCHALRecord(RecordID) if RecordID else None
     CHAL = CBashRECORDARRAY(FnvCHALRecord, 'CHAL')
 
     def create_AMEF(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("AMEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvAMEFRecord(RecordID)
-        return None
+        return FnvAMEFRecord(RecordID) if RecordID else None
     AMEF = CBashRECORDARRAY(FnvAMEFRecord, 'AMEF')
 
     def create_CCRD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CCRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCCRDRecord(RecordID)
-        return None
+        return FnvCCRDRecord(RecordID) if RecordID else None
     CCRD = CBashRECORDARRAY(FnvCCRDRecord, 'CCRD')
 
     def create_CMNY(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CMNY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCMNYRecord(RecordID)
-        return None
+        return FnvCMNYRecord(RecordID) if RecordID else None
     CMNY = CBashRECORDARRAY(FnvCMNYRecord, 'CMNY')
 
     def create_CDCK(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("CDCK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvCDCKRecord(RecordID)
-        return None
+        return FnvCDCKRecord(RecordID) if RecordID else None
     CDCK = CBashRECORDARRAY(FnvCDCKRecord, 'CDCK')
 
     def create_DEHY(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("DEHY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvDEHYRecord(RecordID)
-        return None
+        return FnvDEHYRecord(RecordID) if RecordID else None
     DEHY = CBashRECORDARRAY(FnvDEHYRecord, 'DEHY')
 
     def create_HUNG(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("HUNG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvHUNGRecord(RecordID)
-        return None
+        return FnvHUNGRecord(RecordID) if RecordID else None
     HUNG = CBashRECORDARRAY(FnvHUNGRecord, 'HUNG')
 
     def create_SLPD(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self._ModID, cast("SLPD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
-        if(RecordID): return FnvSLPDRecord(RecordID)
-        return None
+        return FnvSLPDRecord(RecordID) if RecordID else None
     SLPD = CBashRECORDARRAY(FnvSLPDRecord, 'SLPD')
 
     ##Aggregate properties. Useful for iterating through all records without going through the parent records.
@@ -16023,20 +15053,14 @@ class FnvModFile(object):
                      ("HUNG", self.HUNG),("SLPD", self.SLPD),))
 
 class ObCollection:
+    __slots__ = ['_CollectionID','_WhichGame','_ModIndex','LoadOrderMods','AllMods']
     """Collection of esm/esp's."""
     def __init__(self, CollectionID=None, ModsPath=".", CollectionType=0):
         #CollectionType == 0, Oblivion
         #CollectionType == 1, Fallout 3
         #CollectionType == 2, Fallout New Vegas
-        if CollectionID:
-            self._CollectionID = CollectionID
-            self._WhichGame = _CGetCollectionType(CollectionID)
-        else:
-            self._CollectionID = _CCreateCollection(str(ModsPath), CollectionType)
-            self._WhichGame = CollectionType
-        self._ModIndex = -1
-        self.LoadOrderMods = []
-        self.AllMods = []
+        self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(str(ModsPath), CollectionType),CollectionType)
+        self._ModIndex, self.LoadOrderMods, self.AllMods = -1, [], []
 
     def __enter__(self):
         return self
@@ -16045,9 +15069,7 @@ class ObCollection:
         self.Close()
 
     def __eq__(self, other):
-        if type(other) is type(self):
-            return self._CollectionID == other._CollectionID
-        return False
+        return self._CollectionID == other._CollectionID if type(other) is type(self) else False
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -16070,6 +15092,8 @@ class ObCollection:
         return _CDeleteAllCollections()
 
     def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Saveable=True, LoadMasters=True, Flags=None):
+##        //IgnoreExisting, Saveable, and LoadMasters are ignored if Flags is set
+##
 ##        //MinLoad and FullLoad are exclusive
 ##        // If both are set, FullLoad takes priority
 ##        // If neither is set, the mod isn't loaded
@@ -16122,50 +15146,23 @@ class ObCollection:
 ##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
 ##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters + fIsExtendedConflicts
 
-        fIsMinLoad             = 0x00000001
-        fIsFullLoad            = 0x00000002
-        fIsSkipNewRecords      = 0x00000004
-        fIsInLoadOrder         = 0x00000008
-        fIsSaveable            = 0x00000010
-        fIsAddMasters          = 0x00000020
-        fIsLoadMasters         = 0x00000040
-        fIsExtendedConflicts   = 0x00000080
-        fIsTrackNewTypes       = 0x00000100
-        fIsIndexLANDs          = 0x00000200
-        fIsFixupPlaceables     = 0x00000400
-        fIsIgnoreExisting      = 0x00000800
-        fIsIgnoreAbsentMasters = 0x00001000
-        fIsSkipAllRecords      = 0x00002000
+##        fIsMinLoad             = 0x00000001
+##        fIsFullLoad            = 0x00000002
+##        fIsSkipNewRecords      = 0x00000004
+##        fIsInLoadOrder         = 0x00000008
+##        fIsSaveable            = 0x00000010
+##        fIsAddMasters          = 0x00000020
+##        fIsLoadMasters         = 0x00000040
+##        fIsExtendedConflicts   = 0x00000080
+##        fIsTrackNewTypes       = 0x00000100
+##        fIsIndexLANDs          = 0x00000200
+##        fIsFixupPlaceables     = 0x00000400
+##        fIsIgnoreExisting      = 0x00000800
+##        fIsIgnoreAbsentMasters = 0x00001000
+##        fIsSkipAllRecords      = 0x00002000
 
-        if Flags is None:
-            Flags = fIsMinLoad | fIsInLoadOrder | fIsSaveable | fIsAddMasters | fIsLoadMasters
-
-            if IgnoreExisting:
-                Flags |= fIsIgnoreExisting
-            else:
-                Flags &= ~fIsIgnoreExisting
-
-            if Saveable:
-                Flags |= fIsSaveable
-            else:
-                Flags &= ~fIsSaveable
-
-            if LoadMasters:
-                Flags |= fIsLoadMasters
-            else:
-                Flags &= ~fIsLoadMasters
-
-        if NoLoad:
-            Flags &= ~fIsFullLoad
-            Flags &= ~fIsMinLoad
-        elif MinLoad:
-            Flags |= fIsMinLoad
-            Flags &= ~fIsFullLoad
-        else:
-            Flags |= fIsFullLoad
-            Flags &= ~fIsMinLoad
-
-        _CAddMod(self._CollectionID, str(FileName), Flags)
+        if Flags is None: Flags = 0x00000069 | (0x00000800 if IgnoreExisting else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
+        _CAddMod(self._CollectionID, str(FileName), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002))
         return None
 
     def addMergeMod(self, FileName):
@@ -16181,36 +15178,22 @@ class ObCollection:
         if _NumModsIDs > 0:
             cModIDs = (c_ulong * _NumModsIDs)()
             _CGetLoadOrderModIDs(self._CollectionID, byref(cModIDs))
-            if self._WhichGame == 0:
-                self.LoadOrderMods = [ObModFile(ModID) for ModID in cModIDs]
-            elif self._WhichGame == 2:
-                self.LoadOrderMods = [FnvModFile(ModID) for ModID in cModIDs]
+            self.LoadOrderMods = [ObModFile(ModID) for ModID in cModIDs] if self._WhichGame == 0 else [FnvModFile(ModID) for ModID in cModIDs] if self._WhichGame == 2 else []
 
         _NumModsIDs = _CGetAllNumMods(self._CollectionID)
         if _NumModsIDs > 0:
             cModIDs = (c_ulong * _NumModsIDs)()
             _CGetAllModIDs(self._CollectionID, byref(cModIDs))
-            if self._WhichGame == 0:
-                self.AllMods = [ObModFile(ModID) for ModID in cModIDs]
-            elif self._WhichGame == 2:
-                self.AllMods = [FnvModFile(ModID) for ModID in cModIDs]
+            self.AllMods = [ObModFile(ModID) for ModID in cModIDs] if self._WhichGame == 0 else [FnvModFile(ModID) for ModID in cModIDs] if self._WhichGame == 2 else []
 
     def LookupRecords(self, RecordIdentifier, GetExtendedConflicts=False):
         if not RecordIdentifier: return None
-        if GetExtendedConflicts:
-            records = [mod.LookupRecord(RecordIdentifier) for mod in reversed(self.AllMods)]
-        else:
-            records = [mod.LookupRecord(RecordIdentifier) for mod in reversed(self.LoadOrderMods)]
-        return [record for record in records if record is not None]
+        return [record for record in [mod.LookupRecord(RecordIdentifier) for mod in reversed(self.AllMods if GetExtendedConflicts else self.LoadOrderMods)] if record is not None]
 
     def LookupModFile(self, ModName):
         ModID = _CGetModIDByName(self._CollectionID, str(ModName))
-        if(ModID == -1):
-            raise KeyError(_("ModName(%s) not found in collection (%08X)\n") % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
-        if self._WhichGame == 0:
-            return ObModFile(ModID)
-        elif self._WhichGame == 2:
-            return FnvModFile(ModID)
+        if ModID == -1: raise KeyError(_("ModName(%s) not found in collection (%08X)\n") % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
+        return ObModFile(ModID) if self._WhichGame == 0 else FnvModFile(ModID) if self._WhichGame == 2 else None
 
     def LookupModFileLoadOrder(self, ModName):
         return _CGetModLoadOrderByName(self._CollectionID, str(ModName))
@@ -16222,14 +15205,4 @@ class ObCollection:
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)
 
     def Debug_DumpModFiles(self):
-        value = _("Collection (%08X) contains the following modfiles:\n") % (self._CollectionID,)
-        for mod in self.AllMods:
-            LoadOrder = _CGetModLoadOrderByID(mod._ModID)
-            if LoadOrder == -1: LoadOrder = '--'
-            else: LoadOrder = '%02X' % (LoadOrder,)
-            ModName, FileName = mod.ModName, mod.FileName
-            if ModName == FileName:
-                value += _("Load Order (%s), Name(%s)\n") % (LoadOrder, ModName)
-            else:
-                value += _("Load Order (%s), ModName(%s) FileName(%s)\n") % (LoadOrder, ModName, FileName)
-        return value
+        return '\n'.join([_("Collection (%08X) contains the following modfiles:") % (self._CollectionID,)].extend([_("Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]))
