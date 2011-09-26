@@ -15516,7 +15516,7 @@ class Obse_Button(Link):
         # BitmapButton
         image = images[('checkbox.green.off.%s'%settings['bash.statusbar.iconSize'],
                         'checkbox.green.on.%s'%settings['bash.statusbar.iconSize'])[state]]
-         tip = (_("OBSE Disabled"),_("OBSE Enabled"))[state]
+        tip = (_("OBSE Disabled"),_("OBSE Enabled"))[state]
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
         tipAttr = ('tip','obseTip')[state]
