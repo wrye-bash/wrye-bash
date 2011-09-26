@@ -15312,13 +15312,18 @@ class App_Button(Link):
                     cwd.setcwd()
             else:
                 try:
+                    if self.workingDir:
+                        dir = self.workingDir.s
+                    else:
+                        dir = bolt.Path.getcwd().s
+
                     import win32api
                     r, executable = win32api.FindExecutable(self.exePath.s)
                     executable = win32api.GetLongPathName(executable)
                     args = '"%s"' % self.exePath.s
                     for arg in self.exeArgs:
                         args += " " + str(arg)
-                    win32api.ShellExecute(0,"open",executable,args,bosh.dirs['app'].s,1)
+                    win32api.ShellExecute(0,"open",executable,args,dir,1)
                 except Exception, error:
                     print error
                     print _("Used Path: %s") % self.exePath.s
