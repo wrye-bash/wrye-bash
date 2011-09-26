@@ -5028,10 +5028,10 @@ class BashFrame(wx.Frame):
         """Set title. Set to default if no title supplied."""
         if not title:
             ###Remove from Bash after CBash integrated
-            if not CBash:
-                title = "Wrye Bash %s%s: " % (settings['bash.readme'][1],('',' (Standalone)')[settings['bash.standalone']],)
-            else:
+            if CBash:
                 title = "Wrye Bash %s%s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], ('',' (Standalone)')[settings['bash.standalone']],CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
+            else:
+                title = "Wrye Bash %s%s: " % (settings['bash.readme'][1],('',' (Standalone)')[settings['bash.standalone']],)
             maProfile = re.match(r'Saves\\(.+)\\$',bosh.saveInfos.localSave)
             if maProfile:
                 title += maProfile.group(1)
@@ -5980,7 +5980,6 @@ class BashApp(wx.App):
         bashDocBrowser = bashDocBrowser.GetIconBundle()
         bashMonkey = bashMonkey.GetIconBundle()
         fonts = balt.fonts()
-        
 
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
@@ -6294,10 +6293,12 @@ class PatchDialog(wx.Dialog):
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(' '*60+'\n'), abort=True)
         ###Remove from Bash after CBash integrated
-        if not self.doCBash:
+        patchFile = None
+        if self.doCBash:
             try:
                 from datetime import timedelta
                 timer1 = time.clock()
+                fullName = self.patchInfo.getPath().tail
                 #--Save configs
                 patchConfigs = {'ImportedMods':set()}
                 for patcher in self.patchers:
@@ -6305,29 +6306,33 @@ class PatchDialog(wx.Dialog):
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
                 log = bolt.LogFile(stringBuffer())
-                nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-                patchFile = bosh.PatchFile(self.patchInfo,patchers)
-                patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
-                patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
-                patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
+
+                patchFile = bosh.CBash_PatchFile(patchName,patchers)
+                #try to speed this up!
+                patchFile.initData(SubProgress(progress,0,0.1))
+                #try to speed this up!
+                patchFile.buildPatch(SubProgress(progress,0.1,0.9))
+                #no speeding needed/really possible (less than 1/4 second even with large LO)
+                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))
                 #--Save
                 progress.setCancel(False)
-                progress(0.9,patchName.s+_('\nSaving...'))
+                progress(1.0,patchName.s+_('\nSaving...'))
+                patchFile.save()
+                patchTime = fullName.mtime
                 try:
-                    patchFile.safeSave()
+                    patchName.untemp()
                 except WindowsError, werr:
                     if werr.winerror != 32: raise
-                    while balt.askYes(self,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.s,patchName.s),_('Bash Patch - Save Error')):
+                    while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.temp.s, patchName.s, patchName.s),_('Bash Patch - Save Error')):
                         try:
-                            patchFile.safeSave()
+                            patchName.untemp()
                         except WindowsError, werr:
                             continue
                         break
                     else:
                         raise
-
+                patchName.mtime = patchTime
                 #--Cleanup
                 self.patchInfo.refresh()
                 modList.RefreshUI(patchName)
@@ -6374,12 +6379,15 @@ class PatchDialog(wx.Dialog):
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 raise
             finally:
+                try:
+                    patchFile.Current.Close()
+                except:
+                    pass
                 progress.Destroy()
         else:
             try:
                 from datetime import timedelta
                 timer1 = time.clock()
-                fullName = self.patchInfo.getPath().tail
                 #--Save configs
                 patchConfigs = {'ImportedMods':set()}
                 for patcher in self.patchers:
@@ -6387,35 +6395,29 @@ class PatchDialog(wx.Dialog):
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
                 log = bolt.LogFile(stringBuffer())
+                nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-
-                patchFile = bosh.CBash_PatchFile(patchName,patchers)
-                #try to speed this up!
-                patchFile.initData(SubProgress(progress,0,0.1))
-                #try to speed this up!
-                patchFile.buildPatch(SubProgress(progress,0.1,0.9))
-                #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))
+                patchFile = bosh.PatchFile(self.patchInfo,patchers)
+                patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+                patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
+                patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
+                patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
-                #patchFile.CleanMasters()
-                patchFile.CleanMasters2()
                 progress.setCancel(False)
-                progress(1.0,patchName.s+_('\nSaving...'))
-                patchFile.save()
-                patchTime = fullName.mtime
+                progress(0.9,patchName.s+_('\nSaving...'))
                 try:
-                    patchName.untemp()
+                    patchFile.safeSave()
                 except WindowsError, werr:
                     if werr.winerror != 32: raise
-                    while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.temp.s, patchName.s, patchName.s),_('Bash Patch - Save Error')):
+                    while balt.askYes(self,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (patchName.s,patchName.s),_('Bash Patch - Save Error')):
                         try:
-                            patchName.untemp()
+                            patchFile.safeSave()
                         except WindowsError, werr:
                             continue
                         break
                     else:
                         raise
-                patchName.mtime = patchTime
+
                 #--Cleanup
                 self.patchInfo.refresh()
                 modList.RefreshUI(patchName)
@@ -6534,10 +6536,10 @@ class PatchDialog(wx.Dialog):
 
     def UpdateConfig(self,patchConfigs,event=None):
         if not balt.askYes(self.parent,_("Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)" % (['CBash','Python'][self.doCBash], ['Python','CBash'][self.doCBash]))): return
-        if not self.doCBash:
-            bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
-        else:
+        if self.doCBash:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
+        else:
+            bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
         return self.ConvertConfig(patchConfigs)
 
     def ConvertConfig(self,patchConfigs):
@@ -10690,7 +10692,6 @@ class Settings_CheckForUpdates(Link):
         if msg:
             if balt.askYes(self.window,msg,title):
                 os.startfile('http://www.tesnexus.com/downloads/file.php?id=%i'%WBFileId)
-
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
     """Handle hiding/unhiding tabs."""
@@ -10904,41 +10905,43 @@ class MasterList_CleanMasters(Link):
             return
         modInfo = self.window.fileInfo
         path = modInfo.getPath()
-        collection = ObCollection(ModsPath=bosh.dirs['mods'].s)
-        collection.addMod(path.stail)
-        collection.load()
-        remove = []
-        try:
-            modFile = collection.LookupModFile(path.stail)
-            remove = [GPath(x) for x in modFile.GetUnneededMasters()]
-        finally:
-            collection.Unload()
 
-        if remove:
-            removeKey = _("Masters")
-            group = [removeKey,
-                          _("These master files are not referenced within the mod, and can safely be removed."),
-                          ]
-            group.extend(remove)
-            checklists = [group]
-            dialog = ListBoxes(bashFrame,_("Remove these masters?"),
-                                    _("The following master files can be safely removed."),
-                                    checklists)
-            if dialog.ShowModal() == wx.ID_CANCEL:
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            Current.addMod(path.stail)
+            Current.load()
+            modFile = collection.LookupModFile(path.stail)
+            oldMasters = modFile.TES4.masters
+            cleaned = modFile.CleanMasters()
+
+            if cleaned:
+                newMasters = modFile.TES4.masters
+                removed = [GPath(x) for x in oldMasters if x not in newMasters]
+                removeKey = _("Masters")
+                group = [removeKey,
+                              _("These master files are not referenced within the mod, and can safely be removed."),
+                              ]
+                group.extend(remove)
+                checklists = [group]
+                dialog = ListBoxes(bashFrame,_("Remove these masters?"),
+                                        _("The following master files can be safely removed."),
+                                        checklists)
+                if dialog.ShowModal() == wx.ID_CANCEL:
+                    dialog.Destroy()
+                    return
+                id = dialog.ids[removeKey]
+                checks = dialog.FindWindowById(id)
+                if checks:
+                    for i,mod in enumerate(remove):
+                        if not checks.IsChecked(i):
+                            newMasters.append(mod)
+                            
+                modFile.TES4.masters = newMasters
+                modFile.save()
                 dialog.Destroy()
-                return
-            id = dialog.ids[removeKey]
-            checks = dialog.FindWindowById(id)
-            toRemove = set()
-            if checks:
-                for i,mod in enumerate(remove):
-                    if checks.IsChecked(i):
-                        toRemove.add(mod)
-            dialog.Destroy()
-            if toRemove:
-                print _('toRemove:'), toRemove
-        else:
-            balt.showOk(self.window,_("No Masters to clean."),_("Clean Masters"))
+                if toRemove:
+                    print _('toRemove:'), toRemove
+            else:
+                balt.showOk(self.window,_("No Masters to clean."),_("Clean Masters"))
 
 #------------------------------------------------------------------------------
 class Mod_AddMaster(Link):
@@ -11741,10 +11744,10 @@ class Mod_FactionRelations_Export(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_("Export Relations")) as progress:
-            if not CBash:
-                factionRelations = bosh.FactionRelations()
-            else:
+            if CBash:
                 factionRelations = bosh.CBash_FactionRelations()
+            else:
+                factionRelations = bosh.FactionRelations()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -11785,10 +11788,10 @@ class Mod_FactionRelations_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_("Import Relations")) as progress:
-            if not CBash:
-                factionRelations = bosh.FactionRelations()
-            else:
+            if CBash:
                 factionRelations = bosh.CBash_FactionRelations()
+            else:
+                factionRelations = bosh.FactionRelations()
             progress(0.1,_("Reading %s.") % (textName.s,))
             factionRelations.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
@@ -11917,15 +11920,15 @@ class Mod_MarkMergeable(Link):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         for fileName in map(GPath,self.data):
-            if bosh.reOblivion.match(fileName.s): continue
+            if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
             fileInfo = bosh.modInfos[fileName]
 
             if fileName == "Oscuro's_Oblivion_Overhaul.esp":
                 canMerge = _("\n.    Marked non-mergeable at request of mod author.")
-            elif not self.doCBash:
-                canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
-            else:
+            elif self.doCBash:
                 canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+            else:
+                canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
 
             if canMerge == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
@@ -12493,10 +12496,10 @@ class Mod_Fids_Replace(Link):
         #--Export
         changed = None
         with balt.Progress(_("Import Form IDs")) as progress:
-            if not CBash:
-                replacer = bosh.FidReplacer()
-            else:
+            if CBash:
                 replacer = bosh.CBash_FidReplacer()
+            else:
+                replacer = bosh.FidReplacer()
             progress(0.1,_("Reading %s.") % (textName.s,))
             replacer.readFromText(textPath)
             progress(0.2,_("Applying to %s.") % (fileName.s,))
@@ -12530,10 +12533,10 @@ class Mod_FullNames_Export(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_("Export Names")) as progress:
-            if not CBash:
-                fullNames = bosh.FullNames()
-            else:
+            if CBash:
                 fullNames = bosh.CBash_FullNames()
+            else:
+                fullNames = bosh.FullNames()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -12575,10 +12578,10 @@ class Mod_FullNames_Import(Link):
         #--Export
         renamed = None
         with balt.Progress(_("Import Names")) as progress:
-            if not CBash:
-                fullNames = bosh.FullNames()
-            else:
+            if CBash:
                 fullNames = bosh.CBash_FullNames()
+            else:
+                fullNames = bosh.FullNames()
             progress(0.1,_("Reading %s.") % (textName.s,))
             if ext == '.csv':
                 fullNames.readFromText(textPath)
@@ -12651,18 +12654,18 @@ class Mod_Patch_Update(Link):
                     'bash.patch.CBashMismatch'):
                 importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
-            if not self.doCBash:
+            if self.doCBash:
+                bosh.CBash_PatchFile.patchTime = fileInfo.mtime
+                nullProgress = bolt.Progress()
+                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
+                self.window.RefreshUI()
+            else:
                 bosh.PatchFile.patchTime = fileInfo.mtime
                 if settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_("Mark Mergeable")+' '*30) as progress:
                         bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
                     self.window.RefreshUI()
-            else:
-                bosh.CBash_PatchFile.patchTime = fileInfo.mtime
-                nullProgress = bolt.Progress()
-                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
-                self.window.RefreshUI()
 
         #--Check if we should be deactivating some plugins
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
@@ -12816,7 +12819,7 @@ class Mod_ListPatchConfig(Link):
             log.setHeader('== '+humanName)
             clip.write('\n')
             clip.write('== '+humanName+'\n')
-            if isinstance(patcher, bosh.CBash_MultiTweaker) or isinstance(patcher, bosh.MultiTweaker):
+            if isinstance(patcher, (bosh.CBash_MultiTweaker, bosh.MultiTweaker)):
                 # Tweak patcher
                 patcher.getConfig(config)
                 for tweak in patcher.tweaks:
@@ -12829,7 +12832,7 @@ class Mod_ListPatchConfig(Link):
                         else:
                             log('. ~~%s~~' % label)
                             clip.write('    %s\n' % label)
-            elif isinstance(patcher, bosh.CBash_ListsMerger) or isinstance(patcher, bosh.ListsMerger):
+            elif isinstance(patcher, (bosh.CBash_ListsMerger,bosh.ListsMerger)):
                 # Leveled Lists
                 patcher.configChoices = conf.get('configChoices',{})
                 for item in conf.get('configItems',[]):
@@ -13066,10 +13069,10 @@ class Mod_Scripts_Export(Link):
         if not textDir: return
         #--Export
         #try:
-        if not CBash:
-            ScriptText = bosh.ScriptText()
-        else:
+        if CBash:
             ScriptText = bosh.CBash_ScriptText()
+        else:
+            ScriptText = bosh.ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = ScriptText.writeToText(fileInfo,settings['bash.mods.export.skip'],textDir,settings['bash.mods.export.deprefix'],fileName.s,settings['bash.mods.export.skipcomments'])
         #finally:
@@ -13101,10 +13104,10 @@ class Mod_Scripts_Import(Link):
             return
         message = _("Import scripts that don't exist in the esp as new scripts?\n(If not they will just be skipped).")
         makeNew = balt.askYes(self.window,message,_('Import Scripts'),icon=wx.ICON_QUESTION)
-        if not CBash:
-            ScriptText = bosh.ScriptText()
-        else:
+        if CBash:
             ScriptText = bosh.CBash_ScriptText()
+        else:
+            ScriptText = bosh.ScriptText()
         ScriptText.readFromText(textDir.s,fileInfo)
         changed, added = ScriptText.writeToMod(fileInfo,makeNew)
     #--Log
@@ -13149,10 +13152,10 @@ class Mod_Stats_Export(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_("Export Stats")) as progress:
-            if not CBash:
-                itemStats = bosh.ItemStats()
-            else:
+            if CBash:
                 itemStats = bosh.CBash_ItemStats()
+            else:
+                itemStats = bosh.ItemStats()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13392,7 +13395,7 @@ class Mod_Prices_Import(Link):
 
 #------------------------------------------------------------------------------
 class CBash_Mod_MapMarkers_Export(Link):
-    """Export armor and weapon stats from mod to text file."""
+    """Export map marker stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_('Map Markers...'))
@@ -13840,7 +13843,10 @@ class Mod_ScanDirty(Link):
             udr,itm,fog = ret[i]
             if modInfo.name == GPath('Unofficial Oblivion Patch.esp'):
                 # Record for non-SI users, shows up as ITM if SI is installed (OK)
-                itm.discard((GPath('Oblivion.esm'),0x00AA3C))
+                if settings['bash.CBashEnabled']:
+                    itm.discard(FormID(GPath('Oblivion.esm'),0x00AA3C))
+                else:
+                    itm.discard((GPath('Oblivion.esm'),0x00AA3C))
             if modInfo.header.author in ('BASHED PATCH','BASHED LISTS'): itm = set()
             if udr or itm:
                 pos = len(dirty)
