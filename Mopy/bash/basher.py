@@ -4824,7 +4824,7 @@ class BashNotebook(wx.Notebook):
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         tabId = self.HitTest(pos)
-        if tabId != wx.NOT_FOUND:
+        if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
             menu = Links()
             for key in settings['bash.tabs.order']:
                 canDisable = bool(key != 'Mods')
@@ -15516,7 +15516,7 @@ class Obse_Button(Link):
         # BitmapButton
         image = images[('checkbox.green.off.%s'%settings['bash.statusbar.iconSize'],
                         'checkbox.green.on.%s'%settings['bash.statusbar.iconSize'])[state]]
-        tip = (_("OBSE Disabled"),_("OBSE Enabled"))[state]
+         tip = (_("OBSE Disabled"),_("OBSE Enabled"))[state]
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
         tipAttr = ('tip','obseTip')[state]
