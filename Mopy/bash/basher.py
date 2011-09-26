@@ -15267,6 +15267,11 @@ class App_Button(Link):
             self.isShortcut = True
         else:
             self.isShortcut = False
+        #--Folder
+        if self.exePath and self.exePath.isdir():
+            self.isFolder = True
+        else:
+            self.isFolder = False
         #--OBSE stuff
         self.obseTip = obseTip
         self.obseArg = obseArg
@@ -15299,7 +15304,7 @@ class App_Button(Link):
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
-            if self.isShortcut:
+            if self.isShortcut or self.isFolder:
                 os.startfile(self.exePath.s)
             elif self.isJava:
                 cwd = bolt.Path.getcwd()
