@@ -4781,9 +4781,10 @@ class ModBasePanel(SashTankPanel):
         self.detailsItem = item
 
 #------------------------------------------------------------------------------
-class BashNotebook(wx.Notebook):
+class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def __init__(self, parent, id):
         wx.Notebook.__init__(self, parent, id)
+        balt.TabDragMixin.__init__(self)
         #--Pages
         # Ensure the 'Mods' tab is always shown
         if 'Mods' not in settings['bash.tabs.order']:
@@ -4818,12 +4819,8 @@ class BashNotebook(wx.Notebook):
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
-        #--Setup draggable Tabs
-        self.dragging = wx.NOT_FOUND
-        self.justSwapped = wx.NOT_FOUND
-        self.Bind(wx.EVT_LEFT_DOWN, self.OnBeginDrag)
-        self.Bind(wx.EVT_LEFT_UP, self.OnEndDrag)
-        self.Bind(wx.EVT_MOTION, self.OnMotion)
+        #--Dragging
+        self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
         self.Bind(wx.EVT_CONTEXT_MENU, self.DoTabMenu)
 
@@ -4840,84 +4837,32 @@ class BashNotebook(wx.Notebook):
         else:
             event.Skip()
 
-    def OnBeginDrag(self,event):
-        """Left click down: begin dragging Tab."""
-        self.dragging = self.HitTest(event.GetPosition())
-        if self.dragging != wx.NOT_FOUND:
-            # Or maybe wx.CURSOR_SIZEWE
-            self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-            self.CaptureMouse()
-        event.Skip()
-
-    def OnEndDrag(self,event):
-        """Left click up: finished dragging Tab."""
-        if self.dragging != wx.NOT_FOUND:
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-            self.dragging = wx.NOT_FOUND
-            self.justSwapped = wx.NOT_FOUND
-            self.ReleaseMouse()
-        event.Skip()
-
-    def OnMotion(self,event):
-        """During the dragging event."""
-        if self.dragging != wx.NOT_FOUND:
-            tabId = self.HitTest(event.GetPosition())
-            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.dragging[0]):
-                self.justSwapped = wx.NOT_FOUND
-            else:
-                if self.justSwapped == tabId[0]:
-                    # Don't swap, we just swapped with it
-                    return
-                # Time to swap tabs!
-                newPos = tabId[0]
-                oldPos = self.dragging[0]
-                removeTitle = self.GetPageText(oldPos)
-                self.justSwapped = oldPos
-                self.dragging = tabId[:]
-                if newPos < oldPos:
-                    # Moving left
-                    leftPos,rightPos = newPos,oldPos
-                    addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(newPos,oldPos)]
-                    addPages.reverse()
-                    num = oldPos - newPos
-                    for i in range(num):
-                        self.RemovePage(newPos)
-                    for page,title in addPages:
-                        self.InsertPage(newPos+1,page,title)
-                else:
-                    # Moving right
-                    leftPos,rightPos = oldPos,newPos
-                    delta = newPos - oldPos
-                    addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(oldPos+1,newPos+1)]
-                    addPages.reverse()
-                    num = newPos - oldPos
-                    for i in range(num):
-                        self.RemovePage(oldPos+1)
-                    for page,title in addPages:
-                        self.InsertPage(oldPos,page,title)
-                # Update the settings
-                oldOrder = settings['bash.tabs.order']
-                for removeKey in oldOrder:
-                    if tabInfo[removeKey][1] == removeTitle:
-                        break
-                oldOrder.remove(removeKey)
-                if newPos == 0:
-                    # Moved to the front
-                    newOrder = [removeKey]+oldOrder
-                elif newPos == self.GetPageCount() - 1:
-                    # Moved to the end
-                    newOrder = oldOrder+[removeKey]
-                else:
-                    # Moved somewhere in the middle
-                    beforeTitle = self.GetPageText(newPos+1)
-                    for beforeKey in oldOrder:
-                        if tabInfo[beforeKey][1] == beforeTitle:
-                            break
-                    beforeIndex = oldOrder.index(beforeKey)
-                    newOrder = oldOrder[:beforeIndex]+[removeKey]+oldOrder[beforeIndex:]
-                settings['bash.tabs.order'] = newOrder
+    def OnTabDragged(self, event):
+        oldPos = event.fromIndex
+        newPos = event.toIndex
+        # Update the settings
+        removeTitle = self.GetPageText(newPos)
+        oldOrder = settings['bash.tabs.order']
+        for removeKey in oldOrder:
+            if tabInfo[removeKey][1] == removeTitle:
+                break
+        oldOrder.remove(removeKey)
+        if newPos == 0:
+            # Moved to the front
+            newOrder = [removeKey]+oldOrder
+        elif newPos == self.GetPageCount() - 1:
+            # Moved to the end
+            newOrder = oldOrder+[removeKey]
         else:
-            event.Skip()
+            # Moved somewhere in the middle
+            beforeTitle = self.GetPageText(newPos+1)
+            for beforeKey in oldOrder:
+                if tabInfo[beforeKey][1] == beforeTitle:
+                    break
+            beforeIndex = oldOrder.index(beforeKey)
+            newOrder = oldOrder[:beforeIndex]+[removeKey]+oldOrder[beforeIndex:]
+        settings['bash.tabs.order'] = newOrder
+        event.Skip()
 
     def OnShowPage(self,event):
         """Call page's OnShow command."""
