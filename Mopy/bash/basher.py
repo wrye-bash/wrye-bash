@@ -914,11 +914,18 @@ class List(wx.Panel):
         """Deletes selected items."""
         items = self.GetSelected()
         if items:
-            message = _(r'Delete these items? This operation cannot be undone.')
-            message += '\n* ' + '\n* '.join(x.s for x in sorted(items))
-            if balt.askYes(self,message,_('Delete Items')):
-                for item in items:
-                    self.data.delete(item)
+            message = [_(''),_(r'Uncheck items to skip deleting them if desired.')]
+            message.extend(sorted(items))
+            dialog = ListBoxes(self,_('Delete Items'),
+                         _(r'Delete these items? This operation cannot be undone.'),
+                         [message])
+            if dialog.ShowModal() != wx.ID_CANCEL:
+                id = dialog.ids[message[0]]
+                checks = dialog.FindWindowById(id)
+                if checks:
+                    for i,mod in enumerate(items):
+                         if checks.IsChecked(i):
+                            self.data.delete(mod)
                 self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
@@ -5229,11 +5236,12 @@ class BashFrame(wx.Frame):
 #------------------------------------------------------------------------------
 class ListBoxes(wx.Dialog):
     """A window with 1 or more lists."""
-    def __init__(self,parent,title,message,lists,check=True,tree=False,style=wx.DEFAULT_DIALOG_STYLE,changedlabels={}):
+    def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={}):
         """lists is in this format:
+        if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
         [title,tooltip,....],
-        or if check == False & tree == True
+        elif liststyle == 'tree'
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
@@ -5251,11 +5259,13 @@ class ListBoxes(wx.Dialog):
             if len(items) == 0: continue
             box = wx.StaticBox(self,wx.ID_ANY,title)
             subsizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
-            if check:
+            if liststyle == 'check':
                 checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
                 for i in xrange(len(items)):
                     checks.Check(i,True)
-            else: #if tree really for now anyways
+            if liststyle == 'list':
+                checks = wx.ListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+            else:
                 checks = wx.TreeCtrl(self,wx.ID_ANY,size=(150,200),style=wx.TR_DEFAULT_STYLE|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HIDE_ROOT)
                 root = checks.AddRoot(title)
                 for item in group[2]:
@@ -12733,7 +12743,7 @@ class Mod_Patch_Update(Link):
                 _('WARNING!\nThe following mod(s) have master file error(s). Please adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?'),
                 [[_("Missing Master Errors"),_('These mods have missing masters; which will make your game unusable and you will probably have to regenerate your patch after fixing them anyways so just go fix them now.'),missing],
                 [_("Delinquent Master Errors"),_('These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them anyways so just go fix them now.'),delinquent]],
-                check=False,tree=True,style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_('Continue Despite Errors')})
+                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_('Continue Despite Errors')})
             if warning.ShowModal() == wx.ID_CANCEL:
                 return
         try:
