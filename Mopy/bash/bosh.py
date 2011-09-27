@@ -17067,10 +17067,14 @@ class ModCleaner:
             # added files due to implicitly loading masters.
             modInfos = [x.modInfo if isinstance(x,ModCleaner) else x for x in modInfos]
             numMods = len(modInfos)
-            ModsPerGroup = 200
-            numGroups = numMods / ModsPerGroup
-            if numMods % ModsPerGroup:
-                numGroups += 1
+            if numMods > 255:
+                ModsPerGroup = 200
+                numGroups = numMods / ModsPerGroup
+                if numMods % ModsPerGroup:
+                    numGroups += 1
+            else:
+                ModsPerGroup = 255
+                numGroups = 1
             progress.setFull(numGroups)
             ret = []
             for i in range(numGroups):
@@ -17179,61 +17183,67 @@ class ModCleaner:
             doUDR = bool(what & ModCleaner.UDR)
             doITM = bool(what & ModCleaner.ITM)
             doFog = bool(what & ModCleaner.FOG)
-            progress.setFull(max(len(cleaners),1))
-            if len(cleaners) > 1:
-                progress(0,_('Loading...')+'\n'+cleaners[0].modInfo.name.s)
+            # If there are more than 255 mods, we have to break it up into
+            # smaller groups.  We'll do groups of 200 for now, to allow for
+            # added files due to implicitly loading masters.
+            numMods = len(cleaners)
+            if numMods > 255:
+                ModsPerGroup = 200
+                numGroups = numMods / ModsPerGroup
+                if numMods % ModsPerGroup:
+                    numGroups += 1
             else:
-                progress(0,_('Loading...'))
-
-            with ObCollection(ModsPath=dirs['mods'].s) as Current:
-                for mod in modInfos:
-                    if isinstance(mod,ModCleaner):
-                        modInfo = mod.modInfo
-                    else:
-                        modInfo = mod
-                    if len(modInfo.masterNames) == 0: continue
-                    path = modInfo.getPath()
-                    Current.addMod(path.stail)
-                Current.load()
-                #--Clean
-                for i,cleaner in enumerate(cleaners):
-                    progress(i,_('Cleaning...') + '\n' + cleaner.modInfo.name.s)
-                    path = cleaner.modInfo.getPath()
-                    modFile = Current.LookupModFile(path.stail)
-                    changed = False
-                    total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
-                    recordNum = 0
-                    subprogress = SubProgress(progress,i,i+1)
-                    subprogress.setFull(max(total,1))
-                    if doUDR:
-                        for fid in cleaner.udr:
-                            subprogress(recordNum)
-                            recordNum += 1
-                            record = modFile.LookupRecord(fid)
-                            if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
-                                changed = True
-                                record.IsDeleted = False
-                                record.IsIgnored = True
-                    if doFog:
-                        for fid in cleaner.fog:
-                            subprogress(recordNum)
-                            recordNum += 1
-                            record = modFile.LookupRecord(fid)
-                            if record and record._Type == 'CELL':
-                                if not (record.fogNear or record.fogFar or record.fogClip):
-                                    record.fogNear = 0.0001
-                                    changed = True
-                    if doITM:
-                        for fid in cleaner.itm:
-                            subprogress(recordNum)
-                            recordNum += 1
-                            record = modFile.LookupRecord(fid)
-                            if record:
-                                record.DeleteRecord()
-                                changed = True
-                    #--Save
-                    if changed:
-                        modFile.save(False)
+                ModsPerGroup = 255
+                numGroups = 1
+            progress.setFull(numGroups)
+            for i in range(numGroups):
+                #--Load
+                progress(i,_('Loading...'))
+                groupCleaners = cleaners[i*ModsPerGroup:(i+1)*ModsPerGroup]
+                with ObCollection(ModsPath=dirs['mods'].s) as Current:
+                    for cleaner in groupCleaners:
+                        if len(cleaner.modInfo.masterNames) == 0: continue
+                        path = cleaner.modInfo.getPath()
+                        Current.addMod(path.stail)
+                    Current.load()
+                    #--Clean
+                    subprogress1 = SubProgress(progress,i,i+1)
+                    subprogress1.setFull(max(len(groupCleaners),1))
+                    for j,cleaner in enumerate(groupCleaners):
+                        subprogress1(j,_('Cleaning...') + '\n' + cleaner.modInfo.name.s)
+                        path = cleaner.modInfo.getPath()
+                        modFile = Current.LookupModFile(path.stail)
+                        changed = False
+                        if modFile:
+                            total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
+                            subprogress2 = SubProgress(subprogress1,j,j+1)
+                            subprogress2.setFull(max(total,1))
+                            if doUDR:
+                                for fid in cleaner.udr:
+                                    subprogress2.plus()
+                                    record = modFile.LookupRecord(fid)
+                                    if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
+                                        changed = True
+                                        record.IsDeleted = False
+                                        record.IsIgnored = True
+                            if doFog:
+                                for fid in cleaner.fog:
+                                    subprogress2.plus()
+                                    record = modFile.LookupRecord(fid)
+                                    if record and record._Type == 'CELL':
+                                        if not (record.fogNear or record.fogFar or record.fogClip):
+                                            record.fogNear = 0.0001
+                                            changed = True
+                            if doITM:
+                                for fid in cleaner.itm:
+                                    subprogress2.plus()
+                                    record = modFile.LookupRecord(fid)
+                                    if record:
+                                        record.DeleteRecord()
+                                        changed = True
+                            #--Save
+                            if changed:
+                                modFile.save(False)
 
     @staticmethod
     def _clean_Python(cleaners,what,progress):
