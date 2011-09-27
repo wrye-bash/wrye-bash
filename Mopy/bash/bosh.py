@@ -17062,60 +17062,63 @@ class ModCleaner:
             doUDR = bool(what & ModCleaner.UDR)
             doITM = bool(what & ModCleaner.ITM)
             doFog = bool(what & ModCleaner.FOG)
-            if len(modInfos) > 1:
-                progress(0,_('Loading...')+'\n'+modInfos[0].name.s)
-            else:
-                progress(0,_('Loading...'))
-            #--Load
-            with ObCollection(ModsPath=dirs['mods'].s) as Current:
-                for mod in modInfos:
-                    if isinstance(mod,ModCleaner):
-                        modInfo = mod.modInfo
-                    else:
-                        modInfo = mod
-                    if len(modInfo.masterNames) == 0: continue
-                    path = modInfo.getPath()
-                    Current.addMod(path.stail)
-                Current.load()
-                #--Scan
-                progress.setFull(max(len(modInfos),1))
-                ret = []
-                for i,modInfo in enumerate(modInfos):
-                    progress(i,_('Scanning...') + '\n' + modInfo.name.s)
-                    udr = set()
-                    itm = set()
-                    fog = set()
-                    if len(modInfo.masterNames) > 0:
-                        path = modInfo.getPath()
-                        modFile = Current.LookupModFile(path.stail)
-                        blocks = []
-                        if doUDR:
-                            blocks += ['ACRES', 'ACHRS', 'REFRS']
-                        if doFog:
-                            blocks += ['CELL']
-                        subprogress1 = SubProgress(progress,i,i+1)
-                        subprogress1.setFull(max(len(blocks),1))
-                        #--Scan ITM
-                        if doITM:
-                            itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
-                        for j,block in enumerate(blocks):
-                            subprogress1(j)
-                            subprogress2 = SubProgress(subprogress1,j,j+1)
-                            records = getattr(modFile,block)
-                            subprogress2.setFull(max(len(records),1))
-                            for k,record in enumerate(records):
-                                subprogress2(k)
-                                fid = record.fid
+            # If there are more than 255 mods, we have to break it up into
+            # smaller groups.  We'll do groups of 200 for now, to allow for
+            # added files due to implicitly loading masters.
+            modInfos = [x.modInfo if isinstance(x,ModCleaner) else x for x in modInfos]
+            numMods = len(modInfos)
+            ModsPerGroup = 200
+            numGroups = numMods / ModsPerGroup
+            if numMods % ModsPerGroup:
+                numGroups += 1
+            progress.setFull(numGroups)
+            ret = []
+            for i in range(numGroups):
+                #--Load
+                progress(i,_('Loading...'))
+                groupModInfos = modInfos[i*ModsPerGroup:(i+1)*ModsPerGroup]
+                with ObCollection(ModsPath=dirs['mods'].s) as Current:
+                    for mod in groupModInfos:
+                        if len(mod.masterNames) == 0: continue
+                        path = mod.getPath()
+                        Current.addMod(path.stail)
+                    Current.load()
+                    #--Scan
+                    subprogress1 = SubProgress(progress,i,i+1)
+                    subprogress1.setFull(max(len(groupModInfos),1))
+                    for j,modInfo in enumerate(groupModInfos):
+                        subprogress1(j,_('Scanning...') + '\n' + modInfo.name.s)
+                        udr = set()
+                        itm = set()
+                        fog = set()
+                        if len(modInfo.masterNames) > 0:
+                            path = modInfo.getPath()
+                            modFile = Current.LookupModFile(path.stail)
+                            if modFile:
+                                udrRecords = []
+                                fogRecords = []
+                                if doUDR:
+                                    udrRecords += modFile.ACRES + modFile.ACHRS + modFile.REFRS
+                                if doFog:
+                                    fogRecords += modFile.CELL
+                                if doITM:
+                                    itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
+                                total = len(udrRecords) + len(fogRecords)
+                                subprogress2 = SubProgress(subprogress1,j,j+1)
+                                subprogress2.setFull(max(total,1))
                                 #--Scan UDR
-                                if doUDR and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
-                                    udr.add(fid)
+                                for record in udrRecords:
+                                    subprogress2.plus()
+                                    if record.IsDeleted:
+                                        udr.add(record.fid)
                                 #--Scan fog
-                                if doFog and record._Type == 'CELL':
+                                for record in fogRecords:
+                                    subprogress2.plus()
                                     if not (record.fogNear or record.fogFar or record.fogClip):
-                                        fog.add(fid)
-                                record.UnloadRecord()
-                    ret.append((udr,itm,fog))
-                return ret
+                                        fog.add(record.fid)
+                                modFile.Unload()
+                        ret.append((udr,itm,fog))
+            return ret
         else:
             return [(set(),set(),set()) for x in range(len(modInfos))]
 
