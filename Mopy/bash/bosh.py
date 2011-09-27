@@ -23082,7 +23082,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        prev_values = self.fid_attr_value.get(recordId, None)
+        prev_values = self.id_stats.get(recordId, None)
         csv_values = self.csvId_stats.get(recordId, None)
         if csv_values and ValidateDict(csv_values, self.patchFile):
             prev_values = csv_values
