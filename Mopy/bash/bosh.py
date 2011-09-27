@@ -17101,8 +17101,9 @@ class ModCleaner:
                         for j,block in enumerate(blocks):
                             subprogress1(j)
                             subprogress2 = SubProgress(subprogress1,j,j+1)
-                            subprogress2.setFull(max(len(block),1))
-                            for k,record in enumerate(getattr(modFile, block)):
+                            records = getattr(modFile,block)
+                            subprogress2.setFull(max(len(records),1))
+                            for k,record in enumerate(records):
                                 subprogress2(k)
                                 fid = record.fid
                                 #--Scan UDR
