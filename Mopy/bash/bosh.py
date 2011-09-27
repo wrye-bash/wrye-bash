@@ -17826,7 +17826,7 @@ class CBash_PatchFile(ObModFile):
         tags = modInfos[modInfo.name].getBashTags()
         if 'NoMerge' in tags:
             if not verbose: return False
-            reasons += reasons.append(_("\n.    Has 'NoMerge' tag."))
+            reasons.append(_("\n.    Has 'NoMerge' tag."))
         if reasons: return reasons
         return True
 
