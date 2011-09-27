@@ -363,7 +363,7 @@ class FormID(object):
            This class should never be instantiated except by class FormID(object)."""
 
         def __init__(self, master, objectID):
-            self.master, self.objectID = GPath(master), objectID
+            self.master, self.objectID = master, objectID
 
         def __hash__(self):
             return hash((str(self.master), self.objectID))
@@ -431,7 +431,7 @@ class FormID(object):
            This class should never be instantiated except by class FormID(object)."""
 
         def __init__(self, master, objectID, shortID, collectionID):
-            self.master, self.objectID, self.shortID, self._CollectionID = GPath(master), objectID, shortID, collectionID
+            self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
             return hash((str(self.master), self.objectID))
@@ -516,10 +516,10 @@ class FormID(object):
            FormID       = (FormID()        , None)
            Raw FormID   = (int(FormID)     , None)
            Empty FormID = (None            , None)"""
-        self.formID = FormID.EmptyFormID() if master is None else master.formID if isinstance(master, FormID) else FormID.RawFormID(master) if objectID is None else FormID.UnvalidatedFormID(str(master), objectID) if isinstance(master, (basestring, Path)) else None
+        self.formID = FormID.EmptyFormID() if master is None else master.formID if isinstance(master, FormID) else FormID.RawFormID(master) if objectID is None else FormID.UnvalidatedFormID(GPath(master), objectID) if isinstance(master, (basestring, Path)) else None
         if self.formID is None:
             masterstr = _CGetLongIDName(master, objectID, 0)
-            self.formID = FormID.ValidFormID(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else FormID.InvalidFormID(objectID)
+            self.formID = FormID.ValidFormID(GPath(masterstr), objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else FormID.InvalidFormID(objectID)
 
     def __hash__(self):
         return hash(self.formID)
@@ -598,7 +598,7 @@ class ActorValue(object):
            It must be tested to see if it is safe for use in a particular collection.
            This class should never be instantiated except by class ActorValue(object)."""
         def __init__(self, master, objectID):
-            self.master, self.objectID = GPath(master), objectID
+            self.master, self.objectID = master, objectID
 
         def __hash__(self):
             return hash((str(self.master), self.objectID))
@@ -753,10 +753,10 @@ class ActorValue(object):
            ActorValue        = (ActorValue()    , None)
            Raw ActorValue    = (int(ActorValue) , None)
            Empty ActorValue  = (None            , None))"""
-        self.actorValue = ActorValue.EmptyActorValue() if master is None else master.actorValue if isinstance(master, ActorValue) else ActorValue.RawActorValue(master) if objectID is None else ActorValue.UnvalidatedActorValue(str(master), objectID) if isinstance(master, (basestring, Path)) else ActorValue.RawActorValue(objectID) if objectID < 0x800 else None
+        self.actorValue = ActorValue.EmptyActorValue() if master is None else master.actorValue if isinstance(master, ActorValue) else ActorValue.RawActorValue(master) if objectID is None else ActorValue.UnvalidatedActorValue(GPath(master), objectID) if isinstance(master, (basestring, Path)) else ActorValue.RawActorValue(objectID) if objectID < 0x800 else None
         if self.actorValue is None:
             masterstr = _CGetLongIDName(master, objectID, 0)
-            self.actorValue = ActorValue.ValidActorValue(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else ActorValue.InvalidActorValue(objectID)
+            self.actorValue = ActorValue.ValidActorValue(GPath(masterstr), objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else ActorValue.InvalidActorValue(objectID)
 
     def __hash__(self):
         return hash(self.actorValue)
@@ -838,7 +838,7 @@ class MGEFCode(object):
            It must be tested to see if it is safe for use in a particular collection.
            This class should never be instantiated except by class MGEFCode(object)."""
         def __init__(self, master, objectID):
-            self.master, self.objectID = GPath(master), objectID
+            self.master, self.objectID = master, objectID
 
         def __hash__(self):
             return hash((str(self.master), self.objectID))
@@ -1000,10 +1000,10 @@ class MGEFCode(object):
            Raw MGEFCode       = (int(MGEFCode)   , None)
            Raw MGEFCode       = (string(MGEFCode), None)
            Empty MGEFCode     = (None            , None))"""
-        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(str(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(master, objectID) if objectID < 0x80000000 else None
+        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(GPath(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(master, objectID) if objectID < 0x80000000 else None
         if self.mgefCode is None:
             masterstr = _CGetLongIDName(master, objectID, 1)
-            self.mgefCode = MGEFCode.ValidMGEFCode(masterstr, objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else MGEFCode.InvalidMGEFCode(objectID)
+            self.mgefCode = MGEFCode.ValidMGEFCode(GPath(masterstr), objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else MGEFCode.InvalidMGEFCode(objectID)
 
     def __hash__(self):
         return hash(self.mgefCode)
