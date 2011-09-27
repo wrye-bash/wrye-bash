@@ -15260,10 +15260,11 @@ class App_Button(Link):
                 try:
                     subprocess.Popen((self.java.stail,'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except Exception, error:
-                    print error
-                    print _("Used Path: %s") % exePath.s
-                    print _("Used Arguments: "), exeArgs
-                    print
+                    balt.showError(
+                        bashFrame,
+                        _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                            error, self.exePath.s, self.exeArgs),
+                        _("Could not launch '%s'") % self.exePath.stail)
                     raise
                 finally:
                     cwd.setcwd()
@@ -15292,22 +15293,26 @@ class App_Button(Link):
                     subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except WindowsError, werr:
                     if werr.winerror != 740:
-                        print _("Used Path: %s") % exePath.s
-                        print _("Used Arguments: "), args
-                        raise
+                        balt.showError(
+                            bashFrame,
+                            _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                                error, self.exePath.s, self.exeArgs),
+                            _("Could not launch '%s'") % self.exePath.stail)
                     try:
                         import win32api
                         win32api.ShellExecute(0,"open",exePath.s,str(self.exeArgs),bosh.dirs['app'].s,1)
                     except:
-                        print _("Used Path: %s") % exePath.s
-                        print _("Used Arguments: "), exeArgs
-                        raise WindowsError(werr)
+                        balt.showError(
+                            bashFrame,
+                            _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                                error, self.exePath.s, self.exeArgs),
+                            _("Could not launch '%s'") % self.exePath.stail)
                 except Exception, error:
-                    print error
-                    print _("Used Path: %s") % exePath.s
-                    print _("Used Arguments: "), args
-                    print
-                    raise
+                    balt.showError(
+                        bashFrame,
+                        _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                            error, self.exePath.s, self.exeArgs),
+                        _("Could not launch '%s'") % self.exePath.stail)
                 finally:
                     cwd.setcwd()
             else:
@@ -15325,11 +15330,23 @@ class App_Button(Link):
                         args += " " + str(arg)
                     win32api.ShellExecute(0,"open",executable,args,dir,1)
                 except Exception, error:
-                    print error
-                    print _("Used Path: %s") % self.exePath.s
-                    print _("Used Arguments: "), self.exeArgs
-                    print
-                    raise
+                    # Most likely we're here because FindExecutable failed (no file association)
+                    # Or because win32api import failed.  Try doing it using os.startfile
+                    cwd = bolt.Path.getcwd()
+                    if self.workingDir:
+                        self.workingDir.setcwd()
+                    else:
+                        self.exePath.head.setcwd()
+                    try:
+                        os.startfile(self.exePath.s)
+                    except Exception, error:
+                        balt.showError(
+                            bashFrame,
+                            _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                                error, self.exePath.s, self.exeArgs),
+                            _("Could not launch '%s'") % self.exePath.stail)
+                    finally:
+                        cwd.setcwd()
         else:
             raise StateError(_('Application missing: %s') % self.exePath.s)
 
