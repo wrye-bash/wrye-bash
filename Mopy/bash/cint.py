@@ -431,7 +431,7 @@ class FormID(object):
            This class should never be instantiated except by class FormID(object)."""
 
         def __init__(self, master, objectID, shortID, collectionID):
-            self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
+            self.master, self.objectID, self.shortID, self._CollectionID = GPath(master), objectID, shortID, collectionID
 
         def __hash__(self):
             return hash((str(self.master), self.objectID))
