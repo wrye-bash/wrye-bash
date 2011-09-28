@@ -262,6 +262,8 @@ settingDefaults = {
         ],
     #--Wrye Bash: StatusBar
     'bash.statusbar.iconSize': 16,
+    'bash.statusbar.hide': set(),
+    'bash.statusbar.order': [],
     #--Wrye Bash: Statistics
     'bash.fileStats.cols': ['Type','Count','Size'],
     'bash.fileStats.sort': 'Type',
@@ -4885,28 +4887,203 @@ class BashStatusBar(wx.StatusBar):
         wx.EVT_SIZE(self,self.OnSize)
         #--Clear text notice
         self.Bind(wx.EVT_TIMER, self.OnTimer)
+        #--Setup Drag-n-Drop reordering
+        self.dragging = wx.NOT_FOUND
+        self.dragStart = 0
+        self.moved = False
+
+    def OnDragStart(self,event):
+        print "Starting drag!"
+        event.Veto()
+
+    def _addButton(self,link):
+        gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
+        if gButton:
+            self.buttons.append(gButton)
+            # DnD events
+            gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
+            gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
+            gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
         self.size = settings['bash.statusbar.iconSize']
         self.size += 8
         self.buttons = []
         buttons = BashStatusBar.buttons
+        order = settings['bash.statusbar.order']
+        orderChanged = False
+        hide = settings['bash.statusbar.hide']
+        hideChanged = False
+        remove = set()
+        # Add buttons in order that is saved
+        for uid in order:
+            link = self.GetLink(uid=uid)
+            # Doesn't exist?
+            if link is None:
+                remove.add(uid)
+                continue
+            # Hidden?
+            if uid in hide: continue
+            # Add it
+            self._addButton(link)
+        for uid in remove:
+            order.remove(uid)
+        if remove:
+            orderChanged = True
+        # Add any new buttons
         for link in buttons:
-            gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
-            if gButton:
-                self.buttons.append(gButton)
-                #--Required Events for DnD reordering (oops, not ready yet)
-                #gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
-                #gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
-                #gButton.Bind(wx.EVT_MOTION, self.OnDrag)
+            # Already tested?
+            uid = link.uid
+            if uid in order: continue
+            # Remove any hide settings, if they exist
+            if uid in hide:
+                hide.discard(uid)
+                hideChanged = True
+            order.append(uid)
+            orderChanged = True
+            self._addButton(link)
+        # Update settings
+        if orderChanged: settings.setChanged('bash.statusbar.order')
+        if hideChanged: settings.setChanged('bash.statusbar.hide')
+        # Refresh
         self.SetStatusWidths([self.size*len(self.buttons),-1,130])
         self.SetSize((-1, self.size))
         self.GetParent().SendSizeEvent()
         self.OnSize()
 
+    def HideButton(self,button):
+        if button in self.buttons:
+            # Find the BashStatusBar_Button instance that made it
+            link = self.GetLink(button=button)
+            if link:
+                button.Show(False)
+                self.buttons.remove(button)
+                settings['bash.statusbar.hide'].add(link.uid)
+                settings.setChanged('bash.statusbar.hide')
+                # Refresh
+                self.SetStatusWidths([self.size*len(self.buttons),-1,130])
+                self.GetParent().SendSizeEvent()
+                self.OnSize()
+
+    def UnhideButton(self,link):
+        uid = link.uid
+        settings['bash.statusbar.hide'].discard(uid)
+        settings.setChanged('bash.statusbar.hide')
+        # Find the position to insert it at
+        order = settings['bash.statusbar.order']
+        if uid not in order:
+            # Not specified, put it at the end
+            order.append(uid)
+            settings.setChanged('bash.statusbar.order')
+            self._addButton(link)
+        else:
+            # Specified, but now factor in hidden buttons, etc
+            thisIndex = order.index(link.uid)
+            self._addButton(link)
+            button = self.buttons.pop()
+            insertBefore = 0
+            for i in range(len(self.buttons)):
+                otherlink = self.GetLink(index=i)
+                indexOther = order.index(otherlink.uid)
+                if indexOther > thisIndex:
+                    insertBefore = i
+                    break
+            self.buttons.insert(i,button)
+        # Refresh
+        self.SetStatusWidths([self.size*len(self.buttons),-1,130])
+        self.GetParent().SendSizeEvent()
+        self.OnSize()
+
+    def GetLink(self,uid=None,index=None,button=None):
+        """Get the Link object with a specific uid,
+           or that made a specific button."""
+        if uid is not None:
+            for link in BashStatusBar.buttons:
+                if link.uid == uid:
+                    return link
+        elif index is not None:
+            button = self.buttons[index]
+        if button is not None:
+            for link in BashStatusBar.buttons:
+                if link.gButton is button:
+                    return link
+        return None
+
+    def HitTest(self,mouseEvent):
+        id = mouseEvent.GetId()
+        for i,button in enumerate(self.buttons):
+            if button.GetId() == id:
+                x = mouseEvent.GetPosition()[0]
+                if x < 0:
+                    back = abs(x) / self.size
+                    x += back * self.size
+                    if x < 0:
+                        back += 1
+                    i -= back
+                    if i < 0: i = 0
+                else:
+                    forward = x / self.size
+                    x -= forward * self.size
+                    if x > self.size:
+                        forward += 1
+                    i += forward
+                    if i >= len(self.buttons): i = len(self.buttons) - 1
+                return i
+        return wx.NOT_FOUND
+
+    def OnDragStart(self,event):
+        self.dragging = self.HitTest(event)
+        self.dragStart = event.GetPosition()[0]
+        event.Skip()
+
+    def OnDragEnd(self,event):
+        if self.dragging != wx.NOT_FOUND:
+            self.dragging = wx.NOT_FOUND
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            if self.moved:
+                self.moved = False
+                return
+        event.Skip()
+
+    def OnDrag(self,event):
+        if self.dragging != wx.NOT_FOUND:
+            if abs(event.GetPosition()[0] - self.dragStart) > 4:
+                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+            over = self.HitTest(event)
+            if over not in (wx.NOT_FOUND, self.dragging):
+                rect = self.GetFieldRect(0)
+                (xPos,yPos) = (rect.x+1,rect.y+1)
+                if over < self.dragging:
+                    # Move left
+                    xPos += self.size * over
+                    newX = xPos
+                    for i in range(over,self.dragging):
+                        newX += self.size
+                        self.buttons[i].SetPosition((newX,yPos))
+                    self.buttons[self.dragging].SetPosition((xPos,yPos))
+                else:
+                    # Move right
+                    xPos += self.size * self.dragging
+                    newX = xPos
+                    for i in range(self.dragging+1,over+1):
+                        self.buttons[i].SetPosition((newX,yPos))
+                        newX += self.size
+                    self.buttons[self.dragging].SetPosition((newX,yPos))
+                self.moved = True
+                # update self.buttons
+                button = self.buttons[self.dragging]
+                uid = self.GetLink(button=button).uid
+                self.buttons.remove(button)
+                self.buttons.insert(over,button)
+                settings['bash.statusbar.order'].remove(uid)
+                settings['bash.statusbar.order'].insert(over,uid)
+                settings.setChanged('bash.statusbar.order')
+                self.dragging = over
+        event.Skip()
+
     def OnSize(self,event=None):
         rect = self.GetFieldRect(0)
-        (xPos,yPos) = (rect.x+1,rect.y+1)
+        (xPos,yPos) = (rect.x+4,rect.y+2)
         for button in self.buttons:
             button.SetPosition((xPos,yPos))
             xPos += self.size
@@ -10715,6 +10892,67 @@ class Settings_IconSize(Link):
         settings['bash.statusbar.iconSize'] = self.size
         bashFrame.GetStatusBar().UpdateIconSizes()
 
+#------------------------------------------------------------------------------
+class Settings_UnHideButtons(Link):
+    """Menu to unhide a StatusBar button."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        hide = settings['bash.statusbar.hide']
+        hidden = []
+        for link in BashStatusBar.buttons:
+            if link.uid in hide:
+                hidden.append(link)
+        if hidden:
+            subMenu = wx.Menu()
+            menu.AppendMenu(self.id,_("Unhide Buttons"),subMenu)
+            for link in hidden:
+                Settings_UnHideButton(link).AppendToMenu(subMenu,window,data)
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_("Unhide Buttons"))
+            menu.AppendItem(menuItem)
+            menuItem.Enable(False)
+
+#------------------------------------------------------------------------------
+class Settings_UnHideButton(Link):
+    """Unhide a specific StatusBar button."""
+    def __init__(self,link):
+        Link.__init__(self)
+        self.link = link
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        button = self.link.gButton
+        # Get a title for the hidden button
+        if button:
+            # If the wx.Button object exists (it was hidden this session),
+            # Use the tooltip from it
+            tip = button.GetToolTip().GetTip()
+        else:
+            # If the link is an App_Button, it will have a 'tip' attribute
+            tip = getattr(self.link,'tip',None)
+        if tip is None:
+            # No good, use it's uid as a last resort
+            tip = self.link.uid
+        help = _("Unhide the '%s' status bar button.") % tip
+        menuItem = wx.MenuItem(menu,self.id,tip,help)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        bashFrame.GetStatusBar().UnhideButton(self.link)
+
+# StatusBar Links--------------------------------------------------------------
+#------------------------------------------------------------------------------
+class StatusBar_Hide(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        tip = window.GetToolTip().GetTip()
+        menuItem = wx.MenuItem(menu,self.id,_("Hide '%s'") % tip)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        sb = bashFrame.GetStatusBar()
+        sb.HideButton(self.window)
+
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Mod_ActorLevels_Export(Link):
@@ -15157,19 +15395,56 @@ class Master_Disable(Link):
 
 # App Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class App_Button(Link):
+class StatusBar_Button(Link):
+    """Launch an application."""
+    def __init__(self,uid=None,canHide=True):
+        """ui: Unique identifier, used for saving the order of status bar icons
+               and whether they are hidden/shown.
+           canHide: True if this button is allowed to be hidden."""
+        Link.__init__(self)
+        self.mainMenu = Links()
+        self.canHide = canHide
+        self.gButton = None
+        self._uid = uid
+
+    @property
+    def uid(self):
+        if self._uid is None:
+            return (self.__class__.__name__,getattr(self,'tip',None))
+        return self._uid
+
+    def createButton(self, *args, **kwdargs):
+        if len(args) < 11 and 'onRClick' not in kwdargs:
+            kwdargs['onRClick'] = self.DoPopupMenu
+        if len(args) < 9 and 'onClick' not in kwdargs:
+            kwdargs['onClick'] = self.Execute
+        if self.gButton is not None:
+            self.gButton.Destroy()
+        self.gButton = bitmapButton(*args, **kwdargs)
+
+    def DoPopupMenu(self,event):
+        if self.canHide:
+            if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],StatusBar_Hide):
+                if len(self.mainMenu) > 0:
+                    self.mainMenu.append(SeparatorLink())
+                self.mainMenu.append(StatusBar_Hide())
+        if len(self.mainMenu) > 0:
+            self.mainMenu.PopupMenu(self.gButton,bashFrame,0)
+        else:
+            event.Skip()
+
+class App_Button(StatusBar_Button):
     """Launch an application."""
     obseButtons = []
 
-    def __init__(self,exePathArgs,images,tip,obseTip=None,obseArg=None,workingDir=None):
+    def __init__(self,exePathArgs,images,tip,obseTip=None,obseArg=None,workingDir=None,uid=None,canHide=True):
         """Initialize
         exePathArgs (string): exePath
         exePathArgs (tuple): (exePath,*exeArgs)
         exePathArgs (list):  [exePathArgs,altExePathArgs,...]
         images: [16x16,24x24,32x32] images
         """
-        Link.__init__(self)
-        self.gButton = None
+        StatusBar_Button.__init__(self,uid,canHide)
         if isinstance(exePathArgs, list):
             use = exePathArgs[0]
             for item in exePathArgs:
@@ -15232,12 +15507,10 @@ class App_Button(Link):
 
     def GetBitmapButton(self,window,style=0):
         if self.IsPresent():
-            if self.gButton is not None:
-                self.gButton.Destroy()
             size = settings['bash.statusbar.iconSize']
             idex = (size/8)-2
-            self.gButton = bitmapButton(window,self.images[idex].GetBitmap(),style=style,
-                onClick=self.Execute,tip=self.tip)
+            self.createButton(window,self.images[idex].GetBitmap(),
+                              style=style,tip=self.tip)
             if self.obseTip != None:
                 App_Button.obseButtons.append(self)
                 exeObse = bosh.dirs['app'].join('obse_loader.exe')
@@ -15350,6 +15623,12 @@ class App_Button(Link):
         else:
             raise StateError(_('Application missing: %s') % self.exePath.s)
 
+class Tooldir_Button(App_Button):
+    """Just an App_Button that's path is in bosh.tooldirs
+       Use this to automatically set the uid for the App_Button."""
+    def __init__(self,toolKey,images,tip,obseTip=None,obseArg=None,workingDir=None,canHide=True):
+        App_Button.__init__(self,bosh.tooldirs[toolKey],images,tip,obseTip,obseArg,workingDir,toolKey,canHide)
+
 class App_Tes4Gecko(App_Button):
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
@@ -15397,6 +15676,9 @@ class App_Tes4View(App_Button):
 #  or name ends with Edit.exe
 # -translate
 #  or name ends with Trans.exe
+    def __init__(self,*args,**kwdargs):
+        App_Button.__init__(self,*args,**kwdargs)
+        self.mainMenu.append(Mods_Tes4ViewExpert())
 
     def IsPresent(self):
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
@@ -15420,6 +15702,9 @@ class App_Tes4View(App_Button):
 #------------------------------------------------------------------------------
 class App_BOSS(App_Button):
     """loads BOSS"""
+    def __init__(self, *args, **kwdargs):
+        App_Button.__init__(self, *args, **kwdargs)
+        self.mainMenu.append(Mods_BOSSDisableLockTimes())
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
@@ -15487,12 +15772,8 @@ class Oblivion_Button(App_Button):
             bashFrame.Close()
 
 #------------------------------------------------------------------------------
-class Obse_Button(Link):
+class Obse_Button(StatusBar_Button):
     """Obse on/off state button."""
-    def __init__(self):
-        Link.__init__(self)
-        self.gButton = None
-
     def SetState(self,state=None):
         """Sets state related info. If newState != none, sets to new state first.
         For convenience, returns state when done."""
@@ -15515,10 +15796,8 @@ class Obse_Button(Link):
     def GetBitmapButton(self,window,style=0):
         exeObse = bosh.dirs['app'].join('obse_loader.exe')
         if exeObse.exists():
-            if self.gButton is not None:
-                self.gButton.Destroy()
             bitmap = images['checkbox.green.off.%s'%settings['bash.statusbar.iconSize']].GetBitmap()
-            self.gButton = bitmapButton(window,bitmap,style=style,onClick=self.Execute)
+            self.createButton(window,bitmap,style=style)
             self.SetState()
             return self.gButton
         else:
@@ -15529,12 +15808,8 @@ class Obse_Button(Link):
         self.SetState(-1)
 
 #------------------------------------------------------------------------------
-class AutoQuit_Button(Link):
+class AutoQuit_Button(StatusBar_Button):
     """Button toggling application closure when launching Oblivion."""
-    def __init__(self):
-        Link.__init__(self)
-        self.gButton = None
-
     def SetState(self,state=None):
         """Sets state related info. If newState != none, sets to new state first.
         For convenience, returns state when done."""
@@ -15550,10 +15825,8 @@ class AutoQuit_Button(Link):
         self.gButton.SetToolTip(tooltip(tip))
 
     def GetBitmapButton(self,window,style=0):
-        if self.gButton is not None:
-            self.gButton.Destroy()
         bitmap = images['checkbox.red.off.%s'%settings['bash.statusbar.iconSize']].GetBitmap()
-        self.gButton = bitmapButton(window,bitmap,style=style,onClick=self.Execute)
+        self.createButton(window,bitmap,style=style)
         self.SetState()
         return self.gButton
 
@@ -15562,18 +15835,15 @@ class AutoQuit_Button(Link):
         self.SetState(-1)
 
 #------------------------------------------------------------------------------
-class App_Help(Link):
+class App_Help(StatusBar_Button):
     """Show help browser."""
-    def __init__(self):
-        Link.__init__(self)
-        self.gButton = None
-
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        if self.gButton is not None:
-            self.gButton.Destroy()
-        self.gButton = bitmapButton(window,images['help.%s'%settings['bash.statusbar.iconSize']].GetBitmap(),style=style,
-            onClick=self.Execute,tip=_("Help File"))
+        self.createButton(
+            window,
+            images['help.%s'%settings['bash.statusbar.iconSize']].GetBitmap(),
+            style=style,
+            tip=_("Help File"))
         return self.gButton
 
     def Execute(self,event):
@@ -15584,18 +15854,15 @@ class App_Help(Link):
         html.start()
 
 #------------------------------------------------------------------------------
-class App_DocBrowser(Link):
+class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    def __init__(self):
-        Link.__init__(self)
-        self.gButton = None
-
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        if self.gButton is not None:
-            self.gButton.Destroy()
-        self.gButton = bitmapButton(window,images['doc.%s'%settings['bash.statusbar.iconSize']].GetBitmap(),style=style,
-            onClick=self.Execute,tip=_("Doc Browser"))
+        self.createButton(
+            window,
+            images['doc.%s'%settings['bash.statusbar.iconSize']].GetBitmap(),
+            style=style,
+            tip=_("Doc Browser"))
         return self.gButton
 
     def Execute(self,event):
@@ -15607,36 +15874,30 @@ class App_DocBrowser(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
-class App_Settings(Link):
+class App_Settings(StatusBar_Button):
     """Show color configuration dialog."""
-    def __init__(self):
-        Link.__init__(self)
-        self.gButton = None
-
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        if self.gButton is not None:
-            self.gButton.Destroy()
-        self.gButton = bitmapButton(window,Image(GPath(bosh.dirs['images'].join('tes4gecko%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),style=style,
-            onClick=self.Execute,tip=_('Settings'))
+        self.createButton(
+            window,
+            Image(GPath(bosh.dirs['images'].join('tes4gecko%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
+            style=style,
+            tip=_('Settings'))
         return self.gButton
 
     def Execute(self,event):
         SettingsMenu.PopupMenu(bashFrame.GetStatusBar(),bashFrame,None)
 
 #------------------------------------------------------------------------------
-class App_ModChecker(Link):
+class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
-    def __init__(self):
-        Link.__init__(self)
-        self.gButton = None
-
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        if self.gButton is not None:
-            self.gButton.Destroy()
-        self.gButton = bitmapButton(window,Image(GPath(bosh.dirs['images'].join('ModChecker%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),style=style,
-            onClick=self.Execute,tip=_("Mod Checker"))
+        self.createButton(
+            window,
+            Image(GPath(bosh.dirs['images'].join('ModChecker%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
+            style=style,
+            tip=_("Mod Checker"))
         return self.gButton
 
     def Execute(self,event):
@@ -15730,102 +15991,111 @@ def InitStatusBar():
     def imageList(template):
         return [Image(GPath(bosh.dirs['images'].join(template % x))) for x in (16,24,32)]
     #--Bash Status/LinkBar
-    BashStatusBar.buttons.append(Obse_Button())
-    BashStatusBar.buttons.append(AutoQuit_Button())
+    BashStatusBar.buttons.append(Obse_Button(uid='OBSE'))
+    BashStatusBar.buttons.append(AutoQuit_Button(uid='AutoQuit'))
     BashStatusBar.buttons.append( #OBLIVION
         Oblivion_Button(
             bosh.dirs['app'].join('Oblivion.exe'),
             imageList('oblivion%s.png'),
             _("Launch Oblivion"),
             _("Launch Oblivion + OBSE"),
-            ''))
+            '',
+            uid='Oblivion'))
     BashStatusBar.buttons.append( #TESCS
         App_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
             imageList('tescs%s.png'),
             _("Launch TESCS"),
             _("Launch TESCS + OBSE"),
-            '-editor'))
+            '-editor',
+            uid='TESCS'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(
             bosh.dirs['app'].join('OblivionModManager.exe'),
             imageList('obmm%s.png'),
-            _("Launch OBMM")))
+            _("Launch OBMM"),
+            uid='OBMM'))
     BashStatusBar.buttons.append( #ISOBL
-        App_Button(
-            bosh.tooldirs['ISOBL'],
+        Tooldir_Button(
+            'ISOBL',
             imageList('isobl%s.png'),
             _("Launch InsanitySorrow's Oblivion Launcher")))
     BashStatusBar.buttons.append( #ISRMG
-        App_Button(
-            bosh.tooldirs['ISRMG'],
+        Tooldir_Button(
+            'ISRMG',
             imageList("insanity'sreadmegenerator%s.png"),
             _("Launch InsanitySorrow's Readme Generator")))
     BashStatusBar.buttons.append( #ISRNG
-        App_Button(
-            bosh.tooldirs['ISRNG'],
+        Tooldir_Button(
+            'ISRNG',
             imageList("insanity'srng%s.png"),
             _("Launch InsanitySorrow's Random Name Generator")))
     BashStatusBar.buttons.append( #ISRNPCG
-        App_Button(
-            bosh.tooldirs['ISRNPCG'],
+        Tooldir_Button(
+            'ISRNPCG',
             imageList('randomnpc%s.png'),
             _("Launch InsanitySorrow's Random NPC Generator")))
     BashStatusBar.buttons.append( #OBFEL
-        App_Button(
-            bosh.tooldirs['OBFEL'],
+        Tooldir_Button(
+            'OBFEL',
             imageList('oblivionfaceexchangerlite%s.png'),
             _("Oblivion Face Exchange Lite")))
     BashStatusBar.buttons.append( #OBMLG
-        App_Button(
-            bosh.tooldirs['OBMLG'],
+        Tooldir_Button(
+            'OBMLG',
             imageList('modlistgenerator%s.png'),
             _("Oblivion Mod List Generator")))
     BashStatusBar.buttons.append( #OblivionBookCreator
         App_Button(
             (bosh.tooldirs['OblivionBookCreatorPath'],bosh.inisettings['OblivionBookCreatorJavaArg']),
             imageList('oblivionbookcreator%s.png'),
-            _("Launch Oblivion Book Creator")))
+            _("Launch Oblivion Book Creator"),
+            uid='OblivionBookCreator'))
     BashStatusBar.buttons.append( #BSACommander
-        App_Button(
-            bosh.tooldirs['BSACMD'],
+        Tooldir_Button(
+            'BSACMD',
             imageList('bsacommander%s.png'),
             _("Launch BSA Commander")))
     BashStatusBar.buttons.append( #Tabula
-        App_Button(
-            bosh.tooldirs['Tabula'],
+        Tooldir_Button(
+            'Tabula',
             imageList('tabula%s.png'),
             _("Launch Tabula")))
     BashStatusBar.buttons.append( #Tes4Files
-        App_Button(
-            bosh.tooldirs['Tes4FilesPath'],
+        Tooldir_Button(
+            'Tes4FilesPath',
             imageList('tes4files%s.png'),
             _("Launch TES4Files")))
     BashStatusBar.buttons.append( #Tes4Gecko
         App_Button(
             (bosh.tooldirs['Tes4GeckoPath'],bosh.inisettings['Tes4GeckoJavaArg']),
             imageList('tes4gecko%s.png'),
-            _("Launch Tes4Gecko")))
+            _("Launch Tes4Gecko"),
+            uid='Tes4Gecko'))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bosh.tooldirs['Tes4ViewPath'],'-TES4'), #no cmd argument to force view mode
             imageList('tes4view%s.png'),
-            _("Launch TES4View")))
+            _("Launch TES4View"),
+            uid='TES4View'))
     BashStatusBar.buttons.append( #Tes4Edit
         App_Tes4View(
             (bosh.tooldirs['Tes4EditPath'],'-TES4 -edit'),
             imageList('tes4edit%s.png'),
-            _("Launch TES4Edit")))
+            _("Launch TES4Edit"),
+            uid='TES4Edit'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],'-TES4 -translate'),
             imageList('tes4trans%s.png'),
-            _("Launch TES4Trans")))
+            _("Launch TES4Trans"),
+            uid='TES4Trans'))
     BashStatusBar.buttons.append( #Tes4LODGen
         App_Tes4View(
             (bosh.tooldirs['Tes4LodGenPath'],'-TES4 -lodgen'),
             imageList('tes4lodgen%s.png'),
-            _("Launch Tes4LODGen")))
+            _("Launch Tes4LODGen"),
+            uid='TES4LODGen'))
     configHelpers = bosh.ConfigHelpers()
     configHelpers.refresh()
     version = configHelpers.bossVersion
@@ -15836,319 +16106,321 @@ def InitStatusBar():
         App_BOSS(
             (bosh.dirs['app'].join('Data','BOSS.bat'),bosh.dirs['app'].join('Data','BOSS.exe'),bosh.dirs['app'].join('BOSS','BOSS.exe'))[version],
             imageList('boss%s.png'),
-            _("Launch BOSS")))
+            _("Launch BOSS"),
+            uid='BOSS'))
     if bosh.inisettings['ShowModelingToolLaunchers']:
         BashStatusBar.buttons.append( #AutoCad
-            App_Button(
-                bosh.tooldirs['AutoCad'],
+            Tooldir_Button(
+                'AutoCad',
                 imageList('autocad%s.png'),
                 _("Launch AutoCad")))
         BashStatusBar.buttons.append( #Blender
-            App_Button(
-                bosh.tooldirs['BlenderPath'],
+            Tooldir_Button(
+                'BlenderPath',
                 imageList('blender%s.png'),
                 _("Launch Blender")))
         BashStatusBar.buttons.append( #Dogwaffle
-            App_Button(
-                bosh.tooldirs['Dogwaffle'],
+            Tooldir_Button(
+                'Dogwaffle',
                 imageList('dogwaffle%s.png'),
                 _("Launch Dogwaffle")))
         BashStatusBar.buttons.append( #GMax
-            App_Button(
-                bosh.tooldirs['GmaxPath'],
+            Tooldir_Button(
+                'GmaxPath',
                 imageList('gmax%s.png'),
                 _("Launch Gmax")))
         BashStatusBar.buttons.append( #Maya
-            App_Button(
-                bosh.tooldirs['MayaPath'],
+            Tooldir_Button(
+                'MayaPath',
                 imageList('maya%s.png'),
                 _("Launch Maya")))
         BashStatusBar.buttons.append( #Max
-            App_Button(
-                bosh.tooldirs['MaxPath'],
+            Tooldir_Button(
+                'MaxPath',
                 imageList('3dsmax%s.png'),
                 _("Launch 3dsMax")))
         BashStatusBar.buttons.append( #Milkshape3D
-            App_Button(
-                bosh.tooldirs['Milkshape3D'],
+            Tooldir_Button(
+                'Milkshape3D',
                 imageList('milkshape3d%s.png'),
                 _("Launch Milkshape 3D")))
         BashStatusBar.buttons.append( #Mudbox
-            App_Button(
-                bosh.tooldirs['Mudbox'],
+            Tooldir_Button(
+                'Mudbox',
                 imageList('mudbox%s.png'),
                 _("Launch Mudbox")))
         BashStatusBar.buttons.append( #Sculptris
-            App_Button(
-                bosh.tooldirs['Sculptris'],
+            Tooldir_Button(
+                'Sculptris',
                 imageList('sculptris%s.png'),
                 _("Launch Sculptris")))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             App_Button(
                 (bosh.tooldirs['SoftimageModTool'],'-mod'),
                 imageList('softimagemodtool%s.png'),
-                _("Launch Softimage Mod Tool")))
+                _("Launch Softimage Mod Tool"),
+                uid='SoftimageModTool'))
         BashStatusBar.buttons.append( #SpeedTree
-            App_Button(
-                bosh.tooldirs['SpeedTree'],
+            Tooldir_Button(
+                'SpeedTree',
                 imageList('speedtree%s.png'),
                 _("Launch SpeedTree")))
         BashStatusBar.buttons.append( #Tree[d]
-            App_Button(
-                bosh.tooldirs['Treed'],
+            Tooldir_Button(
+                'Treed',
                 imageList('treed%s.png'),
                 _("Launch Tree\[d\]")))
         BashStatusBar.buttons.append( #Wings3D
-            App_Button(
-                bosh.tooldirs['Wings3D'],
+            Tooldir_Button(
+                'Wings3D',
                 imageList('wings3d%s.png'),
                 _("Launch Wings 3D")))
     if bosh.inisettings['ShowModelingToolLaunchers'] or bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
-            App_Button(
-                bosh.tooldirs['NifskopePath'],
+            Tooldir_Button(
+                'NifskopePath',
                 imageList('nifskope%s.png'),
                 _("Launch Nifskope")))
     if bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #AniFX
-            App_Button(
-                bosh.tooldirs['AniFX'],
+            Tooldir_Button(
+                'AniFX',
                 imageList('anifx%s.png'),
                 _("Launch AniFX")))
         BashStatusBar.buttons.append( #Art Of Illusion
-            App_Button(
-                bosh.tooldirs['ArtOfIllusion'],
+            Tooldir_Button(
+                'ArtOfIllusion',
                 imageList('artofillusion%s.png'),
                 _("Launch Art Of Illusion")))
         BashStatusBar.buttons.append( #Artweaver
-            App_Button(
-                bosh.tooldirs['Artweaver'],
+            Tooldir_Button(
+                'Artweaver',
                 imageList('artweaver%s.png'),
                 _("Launch Artweaver")))
         BashStatusBar.buttons.append( #CrazyBump
-            App_Button(
-                bosh.tooldirs['CrazyBump'],
+            Tooldir_Button(
+                'CrazyBump',
                 imageList('crazybump%s.png'),
                 _("Launch CrazyBump")))
         BashStatusBar.buttons.append( #DDSConverter
-            App_Button(
-                bosh.tooldirs['DDSConverter'],
+            Tooldir_Button(
+                'DDSConverter',
                 imageList('ddsconverter%s.png'),
                 _("Launch DDSConverter")))
         BashStatusBar.buttons.append( #DeepPaint
-            App_Button(
-                bosh.tooldirs['DeepPaint'],
+            Tooldir_Button(
+                'DeepPaint',
                 imageList('deeppaint%s.png'),
                 _("Launch DeepPaint")))
         BashStatusBar.buttons.append( #FastStone Image Viewer
-            App_Button(
-                bosh.tooldirs['FastStone'],
+            Tooldir_Button(
+                'FastStone',
                 imageList('faststoneimageviewer%s.png'),
                 _("Launch FastStone Image Viewer")))
         BashStatusBar.buttons.append( #Genetica
-            App_Button(
-                bosh.tooldirs['Genetica'],
+            Tooldir_Button(
+                'Genetica',
                 imageList('genetica%s.png'),
                 _("Launch Genetica")))
         BashStatusBar.buttons.append( #Genetica Viewer
-            App_Button(
-                bosh.tooldirs['GeneticaViewer'],
+            Tooldir_Button(
+                'GeneticaViewer',
                 imageList('geneticaviewer%s.png'),
                 _("Launch Genetica Viewer")))
         BashStatusBar.buttons.append( #GIMP
-            App_Button(
-                bosh.tooldirs['GIMP'],
+            Tooldir_Button(
+                'GIMP',
                 imageList('gimp%s.png'),
                 _("Launch GIMP")))
         BashStatusBar.buttons.append( #GIMP Shop
-            App_Button(
-                bosh.tooldirs['GimpShop'],
+            Tooldir_Button(
+                'GimpShop',
                 imageList('gimpshop%s.png'),
                 _("Launch GIMP Shop")))
         BashStatusBar.buttons.append( #IcoFX
-            App_Button(
-                bosh.tooldirs['IcoFX'],
+            Tooldir_Button(
+                'IcoFX',
                 imageList('icofx%s.png'),
                 _("Launch IcoFX")))
         BashStatusBar.buttons.append( #Inkscape
-            App_Button(
-                bosh.tooldirs['Inkscape'],
+            Tooldir_Button(
+                'Inkscape',
                 imageList('inkscape%s.png'),
                 _("Launch Inkscape")))
         BashStatusBar.buttons.append( #IrfanView
-            App_Button(
-                bosh.tooldirs['IrfanView'],
+            Tooldir_Button(
+                'IrfanView',
                 imageList('irfanview%s.png'),
                 _("Launch IrfanView")))
         BashStatusBar.buttons.append( #MaPZone
-            App_Button(
-                bosh.tooldirs['MaPZone'],
+            Tooldir_Button(
+                'MaPZone',
                 imageList('mapzone%s.png'),
                 _("Launch MaPZone")))
         BashStatusBar.buttons.append( #MyPaint
-            App_Button(
-                bosh.tooldirs['MyPaint'],
+            Tooldir_Button(
+                'MyPaint',
                 imageList('mypaint%s.png'),
                 _("Launch MyPaint")))
         BashStatusBar.buttons.append( #NVIDIAMelody
-            App_Button(
-                bosh.tooldirs['NVIDIAMelody'],
+            Tooldir_Button(
+                'NVIDIAMelody',
                 imageList('nvidiamelody%s.png'),
                 _("Launch Nvidia Melody")))
         BashStatusBar.buttons.append( #Paint.net
-            App_Button(
-                bosh.tooldirs['PaintNET'],
+            Tooldir_Button(
+                'PaintNET',
                 imageList('paint.net%s.png'),
                 _("Launch Paint.NET")))
         BashStatusBar.buttons.append( #PaintShop Photo Pro
-            App_Button(
-                bosh.tooldirs['PaintShopPhotoPro'],
+            Tooldir_Button(
+                'PaintShopPhotoPro',
                 imageList('paintshopprox3%s.png'),
                 _("Launch PaintShop Photo Pro")))
         BashStatusBar.buttons.append( #Photoshop
-            App_Button(
-                bosh.tooldirs['PhotoshopPath'],
+            Tooldir_Button(
+                'PhotoshopPath',
                 imageList('photoshop%s.png'),
                 _("Launch Photoshop")))
         BashStatusBar.buttons.append( #PhotoScape
-            App_Button(
-                bosh.tooldirs['PhotoScape'],
+            Tooldir_Button(
+                'PhotoScape',
                 imageList('photoscape%s.png'),
                 _("Launch PhotoScape")))
         BashStatusBar.buttons.append( #PhotoSEAM
-            App_Button(
-                bosh.tooldirs['PhotoSEAM'],
+            Tooldir_Button(
+                'PhotoSEAM',
                 imageList('photoseam%s.png'),
                 _("Launch PhotoSEAM")))
         BashStatusBar.buttons.append( #Photobie Design Studio
-            App_Button(
-                bosh.tooldirs['Photobie'],
+            Tooldir_Button(
+                'Photobie',
                 imageList('photobie%s.png'),
                 _("Launch Photobie")))
         BashStatusBar.buttons.append( #PhotoFiltre
-            App_Button(
-                bosh.tooldirs['PhotoFiltre'],
+            Tooldir_Button(
+                'PhotoFiltre',
                 imageList('photofiltre%s.png'),
                 _("Launch PhotoFiltre")))
         BashStatusBar.buttons.append( #Pixel Studio Pro
-            App_Button(
-                bosh.tooldirs['PixelStudio'],
+            Tooldir_Button(
+                'PixelStudio',
                 imageList('pixelstudiopro%s.png'),
                 _("Launch Pixel Studio Pro")))
         BashStatusBar.buttons.append( #Pixia
-            App_Button(
-                bosh.tooldirs['Pixia'],
+            Tooldir_Button(
+                'Pixia',
                 imageList('pixia%s.png'),
                 _("Launch Pixia")))
         BashStatusBar.buttons.append( #TextureMaker
-            App_Button(
-                bosh.tooldirs['TextureMaker'],
+            Tooldir_Button(
+                'TextureMaker',
                 imageList('texturemaker%s.png'),
                 _("Launch TextureMaker")))
         BashStatusBar.buttons.append( #Twisted Brush
-            App_Button(
-                bosh.tooldirs['TwistedBrush'],
+            Tooldir_Button(
+                'TwistedBrush',
                 imageList('twistedbrush%s.png'),
                 _("Launch TwistedBrush")))
         BashStatusBar.buttons.append( #Windows Texture Viewer
-            App_Button(
-                bosh.tooldirs['WTV'],
+            Tooldir_Button(
+                'WTV',
                 imageList('wtv%s.png'),
                 _("Launch Windows Texture Viewer")))
         BashStatusBar.buttons.append( #xNormal
-            App_Button(
-                bosh.tooldirs['xNormal'],
+            Tooldir_Button(
+                'xNormal',
                 imageList('xnormal%s.png'),
                 _("Launch xNormal")))
         BashStatusBar.buttons.append( #XnView
-            App_Button(
-                bosh.tooldirs['XnView'],
+            Tooldir_Button(
+                'XnView',
                 imageList('xnview%s.png'),
                 _("Launch XnView")))
     if bosh.inisettings['ShowAudioToolLaunchers']:
         BashStatusBar.buttons.append( #Audacity
-            App_Button(
-                bosh.tooldirs['Audacity'],
+            Tooldir_Button(
+                'Audacity',
                 imageList('audacity%s.png'),
                 _("Launch Audacity")))
         BashStatusBar.buttons.append( #ABCAmberAudioConverter
-            App_Button(
-                bosh.tooldirs['ABCAmberAudioConverter'],
+            Tooldir_Button(
+                'ABCAmberAudioConverter',
                 imageList('abcamberaudioconverter%s.png'),
                 _("Launch ABC Amber Audio Converter")))
         BashStatusBar.buttons.append( #Switch
-            App_Button(
-                bosh.tooldirs['Switch'],
+            Tooldir_Button(
+                'Switch',
                 imageList('switch%s.png'),
                 _("Launch Switch")))
     BashStatusBar.buttons.append( #Fraps
-        App_Button(
-            bosh.tooldirs['Fraps'],
+        Tooldir_Button(
+            'Fraps',
             imageList('fraps%s.png'),
             _("Launch Fraps")))
     BashStatusBar.buttons.append( #MAP
-        App_Button(
-            bosh.tooldirs['MAP'],
+        Tooldir_Button(
+            'MAP',
             imageList('interactivemapofcyrodiil%s.png'),
             _("Interactive Map of Cyrodiil and Shivering Isles")))
     BashStatusBar.buttons.append( #LogitechKeyboard
-        App_Button(
-            bosh.tooldirs['LogitechKeyboard'],
+        Tooldir_Button(
+            'LogitechKeyboard',
             imageList('logitechkeyboard%s.png'),
             _("Launch LogitechKeyboard")))
     BashStatusBar.buttons.append( #MediaMonkey
-        App_Button(
-            bosh.tooldirs['MediaMonkey'],
+        Tooldir_Button(
+            'MediaMonkey',
             imageList('mediamonkey%s.png'),
             _("Launch MediaMonkey")))
     BashStatusBar.buttons.append( #NPP
-        App_Button(
-            bosh.tooldirs['NPP'],
+        Tooldir_Button(
+            'NPP',
             imageList('notepad++%s.png'),
             _("Launch Notepad++")))
     BashStatusBar.buttons.append( #Steam
-        App_Button(
-            bosh.tooldirs['Steam'],
+        Tooldir_Button(
+            'Steam',
             imageList('steam%s.png'),
             _("Launch Steam")))
     BashStatusBar.buttons.append( #EVGA Precision
-        App_Button(
-            bosh.tooldirs['EVGAPrecision'],
+        Tooldir_Button(
+            'EVGAPrecision',
             imageList('evgaprecision%s.png'),
             _("Launch EVGA Precision")))
     BashStatusBar.buttons.append( #WinMerge
-        App_Button(
-            bosh.tooldirs['WinMerge'],
+        Tooldir_Button(
+            'WinMerge',
             imageList('winmerge%s.png'),
             _("Launch WinMerge")))
     BashStatusBar.buttons.append( #Freemind
-        App_Button(
-            bosh.tooldirs['FreeMind'],
+        Tooldir_Button(
+            'FreeMind',
             imageList('freemind%s.png'),
             _("Launch FreeMind")))
     BashStatusBar.buttons.append( #Freeplane
-        App_Button(
-            bosh.tooldirs['Freeplane'],
+        Tooldir_Button(
+            'Freeplane',
             imageList('freeplane%s.png'),
             _("Launch Freeplane")))
     BashStatusBar.buttons.append( #FileZilla
-        App_Button(
-            bosh.tooldirs['FileZilla'],
+        Tooldir_Button(
+            'FileZilla',
             imageList('filezilla%s.png'),
             _("Launch FileZilla")))
     BashStatusBar.buttons.append( #EggTranslator
-        App_Button(
-            bosh.tooldirs['EggTranslator'],
+        Tooldir_Button(
+            'EggTranslator',
             imageList('eggtranslator%s.png'),
             _("Launch Egg Translator")))
     BashStatusBar.buttons.append( #RADVideoTools
-        App_Button(
-            bosh.tooldirs['RADVideo'],
+        Tooldir_Button(
+            'RADVideo',
             imageList('radvideotools%s.png'),
             _("Launch RAD Video Tools")))
     BashStatusBar.buttons.append( #WinSnap
-        App_Button(
-            bosh.tooldirs['WinSnap'],
+        Tooldir_Button(
+            'WinSnap',
             imageList('winsnap%s.png'),
             _("Launch WinSnap")))
     #--Custom Apps
@@ -16216,17 +16488,19 @@ def InitStatusBar():
                     icon,
                     (description),
                     workingDir=workingdir,
+                    canHide=False
                     ))
     #--Final couple
     BashStatusBar.buttons.append(
         App_Button(
             (bosh.dirs['mopy'].join('Wrye Bash Launcher.pyw'), '-d', '--bashmon'),
             imageList('bashmon%s.png'),
-            _("Launch BashMon")))
-    BashStatusBar.buttons.append(App_DocBrowser())
-    BashStatusBar.buttons.append(App_ModChecker())
-    BashStatusBar.buttons.append(App_Settings())
-    BashStatusBar.buttons.append(App_Help())
+            _("Launch BashMon"),
+            uid='Bashmon'))
+    BashStatusBar.buttons.append(App_DocBrowser(uid='DocBrowser'))
+    BashStatusBar.buttons.append(App_ModChecker(uid='ModChecker'))
+    BashStatusBar.buttons.append(App_Settings(uid='Settings',canHide=False))
+    BashStatusBar.buttons.append(App_Help(uid='Help',canHide=False))
 
 def InitMasterLinks():
     """Initialize master list menus."""
@@ -16777,6 +17051,7 @@ def InitSettingsLinks():
         for size in (16,24,32):
             sizeMenu.links.append(Settings_IconSize(size))
         SettingsMenu.append(sizeMenu)
+    SettingsMenu.append(Settings_UnHideButtons())
     SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
