@@ -516,7 +516,7 @@ def makeOOO_NoGuildOwnership():
                           0x0002C177])
         guildFactions = set([0x00022296,0x0002228F])
         changed = {}
-    
+
         for record in modFile.CELL:
             if record.fid in guildCells:
                 print record.eid
@@ -1262,7 +1262,7 @@ def createLSCR(*args):
     with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
         for master in data.masters:
             Current.addMod(master.stail)
-        Current.addMod(modName.stail,IgnoreExisting=True)
+        Current.addMod(modName.stail,CreateNew=True)
         Current.load()
         modFile = Current.LookupModFile(modName.stail)
         # Create overrides for each fid
