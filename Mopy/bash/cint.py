@@ -1335,9 +1335,10 @@ class CBashLIST_GROUP(object):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nElements)
+            if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
+            SetCopyList([self._Type(instance._RecordID, FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements)
 
 # Top level Descriptors
 class CBashLIST(object):
@@ -1352,9 +1353,10 @@ class CBashLIST(object):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nElements)
+            if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
+            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements)
 
 class CBashUNKNOWN_OR_GENERIC(object):
     __slots__ = ['_FieldID','_Type','_ResType']
@@ -1731,9 +1733,10 @@ class CBashLIST_LIST(object):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
         else:
             length = len(nElements)
+            if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements)
 
 class CBashGeneric_LIST(object):
     __slots__ = ['_ListFieldID','_Type','_ResType']
@@ -1972,9 +1975,10 @@ class CBashLIST_LISTX2(object):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
         else:
             length = len(nElements)
+            if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements if isinstance(nElements[0], tuple) else ExtractCopyList(nElements))
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements)
 
 class CBashGeneric_LISTX2(object):
     __slots__ = ['_ListX2FieldID','_Type','_ResType']
