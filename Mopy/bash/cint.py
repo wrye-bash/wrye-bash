@@ -970,7 +970,7 @@ class MGEFCode(object):
            This class should never be instantiated except by class MGEFCode(object)."""
 
         def __init__(self, shortID):
-            self.shortID = shortID
+            self.shortID = str(shortID) if isinstance(shortID, basestring) else shortID
 
         def __hash__(self):
             return hash((self.shortID, None))
@@ -15095,8 +15095,8 @@ class ObCollection:
     def DeleteAllCollections():
         return _CDeleteAllCollections()
 
-    def addMod(self, FileName, MinLoad=True, NoLoad=False, IgnoreExisting=False, Saveable=True, LoadMasters=True, Flags=None):
-##        //IgnoreExisting, Saveable, and LoadMasters are ignored if Flags is set
+    def addMod(self, FileName, MinLoad=True, NoLoad=False, CreateNew=False, Saveable=True, LoadMasters=True, Flags=None):
+##        //CreateNew, Saveable, and LoadMasters are ignored if Flags is set
 ##
 ##        //MinLoad and FullLoad are exclusive
 ##        // If both are set, FullLoad takes priority
@@ -15161,11 +15161,11 @@ class ObCollection:
 ##        fIsTrackNewTypes       = 0x00000100
 ##        fIsIndexLANDs          = 0x00000200
 ##        fIsFixupPlaceables     = 0x00000400
-##        fIsIgnoreExisting      = 0x00000800
+##        fIsCreateNew           = 0x00000800
 ##        fIsIgnoreAbsentMasters = 0x00001000
 ##        fIsSkipAllRecords      = 0x00002000
 
-        if Flags is None: Flags = 0x00000069 | (0x00000800 if IgnoreExisting else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
+        if Flags is None: Flags = 0x00000069 | (0x00000800 if CreateNew else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
         _CAddMod(self._CollectionID, str(FileName), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002))
         return None
 

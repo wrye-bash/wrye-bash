@@ -2784,7 +2784,7 @@ class SaveDetails(SashPanel):
                 ),0,wx.EXPAND|wx.TOP,4),
             (self.picture,1,wx.TOP|wx.EXPAND,4),
             )
-        mastersSizer = vSizer(    
+        mastersSizer = vSizer(
             (self.masters,1,wx.EXPAND|wx.TOP,4),
             (hSizer(
                 self.save,
@@ -6517,7 +6517,7 @@ class PatchDialog(wx.Dialog):
                         patcher.gList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_('Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
-        
+
     def DefaultConfig(self,event=None):
         """Revert configuration back to default"""
         patchConfigs = {}
@@ -10879,7 +10879,7 @@ class MasterList_CleanMasters(Link):
                     for i,mod in enumerate(remove):
                         if not checks.IsChecked(i):
                             newMasters.append(mod)
-                            
+
                 modFile.TES4.masters = newMasters
                 modFile.save()
                 dialog.Destroy()

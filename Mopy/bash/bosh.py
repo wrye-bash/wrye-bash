@@ -14505,7 +14505,7 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
             effects = self.readEffects(fields[12:], aliases, True)
             fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
         ins.close()
-    
+
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
         fid_stats = self.fid_stats
@@ -15678,7 +15678,7 @@ class ScriptText:
                     for line in text.split('\n'):
                         pos = line.find(';')
                         if pos == -1:
-                                tmp += line + '\n'       
+                                tmp += line + '\n'
                         elif pos == 0:
                             continue
                         else:
@@ -15813,7 +15813,7 @@ class CBash_ScriptText:
                     for line in text.split('\n'):
                         pos = line.find(';')
                         if pos == -1:
-                                tmp += line + '\n'       
+                                tmp += line + '\n'
                         elif pos == 0:
                             continue
                         else:
@@ -17506,7 +17506,7 @@ class PatchFile(ModFile):
     def modIsMergeable(modInfo,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
         reasons = ''
-        
+
         if modInfo.isEsm():
             if not verbose: return False
             reasons += _("\n.    Is esm.")
@@ -18017,7 +18017,7 @@ class CBash_PatchFile(ObModFile):
             if modInfos[name].mtime < self.patchTime:
                 self.Current.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
-        self.Current.addMod(self.patchName.temp.s, IgnoreExisting=True)
+        self.Current.addMod(self.patchName.temp.s, CreateNew=True)
         self.Current.load()
         try:
             patchFile = self.patchFile = self.Current.LookupModFile(self.patchName.temp.s)
@@ -18063,7 +18063,7 @@ class CBash_PatchFile(ObModFile):
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
         self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
         type_patchers = self.type_patchers
-        
+
         mod_patchers = type_patchers.get('MOD')
         if mod_patchers:
             mod_apply = [patcher.mod_apply for patcher in sorted(mod_patchers,key=attrgetter('editOrder')) if hasattr(patcher,'mod_apply')]
@@ -18610,7 +18610,7 @@ class MultiTweakItem:
     def isNew(self):
         """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
         return getattr(self, "_isNew", False)
-    
+
     def getListLabel(self):
         """Returns label to be used in list"""
         label = self.label
@@ -19127,7 +19127,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
             override = record.CopyAsOverride(self.patchFile, UseWinningParents=True)
             if override:
                 record._RecordID = override._RecordID
-                
+
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
@@ -22288,7 +22288,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         if not attrs:
             return
         face = record.ConflictDetails(attrs)
-            
+
         if ValidateDict(face, self.patchFile):
             fid = record.fid
             # Only save if different from the master record
@@ -25001,7 +25001,7 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
         log(_('* Grasses Normalized: %d') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
-            
+
 class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
     """Eliminates random variation in groundcover."""
     scanOrder = 32
@@ -25569,7 +25569,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
         choice = self.choiceValues[self.chosen][0] / 100
         if choice == 1: #Prevent any pointless changes if a custom value of 100 is used.
             return
-        
+
         if record.staticAtten:
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -27221,7 +27221,7 @@ class GmstTweaker(MultiTweaker):
             ),
         GmstTweak(_('Leveled Creature Max level difference'),
             _("Maximum difference to player level for leveled creatures."),
-            ('ILevCreaLevelDifferenceMax',),
+            ('iLevCreaLevelDifferenceMax',),
             ('1',1),
             ('5',5),
             ('[8]',8),
@@ -27874,7 +27874,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ),
         CBash_GmstTweak(_('Leveled Creature Max level difference'),
             _("Maximum difference to player level for leveled creatures."),
-            ('ILevCreaLevelDifferenceMax',),
+            ('iLevCreaLevelDifferenceMax',),
             ('1',1),
             ('5',5),
             ('[8]',8),
@@ -28232,7 +28232,6 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
                 if index == 0:
                     if effect.script:
                         schoolType = effect.schoolType
-                        print schoolType
                     else:
                         schoolType = mgef_school.get(effectId,6)
                 #--Non-hostile effect?
@@ -28250,8 +28249,6 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
             if record.IsFood:
                 newFull = '.' + newFull
             else:
-                print record.fid
-                print schoolType
                 label = ('','X')[isPoison] + 'ACDIMRU'[schoolType]
                 newFull = self.format % label + newFull
 
@@ -29503,7 +29500,7 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         """Edits patch file as desired. """
         recordId = record.fid
         if recordId != self.playerFid: #skip player record
-            choice = self.choiceValues[self.chosen][0]                
+            choice = self.choiceValues[self.chosen][0]
             if choice == 1 and record.IsMale: return
             elif choice == 2 and record.IsFemale: return
             self.initSkeletonCollections()
@@ -32564,7 +32561,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
+        self.scan(modFile,record,bashTags)
         if record._Type in ('HAIR','EYES'):
             return
 
