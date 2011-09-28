@@ -15433,6 +15433,17 @@ class StatusBar_Button(Link):
         else:
             event.Skip()
 
+    # Helper function to get OBSE version
+    @property
+    def obseVersion(self):
+        if bosh.inisettings['SteamInstall']:
+            file = 'obse_1_2_416.dll'
+        else:
+            file = 'obse_loader.exe'
+        version = bosh.dirs['app'].join(file).version
+        return '.'.join([str(x) for x in version])
+
+#------------------------------------------------------------------------------
 class App_Button(StatusBar_Button):
     """Launch an application."""
     obseButtons = []
@@ -15623,19 +15634,21 @@ class App_Button(StatusBar_Button):
         else:
             raise StateError(_('Application missing: %s') % self.exePath.s)
 
+#------------------------------------------------------------------------------
 class Tooldir_Button(App_Button):
     """Just an App_Button that's path is in bosh.tooldirs
        Use this to automatically set the uid for the App_Button."""
     def __init__(self,toolKey,images,tip,obseTip=None,obseArg=None,workingDir=None,canHide=True):
         App_Button.__init__(self,bosh.tooldirs[toolKey],images,tip,obseTip,obseArg,workingDir,toolKey,canHide)
 
+#------------------------------------------------------------------------------
 class App_Tes4Gecko(App_Button):
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.__class__ = App_Button
 
-
+#------------------------------------------------------------------------------
 class App_OblivionBookCreator(App_Button):
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
@@ -15705,6 +15718,10 @@ class App_BOSS(App_Button):
     def __init__(self, *args, **kwdargs):
         App_Button.__init__(self, *args, **kwdargs)
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
+        self.mainMenu.append(Mods_BOSSShowUpdate())
+        version = self.exePath.version
+        version = '.'.join([str(x) for x in version])
+        self.tip += ' ' + version
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
@@ -15766,10 +15783,35 @@ class App_BOSS(App_Button):
 #------------------------------------------------------------------------------
 class Oblivion_Button(App_Button):
     """Will close app on execute if autoquit is on."""
+    def __init__(self, *args, **kwdargs):
+        App_Button.__init__(self, *args, **kwdargs)
+        # Oblivion
+        tip = _('Launch Oblivion')
+        # + OBSE
+        tip += ' + OBSE %s' % self.obseVersion
+        self.obseTip = tip
+
     def Execute(self,event):
         App_Button.Execute(self,event)
         if settings.get('bash.autoQuit.on',False):
             bashFrame.Close()
+
+#------------------------------------------------------------------------------
+class TESCS_Button(App_Button):
+    """CS button.  Needs a special Tooltip when OBSE is enabled."""
+    def __init__(self, *args, **kwdargs):
+        App_Button.__init__(self,*args,**kwdargs)
+        # CS
+        tip = _('Launch TESCS')
+        # + OBSE
+        tip += ' + OBSE %s' % self.obseVersion
+        # + CSE
+        path = bosh.dirs['mods'].join('obse','plugins','Construction Set Extender.dll')
+        if path.exists():
+            version = path.version
+            version = '.'.join([str(x) for x in version])
+            tip += ' + CSE %s' % version
+        self.obseTip = tip
 
 #------------------------------------------------------------------------------
 class Obse_Button(StatusBar_Button):
@@ -15785,7 +15827,7 @@ class Obse_Button(StatusBar_Button):
         # BitmapButton
         image = images[('checkbox.green.off.%s'%settings['bash.statusbar.iconSize'],
                         'checkbox.green.on.%s'%settings['bash.statusbar.iconSize'])[state]]
-        tip = (_("OBSE Disabled"),_("OBSE Enabled"))[state]
+        tip = ((_("OBSE %s Disabled"),_("OBSE %s Enabled"))[state]) % self.obseVersion
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
         tipAttr = ('tip','obseTip')[state]
@@ -16002,12 +16044,11 @@ def InitStatusBar():
             '',
             uid='Oblivion'))
     BashStatusBar.buttons.append( #TESCS
-        App_Button(
+        TESCS_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
             imageList('tescs%s.png'),
             _("Launch TESCS"),
-            _("Launch TESCS + OBSE"),
-            '-editor',
+            obseArg='-editor',
             uid='TESCS'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(
