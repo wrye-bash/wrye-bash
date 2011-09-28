@@ -1686,7 +1686,7 @@ class ModList(List):
         modDetails.SetFile(detail)
         bashFrame.SetStatusCount()
         #--Saves
-        if refreshSaves:
+        if refreshSaves and saveList:
             saveList.RefreshUI()
 
     #--Populate Item
@@ -4880,7 +4880,6 @@ class BashStatusBar(wx.StatusBar):
         global statusBar
         statusBar = self
         self.SetFieldsCount(3)
-        buttons = BashStatusBar.buttons
         self.UpdateIconSizes()
         #--Bind events
         wx.EVT_SIZE(self,self.OnSize)
@@ -5300,8 +5299,9 @@ class ColorDialog(wx.Dialog):
         """Update the bashFrame with the new colors"""
         nb = bashFrame.notebook
         with balt.BusyCursor():
-            for i in range(nb.GetPageCount()):
-                nb.GetPage(i).RefreshUIColors()
+            for (className,title,panel) in tabInfo.itervalues():
+                if panel is not None:
+                    panel.RefreshUIColors()
 
     def UpdateUIButtons(self):
         # Apply All and Default All
