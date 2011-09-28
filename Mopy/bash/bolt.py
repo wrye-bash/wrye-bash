@@ -1104,15 +1104,20 @@ class Path(object):
 
     @property
     def version(self):
-        """File version (exe/dll) embeded in the file properties (windows only)."""
+        """File version (exe/dll) embeded in the file properties (windows only).
+           Trims leading and trailing zeros"""
         try:
             import win32api
             info = win32api.GetFileVersionInfo(self.s,'\\')
             ms = info['FileVersionMS']
             ls = info['FileVersionLS']
-            version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
+            version = [win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls)]
         except:
-            version = (0,0,0,0)
+            version = [0]
+        while len(version) > 1 and version[0] == 0:
+            version.pop(0)
+        while len(version) > 1 and version[-1] == 0:
+            version.pop()
         return version
 
     #--crc
