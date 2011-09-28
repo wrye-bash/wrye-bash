@@ -17928,7 +17928,7 @@ class CBash_PatchFile(ObModFile):
         self.worldOrphanMods = []
         self.unFilteredMods = []
         self.compiledAllMods = []
-        self.type_patchers = {}
+        self.group_patchers = {}
         self.indexMGEFs = False
         self.mgef_school = bush.mgef_school.copy()
         self.mgef_name = bush.mgef_name.copy()
@@ -17960,40 +17960,41 @@ class CBash_PatchFile(ObModFile):
         progress = progress.setFull(len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
             progress(index,_("Preparing\n%s") % patcher.getName())
-            patcher.initData(self.type_patchers,SubProgress(progress,index))
+            patcher.initData(self.group_patchers,SubProgress(progress,index))
         progress(progress.full,_('Patchers prepared.'))
 
-    def mergeModFile(self,modFile,progress,doFilter,iiMode):
-        """Copies contents of modFile into self."""
+    def mergeModFile(self,modFile,progress,doFilter,iiMode,group):
+        """Copies contents of modFile group into self."""
         mergeIds = self.mergeIds
         badForm = FormID(GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
-        for blockType, block in modFile.aggregates.iteritems():
-            iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
-            if iiSkipMerge: continue
-            for record in block:
-                if record.fid == badForm: continue
-                #--Include this record?
-                if record.IsWinning():
-                    if doFilter:
-                        if not record.fid.ValidateFormID(self): continue
-                        if not record.mergeFilter(self): continue
-                    override = record.CopyAsOverride(self, UseWinningParents=True)
-                    if override:
-                        mergeIds.add(override.fid)
+        iiSkipMerge = iiMode and group not in ('LVLC','LVLI','LVSP')
+        if iiSkipMerge: return
+        for record in getattr(modFile,group):
+            if record.fid == badForm: continue
+            #--Include this record?
+            if record.IsWinning():
+                if doFilter:
+                    if not record.fid.ValidateFormID(self): continue
+                    if not record.mergeFilter(self): continue
+                override = record.CopyAsOverride(self, UseWinningParents=True)
+                if override:
+                    mergeIds.add(override.fid)
 
     def buildPatch(self,progress):
         """Scans load+merge mods."""
         if not len(self.loadMods): return
-        typeOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
-                     'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
-                     'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
-                     'LIGH','MISC','STAT','GRAS','TREE','FLOR','FURN',
-                     'WEAP','AMMO','FACT','LVLC','LVLI','LVSP','NPC_',
-                     'CREA','CONT','SLGM','KEYM','ALCH','SBSP','SGST',
-                     'WTHR','QUST','IDLE','PACK','CSTY','LSCR','ANIO',
-                     'WATR','EFSH','CLMT','REGN','ACHRS','ACRES',
-                     'REFRS','PGRDS','LANDS','ROADS','INFOS','CELL',
-                     'CELLS','DIAL','WRLD']
+        #Parent records must be processed before any children
+        #EYES,HAIR must be processed before RACE
+        groupOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
+                      'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
+                      'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
+                      'LIGH','MISC','STAT','GRAS','TREE','FLOR','FURN',
+                      'WEAP','AMMO','FACT','LVLC','LVLI','LVSP','NPC_',
+                      'CREA','CONT','SLGM','KEYM','ALCH','SBSP','SGST',
+                      'WTHR','QUST','IDLE','PACK','CSTY','LSCR','ANIO',
+                      'WATR','EFSH','CLMT','REGN','DIAL','INFOS','WRLD',
+                      'ROADS','CELL','CELLS','PGRDS','LANDS','ACHRS',
+                      'ACRES','REFRS']
 
         iiModeSet = set(('InventOnly','IIM'))
         levelLists = set(('LVLC','LVLI','LVSP'))
@@ -18062,106 +18063,112 @@ class CBash_PatchFile(ObModFile):
                     record.UnloadRecord()
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
         self.completeMods = modInfos.getOrdered(self.allSet|self.scanSet)
-        type_patchers = self.type_patchers
+        group_patchers = self.group_patchers
 
-        mod_patchers = type_patchers.get('MOD')
+        mod_patchers = group_patchers.get('MOD')
         if mod_patchers:
             mod_apply = [patcher.mod_apply for patcher in sorted(mod_patchers,key=attrgetter('editOrder')) if hasattr(patcher,'mod_apply')]
-            del type_patchers['MOD']
+            del group_patchers['MOD']
             del mod_patchers
         else:
             mod_apply = []
-
-        numFinishers = 0
-        for type, patchers in type_patchers.iteritems():
-            for patcher in patchers:
-                if hasattr(patcher,'finishPatch'):
-                    numFinishers += 1
-                    break
-
-        progress = progress.setFull(len(self.completeMods) + max(numFinishers,1))
-        maxVersion = 0
-        for index,modName in enumerate(self.completeMods):
-            if modName == self.patchName: continue
+            
+        for modName in self.completeMods:
             modInfo = modInfos[modName]
             bashTags = modInfo.getBashTags()
-            isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
-            if modName in self.loadMods and 'Filter' in bashTags:
-                self.unFilteredMods.append(modName)
-            isMerged = modName in self.mergeSet
-            doFilter = isMerged and 'Filter' in bashTags
-            #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-            iiMode = isMerged and bool(iiModeSet & bashTags)
             try:
                 modFile = self.Current.LookupModFile(modInfo.getPath().stail)
             except KeyError, error:
                 print "completeMods"
                 print error[0]
                 continue
-            modGName = modFile.GName
             #--Error checks
+            if modName in self.loadMods and 'Filter' in bashTags:
+                self.unFilteredMods.append(modName)
             gls = modFile.LookupRecord(FormID(0x00025811))
             if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
                 self.compiledAllMods.append(modName)
-
+            isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if not isScanned:
                 for patcher in mod_apply:
                     patcher(modFile, bashTags)
 
+        numFinishers = 0
+        for group, patchers in group_patchers.iteritems():
+            for patcher in patchers:
+                if hasattr(patcher,'finishPatch'):
+                    numFinishers += 1
+                    break
+
+        progress = progress.setFull(len(groupOrder) + max(numFinishers,1))
+        maxVersion = 0
+        for index,group in enumerate(groupOrder):
+            patchers = group_patchers.get(group, None)
             pstate = 0
             subProgress = SubProgress(progress,index)
-            subProgress.setFull(max(len(type_patchers),1))
-            for type in typeOrder:
-                patchers = type_patchers.get(type, None)
-                if patchers is None: continue
-                iiFilter = IIMSet and not (iiMode or type in levelLists)
-                #Filter the used patchers as needed
-                if iiMode:
-                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
-                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
-                elif isScanned:
-                    applyPatchers = [] #Scanned mods should never be copied directly into the bashed patch.
-                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.allowUnloaded if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
-                else:
-                    applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
-                    scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
+            subProgress.setFull(max(len(self.completeMods),1))
+            for modName in self.completeMods:
+                if modName == self.patchName: continue
+                modInfo = modInfos[modName]
+                bashTags = modInfo.getBashTags()
+                isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
+                isMerged = modName in self.mergeSet
+                doFilter = isMerged and 'Filter' in bashTags
+                #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
+                iiMode = isMerged and bool(iiModeSet & bashTags)
+                iiFilter = IIMSet and not (iiMode or group in levelLists)
+                try:
+                    modFile = self.Current.LookupModFile(modInfo.getPath().stail)
+                except KeyError, error:
+                    print "completeMods"
+                    print error[0]
+                    continue
+                modGName = modFile.GName
 
-                #See if all the patchers were filtered out
-                if not (applyPatchers or scanPatchers): continue
-                subProgress(pstate,_("Patching...\n%s::%s") % (modFile.ModName,type))
-                pstate += 1
-                for record in getattr(modFile, type):
-                    #If conflicts is > 0, it will include all conflicts, even the record that called it
-                    #(i.e. len(conflicts) will never equal 1)
-                    #The winning record is at position 0, and the last record is the one most overridden
-                    if doFilter:
-                        if not record.fid.ValidateFormID(self): continue
-                        record.mergeFilter(self)
-
-                    if iiFilter:
-                        #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
-                        #They're basically a mixture of scanned and merged.
-                        #This effectively hides all non-level list records from the other patchers
-                        conflicts = [conflict for conflict in record.Conflicts() if conflict.GetParentMod().GName not in IIMSet]
-                        isWinning = (len(conflicts) < 2 or conflicts[0] == record)
+                if patchers:
+                    subProgress(pstate,_("Patching...\n%s::%s") % (modName.s,group))
+                    pstate += 1
+                    #Filter the used patchers as needed
+                    if iiMode:
+                        applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') and patcher.iiMode if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
+                        scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.iiMode if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
+                    elif isScanned:
+                        applyPatchers = [] #Scanned mods should never be copied directly into the bashed patch.
+                        scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') and patcher.allowUnloaded if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
                     else:
-                        #Prevents scanned records from being scanned twice if the scanned record loads later than the real winning record
-                        # (once when the real winning record is applied, and once when the scanned record is later encountered)
-                        if isScanned and record.IsWinning(True): #Not the most optimized, but works well enough
-                            continue #doesn't work if the record's been copied into the patch...needs work
-                        isWinning = record.IsWinning()
+                        applyPatchers = [patcher.apply for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'apply') if not patcher.applyRequiresChecked or (modGName in patcher.srcs)]
+                        scanPatchers = [patcher.scan for patcher in sorted(patchers,key=attrgetter('scanOrder')) if hasattr(patcher,'scan') if not patcher.scanRequiresChecked or (modGName in patcher.srcs)]
 
-                    if isWinning:
-                        curPatchers = applyPatchers
-                    else:
-                        curPatchers = scanPatchers
-                    for patcher in curPatchers:
-                        patcher(modFile, record, bashTags)
-                    record.UnloadRecord()
-            if isMerged:
-                progress(index,_("%s\nMerging...") % modFile.ModName)
-                self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
-            maxVersion = max(modFile.TES4.version, maxVersion)
+                    #See if all the patchers were filtered out
+                    if not (applyPatchers or scanPatchers): continue
+                    for record in getattr(modFile, group):
+                        #If conflicts is > 0, it will include all conflicts, even the record that called it
+                        #(i.e. len(conflicts) will never equal 1)
+                        #The winning record is at position 0, and the last record is the one most overridden
+                        if doFilter:
+                            if not record.fid.ValidateFormID(self): continue
+                            record.mergeFilter(self)
+
+                        if iiFilter:
+                            #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
+                            #They're basically a mixture of scanned and merged.
+                            #This effectively hides all non-level list records from the other patchers
+                            conflicts = [conflict for conflict in record.Conflicts() if conflict.GetParentMod().GName not in IIMSet]
+                            isWinning = (len(conflicts) < 2 or conflicts[0] == record)
+                        else:
+                            #Prevents scanned records from being scanned twice if the scanned record loads later than the real winning record
+                            # (once when the real winning record is applied, and once when the scanned record is later encountered)
+                            if isScanned and record.IsWinning(True): #Not the most optimized, but works well enough
+                                continue #doesn't work if the record's been copied into the patch...needs work
+                            isWinning = record.IsWinning()
+
+                        for patcher in applyPatchers if isWinning else scanPatchers:
+                            patcher(modFile, record, bashTags)
+                        record.UnloadRecord()
+                if isMerged:
+                    progress(index,_("%s\nMerging...\n%s") % (modFile.ModName,group))
+                    self.mergeModFile(modFile,nullProgress,doFilter,iiMode,group)
+                maxVersion = max(modFile.TES4.version, maxVersion)
         # Force 1.0 as max TES4 version for now, as we don't expext any new esp format changes,
         # and if they do come about, we can always change this.  Plus this will solve issues where
         # Mod files mistakenly get have the header version set > 1.0
@@ -18172,10 +18179,10 @@ class CBash_PatchFile(ObModFile):
         subProgress = SubProgress(progress,len(self.completeMods))
         subProgress.setFull(max(numFinishers,1))
         pstate = 0
-        for type, patchers in type_patchers.iteritems():
+        for group, patchers in group_patchers.iteritems():
             finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
             if finishPatchers:
-                subProgress(pstate,_("Final Patching...\n%s::%s") % (self.ModName,type))
+                subProgress(pstate,_("Final Patching...\n%s::%s") % (self.ModName,group))
                 pstate += 1
                 for patcher in finishPatchers:
                     patcher(self, subProgress)
@@ -18374,11 +18381,11 @@ class CBash_Patcher:
         """Returns the group types that this patcher checks"""
         return []
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-            type_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
         if self.allowUnloaded:
             loadMods = set([mod for mod in self.srcs if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
@@ -18718,12 +18725,12 @@ class CBash_MultiTweaker(CBash_Patcher):
     editOrder = 20
 
     #--Config Phase -----------------------------------------------------------
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for tweak in self.enabledTweaks:
             for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
+                group_patchers.setdefault(type,[]).append(tweak)
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
@@ -19082,7 +19089,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         self.new_eid = {} #--Maps new fid to new editor id
         self.mod_count_old_new = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
@@ -19101,7 +19108,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         if not self.isActive: return
 
         for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
+             group_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         return ['MOD','FACT','RACE','MGEF','SCPT','LTEX','ENCH',
@@ -20831,10 +20838,10 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         self.csvId_factions = {}
         self.class_mod_count = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
-        CBash_ImportPatcher.initData(self,type_patchers,progress)
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
         actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
@@ -21042,10 +21049,10 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         self.csvFid_faction_mod = {}
         self.mod_count = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
-        CBash_ImportPatcher.initData(self,type_patchers,progress)
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
         factionRelations = CBash_FactionRelations(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
@@ -22057,10 +22064,10 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         self.csvId_full = {}
         self.class_mod_count = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
-        CBash_ImportPatcher.initData(self,type_patchers,progress)
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
         fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
@@ -22848,10 +22855,10 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         self.class_attrs = CBash_ItemStats.class_attrs
         self.class_mod_count = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
-        CBash_ImportPatcher.initData(self,type_patchers,progress)
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
         itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         patchesDir = dirs['patches'].list()
@@ -22867,7 +22874,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
             self.csvFid_attr_value.update(nId_attr_value)
 
         for group in self.getTypes():
-             type_patchers.setdefault(group,[]).append(self)
+             group_patchers.setdefault(group,[]).append(self)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -23046,10 +23053,10 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.mod_count = {}
         self.attrs = None #set in initData
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
-        CBash_ImportPatcher.initData(self,type_patchers,progress)
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
         spellStats = CBash_SpellRecords(aliases=self.patchFile.aliases)
         self.attrs = spellStats.attrs
         progress.setFull(len(self.srcs))
@@ -29192,12 +29199,12 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
         patchFile.bodyTags = bodyTagPatcher.choiceValues[bodyTagPatcher.chosen][0]
         patchFile.indexMGEFs = True
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for tweak in self.enabledTweaks:
             for type in tweak.getTypes():
-                type_patchers.setdefault(type,[]).append(tweak)
+                group_patchers.setdefault(type,[]).append(tweak)
             tweak.format = tweak.choiceValues[tweak.chosen][0]
             if isinstance(tweak, CBash_NamesTweak_Body):
                 tweak.showStat = '%02d' in tweak.format
@@ -30903,11 +30910,11 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         self.SEFF = MGEFCode('SEFF')
         self.exhaustionId = FormID(self.cobl, 0x05139B)
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
+             group_patchers.setdefault(type,[]).append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
@@ -31610,11 +31617,11 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
         self.mFactable = set()
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-             type_patchers.setdefault(type,[]).append(self)
+             group_patchers.setdefault(type,[]).append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
@@ -32306,11 +32313,11 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
         self.racesPatched = set()
         self.fid_faction_mod = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-            type_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         return ['RACE']
@@ -32384,11 +32391,11 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.racesPatched = set()
         self.fid_attr_value = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-            type_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         return ['RACE']
@@ -32444,11 +32451,11 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         self.racesPatched = set()
         self.id_spells = {}
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-            type_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         return ['RACE']
@@ -32517,11 +32524,11 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         self.eye_meshes = {}
         self.finishedOnce = False
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-            type_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         return ['EYES','HAIR','RACE']
@@ -32782,10 +32789,10 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         for tweak in self.tweaks:
             tweak.initPatchFile(self.srcs,patchFile,loadMods)
 
-    def initData(self,type_patchers,progress):
+    def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         for tweak in self.tweaks:
-            tweak.initData(type_patchers,progress)
+            tweak.initData(group_patchers,progress)
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
