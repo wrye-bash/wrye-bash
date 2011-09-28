@@ -1872,7 +1872,7 @@ class ModList(List):
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
             self.DeleteSelected()
         ##Ctrl+Up and Ctrl+Down
-        elif ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN)) and
+        elif ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
                 for thisFile in self.GetSelected():
@@ -1882,7 +1882,7 @@ class ModList(List):
                         break
                 else:
                     orderKey = lambda x: self.items.index(x)
-                    moveMod = (-1,1)[event.GetKeyCode() == wx.WXK_DOWN]
+                    moveMod = (-1,1)[event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN)]
                     isReversed = (moveMod != -1)
                     for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
                         swapItem = self.items.index(thisFile) + moveMod
@@ -1914,7 +1914,7 @@ class ModList(List):
                 #--Check all that aren't
                 self.checkUncheckMod(*toActivate)
         ##Ctrl+A
-        elif event.ControlDown() and event.GetKeyCode() in (65,97):
+        elif event.ControlDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
 
@@ -1926,7 +1926,7 @@ class ModList(List):
     def OnLeftDown(self,event):
         """Left Down: Check/uncheck mods."""
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == 32:
+        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             self.list.SetDnD(False)
             self.checkUncheckMod(self.items[hitItem])
         else:
@@ -2716,13 +2716,13 @@ class SaveList(List):
     def OnKeyUp(self,event):
         """Char event: select all items"""
         ##Ctrl+A
-        if event.ControlDown() and event.GetKeyCode() in (65,97):
+        if event.ControlDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
     #--Event: Left Down
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == 32:
+        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
@@ -3281,11 +3281,11 @@ class InstallersList(balt.Tank):
     def OnChar(self,event):
         """Char event: Reorder."""
         ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
-        if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN))):
+        if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN))):
             if len(self.GetSelected()) < 1: return
             orderKey = lambda x: self.data.data[x].order
             maxPos = max(self.data.data[x].order for x in self.data.data)
-            if(event.GetKeyCode() == wx.WXK_DOWN):
+            if(event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN)):
                 moveMod = 1
                 visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[-1]) + 2
             else:
@@ -3305,7 +3305,7 @@ class InstallersList(balt.Tank):
             if len(self.GetSelected()):
                 path = self.data.dir.join(self.GetSelected()[0])
                 if path.exists(): path.start()
-        elif event.ControlDown() and event.GetKeyCode() == (ord('v')-ord('a')+1):
+        elif event.ControlDown() and event.GetKeyCode() == ord('V'):
             ##Ctrl+V
             if wx.TheClipboard.Open():
                 if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
@@ -3346,7 +3346,7 @@ class InstallersList(balt.Tank):
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         ##Ctrl+A - select all
-        if event.ControlDown() and event.GetKeyCode() in (65,97):
+        if event.ControlDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         ##Delete - delete
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
@@ -3359,7 +3359,7 @@ class InstallersList(balt.Tank):
                 if index != -1:
                     self.gList.EditLabel(index)
         ##Ctrl+Shift+N - Add a marker
-        elif (event.ControlDown() and event.ShiftDown()) and event.GetKeyCode() in (ord('n'),ord('N')):
+        elif (event.ControlDown() and event.ShiftDown()) and event.GetKeyCode() == ord('N'):
             index = self.GetIndex(GPath('===='))
             if index == -1:
                 self.data.addMarker('====')
@@ -3992,7 +3992,7 @@ class ScreensList(List):
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         ##Ctrl-A
-        if event.ControlDown() and event.GetKeyCode() in (65,97):
+        if event.ControlDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
 
@@ -4160,7 +4160,7 @@ class BSAList(List):
     #--Events ---------------------------------------------
     def OnChar(self,event):
         """Char event: Reordering."""
-        if (event.GetKeyCode() == 127):
+        if event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             self.DeleteSelected()
         event.Skip()
 
@@ -4172,7 +4172,7 @@ class BSAList(List):
     #--Event: Left Down
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == 32:
+        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
@@ -4487,7 +4487,7 @@ class MessageList(List):
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         ##Ctrl-A
-        if event.ControlDown() and event.GetKeyCode() in (65,97):
+        if event.ControlDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
 
