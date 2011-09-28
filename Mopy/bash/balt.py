@@ -92,7 +92,7 @@ def fonts():
         font_bold.SetWeight(wx.BOLD)
         font_italic.SetStyle(wx.SLANT)
     return (font_default, font_bold, font_italic)
-        
+
 # Settings --------------------------------------------------------------------
 _settings = {} #--Using applications should override this.
 sizes = {} #--Using applications should override this.
