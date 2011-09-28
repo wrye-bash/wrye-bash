@@ -18175,8 +18175,8 @@ class CBash_PatchFile(ObModFile):
         self.Current.ClearReferenceLog()
         self.TES4.version = min(maxVersion,1.0)
         #Finish the patch
-        progress(len(self.completeMods))
-        subProgress = SubProgress(progress,len(self.completeMods))
+        progress(len(groupOrder))
+        subProgress = SubProgress(progress,len(groupOrder))
         subProgress.setFull(max(numFinishers,1))
         pstate = 0
         for group, patchers in group_patchers.iteritems():
