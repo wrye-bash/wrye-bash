@@ -11079,10 +11079,10 @@ class MasterList_CleanMasters(Link):
         modInfo = self.window.fileInfo
         path = modInfo.getPath()
 
-        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+        with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
             Current.addMod(path.stail)
             Current.load()
-            modFile = collection.LookupModFile(path.stail)
+            modFile = Current.LookupModFile(path.stail)
             oldMasters = modFile.TES4.masters
             cleaned = modFile.CleanMasters()
 
@@ -11850,21 +11850,34 @@ class Mod_CreateDummyMasters(Link):
             return
         modInfo = bosh.modInfos[self.data[0]]
         lastTime = modInfo.mtime - 1
+        if settings['bash.CBashEnabled']:
+            newFiles = []
         refresh = []
         for master in modInfo.header.masters:
-            if master in bosh.modInfos.ordered:
+            if master in bosh.modInfos:
                 lastTime = bosh.modInfos[master].mtime
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(modInfo.dir,master)
             newTime = lastTime
             newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
-            newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
-            newFile.tes4.author = 'BASHED DUMMY'
-            newFile.safeSave()
-            #newInfo.writeAuthor('BASHED DUMMY')
-            bosh.modInfos.refresh()
             refresh.append(master)
+            if settings['bash.CBashEnabled']:
+                newFiles.append(Encode(newInfo.getPath().stail,'mbcs'))
+            else:
+                newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
+                newFile.tes4.author = Encode('BASHED DUMMY','mbcs')
+                newFile.safeSave()
+        if settings['bash.CBashEnabled']:
+            with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+                tempname = Encode('_DummyMaster.esp.tmp','mbcs')
+                Current.addMod(tempname, CreateNew=True)
+                Current.load()
+                modFile = Current.LookupModFile(tempname)
+                modFile.TES4.author = Encode('BASHED DUMMY','mbcs')
+                for newFile in newFiles:
+                    modFile.save(CloseCollection=False,DestinationName=newFile)
+        bashFrame.RefreshData()
         self.window.RefreshUI()
 
 class Mods_CleanDummyMasters(Link):
@@ -11898,7 +11911,7 @@ class Mods_CleanDummyMasters(Link):
 
         for fileName in remove:
             self.window.data.delete(fileName)
-        bosh.modInfos.refresh()
+        bashFrame.RefreshData()
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
