@@ -5031,11 +5031,23 @@ class BashStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             button = self.buttons[self.dragging]
             button.ReleaseMouse()
+            # -*- Hacky code! -*-
+            # Since we've got to CaptureMouse to do DnD properly,
+            # The button will never get a EVT_BUTTON event if you
+            # just click it.  Can't figure out a good way for the
+            # two to play nicely, so we'll just simulate it for now
+            released = self.HitTest(event)
+            if released != self.dragging: released = wx.NOT_FOUND
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             if self.moved:
                 self.moved = False
                 return
+            # -*- Rest of hacky code -*-
+            if released != wx.NOT_FOUND:
+                evt = wx.CommandEvent(wx.wxEVT_COMMAND_BUTTON_CLICKED,
+                                      button.GetId())
+                wx.PostEvent(button,evt)
         event.Skip()
 
     def OnDrag(self,event):
