@@ -12836,14 +12836,8 @@ class CBash_ActorFactions:
         group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,self.fid_eid,self.gotFactions
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False)
+            importFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
             Current.load()
-            try:
-                importFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ActorFactions:readFromMod"
-                print error[0]
-                return
 
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
@@ -12867,14 +12861,8 @@ class CBash_ActorFactions:
         """Exports faction data to specified mod."""
         group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ActorFactions:writeToMod"
-                print error[0]
-                return
 
             changed = {'CREA':0,'NPC_':0}
             types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
@@ -13090,14 +13078,8 @@ class CBash_ActorLevels:
         """Exports actor levels to specified mod."""
         mod_fid_levels = self.mod_fid_levels
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ActorLevels:writeToMod"
-                print error[0]
-                return
 
             changed = 0
             fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath('Unknown'),None))
@@ -13331,14 +13313,8 @@ class CBash_EditorIds:
         group_fid_eid,groups = self.group_fid_eid,self.groups
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_EditorIds:readFromMod"
-                print error[0]
-                return
 
             for group in groups:
                 fid_eid = group_fid_eid.setdefault(group[:4], {})
@@ -13352,14 +13328,8 @@ class CBash_EditorIds:
         group_fid_eid = self.group_fid_eid
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_EditorIds:writeToMod"
-                print error[0]
-                return
 
             changed = []
             for group,block in modFile.aggregates.iteritems():
@@ -13584,14 +13554,8 @@ class CBash_FactionRelations:
         fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,self.fid_eid,self.gotFactions
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
             Current.load()
-            try:
-                importFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_FactionRelations:readFromMod"
-                print error[0]
-                return
 
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
@@ -13632,14 +13596,8 @@ class CBash_FactionRelations:
         fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_FactionRelations:writeToMod"
-                print error[0]
-                return
 
             changed = 0
             for record in modFile.FACT:
@@ -13795,14 +13753,8 @@ class CBash_FidReplacer:
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             for newId in set(old_new.values()):
                 Current.addMod(modInfos[newId[0]].getPath().stail, Saveable=False)
-            Current.addMod(modInfo.getPath().stail)
+            modFile = Current.addMod(modInfo.getPath().stail)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_FidReplacer:updateMod"
-                print error[0]
-                return
 
             counts = modFile.UpdateReferences(old_new)
 
@@ -13926,14 +13878,8 @@ class CBash_FullNames:
         group_fid_name = self.group_fid_name
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_FullNames:readFromMod"
-                print error[0]
-                return
 
             for group in self.types:
                 fid_name = group_fid_name.setdefault(group[:4],{})
@@ -13950,14 +13896,8 @@ class CBash_FullNames:
         group_fid_name = self.group_fid_name
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_FullNames:writeToMod"
-                print error[0]
-                return
 
             changed = {}
             for group in self.types:
@@ -14058,14 +13998,8 @@ class CBash_MapMarkers:
         fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_MapMarkers:readFromMod"
-                print error[0]
-                return
 
             for record in modFile.REFRS:
                 if record.base == markerFid:
@@ -14078,14 +14012,8 @@ class CBash_MapMarkers:
         changed = []
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_MapMarkers:writeToMod"
-                print error[0]
-                return
 
             fid_markerdata = FormID.FilterValidDict(fid_markerdata, modFile, True, False)
             for record in modFile.REFRS:
@@ -14161,14 +14089,8 @@ class CBash_CellBlockInfo:
         celldata = self.celldata
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_CellBlockInfo:readFromMod"
-                print error[0]
-                return
 
             for record in modFile.CELLS:
                 celldata[record.eid] = record.bsb
@@ -14440,14 +14362,8 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
         fid_stats = self.fid_stats
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_SigilStoneDetails:readFromMod"
-                print error[0]
-                return
 
             for record in modFile.SGST:
                 fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath,
@@ -14459,14 +14375,8 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
         changed = []
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_SigilStoneDetails:writeToMod"
-                print error[0]
-                return
 
             fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
             for record in modFile.SGST:
@@ -14792,14 +14702,8 @@ class CBash_ItemStats:
         class_fid_attr_value = self.class_fid_attr_value
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ItemStats:readFromMod"
-                print error[0]
-                return
 
             for group, attrs in self.class_attrs.iteritems():
                 for record in getattr(modFile,group):
@@ -14810,14 +14714,8 @@ class CBash_ItemStats:
         class_fid_attr_value = self.class_fid_attr_value
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ItemStats:writeToMod"
-                print error[0]
-                return
 
             changed = {} #--changed[modName] = numChanged
             for group, fid_attr_value in class_fid_attr_value.iteritems():
@@ -15033,14 +14931,8 @@ class CBash_ItemPrices:
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ItemPrices:readFromMod"
-                print error[0]
-                return
 
             for group, fid_stats in class_fid_stats.iteritems():
                 for record in getattr(modFile,group):
@@ -15051,14 +14943,8 @@ class CBash_ItemPrices:
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ItemPrices:writeToMod"
-                print error[0]
-                return
 
             changed = {} #--changed[modName] = numChanged
             for group, fid_stats in class_fid_stats.iteritems():
@@ -15363,14 +15249,8 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         class_fid_values = self.class_fid_values
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_CompleteItemData:readFromMod"
-                print error[0]
-                return
 
             for group in pickupables:
                 for record in getattr(modFile,group):
@@ -15386,14 +15266,8 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         class_fid_attr_value = self.class_fid_attr_value
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_CompleteItemData:writeToMod"
-                print error[0]
-                return
 
             changed = {} #--changed[modName] = numChanged
             for group, fid_attr_value in class_fid_attr_value.iteritems():
@@ -15711,14 +15585,8 @@ class CBash_ScriptText:
         eid_data = self.eid_data
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ScriptText:readFromMod"
-                print error[0]
-                return
 
             progress = balt.Progress(_("Export Scripts"))
             try:
@@ -15739,14 +15607,8 @@ class CBash_ScriptText:
         added = []
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_ScriptText:writeToMod"
-                print error[0]
-                return
 
             for record in modFile.SCPT:
                 eid = record.eid
@@ -16049,14 +15911,8 @@ class CBash_SpellRecords(UsesEffectsMixin):
         fid_stats, attrs = self.fid_stats, self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_SpellRecords:readFromMod"
-                print error[0]
-                return
 
             for record in modFile.SPEL:
                 fid_stats[record.fid] = map(record.__getattribute__, attrs)
@@ -16066,14 +15922,8 @@ class CBash_SpellRecords(UsesEffectsMixin):
         fid_stats, attrs = self.fid_stats, self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_SpellRecords:writeToMod"
-                print error[0]
-                return
 
             changed = []
             for record in modFile.SPEL:
@@ -16281,14 +16131,8 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         fid_stats = self.fid_stats
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_IngredientDetails:readFromMod"
-                print error[0]
-                return
 
             for record in modFile.INGR:
                 fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
@@ -16299,14 +16143,9 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         changed = []
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "CBash_IngredientDetails:writeToMod"
-                print error[0]
-                return
+
             fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
             for record in modFile.INGR:
                 newStats = fid_stats.get(record.fid, None)
@@ -17852,14 +17691,8 @@ class CBash_PatchFile(ObModFile):
         #--Load test
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             #MinLoad, InLoadOrder, AddMasters, TrackNewTypes, SkipAllRecords
-            Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
+            modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
             Current.load()
-            try:
-                modFile = Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "modIsMergeableLoad"
-                print error[0]
-                return
 
             missingMasters = []
             nonActiveMasters = []
@@ -18029,15 +17862,10 @@ class CBash_PatchFile(ObModFile):
             if modInfos[name].mtime < self.patchTime:
                 self.Current.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
-        self.Current.addMod(self.patchName.temp.s, CreateNew=True)
+        patchFile = self.patchFile = self.Current.addMod(self.patchName.temp.s, CreateNew=True)
         self.Current.load()
-        try:
-            patchFile = self.patchFile = self.Current.LookupModFile(self.patchName.temp.s)
-        except KeyError, error:
-            print "buildPatch"
-            print error[0]
-            return
-        if self.Current.LookupModFileLoadOrder(self.patchName.temp.s) == 0:
+
+        if self.Current.LookupModFileLoadOrder(Encode(self.patchName.temp.s,'mbcs')) <= 0:
             print _("Please copy this entire message and report it on the current official thread at "
                     "http://forums.bethsoft.com/index.php?/forum/25-mods/.\n Also with:\n1. Your OS:"
                     "\n2. Your installed MS Visual C++ redistributable versions:\n3. Your system RAM "
@@ -18057,12 +17885,7 @@ class CBash_PatchFile(ObModFile):
             self.mgef_school.clear()
             self.mgef_name.clear()
             for modName in self.allMods:
-                try:
-                    modFile = self.Current.LookupModFile(modName.s)
-                except KeyError, error:
-                    print "indexMGEFs"
-                    print error[0]
-                    continue
+                modFile = self.Current.LookupModFile(modName.s)
                 for record in modFile.MGEF:
                     full = record.full
                     eid = record.eid
@@ -18087,12 +17910,8 @@ class CBash_PatchFile(ObModFile):
         for modName in self.completeMods:
             modInfo = modInfos[modName]
             bashTags = modInfo.getBashTags()
-            try:
-                modFile = self.Current.LookupModFile(modInfo.getPath().stail)
-            except KeyError, error:
-                print "completeMods"
-                print error[0]
-                continue
+            modFile = self.Current.LookupModFile(modInfo.getPath().stail)
+
             #--Error checks
             if modName in self.loadMods and 'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
@@ -18128,12 +17947,7 @@ class CBash_PatchFile(ObModFile):
                 #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
                 iiMode = isMerged and bool(iiModeSet & bashTags)
                 iiFilter = IIMSet and not (iiMode or group in levelLists)
-                try:
-                    modFile = self.Current.LookupModFile(modInfo.getPath().stail)
-                except KeyError, error:
-                    print "completeMods"
-                    print error[0]
-                    continue
+                modFile = self.Current.LookupModFile(modInfo.getPath().stail)
                 modGName = modFile.GName
 
                 if patchers:
@@ -26726,7 +26540,7 @@ class GmstTweaker(MultiTweaker):
             (_('10 Minutes'),600.0),
             (_('30 Minutes'),1800.0),
             (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),90),
+            (_('Custom (in seconds)'),90.0),
             ),
         GmstTweak(_('Arrow: Recovery from Actor'),
             _("Chance that an arrow shot into an actor can be recovered."),
@@ -26752,7 +26566,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.6'),1500.0*2.6),
             (_('x 2.8'),1500.0*2.8),
             (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500),
+            (_('Custom (base is 1500)'),1500.0),
             ),
         GmstTweak(_('Camera: Chase Tightness'),
             _("Tightness of chase camera to player turning."),
@@ -26761,8 +26575,8 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.0'),8.0,8.0),
             (_('x 3.0'),12.0,12.0),
             (_('x 5.0'),20.0,20.0),
-            (_('ChaseCameraMod.esp (x 24.75)'),99,99),
-            (_('Custom'),4,4),
+            (_('ChaseCameraMod.esp (x 24.75)'),99.0,99.0),
+            (_('Custom'),4.0,4.0),
             ),
         GmstTweak(_('Camera: Chase Distance'),
             _("Distance camera can be moved away from PC using mouse wheel."),
@@ -26772,7 +26586,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
             (_('x 5'),  600.0*5.0, 1000.0,    0.3),
             (_('x 10'), 600.0*10,  2000.0,    0.3),
-            (_('Custom'),600,      300,       0.15),
+            (_('Custom'),600.0,     300.0,    0.15),
             ),
         GmstTweak(_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
@@ -26808,7 +26622,7 @@ class GmstTweaker(MultiTweaker):
             (_('2 Minutes'),2*60.0),
             (_('3 Minutes'),3*60.0),
             (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),10),
+            (_('Custom (in seconds)'),10.0),
             ),
         GmstTweak(_('Fatigue from Running/Encumbrance'),
             _("Fatigue cost of running and encumbrance."),
@@ -26818,7 +26632,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),24.0,12.0),
             (_('x 4'),32.0,16.0),
             (_('x 5'),40.0,20.0),
-            (_('Custom'),8,4),
+            (_('Custom'),8.0,4.0),
             ),
         GmstTweak(_('Horse Turning Speed'),
             _("Speed at which horses turn."),
@@ -26837,7 +26651,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 1.8'),164.0*1.8),
             (_('x 2.0'),164.0*2.0),
             (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),164),
+            (_('Custom (base 164)'),164.0),
             ),
         GmstTweak(_('Camera: PC Death Time'),
             _("Time after player's death before reload menu appears."),
@@ -26847,7 +26661,7 @@ class GmstTweaker(MultiTweaker):
             (_('1 Minute'),60.0),
             (_('5 Minute'),300.0),
             (_('Unlimited'),9999999.0),
-            (_('Custom'),15),
+            (_('Custom'),15.0),
             ),
         GmstTweak(_('Cell Respawn Time'),
             _("Time before unvisited cell respawns. But longer times increase save sizes."),
@@ -26881,7 +26695,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.6'),1000.0*2.6),
             (_('x 2.8'),1000.0*2.8),
             (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),1000),
+            (_('Custom (base 1000)'),1000.0),
             ),
         GmstTweak(_('Msg: Equip Misc. Item'),
             _("Message upon equipping misc. item."),
@@ -27044,7 +26858,7 @@ class GmstTweaker(MultiTweaker):
             ('90',90.0),
             ('120',120.0),
             ('150',150.0),
-            (_('Custom'),10),
+            (_('Custom'),10.0),
             ),
         GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
@@ -27054,7 +26868,7 @@ class GmstTweaker(MultiTweaker):
             ('8',8.0),
             ('10',10.0),
             ('15',15.0),
-            (_('Custom'),3),
+            (_('Custom'),3.0),
             ),
         GmstTweak(_('AI: Max Active Actors'),
             _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
@@ -27170,7 +26984,7 @@ class GmstTweaker(MultiTweaker):
             ('[85]',85.0),
             ('90',90.0),
             ('95',95.0),
-            (_('Custom'),85),
+            (_('Custom'),85.0),
             ),
         GmstTweak(_('Warning: Interior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
@@ -27182,7 +26996,7 @@ class GmstTweaker(MultiTweaker):
             ('[2000]',2000.0),
             ('3000',3000.0),
             ('4000',4000.0),
-            (_('Custom'),2000),
+            (_('Custom'),2000.0),
             ),
         GmstTweak(_('Warning: Exterior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
@@ -27196,7 +27010,7 @@ class GmstTweaker(MultiTweaker):
             ('4000',4000.0),
             ('5000',5000.0),
             ('6000',6000.0),
-            (_('Custom'),3000),
+            (_('Custom'),3000.0),
             ),
         GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
@@ -27215,7 +27029,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-            (_('Custom'),15,20,20,3,10,2.5),
+            (_('Custom'),15,20,20,3,10.0,2.5),
             ),
         GmstTweak(_('Inventory Quantity Prompt'),
             _("Number of items in a stack at which point Oblivion prompts for a quantity."),
@@ -27281,7 +27095,7 @@ class GmstTweaker(MultiTweaker):
             ('10',10.0),
             ('20',20.0),
             (_('Unlimited'),999999.0),
-            (_('Custom'),5),
+            (_('Custom'),5.0),
             ),
         GmstTweak(_('NPC Blood'),
             _("NPC Blood Splatter Textures."),
@@ -27293,33 +27107,33 @@ class GmstTweaker(MultiTweaker):
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
             (_('No Smiles'),0.0),
-            (_('[Default (128)]'),128),
-            (_('Custom'),128),
+            (_('[Default (128)]'),128.0),
+            (_('Custom'),128.0),
             ),
         GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
             (_('MovableBodies.esp (1500)'),1500.0),
-            (_('[Default (150)]'),150),
-            (_('Custom'),150),
+            (_('[Default (150)]'),150.0),
+            (_('Custom'),150.0),
             ),
         GmstTweak(_('AI: Conversation Chance'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player)."),
             ('fAISocialchanceForConversation',),
-            (_('10'),10),
-            (_('25'),25),
-            (_('50'),50),
-            (_('[100]'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('25'),25.0),
+            (_('50'),50.0),
+            (_('[100]'),100.0),
+            (_('Custom'),100.0),
             ),
         GmstTweak(_('AI: Conversation Chance - Interior'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
             ('fAISocialchanceForConversationInterior',),
-            (_('10'),10),
-            (_('[25]'),25),
-            (_('50'),50),
-            (_('100'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('[25]'),25.0),
+            (_('50'),50.0),
+            (_('100'),100.0),
+            (_('Custom'),100.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
@@ -27379,7 +27193,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('10 Minutes'),600.0),
             (_('30 Minutes'),1800.0),
             (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),90),
+            (_('Custom (in seconds)'),90.0),
             ),
         CBash_GmstTweak(_('Arrow: Recovery from Actor'),
             _("Chance that an arrow shot into an actor can be recovered."),
@@ -27405,7 +27219,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 2.6'),1500.0*2.6),
             (_('x 2.8'),1500.0*2.8),
             (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500),
+            (_('Custom (base is 1500)'),1500.0),
             ),
         CBash_GmstTweak(_('Camera: Chase Tightness'),
             _("Tightness of chase camera to player turning."),
@@ -27415,7 +27229,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3.0'),12.0,12.0),
             (_('x 5.0'),20.0,20.0),
             (_('ChaseCameraMod.esp (x 24.75)'),99,99),
-            (_('Custom'),4,4),
+            (_('Custom'),4.0,4.0),
             ),
         CBash_GmstTweak(_('Camera: Chase Distance'),
             _("Distance camera can be moved away from PC using mouse wheel."),
@@ -27425,7 +27239,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
             (_('x 5'),  600.0*5.0, 1000.0,    0.3),
             (_('x 10'), 600.0*10,  2000.0,    0.3),
-            (_('Custom'),600,      300,       0.15),
+            (_('Custom'),600.0,     300.0,    0.15),
             ),
         CBash_GmstTweak(_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
@@ -27461,7 +27275,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('2 Minutes'),2*60.0),
             (_('3 Minutes'),3*60.0),
             (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),10),
+            (_('Custom (in seconds)'),10.0),
             ),
         CBash_GmstTweak(_('Fatigue from Running/Encumbrance'),
             _("Fatigue cost of running and encumbrance."),
@@ -27471,7 +27285,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),24.0,12.0),
             (_('x 4'),32.0,16.0),
             (_('x 5'),40.0,20.0),
-            (_('Custom'),8,4),
+            (_('Custom'),8.0,4.0),
             ),
         CBash_GmstTweak(_('Horse Turning Speed'),
             _("Speed at which horses turn."),
@@ -27490,7 +27304,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 1.8'),164.0*1.8),
             (_('x 2.0'),164.0*2.0),
             (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),164),
+            (_('Custom (base 164)'),164.0),
             ),
         CBash_GmstTweak(_('Camera: PC Death Time'),
             _("Time after player's death before reload menu appears."),
@@ -27500,7 +27314,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('1 Minute'),60.0),
             (_('5 Minute'),300.0),
             (_('Unlimited'),9999999.0),
-            (_('Custom'),15),
+            (_('Custom'),15.0),
             ),
         CBash_GmstTweak(_('Cell Respawn Time'),
             _("Time before unvisited cell respawns. But longer times increase save sizes."),
@@ -27534,7 +27348,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 2.6'),1000.0*2.6),
             (_('x 2.8'),1000.0*2.8),
             (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),1000),
+            (_('Custom (base 1000)'),1000.0),
             ),
         CBash_GmstTweak(_('Msg: Equip Misc. Item'),
             _("Message upon equipping misc. item."),
@@ -27697,7 +27511,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('90',90.0),
             ('120',120.0),
             ('150',150.0),
-            (_('Custom'),10),
+            (_('Custom'),10.0),
             ),
         CBash_GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
@@ -27707,7 +27521,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('8',8.0),
             ('10',10.0),
             ('15',15.0),
-            (_('Custom'),3),
+            (_('Custom'),3.0),
             ),
         CBash_GmstTweak(_('AI: Max Active Actors'),
             _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
@@ -27823,7 +27637,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[85]',85.0),
             ('90',90.0),
             ('95',95.0),
-            (_('Custom'),85),
+            (_('Custom'),85.0),
             ),
         CBash_GmstTweak(_('Warning: Interior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
@@ -27835,7 +27649,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[2000]',2000.0),
             ('3000',3000.0),
             ('4000',4000.0),
-            (_('Custom'),2000),
+            (_('Custom'),2000.0),
             ),
         CBash_GmstTweak(_('Warning: Exterior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
@@ -27849,7 +27663,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('4000',4000.0),
             ('5000',5000.0),
             ('6000',6000.0),
-            (_('Custom'),3000),
+            (_('Custom'),3000.0),
             ),
         CBash_GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
@@ -27868,7 +27682,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-            (_('Custom'),15,20,20,3,10,2.5),
+            (_('Custom'),15,20,20,3,10.0,2.5),
             ),
         CBash_GmstTweak(_('Inventory Quantity Prompt'),
             _("Number of items in a stack at which point Oblivion prompts for a quantity."),
@@ -27934,7 +27748,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('10',10.0),
             ('20',20.0),
             (_('Unlimited'),999999.0),
-            (_('Custom'),5),
+            (_('Custom'),5.0),
             ),
         CBash_GmstTweak(_('NPC Blood'),
             _("NPC Blood Splatter Textures."),
@@ -27946,33 +27760,33 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
             (_('No Smiles'),0.0),
-            (_('[Default (128)]'),128),
-            (_('Custom'),128),
+            (_('[Default (128)]'),128.0),
+            (_('Custom'),128.0),
             ),
         CBash_GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
             (_('MovableBodies.esp'),1500.0),
-            (_('[Default (150)]'),150),
-            (_('Custom'),150),
+            (_('[Default (150)]'),150.0),
+            (_('Custom'),150.0),
             ),
         CBash_GmstTweak(_('AI: Conversation Chance'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player)."),
             ('fAISocialchanceForConversation',),
-            (_('10'),10),
-            (_('25'),25),
-            (_('50'),50),
-            (_('[100]'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('25'),25.0),
+            (_('50'),50.0),
+            (_('[100]'),100.0),
+            (_('Custom'),100.0),
             ),
         CBash_GmstTweak(_('AI: Conversation Chance - Interior'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
             ('fAISocialchanceForConversationInterior',),
-            (_('10'),10),
-            (_('[25]'),25),
-            (_('50'),50),
-            (_('100'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('[25]'),25.0),
+            (_('50'),50.0),
+            (_('100'),100.0),
+            (_('Custom'),100.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
@@ -30743,17 +30557,19 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                     except KeyError:
                         if not self.DebugPrintOnce:
                             self.DebugPrintOnce = 1
-                            deprint(patchFile.Current.Debug_DumpModFiles())
-                            deprint()
-                            deprint('mgef_name:', mgef_name)
-                            deprint()
-                            deprint('mgef:', mgef)
-                            deprint()
+                            print patchFile.Current.Debug_DumpModFiles()
+                            print
+                            print 'mgef_name:', mgef_name
+                            print
+                            print 'mgef:', mgef
+                            print
+                            if mgef in bush.mgef_name:
+                                print 'mgef found in bush.mgef_name'
+                            else:
+                                print 'mgef not found in bush.mgef_name'
                         if mgef in bush.mgef_name:
-                            deprint('mgef found in bush.mgef_name')
                             effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                         else:
-                            deprint('mgef not found in bush.mgef_name')
                             effectName = 'Unknown Effect'
                     effectName = Encode(effectName,'mbcs')
                     if mgef in actorEffects: effectName += Encode(actorNames[effect[5]],'mbcs') #actorValue field
@@ -30770,15 +30586,19 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 except KeyError:
                     if not self.DebugPrintOnce:
                         self.DebugPrintOnce = 1
-                        deprint(patchFile.Current.Debug_DumpModFiles())
-                        deprint()
-                        deprint(mgef_name)
-                        deprint()
+                        print patchFile.Current.Debug_DumpModFiles()
+                        print
+                        print 'mgef_name:', mgef_name
+                        print
+                        print 'mgef:', mgef
+                        print
+                        if mgef in bush.mgef_name:
+                            print 'mgef found in bush.mgef_name'
+                        else:
+                            print 'mgef not found in bush.mgef_name'
                     if mgef in bush.mgef_name:
-                        deprint('mgef found in bush.mgef_name')
                         effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
                     else:
-                        deprint('mgef not found in bush.mgef_name')
                         effectName = 'Unknown Effect'
                 effectName = Encode(effectName,'mbcs')
                 if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
@@ -31711,12 +31531,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         subProgress = SubProgress(progress)
         subProgress.setFull(max(len(mFactable),1))
         pstate = 0
-        try:
-            coblMod = patchFile.Current.LookupModFile(self.cobl.s)
-        except KeyError, error:
-            print "CBash_MFactMarker:finishPatch"
-            print error[0]
-            return
+        coblMod = patchFile.Current.LookupModFile(self.cobl.s)
 
         record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':

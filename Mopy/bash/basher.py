@@ -11100,9 +11100,8 @@ class MasterList_CleanMasters(Link):
         path = modInfo.getPath()
 
         with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
-            Current.addMod(path.stail)
+            modFile = Current.addMod(path.stail)
             Current.load()
-            modFile = Current.LookupModFile(path.stail)
             oldMasters = modFile.TES4.masters
             cleaned = modFile.CleanMasters()
 
@@ -11891,9 +11890,8 @@ class Mod_CreateDummyMasters(Link):
         if settings['bash.CBashEnabled']:
             with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
                 tempname = Encode('_DummyMaster.esp.tmp','mbcs')
-                Current.addMod(tempname, CreateNew=True)
+                modFile = Current.addMod(tempname, CreateNew=True)
                 Current.load()
-                modFile = Current.LookupModFile(tempname)
                 modFile.TES4.author = Encode('BASHED DUMMY','mbcs')
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
