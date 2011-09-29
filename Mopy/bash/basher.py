@@ -11897,10 +11897,15 @@ class Mods_CleanDummyMasters(Link):
             fileInfo = bosh.modInfos[fileName]
             if fileInfo.header.author == 'BASHED DUMMY':
                 remove.append(fileName)
-        message = _(r'Delete these files? This operation cannot be undone.')
-        message += '\n* ' + '\n* '.join(sorted(x.s for x in remove))
-        if not balt.askYes(self.window,message,_('Delete Files')):
+
+        message = [_(''),_(r'Uncheck items to skip deleting them if desired.')]
+        message.extend(sorted(remove))
+        dialog = ListBoxes(bashFrame,_('Delete Dummy Masters'),
+                     _(r'Delete these items? This operation cannot be undone.'),
+                     [message])
+        if dialog.ShowModal() == wx.ID_CANCEL:
             return
+
         for fileName in remove:
             self.window.data.delete(fileName)
         bosh.modInfos.refresh()
