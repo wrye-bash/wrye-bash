@@ -84,6 +84,7 @@ def Unicode(name,tryFirstEncoding=False):
     return name
 
 def Encode(name,tryFirstEncoding=False):
+    if isinstance(name,Path): name = str(name)
     if not bUseUnicode: return name #don't change if not unicode mode.
     if isinstance(name,str): return name
     if isinstance(name,unicode):

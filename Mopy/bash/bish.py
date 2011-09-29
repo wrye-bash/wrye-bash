@@ -1007,9 +1007,8 @@ def dumpLSCR(fileName='Oblivion.esm'):
     #--Load up in CBash
     import cint
     with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
-        Current.addMod(fileName.stail)
+        modFile = Current.addMod(fileName.stail)
         Current.load()
-        modFile = Current.LookupModFile(fileName.stail)
         #--Dump the info
         outFile = GPath(fileName.root+'.csv')
         with outFile.open('w') as file:
@@ -1262,9 +1261,8 @@ def createLSCR(*args):
     with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
         for master in data.masters:
             Current.addMod(master.stail)
-        Current.addMod(modName.stail,CreateNew=True)
+        modFile = Current.addMod(modName.stail,CreateNew=True)
         Current.load()
-        modFile = Current.LookupModFile(modName.stail)
         # Create overrides for each fid
         extraDDS = set()
         extraDESC = set()
