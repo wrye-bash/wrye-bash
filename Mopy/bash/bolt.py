@@ -51,6 +51,9 @@ if os.name == 'nt':
         import _subprocess
         startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
 
+#-- Forward declarations
+class Path(object): pass
+
 
 # Unicode Strings -------------------------------------------------------------
 # See Python's "aliases.py" for a list of possible encodings
