@@ -17965,17 +17965,28 @@ class CBash_PatchFile(ObModFile):
 
     def mergeModFile(self,modFile,progress,doFilter,iiMode,group):
         """Copies contents of modFile group into self."""
+        if iiMode and group not in ('LVLC','LVLI','LVSP'): return
         mergeIds = self.mergeIds
         badForm = FormID(GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
-        iiSkipMerge = iiMode and group not in ('LVLC','LVLI','LVSP')
-        if iiSkipMerge: return
         for record in getattr(modFile,group):
-            if record.fid == badForm: continue
+            fid = record.fid
+            if not fid.ValidateFormID(self): continue
+            if fid == badForm: continue
             #--Include this record?
             if record.IsWinning():
-                if doFilter:
-                    if not record.fid.ValidateFormID(self): continue
-                    if not record.mergeFilter(self): continue
+                if record.HasInvalidFormIDs():
+                    if doFilter:
+                        record.mergeFilter(self)                        
+                        if record.HasInvalidFormIDs():
+                            print "Debugging mergeModFile - Skipping", fid, "in mod (", record.GetParentMod().ModName, ")due to failed merge filter"
+                            dump_record(record)
+                            print
+                            continue
+                    else:
+                        print "Debugging mergeModFile - Skipping", fid, "in mod (", record.GetParentMod().ModName, ")due to invalid formIDs"
+                        dump_record(record)
+                        print
+                        continue
                 override = record.CopyAsOverride(self, UseWinningParents=True)
                 if override:
                     mergeIds.add(override.fid)
@@ -18147,7 +18158,19 @@ class CBash_PatchFile(ObModFile):
                         #The winning record is at position 0, and the last record is the one most overridden
                         if doFilter:
                             if not record.fid.ValidateFormID(self): continue
-                            record.mergeFilter(self)
+                            if record.HasInvalidFormIDs():
+                                record.mergeFilter(self)
+                                if record.HasInvalidFormIDs():
+                                    print "Debugging buildPatch - Skipping", record.fid, "in mod (", record.GetParentMod().ModName, ")due to failed merge filter"
+                                    dump_record(record)
+                                    print
+                                    continue
+
+                        if not isScanned and record.HasInvalidFormIDs():
+                            print "Debugging buildPatch - Skipping", record.fid, "in mod (", record.GetParentMod().ModName, ")due to invalid formIDs"
+                            dump_record(record)
+                            print
+                            continue
 
                         if iiFilter:
                             #InventOnly/IIM tags are a pain. They don't fit the normal patch model.
@@ -30962,7 +30985,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
                 effect.full = _("Power Exhaustion")
                 effect.script = self.exhaustionId
                 effect.IsDestruction = True
-                effect.visual = null4
+                effect.visual = MGEFCode(None,None)
                 effect.IsHostile = False
 
                 mod_count = self.mod_count
@@ -31855,7 +31878,7 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
                     effect.full = _("Power Exhaustion")
                     effect.script = self.exhaustId
                     effect.IsDestruction = True
-                    effect.visual = None
+                    effect.visual = MGEFCode(None,None)
                     effect.IsHostile = False
 
                     mod_count = self.mod_count
