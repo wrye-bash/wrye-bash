@@ -4892,10 +4892,6 @@ class BashStatusBar(wx.StatusBar):
         self.dragStart = 0
         self.moved = False
 
-    def OnDragStart(self,event):
-        print "Starting drag!"
-        event.Veto()
-
     def _addButton(self,link):
         gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
         if gButton:
@@ -5014,30 +5010,27 @@ class BashStatusBar(wx.StatusBar):
         for i,button in enumerate(self.buttons):
             if button.GetId() == id:
                 x = mouseEvent.GetPosition()[0]
-                if x < 0:
-                    back = abs(x) / self.size
-                    x += back * self.size
-                    if x < 0:
-                        back += 1
-                    i -= back
-                    if i < 0: i = 0
-                else:
-                    forward = x / self.size
-                    x -= forward * self.size
-                    if x > self.size:
-                        forward += 1
-                    i += forward
-                    if i >= len(self.buttons): i = len(self.buttons) - 1
+                delta = x/self.size
+                if abs(x) % self.size > self.size:
+                    delta += x/abs(x)
+                i += delta
+                if i < 0: i = 0
+                elif i > len(self.buttons): i = len(self.buttons) - 1
                 return i
         return wx.NOT_FOUND
 
     def OnDragStart(self,event):
         self.dragging = self.HitTest(event)
-        self.dragStart = event.GetPosition()[0]
+        if self.dragging != wx.NOT_FOUND:
+            self.dragStart = event.GetPosition()[0]
+            button = self.buttons[self.dragging]
+            button.CaptureMouse()
         event.Skip()
 
     def OnDragEnd(self,event):
         if self.dragging != wx.NOT_FOUND:
+            button = self.buttons[self.dragging]
+            button.ReleaseMouse()
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             if self.moved:
@@ -5051,34 +5044,19 @@ class BashStatusBar(wx.StatusBar):
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             over = self.HitTest(event)
             if over not in (wx.NOT_FOUND, self.dragging):
-                rect = self.GetFieldRect(0)
-                (xPos,yPos) = (rect.x+1,rect.y+1)
-                if over < self.dragging:
-                    # Move left
-                    xPos += self.size * over
-                    newX = xPos
-                    for i in range(over,self.dragging):
-                        newX += self.size
-                        self.buttons[i].SetPosition((newX,yPos))
-                    self.buttons[self.dragging].SetPosition((xPos,yPos))
-                else:
-                    # Move right
-                    xPos += self.size * self.dragging
-                    newX = xPos
-                    for i in range(self.dragging+1,over+1):
-                        self.buttons[i].SetPosition((newX,yPos))
-                        newX += self.size
-                    self.buttons[self.dragging].SetPosition((newX,yPos))
                 self.moved = True
                 # update self.buttons
                 button = self.buttons[self.dragging]
-                uid = self.GetLink(button=button).uid
                 self.buttons.remove(button)
                 self.buttons.insert(over,button)
+                # update settings
+                uid = self.GetLink(button=button).uid
                 settings['bash.statusbar.order'].remove(uid)
                 settings['bash.statusbar.order'].insert(over,uid)
                 settings.setChanged('bash.statusbar.order')
                 self.dragging = over
+                # Refresh button positions
+                self.OnSize()
         event.Skip()
 
     def OnSize(self,event=None):
