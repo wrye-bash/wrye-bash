@@ -17856,11 +17856,13 @@ class CBash_PatchFile(ObModFile):
             if modInfos[name].mtime < self.patchTime:
                 self.Current.addMergeMod(modInfos[name].getPath().stail)
         for name in self.loadSet:
-            if modInfos[name].mtime < self.patchTime:
-                self.Current.addMod(modInfos[name].getPath().stail)
+            if name not in self.mergeSet:
+                if modInfos[name].mtime < self.patchTime:
+                    self.Current.addMod(modInfos[name].getPath().stail)
         for name in self.scanSet:
-            if modInfos[name].mtime < self.patchTime:
-                self.Current.addScanMod(modInfos[name].getPath().stail)
+            if name not in self.mergeSet and name not in self.loadSet:
+                if modInfos[name].mtime < self.patchTime:
+                    self.Current.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
         patchFile = self.patchFile = self.Current.addMod(self.patchName.temp.s, CreateNew=True)
         self.Current.load()
