@@ -40,6 +40,7 @@ import textwrap
 import time
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+import wx.lib.newevent
 
 if bolt.bUseUnicode:
     stringBuffer = StringIO.StringIO
@@ -300,7 +301,7 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,id,bitmap,pos,size,style,val,name)
     if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
-    if onRClick: gButton.Bind(wx.EVT_RIGHT_DOWN,onRClick)
+    if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
@@ -997,7 +998,6 @@ class ListEditor(wx.Dialog):
         self.Destroy()
 
 #------------------------------------------------------------------------------
-import wx.lib.newevent
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()
 
 class TabDragMixin(object):
@@ -1007,40 +1007,42 @@ class TabDragMixin(object):
            event.oldIdex = old tab position (of tab that was moved
            event.newIdex = new tab position (of tab that was moved
     """
+    __slots__=('__dragX','__dragging','__justSwapped')
+
     def __init__(self):
-        self.dragX = 0;
-        self.dragging = wx.NOT_FOUND
-        self.justSwapped = wx.NOT_FOUND
+        self.__dragX = 0;
+        self.__dragging = wx.NOT_FOUND
+        self.__justSwapped = wx.NOT_FOUND
         self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
         self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
         self.Bind(wx.EVT_MOTION, self.__OnDragging)
 
     def __OnDragStart(self, event):
-        event.Skip()
         pos = event.GetPosition()
-        self.dragging = self.HitTest(pos)
-        if self.dragging != wx.NOT_FOUND:
-            self.dragX = pos[0]
-            self.justSwapped = wx.NOT_FOUND
+        self.__dragging = self.HitTest(pos)
+        if self.__dragging != wx.NOT_FOUND:
+            self.__dragX = pos[0]
+            self.__justSwapped = wx.NOT_FOUND
             self.CaptureMouse()
+        event.Skip()
 
     def __OnDragEnd(self, event):
-        if self.dragging != wx.NOT_FOUND:
+        if self.__dragging != wx.NOT_FOUND:
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-            self.dragging = wx.NOT_FOUND
+            self.__dragging = wx.NOT_FOUND
             self.ReleaseMouse()
         event.Skip()
 
     def __OnDragging(self, event):
-        if self.dragging != wx.NOT_FOUND:
+        if self.__dragging != wx.NOT_FOUND:
             pos = event.GetPosition()
-            if abs(pos[0] - self.dragX) > 5:
+            if abs(pos[0] - self.__dragX) > 5:
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             tabId = self.HitTest(pos)
-            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.dragging[0]):
-                self.justSwapped = wx.NOT_FOUND
+            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.__dragging[0]):
+                self.__justSwapped = wx.NOT_FOUND
             else:
-                if self.justSwapped == tabId[0]:
+                if self.__justSwapped == tabId[0]:
                     return
                 # We'll do the swapping by removing all pages in the way,
                 # then readding them in the right place.  Do this because
@@ -1048,9 +1050,9 @@ class TabDragMixin(object):
                 # if we just removed the current page and reinserted it in the
                 # correct position, there would be refresh artifacts
                 newPos = tabId[0]
-                oldPos = self.dragging[0]
-                self.justSwapped = oldPos
-                self.dragging = tabId[:]
+                oldPos = self.__dragging[0]
+                self.__justSwapped = oldPos
+                self.__dragging = tabId[:]
                 if newPos < oldPos:
                     left,right,step = newPos,oldPos,1
                 else:
@@ -1065,6 +1067,7 @@ class TabDragMixin(object):
                     self.InsertPage(insert,page,title)
                 evt = NoteBookDraggedEvent(fromIndex=oldPos,toIndex=newPos)
                 wx.PostEvent(self,evt)
+        event.Skip()
 
 #------------------------------------------------------------------------------
 class Picture(wx.Window):
