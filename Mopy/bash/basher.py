@@ -264,6 +264,7 @@ settingDefaults = {
     'bash.statusbar.iconSize': 16,
     'bash.statusbar.hide': set(),
     'bash.statusbar.order': [],
+    'bash.statusbar.showversion': False,
     #--Wrye Bash: Statistics
     'bash.fileStats.cols': ['Type','Count','Size'],
     'bash.fileStats.sort': 'Type',
@@ -10883,6 +10884,25 @@ class Settings_IconSize(Link):
         bashFrame.GetStatusBar().UpdateIconSizes()
 
 #------------------------------------------------------------------------------
+class Settings_StatusBar_ShowVersions(Link):
+    """Show/Hide version numbers for buttons on the statusbar."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Show App Version'),kind=wx.ITEM_CHECK)
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.statusbar.showversion'])
+
+    def Execute(self,event):
+        settings['bash.statusbar.showversion'] ^= True
+        for button in BashStatusBar.buttons:
+            if isinstance(button, App_Button):
+                if button.gButton:
+                    button.gButton.SetToolTip(tooltip(button.tip))
+        if settings['bash.obse.on']:
+            for button in App_Button.obseButtons:
+                button.gButton.SetToolTip(tooltip(getattr(button,'obseTip','')))
+
+#------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
     """Menu to unhide a StatusBar button."""
     def AppendToMenu(self,menu,window,data):
@@ -15456,6 +15476,28 @@ class App_Button(StatusBar_Button):
     """Launch an application."""
     obseButtons = []
 
+    @property
+    def version(self):
+        if not self.isJava and self.IsPresent():
+            version = self.exePath.version
+            if version != [0]:
+                version = '.'.join([str(x) for x in version])
+                return version
+        return ''
+
+    @property
+    def tip(self):
+        if not settings['bash.statusbar.showversion']: return self._tip
+        else:
+            return self._tip + ' ' + self.version
+
+    @property
+    def obseTip(self):
+        if self._obseTip is not None:
+            if not settings['bash.statusbar.showversion']: return self._obseTip % (dict(version=''))
+            else: return self._obseTip % (dict(version=self.version))
+        else: return None
+
     def __init__(self,exePathArgs,images,tip,obseTip=None,obseArg=None,workingDir=None,uid=None,canHide=True):
         """Initialize
         exePathArgs (string): exePath
@@ -15483,7 +15525,7 @@ class App_Button(StatusBar_Button):
             self.exePath = exePathArgs
             self.exeArgs = tuple()
         self.images = images
-        self.tip = tip
+        self._tip = tip
         if workingDir:
             self.workingDir = GPath(workingDir)
         else:
@@ -15512,7 +15554,7 @@ class App_Button(StatusBar_Button):
         else:
             self.isFolder = False
         #--OBSE stuff
-        self.obseTip = obseTip
+        self._obseTip = obseTip
         self.obseArg = obseArg
         exeObse = bosh.dirs['app'].join('obse_loader.exe')
 
@@ -15727,9 +15769,6 @@ class App_BOSS(App_Button):
         App_Button.__init__(self, *args, **kwdargs)
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
         self.mainMenu.append(Mods_BOSSShowUpdate())
-        version = self.exePath.version
-        version = '.'.join([str(x) for x in version])
-        self.tip += ' ' + version
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
@@ -15791,13 +15830,16 @@ class App_BOSS(App_Button):
 #------------------------------------------------------------------------------
 class Oblivion_Button(App_Button):
     """Will close app on execute if autoquit is on."""
-    def __init__(self, *args, **kwdargs):
-        App_Button.__init__(self, *args, **kwdargs)
-        # Oblivion
-        tip = _('Launch Oblivion')
+    @property
+    def obseTip(self):
+        # Oblivion (version)
+        if settings['bash.statusbar.showversion']:
+            tip = self._obseTip % (dict(version=self.version))
+        else:
+            tip = self._obseTip % (dict(version=''))
         # + OBSE
         tip += ' + OBSE %s' % self.obseVersion
-        self.obseTip = tip
+        return tip
 
     def Execute(self,event):
         App_Button.Execute(self,event)
@@ -15807,10 +15849,13 @@ class Oblivion_Button(App_Button):
 #------------------------------------------------------------------------------
 class TESCS_Button(App_Button):
     """CS button.  Needs a special Tooltip when OBSE is enabled."""
-    def __init__(self, *args, **kwdargs):
-        App_Button.__init__(self,*args,**kwdargs)
-        # CS
-        tip = _('Launch TESCS')
+    @property
+    def obseTip(self):
+        # TESCS (version)
+        if settings['bash.statusbar.showversion']:
+            tip = self._obseTip % (dict(version=self.version))
+        else:
+            tip = self._obseTip % (dict(version=''))
         # + OBSE
         tip += ' + OBSE %s' % self.obseVersion
         # + CSE
@@ -15819,7 +15864,7 @@ class TESCS_Button(App_Button):
             version = path.version
             version = '.'.join([str(x) for x in version])
             tip += ' + CSE %s' % version
-        self.obseTip = tip
+        return tip
 
 #------------------------------------------------------------------------------
 class Obse_Button(StatusBar_Button):
@@ -15932,7 +15977,8 @@ class App_Settings(StatusBar_Button):
             window,
             Image(GPath(bosh.dirs['images'].join('tes4gecko%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
             style=style,
-            tip=_('Settings'))
+            tip=_('Settings'),
+            onRClick=self.Execute)
         return self.gButton
 
     def Execute(self,event):
@@ -16048,7 +16094,7 @@ def InitStatusBar():
             bosh.dirs['app'].join('Oblivion.exe'),
             imageList('oblivion%s.png'),
             _("Launch Oblivion"),
-            _("Launch Oblivion + OBSE"),
+            _("Launch Oblivion %(version)s"),
             '',
             uid='Oblivion'))
     BashStatusBar.buttons.append( #TESCS
@@ -16056,7 +16102,8 @@ def InitStatusBar():
             bosh.dirs['app'].join('TESConstructionSet.exe'),
             imageList('tescs%s.png'),
             _("Launch TESCS"),
-            obseArg='-editor',
+            _("Launch TESCS %(version)s"),
+            '-editor',
             uid='TESCS'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(
@@ -17095,12 +17142,18 @@ def InitSettingsLinks():
             canDisable = bool(key != 'Mods')
             tabsMenu.links.append(Settings_Tab(key,canDisable))
         SettingsMenu.append(tabsMenu)
+    #--StatusBar
     if True:
-        sizeMenu = MenuLink(_('Icon size'))
-        for size in (16,24,32):
-            sizeMenu.links.append(Settings_IconSize(size))
-        SettingsMenu.append(sizeMenu)
-    SettingsMenu.append(Settings_UnHideButtons())
+        sbMenu = MenuLink(_('Status bar'))
+        #--Icon size
+        if True:
+            sizeMenu = MenuLink(_('Icon size'))
+            for size in (16,24,32):
+                sizeMenu.links.append(Settings_IconSize(size))
+            sbMenu.links.append(sizeMenu)
+        sbMenu.links.append(Settings_UnHideButtons())
+        sbMenu.links.append(Settings_StatusBar_ShowVersions())
+        SettingsMenu.append(sbMenu)
     SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
