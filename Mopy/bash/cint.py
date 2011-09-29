@@ -175,6 +175,7 @@ if(CBash):
     _CGetRecordHistory = CBash.GetRecordHistory
     _CGetNumIdenticalToMasterRecords = CBash.GetNumIdenticalToMasterRecords
     _CGetIdenticalToMasterRecords = CBash.GetIdenticalToMasterRecords
+    _CIsRecordFormIDsInvalid = CBash.IsRecordFormIDsInvalid
     _CUpdateReferences = CBash.UpdateReferences
     _CGetRecordUpdatedReferences = CBash.GetRecordUpdatedReferences
     _CSetIDFields = CBash.SetIDFields
@@ -232,6 +233,7 @@ if(CBash):
     _CGetRecordHistory.restype = c_long
     _CGetNumIdenticalToMasterRecords.restype = c_long
     _CGetIdenticalToMasterRecords.restype = c_long
+    _CIsRecordFormIDsInvalid.restype = c_long
     _CUpdateReferences.restype = c_long
     _CGetRecordUpdatedReferences.restype = c_long
     _CSetIDFields.restype = c_long
@@ -1111,6 +1113,83 @@ def SetCopyList(oElements, nValues):
 def ExtractExportList(Element):
     try: return [tuple(ExtractExportList(listElement) if hasattr(listElement, 'exportattrs') else getattr(listElement, attr) for attr in listElement.exportattrs) for listElement in Element]
     except TypeError: return [tuple(ExtractExportList(getattr(Element, attr)) if hasattr(getattr(Element, attr), 'exportattrs') else getattr(Element, attr) for attr in Element.exportattrs)]
+
+_dump_RecIndent = 2
+_dump_LastIndent = _dump_RecIndent
+_dump_ExpandLists = True
+
+def dump_record(record, expand=False):
+    def printRecord(record):
+        def fflags(y):
+            for x in range(32):
+                z = 1 << x
+                if y & z == z:
+                    print hex(z)
+        global _dump_RecIndent
+        global _dump_LastIndent
+        if hasattr(record, 'copyattrs'):
+            if _dump_ExpandLists == True:
+                msize = max([len(attr) for attr in record.copyattrs if not attr.endswith('_list')])
+            else:
+                msize = max([len(attr) for attr in record.copyattrs])
+            for attr in record.copyattrs:
+                wasList = False
+                if _dump_ExpandLists == True:
+                    if attr.endswith('_list'):
+                        attr = attr[:-5]
+                        wasList = True
+                rec = getattr(record, attr)
+                if _dump_RecIndent: print " " * (_dump_RecIndent - 1),
+                if wasList:
+                    print attr
+                else:
+                    print attr + " " * (msize - len(attr)), ":",
+                if rec is None:
+                    print rec
+                elif 'flag' in attr.lower() or 'service' in attr.lower():
+                    print hex(rec)
+                    if _dump_ExpandLists == True:
+                        for x in range(32):
+                            z = pow(2, x)
+                            if rec & z == z:
+                                print " " * _dump_RecIndent, " Active" + " " * (msize - len("  Active")), "  :", hex(z)
+
+                elif isinstance(rec, list):
+                    if len(rec) > 0:
+                        IsFidList = True
+                        for obj in rec:
+                            if not isinstance(obj, FormID):
+                                IsFidList = False
+                                break
+                        if IsFidList:
+                            print rec
+                        elif not wasList:
+                            print rec
+                    elif not wasList:
+                        print rec
+                elif isinstance(rec, basestring):
+                    print `rec`
+                elif not wasList:
+                    print rec
+                _dump_RecIndent += 2
+                printRecord(rec)
+                _dump_RecIndent -= 2
+        elif isinstance(record, list):
+            if len(record) > 0:
+                if hasattr(record[0], 'copyattrs'):
+                    _dump_LastIndent = _dump_RecIndent
+                    for rec in record:
+                        printRecord(rec)
+                        if _dump_LastIndent == _dump_RecIndent:
+                            print
+    global _dump_ExpandLists
+    _dump_ExpandLists = expand
+    try:
+        msize = max([len(attr) for attr in record.copyattrs])
+        print "  fid" + " " * (msize - len("fid")), ":", record.fid
+    except AttributeError:
+        pass
+    printRecord(record)
 
 # Classes
 # Any level Descriptors
@@ -2732,7 +2811,10 @@ class FnvBaseRecord(object):
         """Returns true if the record is the last to load.
            If GetExtendedConflicts is True, scanned records will be considered.
            More efficient than running Conflicts() and checking the first value."""
-        return _CIsRecordWinning(self._RecordID, c_ulong(GetExtendedConflicts))
+        return _CIsRecordWinning(self._RecordID, c_ulong(GetExtendedConflicts)) > 0
+
+    def HasInvalidFormIDs(self):
+        return _CIsRecordFormIDsInvalid(self._RecordID) > 0
 
     def Conflicts(self, GetExtendedConflicts=False):
         numRecords = _CGetNumRecordConflicts(self._RecordID, c_ulong(GetExtendedConflicts)) #gives upper bound
@@ -2790,12 +2872,8 @@ class FnvBaseRecord(object):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
         for a list record, items coming from mods not in the modSet could be
-        removed from the list.
-
-        In a case where items either cannot be filtered, or doing so will break
-        the record, False should be returned.  If filtering was successful, True
-        should be returned."""
-        return True
+        removed from the list."""
+        pass
 
     def CopyAsOverride(self, target, UseWinningParents=False):
         ##Record Creation Flags
@@ -5343,12 +5421,6 @@ class FnvMGEFRecord(FnvBaseRecord):
 class FnvSCPTRecord(FnvBaseRecord):
     __slots__ = []
     _Type = 'SCPT'
-    def mergeFilter(self, target):
-        """Filter references that don't come from the specified modSet.
-           Since we can't actually do this for SCPT records, return False if
-           any references are to mods not in modSet."""
-        return ValidateList(self.references, target)
-
     unused1 = CBashUINT8ARRAY(7, 4)
     numRefs = CBashGeneric(8, c_ulong)
     compiledSize = CBashGeneric(9, c_ulong)
@@ -5936,7 +6008,6 @@ class FnvCONTRecord(FnvBaseRecord):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.items = [x for x in self.items if x.item.ValidateFormID(target)]
-        return True
 
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7074,7 +7145,6 @@ class FnvNPC_Record(FnvBaseRecord):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.items = [x for x in self.items if x.item.ValidateFormID(target)]
-        return True
 
     boundX1 = CBashGeneric(7, c_short)
     boundY1 = CBashGeneric(8, c_short)
@@ -7319,7 +7389,6 @@ class FnvCREARecord(FnvBaseRecord):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.items = [x for x in self.items if x.item.ValidateFormID(target)]
-        return True
 
     class SoundType(ListComponent):
         __slots__ = []
@@ -7749,7 +7818,6 @@ class FnvLVLCRecord(FnvBaseRecord):
     def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
-        return True
 
     class Entry(ListComponent):
         __slots__ = []
@@ -7815,7 +7883,6 @@ class FnvLVLNRecord(FnvBaseRecord):
     def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
-        return True
 
     class Entry(ListComponent):
         __slots__ = []
@@ -8232,7 +8299,6 @@ class FnvLVLIRecord(FnvBaseRecord):
     def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
-        return True
 
     class Entry(ListComponent):
         __slots__ = []
@@ -9123,7 +9189,6 @@ class FnvQUSTRecord(FnvBaseRecord):
         #        and
         #        (not isinstance(x.param2,FormID) or x.param2[0] in modSet)
         #        )]
-        return True
 
     class Stage(ListComponent):
         __slots__ = []
@@ -10340,8 +10405,11 @@ class ObBaseRecord(object):
         """Returns true if the record is the last to load.
            If GetExtendedConflicts is True, scanned records will be considered.
            More efficient than running Conflicts() and checking the first value."""
-        return _CIsRecordWinning(self._RecordID, c_ulong(GetExtendedConflicts))
+        return _CIsRecordWinning(self._RecordID, c_ulong(GetExtendedConflicts)) > 0
 
+    def HasInvalidFormIDs(self):
+        return _CIsRecordFormIDsInvalid(self._RecordID) > 0
+    
     def Conflicts(self, GetExtendedConflicts=False):
         numRecords = _CGetNumRecordConflicts(self._RecordID, c_ulong(GetExtendedConflicts)) #gives upper bound
         if(numRecords > 1):
@@ -10399,12 +10467,8 @@ class ObBaseRecord(object):
         """This method is called by the bashed patch mod merger. The intention is
         to allow a record to be filtered according to the specified modSet. E.g.
         for a list record, items coming from mods not in the modSet could be
-        removed from the list.
-
-        In a case where items either cannot be filtered, or doing so will break
-        the record, False should be returned.  If filtering was successful, True
-        should be returned."""
-        return True
+        removed from the list."""
+        pass
 
     def CopyAsOverride(self, target, UseWinningParents=False):
         ##Record Creation Flags
@@ -11496,7 +11560,6 @@ class ObCONTRecord(ObBaseRecord):
         """Filter out items that don't come from specified modSet.
         Filters items."""
         self.items = [x for x in self.items if x.item.ValidateFormID(target)]
-        return True
 
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -11531,7 +11594,6 @@ class ObCREARecord(ObBaseRecord):
         self.spells = [x for x in self.spells if x.ValidateFormID(target)]
         self.factions = [x for x in self.factions if x.faction.ValidateFormID(target)]
         self.items = [x for x in self.items if x.item.ValidateFormID(target)]
-        return True
 
     class Sound(ListComponent):
         __slots__ = []
@@ -12355,7 +12417,6 @@ class ObLVLCRecord(ObBaseRecord):
     def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
-        return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
@@ -12390,7 +12451,6 @@ class ObLVLIRecord(ObBaseRecord):
     def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
-        return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
@@ -12424,7 +12484,6 @@ class ObLVSPRecord(ObBaseRecord):
     def mergeFilter(self, target):
         """Filter out items that don't come from specified modSet."""
         self.entries = [entry for entry in self.entries if entry.listId.ValidateFormID(target)]
-        return True
 
     chanceNone = CBashGeneric(5, c_ubyte)
     flags = CBashGeneric(6, c_ubyte)
@@ -12601,7 +12660,6 @@ class ObNPC_Record(ObBaseRecord):
         self.spells = [x for x in self.spells if x.ValidateFormID(target)]
         self.factions = [x for x in self.factions if x.faction.ValidateFormID(target)]
         self.items = [x for x in self.items if x.item.ValidateFormID(target)]
-        return True
 
     full = CBashSTRING(5)
     modPath = CBashISTRING(6)
@@ -12833,7 +12891,6 @@ class ObQUSTRecord(ObBaseRecord):
         #        and
         #        (not isinstance(x.param2,FormID) or x.param2.ValidateFormID(target))
         #        )]
-        return True
 
     class Stage(ListComponent):
         __slots__ = []
@@ -13299,12 +13356,6 @@ class ObSBSPRecord(ObBaseRecord):
 class ObSCPTRecord(ObBaseRecord):
     __slots__ = []
     _Type = 'SCPT'
-    def mergeFilter(self, target):
-        """Filter references that don't come from the specified modSet.
-           Since we can't actually do this for SCPT records, return False if
-           any references are to mods not in modSet."""
-        return ValidateList(self.references, target)
-
     unused1 = CBashUINT8ARRAY(5, 2)
     numRefs = CBashGeneric(6, c_ulong)
     compiledSize = CBashGeneric(7, c_ulong)
@@ -13968,7 +14019,7 @@ class ObModFile(object):
         return None
 
     def IsEmpty(self):
-        return _CIsModEmpty(self._ModID)
+        return _CIsModEmpty(self._ModID) > 0
 
     def GetNewRecordTypes(self):
         numRecords = _CGetModNumTypes(self._ModID)
@@ -14399,7 +14450,7 @@ class FnvModFile(object):
         return None
 
     def IsEmpty(self):
-        return _CIsModEmpty(self._ModID)
+        return _CIsModEmpty(self._ModID) > 0
 
     def GetNewRecordTypes(self):
         numRecords = _CGetModNumTypes(self._ModID)
@@ -15137,7 +15188,7 @@ class ObCollection:
 ##        // Use if you're planning on iterating through every placeable in a specific cell
 ##        //   so that you don't have to check the world cell as well.
 ##
-##        //IgnoreAbsentMasters causes any records that override masters not in the load order to be dropped
+##        //IgnoreInactiveMasters causes any records that override masters not in the load order to be dropped
 ##        // If it is true, it forces IsAddMasters to be false.
 ##        // Allows mods not in load order to copy records
 ##
@@ -15147,32 +15198,34 @@ class ObCollection:
 ##
 ##        //Only the following combinations are tested:
 ##        // Normal:  (fIsMinLoad or fIsFullLoad) + fIsInLoadOrder + fIsSaveable + fIsAddMasters + fIsLoadMasters
-##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters
-##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIgnoreAbsentMasters + fIsExtendedConflicts
+##        // Merged:  (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIsIgnoreInactiveMasters
+##        // Scanned: (fIsMinLoad or fIsFullLoad) + fIsSkipNewRecords + fIsIgnoreInactiveMasters + fIsExtendedConflicts
 
-##        fIsMinLoad             = 0x00000001
-##        fIsFullLoad            = 0x00000002
-##        fIsSkipNewRecords      = 0x00000004
-##        fIsInLoadOrder         = 0x00000008
-##        fIsSaveable            = 0x00000010
-##        fIsAddMasters          = 0x00000020
-##        fIsLoadMasters         = 0x00000040
-##        fIsExtendedConflicts   = 0x00000080
-##        fIsTrackNewTypes       = 0x00000100
-##        fIsIndexLANDs          = 0x00000200
-##        fIsFixupPlaceables     = 0x00000400
-##        fIsCreateNew           = 0x00000800
-##        fIsIgnoreAbsentMasters = 0x00001000
-##        fIsSkipAllRecords      = 0x00002000
+##        fIsMinLoad               = 0x00000001
+##        fIsFullLoad              = 0x00000002
+##        fIsSkipNewRecords        = 0x00000004
+##        fIsInLoadOrder           = 0x00000008
+##        fIsSaveable              = 0x00000010
+##        fIsAddMasters            = 0x00000020
+##        fIsLoadMasters           = 0x00000040
+##        fIsExtendedConflicts     = 0x00000080
+##        fIsTrackNewTypes         = 0x00000100
+##        fIsIndexLANDs            = 0x00000200
+##        fIsFixupPlaceables       = 0x00000400
+##        fIsCreateNew             = 0x00000800
+##        fIsIgnoreInactiveMasters = 0x00001000
+##        fIsSkipAllRecords        = 0x00002000
 
         if Flags is None: Flags = 0x00000069 | (0x00000800 if CreateNew else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
         _CAddMod(self._CollectionID, str(FileName), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002))
         return None
 
     def addMergeMod(self, FileName):
+        #fIsIgnoreInactiveMasters, fIsSkipNewRecords
         return self.addMod(FileName, Flags=0x00001004)
 
     def addScanMod(self, FileName):
+        #fIsIgnoreInactiveMasters, fIsExtendedConflicts, fIsSkipNewRecords
         return self.addMod(FileName, Flags=0x00001084)
 
     def load(self):
