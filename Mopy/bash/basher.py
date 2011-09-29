@@ -15468,7 +15468,7 @@ class StatusBar_Button(Link):
             file = 'obse_1_2_416.dll'
         else:
             file = 'obse_loader.exe'
-        version = bosh.dirs['app'].join(file).version
+        version = bosh.dirs['app'].join(file).strippedVersion
         return '.'.join([str(x) for x in version])
 
 #------------------------------------------------------------------------------
@@ -15479,7 +15479,7 @@ class App_Button(StatusBar_Button):
     @property
     def version(self):
         if not self.isJava and self.IsPresent():
-            version = self.exePath.version
+            version = self.exePath.strippedVersion
             if version != [0]:
                 version = '.'.join([str(x) for x in version])
                 return version
