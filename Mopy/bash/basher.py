@@ -5184,9 +5184,12 @@ class BashFrame(wx.Frame):
             if bosh.modInfos.mtimesReset[0] == 'FAILED':
                 balt.showWarning(self,_("It appears that the current user doesn't have permissions for some or all of the files in Oblivion\\Data.\nSpecifically had permission denied to change the time on:\n%s") % bosh.modInfos.mtimesReset[1].s)
             if not bosh.inisettings['SkipResetTimeNotifications']:
-                message = _('Modified dates have been reset for some mod files:')
-                message += listFiles(sorted(bosh.modInfos.mtimesReset))
-                balt.showInfo(self,message)
+                message = ['',_('Modified dates have been reset for some mod files')]
+                message.extend(sorted(bosh.modInfos.mtimesReset))
+                dialog = ListBoxes(self,_('Modified Dates Reset'),
+                         _(r'Modified dates have been reset for some mod files.'),
+                         [message],liststyle='list',Cancel=False)   
+                dialog.ShowModal()
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Mods autogrouped?
@@ -5221,38 +5224,50 @@ class BashFrame(wx.Frame):
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
         if bosh.modInfos.plugins.selectedBad:
-            message = _("Missing files have been removed from load list:")
-            message += listFiles(bosh.modInfos.plugins.selectedBad)
+            message = ['',_('Missing files have been removed from load list:')]
+            message.extend(sorted(bosh.modInfos.plugins.selectedBad))
+            dialog = ListBoxes(self,_('Warning: Load List Sanitized'),
+                     _(r'Missing files have been removed from load list:'),
+                     [message],liststyle='list',Cancel=False)  
+            dialog.ShowModal()
             del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.plugins.save()
-            balt.showWarning(self,message)
         #--Was load list too long?
         if bosh.modInfos.plugins.selectedExtra:
-            message = _("Load list is overloaded. Some files have been de-activated:")
-            message += listFiles(bosh.modInfos.plugins.selectedExtra)
+            message = ['',_('Load list is overloaded. Some files have been deactivated:')]
+            message.extend(sorted(bosh.modInfos.plugins.selectedExtra))
+            dialog = ListBoxes(self,_('Warning: Load List Sanitized'),
+                     _(r'Missing files have been removed from load list:'),
+                     [message],liststyle='list',Cancel=False)
+            dialog.ShowModal()
             del bosh.modInfos.plugins.selectedExtra[:]
             bosh.modInfos.plugins.save()
             balt.showWarning(self,message)
         #--Any new corrupted files?
-        message = ''
+        message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
         if not corruptMods <= self.knownCorrupted:
-            message += _("The following mod files have corrupted headers: ")
-            message += listFiles(sorted(corruptMods))
+            m = [_('Corrupted Mods'),_("The following mod files have corrupted headers: ")]
+            m.extend(sorted(corruptMods))
+            message.append(m)
             self.knownCorrupted |= corruptMods
         corruptSaves = set(bosh.saveInfos.corrupted.keys())
         if not corruptSaves <= self.knownCorrupted:
-            if message: message += '\n'
-            message += _("The following save files have corrupted headers: ")
-            message += listFiles(sorted(corruptSaves))
+            m = [_('Corrupted Saves'),_("The following save files have corrupted headers: ")]
+            m.extend(sorted(corruptSaves))
+            message.append(m)
             self.knownCorrupted |= corruptSaves
         invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.8,1.0)])
         if not invalidVersions <= self.knownInvalidVerions:
-            if message: message += '\n'
-            message += _("The following mods have unrecognized TES4 header versions: ")
-            message += listFiles(sorted(invalidVersions))
+            m = [_('Unrecognized Versions'),_("The following mods have unrecognized TES4 header versions: ")]
+            m.extend(sorted(invalidVersions))
+            message.append(m)
             self.knownInvalidVerions |= invalidVersions
-        if message: balt.showWarning(self,message)
+        if message: 
+            dialog = ListBoxes(self,_('Warning: Corrupt/Unrecognized Files'),
+                     _(r'Some files have corrupted headers or TES4 header versions:'),
+                     message,liststyle='list',Cancel=False)  
+            dialog.ShowModal()
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
@@ -5261,10 +5276,13 @@ class BashFrame(wx.Frame):
                 balt.showWarning(self,fill(message))
         #--Any Y2038 Resets?
         if bolt.Path.mtimeResets:
-            message = _("Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: ")
-            message += listFiles(sorted(bolt.Path.mtimeResets))
+            message = ['',_("Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: ")]
+            message.extend(sorted(bolt.Path.mtimeResets))
+            dialog = ListBoxes(self,_('Warning: Dates Reset'),
+                     _(r'Modified dates have been reste to an earlier date for  these files'),
+                     [message],liststyle='list',Cancel=False)
+            dialog.ShowModal()
             del bolt.Path.mtimeResets[:]
-            balt.showWarning(self,message)
         #--OBMM Warning?
         if settings['bosh.modInfos.obmmWarn'] == 1:
             settings['bosh.modInfos.obmmWarn'] = 2
@@ -5348,7 +5366,7 @@ class BashFrame(wx.Frame):
 #------------------------------------------------------------------------------
 class ListBoxes(wx.Dialog):
     """A window with 1 or more lists."""
-    def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={}):
+    def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={},Cancel=True):
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -5391,11 +5409,17 @@ class ListBoxes(wx.Dialog):
             sizer.AddGrowableRow(i)
         okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
         okButton.SetDefault()
-        sizer.Add(hSizer(
-            (balt.spacer),
-            (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
-            (button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT),
-            ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        if Cancel:
+            sizer.Add(hSizer(
+                (balt.spacer),
+                (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
+                (button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT),
+                ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        else:
+            sizer.Add(hSizer(
+                (balt.spacer),
+                (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
+                ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
@@ -7720,16 +7744,19 @@ class File_Delete(Link):
         menu.AppendItem(wx.MenuItem(menu,self.id,_('Delete')))
 
     def Execute(self,event):
-        message = _(r'Delete these files? This operation cannot be undone.')
-        message += '\n* ' + '\n* '.join(sorted(x.s for x in self.data))
-        if not balt.askYes(self.window,message,_('Delete Files')):
-            return
-        #--Do it
-        for fileName in self.data:
-            self.window.data.delete(fileName)
-        #--Refresh stuff
-        self.window.RefreshUI()
-
+        message = [_(''),_(r'Uncheck files to skip deleting them if desired.')]
+        message.extend(sorted(self.data))
+        dialog = ListBoxes(self,_('Delete Files'),
+                     _(r'Delete these files? This operation cannot be undone.'),
+                     [message])
+        if dialog.ShowModal() != wx.ID_CANCEL:
+            id = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id)
+            if checks:
+                for i,mod in enumerate(self.data):
+                     if checks.IsChecked(i):
+                        self.window.data.delete(mod)
+            self.window.RefreshUI()
 #------------------------------------------------------------------------------
 class File_Duplicate(Link):
     """Create a duplicate of the file."""
