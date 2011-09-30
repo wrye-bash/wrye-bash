@@ -159,8 +159,8 @@ def CreateStandaloneExe(version, file_version, pipe=None):
                      icon+',', 'icon,', '101,', '0'], stdout=pipe, stderr=pipe)
 
     # Compress with UPX
-    subprocess.call([upx, '-9', exe])
-    subprocess.call([upx, '-9', w9xexe])
+    subprocess.call([upx, '-9', exe], stdout=pipe, stderr=pipe)
+    subprocess.call([upx, '-9', w9xexe], stdout=pipe, stderr=pipe)
     
     # Clean up left over files
     rm(os.path.join(wbsa, 'ResHacker.ini'))
