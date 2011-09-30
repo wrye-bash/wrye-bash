@@ -11945,7 +11945,7 @@ class Mods_CleanDummyMasters(Link):
             fileInfo = bosh.modInfos[fileName]
             if fileInfo.header.author == 'BASHED DUMMY':
                 remove.append(fileName)
-        remove.sort()
+        remove = bosh.modInfos.getOrdered(remove)
         message = [_(''),_(r'Uncheck items to skip deleting them if desired.')]
         message.extend(remove)
         dialog = ListBoxes(bashFrame,_('Delete Dummy Masters'),
