@@ -14994,6 +14994,11 @@ class App_Button(Link):
             self.isShortcut = True
         else:
             self.isShortcut = False
+        #--Folder
+        if self.exePath and self.exePath.isdir():
+            self.isFolder = True
+        else:
+            self.isFolder = False
         #--OBSE stuff
         self.obseTip = obseTip
         self.obseArg = obseArg
@@ -15022,7 +15027,7 @@ class App_Button(Link):
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
-            if self.isShortcut:
+            if self.isShortcut or self.isFolder:
                 os.startfile(self.exePath.s)
             elif self.isJava:
                 cwd = bolt.Path.getcwd()
@@ -15033,10 +15038,11 @@ class App_Button(Link):
                 try:
                     subprocess.Popen((self.java.stail,'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except Exception, error:
-                    print error
-                    print _("Used Path: %s") % exePath.s
-                    print _("Used Arguments: "), exeArgs
-                    print
+                    balt.showError(
+                        bashFrame,
+                        _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                            error, self.exePath.s, self.exeArgs),
+                        _("Could not launch '%s'") % self.exePath.stail)
                     raise
                 finally:
                     cwd.setcwd()
@@ -15065,39 +15071,60 @@ class App_Button(Link):
                     subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except WindowsError, werr:
                     if werr.winerror != 740:
-                        print _("Used Path: %s") % exePath.s
-                        print _("Used Arguments: "), args
-                        raise
+                        balt.showError(
+                            bashFrame,
+                            _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                                error, self.exePath.s, self.exeArgs),
+                            _("Could not launch '%s'") % self.exePath.stail)
                     try:
                         import win32api
                         win32api.ShellExecute(0,"open",exePath.s,str(self.exeArgs),bosh.dirs['app'].s,1)
                     except:
-                        print _("Used Path: %s") % exePath.s
-                        print _("Used Arguments: "), exeArgs
-                        raise WindowsError(werr)
+                        balt.showError(
+                            bashFrame,
+                            _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                                error, self.exePath.s, self.exeArgs),
+                            _("Could not launch '%s'") % self.exePath.stail)
                 except Exception, error:
-                    print error
-                    print _("Used Path: %s") % exePath.s
-                    print _("Used Arguments: "), args
-                    print
-                    raise
+                    balt.showError(
+                        bashFrame,
+                        _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                            error, self.exePath.s, self.exeArgs),
+                        _("Could not launch '%s'") % self.exePath.stail)
                 finally:
                     cwd.setcwd()
             else:
                 try:
+                    if self.workingDir:
+                        dir = self.workingDir.s
+                    else:
+                        dir = bolt.Path.getcwd().s
+
                     import win32api
                     r, executable = win32api.FindExecutable(self.exePath.s)
                     executable = win32api.GetLongPathName(executable)
                     args = '"%s"' % self.exePath.s
                     for arg in self.exeArgs:
                         args += " " + str(arg)
-                    win32api.ShellExecute(0,"open",executable,args,bosh.dirs['app'].s,1)
+                    win32api.ShellExecute(0,"open",executable,args,dir,1)
                 except Exception, error:
-                    print error
-                    print _("Used Path: %s") % self.exePath.s
-                    print _("Used Arguments: "), self.exeArgs
-                    print
-                    raise
+                    # Most likely we're here because FindExecutable failed (no file association)
+                    # Or because win32api import failed.  Try doing it using os.startfile
+                    cwd = bolt.Path.getcwd()
+                    if self.workingDir:
+                        self.workingDir.setcwd()
+                    else:
+                        self.exePath.head.setcwd()
+                    try:
+                        os.startfile(self.exePath.s)
+                    except Exception, error:
+                        balt.showError(
+                            bashFrame,
+                            _("%s\n\nUsed Path: %s\nUsed Arguments: %s") % (
+                                error, self.exePath.s, self.exeArgs),
+                            _("Could not launch '%s'") % self.exePath.stail)
+                    finally:
+                        cwd.setcwd()
         else:
             raise StateError(_('Application missing: %s') % self.exePath.s)
 
@@ -15888,16 +15915,26 @@ def InitStatusBar():
                 else:
                     # Use the default icon for that file type
                     try:
-                        import win32api
-                        import win32con
-                        icon_path = win32api.RegQueryValue(
-                            win32con.HKEY_CLASSES_ROOT,
-                            path.cext
-                            )
-                        filedata = win32api.RegQueryValue(
-                            win32con.HKEY_CLASSES_ROOT,
-                            '%s\\DefaultIcon' % icon_path
-                            )
+                        import _winreg
+                        if path.isdir():
+                            # Special handling of the Folder icon
+                            folderkey = _winreg.OpenKey(
+                                _winreg.HKEY_CLASSES_ROOT,
+                                'Folder')
+                            iconkey = _winreg.OpenKey(
+                                folderkey,
+                                'DefaultIcon')
+                            filedata = _winreg.EnumValue(
+                                iconkey,0)
+                            filedata = filedata[1]
+                            filedata = re.sub('%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I)
+                        else:
+                            icon_path = _winreg.QueryValue(
+                                _winreg.HKEY_CLASSES_ROOT,
+                                path.cext)
+                            filedata = _winreg.QueryValue(
+                                _winreg.HKEY_CLASSES_ROOT,
+                                '%s\\DefaultIcon' % icon_path)
                         icon,idex = filedata.split(',')
                         if not os.path.isabs(icon):
                             # Get the correct path to the dll

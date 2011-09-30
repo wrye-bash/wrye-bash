@@ -170,10 +170,17 @@ def dump_environment():
         print "wxPython version: %s" % wx.version()
     except ImportError:
         print "wxPython not found"
-    print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, sys.stdout.encoding, locale.getdefaultlocale())
+    # Standalone: stdout will actually be pointing to stderr, which has no 'encoding' attribute
+    print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, getattr(sys.stdout,'encoding',None), locale.getdefaultlocale())
 
 # Main ------------------------------------------------------------------------
 def main():
+    if hasattr(sys,'frozen'):
+        # Standalone stdout is NUL, no matter what.  Reassign it to stderr so the output
+        # goes to 'Wrye Bash.exe.txt'
+        sys.stdout = sys.stderr
+        # Also, save it for later, to regain control from wxPython
+        old_stderr = sys.stderr
     bolt.deprintOn = opts.debug
     if len(extra) > 0:
         return
@@ -284,6 +291,9 @@ def main():
         if hasattr(sys, 'frozen'):
             # Special case for py2exe version
             app = basher.BashApp()
+            # Regain control of stdout/stderr from wxPython
+            sys.stdout = old_stderr
+            sys.stderr = old_stderr
         else:
             app = basher.BashApp(False)
     else:
