@@ -11945,17 +11945,21 @@ class Mods_CleanDummyMasters(Link):
             fileInfo = bosh.modInfos[fileName]
             if fileInfo.header.author == 'BASHED DUMMY':
                 remove.append(fileName)
-
+        remove.sort()
         message = [_(''),_(r'Uncheck items to skip deleting them if desired.')]
-        message.extend(sorted(remove))
+        message.extend(remove)
         dialog = ListBoxes(bashFrame,_('Delete Dummy Masters'),
                      _(r'Delete these items? This operation cannot be undone.'),
                      [message])
         if dialog.ShowModal() == wx.ID_CANCEL:
             return
+        id = dialog.ids['']
+        checks = dialog.FindWindowById(id)
+        if checks:
+            for i,mod in enumerate(remove):
+                if checks.IsChecked(i):
+                    self.window.data.delete(mod)
 
-        for fileName in remove:
-            self.window.data.delete(fileName)
         bashFrame.RefreshData()
         self.window.RefreshUI()
 
