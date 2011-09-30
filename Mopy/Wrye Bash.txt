@@ -2404,7 +2404,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295 [XX/XX/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]
+=== 296 [XX/X/2011]
+* UI Improvements:
+
+
+=== 295 [30/9/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]
 * Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs.  It's community members like you that help Wrye Bash succeed!
 * First-run Usability Improvements:
   * Default options and widget sizes have been revamped for a smoother first-time experience
