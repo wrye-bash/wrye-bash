@@ -7746,7 +7746,7 @@ class File_Delete(Link):
     def Execute(self,event):
         message = [_(''),_(r'Uncheck files to skip deleting them if desired.')]
         message.extend(sorted(self.data))
-        dialog = ListBoxes(self,_('Delete Files'),
+        dialog = ListBoxes(self.window,_('Delete Files'),
                      _(r'Delete these files? This operation cannot be undone.'),
                      [message])
         if dialog.ShowModal() != wx.ID_CANCEL:
