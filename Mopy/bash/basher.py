@@ -5016,7 +5016,7 @@ class BashStatusBar(wx.StatusBar):
                     delta += x/abs(x)
                 i += delta
                 if i < 0: i = 0
-                elif i > len(self.buttons): i = len(self.buttons) - 1
+                elif i > len(self.buttons): i = len(self.buttons)
                 return i
         return wx.NOT_FOUND
 
@@ -5056,6 +5056,7 @@ class BashStatusBar(wx.StatusBar):
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             over = self.HitTest(event)
+            if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
                 # update self.buttons
