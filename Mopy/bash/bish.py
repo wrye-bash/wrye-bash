@@ -1161,7 +1161,7 @@ def createLSCR(*args):
                         except:
                             continue
                         masterName = bosh.dirs['mods'].join(masterName)
-                        self.fids_eids.append(((masterName.tail,recordId),eid))
+                        self.fids_eids.append((cint.FormID(masterName.tail,recordId),eid))
             except Exception, e:
                 print "WARNING: An error occured while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
 
@@ -1207,7 +1207,7 @@ def createLSCR(*args):
                         except:
                             continue
                         masterName = bosh.dirs['mods'].join(masterName)
-                        self.LNAM.append((masterName.tail,recordId))
+                        self.LNAM.append(cint.FormID(masterName.tail,recordId))
             except Exception, e:
                 print "WARNING: An error occured while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
 
