@@ -15510,7 +15510,7 @@ class App_Button(StatusBar_Button):
     def version(self):
         if not self.isJava and self.IsPresent():
             version = self.exePath.strippedVersion
-            if version != [0]:
+            if version != (0,):
                 version = '.'.join([str(x) for x in version])
                 return version
         return ''
@@ -15891,8 +15891,11 @@ class TESCS_Button(App_Button):
         # + CSE
         path = bosh.dirs['mods'].join('obse','plugins','Construction Set Extender.dll')
         if path.exists():
-            version = path.version
-            version = '.'.join([str(x) for x in version])
+            version = path.strippedVersion
+            if version != (0,):
+                version = '.'.join([str(x) for x in version])
+            else:
+                version = ''
             tip += ' + CSE %s' % version
         return tip
 
