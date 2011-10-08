@@ -917,7 +917,7 @@ class List(wx.Panel):
         """Deletes selected items."""
         items = self.GetSelected()
         if items:
-            message = [_(''),_(r'Uncheck items to skip deleting them if desired.')]
+            message = ['',_(r'Uncheck items to skip deleting them if desired.')]
             message.extend(sorted(items))
             dialog = ListBoxes(self,_('Delete Items'),
                          _(r'Delete these items? This operation cannot be undone.'),
@@ -5189,7 +5189,7 @@ class BashFrame(wx.Frame):
                 message.extend(sorted(bosh.modInfos.mtimesReset))
                 dialog = ListBoxes(self,_('Modified Dates Reset'),
                          _(r'Modified dates have been reset for some mod files.'),
-                         [message],liststyle='list',Cancel=False)   
+                         [message],liststyle='list',Cancel=False)
                 dialog.ShowModal()
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
@@ -5229,7 +5229,7 @@ class BashFrame(wx.Frame):
             message.extend(sorted(bosh.modInfos.plugins.selectedBad))
             dialog = ListBoxes(self,_('Warning: Load List Sanitized'),
                      _(r'Missing files have been removed from load list:'),
-                     [message],liststyle='list',Cancel=False)  
+                     [message],liststyle='list',Cancel=False)
             dialog.ShowModal()
             del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.plugins.save()
@@ -5243,7 +5243,6 @@ class BashFrame(wx.Frame):
             dialog.ShowModal()
             del bosh.modInfos.plugins.selectedExtra[:]
             bosh.modInfos.plugins.save()
-            balt.showWarning(self,message)
         #--Any new corrupted files?
         message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
@@ -5264,10 +5263,10 @@ class BashFrame(wx.Frame):
             m.extend(sorted(invalidVersions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
-        if message: 
+        if message:
             dialog = ListBoxes(self,_('Warning: Corrupt/Unrecognized Files'),
                      _(r'Some files have corrupted headers or TES4 header versions:'),
-                     message,liststyle='list',Cancel=False)  
+                     message,liststyle='list',Cancel=False)
             dialog.ShowModal()
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
@@ -5378,10 +5377,12 @@ class ListBoxes(wx.Dialog):
         """
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=style)
         self.SetIcons(bashBlue)
+        minWidth = self.GetTextExtent(title)[0]*1.2+64
         sizer = wx.FlexGridSizer(len(lists)+1,1)
         self.ids = {}
         labels = {wx.ID_CANCEL:_('Cancel'),wx.ID_OK:_('OK')}
         labels.update(changedlabels)
+        self.SetSize(wx.Size(self.GetTextExtent(title)[0]*1.2+64,-1))
         for i,group in enumerate(lists):
             title = group[0]
             tip = group[1]
@@ -5424,6 +5425,9 @@ class ListBoxes(wx.Dialog):
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
+        #make sure that minimum size is at least the size of title
+        if self.GetSize()[0] < minWidth:
+            self.SetSize(wx.Size(minWidth,-1))
 
 #------------------------------------------------------------------------------
 class ColorDialog(wx.Dialog):
@@ -7745,7 +7749,7 @@ class File_Delete(Link):
         menu.AppendItem(wx.MenuItem(menu,self.id,_('Delete')))
 
     def Execute(self,event):
-        message = [_(''),_(r'Uncheck files to skip deleting them if desired.')]
+        message = ['',_(r'Uncheck files to skip deleting them if desired.')]
         message.extend(sorted(self.data))
         dialog = ListBoxes(self.window,_('Delete Files'),
                      _(r'Delete these files? This operation cannot be undone.'),
@@ -11947,7 +11951,7 @@ class Mods_CleanDummyMasters(Link):
             if fileInfo.header.author == 'BASHED DUMMY':
                 remove.append(fileName)
         remove = bosh.modInfos.getOrdered(remove)
-        message = [_(''),_(r'Uncheck items to skip deleting them if desired.')]
+        message = ['',_(r'Uncheck items to skip deleting them if desired.')]
         message.extend(remove)
         dialog = ListBoxes(bashFrame,_('Delete Dummy Masters'),
                      _(r'Delete these items? This operation cannot be undone.'),
