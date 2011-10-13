@@ -164,7 +164,7 @@ def exit():
 def dump_environment():
     import locale
     print "Wrye Bash starting"
-    print "Python version: %d.%d.%d" % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    print "Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
     try:
         import wx
         print "wxPython version: %s" % wx.version()
