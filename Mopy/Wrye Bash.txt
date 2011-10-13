@@ -1263,7 +1263,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 
 === Patch Usage
 * __Select a Bashed Patch__
-  * Probably Bash has automatically created one for you. If not, you can copy the blank one from Oblivion\Mopy\Extras to Oblivion\Data.
+  * Probably Bash has automatically created one for you. If not, you can copy "Oblivion\Mopy\templates\Bashed Patch, 0.esp" to Oblivion\Data.
   * Note that the author of the mod must be set to __Bashed Patch__.
 * __Configure the Patch__
   * Right click on the Bashed Patch and select "Rebuild Patch..." This will bring up a dialog in which you can activate and configure various patcher components.
