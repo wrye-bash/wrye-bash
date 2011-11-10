@@ -11,18 +11,16 @@ Continuing from the [topic=]previous thread[/topic]...
 Yeah, to save typing, we often sling around terminology that can be confusing to newcomers. Here's a quick rundown of what we mean:[list][*][b]WB[/b]: Wrye Bash.  Written in Python.
 [*][b]WBSA[/b]: Wrye Bash Standalone. Wrye Bash packaged with the required Python interpreter and all dependencies into one neat executable package. Still internally runs on Python, but since the interpreter is internal to the exe, no Python components are required to be installed.
 [*][b]PBash[/b]: A Bashed Patch built with the "classic" Python mode patchers. These patchers read, process, and write mod records all in Python.
-[*][b]CBash[/b]:[list=1][*] A Bashed Patch built with the CBash (see #2) mode patchers. These patchers still do mod processing in Python, but utilize CBash.dll to do the file reading and writing.
-[*]The CBash.dll. A C++ written DLL with a C API, that is used for reading and writing ESP/ESM format files. This is the only part of Wrye Bash not written in Python (well, except for calls to 7z.exe to extract things).[/list]The practical benefits of using CBash are:
-[list=1]
+[*][b]CBash[/b]: (1) A Bashed Patch built with the CBash (see #2) mode patchers. These patchers still do mod processing in Python, but utilize CBash.dll to do the file reading and writing.
+[*][b]CBash[/b]: (2) A C++ written DLL with a C API, that is used for reading and writing ESP/ESM format files. This is the only part of Wrye Bash not written in Python (well, except for calls to 7z.exe to extract things).
+[*]The practical benefits of using CBash are:[list=1]
 [*] Building the bashed patch is much faster
 [*] More plugins are mergeable, giving you the ability to cram more goodness into Oblivion
-[*] In the future, more interesting kinds of tweaks will be practical to implement
-[/list][b]At this stage CBash still has a few bugs, though, and is in BETA.[/b]
+[*] In the future, more interesting kinds of tweaks will be practical to implement[/list]
 [*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
 [*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
 [*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
-[/list]
-[/spoiler]
+[/list][/list][/spoiler]
 
 [b]Download[/b]: [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] (mirrored at [url=http://www.fliggerty.com/phpBB3/viewtopic.php?f=54&t=4233]GHF[/url] and, of course, [url=https://sourceforge.net/projects/oblivionworks/files/Wrye%20Bash/]SourceForge[/url])
 
@@ -33,6 +31,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
   [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
   [*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
   [*][url=http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash]UESP Wrye Bash unofficial wiki[/url]
+  [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]簡體中文[/url]
 [/list]
 [b]Screenshots[/b]:[list]
   [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_1.png]Building a bashed patch[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_2.png]2[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_3.png]3[/url]
@@ -129,7 +128,7 @@ Rinse and repeat when a new svn comes out.
   [*]Revert to Default option added; just reverts the patch config to default.
   [*]Settings tweaker:[list]
     [*]AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
-    [*]Leveled Creature Max level difference[/list]
+    [*]Leveled Creature Max level difference[/list][/list]
   [*]BAIN:[list]
     [*]Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
     [*]BAIN Wizards: Updated the EditINI function to allow comments.
