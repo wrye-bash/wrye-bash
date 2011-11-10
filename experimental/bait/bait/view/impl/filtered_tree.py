@@ -246,7 +246,8 @@ class _FilteredTree:
         if item:
             tree = self._tree
             rect = tree.GetBoundingRect(item, textOnly=True)
-            if rect and tree.GetSize()[0] < rect.GetLeft()+rect.GetWidth():
+            if rect and (rect.GetLeft() < 0 or
+                         tree.GetSize()[0] < rect.GetLeft()+rect.GetWidth()):
                 text = tree.GetItemText(item)
                 if text:
                     event.SetToolTip(wx.ToolTip(text))

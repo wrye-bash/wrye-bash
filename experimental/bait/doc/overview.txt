@@ -40,11 +40,11 @@ there.
   Background
 ==============
 For readers unfamiliar with Wrye Bash, it is a mod management tool for the game
-"The Elder Scrolls IV: Oblivion".  Its two main features a the Bashed Patch, a
-mechanism for combining multiple conflicting mods into a functioning whole, and
-the BAIN installer, a mod management system that keeps track of individual file
-origins and guarantees a consistent installed fileset at all times (i.e. it
-"anneals" the installed files after one component is uninstalled).
+"The Elder Scrolls IV: Oblivion".  Its two main features are the Bashed Patch,
+a mechanism for combining multiple conflicting mods into a functioning whole,
+and the BAIN installer, a mod management system that keeps track of individual
+file origins and guarantees a consistent installed fileset at all times (i.e. it
+"heals" the installed files after one component is uninstalled).
 
 This document describes the proposed next version of the BAIN installer and its
 UI, the Installers tab.

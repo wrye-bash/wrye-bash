@@ -87,7 +87,8 @@ class PackageSettingsButton:
 
     def _on_package_settings_menu(self, event):
         _logger.debug("showing package settings menu")
-        # TODO: use a PopupWindow with a listbox instead of PopupMenu() to avoid stalling the GUI event loop thread
+        # TODO: use a PopupWindow with a listbox instead of PopupMenu() to avoid stalling
+        # the GUI event loop thread
         menu = wx.Menu()
         menu.Append(-1, "Skip DistantLOD", kind=wx.ITEM_CHECK)
         menu.Append(-1, "Skip LOD meshes", kind=wx.ITEM_CHECK)

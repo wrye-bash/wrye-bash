@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 #
-# queue_handler.py
+# bait/util/queue_handler.py
 #
 # adapted from:
 # http://plumberjack.blogspot.com/2010/09/using-logging-with-multiprocessing.html
@@ -53,14 +54,13 @@ import logging.handlers
 import multiprocessing
 import threading
 
-from random import choice, random
-import time
+from . import monitored_thread
 
 
-class QueueHandler(logging.Handler):
+class _QueueHandler(logging.Handler):
     """
     This is a logging handler which sends events to a multiprocessing queue.
-    
+
     The plan is to add it to Python 3.2, but this can be copy pasted into
     user code for use with earlier Python versions.
     """
@@ -70,8 +70,8 @@ class QueueHandler(logging.Handler):
         Initialise an instance, using the passed queue.
         """
         logging.Handler.__init__(self)
-        self.queue = queue
-        
+        self._queue = queue
+
     def emit(self, record):
         """
         Emit a record.
@@ -81,37 +81,19 @@ class QueueHandler(logging.Handler):
         try:
             ei = record.exc_info
             if ei:
-                dummy = self.format(record) # just to get traceback text into record.exc_text
+                # just to get traceback text into record.exc_text
+                dummy = self.format(record)
                 record.exc_info = None  # not needed any more
-            self.queue.put_nowait(record)
+            # throws if queue is full and prints the message to stderr
+            self._queue.put_nowait(record)
         except (KeyboardInterrupt, SystemExit):
             raise
         except:
             self.handleError(record)
 
-# Because you'll want to define the logging configurations for listener and workers, the
-# listener and worker process functions take a configurer parameter which is a callable
-# for configuring logging for that process. These functions are also passed the queue,
-# which they use for communication.
-#
-# In practice, you can configure the listener however you want, but note that in this
-# simple example, the listener does not apply level or filter logic to received records.
-# In practice, you would probably want to do ths logic in the worker processes, to avoid
-# sending events which would be filtered out between processes.
-#
-# The size of the rotated files is made small so you can see the results easily.
-def listener_configurer():
-    root = logging.getLogger()
-    h = logging.handlers.RotatingFileHandler('/tmp/mptest.log', 'a', 300, 10)
-    logFormat = "[0;1;31m%(asctime)s [0;1;33m%(relativeCreated)d [0;1;34m[[0;1;35m%(processName)s[0;1;34m/[0;1;35m%(threadName)s[0;1;34m] [0;1;32m%(levelname)s[0m [0;1;36m%(name)s[0;1;34m:[0;1;31m%(lineno)d [0;1;34m-[0m %(message)s"
-    f = logging.Formatter(logFormat)
-    h.setFormatter(f)
-    root.addHandler(h)
-
 # This is the listener loop: wait for logging events (LogRecords) on the queue
 # and handle them, quit when you get a None for a LogRecord.
-def log_listener(queue, configurer):
-    configurer()
+def _log_listener(queue):
     while True:
         try:
             record = queue.get()
@@ -126,42 +108,23 @@ def log_listener(queue, configurer):
             print >> sys.stderr, 'Whoops! Problem:'
             traceback.print_exc(file=sys.stderr)
 
-# Arrays used for random selections in this demo
-
-LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING,
-          logging.ERROR, logging.CRITICAL]
-
-LOGGERS = ['a.b.c', 'd.e.f']
-
-MESSAGES = [
-    'Random message #1',
-    'Random message #2',
-    'Random message #3',
-]
-
-# The worker configuration is done at the start of the worker process run.
 # Note that on Windows you can't rely on fork semantics, so each process
 # will run the logging configuration code when it starts.
-def worker_configurer(queue):
-    h = QueueHandler(queue) # Just the one handler needed
-    root = logging.getLogger()
-    root.addHandler(h)
-    root.setLevel(logging.DEBUG) # send all messages, for demo; no other level or filter logic applied.
+def _init_child_process(initLoggingFn, queue):
+    monitored_thread.tag_current_thread()
+    # initialize logging
+    initLoggingFn()
+    # remove all configured handlers
+    for logger in logging.Logger.manager.loggerDict.itervalues():
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+    # just the one handler needed for everything
+    queueHandler = QueueHandler(queue)
+    logging.getLogger().addHandler(queueHandler)
 
-# This is the worker process top-level loop, which just logs ten events with
-# random intervening delays before terminating.
-# The print messages are just so you know it's doing something!
-def worker_process(queue, configurer):
-    configurer(queue)
-    name = multiprocessing.current_process().name
-    print('Worker started: %s' % name)
-    for i in range(10):
-        time.sleep(random())
-        logger = logging.getLogger(choice(LOGGERS))
-        level = choice(LEVELS)
-        message = choice(MESSAGES)
-        logger.log(level, message)
-    print('Worker finished: %s' % name)
+_initLoggingFn = None
+def set_init_logging_fn(initLoggingFn=None):
+    _initLoggingFn = initLoggingFn
 
 # Here's where the demo gets orchestrated. Create the queue, create and start
 # the listener, create ten workers and start them, wait for them to finish,

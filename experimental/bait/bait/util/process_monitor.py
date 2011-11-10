@@ -43,7 +43,7 @@ try:
 except ImportError:
     pass
 
-# will this still match when we're running from a py2exe standalone executable?
+# TODO: will this still match when we're running from a py2exe standalone executable?
 _includeStackStr = os.path.sep + 'bait' + os.path.sep
 _excludeStackStr = 'monitored_thread.py'
 _bytesPerMegabyte = 1024*1024
