@@ -20,13 +20,13 @@ import locale
 
 class BashIntermediary:
     """bashim process: Intermediary layer"""
-    def __init__(self, to_parent_queue, to_gui_queue, to_bashim_queue):
+    def __init__(self, top_working_dir, to_parent_queue, to_gui_queue, to_bashim_queue):
         self.to_parent_queue = to_parent_queue
         self.to_bashim_queue = to_bashim_queue
         self.to_gui_queue = to_gui_queue
         self._command_table = {}
         self.afters = []
-        self.game_manager = bash.games.manager.ResourceManager()
+        self.game_manager = bash.games.manager.ResourceManager(top_working_dir)
         #Before the connection is used, bind all messages that might be received
         self.bind_message(GET_RESOURCE, self.get_resource)
         self.bind_message(SET_RESOURCE, self.set_resource)

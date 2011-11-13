@@ -23,7 +23,8 @@ fp = format_program
 
 class ResourceManager:
     """Responsible for loading, retrieving, and/or creating requested resources."""
-    def __init__(self):
+    def __init__(self, top_working_dir):
+        self.top_working_dir = top_working_dir
         self._resource_table = {}
         self._app_table = {}
         self.profiles = []
@@ -48,7 +49,7 @@ class ResourceManager:
     def init_profiles(self):
         """Load profiles. Create an empty profile if none exist."""
         profiles = self.profiles
-        self.profiles_dir = norm_join(os.path.dirname(__file__), '..','..','Profiles')
+        self.profiles_dir = norm_join(self.top_working_dir, 'Profiles')
         profile_base_settings_path = norm_join(self.profiles_dir, 'profiles.ini')
 
         profiles_settings = load_ini_settings(profile_base_settings_path)
@@ -78,7 +79,7 @@ class ResourceManager:
 
     def init_resources(self):
         _resource_table = self._resource_table
-        img_dir = norm_join(os.path.dirname(__file__), 'images')
+        img_dir = norm_join(self.top_working_dir,'bash','games','images')
         _resource_table['img_dir'] = fr(RES_STRING, value=img_dir)
 
         _resource_table['tab_close'] = fr(RES_IMAGE, norm_join(img_dir, 'transparent16.gif'))

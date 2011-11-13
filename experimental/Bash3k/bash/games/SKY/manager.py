@@ -246,7 +246,8 @@ class GameManager:
             out.write('# This file is used to tell Skyrim which data files to load.\n\n')
             for modName in mods_list:
                 out.write('%s\n' % (modName,))
-        os.remove(backup_name)
+        if os.path.exists(backup_name):
+            os.remove(backup_name)
         os.rename(self.active_files_path, backup_name)
         os.rename(temp_name, self.active_files_path)
 

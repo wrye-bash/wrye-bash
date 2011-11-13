@@ -136,6 +136,7 @@ class UserProfile:
 
         for ungrouped_app_path in ungrouped_app_paths:
             print('Unimplemented! Need to add %s to a grouped app path' % (ungrouped_app_path,))
-        del shell
-        del win32com.client
-        del win32com
+        if shell:
+            del shell
+            del win32com.client
+            del win32com

@@ -2230,12 +2230,12 @@ def pre_init():
     images = {} #GUI dependent resource
     registered_afters = {}
 
-def main(to_parent_queue, to_gui_queue, to_bashim_queue):
+def main(top_working_dir, to_parent_queue, to_gui_queue, to_bashim_queue):
     """Main Process: Start the GUI"""
     pre_init()
     root = tkinter.Tk()
     cwd = os.getcwd()
-    os.chdir(os.path.join(os.path.dirname(__file__),r'..\compiled'))
+    os.chdir(os.path.join(top_working_dir,'bash','compiled'))
     root.tk.eval('load shellicon.dll')
     os.chdir(cwd)
     app = Application(root, to_parent_queue, to_gui_queue, to_bashim_queue)
