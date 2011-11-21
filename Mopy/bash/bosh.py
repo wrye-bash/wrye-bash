@@ -8277,7 +8277,7 @@ class TrackedFileInfos(DataDict):
         return changed
 
     def track(self,fileName):
-        self.refreshFile(fileName)
+        self.refreshFile(GPath(fileName))
 
     def untrack(self,fileName):
         self.data.pop(fileName,None)
