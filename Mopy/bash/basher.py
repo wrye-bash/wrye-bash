@@ -4810,12 +4810,14 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             except Exception, e:
                 if isinstance(e, ImportError):
                     if page == 'PM Archive':
-                        deprint(_("%s panel disabled due to Import Error (most likely comtypes)") % title)
+                        deprint(_("%s panel disabled due to Import Error (most likely comtypes)") % title,traceback=True)
                         continue
                 if page == 'Mods':
-                    deprint(_("Fatal error constructing '%s' panel.") % title)
+                    deprint(_("Fatal error constructing '%s' panel.") % title,traceback=True)
                     raise
-                deprint(_("Error constructing '%s' panel.") % title)
+                deprint(_("Error constructing '%s' panel.") % title,traceback=True)
+                if page in settings['bash.tabs']:
+                    settings['bash.tabs'] = False
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Selection
         pageIndex = max(min(settings['bash.page'],self.GetPageCount()-1),0)
