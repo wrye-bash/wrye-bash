@@ -4817,7 +4817,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                     raise
                 deprint(_("Error constructing '%s' panel.") % title,traceback=True)
                 if page in settings['bash.tabs']:
-                    settings['bash.tabs'] = False
+                    settings['bash.tabs'][page] = False
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Selection
         pageIndex = max(min(settings['bash.page'],self.GetPageCount()-1),0)
