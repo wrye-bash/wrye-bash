@@ -2284,9 +2284,17 @@ class INIPanel(SashPanel):
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
+        # Debug prints to track down a bug
+        deprint(_('bash.ini.choices:', self.choices))
+        deprint(_('bash.ini.choice:', self.choice))
         self.CheckTargets()
         self.lastDir = bosh.dirs['mods'].s
         self.SortChoices()
+        deprint(_('After validating files:'))
+        deprint(self.choices)
+        deprint(self.choice)
+        deprint(self.GetChoice())
+        deprint(self.GetChoiceString())
         #--Watch for changes to the target INI
         self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
         self.trackedInfo.track(self.GetChoice())
