@@ -2285,16 +2285,11 @@ class INIPanel(SashPanel):
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
         # Debug prints to track down a bug
-        deprint(_('bash.ini.choices:', self.choices))
-        deprint(_('bash.ini.choice:', self.choice))
         self.CheckTargets()
         self.lastDir = bosh.dirs['mods'].s
         self.SortChoices()
-        deprint(_('After validating files:'))
-        deprint(self.choices)
-        deprint(self.choice)
-        deprint(self.GetChoice())
-        deprint(self.GetChoiceString())
+        if self.choice < 0 or self.choice >= len(self.sortKeys):
+            self.choice = 0
         #--Watch for changes to the target INI
         self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
         self.trackedInfo.track(self.GetChoice())
@@ -2452,7 +2447,7 @@ class INIPanel(SashPanel):
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        keys.sort(key=lambda a: 2 if a == 'Oblivion.ini' else 0 if a == _('Browse...') else 1)
+        keys.sort(key=lambda a: 0 if a == 'Oblivion.ini' else 1 if a == _('Browse...') else 2)
         self.sortKeys = keys
         return keys
 
