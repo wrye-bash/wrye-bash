@@ -2452,7 +2452,7 @@ class INIPanel(SashPanel):
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        keys.sort(key=lambda a: (a != 'Oblivion.ini') + (a == _('Browse...')))
+        keys.sort(key=lambda a: 2 if a == 'Oblivion.ini' else 1 if a == _('Browse...') else 0)
         self.sortKeys = keys
         return keys
 
