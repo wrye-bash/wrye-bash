@@ -8695,7 +8695,7 @@ class ModInfos(FileInfos):
         elif doCBash and not bool(CBash):
             doCBash = False
         mod_mergeInfo = self.table.getColumn('mergeInfo')
-        progress.setFull(len(names))
+        progress.setFull(max(len(names),1))
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
