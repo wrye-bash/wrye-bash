@@ -483,6 +483,10 @@ class ModReader:
         ins.seek(0,2)
         self.size = ins.tell()
         ins.seek(curPos)
+        if settings['bash.game'] == 'Skyrim':
+            self.headerUnpack = ('4s5I',24,'REC_HEAD')
+        else:
+            self.headerUnpack = ('4s4I',20,'REC_HEAD')
 
     #--IO Stream ------------------------------------------
     def seek(self,offset,whence=0,recType='----'):
@@ -544,7 +548,7 @@ class ModReader:
 
     def unpackRecHeader(self):
         """Unpack a record header."""
-        (type,size,uint0,uint1,uint2) = self.unpack('4s4I',20,'REC_HEAD')
+        (type,size,uint0,uint1,uint2) = self.unpack(*self.headerUnpack)[0:5]#'4s4I',20,'REC_HEAD')
         #--Bad?
         if type not in bush.recordTypes:
             raise ModError(self.inName,_('Bad header type: ')+type)
@@ -3831,6 +3835,21 @@ class MreTes4(MelRecord):
         return (self.nextObject -1)
 
 #------------------------------------------------------------------------------
+class MreTes5(MreTes4):
+    """TES4 Record for Skyrim."""
+    melSet = MelSet(
+        MelStruct('HEDR', 'f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',), #--Unconfirmed for Skyrim
+        MelBase('DELE','dele_p',), #--Unconfirmed for Skyrim
+        MelString('CNAM','author','',512),
+        MelString('SNAM','description','',512),
+        MreTes4.MelTes4Name('MAST','masters'),
+        MelNull('DATA'),
+        MelNull('INTV'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreTree(MelRecord):
     """Tree record."""
     classType = 'TREE'
@@ -5709,33 +5728,76 @@ class SaveHeader:
 
     def load(self,path):
         """Extract info from save file."""
-        ins = path.open('rb')
         try:
-            #--Header
-            ins.seek(34)
-            headerSize, = struct.unpack('I',ins.read(4))
-            #posMasters = 38 + headerSize
-            #--Name, location
-            ins.seek(38+4)
-            size, = struct.unpack('B',ins.read(1))
-            self.pcName = cstrip(ins.read(size))
-            self.pcLevel, = struct.unpack('H',ins.read(2))
-            size, = struct.unpack('B',ins.read(1))
-            self.pcLocation = cstrip(ins.read(size))
-            #--Image Data
-            self.gameDays,self.gameTicks,self.gameTime,ssSize,ssWidth,ssHeight = struct.unpack('=fI16s3I',ins.read(36))
-            ssData = ins.read(3*ssWidth*ssHeight)
-            self.image = (ssWidth,ssHeight,ssData)
-            #--Masters
-            #ins.seek(posMasters)
-            del self.masters[:]
-            numMasters, = struct.unpack('B',ins.read(1))
-            for count in range(numMasters):
-                size, = struct.unpack('B',ins.read(1))
-                self.masters.append(GPath(ins.read(size)))
+            with path.open('rb') as ins:
+                if settings['bash.game'] == 'Oblivion':
+                    #--Header
+                    ins.seek(34)
+                    headerSize, = struct.unpack('I',ins.read(4))
+                    #posMasters = 38 + headerSize
+                    #--Name, location
+                    ins.seek(38+4)
+                    size, = struct.unpack('B',ins.read(1))
+                    self.pcName = cstrip(ins.read(size))
+                    self.pcLevel, = struct.unpack('H',ins.read(2))
+                    size, = struct.unpack('B',ins.read(1))
+                    self.pcLocation = cstrip(ins.read(size))
+                    #--Image Data
+                    self.gameDays,self.gameTicks,self.gameTime,ssSize,ssWidth,ssHeight = struct.unpack('=fI16s3I',ins.read(36))
+                    ssData = ins.read(3*ssWidth*ssHeight)
+                    self.image = (ssWidth,ssHeight,ssData)
+                    #--Masters
+                    #ins.seek(posMasters)
+                    del self.masters[:]
+                    numMasters, = struct.unpack('B',ins.read(1))
+                    for count in range(numMasters):
+                        size, = struct.unpack('B',ins.read(1))
+                        self.masters.append(GPath(ins.read(size)))
+                else:
+                    #--Header
+                    if ins.read(13) != 'TESV_SAVEGAME':
+                        raise SaveFileError(path.tail,_('Save file is not a Skyrim save file.'))
+                    headerSize, = struct.unpack('I',ins.read(4))
+                    version,saveNumber,size = struct.unpack('2IH',ins.read(10))
+                    self.pcName = cstrip(ins.read(size))
+                    self.pcLevel, = struct.unpack('I',ins.read(4))
+                    size, = struct.unpack('H',ins.read(2))
+                    self.pcLocation = ins.read(size)
+                    size, = struct.unpack('H',ins.read(2))
+                    self.gameDate = ins.read(size)
+                    days,hours,minutes = [int(x) for x in self.gameDate.split('.')]
+                    self.gameDays = days + (hours/24) + (minutes/(24*60))
+                    minutes = days*24*60 + hours*60 + minutes
+                    self.gameTicks = minutes * 1000
+                    size, = struct.unpack('H',ins.read(2))
+                    raceEdid = ins.read(size)
+                    unk0, = struct.unpack('H',ins.read(2))
+                    unk1, = struct.unpack('f',ins.read(4))
+                    unk2, = struct.unpack('f',ins.read(4))
+                    ftime, = struct.unpack('Q',ins.read(8))
+                    ssWidth, = struct.unpack('I',ins.read(4))
+                    ssHeight, = struct.unpack('I',ins.read(4))
+                    if ins.tell() != headerSize + 17:
+                        raise SaveFileError(path.tail,'Save game header size (%i) not as expected (%i).' % (ins.tell()-17,headerSize))
+                    #--Screenshot data
+                    ssData = ins.read(ssWidth*ssHeight*3)
+                    self.image = (ssWidth,ssHeight,ssData)
+                    #--unknown
+                    unk3, = struct.unpack('B',ins.read(1))
+                    #--Masters
+                    mastersSize, = struct.unpack('I',ins.read(4))
+                    mastersStart = ins.tell()
+                    del self.masters[:]
+                    numMasters, = struct.unpack('B',ins.read(1))
+                    for count in xrange(numMasters):
+                        size, = struct.unpack('H',ins.read(2))
+                        self.masters.append(GPath(ins.read(size)))
+                    if ins.tell() != mastersStart + mastersSize:
+                        deprint(path.tail,'Save masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
         #--Errors
         except:
-            raise SaveFileError(path.tail,_('File header is corrupted..'))
+            deprint('save file error:',traceback=True)
+            raise SaveFileError(path.tail,_('File header is corrupted.'))
         #--Done
         ins.close()
 
@@ -5860,85 +5922,84 @@ class SaveFile:
         """Extract info from save file."""
         import array
         path = self.fileInfo.getPath()
-        ins = bolt.StructFile(path.s,'rb')
-        #--Progress
-        fileName = self.fileInfo.name
-        progress = progress or bolt.Progress()
-        progress.setFull(self.fileInfo.size)
-        #--Header
-        progress(0,_('Reading Header.'))
-        self.header = ins.read(34)
+        with bolt.StructFile(path.s,'rb') as ins:
+            #--Progress
+            fileName = self.fileInfo.name
+            progress = progress or bolt.Progress()
+            progress.setFull(self.fileInfo.size)
+            #--Header
+            progress(0,_('Reading Header.'))
+            self.header = ins.read(34)
 
-        #--Save Header, pcName
-        gameHeaderSize, = ins.unpack('I',4)
-        self.saveNum,pcNameSize, = ins.unpack('=IB',5)
-        self.pcName = cstrip(ins.read(pcNameSize))
-        self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
+            #--Save Header, pcName
+            gameHeaderSize, = ins.unpack('I',4)
+            self.saveNum,pcNameSize, = ins.unpack('=IB',5)
+            self.pcName = cstrip(ins.read(pcNameSize))
+            self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
-        #--Masters
-        del self.masters[:]
-        numMasters, = ins.unpack('B',1)
-        for count in range(numMasters):
-            size, = ins.unpack('B',1)
-            self.masters.append(GPath(ins.read(size)))
+            #--Masters
+            del self.masters[:]
+            numMasters, = ins.unpack('B',1)
+            for count in range(numMasters):
+                size, = ins.unpack('B',1)
+                self.masters.append(GPath(ins.read(size)))
 
-        #--Pre-Records copy buffer
-        def insCopy(buff,size,backSize=0):
-            if backSize: ins.seek(-backSize,1)
-            buff.write(ins.read(size+backSize))
+            #--Pre-Records copy buffer
+            def insCopy(buff,size,backSize=0):
+                if backSize: ins.seek(-backSize,1)
+                buff.write(ins.read(size+backSize))
 
-        #--"Globals" block
-        fidsPointer,recordsNum = ins.unpack('2I',8)
-        #--Pre-globals
-        self.preGlobals = ins.read(8*4)
-        #--Globals
-        globalsNum, = ins.unpack('H',2)
-        self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
-        #--Pre-Created (Class, processes, spectator, sky)
-        buff = cStringIO.StringIO()
-        for count in range(4):
-            size, = ins.unpack('H',2)
-            insCopy(buff,size,2)
-        insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
-        self.preCreated = buff.getvalue()
-        #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
-        modReader = ModReader(self.fileInfo.name,ins)
-        createdNum, = ins.unpack('I',4)
-        for count in xrange(createdNum):
-            progress(ins.tell(),_('Reading created...'))
-            header = ins.unpack('4s4I',20)
-            self.created.append(MreRecord(header,modReader))
-        #--Pre-records: Quickkeys, reticule, interface, regions
-        buff = cStringIO.StringIO()
-        for count in range(4):
-            size, = ins.unpack('H',2)
-            insCopy(buff,size,2)
-        self.preRecords = buff.getvalue()
+            #--"Globals" block
+            fidsPointer,recordsNum = ins.unpack('2I',8)
+            #--Pre-globals
+            self.preGlobals = ins.read(8*4)
+            #--Globals
+            globalsNum, = ins.unpack('H',2)
+            self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
+            #--Pre-Created (Class, processes, spectator, sky)
+            buff = cStringIO.StringIO()
+            for count in range(4):
+                size, = ins.unpack('H',2)
+                insCopy(buff,size,2)
+            insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
+            self.preCreated = buff.getvalue()
+            #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
+            modReader = ModReader(self.fileInfo.name,ins)
+            createdNum, = ins.unpack('I',4)
+            for count in xrange(createdNum):
+                progress(ins.tell(),_('Reading created...'))
+                header = ins.unpack('4s4I',20)
+                self.created.append(MreRecord(header,modReader))
+            #--Pre-records: Quickkeys, reticule, interface, regions
+            buff = cStringIO.StringIO()
+            for count in range(4):
+                size, = ins.unpack('H',2)
+                insCopy(buff,size,2)
+            self.preRecords = buff.getvalue()
 
-        #--Records
-        for count in xrange(recordsNum):
-            progress(ins.tell(),_('Reading records...'))
-            (fid,recType,flags,version,size) = ins.unpack('=IBIBH',12)
-            data = ins.read(size)
-            self.records.append((fid,recType,flags,version,data))
+            #--Records
+            for count in xrange(recordsNum):
+                progress(ins.tell(),_('Reading records...'))
+                (fid,recType,flags,version,size) = ins.unpack('=IBIBH',12)
+                data = ins.read(size)
+                self.records.append((fid,recType,flags,version,data))
 
-        #--Temp Effects, fids, worldids
-        progress(ins.tell(),_('Reading fids, worldids...'))
-        size, = ins.unpack('I',4)
-        self.tempEffects = ins.read(size)
-        #--Fids
-        num, = ins.unpack('I',4)
-        self.fids = array.array('I')
-        self.fids.fromfile(ins,num)
-        for iref,fid in enumerate(self.fids):
-            self.irefs[fid] = iref
+            #--Temp Effects, fids, worldids
+            progress(ins.tell(),_('Reading fids, worldids...'))
+            size, = ins.unpack('I',4)
+            self.tempEffects = ins.read(size)
+            #--Fids
+            num, = ins.unpack('I',4)
+            self.fids = array.array('I')
+            self.fids.fromfile(ins,num)
+            for iref,fid in enumerate(self.fids):
+                self.irefs[fid] = iref
 
-        #--WorldSpaces
-        num, = ins.unpack('I',4)
-        self.worldSpaces = array.array('I')
-        self.worldSpaces.fromfile(ins,num)
+            #--WorldSpaces
+            num, = ins.unpack('I',4)
+            self.worldSpaces = array.array('I')
+            self.worldSpaces.fromfile(ins,num)
         #--Done
-        ins.close()
         progress(progress.full,_('Finished reading.'))
 
     def save(self,outPath=None,progress=None):
@@ -7159,17 +7220,17 @@ class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = set(('archiveinvalidationinvalidated!.bsa',r'..\obmm\bsaredirection.bsa'))
 
-    def __init__(self):
+    def __init__(self,game_type):
         """Initialize."""
         # Use local copy of the oblivion.ini if present
-        if dirs['app'].join('oblivion.ini').exists():
-            IniFile.__init__(self,dirs['app'].join('Oblivion.ini'),'General')
+        if dirs['app'].join('%s.ini' % game_type).exists():
+            IniFile.__init__(self,dirs['app'].join('%s.ini' % game_type),'General')
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting('General','bUseMyGamesDirectory','1') == '0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self,dirs['saveBase'].join('Oblivion.ini'),'General')
+        IniFile.__init__(self,dirs['saveBase'].join('%s.ini' % game_type),'General')
 
 
     def ensureExists(self):
@@ -7958,14 +8019,14 @@ class ModInfo(FileInfo):
             recHeader = ins.unpackRecHeader()
             if recHeader[0] != 'TES4':
                 raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            self.header = MreTes4(recHeader,ins,True)
-            ins.close()
+            if settings['bash.game'] == 'Skyrim':
+                self.header = MreTes5(recHeader,ins,True)
+            else:
+                self.header = MreTes4(recHeader,ins,True)
         except struct.error, rex:
-            ins.close()
             raise ModError(self.name,_('Struct.error: ')+`rex`)
-        except:
+        finally:
             ins.close()
-            raise
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
@@ -8468,13 +8529,19 @@ class ModInfos(FileInfos):
         self.plugins = Plugins() #--Plugins instance.
         self.ordered = tuple() #--Active mods arranged in load order.
         #--Info lists/sets
-        if dirs['mods'].join('Oblivion.esm').exists():
-            self.masterName = GPath('Oblivion.esm')
-        elif dirs['mods'].join('Nehrim.esm').exists():
-            self.masterName = GPath('Nehrim.esm')
-        else:
-            self.masterName = GPath('Oblivion.esm')
-            deprint(_('Missing master file; Neither Oblivion.esm or Nehrim.esm exists in an unghosted state in %s - presuming that Oblivion.esm is the correct masterfile.') % (dirs['mods'].s))
+        if settings['bash.game'] == 'Oblivion':
+            if dirs['mods'].join('Oblivion.esm').exists():
+                self.masterName = GPath('Oblivion.esm')
+            elif dirs['mods'].join('Nehrim.esm').exists():
+                self.masterName = GPath('Nehrim.esm')
+            else:
+                self.masterName = GPath('Oblivion.esm')
+                deprint(_('Missing master file; Neither Oblivion.esm or Nehrim.esm exists in an unghosted state in %s - presuming that Oblivion.esm is the correct masterfile.') % (dirs['mods'].s))
+        elif settings['bash.game'] == 'Skyrim':
+            if dirs['mods'].join('Skyrim.esm').exists():
+                self.masterName = GPath('Skyrim.esm')
+            else:
+                deprint(_('Missing master file; Skyrim.esm does not exist in an unghosted state in %s') % dirs['mods'].s)
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
@@ -10350,7 +10417,10 @@ class Installer(object):
         if settings['bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            bethFiles = bush.bethDataFiles
+            if settings['bash.game'] == 'Oblivion':
+                bethFiles = bush.bethDataFiles
+            else:
+                bethFiles = bush.bethDataFiles_Skyrim
         skipExts = Installer.skipExts
         asRoot = apRoot.s
         relPos = len(apRoot.s)+1
@@ -10579,7 +10649,10 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        bethFiles = bush.bethDataFiles
+        if settings['bash.game'] == 'Oblivion':
+            bethFiles = bush.bethDataFiles
+        else:
+            bethFiles = bush.bethDataFiles_Skyrim
         packageFiles = set(('package.txt','package.jpg'))
         unSize = 0
         espmNots = self.espmNots
@@ -12610,7 +12683,10 @@ class InstallersData(bolt.TankData, DataDict):
             if installer.isActive:
                 installed += installer.data_sizeCrc
         keepFiles = set(installed)
-        keepFiles.update((GPath(f) for f in bush.allBethFiles))
+        if settings['bash.game'] == 'Oblivion':
+            keepFiles.update((GPath(f) for f in bush.allBethFiles))
+        else:
+            keepFiles.update((GPath(f) for f in bush.allBethFiles_Skyrim))
         keepFiles.update((GPath(f) for f in bush.wryeBashDataFiles))
         keepFiles.update((GPath(f) for f in bush.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
@@ -33141,7 +33217,14 @@ def getOblivionPath(bashIni, path):
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
-    if not path.join('Oblivion.exe').exists():
+    if path.tail == 'Skyrim':
+        if path.join('TESV.exe').exists():
+            dirs['game_type'] = 'Skyrim'
+        else:
+            raise BoltError(_("Install Error\nFailed to find Skyrim.exe in %s.\nNote that the Mopy folder should be in the same folder as TESV.exe.") % path)
+    elif path.join('Oblivion.exe').exists():
+        dirs['game_type'] = 'Oblivion'
+    else:
         raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % path)
     return path
 
@@ -33197,7 +33280,7 @@ def getOblivionModsPath(bashIni):
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         path = GPath(bashIni.get('General','sOblivionMods').strip())
     else:
-        path = GPath(r'..\Oblivion Mods')
+        path = GPath(r'..\%s Mods' % dirs['game_type'])
     if not path.isabs(): path = dirs['app'].join(path)
     return path
 
@@ -33238,14 +33321,14 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join(r'My Games','Oblivion')
+    dirs['saveBase'] = personal.join('My Games',dirs['game_type'])
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
-    dirs['userApp'] = localAppData.join('Oblivion')
+    dirs['userApp'] = localAppData.join(dirs['game_type'])
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
-    oblivionIni = OblivionIni()
+    oblivionIni = OblivionIni(dirs['game_type'])
     try:
         if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
             # Set the save game folder to the Oblivion directory

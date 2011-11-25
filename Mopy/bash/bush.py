@@ -95,6 +95,20 @@ bethDataFiles = set((
     r'dlcshiveringisles - textures.bsa',
     r'dlcshiveringisles - voices.bsa',
     ))
+bethDataFiles_Skyrim = set((
+    #--Vanilla
+    r'skyrim.esm',
+    r'update.esm',
+    r'skyrim - animations.bsa',
+    r'skyrim - interface.bsa',
+    r'skyrim - meshes.bsa',
+    r'skyrim - misc.bsa',
+    r'skyrim - shaders.bsa',
+    r'skyrim - sounds.bsa',
+    r'skyrim - textures.bsa',
+    r'skyrim - voices.bsa',
+    r'skyrim - voicesextra.bsa',
+    ))
 allBethFiles = set((
     #vanilla
     r'Credits.txt',
@@ -186,6 +200,28 @@ allBethFiles = set((
     r'Knights.bsa',
     r'Knights.esp',
     r'DLCList.txt',
+    ))
+allBethFiles_Skyrim = set((
+    #--Vanilla
+    r'skyrim.esm',
+    r'update.esm',
+    r'skyrim - animations.bsa',
+    r'skyrim - interface.bsa',
+    r'skyrim - meshes.bsa',
+    r'skyrim - misc.bsa',
+    r'skyrim - shaders.bsa',
+    r'skyrim - sounds.bsa',
+    r'skyrim - textures.bsa',
+    r'skyrim - voices.bsa',
+    r'skyrim - voicesextra.bsa',
+    r'interface\translate_english.txt', #--probably need one for each language
+    r'strings\skyrim_english.dlstrings', #--same here
+    r'strings\skyrim_english.ilstrings',
+    r'strings\skryim_english.strings',
+    r'strings\update_english.dlstrings',
+    r'strings\update_english.ilstrings',
+    r'strings\update_english.strings',
+    r'video\bgs_logo.bik',
     ))
 
 # Balo Canonical Groups -------------------------------------------------------
