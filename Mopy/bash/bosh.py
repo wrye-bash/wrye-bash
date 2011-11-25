@@ -3800,7 +3800,7 @@ class MreStat(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreTes4(MelRecord):
+class MreTes4Base(MelRecord):
     """TES4 Record. File header."""
     classType = 'TES4' #--Used by LoadFactory
     #--Masters array element
@@ -3816,17 +3816,6 @@ class MreTes4(MelRecord):
             for name in record.masters:
                 pack1('MAST',name.s)
                 pack2('DATA','Q',0)
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
-        MelBase('OFST','ofst_p',), #--Obsolete?
-        MelBase('DELE','dele_p'), #--Obsolete?
-        MelString('CNAM','author','',512),
-        MelString('SNAM','description','',512),
-        MelTes4Name('MAST','masters'),
-        MelNull('DATA'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""
@@ -3835,15 +3824,31 @@ class MreTes4(MelRecord):
         return (self.nextObject -1)
 
 #------------------------------------------------------------------------------
-class MreTes5(MreTes4):
+class MreTes4(MreTes4Base):
+    """TES4 Record for Oblivion."""
+    #--Data elements
+    melSet = MelSet(
+        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',), #--Obsolete?
+        MelBase('DELE','dele_p'), #--Obsolete?
+        MelString('CNAM','author','',512),
+        MelString('SNAM','description','',512),
+        MreTes4Base.MelTes4Name('MAST','masters'),
+        MelNull('DATA'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreTes5(MreTes4Base):
     """TES4 Record for Skyrim."""
+    #--Data elements
     melSet = MelSet(
         MelStruct('HEDR', 'f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
         MelBase('OFST','ofst_p',), #--Unconfirmed for Skyrim
         MelBase('DELE','dele_p',), #--Unconfirmed for Skyrim
         MelString('CNAM','author','',512),
         MelString('SNAM','description','',512),
-        MreTes4.MelTes4Name('MAST','masters'),
+        MreTes4Base.MelTes4Name('MAST','masters'),
         MelNull('DATA'),
         MelNull('INTV'),
         )
@@ -5102,7 +5107,10 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = MreTes4(('TES4',0,0,0,0))
+        if settings['bash.game'] == 'Oblivion':
+            self.tes4 = MreTes4(('TES4',0,0,0,0))
+        else:
+            self.tes4 = MreTes5(('TES4',0,0,0,0,0))
         self.tes4.setChanged()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
@@ -5132,7 +5140,10 @@ class ModFile:
         #--Header
         ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
         header = ins.unpackRecHeader()
-        self.tes4 = MreTes4(header,ins,True)
+        if settings['bash.game'] == 'Oblivion':
+            self.tes4 = MreTes4(header,ins,True)
+        else:
+            self.tes4 = MreTes5(header,ins,True)
         #--Raw data read
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -5766,7 +5777,7 @@ class SaveHeader:
                     size, = struct.unpack('H',ins.read(2))
                     self.gameDate = ins.read(size)
                     days,hours,minutes = [int(x) for x in self.gameDate.split('.')]
-                    self.gameDays = days + (hours/24) + (minutes/(24*60))
+                    self.gameDays = days + (float(hours)/24) + (float(minutes)/(24*60))
                     minutes = days*24*60 + hours*60 + minutes
                     self.gameTicks = minutes * 1000
                     size, = struct.unpack('H',ins.read(2))
