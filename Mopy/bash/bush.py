@@ -212,6 +212,11 @@ class Oblivion:
         r'DLCList.txt',
         ))
 
+    #--BAIN: Directories that are OK to install to
+    dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
+        'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
+    dataDirsPlus = set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
+
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.8,1.0)
 
@@ -279,6 +284,11 @@ class Skyrim:
         r'strings\update_english.strings',
         r'video\bgs_logo.bik',
         ))
+
+    #--BAIN: Directories that are OK to install to
+    dataDirs = set(('bash patches','interface','meshes','strings','textures',
+        'video','lodsettings','grass','scripts','shadersfx','music','sound',))
+    dataDirsPlus = set(('ini tweaks','skse','ini'))
 
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.94,)
