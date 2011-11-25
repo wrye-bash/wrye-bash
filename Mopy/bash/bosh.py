@@ -10366,10 +10366,10 @@ class Installer(object):
     scriptExts = set(('.txt','.ini'))
     commonlyEditedExts = scriptExts | set(('.xml',))
     #--Needs to be called after bush.game has been set
-    @classmethod
-    def initData(cls):
-        cls.dataDirs = bush.game.dataDirs
-        cls.dataDirsPlus = cls.dataDirs | cls.docDirs | bush.game.dataDirsPlus
+    @staticmethod
+    def initData():
+        Installer.dataDirs = bush.game.dataDirs
+        Installer.dataDirsPlus = Installer.dataDirs | Installer.docDirs | bush.game.dataDirsPlus
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
@@ -33214,15 +33214,11 @@ def getOblivionPath(bashIni, path):
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
-    if path.tail == 'Skyrim':
-        if path.join('TESV.exe').exists():
-            bush.game = bush.Skyrim
-        else:
-            raise BoltError(_("Install Error\nFailed to find Skyrim.exe in %s.\nNote that the Mopy folder should be in the same folder as TESV.exe.") % path)
-    elif path.join('Oblivion.exe').exists():
-        bush.game = bush.Oblivion
-    else:
-        raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % path)
+    bush.setGame(path)
+    if not path.join(bush.game.exe).exists():
+        raise BoltError(_("Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe))
+    deprint('Running in game mode:', bush.game.name)
+
     Installer.initData()
     return path
 
