@@ -33,6 +33,8 @@ if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
 import re
+import traceback
+import cStringIO
 
 import bass
 import barg
@@ -271,8 +273,12 @@ def main():
             button = Tkinter.Button(frame, text="QUIT", fg="red", command=frame.quit, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
 
+            o = cStringIO.StringIO()
+            traceback.print_exc(file=o)
+            msg = o.getvalue()
+            o.close()
             w = Tkinter.Text(frame)
-            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (e,))
+            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (msg,))
             w.config(state=Tkinter.DISABLED)
             w.pack()
             root.mainloop()
