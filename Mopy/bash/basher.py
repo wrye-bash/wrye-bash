@@ -2095,7 +2095,8 @@ class ModDetails(SashPanel):
 
     def SetEdited(self):
         self.edited = True
-        self.save.Enable()
+        if bush.game.canBash:
+            self.save.Enable()
         self.cancel.Enable()
 
     def OnTextEdit(self,event):
@@ -2382,13 +2383,18 @@ class INIPanel(SashPanel):
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
         refresh = True
-        if self.choice == 0:
-            refresh = bosh.iniInfos.ini != bosh.OblivionIni
-            bosh.iniInfos.setBaseIni(bosh.oblivionIni)
-            self.button.Enable(False)
-        else:
+        choicePath = self.GetChoice()
+        isGameIni = False
+        for iFile in bosh.gameInis:
+            if iFile.path == choicePath:
+                refresh = bosh.iniInfos.ini != iFile
+                bosh.iniInfos.setBaseIni(iFile)
+                self.button.Enable(False)
+                isGameIni = True
+                break
+        if not isGameIni:
             if not path:
-                path = self.GetChoice()
+                path = choicePath
             ini = bosh.BestIniFile(path)
             refresh = bosh.iniInfos.ini != ini
             bosh.iniInfos.setBaseIni(ini)
@@ -2883,7 +2889,8 @@ class SaveDetails(SashPanel):
     def SetEdited(self):
         """Mark as edited."""
         self.edited = True
-        self.save.Enable()
+        if bush.game.canEditSaves:
+            self.save.Enable()
         self.cancel.Enable()
 
     def OnInfoEdit(self,event):
