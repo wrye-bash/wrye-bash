@@ -10356,9 +10356,6 @@ class Installer(object):
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set(('screenshots',))
-    dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
-        'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
-    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
     dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
@@ -10368,6 +10365,11 @@ class Installer(object):
     imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
     commonlyEditedExts = scriptExts | set(('.xml',))
+    #--Needs to be called after bush.game has been set
+    @classmethod
+    def initData(cls):
+        cls.dataDirs = bush.game.dataDirs
+        cls.dataDirsPlus = cls.dataDirs | cls.docDirs | bush.game.dataDirsPlus
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
@@ -33221,6 +33223,7 @@ def getOblivionPath(bashIni, path):
         bush.game = bush.Oblivion
     else:
         raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % path)
+    Installer.initData()
     return path
 
 def getPersonalPath(bashIni, path):
