@@ -204,7 +204,6 @@ settingDefaults = {
     'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
     'bash.page':1,
-    'bash.game':'Oblivion',
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -1579,7 +1578,7 @@ class INILineCtrl(wx.ListCtrl):
             for i in range(len(lines), num):
                 self.DeleteItem(len(lines))
         except IOError:
-            balt.showWarning(self, _("%s does not exist yet.  %s will create this file on first run.  INI tweaks will not be usable until then.") % (bosh.iniInfos.ini.path, settings['bash.game']))
+            balt.showWarning(self, _("%s does not exist yet.  %s will create this file on first run.  INI tweaks will not be usable until then.") % (bosh.iniInfos.ini.path, bush.game.iniFiles[0]))
         finally:
             if ini: ini.close()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
@@ -2432,9 +2431,11 @@ class INIPanel(SashPanel):
             if not path.isfile():
                 del self.choices[i]
                 changed = True
-        if '%s.ini' % settings['bash.game'] not in self.choices:
-            self.choices['%s.ini' % settings['bash.game']] = bosh.oblivionIni.path
-            changed = True
+        csChoices = [x.lower() for x in self.choices]
+        for iFile in bosh.gameInis:
+            if iFile.path.tail.cs not in csChoices:
+                self.choices[iFile.path.stail] = iFile.path
+                changed = True
         if _('Browse...') not in self.choices:
             self.choices[_('Browse...')] = None
             changed = True
@@ -2449,7 +2450,10 @@ class INIPanel(SashPanel):
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        keys.sort(key=lambda a: 0 if a == '%s.ini' % settings['bash.game'] else 1 if a == _('Browse...') else 2)
+        keys.sort(key=lambda a:
+                  bush.game.iniFiles.index(a) if a in bush.game.iniFiles
+                  else len(bush.game.iniFiles)+1 if a == _('Browse...')
+                  else len(bush.game.iniFiles))
         self.sortKeys = keys
         return keys
 
@@ -5148,14 +5152,16 @@ class BashFrame(wx.Frame):
         """Set title. Set to default if no title supplied."""
         if not title:
             ###Remove from Bash after CBash integrated
-            if settings['bash.game'] == 'Oblivion':
-                baseName = 'Wrye Bash'
-            else:
-                baseName = 'Wrye Smash'
+            title = "Wrye Bash %s%s for %s" % (
+                settings['bash.readme'][1],
+                '(Standalone)' if settings['bash.standalone'] else '',
+                bush.game.name)
             if CBash:
-                title = "%s %s%s, CBash v%u.%u.%u: " % (baseName, settings['bash.readme'][1], ('',' (Standalone)')[settings['bash.standalone']],CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
+                title += ', CBash v%u.%u.%u: ' % (
+                    CBash.GetVersionMajor(), CBash.GetVersionMinor(),
+                    CBash.GetVersionRevision())
             else:
-                title = "%s %s%s: " % (baseName, settings['bash.readme'][1],('',' (Standalone)')[settings['bash.standalone']],)
+                title += ': '
             maProfile = re.match(r'Saves\\(.+)\\$',bosh.saveInfos.localSave)
             if maProfile:
                 title += maProfile.group(1)
@@ -5268,10 +5274,7 @@ class BashFrame(wx.Frame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        if settings['bash.game'] == 'Skyrim':
-            invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.94,)])
-        else:
-            invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.8,1.0)])
+        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.validHeaderVersions])
         if not invalidVersions <= self.knownInvalidVerions:
             m = [_('Unrecognized Versions'),_("The following mods have unrecognized TES4 header versions: ")]
             m.extend(sorted(invalidVersions))
@@ -6139,12 +6142,11 @@ class BashApp(wx.App):
 
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
-        settings['bash.game'] = bosh.dirs['game_type']
-        del bosh.dirs['game_type']
         progress.Update(5,_("Initializing ModInfos"))
         bosh.configHelpers = bosh.ConfigHelpers()
         bosh.configHelpers.refresh()
-        bosh.oblivionIni = bosh.OblivionIni(settings['bash.game'])
+        bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
+        bosh.oblivionIni = bosh.gameInis[0]
         bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh(doAutoGroup=True)
@@ -6159,7 +6161,7 @@ class BashApp(wx.App):
         #bosh.BSAInfos.refresh()
         #--Patch check
         firstBashed = settings.get('bash.patch.firstBashed',False)
-        if not firstBashed and settings['bash.game'] == 'Oblivion':
+        if not firstBashed and bush.game.canBash:
             for modInfo in bosh.modInfos.values():
                 if modInfo.header.author == 'BASHED PATCH': break
             else:
@@ -16854,7 +16856,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('CRC'))
         sortMenu.links.append(Files_SortBy('Mod Status'))
         ModList.mainMenu.append(sortMenu)
-    if settings['bash.game'] == 'Oblivion': #--Versions
+    if bush.game.name == 'Oblivion': #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1'))
         versionsMenu.links.append(Mods_OblivionVersion('1.1b'))
@@ -16891,7 +16893,7 @@ def InitModLinks():
     #--ModList: Item Links
     if True: #--File
         fileMenu = MenuLink(_("File"))
-        if settings['bash.game'] == 'Oblivion':
+        if bush.game.canBash:
             fileMenu.links.append(Mod_CreateBlankBashedPatch())
             fileMenu.links.append(Mod_CreateBlank())
             fileMenu.links.append(Mod_CreateDummyMasters())
@@ -16920,7 +16922,7 @@ def InitModLinks():
         ModList.itemMenu.append(ratingMenu)
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
-    if settings['bash.game'] == 'Oblivion':
+    if bush.game.canBash:
         ModList.itemMenu.append(Mod_Details())
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
@@ -16931,7 +16933,7 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
     ModList.itemMenu.append(Mod_Ghost())
-    if settings['bash.game'] == 'Oblivion':
+    if bush.game.canBash:
         ModList.itemMenu.append(SeparatorLink())
         ModList.itemMenu.append(Mod_MarkMergeable(False))
         if CBash:
@@ -17013,7 +17015,7 @@ def InitSaveLinks():
         sortMenu.links.append(Files_SortBy('Player'))
         sortMenu.links.append(Files_SortBy('Status'))
         SaveList.mainMenu.append(sortMenu)
-    if settings['bash.game'] == 'Oblivion': #--Versions
+    if bush.game.name == 'Oblivion': #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1',True))
         versionsMenu.links.append(Mods_OblivionVersion('1.1b',True))
@@ -17060,7 +17062,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_LoadMasters())
     SaveList.itemMenu.append(File_ListMasters())
     SaveList.itemMenu.append(Save_DiffMasters())
-    if settings['bash.game'] == 'Oblivion':
+    if bush.game.canEditSaves:
         SaveList.itemMenu.append(Save_Stats())
         SaveList.itemMenu.append(Save_StatObse())
         #--------------------------------------------
@@ -17078,7 +17080,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_ExportScreenshot())
     #--------------------------------------------
-    if settings['bash.game'] == 'Oblivion':
+    if bush.game.canEditSaves:
         SaveList.itemMenu.append(SeparatorLink())
         SaveList.itemMenu.append(Save_Unbloat())
         SaveList.itemMenu.append(Save_RepairAbomb())

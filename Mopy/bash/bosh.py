@@ -106,6 +106,7 @@ oiMask = 0xFFFFFFL
 question = False
 
 #--File Singletons
+gameInis = None
 oblivionIni = None
 modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
@@ -483,10 +484,6 @@ class ModReader:
         ins.seek(0,2)
         self.size = ins.tell()
         ins.seek(curPos)
-        if settings['bash.game'] == 'Skyrim':
-            self.headerUnpack = ('4s5I',24,'REC_HEAD')
-        else:
-            self.headerUnpack = ('4s4I',20,'REC_HEAD')
 
     #--IO Stream ------------------------------------------
     def seek(self,offset,whence=0,recType='----'):
@@ -548,14 +545,14 @@ class ModReader:
 
     def unpackRecHeader(self):
         """Unpack a record header."""
-        (type,size,uint0,uint1,uint2) = self.unpack(*self.headerUnpack)[0:5]#'4s4I',20,'REC_HEAD')
+        header = self.unpack(*bush.game.unpackRecordHeader)[0:5]
+        (type,size,uint0,uint1,uint2) = header
         #--Bad?
         if type not in bush.recordTypes:
             raise ModError(self.inName,_('Bad header type: ')+type)
-        #print (type,size,uint0,uint1,uint2)
         #--Record
         if type != 'GRUP':
-            return (type,size,uint0,uint1,uint2)
+            return header
         #--Top Group
         elif uint1 == 0:
             str0 = struct.pack('I',uint0)
@@ -567,7 +564,7 @@ class ModReader:
                 raise ModError(self.inName,_('Bad Top GRUP type: ')+str0)
         #--Other groups
         else:
-            return (type,size,uint0,uint1,uint2)
+            return header
 
     def unpackSubHeader(self,recType='----',expType=None,expSize=0):
         """Unpack a subrecord header. Optionally checks for match with expected type and size."""
@@ -5107,10 +5104,7 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        if settings['bash.game'] == 'Oblivion':
-            self.tes4 = MreTes4(('TES4',0,0,0,0))
-        else:
-            self.tes4 = MreTes5(('TES4',0,0,0,0,0))
+        self.tes4 = globals()[bush.game.tes4ClassName](('TES4',0,0,0,0))
         self.tes4.setChanged()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
@@ -5140,10 +5134,7 @@ class ModFile:
         #--Header
         ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
         header = ins.unpackRecHeader()
-        if settings['bash.game'] == 'Oblivion':
-            self.tes4 = MreTes4(header,ins,True)
-        else:
-            self.tes4 = MreTes5(header,ins,True)
+        self.tes4 = globals()[bush.game.tes4ClassName](header,ins,True)
         #--Raw data read
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -5741,7 +5732,7 @@ class SaveHeader:
         """Extract info from save file."""
         try:
             with path.open('rb') as ins:
-                if settings['bash.game'] == 'Oblivion':
+                if bush.game.name == 'Oblivion':
                     #--Header
                     ins.seek(34)
                     headerSize, = struct.unpack('I',ins.read(4))
@@ -7231,17 +7222,17 @@ class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = set(('archiveinvalidationinvalidated!.bsa',r'..\obmm\bsaredirection.bsa'))
 
-    def __init__(self,game_type):
+    def __init__(self,name):
         """Initialize."""
         # Use local copy of the oblivion.ini if present
-        if dirs['app'].join('%s.ini' % game_type).exists():
-            IniFile.__init__(self,dirs['app'].join('%s.ini' % game_type),'General')
+        if dirs['app'].join(name).exists():
+            IniFile.__init__(self,dirs['app'].join(name),'General')
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting('General','bUseMyGamesDirectory','1') == '0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self,dirs['saveBase'].join('%s.ini' % game_type),'General')
+        IniFile.__init__(self,dirs['saveBase'].join(name),'General')
 
 
     def ensureExists(self):
@@ -8030,10 +8021,7 @@ class ModInfo(FileInfo):
             recHeader = ins.unpackRecHeader()
             if recHeader[0] != 'TES4':
                 raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            if settings['bash.game'] == 'Skyrim':
-                self.header = MreTes5(recHeader,ins,True)
-            else:
-                self.header = MreTes4(recHeader,ins,True)
+            self.header = globals()[bush.game.tes4ClassName](recHeader,ins,True)
         except struct.error, rex:
             raise ModError(self.name,_('Struct.error: ')+`rex`)
         finally:
@@ -8540,19 +8528,20 @@ class ModInfos(FileInfos):
         self.plugins = Plugins() #--Plugins instance.
         self.ordered = tuple() #--Active mods arranged in load order.
         #--Info lists/sets
-        if settings['bash.game'] == 'Oblivion':
-            if dirs['mods'].join('Oblivion.esm').exists():
-                self.masterName = GPath('Oblivion.esm')
-            elif dirs['mods'].join('Nehrim.esm').exists():
-                self.masterName = GPath('Nehrim.esm')
+        for fname in bush.game.masterFiles:
+            if dirs['mods'].join(fname).exists():
+                self.masterName = GPath(fname)
+                break
+        else:
+            if len(bush.game.masterFiles) == 1:
+                deprint(_('Missing master file; %s does not exist in an unghosted state in %s') % (fname, dirs['mods'].s))
             else:
-                self.masterName = GPath('Oblivion.esm')
-                deprint(_('Missing master file; Neither Oblivion.esm or Nehrim.esm exists in an unghosted state in %s - presuming that Oblivion.esm is the correct masterfile.') % (dirs['mods'].s))
-        elif settings['bash.game'] == 'Skyrim':
-            if dirs['mods'].join('Skyrim.esm').exists():
-                self.masterName = GPath('Skyrim.esm')
-            else:
-                deprint(_('Missing master file; Skyrim.esm does not exist in an unghosted state in %s') % dirs['mods'].s)
+                if len(bush.game.masterFiles) > 2:
+                    msg = ', '.join(bush.game.masterFiles[0:-1])
+                else:
+                    msg = ''
+                msg += ' or ' + bush.game.masterFiles[-1]
+                deprint(_('Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
@@ -8778,19 +8767,23 @@ class ModInfos(FileInfos):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
-            try:
-                if doCBash:
-                    canMerge = CBash_PatchFile.modIsMergeable(fileInfo)
-                else:
-                    canMerge = PatchFile.modIsMergeable(fileInfo)
-            except Exception, e:
-                deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
-                canMerge = False #presume non-mergeable.
+            if not bush.game.canBash:
 
-            #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
-            if fileName == "Oscuro's_Oblivion_Overhaul.esp":
                 canMerge = False
+            else:
+                try:
+                    if doCBash:
+                        canMerge = CBash_PatchFile.modIsMergeable(fileInfo)
+                    else:
+                        canMerge = PatchFile.modIsMergeable(fileInfo)
+                except Exception, e:
+                    raise
+                    deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
+                    canMerge = False #presume non-mergeable.
 
+                #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
+                if fileName == "Oscuro's_Oblivion_Overhaul.esp":
+                    canMerge = False
             if canMerge == True:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
@@ -10428,10 +10421,7 @@ class Installer(object):
         if settings['bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            if settings['bash.game'] == 'Oblivion':
-                bethFiles = bush.bethDataFiles
-            else:
-                bethFiles = bush.bethDataFiles_Skyrim
+            bethFiles = bush.game.bethDataFiles
         skipExts = Installer.skipExts
         asRoot = apRoot.s
         relPos = len(apRoot.s)+1
@@ -10660,10 +10650,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        if settings['bash.game'] == 'Oblivion':
-            bethFiles = bush.bethDataFiles
-        else:
-            bethFiles = bush.bethDataFiles_Skyrim
+        bethFiles = bush.game.bethDataFiles
         packageFiles = set(('package.txt','package.jpg'))
         unSize = 0
         espmNots = self.espmNots
@@ -12694,10 +12681,7 @@ class InstallersData(bolt.TankData, DataDict):
             if installer.isActive:
                 installed += installer.data_sizeCrc
         keepFiles = set(installed)
-        if settings['bash.game'] == 'Oblivion':
-            keepFiles.update((GPath(f) for f in bush.allBethFiles))
-        else:
-            keepFiles.update((GPath(f) for f in bush.allBethFiles_Skyrim))
+        keepFiles.update((GPath(f) for f in bush.game.allBethFiles))
         keepFiles.update((GPath(f) for f in bush.wryeBashDataFiles))
         keepFiles.update((GPath(f) for f in bush.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
@@ -33230,11 +33214,11 @@ def getOblivionPath(bashIni, path):
     #--Error check
     if path.tail == 'Skyrim':
         if path.join('TESV.exe').exists():
-            dirs['game_type'] = 'Skyrim'
+            bush.game = bush.Skyrim
         else:
             raise BoltError(_("Install Error\nFailed to find Skyrim.exe in %s.\nNote that the Mopy folder should be in the same folder as TESV.exe.") % path)
     elif path.join('Oblivion.exe').exists():
-        dirs['game_type'] = 'Oblivion'
+        bush.game = bush.Oblivion
     else:
         raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % path)
     return path
@@ -33291,7 +33275,7 @@ def getOblivionModsPath(bashIni):
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         path = GPath(bashIni.get('General','sOblivionMods').strip())
     else:
-        path = GPath(r'..\%s Mods' % dirs['game_type'])
+        path = GPath(r'..\%s Mods' % bush.game.name)
     if not path.isabs(): path = dirs['app'].join(path)
     return path
 
@@ -33332,14 +33316,15 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join('My Games',dirs['game_type'])
+    dirs['saveBase'] = personal.join('My Games',bush.game.name)
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
-    dirs['userApp'] = localAppData.join(dirs['game_type'])
+    dirs['userApp'] = localAppData.join(bush.game.name)
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
-    oblivionIni = OblivionIni(dirs['game_type'])
+    gameInis = [OblivionIni(x) for x in bush.game.iniFiles]
+    oblivionIni = gameInis[0]
     try:
         if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
             # Set the save game folder to the Oblivion directory
