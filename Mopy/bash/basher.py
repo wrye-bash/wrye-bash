@@ -204,6 +204,7 @@ settingDefaults = {
     'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
     'bash.page':1,
+    'bash.game':'Oblivion',
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -1578,7 +1579,7 @@ class INILineCtrl(wx.ListCtrl):
             for i in range(len(lines), num):
                 self.DeleteItem(len(lines))
         except IOError:
-            balt.showWarning(self, _("%s does not exist yet.  Oblivion will create this file on first run.  INI tweaks will not be usable until then.") % bosh.iniInfos.ini.path)
+            balt.showWarning(self, _("%s does not exist yet.  %s will create this file on first run.  INI tweaks will not be usable until then.") % (bosh.iniInfos.ini.path, settings['bash.game']))
         finally:
             if ini: ini.close()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
@@ -2359,6 +2360,7 @@ class INIPanel(SashPanel):
 
     def OnShow(self):
         changed = self.trackedInfo.refresh()
+        changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshUI()
 
@@ -2430,8 +2432,8 @@ class INIPanel(SashPanel):
             if not path.isfile():
                 del self.choices[i]
                 changed = True
-        if 'Oblivion.ini' not in self.choices:
-            self.choices['Oblivion.ini'] = bosh.oblivionIni.path
+        if '%s.ini' % settings['bash.game'] not in self.choices:
+            self.choices['%s.ini' % settings['bash.game']] = bosh.oblivionIni.path
             changed = True
         if _('Browse...') not in self.choices:
             self.choices[_('Browse...')] = None
@@ -2447,7 +2449,7 @@ class INIPanel(SashPanel):
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        keys.sort(key=lambda a: 0 if a == 'Oblivion.ini' else 1 if a == _('Browse...') else 2)
+        keys.sort(key=lambda a: 0 if a == '%s.ini' % settings['bash.game'] else 1 if a == _('Browse...') else 2)
         self.sortKeys = keys
         return keys
 
@@ -5146,10 +5148,14 @@ class BashFrame(wx.Frame):
         """Set title. Set to default if no title supplied."""
         if not title:
             ###Remove from Bash after CBash integrated
-            if CBash:
-                title = "Wrye Bash %s%s, CBash v%u.%u.%u: " % (settings['bash.readme'][1], ('',' (Standalone)')[settings['bash.standalone']],CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
+            if settings['bash.game'] == 'Oblivion':
+                baseName = 'Wrye Bash'
             else:
-                title = "Wrye Bash %s%s: " % (settings['bash.readme'][1],('',' (Standalone)')[settings['bash.standalone']],)
+                baseName = 'Wrye Smash'
+            if CBash:
+                title = "%s %s%s, CBash v%u.%u.%u: " % (baseName, settings['bash.readme'][1], ('',' (Standalone)')[settings['bash.standalone']],CBash.GetVersionMajor(), CBash.GetVersionMinor(), CBash.GetVersionRevision())
+            else:
+                title = "%s %s%s: " % (baseName, settings['bash.readme'][1],('',' (Standalone)')[settings['bash.standalone']],)
             maProfile = re.match(r'Saves\\(.+)\\$',bosh.saveInfos.localSave)
             if maProfile:
                 title += maProfile.group(1)
@@ -5262,7 +5268,10 @@ class BashFrame(wx.Frame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.8,1.0)])
+        if settings['bash.game'] == 'Skyrim':
+            invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.94,)])
+        else:
+            invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in (0.8,1.0)])
         if not invalidVersions <= self.knownInvalidVerions:
             m = [_('Unrecognized Versions'),_("The following mods have unrecognized TES4 header versions: ")]
             m.extend(sorted(invalidVersions))
@@ -6130,10 +6139,12 @@ class BashApp(wx.App):
 
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
+        settings['bash.game'] = bosh.dirs['game_type']
+        del bosh.dirs['game_type']
         progress.Update(5,_("Initializing ModInfos"))
         bosh.configHelpers = bosh.ConfigHelpers()
         bosh.configHelpers.refresh()
-        bosh.oblivionIni = bosh.OblivionIni()
+        bosh.oblivionIni = bosh.OblivionIni(settings['bash.game'])
         bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh(doAutoGroup=True)
@@ -6148,7 +6159,7 @@ class BashApp(wx.App):
         #bosh.BSAInfos.refresh()
         #--Patch check
         firstBashed = settings.get('bash.patch.firstBashed',False)
-        if not firstBashed:
+        if not firstBashed and settings['bash.game'] == 'Oblivion':
             for modInfo in bosh.modInfos.values():
                 if modInfo.header.author == 'BASHED PATCH': break
             else:
@@ -16139,6 +16150,14 @@ def InitStatusBar():
             _("Launch Oblivion %(version)s"),
             '',
             uid='Oblivion'))
+    BashStatusBar.buttons.append( #SKYRIM
+        Oblivion_Button(
+            bosh.dirs['app'].join('TESV.exe'),
+            imageList('skyrim%s.png'),
+            _("Launch Skyrim"),
+            _("Launch Skyrim %(version)s"),
+            '',
+            uid='Skyrim'))
     BashStatusBar.buttons.append( #TESCS
         TESCS_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
@@ -16835,7 +16854,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('CRC'))
         sortMenu.links.append(Files_SortBy('Mod Status'))
         ModList.mainMenu.append(sortMenu)
-    if True: #--Versions
+    if settings['bash.game'] == 'Oblivion': #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1'))
         versionsMenu.links.append(Mods_OblivionVersion('1.1b'))
@@ -16872,10 +16891,11 @@ def InitModLinks():
     #--ModList: Item Links
     if True: #--File
         fileMenu = MenuLink(_("File"))
-        fileMenu.links.append(Mod_CreateBlankBashedPatch())
-        fileMenu.links.append(Mod_CreateBlank())
-        fileMenu.links.append(Mod_CreateDummyMasters())
-        fileMenu.links.append(SeparatorLink())
+        if settings['bash.game'] == 'Oblivion':
+            fileMenu.links.append(Mod_CreateBlankBashedPatch())
+            fileMenu.links.append(Mod_CreateBlank())
+            fileMenu.links.append(Mod_CreateDummyMasters())
+            fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_Backup())
         fileMenu.links.append(File_Duplicate())
         fileMenu.links.append(File_Snapshot())
@@ -16900,7 +16920,8 @@ def InitModLinks():
         ModList.itemMenu.append(ratingMenu)
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
-    ModList.itemMenu.append(Mod_Details())
+    if settings['bash.game'] == 'Oblivion':
+        ModList.itemMenu.append(Mod_Details())
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
     ModList.itemMenu.append(Mod_ListBashTags())
@@ -16910,70 +16931,71 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
     ModList.itemMenu.append(Mod_Ghost())
-    ModList.itemMenu.append(SeparatorLink())
-    ModList.itemMenu.append(Mod_MarkMergeable(False))
-    if CBash:
-        ModList.itemMenu.append(Mod_MarkMergeable(True))
-    ModList.itemMenu.append(Mod_Patch_Update(False))
-    if CBash:
-        ModList.itemMenu.append(Mod_Patch_Update(True))
-    ModList.itemMenu.append(Mod_ListPatchConfig())
-    ModList.itemMenu.append(Mod_ExportPatchConfig())
-    #--Advanced
-    ModList.itemMenu.append(SeparatorLink())
-    if True: #--Export
-        exportMenu = MenuLink(_("Export"))
-        exportMenu.links.append(CBash_Mod_CellBlockInfo())
-        exportMenu.links.append(Mod_EditorIds_Export())
-        exportMenu.links.append(Mod_Groups_Export())
-##        exportMenu.links.append(Mod_ItemData_Export())
-        exportMenu.links.append(Mod_Factions_Export())
-        exportMenu.links.append(Mod_FullNames_Export())
-        exportMenu.links.append(Mod_ActorLevels_Export())
-        exportMenu.links.append(CBash_Mod_MapMarkers_Export())
-        exportMenu.links.append(Mod_Prices_Export())
-        exportMenu.links.append(Mod_FactionRelations_Export())
-        exportMenu.links.append(Mod_IngredientDetails_Export())
-        exportMenu.links.append(Mod_Scripts_Export())
-        exportMenu.links.append(Mod_SigilStoneDetails_Export())
-        exportMenu.links.append(Mod_SpellRecords_Export())
-        exportMenu.links.append(Mod_Stats_Export())
-        ModList.itemMenu.append(exportMenu)
-    if True: #--Import
-        importMenu = MenuLink(_("Import"))
-        importMenu.links.append(Mod_EditorIds_Import())
-        importMenu.links.append(Mod_Groups_Import())
-##        importMenu.links.append(Mod_ItemData_Import())
-        importMenu.links.append(Mod_Factions_Import())
-        importMenu.links.append(Mod_FullNames_Import())
-        importMenu.links.append(Mod_ActorLevels_Import())
-        importMenu.links.append(CBash_Mod_MapMarkers_Import())
-        importMenu.links.append(Mod_Prices_Import())
-        importMenu.links.append(Mod_FactionRelations_Import())
-        importMenu.links.append(Mod_IngredientDetails_Import())
-        importMenu.links.append(Mod_Scripts_Import())
-        importMenu.links.append(Mod_SigilStoneDetails_Import())
-        importMenu.links.append(Mod_SpellRecords_Import())
-        importMenu.links.append(Mod_Stats_Import())
-        importMenu.links.append(SeparatorLink())
-        importMenu.links.append(Mod_Face_Import())
-        importMenu.links.append(Mod_Fids_Replace())
-        ModList.itemMenu.append(importMenu)
-    if True: #--Cleaning
-        cleanMenu = MenuLink(_("Mod Cleaning"))
-        cleanMenu.links.append(Mod_SkipDirtyCheck())
-        cleanMenu.links.append(SeparatorLink())
-        cleanMenu.links.append(Mod_ScanDirty())
-        cleanMenu.links.append(Mod_RemoveWorldOrphans())
-        cleanMenu.links.append(Mod_CleanMod())
-        cleanMenu.links.append(Mod_UndeleteRefs())
-        ModList.itemMenu.append(cleanMenu)
-    ModList.itemMenu.append(Mod_AddMaster())
-    ModList.itemMenu.append(Mod_CopyToEsmp())
-    ModList.itemMenu.append(Mod_DecompileAll())
-    ModList.itemMenu.append(Mod_FlipSelf())
-    ModList.itemMenu.append(Mod_FlipMasters())
-    ModList.itemMenu.append(Mod_SetVersion())
+    if settings['bash.game'] == 'Oblivion':
+        ModList.itemMenu.append(SeparatorLink())
+        ModList.itemMenu.append(Mod_MarkMergeable(False))
+        if CBash:
+            ModList.itemMenu.append(Mod_MarkMergeable(True))
+        ModList.itemMenu.append(Mod_Patch_Update(False))
+        if CBash:
+            ModList.itemMenu.append(Mod_Patch_Update(True))
+        ModList.itemMenu.append(Mod_ListPatchConfig())
+        ModList.itemMenu.append(Mod_ExportPatchConfig())
+        #--Advanced
+        ModList.itemMenu.append(SeparatorLink())
+        if True: #--Export
+            exportMenu = MenuLink(_("Export"))
+            exportMenu.links.append(CBash_Mod_CellBlockInfo())
+            exportMenu.links.append(Mod_EditorIds_Export())
+            exportMenu.links.append(Mod_Groups_Export())
+    ##        exportMenu.links.append(Mod_ItemData_Export())
+            exportMenu.links.append(Mod_Factions_Export())
+            exportMenu.links.append(Mod_FullNames_Export())
+            exportMenu.links.append(Mod_ActorLevels_Export())
+            exportMenu.links.append(CBash_Mod_MapMarkers_Export())
+            exportMenu.links.append(Mod_Prices_Export())
+            exportMenu.links.append(Mod_FactionRelations_Export())
+            exportMenu.links.append(Mod_IngredientDetails_Export())
+            exportMenu.links.append(Mod_Scripts_Export())
+            exportMenu.links.append(Mod_SigilStoneDetails_Export())
+            exportMenu.links.append(Mod_SpellRecords_Export())
+            exportMenu.links.append(Mod_Stats_Export())
+            ModList.itemMenu.append(exportMenu)
+        if True: #--Import
+            importMenu = MenuLink(_("Import"))
+            importMenu.links.append(Mod_EditorIds_Import())
+            importMenu.links.append(Mod_Groups_Import())
+    ##        importMenu.links.append(Mod_ItemData_Import())
+            importMenu.links.append(Mod_Factions_Import())
+            importMenu.links.append(Mod_FullNames_Import())
+            importMenu.links.append(Mod_ActorLevels_Import())
+            importMenu.links.append(CBash_Mod_MapMarkers_Import())
+            importMenu.links.append(Mod_Prices_Import())
+            importMenu.links.append(Mod_FactionRelations_Import())
+            importMenu.links.append(Mod_IngredientDetails_Import())
+            importMenu.links.append(Mod_Scripts_Import())
+            importMenu.links.append(Mod_SigilStoneDetails_Import())
+            importMenu.links.append(Mod_SpellRecords_Import())
+            importMenu.links.append(Mod_Stats_Import())
+            importMenu.links.append(SeparatorLink())
+            importMenu.links.append(Mod_Face_Import())
+            importMenu.links.append(Mod_Fids_Replace())
+            ModList.itemMenu.append(importMenu)
+        if True: #--Cleaning
+            cleanMenu = MenuLink(_("Mod Cleaning"))
+            cleanMenu.links.append(Mod_SkipDirtyCheck())
+            cleanMenu.links.append(SeparatorLink())
+            cleanMenu.links.append(Mod_ScanDirty())
+            cleanMenu.links.append(Mod_RemoveWorldOrphans())
+            cleanMenu.links.append(Mod_CleanMod())
+            cleanMenu.links.append(Mod_UndeleteRefs())
+            ModList.itemMenu.append(cleanMenu)
+        ModList.itemMenu.append(Mod_AddMaster())
+        ModList.itemMenu.append(Mod_CopyToEsmp())
+        ModList.itemMenu.append(Mod_DecompileAll())
+        ModList.itemMenu.append(Mod_FlipSelf())
+        ModList.itemMenu.append(Mod_FlipMasters())
+        ModList.itemMenu.append(Mod_SetVersion())
 #    if bosh.inisettings['showadvanced'] == 1:
 #        advmenu = MenuLink(_("Advanced Scripts"))
 #        advmenu.links.append(Mod_DiffScripts())
@@ -16991,7 +17013,7 @@ def InitSaveLinks():
         sortMenu.links.append(Files_SortBy('Player'))
         sortMenu.links.append(Files_SortBy('Status'))
         SaveList.mainMenu.append(sortMenu)
-    if True: #--Versions
+    if settings['bash.game'] == 'Oblivion': #--Versions
         versionsMenu = MenuLink("Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion('1.1',True))
         versionsMenu.links.append(Mods_OblivionVersion('1.1b',True))
@@ -17038,28 +17060,30 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_LoadMasters())
     SaveList.itemMenu.append(File_ListMasters())
     SaveList.itemMenu.append(Save_DiffMasters())
-    SaveList.itemMenu.append(Save_Stats())
-    SaveList.itemMenu.append(Save_StatObse())
-    #--------------------------------------------
-    SaveList.itemMenu.append(SeparatorLink())
-    SaveList.itemMenu.append(Save_EditPCSpells())
-    SaveList.itemMenu.append(Save_RenamePlayer())
-    SaveList.itemMenu.append(Save_EditCreatedEnchantmentCosts())
-    SaveList.itemMenu.append(Save_ImportFace())
-    SaveList.itemMenu.append(Save_EditCreated('ENCH'))
-    SaveList.itemMenu.append(Save_EditCreated('ALCH'))
-    SaveList.itemMenu.append(Save_EditCreated('SPEL'))
-    SaveList.itemMenu.append(Save_ReweighPotions())
-    SaveList.itemMenu.append(Save_UpdateNPCLevels())
+    if settings['bash.game'] == 'Oblivion':
+        SaveList.itemMenu.append(Save_Stats())
+        SaveList.itemMenu.append(Save_StatObse())
+        #--------------------------------------------
+        SaveList.itemMenu.append(SeparatorLink())
+        SaveList.itemMenu.append(Save_EditPCSpells())
+        SaveList.itemMenu.append(Save_RenamePlayer())
+        SaveList.itemMenu.append(Save_EditCreatedEnchantmentCosts())
+        SaveList.itemMenu.append(Save_ImportFace())
+        SaveList.itemMenu.append(Save_EditCreated('ENCH'))
+        SaveList.itemMenu.append(Save_EditCreated('ALCH'))
+        SaveList.itemMenu.append(Save_EditCreated('SPEL'))
+        SaveList.itemMenu.append(Save_ReweighPotions())
+        SaveList.itemMenu.append(Save_UpdateNPCLevels())
     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_ExportScreenshot())
-     #--------------------------------------------
-    SaveList.itemMenu.append(SeparatorLink())
-    SaveList.itemMenu.append(Save_Unbloat())
-    SaveList.itemMenu.append(Save_RepairAbomb())
-    SaveList.itemMenu.append(Save_RepairFactions())
-    SaveList.itemMenu.append(Save_RepairHair())
+    #--------------------------------------------
+    if settings['bash.game'] == 'Oblivion':
+        SaveList.itemMenu.append(SeparatorLink())
+        SaveList.itemMenu.append(Save_Unbloat())
+        SaveList.itemMenu.append(Save_RepairAbomb())
+        SaveList.itemMenu.append(Save_RepairFactions())
+        SaveList.itemMenu.append(Save_RepairHair())
 
 def InitBSALinks():
     """Initialize save tab menus."""
