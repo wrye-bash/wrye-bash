@@ -74,155 +74,225 @@ ignoreDataDirs = set((
     r'OBSE\Plugins\ComponentDLLs\CSE',
     r'LSData'
     ))
-bethDataFiles = set((
-    #--Vanilla
-    r'oblivion.esm',
-    r'oblivion_1.1.esm',
-    r'oblivion_si.esm',
-    r'oblivion_1.1.esm.ghost',
-    r'oblivion_si.esm.ghost',
-    r'oblivion - meshes.bsa',
-    r'oblivion - misc.bsa',
-    r'oblivion - sounds.bsa',
-    r'oblivion - textures - compressed.bsa',
-    r'oblivion - textures - compressed.bsa.orig',
-    r'oblivion - voices1.bsa',
-    r'oblivion - voices2.bsa',
-    #--Shivering Isles
-    r'dlcshiveringisles.esp',
-    r'dlcshiveringisles - meshes.bsa',
-    r'dlcshiveringisles - sounds.bsa',
-    r'dlcshiveringisles - textures.bsa',
-    r'dlcshiveringisles - voices.bsa',
-    ))
-bethDataFiles_Skyrim = set((
-    #--Vanilla
-    r'skyrim.esm',
-    r'update.esm',
-    r'skyrim - animations.bsa',
-    r'skyrim - interface.bsa',
-    r'skyrim - meshes.bsa',
-    r'skyrim - misc.bsa',
-    r'skyrim - shaders.bsa',
-    r'skyrim - sounds.bsa',
-    r'skyrim - textures.bsa',
-    r'skyrim - voices.bsa',
-    r'skyrim - voicesextra.bsa',
-    ))
-allBethFiles = set((
-    #vanilla
-    r'Credits.txt',
-    r'Oblivion - Meshes.bsa',
-    r'Oblivion - Misc.bsa',
-    r'Oblivion - Sounds.bsa',
-    r'Oblivion - Textures - Compressed.bsa',
-    r'Oblivion - Voices1.bsa',
-    r'Oblivion - Voices2.bsa',
-    r'Oblivion.esm',
-    r'Music\Battle\battle_01.mp3',
-    r'Music\Battle\battle_02.mp3',
-    r'Music\Battle\battle_03.mp3',
-    r'Music\Battle\battle_04.mp3',
-    r'Music\Battle\battle_05.mp3',
-    r'Music\Battle\battle_06.mp3',
-    r'Music\Battle\battle_07.mp3',
-    r'Music\Battle\battle_08.mp3',
-    r'Music\Dungeon\Dungeon_01_v2.mp3',
-    r'Music\Dungeon\dungeon_02.mp3',
-    r'Music\Dungeon\dungeon_03.mp3',
-    r'Music\Dungeon\dungeon_04.mp3',
-    r'Music\Dungeon\dungeon_05.mp3',
-    r'Music\Explore\atmosphere_01.mp3',
-    r'Music\Explore\atmosphere_03.mp3',
-    r'Music\Explore\atmosphere_04.mp3',
-    r'Music\Explore\atmosphere_06.mp3',
-    r'Music\Explore\atmosphere_07.mp3',
-    r'Music\Explore\atmosphere_08.mp3',
-    r'Music\Explore\atmosphere_09.mp3',
-    r'Music\Public\town_01.mp3',
-    r'Music\Public\town_02.mp3',
-    r'Music\Public\town_03.mp3',
-    r'Music\Public\town_04.mp3',
-    r'Music\Public\town_05.mp3',
-    r'Music\Special\death.mp3',
-    r'Music\Special\success.mp3',
-    r'Music\Special\tes4title.mp3',
-    r'Shaders\shaderpackage001.sdp',
-    r'Shaders\shaderpackage002.sdp',
-    r'Shaders\shaderpackage003.sdp',
-    r'Shaders\shaderpackage004.sdp',
-    r'Shaders\shaderpackage005.sdp',
-    r'Shaders\shaderpackage006.sdp',
-    r'Shaders\shaderpackage007.sdp',
-    r'Shaders\shaderpackage008.sdp',
-    r'Shaders\shaderpackage009.sdp',
-    r'Shaders\shaderpackage010.sdp',
-    r'Shaders\shaderpackage011.sdp',
-    r'Shaders\shaderpackage012.sdp',
-    r'Shaders\shaderpackage013.sdp',
-    r'Shaders\shaderpackage014.sdp',
-    r'Shaders\shaderpackage015.sdp',
-    r'Shaders\shaderpackage016.sdp',
-    r'Shaders\shaderpackage017.sdp',
-    r'Shaders\shaderpackage018.sdp',
-    r'Shaders\shaderpackage019.sdp',
-    r'Video\2k games.bik',
-    r'Video\bethesda softworks HD720p.bik',
-    r'Video\CreditsMenu.bik',
-    r'Video\game studios.bik',
-    r'Video\Map loop.bik',
-    r'Video\Oblivion iv logo.bik',
-    r'Video\Oblivion Legal.bik',
-    r'Video\OblivionIntro.bik',
-    r'Video\OblivionOutro.bik',
-    #SI
-    r'DLCShiveringIsles - Meshes.bsa',
-    r'DLCShiveringIsles - Textures.bsa',
-    r'DLCShiveringIsles - Sounds.bsa',
-    r'DLCShiveringIsles - Voices.bsa',
-    r'DLCShiveringIsles.esp',
-    r'Textures\Effects\TerrainNoise.dds',
-    #DLCs
-    r'DLCBattlehornCastle.bsa',
-    r'DLCBattlehornCastle.esp',
-    r'DLCFrostcrag.bsa',
-    r'DLCFrostcrag.esp',
-    r'DLCHorseArmor.bsa',
-    r'DLCHorseArmor.esp',
-    r'DLCMehrunesRazor.esp',
-    r'DLCOrrery.bsa',
-    r'DLCOrrery.esp',
-    r'DLCSpellTomes.esp',
-    r'DLCThievesDen.bsa',
-    r'DLCThievesDen.esp',
-    r'DLCVileLair.bsa',
-    r'DLCVileLair.esp',
-    r'Knights.bsa',
-    r'Knights.esp',
-    r'DLCList.txt',
-    ))
-allBethFiles_Skyrim = set((
-    #--Vanilla
-    r'skyrim.esm',
-    r'update.esm',
-    r'skyrim - animations.bsa',
-    r'skyrim - interface.bsa',
-    r'skyrim - meshes.bsa',
-    r'skyrim - misc.bsa',
-    r'skyrim - shaders.bsa',
-    r'skyrim - sounds.bsa',
-    r'skyrim - textures.bsa',
-    r'skyrim - voices.bsa',
-    r'skyrim - voicesextra.bsa',
-    r'interface\translate_english.txt', #--probably need one for each language
-    r'strings\skyrim_english.dlstrings', #--same here
-    r'strings\skyrim_english.ilstrings',
-    r'strings\skryim_english.strings',
-    r'strings\update_english.dlstrings',
-    r'strings\update_english.ilstrings',
-    r'strings\update_english.strings',
-    r'video\bgs_logo.bik',
-    ))
+
+class Oblivion:
+    """Game specific information for TES IV: Oblivion"""
+    #--Name of the game
+    name = 'Oblivion'
+
+    #--Wrye Bash capabilities with this game
+    canBash = True
+    canEditSaves = True
+
+    # The main plugin Wrye Bash should look for
+    masterFiles = [
+        r'Oblivion.esm',
+        r'Nehrim.esm',
+        ]
+
+    # INI files that should show up in the INI Edits tab
+    iniFiles = [
+        r'Oblivion.ini',
+        ]
+
+    # Game ESM/ESP/BSA files
+    bethDataFiles = set((
+        #--Vanilla
+        r'oblivion.esm',
+        r'oblivion_1.1.esm',
+        r'oblivion_si.esm',
+        r'oblivion_1.1.esm.ghost',
+        r'oblivion_si.esm.ghost',
+        r'oblivion - meshes.bsa',
+        r'oblivion - misc.bsa',
+        r'oblivion - sounds.bsa',
+        r'oblivion - textures - compressed.bsa',
+        r'oblivion - textures - compressed.bsa.orig',
+        r'oblivion - voices1.bsa',
+        r'oblivion - voices2.bsa',
+        #--Shivering Isles
+        r'dlcshiveringisles.esp',
+        r'dlcshiveringisles - meshes.bsa',
+        r'dlcshiveringisles - sounds.bsa',
+        r'dlcshiveringisles - textures.bsa',
+        r'dlcshiveringisles - voices.bsa',
+        ))
+
+    # Every file in the Data directory from Bethsoft
+    allBethFiles = set((
+        #vanilla
+        r'Credits.txt',
+        r'Oblivion - Meshes.bsa',
+        r'Oblivion - Misc.bsa',
+        r'Oblivion - Sounds.bsa',
+        r'Oblivion - Textures - Compressed.bsa',
+        r'Oblivion - Voices1.bsa',
+        r'Oblivion - Voices2.bsa',
+        r'Oblivion.esm',
+        r'Music\Battle\battle_01.mp3',
+        r'Music\Battle\battle_02.mp3',
+        r'Music\Battle\battle_03.mp3',
+        r'Music\Battle\battle_04.mp3',
+        r'Music\Battle\battle_05.mp3',
+        r'Music\Battle\battle_06.mp3',
+        r'Music\Battle\battle_07.mp3',
+        r'Music\Battle\battle_08.mp3',
+        r'Music\Dungeon\Dungeon_01_v2.mp3',
+        r'Music\Dungeon\dungeon_02.mp3',
+        r'Music\Dungeon\dungeon_03.mp3',
+        r'Music\Dungeon\dungeon_04.mp3',
+        r'Music\Dungeon\dungeon_05.mp3',
+        r'Music\Explore\atmosphere_01.mp3',
+        r'Music\Explore\atmosphere_03.mp3',
+        r'Music\Explore\atmosphere_04.mp3',
+        r'Music\Explore\atmosphere_06.mp3',
+        r'Music\Explore\atmosphere_07.mp3',
+        r'Music\Explore\atmosphere_08.mp3',
+        r'Music\Explore\atmosphere_09.mp3',
+        r'Music\Public\town_01.mp3',
+        r'Music\Public\town_02.mp3',
+        r'Music\Public\town_03.mp3',
+        r'Music\Public\town_04.mp3',
+        r'Music\Public\town_05.mp3',
+        r'Music\Special\death.mp3',
+        r'Music\Special\success.mp3',
+        r'Music\Special\tes4title.mp3',
+        r'Shaders\shaderpackage001.sdp',
+        r'Shaders\shaderpackage002.sdp',
+        r'Shaders\shaderpackage003.sdp',
+        r'Shaders\shaderpackage004.sdp',
+        r'Shaders\shaderpackage005.sdp',
+        r'Shaders\shaderpackage006.sdp',
+        r'Shaders\shaderpackage007.sdp',
+        r'Shaders\shaderpackage008.sdp',
+        r'Shaders\shaderpackage009.sdp',
+        r'Shaders\shaderpackage010.sdp',
+        r'Shaders\shaderpackage011.sdp',
+        r'Shaders\shaderpackage012.sdp',
+        r'Shaders\shaderpackage013.sdp',
+        r'Shaders\shaderpackage014.sdp',
+        r'Shaders\shaderpackage015.sdp',
+        r'Shaders\shaderpackage016.sdp',
+        r'Shaders\shaderpackage017.sdp',
+        r'Shaders\shaderpackage018.sdp',
+        r'Shaders\shaderpackage019.sdp',
+        r'Video\2k games.bik',
+        r'Video\bethesda softworks HD720p.bik',
+        r'Video\CreditsMenu.bik',
+        r'Video\game studios.bik',
+        r'Video\Map loop.bik',
+        r'Video\Oblivion iv logo.bik',
+        r'Video\Oblivion Legal.bik',
+        r'Video\OblivionIntro.bik',
+        r'Video\OblivionOutro.bik',
+        #SI
+        r'DLCShiveringIsles - Meshes.bsa',
+        r'DLCShiveringIsles - Textures.bsa',
+        r'DLCShiveringIsles - Sounds.bsa',
+        r'DLCShiveringIsles - Voices.bsa',
+        r'DLCShiveringIsles.esp',
+        r'Textures\Effects\TerrainNoise.dds',
+        #DLCs
+        r'DLCBattlehornCastle.bsa',
+        r'DLCBattlehornCastle.esp',
+        r'DLCFrostcrag.bsa',
+        r'DLCFrostcrag.esp',
+        r'DLCHorseArmor.bsa',
+        r'DLCHorseArmor.esp',
+        r'DLCMehrunesRazor.esp',
+        r'DLCOrrery.bsa',
+        r'DLCOrrery.esp',
+        r'DLCSpellTomes.esp',
+        r'DLCThievesDen.bsa',
+        r'DLCThievesDen.esp',
+        r'DLCVileLair.bsa',
+        r'DLCVileLair.esp',
+        r'Knights.bsa',
+        r'Knights.esp',
+        r'DLCList.txt',
+        ))
+
+    #--Valid ESM/ESP header versions
+    validHeaderVersions = (0.8,1.0)
+
+    #--Class to use to read the TES4 record
+    tes4ClassName = 'MreTes4'
+    #--How to unpack the record header
+    unpackRecordHeader = ('4s4I',20,'REC_HEAD')
+
+class Skyrim:
+    """Game specific information for TES V: Skyrim"""
+    #--Name of the game
+    name = 'Skyrim'
+
+    #--Wrye Bash capabilities with this game
+    canBash = False      # No Bashed Patch creation or messing with mods
+    canEditSaves = False # Only basic understanding of save games
+
+    # INI files that should show up in the INI Edits tab
+    iniFiles = [
+        r'Skyrim.ini',
+        r'SkyrimPrefs.ini',
+        ]
+
+    # The main plugin file Wrye Bash should look for
+    masterFiles = [
+        r'Skyrim.esm',
+        ]
+
+    # Game ESM/ESP/BSA files
+    bethDataFiles = set((
+        #--Vanilla
+        r'skyrim.esm',
+        r'update.esm',
+        r'skyrim - animations.bsa',
+        r'skyrim - interface.bsa',
+        r'skyrim - meshes.bsa',
+        r'skyrim - misc.bsa',
+        r'skyrim - shaders.bsa',
+        r'skyrim - sounds.bsa',
+        r'skyrim - textures.bsa',
+        r'skyrim - voices.bsa',
+        r'skyrim - voicesextra.bsa',
+        ))
+
+    # Every file in the Data directory from Bethsoft
+    allBethFiles = set((
+        #--Vanilla
+        r'skyrim.esm',
+        r'update.esm',
+        r'skyrim - animations.bsa',
+        r'skyrim - interface.bsa',
+        r'skyrim - meshes.bsa',
+        r'skyrim - misc.bsa',
+        r'skyrim - shaders.bsa',
+        r'skyrim - sounds.bsa',
+        r'skyrim - textures.bsa',
+        r'skyrim - voices.bsa',
+        r'skyrim - voicesextra.bsa',
+        r'interface\translate_english.txt', #--probably need one for each language
+        r'strings\skyrim_english.dlstrings', #--same here
+        r'strings\skyrim_english.ilstrings',
+        r'strings\skryim_english.strings',
+        r'strings\update_english.dlstrings',
+        r'strings\update_english.ilstrings',
+        r'strings\update_english.strings',
+        r'video\bgs_logo.bik',
+        ))
+
+    #--Valid ESM/ESP header versions
+    validHeaderVersions = (0.94,)
+
+    #--Class to use to read the TES4 record
+    tes4ClassName = 'MreTes5'
+    #--How to unpack the record header
+    unpackRecordHeader = ('4s5I',24,'REC_HEAD')
+
+games = {
+    'Oblivion': Oblivion,
+    'Skyrim': Skyrim,
+    }
+game = None # Set this once the game type is detected
 
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
