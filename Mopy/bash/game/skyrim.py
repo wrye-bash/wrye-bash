@@ -30,6 +30,11 @@ name = 'Skyrim'
 #--exe to look for to see if this is the right game
 exe = 'TESV.exe'
 
+#--Name of the script extender launcher
+scriptExtenderName = 'SKSE'
+scriptExtender = 'skse_loader.exe'
+scriptExtenderSteam = scriptExtender
+
 #--Wrye Bash capabilities with this game
 canBash = False      # No Bashed Patch creation or messing with mods
 canEditSaves = False # Only basic understanding of save games

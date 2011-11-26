@@ -30,6 +30,11 @@ name = 'Oblivion'
 #--Exe to look for to see if this is the right game
 exe = 'Oblivion.exe'
 
+#--Name of the script extender launcher
+scriptExtenderName = 'OBSE'
+scriptExtender = 'obse_loader.exe'
+scriptExtenderSteam = 'obse_1_2_416.dll'
+
 #--Wrye Bash capabilities with this game
 canBash = True
 canEditSaves = True

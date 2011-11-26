@@ -1,0 +1,87 @@
+# -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2011 Wrye Bash Team
+#
+# =============================================================================
+
+"""This a template to use for making new game types for bash.game"""
+
+#--Name of the game
+## Example: 'Oblivion'
+name = ''
+
+#--Exe to look for to see if this is the right game
+## Example: 'TESV.exe'
+exe = ''
+
+#--Name of the script extender launcher
+## Example: 'obse_loader.exe'
+scriptExtenderName = ''
+scriptExtender = ''
+scriptExtenderSteam = ''
+
+#--Wrye Bash capabilities with this game
+## True/False
+canBash = False
+canEditSaves = False
+
+#--The main plugin Wrye Bash should look for
+## Example: ['Skyrim.esm']
+masterFiles = [
+    ]
+
+#--INI files that should show up in the INI Edits tab
+## Example: ['Oblivion.ini']
+iniFiles = [
+    ]
+
+#--Game ESM/ESP/BSA files
+## These are all of the data files that belong to the game
+bethDataFiles = set()
+
+#--Every file in the Data directory from Bethsoft
+## These are every single file in the Data directory that
+## belong to the game
+allBethFiles = set()
+
+#--BAIN:
+## These are the allowed default data directories the BAIN can install to
+dataDirs = set()
+## These are additional special directories that BAIN can install to
+dataDirsPlus = set()
+
+#--Valid ESM/ESP header versions
+## These are the valid 'version' numbers for the game file headers
+validHeaderVersions = tuple()
+
+#--Class to use to read the TES4 record
+## This is the class name in bosh.py to use for the TES4 record when reading
+## Example: 'MreTes4'
+tes4ClassName = ''
+
+#--How to unpack the record header
+## This is the format to use to unpack a record header.  It should return at
+## least 5 unpacked items.  the format of this is:
+## (unpack_string,size,name)
+##  where unpack_string is a string to pass to struct.unpack
+##  size is the size of the data to read and then send to struct.unpack
+##  name is the name to save the result as
+## Example: ('4s4I',20,'REC_HEAD')
+unpackRecordHeader = ('',0,'')
