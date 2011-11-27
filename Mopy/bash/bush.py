@@ -38,12 +38,14 @@ game = None
 gamePath = None
 
 def setGame(gameName,workingDir=''):
-    """call bush.setGame with the name of the desired game.  If the game is
-       detected as installed (checked both by registry key entries and  by
-       looking one directory up from 'Mopy', as well as verifying the correct
-       exe is present), then False is returned, and everything is set.  If the
-       desired game is not found, a list of found game names will be returned."""
-    #--First: Try finding a match in bash\game
+    """If gameName is specified:
+        - Try to find that game's intall path via windows registry
+        - Try to find that game at "workingDir"
+        - Try to find that game one directory up from the cwd
+       If gameName is not specified:
+        - Use the game found at "workingDir"
+        - Use the game found one directory up from the cwd."""
+    #--First: Find all supported games via the registry
     gameName = gameName.lower()
     import pkgutil
     import game as _game
@@ -83,11 +85,12 @@ def setGame(gameName,workingDir=''):
     deprint('Detected the following supported games via Windows Registry:')
     for name in foundGames:
         deprint(' %s:' % name, foundGames[name])
-    # Also check if Wrye Bash is installed just above the directory
+    #--Second: Detect what game is installed on directory up from Mopy
     path = Path.getcwd()
     if path.cs[-4:] == 'mopy':
         path = GPath(path.s[:-5])
     installPaths = [path]
+    #--Third: Detect what game is installed at the specified "workingDir"
     if workingDir != '':
         path = GPath(workingDir)
         if not path.isabs():
@@ -98,8 +101,8 @@ def setGame(gameName,workingDir=''):
         name = path.tail.cs
         if name in allGames:
             # We have a config for that game
-            deprint(' %s:' % name, installPath)
-            foundGames[name] = installPath
+            deprint(' %s:' % name, path)
+            foundGames[name] = path
             break
         else:
             # Folder name wasn't found, try looking by exe name
@@ -117,6 +120,7 @@ def setGame(gameName,workingDir=''):
             else:
                 continue
             break
+    #--See if the specified game is one that was found
     if gameName in foundGames:
         # The game specified was found
         gamePath = foundGames[gameName]
@@ -127,6 +131,8 @@ def setGame(gameName,workingDir=''):
             if i != gameName:
                 del allGames[i]
         return False
+    #--Specified game not found, or game was not specified,
+    #  so use the game found via workingDir or the cwd
     else:
         if gameName == '':
             deprint('No preferred game specified.')
@@ -143,10 +149,10 @@ def setGame(gameName,workingDir=''):
                 if i != name:
                     del allGames[i]
             return False
-        # No match found return the list of possible games
-        # Unload all the modules
-        del allGames
-        return foundGames.keys()
+    # No match found return the list of possible games
+    # Unload all the modules
+    del allGames
+    return foundGames.keys()
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
