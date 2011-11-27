@@ -33216,9 +33216,8 @@ def getOblivionPath(bashIni, path):
         ret = bush.setGame('',path.s)
         if ret != False:
             deprint('Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.name)
-        else:
-            if oldMode != bush.game.name:
-                deprint('Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
+        elif oldMode != bush.game.name:
+            deprint('Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
     path = bush.gamePath
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
