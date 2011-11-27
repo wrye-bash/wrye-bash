@@ -27,6 +27,12 @@ import optparse
 import sys
 def parse():
     parser = optparse.OptionParser()
+    parser.add_option('-g', '--game',
+                        action='store',
+                        type='string',
+                        default='',
+                        dest='gameName',
+                        help='Specifies the game Wrye Bash should try to manage.  Use this argument if more than one game Wrye Bash supports is installed.')
     pathGroup = optparse.OptionGroup(parser, "Path Arguments",
                          r"All path arguments must be absolute paths and use either forward slashes (/) or two backward slashes (\\). All of these can also be set in the ini (where  you can also use relative paths) and if set in both cmd line takes precedence.")
     pathGroup.add_option('-o', '--oblivionPath',
@@ -34,7 +40,7 @@ def parse():
                         type='string',
                         default='',
                         dest='oblivionPath',
-                        help='Specifies the Oblivion directory (the one containing Oblivion.exe). Use this argument if Bash is located outside of the Oblivion directory.')
+                        help='Specifies the game directory (the one containing game\'s exe). Use this argument if Bash is located outside of the game directory, and the --game argument failed to find it.')
     userPathGroup = optparse.OptionGroup(parser, "'User Directory Arguments",
                         'These arguments allow you to specify your user directories in several ways.'
                         ' These are only useful if the regular procedure for getting the user directory fails.'

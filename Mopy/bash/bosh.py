@@ -8542,6 +8542,7 @@ class ModInfos(FileInfos):
                     msg = ''
                 msg += ' or ' + bush.game.masterFiles[-1]
                 deprint(_('Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
+                self.masterName = GPath(bush.game.masterFiles[0])
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
@@ -33203,22 +33204,27 @@ def testPermissions(path,permissions='rwcd'):
     return True
 
 def getOblivionPath(bashIni, path):
-    if path: path = GPath(path)
+    if path:
+        # Already handled by bush.setGame, but we don't want to use
+        # The sOblivionPath ini entry if a path was specified on the
+        # command line
+        pass
     elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
         path = GPath(bashIni.get('General', 'sOblivionPath').strip())
-    else:
-        path = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
-        #but for bashmon have to do a checky.
-        if path.s[-4:].lower() == 'mopy':
-            path = GPath(path.s[:-5])
+        # Validate it:
+        oldMode = bush.game.name
+        ret = bush.setGame('',path.s)
+        if ret != False:
+            deprint('Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.name)
+        else:
+            if oldMode != bush.game.name:
+                deprint('Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
+    path = bush.gamePath
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
-    bush.setGame(path)
     if not path.join(bush.game.exe).exists():
         raise BoltError(_("Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe))
-    deprint('Running in game mode:', bush.game.name)
-
     Installer.initData()
     return path
 

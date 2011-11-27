@@ -31,6 +31,15 @@ name = ''
 ## Example: 'TESV.exe'
 exe = ''
 
+#--Registry keys to read to find the install location
+## These are relative to:
+##  HKLM\Software
+##  HKLM\Software\Wow6432Node
+##  HKCU\Software
+##  HKCU\Software\Wow6432Node
+regInstallKeys = [
+    ]
+
 #--Name of the script extender launcher
 ## Example: 'obse_loader.exe'
 scriptExtenderName = ''
