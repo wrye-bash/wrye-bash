@@ -30,6 +30,11 @@ name = 'Oblivion'
 #--Exe to look for to see if this is the right game
 exe = 'Oblivion.exe'
 
+#--Registry keys to read to find the install location
+regInstallKeys = [
+    ('Bethesda Softworks\Oblivion','Installed Path'),
+    ]
+
 #--Name of the script extender launcher
 scriptExtenderName = 'OBSE'
 scriptExtender = 'obse_loader.exe'

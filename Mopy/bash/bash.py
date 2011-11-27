@@ -208,6 +208,47 @@ def main():
         os.chdir(pathToProg)
     del pathToProg
 
+    # Detect the game we're running for
+    import bush
+    ret = bush.setGame(opts.gameName,opts.oblivionPath)
+    if ret != False: # False == success
+        if len(ret) != 1:
+            # Use Tkinter here, since we haven't started the wxApp yet
+            import Tkinter
+            root = Tkinter.Tk()
+            frame = Tkinter.Frame(root)
+            frame.pack()
+
+            canceled = False
+            def onClickQuit():
+                canceled = True
+                root.destroy()
+
+            button = Tkinter.Button(frame,text='Quit',fg='red',command=onClickQuit,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+            button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+            class onClick(object):
+                def __init__(self,gameName):
+                    self.gameName = gameName
+
+                def onClick(self):
+                    bush.setGame(self.gameName,opts.oblivionPath)
+                    root.destroy()
+            for gameName in ret:
+                text = gameName[0].upper() + gameName[1:]
+                command = onClick(gameName).onClick
+                button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+            w = Tkinter.Text(frame)
+            w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
+            w.config(state=Tkinter.DISABLED)
+            w.pack()
+            root.mainloop()
+            if canceled:
+                return
+            del Tkinter # Unload TKinter, it's not needed anymore
+        else:
+            bush.setGame(ret[0],opts.oblivionPath)
+
     if opts.bashmon:
         # ensure the console is set up properly
         import ctypes
@@ -270,7 +311,7 @@ def main():
             frame = Tkinter.Frame(root)
             frame.pack()
 
-            button = Tkinter.Button(frame, text="QUIT", fg="red", command=frame.quit, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+            button = Tkinter.Button(frame, text="QUIT", fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
 
             o = cStringIO.StringIO()

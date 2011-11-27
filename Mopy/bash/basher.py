@@ -16151,22 +16151,14 @@ def InitStatusBar():
     #--Bash Status/LinkBar
     BashStatusBar.buttons.append(Obse_Button(uid='OBSE'))
     BashStatusBar.buttons.append(AutoQuit_Button(uid='AutoQuit'))
-    BashStatusBar.buttons.append( #OBLIVION
+    BashStatusBar.buttons.append( # Game
         Oblivion_Button(
-            bosh.dirs['app'].join('Oblivion.exe'),
-            imageList('oblivion%s.png'),
-            _("Launch Oblivion"),
-            _("Launch Oblivion %(version)s"),
+            bosh.dirs['app'].join(bush.game.exe),
+            imageList('%s%%s.png' % bush.game.name.lower()),
+            _("Launch") + ' %s' % bush.game.name,
+            _("Launch") + ' %s %%(version)s' % bush.game.name,
             '',
-            uid='Oblivion'))
-    BashStatusBar.buttons.append( #SKYRIM
-        Oblivion_Button(
-            bosh.dirs['app'].join('TESV.exe'),
-            imageList('skyrim%s.png'),
-            _("Launch Skyrim"),
-            _("Launch Skyrim %(version)s"),
-            '',
-            uid='Skyrim'))
+            uid = 'Oblivion'))
     BashStatusBar.buttons.append( #TESCS
         TESCS_Button(
             bosh.dirs['app'].join('TESConstructionSet.exe'),
