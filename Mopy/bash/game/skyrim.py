@@ -35,10 +35,26 @@ regInstallKeys = [
     ('Bethesda Softworks\Skyrim','Installed Path'),
     ]
 
-#--Name of the script extender launcher
-scriptExtenderName = 'SKSE'
-scriptExtender = 'skse_loader.exe'
-scriptExtenderSteam = scriptExtender
+#--patch information
+patchURL = '' # Update via steam
+patchTip = 'Update via Steam'
+
+#--Script Extender information
+class se:
+    shortName = 'SKSE'                      # Abbreviated name
+    longName = 'Skyrim Script Extender'     # Full name
+    exe = 'skse_loader.exe'                 # Exe to run
+    steamExe = 'skse_loader.exe'            # Exe to run if a steam install
+    url = 'http://skse.silverlock.org/'     # URL to download from
+    urlTip = 'http://skse.silverlock.org/'  # Tooltip for mouse over the URL
+
+#--Graphics Extender information
+class ge:
+    shortName = ''
+    longName = ''
+    exe = ''
+    url = ''
+    urlTip = ''
 
 #--Wrye Bash capabilities with this game
 canBash = False      # No Bashed Patch creation or messing with mods

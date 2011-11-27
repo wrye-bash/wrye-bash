@@ -8502,11 +8502,12 @@ class Installers_skipLandscapeLODNormals(Installers_Skip):
 class Installers_SkipOBSEPlugins(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
     def __init__(self): BoolLink.__init__(self,
-                                          _('Skip %s Plugins') % bush.game.scriptExtenderName,
+                                          _('Skip %s Plugins') % bush.game.se.shortName,
                                           'bash.installers.allowOBSEPlugins',
                                           )
 
     def AppendToMenu(self,menu,window,data):
+        if bush.game.se.shortName == '': return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,self.text,self.help,kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
@@ -10679,15 +10680,16 @@ class Settings_SaveSettings(Link):
 class Settings_ExportDllInfo(Link):
     """Exports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
+        if bush.game.se.shortName == '': return
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed %s plugin dlls") % bush.game.scriptExtenderName)
+        menuItem = wx.MenuItem(menu,self.id,_("Export list of allowed/disallowed %s plugin dlls") % bush.game.se.shortName)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window,_('Export list of allowed/disallowed %s plugin dlls to:') % bush.game.scriptExtenderName, textDir, _("%s dll permissions.txt") % bush.game.scriptExtenderName, '*.txt')
+        textPath = balt.askSave(self.window,_('Export list of allowed/disallowed %s plugin dlls to:') % bush.game.se.shortName, textDir, _("%s dll permissions.txt") % bush.game.se.shortName, '*.txt')
         if not textPath: return
         try:
             out = textPath.open("w")
@@ -10711,16 +10713,17 @@ class Settings_ExportDllInfo(Link):
 class Settings_ImportDllInfo(Link):
     """Imports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
+        if bush.game.se.shortName == '': return
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed %s plugin dlls") % bush.game.scriptExtenderName)
+        menuItem = wx.MenuItem(menu,self.id,_("Import list of allowed/disallowed %s plugin dlls") % bush.game.se.shortName)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.window,_('Import list of allowed/disallowed %s plugin dlls from:') % bush.game.scriptExtenderName,
-            textDir, _("%s dll permissions.txt") % bush.game.scriptExtenderName, '*.txt',mustExist=True)
+        textPath = balt.askOpen(self.window,_('Import list of allowed/disallowed %s plugin dlls from:') % bush.game.se.shortName,
+            textDir, _("%s dll permissions.txt") % bush.game.se.shortName, '*.txt',mustExist=True)
         if not textPath: return
         message = _("Merge permissions from file with current dll permissions?\n('No' Replaces current permissions instead.)")
         if not balt.askYes(self.window,message,_('Merge permissions?')): replace = True
@@ -14498,8 +14501,8 @@ class Save_Renumber(Link):
                 newPath = bosh.saveInfos.dir.join(newFileName)
                 if not newPath.exists():
                     oldPath.moveTo(newPath)
-                    if GPath(oldPath.s[:-3]+bush.game.scriptExtenderName.lower()).exists():
-                        GPath(oldPath.s[:-3]+bush.game.scriptExtenderName.lower()).moveTo(GPath(newPath.s[:-3]+bush.game.scriptExtenderName.lower()))
+                    if GPath(oldPath.s[:-3]+bush.game.se.shortName.lower()).exists():
+                        GPath(oldPath.s[:-3]+bush.game.se.shortName.lower()).moveTo(GPath(newPath.s[:-3]+bush.game.se.shortName.lower()))
                     if GPath(oldPath.s[:-3]+'pluggy').exists():
                         GPath(oldPath.s[:-3]+'pluggy').moveTo(GPath(newPath.s[:-3]+'pluggy'))
                 newNumber += 1
@@ -15037,22 +15040,23 @@ class Save_Stats(Link):
 class Save_StatObse(Link):
     """Dump .obse records."""
     def AppendToMenu(self,menu,window,data):
+        if bush.game.se.shortName == '': return
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('.%s Statistics') % bush.game.scriptExtenderName.lower())
+        menuItem = wx.MenuItem(menu,self.id,_('.%s Statistics') % bush.game.se.shortName.lower())
         menu.AppendItem(menuItem)
         if len(data) != 1:
             menuItem.Enable(False)
         else:
             fileName = GPath(self.data[0])
             fileInfo = self.window.data[fileName]
-            fileName = fileInfo.getPath().root+'.%s' % bush.game.scriptExtenderName
+            fileName = fileInfo.getPath().root+'.%s' % bush.game.se.shortName
             menuItem.Enable(fileName.exists())
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         saveFile = bosh.SaveFile(fileInfo)
-        with balt.Progress(".%s" % bush.game.scriptExtenderName) as progress:
+        with balt.Progress(".%s" % bush.game.se.shortName) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(stringBuffer())
             progress(0.9,_("Calculating statistics."))
@@ -15524,9 +15528,9 @@ class StatusBar_Button(Link):
     @property
     def obseVersion(self):
         if bosh.inisettings['SteamInstall']:
-            file = bush.game.scriptExtenderSteam
+            file = bush.game.se.steamExe
         else:
-            file = bush.game.scriptExtender
+            file = bush.game.se.exe
         version = bosh.dirs['app'].join(file).strippedVersion
         return '.'.join([str(x) for x in version])
 
@@ -15615,7 +15619,7 @@ class App_Button(StatusBar_Button):
         #--**SE stuff
         self._obseTip = obseTip
         self.obseArg = obseArg
-        exeObse = bosh.dirs['app'].join(bush.game.scriptExtender)
+        exeObse = bosh.dirs['app'].join(bush.game.se.exe)
 
     def IsPresent(self):
         if self.isJava:
@@ -15633,7 +15637,7 @@ class App_Button(StatusBar_Button):
                               style=style,tip=self.tip)
             if self.obseTip != None:
                 App_Button.obseButtons.append(self)
-                exeObse = bosh.dirs['app'].join(bush.game.scriptExtender)
+                exeObse = bosh.dirs['app'].join(bush.game.se.exe)
                 if settings.get('bash.obse.on',False) and exeObse.exists():
                     self.gButton.SetToolTip(tooltip(self.obseTip))
             return self.gButton
@@ -15662,7 +15666,7 @@ class App_Button(StatusBar_Button):
                 finally:
                     cwd.setcwd()
             elif self.isExe:
-                exeObse = bosh.dirs['app'].join(bush.game.scriptExtender)
+                exeObse = bosh.dirs['app'].join(bush.game.se.exe)
                 if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                     if bosh.inisettings['SteamInstall'] and self.exePath.tail.cs == 'oblivion.exe':
                         exePath = self.exePath
@@ -15831,7 +15835,7 @@ class App_BOSS(App_Button):
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
-            exeObse = bosh.dirs['app'].join(bush.game.scriptExtender)
+            exeObse = bosh.dirs['app'].join(bush.game.se.exe)
             exeArgs = self.exeArgs
             if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                 exePath = exeObse
@@ -15897,7 +15901,7 @@ class Oblivion_Button(App_Button):
         else:
             tip = self._obseTip % (dict(version=''))
         # + OBSE
-        tip += ' + %s %s' % (bush.game.scriptExtenderName, self.obseVersion)
+        tip += ' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         return tip
 
     def Execute(self,event):
@@ -15916,7 +15920,7 @@ class TESCS_Button(App_Button):
         else:
             tip = self._obseTip % (dict(version=''))
         # + OBSE
-        tip += ' + %s %s' % (bush.game.scriptExtenderName, self.obseVersion)
+        tip += ' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + CSE
         path = bosh.dirs['mods'].join('obse','plugins','Construction Set Extender.dll')
         if path.exists():
@@ -15942,7 +15946,7 @@ class Obse_Button(StatusBar_Button):
         # BitmapButton
         image = images[('checkbox.green.off.%s'%settings['bash.statusbar.iconSize'],
                         'checkbox.green.on.%s'%settings['bash.statusbar.iconSize'])[state]]
-        tip = ((_("%s %s Disabled"),_("%s %s Enabled"))[state]) % (bush.game.scriptExtenderName, self.obseVersion)
+        tip = ((_("%s %s Disabled"),_("%s %s Enabled"))[state]) % (bush.game.se.shortName, self.obseVersion)
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
         tipAttr = ('tip','obseTip')[state]
@@ -15951,7 +15955,7 @@ class Obse_Button(StatusBar_Button):
         return state
 
     def GetBitmapButton(self,window,style=0):
-        exeObse = bosh.dirs['app'].join(bush.game.scriptExtender)
+        exeObse = bosh.dirs['app'].join(bush.game.se.shortName)
         if exeObse.exists():
             bitmap = images['checkbox.green.off.%s'%settings['bash.statusbar.iconSize']].GetBitmap()
             self.createButton(window,bitmap,style=style)

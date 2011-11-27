@@ -35,10 +35,28 @@ regInstallKeys = [
     ('Bethesda Softworks\Oblivion','Installed Path'),
     ]
 
-#--Name of the script extender launcher
-scriptExtenderName = 'OBSE'
-scriptExtender = 'obse_loader.exe'
-scriptExtenderSteam = 'obse_1_2_416.dll'
+#--patch information
+patchURL = 'http://www.elderscrolls.com/downloads/updates_patches.htm'
+patchTip = 'http://www.elderscrolls.com/' 
+
+#--Script Extender information
+class se:
+    shortName = 'OBSE'                      # Abbreviated name
+    longName = 'Oblivion Script Extender'   # Full name
+    exe = 'obse_loader.exe'                 # Exe to run
+    steamExe = 'obse_1_2_416.dll'           # Exe to run if a steam install
+    url = 'http://obse.silverlock.org/'     # URL to download from
+    urlTip = 'http://obse.silverlock.org/'  # Tooltip for mouse over the URL
+
+#--Graphics Extender information
+class ge:
+    shortName = 'OBGE'
+    longName = 'Oblivion Graphics Extender'
+    exe = [('Data','obse','plugins','obge.dll'),
+           ('Data','obse','plugins','obgev2.dll'),
+           ]
+    url = 'http://www.tesnexus.com/downloads/file.php?id=30054'
+    urlTip = 'http://www.tesnexus.com/'
 
 #--Wrye Bash capabilities with this game
 canBash = True
