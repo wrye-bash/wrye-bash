@@ -211,7 +211,7 @@ def main():
     # Detect the game we're running for
     import bush
     if opts.debug:
-        print 'Searching for game to manage:\n name: "%s"\n path: "%s"' % (opts.gameName,opts.oblivionPath)
+        print 'Searching for game to manage:'
     ret = bush.setGame(opts.gameName,opts.oblivionPath)
     if ret != False: # False == success
         if len(ret) != 1:
