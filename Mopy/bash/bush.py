@@ -30,7 +30,7 @@ import struct
 import ctypes
 import _winreg
 
-from bolt import _,GPath,Path
+from bolt import _,GPath,Path,deprint
 
 # Setup -----------------------------------------------------------------------
 # Call this with the name of the game to setup bush.game for.
@@ -80,6 +80,9 @@ def setGame(gameName,workingDir=''):
     # unload some modules
     del pkgutil
     del _game
+    deprint('Detected the following supported games via Windows Registry:')
+    for name in foundGames:
+        deprint(' %s:' % name, foundGames[name])
     # Also check if Wrye Bash is installed just above the directory
     path = Path.getcwd()
     if path.cs[-4:] == 'mopy':
@@ -90,10 +93,12 @@ def setGame(gameName,workingDir=''):
         if not path.isabs():
             path = Path.getcwd().join(path)
         installPaths.insert(0,path)
+    deprint('Detecting games via relative path and the -o argument:')
     for path in installPaths:
         name = path.tail.cs
         if name in allGames:
             # We have a config for that game
+            deprint(' %s:' % name, installPath)
             foundGames[name] = installPath
             break
         else:
@@ -102,6 +107,7 @@ def setGame(gameName,workingDir=''):
                 for _name in allGames:
                     if allGames[_name].exe == file:
                         # Must be this game
+                        deprint(' %s:' % _name, path)
                         name = _name
                         foundGames[name] = path
                         break
@@ -115,16 +121,22 @@ def setGame(gameName,workingDir=''):
         # The game specified was found
         gamePath = foundGames[gameName]
         game = allGames[gameName]
+        deprint('Specified game "%s" was found:' % gameName, gamePath)
         # Unload the other modules
         for i in allGames.keys():
             if i != gameName:
                 del allGames[i]
         return False
     else:
+        if gameName == '':
+            deprint('No preferred game specified.')
+        else:
+            deprint('Specified game "%s" was not found.' % gameName)
         if name in foundGames:
             # Game specified was not found, or no game was specified
             # try the game based on Wrye Bash install location
             gamePath = foundGames[name]
+            deprint(' Using %s game:' % name, gamePath)
             game = allGames[name]
             # Unload the other modules
             for i in allGames.keys():

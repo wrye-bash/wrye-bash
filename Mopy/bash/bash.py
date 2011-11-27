@@ -41,7 +41,7 @@ import barg
 opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
-from bolt import _, GPath
+from bolt import _, GPath, deprint
 basherImported = False
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -211,7 +211,10 @@ def main():
     # Detect the game we're running for
     import bush
     ret = bush.setGame(opts.gameName,opts.oblivionPath)
+    if opts.debug:
+        print 'Searching for game to manage:\n name: "%s"\n path: "%s"' % (opts.gameName,opts.oblivionPath)
     if ret != False: # False == success
+        deprint('Match not found.  Detected games:', ret)
         if len(ret) != 1:
             # Use Tkinter here, since we haven't started the wxApp yet
             import Tkinter
@@ -248,6 +251,8 @@ def main():
             del Tkinter # Unload TKinter, it's not needed anymore
         else:
             bush.setGame(ret[0],opts.oblivionPath)
+    elif opts.debug:
+        print 'Match found:\n name: "%s"\n path: "%s"' % (bush.game.name, bush.gamePath)
 
     if opts.bashmon:
         # ensure the console is set up properly
