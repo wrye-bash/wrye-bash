@@ -28,9 +28,113 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import struct
 import ctypes
+import _winreg
 
-from bolt import _,GPath
+from bolt import _,GPath,Path
 
+# Setup -----------------------------------------------------------------------
+# Call this with the name of the game to setup bush.game for.
+game = None
+gamePath = None
+
+def setGame(gameName,workingDir=''):
+    """call bush.setGame with the name of the desired game.  If the game is
+       detected as installed (checked both by registry key entries and  by
+       looking one directory up from 'Mopy', as well as verifying the correct
+       exe is present), then False is returned, and everything is set.  If the
+       desired game is not found, a list of found game names will be returned."""
+    #--First: Try finding a match in bash\game
+    gameName = gameName.lower()
+    import pkgutil
+    import game as _game
+    global game
+    global gamePath
+    foundGames = {}
+    allGames = {}
+    # Detect the known games
+    for importer,modname,ispkg in pkgutil.iter_modules(_game.__path__):
+        # Equivalent of "from game import <modname>"
+        try:
+            module = __import__('game',globals(),locals(),[modname],-1)
+        except:
+            continue
+        submod = getattr(module,modname)
+        if not hasattr(submod,'name') or not hasattr(submod,'exe'): continue
+        allGames[submod.name.lower()] = submod
+        #--Get this game's install path
+        for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+            for wow6432 in ('','Wow6432Node\\'):
+                for (subkey,entry) in submod.regInstallKeys:
+                    try:
+                        key = _winreg.OpenKey(hkey,
+                            'Software\\%s%s' % (wow6432,subkey))
+                        value = _winreg.QueryValueEx(key,entry)
+                    except: continue
+                    if value[1] != _winreg.REG_SZ: continue
+                    installPath = GPath(value[0])
+                    if not installPath.exists(): continue
+                    exePath = installPath.join(submod.exe)
+                    if not exePath.exists(): continue
+                    foundGames[submod.name.lower()] = installPath
+        del module
+    # unload some modules
+    del pkgutil
+    del _game
+    # Also check if Wrye Bash is installed just above the directory
+    path = Path.getcwd()
+    if path.cs[-4:] == 'mopy':
+        path = GPath(path.s[:-5])
+    installPaths = [path]
+    if workingDir != '':
+        path = GPath(workingDir)
+        if not path.isabs():
+            path = Path.getcwd().join(path)
+        installPaths.insert(0,path)
+    for path in installPaths:
+        name = path.tail.cs
+        if name in allGames:
+            # We have a config for that game
+            foundGames[name] = installPath
+            break
+        else:
+            # Folder name wasn't found, try looking by exe name
+            for file in path.list():
+                for _name in allGames:
+                    if allGames[_name].exe == file:
+                        # Must be this game
+                        name = _name
+                        foundGames[name] = path
+                        break
+                else:
+                    continue
+                break
+            else:
+                continue
+            break
+    if gameName in foundGames:
+        # The game specified was found
+        gamePath = foundGames[gameName]
+        game = allGames[gameName]
+        # Unload the other modules
+        for i in allGames.keys():
+            if i != gameName:
+                del allGames[i]
+        return False
+    else:
+        if name in foundGames:
+            # Game specified was not found, or no game was specified
+            # try the game based on Wrye Bash install location
+            gamePath = foundGames[name]
+            game = allGames[name]
+            # Unload the other modules
+            for i in allGames.keys():
+                if i != name:
+                    del allGames[i]
+            return False
+        # No match found return the list of possible games
+        # Unload all the modules
+        del allGames
+        return foundGames.keys()
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
@@ -75,34 +179,6 @@ ignoreDataDirs = set((
     r'LSData'
     ))
 
-#--bush.game will reference all game specific static data
-game = None
-def setGame(gameDir):
-    gameDir = GPath(gameDir)
-    """Call this with the root directory of the game.  setGame will
-       walk through the possible game types and check to see if it matches,
-       then set bush.game accordingly"""
-    import pkgutil
-    import game as _game
-    global game
-    for importer,modname,ispgk in pkgutil.iter_modules(_game.__path__):
-        # from game import 'modname'
-        module = __import__('game',globals(),locals(),[modname], -1)
-        submod = getattr(module,modname)
-        #--Check for the proper exe
-        if submod.name == gameDir.tail:
-            if gameDir.join(submod.exe).exists():
-                game = submod
-                del pkgutil
-                del _game
-                return
-        del module
-        del submod
-    del pkgutil
-    del _game
-    # Failsaif - assume oblivion
-    import game.oblivion as _game
-    game = _game
 
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
