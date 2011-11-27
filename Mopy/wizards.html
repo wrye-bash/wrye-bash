@@ -49,8 +49,11 @@
 <p class="list-3">&bull;&nbsp; <a href="#Comments">Comments (;)</a></p>
 <p class="list-1">&bull;&nbsp; <a href="#Functions">Functions</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CompareObVersion">CompareObVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareGameVersion">CompareGameVersion</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CompareOBSEVersion">CompareOBSEVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareSEVersion">CompareSEVersion</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CompareOBGEVersion">CompareOBGEVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareGEVersion">CompareGEVersion</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CompareWBVersion">CompareWBVersion</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#DataFileExists">DataFileExists</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#GetEspmStatus">GetEspmStatus</a></p>
@@ -332,8 +335,13 @@
 <p>Used to test the installed version of Oblivion against one you specify.
 </p>
   <p class="empty">&nbsp;</p>
+<p><b>Deprecated:</b> Retained for backwards compatibility only.  Use <a href="#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a> instead.
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareGameVersion'>CompareGameVersion</a></h2>
+  <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareObVersion"><span style="color:purple;">CompareObVersion</span></a>(<i>version_string</i>)</span>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a>(<i>version_string</i>)</span>
 </pre>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>version_string:</b></i> a string formatted to hold a file version number, like "1.2.3.93".  For example the current Oblivion version would be represented as "1.2.0.416"</p>
@@ -346,29 +354,41 @@
 <p>Used to test the installed version of <a href="http://obse.silverlock.org/">OBSE</a> against one you specify.
 </p>
   <p class="empty">&nbsp;</p>
+<p><b>Deprecated:</b> Retained for backwards compatibility only.  Use <a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a> instead.
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareSEVersion'>CompareSEVersion</a></h2>
+<p>Used to test the installed version of the game's Script Extender against one you specify.
+</p>
+  <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareOBSEVersion"><span style="color:purple;">CompareOBSEVersion</span></a>(<i>version_string</i>)</span>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a>(<i>version_string</i>)</span>
 </pre>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>version_string:</b></i> a string formatted to hold a file version number, like "1.2.3.93".  For example OBSE v18 would be represented as "0.0.18.6"</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed OBSE version is less than the version specified in <i><b>version_string</b></i>.</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed OBSE version is the same as the version specified in <i><b>version_string</b></i>.</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed OBSE version is higher than the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed SE version is less than the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed SE version is the same as the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed SE version is higher than the version specified in <i><b>version_string</b></i>, or there is no SE available for this game.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='CompareOBGEVersion'>CompareOBGEVersion</a></h2>
-<p>Used to test the installed version of OBGE against one you specify.  If the <a href="http://www.tesnexus.com/downloads/file.php?id=30054">new version</a> of OBGE/OGE is installed, this will be used for the comparison.  Otherwise, this will be compared to the <a href="http://timeslip.users.sourceforge.net/obge.html">old version</a> or <a href="http://www.tesnexus.com/downloads/file.php?id=25912">debugged version</a> if installed.
+  <p class="empty">&nbsp;</p>
+<p><b>Deprecated:</b> Retained for backwards compatibility only.  Use <a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a> instead.
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareGEVersion'>CompareGEVersion</a></h2>
+<p>Used to test the installed version of the game's Graphics Extender against one you specify.
 </p>
   <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareOBGEVersion"><span style="color:purple;">CompareOBGEVersion</span></a>(<i>version_string</i>)</span>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a>(<i>version_string</i>)</span>
 </pre>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>version_string:</b></i> a string formatted to hold a file version number, like "1.2.3.93".  For example OBGEv2 version 3 would be represented as "3.0.0.0", while the old OBGE would be "0.1.1.0"</p>
 <p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed OBGE version is less than the version specified in <i><b>version_string</b></i></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed OBGE version is the same as the version specified in <i><b>version_string</b></i></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed OBGE version is higher than the version specified in <i><b>version_string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed GE version is less than the version specified in <i><b>version_string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed GE version is the same as the version specified in <i><b>version_string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed GE version is higher than the version specified in <i><b>version_string</b></i>, or there is no GE available for this game.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='CompareWBVersion'>CompareWBVersion</a></h2>
 <p>Used to test the current version of Wrye Bash agains one you specify.
@@ -579,7 +599,7 @@ setGS fPCBaseMagickaMult 1</pre>
 </p>
   <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#find"><span style="color:purple;">find</span></a>(<i>string</i>, <i>substring</i> [, <i>start</i>, <i>stop</i>])</span>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#rfind"><span style="color:purple;">rfind</span></a>(<i>string</i>, <i>substring</i> [, <i>start</i>, <i>stop</i>])</span>
 </pre>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable to search in.</p>
@@ -912,12 +932,12 @@ setGS fPCBaseMagickaMult 1</pre>
 </p>
 <p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
-<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> <i>oblivion_version</i> [, <i>obse_version</i>, <i>obge_version</i>, <i>wrye_bash_version</i>]</span>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> <i>game_version</i> [, <i>se_version</i>, <i>ge_version</i>, <i>wrye_bash_version</i>]</span>
 </pre>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
-  <p class="list-2">&bull;&nbsp;  <i><b>oblivion_version:</b></i> Version of Oblivion to for.  See <a href="#CompareObVersion">CompareObVersion</a> for the proper format of the string.</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>obse_version:</b></i> Optional.  Version of OBSE to test for.  See <a href="#CompareOBSEVersion">CompareOBSEVersion</a> for the proper format of the string.</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>obge_version:</b></i> Optional.  Version of OBGE to test for.  See <a href="#CompareOBGEVersion">CompareOBGEVersion</a> for the proper format of the string.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>game_version:</b></i> Version of the game to test for.  See <a href="#CompareGameVersion">CompareGameVersion</a> for the proper format of the string.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>se_version:</b></i> Optional.  Version of the Script Extender to test for.  See <a href="#CompareSEVersion">CompareSEVersion</a> for the proper format of the string.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>ge_version:</b></i> Optional.  Version of the Graphics Extender to test for.  See <a href="#CompareGEVersion">CompareGEVersion</a> for the proper format of the string.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>wrye_bash_version:</b></i> Optional.  Version of Wrye Bash to test for.  See <a href="#CompareWBVersion">CompareWBVersion</a> for more info.</p>
   <p class="empty">&nbsp;</p>
 <h1><a id='Operators'>Operators</a></h1>
@@ -1236,19 +1256,19 @@ setGS fPCBaseMagickaMult 1</pre>
 </td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<i>filename</i>)</span><br />
 </td></tr><tr><td class="code">
 <h3><a id='IfScriptExtenderPresent'>If ScriptExtenderPresent</a></h3>
-</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareOBSEVersion"><span style="color:purple;">CompareOBSEVersion</span></a>(<span style="color:brown;">"0.0.0.0"</span>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a>(<span style="color:brown;">"0.0.0.0"</span>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
 </td></tr><tr><td class="code">
 <h3><a id='IfScriptExtenderNewerThanltversiongtspan'>If ScriptExtenderNewerThan <span style="color:blue;">&lt;version&gt;</span></a></h3>
-</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareOBSEVersion"><span style="color:purple;">CompareOBSEVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
 </td></tr><tr><td class="code">
 <h3><a id='IfGraphicsExtenderPresent'>If GraphicsExtenderPresent</a></h3>
-</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareOBGEVersion"><span style="color:purple;">CompareOBGEVersion</span></a>(<span style="color:brown;">"0.0.0.0"</span>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a>(<span style="color:brown;">"0.0.0.0"</span>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
 </td></tr><tr><td class="code">
 <h3><a id='IfGraphicsExtenderNewerThan'>If GraphicsExtenderNewerThan</a></h3>
-</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareOBGEVersion"><span style="color:purple;">CompareOBGEVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
 </td></tr><tr><td class="code">
 <h3><a id='IfOblivionNewerThanltversiongtspan'>If OblivionNewerThan <span style="color:blue;">&lt;version&gt;</span></a></h3>
-</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareObVersion"><span style="color:purple;">CompareObVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
 </td></tr><tr><td class="code">
 <h3><a id='IfEqualltarg1gtspanltarg2gtspan'>If Equal <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></a></h3>
 <p><b>If GreaterThan <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></b>

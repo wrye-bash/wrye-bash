@@ -836,13 +836,11 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator('^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
 
         #--Functions
-        self.SetFunction('CompareObVersion', self.fnCompareGameVersion, 1)
+        self.SetFunction('CompareObVersion', self.fnCompareGameVersion, 1)      # Retained for compatibility
         self.SetFunction('CompareGameVersion', self.fnCompareGameVersion, 1)
-        if bush.game.se.shortName != '':
-            self.SetFunction('Compare%sVersion'%bush.game.se.shortName, self.fnCompareSEVersion, 1)
+        self.SetFunction('CompareOBSEVersion', self.fnCompareSEVersion, 1)      # Retained for compatibility
         self.SetFunction('CompareSEVersion', self.fnCompareSEVersion, 1)
-        if bush.game.ge.shortName != '':
-            self.SetFunction('Compare%sVersion'%bush.game.ge.shortName, self.fnCompareGEVersion, 1)
+        self.SetFunction('CompareOBGEVersion', self.fnCompareGEVersion, 1)      # Retained for compatibility
         self.SetFunction('CompareGEVersion', self.fnCompareGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
@@ -1086,15 +1084,23 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(self._TestVersion_Want(obWant), bosh.dirs['app'].join(bush.game.exe))
         return ret[0]
     def fnCompareSEVersion(self, seWant):
-        if bosh.inisettings['SteamInstall']:
-            se = bush.game.se.steamExe   # User may not have obse_loader.exe, since it's only required for the CS
+        if bush.game.se.shortName != '':
+            if bosh.inisettings['SteamInstall']:
+                se = bush.game.se.steamExe   # User may not have obse_loader.exe, since it's only required for the CS
+            else:
+                se = bush.game.se.exe
+            ret = self._TestVersion(self._TestVersion_Want(seWant), bosh.dirs['app'].join(se))
+            return ret[0]
         else:
-            se = bush.game.se.exe
-        ret = self._TestVersion(self._TestVersion_Want(seWant), bosh.dirs['app'].join(se))
-        return ret[0]
+            # No script extender available for this game
+            return 1
     def fnCompareGEVersion(self, geWant):
-        ret = self._TestVersion_OBGE(self._TestVersion_Want(geWant))
-        return ret[0]
+        if bush.game.ge.shortName != '':
+            ret = self._TestVersion_OBGE(self._TestVersion_Want(geWant))
+            return ret[0]
+        else:
+            # No graphics extender available for this game
+            return 1
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
         return cmp(float(wbHave), float(wbWant))
