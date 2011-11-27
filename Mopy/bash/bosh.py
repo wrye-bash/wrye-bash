@@ -5767,10 +5767,10 @@ class SaveHeader:
                     self.pcLocation = ins.read(size)
                     size, = struct.unpack('H',ins.read(2))
                     self.gameDate = ins.read(size)
-                    days,hours,minutes = [int(x) for x in self.gameDate.split('.')]
-                    self.gameDays = days + (float(hours)/24) + (float(minutes)/(24*60))
-                    minutes = days*24*60 + hours*60 + minutes
-                    self.gameTicks = minutes * 1000
+                    hours,minutes,seconds = [int(x) for x in self.gameDate.split('.')]
+                    playSeconds = hours*60*60 + minutes*60 + seconds
+                    self.gameDays = float(playSeconds)/(24*60*60)
+                    self.gameTicks = playSeconds * 1000
                     size, = struct.unpack('H',ins.read(2))
                     raceEdid = ins.read(size)
                     unk0, = struct.unpack('H',ins.read(2))
