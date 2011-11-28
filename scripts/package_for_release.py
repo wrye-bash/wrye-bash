@@ -128,12 +128,21 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     else:
         print " Could not find 'manifest.template', the StandAlone will look OLD (Windows 9x style)."
         manifest = None
-    
+
+    # Determine the extra includes needed (because py2exe wont automatically detect these)
+    includes = []
+    for file in os.listdir(os.path.join(mopy,'bash','game')):
+        if file.lower()[-3:] == '.py':
+            if file.lower() != '__init__.py':
+                includes.append("'bash.game.%s'" % file[:-3])
+    includes = ','.join(includes)
+
     # Write the setup script
     file = open(script, 'r')
     script = file.read()
     script = script % dict(version=version, file_version=file_version,
-                           manifest=manifest, upx=None, upx_compression='-9'
+                           manifest=manifest, upx=None, upx_compression='-9',
+                           includes=includes,
                            )
     file.close()
     file = open(setup, 'w')
