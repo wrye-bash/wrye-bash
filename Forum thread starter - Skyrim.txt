@@ -1,0 +1,125 @@
+﻿Continuing from the [topic=1256835]previous thread[/topic]...
+
+[b]What does Wrye Bash do?[/b]
+[list]
+[*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
+[*][s]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"[/s] [color=orange](WIPz)[/color]
+[*][s]It allows you to exceed the 255 mod threshold by automatically merging mods for you[/s] [color=orange](WIPz)[/color]
+[/list]
+[b]FAQ[/b]:
+[spoiler][list=1][*]What the heck do all these acronyms mean?
+Yeah, to save typing, we often sling around terminology that can be confusing to newcomers. Here's a quick rundown of what we mean:[list][*][b]WB[/b]: Wrye Bash.  Written in Python.
+[*][b]WBSA[/b]: Wrye Bash Standalone. Wrye Bash packaged with the required Python interpreter and all dependencies into one neat executable package. Still internally runs on Python, but since the interpreter is internal to the exe, no Python components are required to be installed.
+[*][b]PBash[/b]: A Bashed Patch built with the "classic" Python mode patchers. These patchers read, process, and write mod records all in Python.
+[*][b]CBash[/b]: (1) A Bashed Patch built with the CBash (see #2) mode patchers. These patchers still do mod processing in Python, but utilize CBash.dll to do the file reading and writing.
+[*][b]CBash[/b]: (2) A C++ written DLL with a C API, that is used for reading and writing ESP/ESM format files. This is the only part of Wrye Bash not written in Python (well, except for calls to 7z.exe to extract things).
+[*]The practical benefits of using CBash are:[list=1]
+[*] Building the bashed patch is much faster
+[*] More plugins are mergeable, giving you the ability to cram more goodness into Oblivion
+[*] In the future, more interesting kinds of tweaks will be practical to implement[/list]
+[*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
+[*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
+[*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
+[/list][/list][/spoiler]
+
+[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] [s]or [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url][/s] (upload in progress)
+
+[b]Documentation[/b]:
+[list]
+  [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
+  [*]Waruddar's [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/patch_option_reference.html]Patch Option Reference[/url] (also included in the download as "patch_option_reference.html" in the Mopy folder)
+  [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
+  [*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
+  [*][url=http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash]UESP Wrye Bash unofficial wiki[/url]
+  [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]簡體中文[/url]
+[/list]
+[b]Screenshots[/b]:[list]
+  [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab.png]Installers tab[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/installers_tab_conflicts.png]2[/url]
+  [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/mods_tab.png]Mods tab[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/saves_tab.png]Saves tab[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/ini_edits_tab.png]INI Edits tab[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/screenshots_tab.png]Screenshots tab[/url]
+[/list]
+[b]Requirements and Installation[/b]: Short version: just use the installer and install to the Skyrim folder!   When you install dependencies, just install them to their default locations.
+Long version:[spoiler]There are two versions available: the Python version and the Standalone version.  They are functionally equivalent.  Most people should run the Standalone version since it is slightly simpler (no external Python components to install).  You should to install the Python version, however, if you want to be more involved with development or if you already have Python installed on your system for other reasons.
+
+If you're using the Standalone version, the only thing you need to install manually is the [url=http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2]MSVC++ 2008 Redistributable[/url].
+
+If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:[spoiler][list]
+  [*][url=http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi]Python 2.7.2[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
+  [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe]wxPython 2.8.12.0 ansi for Python 2.7[/url]
+  [*][url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
+  [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url]
+  [*]Other setups _may_work_, but this is the only officially supported setup.
+  [*]Python 3.x: [b][u]NOT Supported[/u][/b]
+[/list]Note that the 32-bit versions are required even if you are on a 64-bit operating system[/spoiler]
+Then:[list]
+  [*]For manual installations of either the Standalone or Python versions, extract the archive in your Skyrim game folder so that the Mopy directory appears in the Skyrim directory
+  [*]For Python versions, run by double-clicking on Wrye Bash Launcher.pyw
+  [*]For WBSA (Wrye Bash StandAlone), run by double-clicking on Wrye Bash.exe
+[/list][/spoiler]Remember! In Windows Vista and up, don't install Skyrim in the Program Files folder due to User Access Controls!
+
+[b]Development[/b]:
+The project is hosted at [url=https://sourceforge.net/projects/oblivionworks/develop]SourceForge[/url].  You don't need a SourceForge account to create or add data to bug reports and feature requests  -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
+[spoiler]If going from Standalone version to Python version, use the latest installer to install the Python version before continuing.  It will install all required dependencies for you.
+
+The latest svn is always here >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/]Click and Bookmark it[/url]<< - Then just click "Download GNU Tarball" at the bottom.  Note: If you have been told to try a specific revision number instead of the latest, type the revision number in the sticky revision box and press return, the Download GNU Tarball will now grab that revision's set of files.
+
+Use >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=log]this link[/url]<< to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong...
+
+[b]A screenshot walkthrough:[/b]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn1.jpg]Screenshot 1[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg]Screenshot 2[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg]Screenshot 3[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg]Screenshot 4[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5.jpg]Screenshot 5[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg]Screenshot 6[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg]Screenshot 7[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8.jpg]Screenshot 8[/url]
+
+Rinse and repeat when a new svn comes out.
+
+[b]Beware:[/b] Its a good idea to rename the tarball according to the revision number and keep it around.  Keep a few weeks worth of them so if there is a problem found later with a particular set of committed files in the tarball you can go back to a previous known good revision.  There's no need to go back this far but note svn revision 1309 was the directory structure change, and if you go back to a revision earlier than that you will probably have to follow [url=http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/page__view__findpost__p__18000658]this post[/url] to get WB running again.[/spoiler]
+[b]Reporting Bugs[/b]: Try to give us enough information to diagnose your problem.  The following information is useful to us:[spoiler][list]
+[*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
+[*]What game are you running Wrye Bash for?
+[*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpful), what you expected, and what happened.
+[*]What do you see?  Error messages are very valuable to us.
+[*]What version of Windows are you using?  Is UAC enabled and is Skyrim in the default directory? (If it is, please install it somewhere else.  This can cause lots of problems)
+[*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
+[*][s]Is the problem related to the Bashed Patch?  If so include the following:[list]
+ [*]Your Load Order (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Mods...'
+ [*]Your Bashed Tags (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Bash Tags...'
+ [*]Your Bashed Patch config (in spoiler tags).  Get this by right clicking on the Bashed Patch and selecting 'List Patch Config...'[/list][/s][/list][/spoiler]
+[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url], [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
+
+[b]Related Projects[/b]:[list]
+[*]The Official [topic=1286667]Wrye Bash for Oblivion thread[/topic].
+[*]Load orders should be managed with [url=http://www.skyrimnexus.com/downloads/file.php?id=6]BOSS for Skyrim[/url] (Better Oblivion Sorting Software for Skyrim), which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
+[*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
+[/list]
+[b]Changelog for Latest Version[/b]:
+=== 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind][list]
+[*] Skyrim support added:[list]
+  [*] Can read basic information from Skyrim mods (author and description)
+  [*] Can read basic save game information (player name, level, play time)
+  [*] Can modify your Load Order[list]
+    [*] Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.[/list]  [*] BAIN is supported, including the standard directories and SKSE plugins.[/list][*] UI Improvements:[list]
+  [*] Customizible Status Bar and Tabs:[list]
+    [*] Drag and drop reordering
+    [*] Hideable[/list][/list][*] Bugfixes:[list]
+  [*] Fixed a few INI Edits tab related startup crashes.
+  [*] More information should be displayed when Wrye Bash fails to startup.
+  [*] More information is displayed in debug mode when a Tab fails to initialize.
+  [*] Fixed a crash on startup bug when no plugins are found in the Data directory.[/list][*] BAIN Wizards:[list]
+  [*] New function 'CompareGameVersion' replaces the older 'CompareObVersion'.  The older function is retained for backwards compatibility only.
+  [*] New function 'CompareSEVersion' replaces the older 'CompareOBSEVersion'.  The older function is retained for backwards compatibility only.
+  [*] New function 'CompareGEVersion' replaces the older 'CompareGEVersion'.  The older function is retained for backwards compatibility only.[/list][*] Changes to the installation requirements:[list]
+  [*] You may still install Wrye Bash to "path.to.you.game\Mopy" as before, and it will function normally.
+  [*] You may also install Wrye Bash to any other location.  In that case, here is how it will decide what game to manage:[list]
+    [*] Read the Windows Registry to see what supported games you have installed.
+    [*] Also check one directory up relative to Wrye Bash to see if it contains a supported game.
+    [*] If only one supported game is detected:  Wrye Bash will manage that game.
+    [*] If multiple supported games are detected:[list]
+      [*] If the '-g' command line argument is used, Wrye Bash will manage the game specified by '-g'.
+      [*] If the '-o' command line argument is specified, Wrye Bash will manage the game in the location specified by '-o'.
+      [*] If Wrye Bash is installed as a sub-directory to a detected game, Wrye Bash will manage that game.
+      [*] Finally, Wrye Bash will display a prompt asking which game to manage.[/list][/list][/list][*] New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:
+    [xml]"Wrye Bash.exe" -g oblivion[/xml]    Will tell Wrye Bash to manage your Oblivion installation.[/list]
