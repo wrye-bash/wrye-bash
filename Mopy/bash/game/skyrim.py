@@ -26,6 +26,7 @@
 
 #--Name of the game
 name = 'Skyrim'
+altName = 'Wrye Smash'
 
 #--exe to look for to see if this is the right game
 exe = 'TESV.exe'
