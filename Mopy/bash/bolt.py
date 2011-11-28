@@ -51,6 +51,9 @@ if os.name == 'nt':
         import _subprocess
         startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
 
+#-- Forward declarations
+class Path(object): pass
+
 
 # Unicode Strings -------------------------------------------------------------
 # See Python's "aliases.py" for a list of possible encodings
@@ -84,6 +87,7 @@ def Unicode(name,tryFirstEncoding=False):
     return name
 
 def Encode(name,tryFirstEncoding=False):
+    if isinstance(name,Path): name = str(name)
     if not bUseUnicode: return name #don't change if not unicode mode.
     if isinstance(name,str): return name
     if isinstance(name,unicode):
@@ -1102,6 +1106,29 @@ class Path(object):
             deprint(_("Unable to set modified time of %s - probably a unicode error") % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
+    @property
+    def version(self):
+        """File version (exe/dll) embeded in the file properties (windows only)."""
+        try:
+            import win32api
+            info = win32api.GetFileVersionInfo(self.s,'\\')
+            ms = info['FileVersionMS']
+            ls = info['FileVersionLS']
+            version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
+        except:
+            version = (0,0,0,0)
+        return version
+
+    @property
+    def strippedVersion(self):
+        """.version with leading and trailing zeros stripped."""
+        version = list(self.version)
+        while len(version) > 1 and version[0] == 0:
+            version.pop(0)
+        while len(version) > 1 and version[-1] == 0:
+            version.pop()
+        return tuple(version)
+
     #--crc
     @property
     def crc(self):
@@ -1334,7 +1361,7 @@ class CsvReader:
         import csv
         self.ins = path.open('rb')
         format = ('excel','excel-tab')['\t' in self.ins.readline()]
-        if format == 'excel': 
+        if format == 'excel':
             delimiter = (',',';')[';' in self.ins.readline()]
             self.ins.seek(0)
             self.reader = csv.reader(self.ins,format,delimiter=delimiter)

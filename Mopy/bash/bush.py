@@ -28,8 +28,131 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import struct
 import ctypes
+import _winreg
 
-from bolt import _,GPath
+from bolt import _,GPath,Path,deprint
+
+# Setup -----------------------------------------------------------------------
+# Call this with the name of the game to setup bush.game for.
+game = None
+gamePath = None
+
+def setGame(gameName,workingDir=''):
+    """If gameName is specified:
+        - Try to find that game's intall path via windows registry
+        - Try to find that game at "workingDir"
+        - Try to find that game one directory up from the cwd
+       If gameName is not specified:
+        - Use the game found at "workingDir"
+        - Use the game found one directory up from the cwd."""
+    #--First: Find all supported games via the registry
+    gameName = gameName.lower()
+    import pkgutil
+    import game as _game
+    global game
+    global gamePath
+    foundGames = {}
+    allGames = {}
+    # Detect the known games
+    for importer,modname,ispkg in pkgutil.iter_modules(_game.__path__):
+        # Equivalent of "from game import <modname>"
+        try:
+            module = __import__('game',globals(),locals(),[modname],-1)
+        except:
+            continue
+        submod = getattr(module,modname)
+        if not hasattr(submod,'name') or not hasattr(submod,'exe'): continue
+        allGames[submod.name.lower()] = submod
+        #--Get this game's install path
+        for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+            for wow6432 in ('','Wow6432Node\\'):
+                for (subkey,entry) in submod.regInstallKeys:
+                    try:
+                        key = _winreg.OpenKey(hkey,
+                            'Software\\%s%s' % (wow6432,subkey))
+                        value = _winreg.QueryValueEx(key,entry)
+                    except: continue
+                    if value[1] != _winreg.REG_SZ: continue
+                    installPath = GPath(value[0])
+                    if not installPath.exists(): continue
+                    exePath = installPath.join(submod.exe)
+                    if not exePath.exists(): continue
+                    foundGames[submod.name.lower()] = installPath
+        del module
+    # unload some modules
+    del pkgutil
+    del _game
+    deprint('Detected the following supported games via Windows Registry:')
+    for name in foundGames:
+        deprint(' %s:' % name, foundGames[name])
+    #--Second: Detect what game is installed on directory up from Mopy
+    path = Path.getcwd()
+    if path.cs[-4:] == 'mopy':
+        path = GPath(path.s[:-5])
+    installPaths = [path]
+    #--Third: Detect what game is installed at the specified "workingDir"
+    if workingDir != '':
+        path = GPath(workingDir)
+        if not path.isabs():
+            path = Path.getcwd().join(path)
+        installPaths.insert(0,path)
+    deprint('Detecting games via relative path and the -o argument:')
+    for path in installPaths:
+        name = path.tail.cs
+        if name in allGames:
+            # We have a config for that game
+            deprint(' %s:' % name, path)
+            foundGames[name] = path
+            break
+        else:
+            # Folder name wasn't found, try looking by exe name
+            for file in path.list():
+                for _name in allGames:
+                    if allGames[_name].exe == file:
+                        # Must be this game
+                        deprint(' %s:' % _name, path)
+                        name = _name
+                        foundGames[name] = path
+                        break
+                else:
+                    continue
+                break
+            else:
+                continue
+            break
+    #--See if the specified game is one that was found
+    if gameName in foundGames:
+        # The game specified was found
+        gamePath = foundGames[gameName]
+        game = allGames[gameName]
+        deprint('Specified game "%s" was found:' % gameName, gamePath)
+        # Unload the other modules
+        for i in allGames.keys():
+            if i != gameName:
+                del allGames[i]
+        return False
+    #--Specified game not found, or game was not specified,
+    #  so use the game found via workingDir or the cwd
+    else:
+        if gameName == '':
+            deprint('No preferred game specified.')
+        else:
+            deprint('Specified game "%s" was not found.' % gameName)
+        if name in foundGames:
+            # Game specified was not found, or no game was specified
+            # try the game based on Wrye Bash install location
+            gamePath = foundGames[name]
+            deprint(' Using %s game:' % name, gamePath)
+            game = allGames[name]
+            # Unload the other modules
+            for i in allGames.keys():
+                if i != name:
+                    del allGames[i]
+            return False
+    # No match found return the list of possible games
+    # Unload all the modules
+    del allGames
+    return foundGames.keys()
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
@@ -73,119 +196,6 @@ ignoreDataFilePrefixes = set((
 ignoreDataDirs = set((
     r'OBSE\Plugins\ComponentDLLs\CSE',
     r'LSData'
-    ))
-bethDataFiles = set((
-    #--Vanilla
-    r'oblivion.esm',
-    r'oblivion_1.1.esm',
-    r'oblivion_si.esm',
-    r'oblivion_1.1.esm.ghost',
-    r'oblivion_si.esm.ghost',
-    r'oblivion - meshes.bsa',
-    r'oblivion - misc.bsa',
-    r'oblivion - sounds.bsa',
-    r'oblivion - textures - compressed.bsa',
-    r'oblivion - textures - compressed.bsa.orig',
-    r'oblivion - voices1.bsa',
-    r'oblivion - voices2.bsa',
-    #--Shivering Isles
-    r'dlcshiveringisles.esp',
-    r'dlcshiveringisles - meshes.bsa',
-    r'dlcshiveringisles - sounds.bsa',
-    r'dlcshiveringisles - textures.bsa',
-    r'dlcshiveringisles - voices.bsa',
-    ))
-allBethFiles = set((
-    #vanilla
-    r'Credits.txt',
-    r'Oblivion - Meshes.bsa',
-    r'Oblivion - Misc.bsa',
-    r'Oblivion - Sounds.bsa',
-    r'Oblivion - Textures - Compressed.bsa',
-    r'Oblivion - Voices1.bsa',
-    r'Oblivion - Voices2.bsa',
-    r'Oblivion.esm',
-    r'Music\Battle\battle_01.mp3',
-    r'Music\Battle\battle_02.mp3',
-    r'Music\Battle\battle_03.mp3',
-    r'Music\Battle\battle_04.mp3',
-    r'Music\Battle\battle_05.mp3',
-    r'Music\Battle\battle_06.mp3',
-    r'Music\Battle\battle_07.mp3',
-    r'Music\Battle\battle_08.mp3',
-    r'Music\Dungeon\Dungeon_01_v2.mp3',
-    r'Music\Dungeon\dungeon_02.mp3',
-    r'Music\Dungeon\dungeon_03.mp3',
-    r'Music\Dungeon\dungeon_04.mp3',
-    r'Music\Dungeon\dungeon_05.mp3',
-    r'Music\Explore\atmosphere_01.mp3',
-    r'Music\Explore\atmosphere_03.mp3',
-    r'Music\Explore\atmosphere_04.mp3',
-    r'Music\Explore\atmosphere_06.mp3',
-    r'Music\Explore\atmosphere_07.mp3',
-    r'Music\Explore\atmosphere_08.mp3',
-    r'Music\Explore\atmosphere_09.mp3',
-    r'Music\Public\town_01.mp3',
-    r'Music\Public\town_02.mp3',
-    r'Music\Public\town_03.mp3',
-    r'Music\Public\town_04.mp3',
-    r'Music\Public\town_05.mp3',
-    r'Music\Special\death.mp3',
-    r'Music\Special\success.mp3',
-    r'Music\Special\tes4title.mp3',
-    r'Shaders\shaderpackage001.sdp',
-    r'Shaders\shaderpackage002.sdp',
-    r'Shaders\shaderpackage003.sdp',
-    r'Shaders\shaderpackage004.sdp',
-    r'Shaders\shaderpackage005.sdp',
-    r'Shaders\shaderpackage006.sdp',
-    r'Shaders\shaderpackage007.sdp',
-    r'Shaders\shaderpackage008.sdp',
-    r'Shaders\shaderpackage009.sdp',
-    r'Shaders\shaderpackage010.sdp',
-    r'Shaders\shaderpackage011.sdp',
-    r'Shaders\shaderpackage012.sdp',
-    r'Shaders\shaderpackage013.sdp',
-    r'Shaders\shaderpackage014.sdp',
-    r'Shaders\shaderpackage015.sdp',
-    r'Shaders\shaderpackage016.sdp',
-    r'Shaders\shaderpackage017.sdp',
-    r'Shaders\shaderpackage018.sdp',
-    r'Shaders\shaderpackage019.sdp',
-    r'Video\2k games.bik',
-    r'Video\bethesda softworks HD720p.bik',
-    r'Video\CreditsMenu.bik',
-    r'Video\game studios.bik',
-    r'Video\Map loop.bik',
-    r'Video\Oblivion iv logo.bik',
-    r'Video\Oblivion Legal.bik',
-    r'Video\OblivionIntro.bik',
-    r'Video\OblivionOutro.bik',
-    #SI
-    r'DLCShiveringIsles - Meshes.bsa',
-    r'DLCShiveringIsles - Textures.bsa',
-    r'DLCShiveringIsles - Sounds.bsa',
-    r'DLCShiveringIsles - Voices.bsa',
-    r'DLCShiveringIsles.esp',
-    r'Textures\Effects\TerrainNoise.dds',
-    #DLCs
-    r'DLCBattlehornCastle.bsa',
-    r'DLCBattlehornCastle.esp',
-    r'DLCFrostcrag.bsa',
-    r'DLCFrostcrag.esp',
-    r'DLCHorseArmor.bsa',
-    r'DLCHorseArmor.esp',
-    r'DLCMehrunesRazor.esp',
-    r'DLCOrrery.bsa',
-    r'DLCOrrery.esp',
-    r'DLCSpellTomes.esp',
-    r'DLCThievesDen.bsa',
-    r'DLCThievesDen.esp',
-    r'DLCVileLair.bsa',
-    r'DLCVileLair.esp',
-    r'Knights.bsa',
-    r'Knights.esp',
-    r'DLCList.txt',
     ))
 
 # Balo Canonical Groups -------------------------------------------------------

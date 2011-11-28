@@ -33,13 +33,15 @@ if sys.version[:3] == '2.4':
     import wxversion
     wxversion.select("2.5.3.1")
 import re
+import traceback
+import cStringIO
 
 import bass
 import barg
 opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
-from bolt import _, GPath
+from bolt import _, GPath, deprint
 basherImported = False
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -164,7 +166,7 @@ def exit():
 def dump_environment():
     import locale
     print "Wrye Bash starting"
-    print "Python version: %d.%d.%d" % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    print "Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
     try:
         import wx
         print "wxPython version: %s" % wx.version()
@@ -205,6 +207,49 @@ def main():
     if pathToProg:
         os.chdir(pathToProg)
     del pathToProg
+
+    # Detect the game we're running for
+    import bush
+    if opts.debug:
+        print 'Searching for game to manage:'
+    ret = bush.setGame(opts.gameName,opts.oblivionPath)
+    if ret != False: # False == success
+        if len(ret) != 1:
+            # Use Tkinter here, since we haven't started the wxApp yet
+            import Tkinter
+            root = Tkinter.Tk()
+            frame = Tkinter.Frame(root)
+            frame.pack()
+
+            canceled = False
+            def onClickQuit():
+                canceled = True
+                root.destroy()
+
+            button = Tkinter.Button(frame,text='Quit',fg='red',command=onClickQuit,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+            button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+            class onClick(object):
+                def __init__(self,gameName):
+                    self.gameName = gameName
+
+                def onClick(self):
+                    bush.setGame(self.gameName,opts.oblivionPath)
+                    root.destroy()
+            for gameName in ret:
+                text = gameName[0].upper() + gameName[1:]
+                command = onClick(gameName).onClick
+                button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+            w = Tkinter.Text(frame)
+            w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
+            w.config(state=Tkinter.DISABLED)
+            w.pack()
+            root.mainloop()
+            if canceled:
+                return
+            del Tkinter # Unload TKinter, it's not needed anymore
+        else:
+            bush.setGame(ret[0],opts.oblivionPath)
 
     if opts.bashmon:
         # ensure the console is set up properly
@@ -267,12 +312,16 @@ def main():
             root = Tkinter.Tk()
             frame = Tkinter.Frame(root)
             frame.pack()
-            
-            button = Tkinter.Button(frame, text="QUIT", fg="red", command=frame.quit, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+
+            button = Tkinter.Button(frame, text="QUIT", fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
-            
+
+            o = cStringIO.StringIO()
+            traceback.print_exc(file=o)
+            msg = o.getvalue()
+            o.close()
             w = Tkinter.Text(frame)
-            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (e,))
+            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (msg,))
             w.config(state=Tkinter.DISABLED)
             w.pack()
             root.mainloop()

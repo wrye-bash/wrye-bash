@@ -645,6 +645,13 @@
 <p class="list-1">&bull;&nbsp;  <b>Export list of allowed/disallowed OBSE plugin dlls:</b> This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.</p>
 <p class="list-1">&bull;&nbsp;  <b>Import list of allowed/disallowed OBSE plugin dlls:</b> This will import the list of Good/Bad OBSE dll definitions from a text file.</p>
 <p class="list-1">&bull;&nbsp;  <b>Colors:</b> Brings up the <a href="#ColorsDialog">Colors Dialog</a>.</p>
+<p class="list-1">&bull;&nbsp;  <b>Tabs:</b> Select which Tabs are shown in the UI.</p>
+<p class="list-1">&bull;&nbsp;  <b>Status Bar:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>Icon Size:</b> Choose between 16x16, 24x24, or 32x32 Status Bar Icons.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Unhide Buttons:</b> Unhide Status Bar buttons that you have hidden.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Show App Version:</b> Shows the version of the Application in its tooltip.</p>
+<p class="list-1">&bull;&nbsp;  <b>Use Alternate Wrye Bash Name:</b> If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for <game name>".</p>
+<p class="list-1">&bull;&nbsp;  <b>Check for updates:</b> Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='ColorsDialog'>Colors Dialog</a></h3>
 <p><img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
@@ -1518,7 +1525,7 @@
 <p class="empty">&nbsp;</p>
 <h3><a id='PatchUsage'>Patch Usage</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Select a Bashed Patch</b></p>
-  <p class="list-2">&bull;&nbsp;  Probably Bash has automatically created one for you. If not, you can copy the blank one from Oblivion\Mopy\Extras to Oblivion\Data.</p>
+  <p class="list-2">&bull;&nbsp;  Probably Bash has automatically created one for you. If not, you can copy "Oblivion\Mopy\templates\Bashed Patch, 0.esp" to Oblivion\Data.</p>
   <p class="list-2">&bull;&nbsp;  Note that the author of the mod must be set to <b>Bashed Patch</b>.</p>
 <p class="list-1">&bull;&nbsp;  <b>Configure the Patch</b></p>
   <p class="list-2">&bull;&nbsp;  Right click on the Bashed Patch and select "Rebuild Patch..." This will bring up a dialog in which you can activate and configure various patcher components.</p>
@@ -1996,12 +2003,12 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
   <p class="list-2">&bull;&nbsp;  ABGHINOPSL: Assigns codes to sort more usefully. Amulets, then Rings, etc.</p>
 <p class="list-1">&bull;&nbsp;  <b>Armor:</b> Choose format and whether you want armor rating to be shown.</p>
 <p class="list-1">&bull;&nbsp;  <b>Clothes:</b> Choose format.</p>
-<p class="list-1">&bull;&nbsp;  <b>Lore Friendly Names: Dwarven->Dwemer:</b> Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.</p>
+<p class="list-1">&bull;&nbsp;  <b>Lore Friendly Text: Dwarven->Dwemer:</b> Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.</p>
 <p class="list-1">&bull;&nbsp;  <b>Notes and Scrolls:</b> Choose format and whether you want enchanted scrolls at top (~) or bottom (.) of list. (Note that "~" will not display in inventory.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Potions:</b> Choose format.</p>
-<p class="list-1">&bull;&nbsp;  <b>Proper English Names: Staffs -> Staves:</b> renames any instances of staffs to staves.</p>
-<p class="list-1">&bull;&nbsp;  <b>Proper English Names: Dwarfs -> Dwarves:</b> renames any instances of dwarfs to dwarves</p>
-<p class="list-1">&bull;&nbsp;  <b>Spells:</b> Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.</p>
+<p class="list-1">&bull;&nbsp;  <b>Proper English Text: Staffs -> Staves:</b> renames any instances of staffs to staves.</p>
+<p class="list-1">&bull;&nbsp;  <b>Proper English Text: Dwarfs -> Dwarves:</b> renames any instances of dwarfs to dwarves</p>
+<p class="list-1">&bull;&nbsp;  <b>Spells:</b> Choose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.</p>
   <p class="list-2">&bull;&nbsp;  If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.</p>
   <p class="list-2">&bull;&nbsp;  If you only want to remove existing labels, then use the No Label option ("Fire Ball").</p>
 <p class="list-1">&bull;&nbsp;  <b>Weapons:</b> Choose format and whether you want damage to be shown.</p>
@@ -2692,6 +2699,42 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 <h2><a id='Versions'>Versions</a></h2>
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='_295127112011LojackWaruddarmyk002PaificMorrowind'>295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]</a></h3>
+<p class="list-1">&bull;&nbsp;  Skyrim support added:</p>
+  <p class="list-2">&bull;&nbsp;  Can read basic information from Skyrim mods (author and description)</p>
+  <p class="list-2">&bull;&nbsp;  Can read basic save game information (player name, level, play time)</p>
+  <p class="list-2">&bull;&nbsp;  Can modify your Load Order</p>
+    <p class="list-3">&bull;&nbsp;  Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#InstallersTab">BAIN</a> is supported, including the standard directories and SKSE plugins.</p>
+<p class="list-1">&bull;&nbsp;  UI Improvements:</p>
+  <p class="list-2">&bull;&nbsp;  Customizible Status Bar and Tabs:</p>
+    <p class="list-3">&bull;&nbsp;  Drag and drop reordering</p>
+    <p class="list-3">&bull;&nbsp;  Hideable</p>
+<p class="list-1">&bull;&nbsp;  Bugfixes:</p>
+  <p class="list-2">&bull;&nbsp;  Fixed a few <a href="#INIEditsTab">INI Edits</a> tab related startup crashes.</p>
+  <p class="list-2">&bull;&nbsp;  More information should be displayed when Wrye Bash fails to startup.</p>
+  <p class="list-2">&bull;&nbsp;  More information is displayed in debug mode when a Tab fails to initialize.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed a crash on startup bug when no plugins are found in the Data directory.</p>
+<p class="list-1">&bull;&nbsp;  <a href="wizards.html">BAIN Wizards</a>:</p>
+  <p class="list-2">&bull;&nbsp;  New function <a href="wizards.html#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a> replaces the older <a href="wizards.html#CompareObVersion"><span style="color:purple;">CompareObVersion</span></a>.  The older function is retained for backwards compatibility only.</p>
+  <p class="list-2">&bull;&nbsp;  New function <a href="wizards.html#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a> replaces the older <a href="wizards.html#CompareOBSEVersion"><span style="color:purple;">CompareOBSEVersion</span></a>.  The older function is retained for backwards compatibility only.</p>
+  <p class="list-2">&bull;&nbsp;  New function <a href="wizards.html#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a> replaces the older <a href="wizards.html#CompareGEVersion"><span style="color:purple;">CompareOBGEVersion</span></a>.  The older function is retained for backwards compatibility only.</p>
+<p class="list-1">&bull;&nbsp;  Changes to the installation requirements:</p>
+  <p class="list-2">&bull;&nbsp;  You may still install Wrye Bash to "path.to.you.game\Mopy" as before, and it will function normally.</p>
+  <p class="list-2">&bull;&nbsp;  You may also install Wrye Bash to any other location.  In that case, here is how it will decide what game to manage:</p>
+    <p class="list-3">&bull;&nbsp;  Read the Windows Registry to see what supported games you have installed.</p>
+    <p class="list-3">&bull;&nbsp;  Also check one directory up relative to Wrye Bash to see if it contains a supported game.</p>
+    <p class="list-3">&bull;&nbsp;  If only one supported game is detected:  Wrye Bash will manage that game.</p>
+    <p class="list-3">&bull;&nbsp;  If multiple supported games are detected:</p>
+      <p class="list-4">&bull;&nbsp;  If the '-g' command line argument is used, Wrye Bash will manage the game specified by '-g'.</p>
+      <p class="list-4">&bull;&nbsp;  If the '-o' command line argument is specified, Wrye Bash will manage the game in the location specified by '-o'.</p>
+      <p class="list-4">&bull;&nbsp;  If Wrye Bash is installed as a sub-directory to a detected game, Wrye Bash will manage that game.</p>
+      <p class="list-4">&bull;&nbsp;  Finally, Wrye Bash will display a prompt asking which game to manage.</p>
+<p class="list-1">&bull;&nbsp;  New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:</p>
+  <p class="list-2">&nbsp;&nbsp;   <span class="code-n"><span style="color:brown;">"Wrye Bash.exe"</span> <a href="#Subtraction"><span style="color:black;">-</span></a><i>g</i> <i>oblivion</i></span></p>
+  <p class="list-2">&nbsp;&nbsp;   Will tell Wrye Bash to manage your Oblivion installation.  </p>
+  <p class="empty">&nbsp;</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_2953092011bluesky404Gratis_monstaLojackmyk002PacificMorrowindvaldaWaruddar'>295 [30/9/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]</a></h3>
 <p class="list-1">&bull;&nbsp;  Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs.  It's community members like you that help Wrye Bash succeed!</p>

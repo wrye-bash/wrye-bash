@@ -40,6 +40,7 @@ import textwrap
 import time
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+import wx.lib.newevent
 
 if bolt.bUseUnicode:
     stringBuffer = StringIO.StringIO
@@ -80,6 +81,18 @@ defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
+
+def fonts():
+    font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    try:
+        font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
+        font_italic.SetStyle(wx.FONTSTYLE_SLANT)
+    except: #OLD wxpython!
+        font_bold.SetWeight(wx.BOLD)
+        font_italic.SetStyle(wx.SLANT)
+    return (font_default, font_bold, font_italic)
 
 # Settings --------------------------------------------------------------------
 _settings = {} #--Using applications should override this.
@@ -288,7 +301,7 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,id,bitmap,pos,size,style,val,name)
     if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
-    if onRClick: gButton.Bind(wx.EVT_RIGHT_DOWN,onRClick)
+    if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
@@ -985,6 +998,78 @@ class ListEditor(wx.Dialog):
         self.Destroy()
 
 #------------------------------------------------------------------------------
+NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()
+
+class TabDragMixin(object):
+    """Mixin for the wx.Notebook class.  Enables draggable Tabs.
+       Events:
+         EVT_NB_TAB_DRAGGED: Called after a tab has been dragged
+           event.oldIdex = old tab position (of tab that was moved
+           event.newIdex = new tab position (of tab that was moved
+    """
+    __slots__=('__dragX','__dragging','__justSwapped')
+
+    def __init__(self):
+        self.__dragX = 0;
+        self.__dragging = wx.NOT_FOUND
+        self.__justSwapped = wx.NOT_FOUND
+        self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
+        self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
+        self.Bind(wx.EVT_MOTION, self.__OnDragging)
+
+    def __OnDragStart(self, event):
+        pos = event.GetPosition()
+        self.__dragging = self.HitTest(pos)
+        if self.__dragging != wx.NOT_FOUND:
+            self.__dragX = pos[0]
+            self.__justSwapped = wx.NOT_FOUND
+            self.CaptureMouse()
+        event.Skip()
+
+    def __OnDragEnd(self, event):
+        if self.__dragging != wx.NOT_FOUND:
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            self.__dragging = wx.NOT_FOUND
+            self.ReleaseMouse()
+        event.Skip()
+
+    def __OnDragging(self, event):
+        if self.__dragging != wx.NOT_FOUND:
+            pos = event.GetPosition()
+            if abs(pos[0] - self.__dragX) > 5:
+                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+            tabId = self.HitTest(pos)
+            if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.__dragging[0]):
+                self.__justSwapped = wx.NOT_FOUND
+            else:
+                if self.__justSwapped == tabId[0]:
+                    return
+                # We'll do the swapping by removing all pages in the way,
+                # then readding them in the right place.  Do this because
+                # it makes the tab we're dragging not have to refresh, whereas
+                # if we just removed the current page and reinserted it in the
+                # correct position, there would be refresh artifacts
+                newPos = tabId[0]
+                oldPos = self.__dragging[0]
+                self.__justSwapped = oldPos
+                self.__dragging = tabId[:]
+                if newPos < oldPos:
+                    left,right,step = newPos,oldPos,1
+                else:
+                    left,right,step = oldPos+1,newPos+1,-1
+                insert = left+step
+                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(left,right)]
+                addPages.reverse()
+                num = right - left
+                for i in range(num):
+                    self.RemovePage(left)
+                for page,title in addPages:
+                    self.InsertPage(insert,page,title)
+                evt = NoteBookDraggedEvent(fromIndex=oldPos,toIndex=newPos)
+                wx.PostEvent(self,evt)
+        event.Skip()
+
+#------------------------------------------------------------------------------
 class Picture(wx.Window):
     """Picture panel."""
     def __init__(self, parent,width,height,scaling=1,style=0,background=wx.MEDIUM_GREY_BRUSH):
@@ -993,6 +1078,10 @@ class Picture(wx.Window):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bitmap = None
         if background is not None:
+            if isinstance(background, tuple):
+                background = wx.Colour(background)
+            if isinstance(background, wx.Colour):
+                background = wx.Brush(background)
             self.background = background
         else:
             self.background = wx.Brush(self.GetBackgroundColour())
@@ -1000,6 +1089,14 @@ class Picture(wx.Window):
         #--Events
         self.Bind(wx.EVT_PAINT,self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+        self.OnSize()
+
+    def SetBackground(self,background):
+        if isinstance(background,tuple):
+            background = wx.Colour(background)
+        if isinstance(background,wx.Colour):
+            background = wx.Brush(background)
+        self.background = background
         self.OnSize()
 
     def SetBitmap(self,bitmap):

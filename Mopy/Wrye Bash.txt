@@ -420,6 +420,13 @@ The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButt
 * __Export list of allowed/disallowed OBSE plugin dlls:__ This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
 * __Import list of allowed/disallowed OBSE plugin dlls:__ This will import the list of Good/Bad OBSE dll definitions from a text file.
 * __Colors:__ Brings up the [[#|Colors Dialog]].
+* __Tabs:__ Select which Tabs are shown in the UI.
+* __Status Bar:__
+  * __Icon Size:__ Choose between 16x16, 24x24, or 32x32 Status Bar Icons.
+  * __Unhide Buttons:__ Unhide Status Bar buttons that you have hidden.
+  * __Show App Version:__ Shows the version of the Application in its tooltip.
+* __Use Alternate Wrye Bash Name:__ If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for <game name>".
+* __Check for updates:__ Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
 
 === Colors Dialog
 <img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
@@ -1263,7 +1270,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 
 === Patch Usage
 * __Select a Bashed Patch__
-  * Probably Bash has automatically created one for you. If not, you can copy the blank one from Oblivion\Mopy\Extras to Oblivion\Data.
+  * Probably Bash has automatically created one for you. If not, you can copy "Oblivion\Mopy\templates\Bashed Patch, 0.esp" to Oblivion\Data.
   * Note that the author of the mod must be set to __Bashed Patch__.
 * __Configure the Patch__
   * Right click on the Bashed Patch and select "Rebuild Patch..." This will bring up a dialog in which you can activate and configure various patcher components.
@@ -1737,12 +1744,12 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
   * ABGHINOPSL: Assigns codes to sort more usefully. Amulets, then Rings, etc.
 * __Armor:__ Choose format and whether you want armor rating to be shown.
 * __Clothes:__ Choose format.
-* __Lore Friendly Names: Dwarven->Dwemer:__ Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.
+* __Lore Friendly Text: Dwarven->Dwemer:__ Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.
 * __Notes and Scrolls:__ Choose format and whether you want enchanted scrolls at top (~) or bottom (.) of list. (Note that "~" will not display in inventory.)
 * __Potions:__ Choose format.
-* __Proper English Names: Staffs -> Staves:__ renames any instances of staffs to staves.
-* __Proper English Names: Dwarfs -> Dwarves:__ renames any instances of dwarfs to dwarves
-* __Spells:__ Chose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
+* __Proper English Text: Staffs -> Staves:__ renames any instances of staffs to staves.
+* __Proper English Text: Dwarfs -> Dwarves:__ renames any instances of dwarfs to dwarves
+* __Spells:__ Choose format. You can choose whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
   * If you're already using Supreme Magicka or similar spell namer, their label will be overwritten.
   * If you only want to remove existing labels, then use the No Label option ("Fire Ball").
 * __Weapons:__ Choose format and whether you want damage to be shown.
@@ -2403,6 +2410,42 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 == Versions ===================================================================
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
+
+=== 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
+* Skyrim support added:
+  * Can read basic information from Skyrim mods (author and description)
+  * Can read basic save game information (player name, level, play time)
+  * Can modify your Load Order
+    * Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.
+  * [[#InstallersTab|BAIN]] is supported, including the standard directories and SKSE plugins.
+* UI Improvements:
+  * Customizible Status Bar and Tabs:
+    * Drag and drop reordering
+    * Hideable
+* Bugfixes:
+  * Fixed a few [[#INIEditsTab|INI Edits]] tab related startup crashes.
+  * More information should be displayed when Wrye Bash fails to startup.
+  * More information is displayed in debug mode when a Tab fails to initialize.
+  * Fixed a crash on startup bug when no plugins are found in the Data directory.
+* [[wizards.html|BAIN Wizards]]:
+  * New function [[wizards.html#CompareGameVersion|[color=purple]CompareGameVersion[/color]]] replaces the older [[wizards.html#CompareObVersion|[color=purple]CompareObVersion[/color]]].  The older function is retained for backwards compatibility only.
+  * New function [[wizards.html#CompareSEVersion|[color=purple]CompareSEVersion[/color]]] replaces the older [[wizards.html#CompareOBSEVersion|[color=purple]CompareOBSEVersion[/color]]].  The older function is retained for backwards compatibility only.
+  * New function [[wizards.html#CompareGEVersion|[color=purple]CompareGEVersion[/color]]] replaces the older [[wizards.html#CompareGEVersion|[color=purple]CompareOBGEVersion[/color]]].  The older function is retained for backwards compatibility only.
+* Changes to the installation requirements:
+  * You may still install Wrye Bash to "path.to.you.game\Mopy" as before, and it will function normally.
+  * You may also install Wrye Bash to any other location.  In that case, here is how it will decide what game to manage:
+    * Read the Windows Registry to see what supported games you have installed.
+    * Also check one directory up relative to Wrye Bash to see if it contains a supported game.
+    * If only one supported game is detected:  Wrye Bash will manage that game.
+    * If multiple supported games are detected:
+      * If the '-g' command line argument is used, Wrye Bash will manage the game specified by '-g'.
+      * If the '-o' command line argument is specified, Wrye Bash will manage the game in the location specified by '-o'.
+      * If Wrye Bash is installed as a sub-directory to a detected game, Wrye Bash will manage that game.
+      * Finally, Wrye Bash will display a prompt asking which game to manage.
+* New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:
+  .  [code]"Wrye Bash.exe" -g oblivion[/code]
+  .  Will tell Wrye Bash to manage your Oblivion installation.  
+
 
 === 295 [30/9/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]
 * Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs.  It's community members like you that help Wrye Bash succeed!

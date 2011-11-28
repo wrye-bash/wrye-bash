@@ -78,6 +78,7 @@ from operator import attrgetter,itemgetter
 import subprocess
 from subprocess import Popen, PIPE
 import codecs
+import ctypes
 
 #--Local
 import balt
@@ -105,6 +106,7 @@ oiMask = 0xFFFFFFL
 question = False
 
 #--File Singletons
+gameInis = None
 oblivionIni = None
 modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
@@ -543,14 +545,14 @@ class ModReader:
 
     def unpackRecHeader(self):
         """Unpack a record header."""
-        (type,size,uint0,uint1,uint2) = self.unpack('4s4I',20,'REC_HEAD')
+        header = self.unpack(*bush.game.unpackRecordHeader)[0:5]
+        (type,size,uint0,uint1,uint2) = header
         #--Bad?
         if type not in bush.recordTypes:
             raise ModError(self.inName,_('Bad header type: ')+type)
-        #print (type,size,uint0,uint1,uint2)
         #--Record
         if type != 'GRUP':
-            return (type,size,uint0,uint1,uint2)
+            return header
         #--Top Group
         elif uint1 == 0:
             str0 = struct.pack('I',uint0)
@@ -562,7 +564,7 @@ class ModReader:
                 raise ModError(self.inName,_('Bad Top GRUP type: ')+str0)
         #--Other groups
         else:
-            return (type,size,uint0,uint1,uint2)
+            return header
 
     def unpackSubHeader(self,recType='----',expType=None,expSize=0):
         """Unpack a subrecord header. Optionally checks for match with expected type and size."""
@@ -3795,7 +3797,7 @@ class MreStat(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreTes4(MelRecord):
+class MreTes4Base(MelRecord):
     """TES4 Record. File header."""
     classType = 'TES4' #--Used by LoadFactory
     #--Masters array element
@@ -3811,6 +3813,16 @@ class MreTes4(MelRecord):
             for name in record.masters:
                 pack1('MAST',name.s)
                 pack2('DATA','Q',0)
+
+    def getNextObject(self):
+        """Gets next object index and increments it for next time."""
+        self.changed = True
+        self.nextObject += 1
+        return (self.nextObject -1)
+
+#------------------------------------------------------------------------------
+class MreTes4(MreTes4Base):
+    """TES4 Record for Oblivion."""
     #--Data elements
     melSet = MelSet(
         MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
@@ -3818,16 +3830,26 @@ class MreTes4(MelRecord):
         MelBase('DELE','dele_p'), #--Obsolete?
         MelString('CNAM','author','',512),
         MelString('SNAM','description','',512),
-        MelTes4Name('MAST','masters'),
+        MreTes4Base.MelTes4Name('MAST','masters'),
         MelNull('DATA'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-    def getNextObject(self):
-        """Gets next object index and increments it for next time."""
-        self.changed = True
-        self.nextObject += 1
-        return (self.nextObject -1)
+#------------------------------------------------------------------------------
+class MreTes5(MreTes4Base):
+    """TES4 Record for Skyrim."""
+    #--Data elements
+    melSet = MelSet(
+        MelStruct('HEDR', 'f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',), #--Unconfirmed for Skyrim
+        MelBase('DELE','dele_p',), #--Unconfirmed for Skyrim
+        MelString('CNAM','author','',512),
+        MelString('SNAM','description','',512),
+        MreTes4Base.MelTes4Name('MAST','masters'),
+        MelNull('DATA'),
+        MelNull('INTV'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreTree(MelRecord):
@@ -5082,7 +5104,7 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = MreTes4(('TES4',0,0,0,0))
+        self.tes4 = globals()[bush.game.tes4ClassName](('TES4',0,0,0,0))
         self.tes4.setChanged()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
@@ -5112,7 +5134,7 @@ class ModFile:
         #--Header
         ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
         header = ins.unpackRecHeader()
-        self.tes4 = MreTes4(header,ins,True)
+        self.tes4 = globals()[bush.game.tes4ClassName](header,ins,True)
         #--Raw data read
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -5708,33 +5730,76 @@ class SaveHeader:
 
     def load(self,path):
         """Extract info from save file."""
-        ins = path.open('rb')
         try:
-            #--Header
-            ins.seek(34)
-            headerSize, = struct.unpack('I',ins.read(4))
-            #posMasters = 38 + headerSize
-            #--Name, location
-            ins.seek(38+4)
-            size, = struct.unpack('B',ins.read(1))
-            self.pcName = cstrip(ins.read(size))
-            self.pcLevel, = struct.unpack('H',ins.read(2))
-            size, = struct.unpack('B',ins.read(1))
-            self.pcLocation = cstrip(ins.read(size))
-            #--Image Data
-            self.gameDays,self.gameTicks,self.gameTime,ssSize,ssWidth,ssHeight = struct.unpack('=fI16s3I',ins.read(36))
-            ssData = ins.read(3*ssWidth*ssHeight)
-            self.image = (ssWidth,ssHeight,ssData)
-            #--Masters
-            #ins.seek(posMasters)
-            del self.masters[:]
-            numMasters, = struct.unpack('B',ins.read(1))
-            for count in range(numMasters):
-                size, = struct.unpack('B',ins.read(1))
-                self.masters.append(GPath(ins.read(size)))
+            with path.open('rb') as ins:
+                if bush.game.name == 'Oblivion':
+                    #--Header
+                    ins.seek(34)
+                    headerSize, = struct.unpack('I',ins.read(4))
+                    #posMasters = 38 + headerSize
+                    #--Name, location
+                    ins.seek(38+4)
+                    size, = struct.unpack('B',ins.read(1))
+                    self.pcName = cstrip(ins.read(size))
+                    self.pcLevel, = struct.unpack('H',ins.read(2))
+                    size, = struct.unpack('B',ins.read(1))
+                    self.pcLocation = cstrip(ins.read(size))
+                    #--Image Data
+                    self.gameDays,self.gameTicks,self.gameTime,ssSize,ssWidth,ssHeight = struct.unpack('=fI16s3I',ins.read(36))
+                    ssData = ins.read(3*ssWidth*ssHeight)
+                    self.image = (ssWidth,ssHeight,ssData)
+                    #--Masters
+                    #ins.seek(posMasters)
+                    del self.masters[:]
+                    numMasters, = struct.unpack('B',ins.read(1))
+                    for count in range(numMasters):
+                        size, = struct.unpack('B',ins.read(1))
+                        self.masters.append(GPath(ins.read(size)))
+                else:
+                    #--Header
+                    if ins.read(13) != 'TESV_SAVEGAME':
+                        raise SaveFileError(path.tail,_('Save file is not a Skyrim save file.'))
+                    headerSize, = struct.unpack('I',ins.read(4))
+                    version,saveNumber,size = struct.unpack('2IH',ins.read(10))
+                    self.pcName = cstrip(ins.read(size))
+                    self.pcLevel, = struct.unpack('I',ins.read(4))
+                    size, = struct.unpack('H',ins.read(2))
+                    self.pcLocation = ins.read(size)
+                    size, = struct.unpack('H',ins.read(2))
+                    self.gameDate = ins.read(size)
+                    hours,minutes,seconds = [int(x) for x in self.gameDate.split('.')]
+                    playSeconds = hours*60*60 + minutes*60 + seconds
+                    self.gameDays = float(playSeconds)/(24*60*60)
+                    self.gameTicks = playSeconds * 1000
+                    size, = struct.unpack('H',ins.read(2))
+                    raceEdid = ins.read(size)
+                    unk0, = struct.unpack('H',ins.read(2))
+                    unk1, = struct.unpack('f',ins.read(4))
+                    unk2, = struct.unpack('f',ins.read(4))
+                    ftime, = struct.unpack('Q',ins.read(8))
+                    ssWidth, = struct.unpack('I',ins.read(4))
+                    ssHeight, = struct.unpack('I',ins.read(4))
+                    if ins.tell() != headerSize + 17:
+                        raise SaveFileError(path.tail,'Save game header size (%i) not as expected (%i).' % (ins.tell()-17,headerSize))
+                    #--Screenshot data
+                    ssData = ins.read(ssWidth*ssHeight*3)
+                    self.image = (ssWidth,ssHeight,ssData)
+                    #--unknown
+                    unk3, = struct.unpack('B',ins.read(1))
+                    #--Masters
+                    mastersSize, = struct.unpack('I',ins.read(4))
+                    mastersStart = ins.tell()
+                    del self.masters[:]
+                    numMasters, = struct.unpack('B',ins.read(1))
+                    for count in xrange(numMasters):
+                        size, = struct.unpack('H',ins.read(2))
+                        self.masters.append(GPath(ins.read(size)))
+                    if ins.tell() != mastersStart + mastersSize:
+                        deprint(path.tail,'Save masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
         #--Errors
         except:
-            raise SaveFileError(path.tail,_('File header is corrupted..'))
+            deprint('save file error:',traceback=True)
+            raise SaveFileError(path.tail,_('File header is corrupted.'))
         #--Done
         ins.close()
 
@@ -5859,85 +5924,84 @@ class SaveFile:
         """Extract info from save file."""
         import array
         path = self.fileInfo.getPath()
-        ins = bolt.StructFile(path.s,'rb')
-        #--Progress
-        fileName = self.fileInfo.name
-        progress = progress or bolt.Progress()
-        progress.setFull(self.fileInfo.size)
-        #--Header
-        progress(0,_('Reading Header.'))
-        self.header = ins.read(34)
+        with bolt.StructFile(path.s,'rb') as ins:
+            #--Progress
+            fileName = self.fileInfo.name
+            progress = progress or bolt.Progress()
+            progress.setFull(self.fileInfo.size)
+            #--Header
+            progress(0,_('Reading Header.'))
+            self.header = ins.read(34)
 
-        #--Save Header, pcName
-        gameHeaderSize, = ins.unpack('I',4)
-        self.saveNum,pcNameSize, = ins.unpack('=IB',5)
-        self.pcName = cstrip(ins.read(pcNameSize))
-        self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
+            #--Save Header, pcName
+            gameHeaderSize, = ins.unpack('I',4)
+            self.saveNum,pcNameSize, = ins.unpack('=IB',5)
+            self.pcName = cstrip(ins.read(pcNameSize))
+            self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
-        #--Masters
-        del self.masters[:]
-        numMasters, = ins.unpack('B',1)
-        for count in range(numMasters):
-            size, = ins.unpack('B',1)
-            self.masters.append(GPath(ins.read(size)))
+            #--Masters
+            del self.masters[:]
+            numMasters, = ins.unpack('B',1)
+            for count in range(numMasters):
+                size, = ins.unpack('B',1)
+                self.masters.append(GPath(ins.read(size)))
 
-        #--Pre-Records copy buffer
-        def insCopy(buff,size,backSize=0):
-            if backSize: ins.seek(-backSize,1)
-            buff.write(ins.read(size+backSize))
+            #--Pre-Records copy buffer
+            def insCopy(buff,size,backSize=0):
+                if backSize: ins.seek(-backSize,1)
+                buff.write(ins.read(size+backSize))
 
-        #--"Globals" block
-        fidsPointer,recordsNum = ins.unpack('2I',8)
-        #--Pre-globals
-        self.preGlobals = ins.read(8*4)
-        #--Globals
-        globalsNum, = ins.unpack('H',2)
-        self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
-        #--Pre-Created (Class, processes, spectator, sky)
-        buff = cStringIO.StringIO()
-        for count in range(4):
-            size, = ins.unpack('H',2)
-            insCopy(buff,size,2)
-        insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
-        self.preCreated = buff.getvalue()
-        #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
-        modReader = ModReader(self.fileInfo.name,ins)
-        createdNum, = ins.unpack('I',4)
-        for count in xrange(createdNum):
-            progress(ins.tell(),_('Reading created...'))
-            header = ins.unpack('4s4I',20)
-            self.created.append(MreRecord(header,modReader))
-        #--Pre-records: Quickkeys, reticule, interface, regions
-        buff = cStringIO.StringIO()
-        for count in range(4):
-            size, = ins.unpack('H',2)
-            insCopy(buff,size,2)
-        self.preRecords = buff.getvalue()
+            #--"Globals" block
+            fidsPointer,recordsNum = ins.unpack('2I',8)
+            #--Pre-globals
+            self.preGlobals = ins.read(8*4)
+            #--Globals
+            globalsNum, = ins.unpack('H',2)
+            self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
+            #--Pre-Created (Class, processes, spectator, sky)
+            buff = cStringIO.StringIO()
+            for count in range(4):
+                size, = ins.unpack('H',2)
+                insCopy(buff,size,2)
+            insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
+            self.preCreated = buff.getvalue()
+            #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
+            modReader = ModReader(self.fileInfo.name,ins)
+            createdNum, = ins.unpack('I',4)
+            for count in xrange(createdNum):
+                progress(ins.tell(),_('Reading created...'))
+                header = ins.unpack('4s4I',20)
+                self.created.append(MreRecord(header,modReader))
+            #--Pre-records: Quickkeys, reticule, interface, regions
+            buff = cStringIO.StringIO()
+            for count in range(4):
+                size, = ins.unpack('H',2)
+                insCopy(buff,size,2)
+            self.preRecords = buff.getvalue()
 
-        #--Records
-        for count in xrange(recordsNum):
-            progress(ins.tell(),_('Reading records...'))
-            (fid,recType,flags,version,size) = ins.unpack('=IBIBH',12)
-            data = ins.read(size)
-            self.records.append((fid,recType,flags,version,data))
+            #--Records
+            for count in xrange(recordsNum):
+                progress(ins.tell(),_('Reading records...'))
+                (fid,recType,flags,version,size) = ins.unpack('=IBIBH',12)
+                data = ins.read(size)
+                self.records.append((fid,recType,flags,version,data))
 
-        #--Temp Effects, fids, worldids
-        progress(ins.tell(),_('Reading fids, worldids...'))
-        size, = ins.unpack('I',4)
-        self.tempEffects = ins.read(size)
-        #--Fids
-        num, = ins.unpack('I',4)
-        self.fids = array.array('I')
-        self.fids.fromfile(ins,num)
-        for iref,fid in enumerate(self.fids):
-            self.irefs[fid] = iref
+            #--Temp Effects, fids, worldids
+            progress(ins.tell(),_('Reading fids, worldids...'))
+            size, = ins.unpack('I',4)
+            self.tempEffects = ins.read(size)
+            #--Fids
+            num, = ins.unpack('I',4)
+            self.fids = array.array('I')
+            self.fids.fromfile(ins,num)
+            for iref,fid in enumerate(self.fids):
+                self.irefs[fid] = iref
 
-        #--WorldSpaces
-        num, = ins.unpack('I',4)
-        self.worldSpaces = array.array('I')
-        self.worldSpaces.fromfile(ins,num)
+            #--WorldSpaces
+            num, = ins.unpack('I',4)
+            self.worldSpaces = array.array('I')
+            self.worldSpaces.fromfile(ins,num)
         #--Done
-        ins.close()
         progress(progress.full,_('Finished reading.'))
 
     def save(self,outPath=None,progress=None):
@@ -7158,17 +7222,17 @@ class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = set(('archiveinvalidationinvalidated!.bsa',r'..\obmm\bsaredirection.bsa'))
 
-    def __init__(self):
+    def __init__(self,name):
         """Initialize."""
         # Use local copy of the oblivion.ini if present
-        if dirs['app'].join('oblivion.ini').exists():
-            IniFile.__init__(self,dirs['app'].join('Oblivion.ini'),'General')
+        if dirs['app'].join(name).exists():
+            IniFile.__init__(self,dirs['app'].join(name),'General')
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting('General','bUseMyGamesDirectory','1') == '0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self,dirs['saveBase'].join('Oblivion.ini'),'General')
+        IniFile.__init__(self,dirs['saveBase'].join(name),'General')
 
 
     def ensureExists(self):
@@ -7957,14 +8021,11 @@ class ModInfo(FileInfo):
             recHeader = ins.unpackRecHeader()
             if recHeader[0] != 'TES4':
                 raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            self.header = MreTes4(recHeader,ins,True)
-            ins.close()
+            self.header = globals()[bush.game.tes4ClassName](recHeader,ins,True)
         except struct.error, rex:
-            ins.close()
             raise ModError(self.name,_('Struct.error: ')+`rex`)
-        except:
+        finally:
             ins.close()
-            raise
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
@@ -8276,7 +8337,7 @@ class TrackedFileInfos(DataDict):
         return changed
 
     def track(self,fileName):
-        self.refreshFile(fileName)
+        self.refreshFile(GPath(fileName))
 
     def untrack(self,fileName):
         self.data.pop(fileName,None)
@@ -8467,13 +8528,21 @@ class ModInfos(FileInfos):
         self.plugins = Plugins() #--Plugins instance.
         self.ordered = tuple() #--Active mods arranged in load order.
         #--Info lists/sets
-        if dirs['mods'].join('Oblivion.esm').exists():
-            self.masterName = GPath('Oblivion.esm')
-        elif dirs['mods'].join('Nehrim.esm').exists():
-            self.masterName = GPath('Nehrim.esm')
+        for fname in bush.game.masterFiles:
+            if dirs['mods'].join(fname).exists():
+                self.masterName = GPath(fname)
+                break
         else:
-            self.masterName = GPath('Oblivion.esm')
-            deprint(_('Missing master file; Neither Oblivion.esm or Nehrim.esm exists in an unghosted state in %s - presuming that Oblivion.esm is the correct masterfile.') % (dirs['mods'].s))
+            if len(bush.game.masterFiles) == 1:
+                deprint(_('Missing master file; %s does not exist in an unghosted state in %s') % (fname, dirs['mods'].s))
+            else:
+                if len(bush.game.masterFiles) > 2:
+                    msg = ', '.join(bush.game.masterFiles[0:-1])
+                else:
+                    msg = ''
+                msg += ' or ' + bush.game.masterFiles[-1]
+                deprint(_('Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
+                self.masterName = GPath(bush.game.masterFiles[0])
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
@@ -8694,20 +8763,28 @@ class ModInfos(FileInfos):
         elif doCBash and not bool(CBash):
             doCBash = False
         mod_mergeInfo = self.table.getColumn('mergeInfo')
-        progress.setFull(len(names))
+        progress.setFull(max(len(names),1))
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
             if reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
-            try:
-                if not doCBash:
-                    canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
-                else:
-                    canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
-            except Exception, e:
-                deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
-                canMerge = False #presume non-mergeable.
-            if fileName == "Oscuro's_Oblivion_Overhaul.esp": canMerge = False #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
+            if not bush.game.canBash:
+
+                canMerge = False
+            else:
+                try:
+                    if doCBash:
+                        canMerge = CBash_PatchFile.modIsMergeable(fileInfo)
+                    else:
+                        canMerge = PatchFile.modIsMergeable(fileInfo)
+                except Exception, e:
+                    raise
+                    deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
+                    canMerge = False #presume non-mergeable.
+
+                #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
+                if fileName == "Oscuro's_Oblivion_Overhaul.esp":
+                    canMerge = False
             if canMerge == True:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
@@ -9559,16 +9636,9 @@ class ConfigHelpers:
         #<1.6   = 0
         if dirs['app'].join('BOSS//BOSS.exe').exists():
             self.bossVersion = 2
-            try:
-                import win32api
-                info = win32api.GetFileVersionInfo(dirs['app'].join('BOSS','BOSS.exe').s, '\\')
-                ms = info['FileVersionMS']
-                ls = info['FileVersionLS']
-                version = (win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), win32api.LOWORD(ls))
-                if version >= (1,8,0,0):
-                    self.bossVersion = 3
-            except:
-                pass
+            version = dirs['app'].join('BOSS','BOSS.exe').version
+            if version >= (1,8,0,0):
+                self.bossVersion = 3
             self.bossMasterPath = dirs['app'].join('BOSS','masterlist.txt')
             self.bossUserPath = dirs['app'].join('BOSS','userlist.txt')
         else:
@@ -10292,9 +10362,6 @@ class Installer(object):
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set(('screenshots',))
-    dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
-        'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
-    dataDirsPlus = dataDirs | docDirs | set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
     dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
     reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
@@ -10304,6 +10371,11 @@ class Installer(object):
     imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
     scriptExts = set(('.txt','.ini'))
     commonlyEditedExts = scriptExts | set(('.xml',))
+    #--Needs to be called after bush.game has been set
+    @staticmethod
+    def initData():
+        Installer.dataDirs = bush.game.dataDirs
+        Installer.dataDirsPlus = Installer.dataDirs | Installer.docDirs | bush.game.dataDirsPlus
     #--Temp Files/Dirs
     tempDir = GPath('InstallerTemp')
     tempList = GPath('InstallerTempList.txt')
@@ -10357,7 +10429,7 @@ class Installer(object):
         if settings['bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            bethFiles = bush.bethDataFiles
+            bethFiles = bush.game.bethDataFiles
         skipExts = Installer.skipExts
         asRoot = apRoot.s
         relPos = len(apRoot.s)+1
@@ -10586,7 +10658,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        bethFiles = bush.bethDataFiles
+        bethFiles = bush.game.bethDataFiles
         packageFiles = set(('package.txt','package.jpg'))
         unSize = 0
         espmNots = self.espmNots
@@ -11987,7 +12059,7 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.save()
             self.hasChanged = False
 
-    def getSorted(self,column,reverse):
+    def getSorted(self,column,reverse,sortSpecial=True):
         """Returns items sorted according to column and reverse."""
         data = self.data
         items = data.keys()
@@ -12004,12 +12076,13 @@ class InstallersData(bolt.TankData, DataDict):
                 getter = lambda x: object.__getattribute__(data[x],attr)
             items.sort(key=getter,reverse=reverse)
         #--Special sorters
-        if settings['bash.installers.sortStructure']:
-            items.sort(key=lambda x: data[x].type)
-        if settings['bash.installers.sortActive']:
-            items.sort(key=lambda x: not data[x].isActive)
-        if settings['bash.installers.sortProjects']:
-            items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
+        if sortSpecial:
+            if settings['bash.installers.sortStructure']:
+                items.sort(key=lambda x: data[x].type)
+            if settings['bash.installers.sortActive']:
+                items.sort(key=lambda x: not data[x].isActive)
+            if settings['bash.installers.sortProjects']:
+                items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
         return items
 
     #--Item Info
@@ -12457,7 +12530,7 @@ class InstallersData(bolt.TankData, DataDict):
         if tweaksCreated:
             # Edit the tweaks
             for (oldIni,target) in tweaksCreated:
-                iniFile = bosh.BestIniFile(target)
+                iniFile = BestIniFile(target)
                 currSection = None
                 lines = []
                 for (text,section,setting,value,status,lineNo) in iniFile.getTweakFileLines(oldIni):
@@ -12616,7 +12689,7 @@ class InstallersData(bolt.TankData, DataDict):
             if installer.isActive:
                 installed += installer.data_sizeCrc
         keepFiles = set(installed)
-        keepFiles.update((GPath(f) for f in bush.allBethFiles))
+        keepFiles.update((GPath(f) for f in bush.game.allBethFiles))
         keepFiles.update((GPath(f) for f in bush.wryeBashDataFiles))
         keepFiles.update((GPath(f) for f in bush.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
@@ -12821,9 +12894,9 @@ class ActorFactions:
         out.write(Encode(headFormat % (_('Type'),_('Actor Eid'),_('Actor Mod'),_('Actor Object'),_('Faction Eid'),_('Faction Mod'),_('Faction Object'),_('Rank')),'mbcs'))
         for type in sorted(type_id_factions):
             id_factions = type_id_factions[type]
-            for id in sorted(id_factions,key = lambda x: id_eid.get(x)):
+            for id in sorted(id_factions,key = lambda x: id_eid.get(x).lower()):
                 actorEid = id_eid.get(id,'Unknown')
-                for faction, rank in sorted(id_factions[id],key=lambda x: id_eid.get(x[0])):
+                for faction, rank in sorted(id_factions[id],key=lambda x: id_eid.get(x[0]).lower()):
                     factionEid = id_eid.get(faction,'Unknown')
                     out.write(rowFormat % (type,actorEid,id[0].s,id[1],factionEid,faction[0].s,faction[1],rank))
         out.close()
@@ -13053,7 +13126,7 @@ class ActorLevels:
         for mod in sorted(mod_id_levels):
             if mod.s.lower() == 'oblivion.esm': continue
             id_levels = mod_id_levels[mod]
-            for id in sorted(id_levels,key=lambda k: (k[0].s,id_levels[k][0])):
+            for id in sorted(id_levels,key=lambda k: (k[0].s.lower(),id_levels[k][0].lower())):
                 eid, isOffset, offset, calcMin, calcMax = id_levels[id]
                 if isOffset:
                     source = mod.s
@@ -13319,7 +13392,7 @@ class EditorIds:
         out.write(Encode(headFormat % (_('Type'),_('Mod Name'),_('ObjectIndex'),_('Editor Id')),'mbcs'))
         for type in sorted(type_id_eid):
             id_eid = type_id_eid[type]
-            for id in sorted(id_eid,key = lambda a: id_eid[a]):
+            for id in sorted(id_eid,key = lambda a: id_eid[a].lower()):
                 out.write(rowFormat % (type,id[0].s,id[1],id_eid[id]))
         out.close()
 class CBash_EditorIds:
@@ -13566,13 +13639,13 @@ class FactionRelations:
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
         id_relations,id_eid = self.id_relations, self.id_eid
-        headFormat = '%s","%s","%s","%s","%s","%s","%s"\n'
+        headFormat = '"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = '"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         out = textPath.open('w')
         out.write(Encode(headFormat % (_('Main Eid'),_('Main Mod'),_('Main Object'),_('Other Eid'),_('Other Mod'),_('Other Object'),_('Disp')),'mbcs'))
-        for main in sorted(id_relations,key = lambda x: id_eid.get(x)):
+        for main in sorted(id_relations,key = lambda x: id_eid.get(x).lower()):
             mainEid = id_eid.get(main,'Unknown')
-            for other, disp in sorted(id_relations[main],key=lambda x: id_eid.get(x[0])):
+            for other, disp in sorted(id_relations[main],key=lambda x: id_eid.get(x[0]).lower()):
                 otherEid = id_eid.get(other,'Unknown')
                 out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
         out.close()
@@ -13851,7 +13924,7 @@ class FullNames:
             id_name = type_id_name[type]
             for record in typeBlock.getActiveRecords():
                 longid = mapper(record.fid)
-                full = record.full or (type != 'LIGH' and 'NO NAME')
+                full = record.full or (type == 'LIGH' and 'NO NAME')
                 if record.eid and full:
                     id_name[longid] = (record.eid,full)
 
@@ -13910,7 +13983,7 @@ class FullNames:
         for type in sorted(type_id_name):
             id_name = type_id_name[type]
             longids = id_name.keys()
-            longids.sort(key=lambda a: id_name[a][0])
+            longids.sort(key=lambda a: id_name[a][0].lower())
             longids.sort(key=itemgetter(0))
             for longid in longids:
                 eid,name = id_name[longid]
@@ -14635,7 +14708,7 @@ class ItemStats:
         out = textPath.open('w')
         def getSortedIds(fid_attr_value):
             longids = fid_attr_value.keys()
-            longids.sort(key=lambda a: fid_attr_value[a]['eid'])
+            longids.sort(key=lambda a: fid_attr_value[a]['eid'].lower())
             longids.sort(key=itemgetter(0))
             return longids
         def write(out, attrs, values):
@@ -14646,7 +14719,10 @@ class ItemStats:
             snoneint = self.snoneint
             sfloat = self.sfloat
             for index, attr in enumerate(attrs):
-                stype = attr_type[attr]
+                if attr == 'enchantPoints':
+                    stype = self.snoneint
+                else:
+                    stype = attr_type[attr]
                 values[index] = stype(values[index]) #sanitize output
                 if values[index] is None: csvFormat += ',"{0[%d]}"' % index
                 elif stype is sstr: csvFormat += ',"{0[%d]}"' % index
@@ -15001,7 +15077,7 @@ class ItemPrices:
         for group, fid_stats in sorted(class_fid_stats.iteritems()):
             if not fid_stats: continue
             out.write(Encode(header,'mbcs'))
-            for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
+            for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1].lower(),fid_stats[x][0])):
                 out.write(Encode('"%s","0x%06X",' % (fid[0].s,fid[1]),'mbcs'))
                 out.write(format % tuple(fid_stats[fid]) + ',%s\n' % group)
         out.close()
@@ -15171,8 +15247,6 @@ class CompleteItemData:
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        ###Remove from Bash after CBash integrated
-##        if(CBash == None):
         loadFactory= LoadFactory(True,MreAlch,MreAmmo,MreAppa,MreArmo,MreBook,MreClot,MreIngr,MreKeym,MreLigh,MreMisc,MreSgst,MreSlgm,MreWeap)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -15189,24 +15263,6 @@ class CompleteItemData:
                 changed[longid[0]] = 1 + changed.get(longid[0],0)
         if changed: modFile.safeSave()
         return changed
-##        else:
-##            Current = ObCollection(ModsPath=dirs['mods'].s)
-##            modFile = Current.addMod(modInfo.getPath().stail)
-##            Current.minimalLoad(LoadMasters=False)
-##
-##            changed = {} #--changed[modName] = numChanged
-##            for type,stats in self.type_stats.iteritems():
-##                attrs = self.type_attrs[type]
-##                for record in getattr(modFile,type):
-##                    longid = record.fid
-##                    itemStats = stats.get(longid,None)
-##                    if not itemStats: continue
-##                    for attr,stat in attrs,itemStats:
-##                        if(stat != "NONE"):
-##                            setattr(record,attr,stat)
-##                    changed[longid[0]] = 1 + changed.get(longid[0],0)
-##            if changed: modFile.save()
-##            return changed
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
@@ -15789,7 +15845,7 @@ class ScriptText:
                     for line in text.split('\n'):
                         pos = line.find(';')
                         if pos == -1:
-                                tmp += line + '\n'       
+                                tmp += line + '\n'
                         elif pos == 0:
                             continue
                         else:
@@ -17696,7 +17752,7 @@ class SaveSpells:
         loadFactory = LoadFactory(False,MreSpel)
         modFile = ModFile(modInfo,loadFactory)
         try: modFile.load(True)
-        except bosh.ModError, err:
+        except ModError, err:
             deprint(_('skipped mod due to read error (%s)') % err)
             return
         modFile.convertToLongFids(('SPEL',))
@@ -22143,8 +22199,7 @@ class ImportScriptContents(ImportPatcher):
         log(_("\n=== Modified Records"))
         for type,count in sorted(type_count.iteritems()):
             if count: log("* %s: %d" % (type,count))
-##class CBash_ImportScriptContents(CBash_ImportPatcher):
-##    raise NotImplementedError
+
 #------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
     """Merge changes to actor inventories."""
@@ -25469,7 +25524,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
         log.setHeader(_('=== Magic: Script Effect Silencer'))
         log(_('Script Effect silenced.'))
 class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
-    """Reweighs standard arrows down to 0.1."""
+    """Silences the script magic effect and gives it an extremely high speed."""
     scanOrder = 32
     editOrder = 32
     name = _('Magic: Script Effect Silencer')
@@ -26302,7 +26357,7 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
-    """Sets Cast When Used Enchantment number of uses."""
+    """Sets Sound Attenuation Levels for all records except Nirnroots."""
     scanOrder = 32
     editOrder = 32
     name = _('Set Sound Attenuation Levels')
@@ -26402,7 +26457,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTweakItem):
-    """Sets Cast When Used Enchantment number of uses."""
+    """Sets Sound Attenuation Levels for Nirnroots."""
     scanOrder = 32
     editOrder = 32
     name = _('Set Sound Attenuation Levels: Nirnroots Only')
@@ -27452,7 +27507,7 @@ class GmstTweaker(MultiTweaker):
             (_('10 Minutes'),600.0),
             (_('30 Minutes'),1800.0),
             (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),90),
+            (_('Custom (in seconds)'),90.0),
             ),
         GmstTweak(_('Arrow: Recovery from Actor'),
             _("Chance that an arrow shot into an actor can be recovered."),
@@ -27478,7 +27533,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.6'),1500.0*2.6),
             (_('x 2.8'),1500.0*2.8),
             (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500),
+            (_('Custom (base is 1500)'),1500.0),
             ),
         GmstTweak(_('Camera: Chase Tightness'),
             _("Tightness of chase camera to player turning."),
@@ -27487,8 +27542,8 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.0'),8.0,8.0),
             (_('x 3.0'),12.0,12.0),
             (_('x 5.0'),20.0,20.0),
-            (_('ChaseCameraMod.esp (x 24.75)'),99,99),
-            (_('Custom'),4,4),
+            (_('ChaseCameraMod.esp (x 24.75)'),99.0,99.0),
+            (_('Custom'),4.0,4.0),
             ),
         GmstTweak(_('Camera: Chase Distance'),
             _("Distance camera can be moved away from PC using mouse wheel."),
@@ -27498,7 +27553,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
             (_('x 5'),  600.0*5.0, 1000.0,    0.3),
             (_('x 10'), 600.0*10,  2000.0,    0.3),
-            (_('Custom'),600,      300,       0.15),
+            (_('Custom'),600.0,     300.0,    0.15),
             ),
         GmstTweak(_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
@@ -27534,7 +27589,7 @@ class GmstTweaker(MultiTweaker):
             (_('2 Minutes'),2*60.0),
             (_('3 Minutes'),3*60.0),
             (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),10),
+            (_('Custom (in seconds)'),10.0),
             ),
         GmstTweak(_('Fatigue from Running/Encumbrance'),
             _("Fatigue cost of running and encumbrance."),
@@ -27544,7 +27599,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),24.0,12.0),
             (_('x 4'),32.0,16.0),
             (_('x 5'),40.0,20.0),
-            (_('Custom'),8,4),
+            (_('Custom'),8.0,4.0),
             ),
         GmstTweak(_('Horse Turning Speed'),
             _("Speed at which horses turn."),
@@ -27563,7 +27618,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 1.8'),164.0*1.8),
             (_('x 2.0'),164.0*2.0),
             (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),164),
+            (_('Custom (base 164)'),164.0),
             ),
         GmstTweak(_('Camera: PC Death Time'),
             _("Time after player's death before reload menu appears."),
@@ -27573,7 +27628,7 @@ class GmstTweaker(MultiTweaker):
             (_('1 Minute'),60.0),
             (_('5 Minute'),300.0),
             (_('Unlimited'),9999999.0),
-            (_('Custom'),15),
+            (_('Custom'),15.0),
             ),
         GmstTweak(_('Cell Respawn Time'),
             _("Time before unvisited cell respawns. But longer times increase save sizes."),
@@ -27607,7 +27662,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 2.6'),1000.0*2.6),
             (_('x 2.8'),1000.0*2.8),
             (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),1000),
+            (_('Custom (base 1000)'),1000.0),
             ),
         GmstTweak(_('Msg: Equip Misc. Item'),
             _("Message upon equipping misc. item."),
@@ -27770,7 +27825,7 @@ class GmstTweaker(MultiTweaker):
             ('90',90.0),
             ('120',120.0),
             ('150',150.0),
-            (_('Custom'),10),
+            (_('Custom'),10.0),
             ),
         GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
@@ -27780,7 +27835,7 @@ class GmstTweaker(MultiTweaker):
             ('8',8.0),
             ('10',10.0),
             ('15',15.0),
-            (_('Custom'),3),
+            (_('Custom'),3.0),
             ),
         GmstTweak(_('AI: Max Active Actors'),
             _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
@@ -27896,7 +27951,7 @@ class GmstTweaker(MultiTweaker):
             ('[85]',85.0),
             ('90',90.0),
             ('95',95.0),
-            (_('Custom'),85),
+            (_('Custom'),85.0),
             ),
         GmstTweak(_('Warning: Interior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
@@ -27908,7 +27963,7 @@ class GmstTweaker(MultiTweaker):
             ('[2000]',2000.0),
             ('3000',3000.0),
             ('4000',4000.0),
-            (_('Custom'),2000),
+            (_('Custom'),2000.0),
             ),
         GmstTweak(_('Warning: Exterior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
@@ -27922,7 +27977,7 @@ class GmstTweaker(MultiTweaker):
             ('4000',4000.0),
             ('5000',5000.0),
             ('6000',6000.0),
-            (_('Custom'),3000),
+            (_('Custom'),3000.0),
             ),
         GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
@@ -27941,7 +27996,7 @@ class GmstTweaker(MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-            (_('Custom'),15,20,20,3,10,2.5),
+            (_('Custom'),15,20,20,3,10.0,2.5),
             ),
         GmstTweak(_('Inventory Quantity Prompt'),
             _("Number of items in a stack at which point Oblivion prompts for a quantity."),
@@ -27977,7 +28032,7 @@ class GmstTweaker(MultiTweaker):
             ),
         GmstTweak(_('Leveled Creature Max level difference'),
             _("Maximum difference to player level for leveled creatures."),
-            ('ILevCreaLevelDifferenceMax',),
+            ('iLevCreaLevelDifferenceMax',),
             ('1',1),
             ('5',5),
             ('[8]',8),
@@ -28007,7 +28062,7 @@ class GmstTweaker(MultiTweaker):
             ('10',10.0),
             ('20',20.0),
             (_('Unlimited'),999999.0),
-            (_('Custom'),5),
+            (_('Custom'),5.0),
             ),
         GmstTweak(_('NPC Blood'),
             _("NPC Blood Splatter Textures."),
@@ -28019,33 +28074,33 @@ class GmstTweaker(MultiTweaker):
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
             (_('No Smiles'),0.0),
-            (_('[Default (128)]'),128),
-            (_('Custom'),128),
+            (_('[Default (128)]'),128.0),
+            (_('Custom'),128.0),
             ),
         GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
             (_('MovableBodies.esp (1500)'),1500.0),
-            (_('[Default (150)]'),150),
-            (_('Custom'),150),
+            (_('[Default (150)]'),150.0),
+            (_('Custom'),150.0),
             ),
         GmstTweak(_('AI: Conversation Chance'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player)."),
             ('fAISocialchanceForConversation',),
-            (_('10'),10),
-            (_('25'),25),
-            (_('50'),50),
-            (_('[100]'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('25'),25.0),
+            (_('50'),50.0),
+            (_('[100]'),100.0),
+            (_('Custom'),100.0),
             ),
         GmstTweak(_('AI: Conversation Chance - Interior'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
             ('fAISocialchanceForConversationInterior',),
-            (_('10'),10),
-            (_('[25]'),25),
-            (_('50'),50),
-            (_('100'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('[25]'),25.0),
+            (_('50'),50.0),
+            (_('100'),100.0),
+            (_('Custom'),100.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
@@ -28105,7 +28160,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('10 Minutes'),600.0),
             (_('30 Minutes'),1800.0),
             (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),90),
+            (_('Custom (in seconds)'),90.0),
             ),
         CBash_GmstTweak(_('Arrow: Recovery from Actor'),
             _("Chance that an arrow shot into an actor can be recovered."),
@@ -28131,7 +28186,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 2.6'),1500.0*2.6),
             (_('x 2.8'),1500.0*2.8),
             (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500),
+            (_('Custom (base is 1500)'),1500.0),
             ),
         CBash_GmstTweak(_('Camera: Chase Tightness'),
             _("Tightness of chase camera to player turning."),
@@ -28141,7 +28196,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3.0'),12.0,12.0),
             (_('x 5.0'),20.0,20.0),
             (_('ChaseCameraMod.esp (x 24.75)'),99,99),
-            (_('Custom'),4,4),
+            (_('Custom'),4.0,4.0),
             ),
         CBash_GmstTweak(_('Camera: Chase Distance'),
             _("Distance camera can be moved away from PC using mouse wheel."),
@@ -28151,7 +28206,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
             (_('x 5'),  600.0*5.0, 1000.0,    0.3),
             (_('x 10'), 600.0*10,  2000.0,    0.3),
-            (_('Custom'),600,      300,       0.15),
+            (_('Custom'),600.0,     300.0,    0.15),
             ),
         CBash_GmstTweak(_('Magic: Chameleon Refraction'),
             _("Chameleon with transparency instead of refraction effect."),
@@ -28187,7 +28242,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('2 Minutes'),2*60.0),
             (_('3 Minutes'),3*60.0),
             (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),10),
+            (_('Custom (in seconds)'),10.0),
             ),
         CBash_GmstTweak(_('Fatigue from Running/Encumbrance'),
             _("Fatigue cost of running and encumbrance."),
@@ -28197,7 +28252,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),24.0,12.0),
             (_('x 4'),32.0,16.0),
             (_('x 5'),40.0,20.0),
-            (_('Custom'),8,4),
+            (_('Custom'),8.0,4.0),
             ),
         CBash_GmstTweak(_('Horse Turning Speed'),
             _("Speed at which horses turn."),
@@ -28216,7 +28271,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 1.8'),164.0*1.8),
             (_('x 2.0'),164.0*2.0),
             (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),164),
+            (_('Custom (base 164)'),164.0),
             ),
         CBash_GmstTweak(_('Camera: PC Death Time'),
             _("Time after player's death before reload menu appears."),
@@ -28226,7 +28281,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('1 Minute'),60.0),
             (_('5 Minute'),300.0),
             (_('Unlimited'),9999999.0),
-            (_('Custom'),15),
+            (_('Custom'),15.0),
             ),
         CBash_GmstTweak(_('Cell Respawn Time'),
             _("Time before unvisited cell respawns. But longer times increase save sizes."),
@@ -28260,7 +28315,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 2.6'),1000.0*2.6),
             (_('x 2.8'),1000.0*2.8),
             (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),1000),
+            (_('Custom (base 1000)'),1000.0),
             ),
         CBash_GmstTweak(_('Msg: Equip Misc. Item'),
             _("Message upon equipping misc. item."),
@@ -28423,7 +28478,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('90',90.0),
             ('120',120.0),
             ('150',150.0),
-            (_('Custom'),10),
+            (_('Custom'),10.0),
             ),
         CBash_GmstTweak(_('Cost Multiplier: Spell Making'),
             _("Cost factor for making spells."),
@@ -28433,7 +28488,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('8',8.0),
             ('10',10.0),
             ('15',15.0),
-            (_('Custom'),3),
+            (_('Custom'),3.0),
             ),
         CBash_GmstTweak(_('AI: Max Active Actors'),
             _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
@@ -28549,7 +28604,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[85]',85.0),
             ('90',90.0),
             ('95',95.0),
-            (_('Custom'),85),
+            (_('Custom'),85.0),
             ),
         CBash_GmstTweak(_('Warning: Interior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
@@ -28561,7 +28616,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('[2000]',2000.0),
             ('3000',3000.0),
             ('4000',4000.0),
-            (_('Custom'),2000),
+            (_('Custom'),2000.0),
             ),
         CBash_GmstTweak(_('Warning: Exterior Distance to Hostiles'),
             _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
@@ -28575,7 +28630,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('4000',4000.0),
             ('5000',5000.0),
             ('6000',6000.0),
-            (_('Custom'),3000),
+            (_('Custom'),3000.0),
             ),
         CBash_GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
             _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
@@ -28594,7 +28649,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
             (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
             (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-            (_('Custom'),15,20,20,3,10,2.5),
+            (_('Custom'),15,20,20,3,10.0,2.5),
             ),
         CBash_GmstTweak(_('Inventory Quantity Prompt'),
             _("Number of items in a stack at which point Oblivion prompts for a quantity."),
@@ -28630,7 +28685,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ),
         CBash_GmstTweak(_('Leveled Creature Max level difference'),
             _("Maximum difference to player level for leveled creatures."),
-            ('ILevCreaLevelDifferenceMax',),
+            ('iLevCreaLevelDifferenceMax',),
             ('1',1),
             ('5',5),
             ('[8]',8),
@@ -28660,7 +28715,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             ('10',10.0),
             ('20',20.0),
             (_('Unlimited'),999999.0),
-            (_('Custom'),5),
+            (_('Custom'),5.0),
             ),
         CBash_GmstTweak(_('NPC Blood'),
             _("NPC Blood Splatter Textures."),
@@ -28672,33 +28727,33 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             _("Maximum distance for NPCs to start smiling."),
             ('fAIMaxSmileDistance',),
             (_('No Smiles'),0.0),
-            (_('[Default (128)]'),128),
-            (_('Custom'),128),
+            (_('[Default (128)]'),128.0),
+            (_('Custom'),128.0),
             ),
         CBash_GmstTweak(_('Drag: Max Moveable Weight'),
             _("Maximum weight to be able move things with the drag key."),
             ('fMoveWeightMax',),
             (_('MovableBodies.esp'),1500.0),
-            (_('[Default (150)]'),150),
-            (_('Custom'),150),
+            (_('[Default (150)]'),150.0),
+            (_('Custom'),150.0),
             ),
         CBash_GmstTweak(_('AI: Conversation Chance'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player)."),
             ('fAISocialchanceForConversation',),
-            (_('10'),10),
-            (_('25'),25),
-            (_('50'),50),
-            (_('[100]'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('25'),25.0),
+            (_('50'),50.0),
+            (_('[100]'),100.0),
+            (_('Custom'),100.0),
             ),
         CBash_GmstTweak(_('AI: Conversation Chance - Interior'),
             _("Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
             ('fAISocialchanceForConversationInterior',),
-            (_('10'),10),
-            (_('[25]'),25),
-            (_('50'),50),
-            (_('100'),100),
-            (_('Custom'),100),
+            (_('10'),10.0),
+            (_('[25]'),25.0),
+            (_('50'),50.0),
+            (_('100'),100.0),
+            (_('Custom'),100.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
@@ -30689,7 +30744,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
 
         #--Some setup
-        skeletonDir = bosh.dirs['mods'].join('Meshes','Characters','_male')
+        skeletonDir = dirs['mods'].join('Meshes','Characters','_male')
         modSkeletonDir = GPath('Characters').join('_male')
 
         if skeletonDir.exists():
@@ -34581,19 +34636,27 @@ def testPermissions(path,permissions='rwcd'):
     return True
 
 def getOblivionPath(bashIni, path):
-    if path: path = GPath(path)
+    if path:
+        # Already handled by bush.setGame, but we don't want to use
+        # The sOblivionPath ini entry if a path was specified on the
+        # command line
+        pass
     elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
         path = GPath(bashIni.get('General', 'sOblivionPath').strip())
-    else:
-        path = bolt.Path.getcwd().head #Assume bash is in right place (\Oblivion\Mopy\)
-        #but for bashmon have to do a checky.
-        if path.s[-4:].lower() == 'mopy':
-            path = GPath(path.s[:-5])
+        # Validate it:
+        oldMode = bush.game.name
+        ret = bush.setGame('',path.s)
+        if ret != False:
+            deprint('Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.name)
+        elif oldMode != bush.game.name:
+            deprint('Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
+    path = bush.gamePath
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
-    if not path.join('Oblivion.exe').exists():
-        raise BoltError(_("Install Error\nFailed to find Oblivion.exe in %s.\nNote that the Mopy folder should be in the same folder as Oblivion.exe.") % path)
+    if not path.join(bush.game.exe).exists():
+        raise BoltError(_("Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe))
+    Installer.initData()
     return path
 
 def getPersonalPath(bashIni, path):
@@ -34648,7 +34711,7 @@ def getOblivionModsPath(bashIni):
     if bashIni and bashIni.has_option('General','sOblivionMods'):
         path = GPath(bashIni.get('General','sOblivionMods').strip())
     else:
-        path = GPath(r'..\Oblivion Mods')
+        path = GPath(r'..\%s Mods' % bush.game.name)
     if not path.isabs(): path = dirs['app'].join(path)
     return path
 
@@ -34689,14 +34752,15 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join(r'My Games','Oblivion')
+    dirs['saveBase'] = personal.join('My Games',bush.game.name)
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
-    dirs['userApp'] = localAppData.join('Oblivion')
+    dirs['userApp'] = localAppData.join(bush.game.name)
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
-    oblivionIni = OblivionIni()
+    gameInis = [OblivionIni(x) for x in bush.game.iniFiles]
+    oblivionIni = gameInis[0]
     try:
         if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
             # Set the save game folder to the Oblivion directory
@@ -34863,7 +34927,6 @@ def initDefaultSettings():
     inisettings['ShowModelingToolLaunchers'] = True
     inisettings['ShowAudioToolLaunchers'] = True
     inisettings['7zExtraCompressionArguments'] = ''
-    inisettings['IconSize'] = '16'
     inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
@@ -34883,8 +34946,6 @@ def initOptions(bashIni):
         for defaultKey,defaultValue in settingsDict.iteritems():
             settingType = type(defaultValue)
             readKey = type_key[settingType] + defaultKey
-            if defaultKey == 'IconSize': #Hack to support misnamed variable
-                readKey = 'iIconSize'
             defaultOptions[readKey.lower()] = (defaultKey,settingsDict)
 
     # if bash.ini exists update the settings from there:

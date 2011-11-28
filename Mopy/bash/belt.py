@@ -29,7 +29,7 @@ import ScriptParser         # generic parser class
 from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt, bolt, basher
+import bosh, balt, bolt, basher, bush
 from bolt import _
 import struct, string
 import win32api
@@ -230,8 +230,8 @@ class PageError(PageInstaller):
 
         #Layout stuff
         sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
-        textError = wx.TextCtrl(self, -1, errorMsg, style=wx.TE_READONLY|wx.TE_MULTILINE)
-        sizerMain.Add(wx.StaticText(self, -1, title))
+        textError = wx.TextCtrl(self, wx.ID_ANY, errorMsg, style=wx.TE_READONLY|wx.TE_MULTILINE)
+        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, title))
         sizerMain.Add(textError, 0, wx.ALL|wx.CENTER|wx.EXPAND)
         sizerMain.AddGrowableCol(0)
         sizerMain.AddGrowableRow(1)
@@ -274,11 +274,11 @@ class PageSelect(PageInstaller):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
             defaultMap = [choice in oldChoices for choice in listItems]
         if bMany:
-            self.listOptions = wx.CheckListBox(self, 643, choices=listItems, style=wx.LB_HSCROLL)
+            self.listOptions = wx.CheckListBox(self, wx.ID_ANY, choices=listItems, style=wx.LB_HSCROLL)
             for index, default in enumerate(defaultMap):
                 self.listOptions.Check(index, default)
         else:
-            self.listOptions = wx.ListBox(self, 643, choices=listItems, style=wx.LB_HSCROLL)
+            self.listOptions = wx.ListBox(self, wx.ID_ANY, choices=listItems, style=wx.LB_HSCROLL)
             self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
             for index, default in enumerate(defaultMap):
                 if default:
@@ -287,7 +287,7 @@ class PageSelect(PageInstaller):
                     break
         sizerBoxes.Add(self.listOptions, 1, wx.ALL|wx.EXPAND)
         sizerBoxes.Add(self.bmpItem, 1, wx.ALL|wx.EXPAND)
-        sizerMain.Add(sizerBoxes, -1, wx.EXPAND)
+        sizerMain.Add(sizerBoxes, wx.ID_ANY, wx.EXPAND)
 
         sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _('Description:')))
         sizerMain.Add(self.textItem, wx.ID_ANY, wx.EXPAND|wx.ALL)
@@ -298,7 +298,7 @@ class PageSelect(PageInstaller):
         sizerMain.AddGrowableCol(0)
         self.Layout()
 
-        wx.EVT_LISTBOX(self, 643, self.OnSelect)
+        self.listOptions.Bind(wx.EVT_LISTBOX, self.OnSelect)
         self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
 
@@ -406,24 +406,24 @@ class PageFinish(PageInstaller):
 
         #--Heading
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, -1, ''))
-        textTitle = wx.StaticText(self, -1, _("The installer script has finished, and will apply the following settings:"))
+        textTitle = wx.StaticText(self, wx.ID_ANY, _("The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle, 0, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
 
         #--Subpackages and Espms
         sizerLists = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerLists.Add(wx.StaticText(self, -1, _('Sub-Packages')))
-        sizerLists.Add(wx.StaticText(self, -1, _('Esp/ms')))
-        self.listSubs = wx.CheckListBox(self, 666, choices=subs)
-        wx.EVT_CHECKLISTBOX(self, 666, self.OnSelectSubs)
+        sizerLists.Add(wx.StaticText(self, wx.ID_ANY, _('Sub-Packages')))
+        sizerLists.Add(wx.StaticText(self, wx.ID_ANY, _('Esp/ms')))
+        self.listSubs = wx.CheckListBox(self, wx.ID_ANY, choices=subs)
+        self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
         for index,key in enumerate(subs):
             key = key.replace('&&','&')
             if subsList[key]:
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
-        self.listEspms = wx.CheckListBox(self, 667, choices=espmShow)
-        wx.EVT_CHECKLISTBOX(self, 667, self.OnSelectEspms)
+        self.listEspms = wx.CheckListBox(self, wx.ID_ANY, choices=espmShow)
+        self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)
@@ -438,11 +438,11 @@ class PageFinish(PageInstaller):
 
         #--Ini tweaks
         sizerInis = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerInis.Add(wx.StaticText(self, -1, _('Ini Tweaks:')))
-        sizerInis.Add(wx.StaticText(self, -1, ''))
-        self.listInis = wx.ListBox(self, 668, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
+        sizerInis.Add(wx.StaticText(self, wx.ID_ANY, _('Ini Tweaks:')))
+        sizerInis.Add(wx.StaticText(self, wx.ID_ANY, ''))
+        self.listInis = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
-        self.listTweaks = wx.ListBox(self, -1, style=wx.LB_SINGLE)
+        self.listTweaks = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
         sizerInis.Add(self.listInis, 0, wx.ALL|wx.EXPAND)
         sizerInis.Add(self.listTweaks, 0, wx.ALL|wx.EXPAND)
         sizerInis.AddGrowableRow(1)
@@ -453,8 +453,8 @@ class PageFinish(PageInstaller):
 
         #--Notes
         sizerNotes = wx.FlexGridSizer(2, 1, 5, 0)
-        sizerNotes.Add(wx.StaticText(self, -1, _('Notes:')))
-        sizerNotes.Add(wx.TextCtrl(self, -1, ''.join(notes), style=wx.TE_READONLY|wx.TE_MULTILINE), 1, wx.EXPAND)
+        sizerNotes.Add(wx.StaticText(self, wx.ID_ANY, _('Notes:')))
+        sizerNotes.Add(wx.TextCtrl(self, wx.ID_ANY, ''.join(notes), style=wx.TE_READONLY|wx.TE_MULTILINE), 1, wx.EXPAND)
         sizerNotes.AddGrowableCol(0)
         sizerNotes.AddGrowableRow(1)
         sizerMain.Add(sizerNotes, 2, wx.TOP|wx.EXPAND)
@@ -509,21 +509,6 @@ class PageFinish(PageInstaller):
         index = event.GetSelection()
         path = bolt.GPath(self.listInis.GetString(index))
         lines = generateTweakLines(self.parent.ret.IniEdits[path],path)
-        #lines = []
-        #for section in self.parent.ret.IniEdits[path]:
-        #    sectionlines = []
-        #    if section.strip() == ']set[':
-        #        format = section.replace(']set[','set')+' %(setting)s to %(value)s%(comment)s'
-        #    elif section.strip() == ']setgs[':
-        #        format = section.replace(']setgs[','setgs')+' %(setting)s %(value)s%(comment)s'
-        #    else:
-        #        lines.append('[%s]' % str(section))
-        #        format = '%(setting)s = %(value)s%(comment)s'
-        #    for setting in self.parent.ret.IniEdits[path][section]:
-        #        sectionlines.append(format % dict(setting=setting,
-        #                                          value=self.parent.ret.IniEdits[path][section][setting][0],
-        #                                          comment=self.parent.ret.IniEdits[path][section][setting][1]))
-        #    lines.extend(sorted(sectionlines))
         self.listTweaks.Set(lines)
 # End PageFinish -------------------------------------
 
@@ -531,10 +516,11 @@ class PageFinish(PageInstaller):
 # PageVersions ---------------------------------------
 #  Page for displaying what versions an installer
 #  requires/recommends and what you have installed
-#  for Oblivion, OBSE, and OBGE, and Wrye Bash
+#  for Game, *SE, *GE, and Wrye Bash
 #-----------------------------------------------------
 class PageVersions(PageInstaller):
-    def __init__(self, parent, bObOk, obHave, obNeed, bOBSEOk, obseHave, obseNeed, bOBGEOk, obgeHave, obgeNeed, bWBOk, wbHave, wbNeed):
+    def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
+                 seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
 
         bmp = [wx.Bitmap(bosh.dirs['images'].join('x.png').s),
@@ -543,50 +529,58 @@ class PageVersions(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
-        self.textWarning = wx.StaticText(self, 124, _('WARNING: The following version requirements are not met for using this installer.'))
+        self.textWarning = wx.StaticText(self, wx.ID_ANY, _('WARNING: The following version requirements are not met for using this installer.'))
         self.textWarning.Wrap(parent.GetPageSize()[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
-        sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, -1, _('Version Requirements')))
+        sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _('Version Requirements')))
         sizerVersions = wx.FlexGridSizer(5, 4, 5, 5)
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
         sizerVersions.AddStretchSpacer()
-        sizerVersions.Add(wx.StaticText(self, -1, _('Need')))
-        sizerVersions.Add(wx.StaticText(self, -1, _('Have')))
+        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, _('Need')))
+        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, _('Have')))
         sizerVersions.AddStretchSpacer()
 
-        linkOb = wx.HyperlinkCtrl(self, -1, 'Oblivion', 'http://www.elderscrolls.com/downloads/updates_patches.htm')
-        linkOb.SetVisitedColour(linkOb.GetNormalColour())
-        linkOb.SetToolTip(wx.ToolTip('http://www.elderscrolls.com/'))
-        sizerVersions.Add(linkOb)
-        sizerVersions.Add(wx.StaticText(self, -1, obNeed))
-        sizerVersions.Add(wx.StaticText(self, -1, obHave))
-        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bObOk]))
+        # Game
+        if bush.game.patchURL != '':
+            linkGame = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.name, bush.game.patchURL)
+            linkGame.SetVisitedColour(linkGame.GetNormalColour())
+        else:
+            linkGame = wx.StaticText(self, wx.ID_ANY, bush.game.name)
+        linkGame.SetToolTip(wx.ToolTip(bush.game.patchTip))
+        sizerVersions.Add(linkGame)
+        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameNeed))
+        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameHave))
+        sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGameOk]))
 
-        linkOBSE = wx.HyperlinkCtrl(self, -1, 'Oblivion Script Extender', 'http://obse.silverlock.org/')
-        linkOBSE.SetVisitedColour(linkOBSE.GetNormalColour())
-        linkOBSE.SetToolTip(wx.ToolTip('http://obse.silverlock.org/'))
-        sizerVersions.Add(linkOBSE)
-        sizerVersions.Add(wx.StaticText(self, -1, obseNeed))
-        sizerVersions.Add(wx.StaticText(self, -1, obseHave))
-        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bOBSEOk]))
+        # Script Extender
+        if bush.game.se.shortName != '':
+            linkSE = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.se.longName, bush.game.se.url)
+            linkSE.SetVisitedColour(linkSE.GetNormalColour())
+            linkSE.SetToolTip(wx.ToolTip(bush.game.se.urlTip))
+            sizerVersions.Add(linkSE)
+            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, seNeed))
+            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, seHave))
+            sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bSEOk]))
 
-        linkOBGE = wx.HyperlinkCtrl(self, -1, 'Oblivion Graphics Extender', 'http://timeslip.chorrol.com/obge.html')
-        linkOBGE.SetVisitedColour(linkOBGE.GetNormalColour())
-        linkOBGE.SetToolTip(wx.ToolTip('http://timeslip.chorrol.com/'))
-        sizerVersions.Add(linkOBGE)
-        sizerVersions.Add(wx.StaticText(self, -1, obgeNeed))
-        sizerVersions.Add(wx.StaticText(self, -1, obgeHave))
-        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bOBGEOk]))
+        # Graphics extender
+        if bush.game.ge.shortName != '':
+            linkGE = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.ge.longName, bush.game.ge.url)
+            linkGE.SetVisitedColour(linkGE.GetNormalColour())
+            linkGE.SetToolTip(wx.ToolTip(bush.game.ge.urlTip))
+            sizerVersions.Add(linkGE)
+            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geNeed))
+            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geHave))
+            sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGEOk]))
 
-        linkWB = wx.HyperlinkCtrl(self, -1, 'Wrye Bash', 'http://www.tesnexus.com/downloads/file.php?id=22368')
+        linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, 'Wrye Bash', 'http://www.tesnexus.com/downloads/file.php?id=22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
         linkWB.SetToolTip(wx.ToolTip('http://www.tesnexus.com/'))
         sizerVersions.Add(linkWB)
-        sizerVersions.Add(wx.StaticText(self, -1, wbNeed))
-        sizerVersions.Add(wx.StaticText(self, -1, wbHave))
-        sizerVersions.Add(wx.StaticBitmap(self, -1, bmp[bWBOk]))
+        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbNeed))
+        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbHave))
+        sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bWBOk]))
 
         sizerVersions.AddGrowableCol(0)
         sizerVersions.AddGrowableCol(1)
@@ -597,8 +591,8 @@ class PageVersions(PageInstaller):
         sizerMain.AddStretchSpacer()
 
         sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
-        self.checkOk = wx.CheckBox(self, 123, _('Install anyway.'))
-        wx.EVT_CHECKBOX(self, 123, self.OnCheck)
+        self.checkOk = wx.CheckBox(self, wx.ID_ANY, _('Install anyway.'))
+        self.checkOk.Bind(wx.EVT_CHECKBOX, self.OnCheck)
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
         sizerCheck.AddStretchSpacer()
         sizerCheck.Add(self.checkOk)
@@ -842,9 +836,12 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator('^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
 
         #--Functions
-        self.SetFunction('CompareObVersion', self.fnCompareOblivionVersion, 1)
-        self.SetFunction('CompareOBSEVersion', self.fnCompareOBSEVersion, 1)
-        self.SetFunction('CompareOBGEVersion', self.fnCompareOBGEVersion, 1)
+        self.SetFunction('CompareObVersion', self.fnCompareGameVersion, 1)      # Retained for compatibility
+        self.SetFunction('CompareGameVersion', self.fnCompareGameVersion, 1)
+        self.SetFunction('CompareOBSEVersion', self.fnCompareSEVersion, 1)      # Retained for compatibility
+        self.SetFunction('CompareSEVersion', self.fnCompareSEVersion, 1)
+        self.SetFunction('CompareOBGEVersion', self.fnCompareGEVersion, 1)      # Retained for compatibility
+        self.SetFunction('CompareGEVersion', self.fnCompareGEVersion, 1)
         self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction('DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
         self.SetFunction('GetEspmStatus', self.fnGetEspmStatus, 1)
@@ -1083,19 +1080,27 @@ class WryeParser(ScriptParser.Parser):
     def opExp(self, l, r): return l ** r
 
     # Functions...
-    def fnCompareOblivionVersion(self, obWant):
-        ret = self._TestVersion(self._TestVersion_Want(obWant), bosh.dirs['app'].join('oblivion.exe'))
+    def fnCompareGameVersion(self, obWant):
+        ret = self._TestVersion(self._TestVersion_Want(obWant), bosh.dirs['app'].join(bush.game.exe))
         return ret[0]
-    def fnCompareOBSEVersion(self, obseWant):
-        if bosh.inisettings['SteamInstall']:
-            obse = 'obse_steam_loader.dll'   # User may not have obse_loader.exe, since it's only required for the CS
+    def fnCompareSEVersion(self, seWant):
+        if bush.game.se.shortName != '':
+            if bosh.inisettings['SteamInstall']:
+                se = bush.game.se.steamExe   # User may not have obse_loader.exe, since it's only required for the CS
+            else:
+                se = bush.game.se.exe
+            ret = self._TestVersion(self._TestVersion_Want(seWant), bosh.dirs['app'].join(se))
+            return ret[0]
         else:
-            obse = 'obse_loader.exe'
-        ret = self._TestVersion(self._TestVersion_Want(obseWant), bosh.dirs['app'].join(obse))
-        return ret[0]
-    def fnCompareOBGEVersion(self, obgeWant):
-        ret = self._TestVersion_OBGE(self._TestVersion_Want(obgeWant))
-        return ret[0]
+            # No script extender available for this game
+            return 1
+    def fnCompareGEVersion(self, geWant):
+        if bush.game.ge.shortName != '':
+            ret = self._TestVersion_OBGE(self._TestVersion_Want(geWant))
+            return ret[0]
+        else:
+            # No graphics extender available for this game
+            return 1
     def fnCompareWBVersion(self, wbWant):
         wbHave = bosh.settings['bash.readme'][1]
         return cmp(float(wbHave), float(wbWant))
@@ -1534,45 +1539,52 @@ class WryeParser(ScriptParser.Parser):
     def kwdNote(self, note):
         self.notes.append('- %s\n' % note)
 
-    def kwdRequireVersions(self, ob, obse='None', obge='None', wbWant='0'):
+    def kwdRequireVersions(self, game, se='None', ge='None', wbWant='0'):
         if self.bAuto: return
 
-        obWant = self._TestVersion_Want(ob)
-        if obWant == 'None': ob = 'None'
-        obseWant = self._TestVersion_Want(obse)
-        if obseWant == 'None': obse = 'None'
-        obgeWant = self._TestVersion_Want(obge)
-        if obgeWant == 'None': obge = 'None'
+        gameWant = self._TestVersion_Want(game)
+        if gameWant == 'None': game = 'None'
+        seWant = self._TestVersion_Want(se)
+        if seWant == 'None': se = 'None'
+        geWant = self._TestVersion_Want(ge)
+        if geWant == 'None': ge = 'None'
         wbHave = bosh.settings['bash.readme'][1]
 
-        ret = self._TestVersion(obWant, bosh.dirs['app'].join('oblivion.exe'))
-        bObOk = ret[0] >= 0
-        obHave = ret[1]
-        if bosh.inisettings['SteamInstall']:
-            obseName = 'obse_steam_loader.dll'
+        ret = self._TestVersion(gameWant, bosh.dirs['app'].join(bush.game.exe))
+        bGameOk = ret[0] >= 0
+        gameHave = ret[1]
+        if bush.game.se.shortName != '':
+            if bosh.inisettings['SteamInstall']:
+                seName = bush.game.se.steamExe
+            else:
+                seName = bush.game.se.exe
+            ret = self._TestVersion(seWant, bosh.dirs['app'].join(seName))
+            bSEOk = ret[0] >= 0
+            seHave = ret[1]
         else:
-            obseName = 'obse_loader.exe'
-        ret = self._TestVersion(obseWant, bosh.dirs['app'].join(obseName))
-        bOBSEOk = ret[0] >= 0
-        obseHave = ret[1]
-        ret = self._TestVersion_OBGE(obgeWant)
-        bOBGEOk = ret[0] >= 0
-        obgeHave = ret[1]
+            bSEOk = True
+            seHave = 'None'
+        if bush.game.ge.shortName != '':
+            ret = self._TestVersion_GE(geWant)
+            bGEOk = ret[0] >= 0
+            geHave = ret[1]
+        else:
+            bGEOk = True
+            geHave = 'None'
         bWBOk = float(wbHave) >= float(wbWant)
 
-        if not bObOk or not bOBSEOk or not bOBGEOk or not bWBOk:
-            self.page = PageVersions(self.parent, bObOk, obHave, ob, bOBSEOk, obseHave, obse, bOBGEOk, obgeHave, obge, bWBOk, wbHave, wbWant)
-    def _TestVersion_OBGE(self, want):
-        retOBGEOld = self._TestVersion(want, bosh.dirs['mods'].join('obse', 'plugins', 'obge.dll'))
-        retOBGENew = self._TestVersion(want, bosh.dirs['mods'].join('obse', 'plugins', 'obgev2.dll'))
-        haveNew = retOBGENew[1]
-        haveOld = retOBGEOld[1]
-        if haveNew != 'None':
-            # OBGEv2 is installed, use that for comparison
-            return retOBGENew
+        if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
+            self.page = PageVersions(self.parent, bGameOk, gameHave, game, bSEOk, seHave, se, bGEOk, geHave, ge, bWBOk, wbHave, wbWant)
+    def _TestVersion_GE(self, want):
+        if isinstance(bush.game.ge.exe,str):
+            files = [bosh.dirs['mods'].join(bush.game.ge.exe)]
         else:
-            # OBGEv2 isn't installed
-            return retOBGEOld
+            files = [bosh.dirs['mods'].join(*x) for x in bush.game.ge.exe]
+        for file in reversed(files):
+            ret = self._TestVersion(want, file)
+            if ret[1] != 'None':
+                return ret
+        return ret
     def _TestVersion_Want(self, want):
         try:
             need = [int(i) for i in want.split('.')]
