@@ -90,7 +90,7 @@ ECHO Found Python at '%PYTHON%' >%OUTFILE%
 ECHO Found Python at '%PYTHON%'
 ECHO Launching Wrye Bash in debug mode >>%OUTFILE%
 ECHO Launching Wrye Bash in debug mode
-"%PYTHON%" "Wrye Bash Launcher.pyw" -d >>%OUTFILE% 2>&1
+"%PYTHON%" "Wrye Bash Launcher.pyw" -d %1 %2 %3 %4 %5 %6 %7 %8 %9 >>%OUTFILE% 2>&1
 
 
 :END

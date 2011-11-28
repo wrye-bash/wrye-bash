@@ -110,6 +110,8 @@ bashFrame = None
 docBrowser = None
 modChecker = None
 SettingsMenu = None
+obseButton = None
+laaButton = None
 
 # Settings --------------------------------------------------------------------
 settings = None
@@ -15681,7 +15683,12 @@ class App_Button(StatusBar_Button):
                     cwd.setcwd()
             elif self.isExe:
                 exeObse = bosh.dirs['app'].join(bush.game.se.exe)
-                if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
+                exeLaa = bosh.dirs['app'].join(bush.game.laa.exe)
+                if exeLaa.exists() and settings.get('bash.laa.on',True) and self.exePath.tail == bush.game.exe:
+                    # Should use the LAA Launcher
+                    exePath = exeLaa
+                    args = [exePath.s]
+                elif self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
                     if bosh.inisettings['SteamInstall'] and self.exePath.tail.cs == 'oblivion.exe':
                         exePath = self.exePath
                     else:
@@ -15908,6 +15915,16 @@ class App_BOSS(App_Button):
 class Oblivion_Button(App_Button):
     """Will close app on execute if autoquit is on."""
     @property
+    def tip(self):
+        if not settings['bash.statusbar.showversion']:
+            tip = self._tip
+        else:
+            tip = self._tip + ' ' + self.version
+        if bosh.dirs['app'].join(bush.game.laa.exe).exists() and settings.get('bash.laa.on',True):
+            tip += ' + ' + bush.game.laa.name
+        return tip
+
+    @property
     def obseTip(self):
         # Oblivion (version)
         if settings['bash.statusbar.showversion']:
@@ -15916,6 +15933,9 @@ class Oblivion_Button(App_Button):
             tip = self._obseTip % (dict(version=''))
         # + OBSE
         tip += ' + %s %s' % (bush.game.se.shortName, self.obseVersion)
+        # + LAA
+        if bosh.dirs['app'].join(bush.game.laa.exe).exists() and settings.get('bash.laa.on',True):
+            tip += ' + ' + bush.game.laa.name
         return tip
 
     def Execute(self,event):
@@ -15957,12 +15977,21 @@ class Obse_Button(StatusBar_Button):
         elif state == -1: #--Invert
             state = not settings.get('bash.obse.on',False)
         settings['bash.obse.on'] = state
+        if bush.game.laa.launchesSE and not state:
+            # 4GB Launcher automatically launches the SE, so turning of the SE
+            # required turning off the 4GB Laucner as well
+            laaButton.SetState(state)
         # BitmapButton
         image = images[('checkbox.green.off.%s'%settings['bash.statusbar.iconSize'],
                         'checkbox.green.on.%s'%settings['bash.statusbar.iconSize'])[state]]
         tip = ((_("%s %s Disabled"),_("%s %s Enabled"))[state]) % (bush.game.se.shortName, self.obseVersion)
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
+        self.UpdateToolTips(state)
+
+    def UpdateToolTips(self,state=None):
+        if state is None:
+            state = settings.get('bash.obse.on',True)
         tipAttr = ('tip','obseTip')[state]
         for button in App_Button.obseButtons:
             button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,'')))
@@ -15981,6 +16010,42 @@ class Obse_Button(StatusBar_Button):
     def Execute(self,event):
         """Invert state."""
         self.SetState(-1)
+
+class LAA_Button(Obse_Button):
+    """4GB Launcher on/off state button."""
+    def SetState(self,state=None):
+        """Sets state related info.  If newState != none, sets to new state first.
+        For convenience, returns state when done."""
+        if state == None: #--Default
+            state = settings.get('bash.laa.on',True)
+        elif state == -1: #--Invert
+            state = not settings.get('bash.laa.on',False)
+        settings['bash.laa.on'] = state
+        if bush.game.laa.launchesSE:
+            if state:
+                # If the 4gb launcher launces the SE, enable the SE when enabling this
+                obseButton.SetState(state)
+            else:
+                # We need the obse button to update the tooltips anyway
+                obseButton.UpdateToolTips()
+        # BitmapButton
+        image = images[('checkbox.blue.off.%s'%settings['bash.statusbar.iconSize'],
+                        'checkbox.blue.on.%s'%settings['bash.statusbar.iconSize'])[state]]
+        tip = bush.game.laa.name + (_(' Disabled'),_(' Enabled'))[state]
+        if self.gButton:
+            self.gButton.SetBitmapLabel(image.GetBitmap())
+            self.gButton.SetToolTip(tooltip(tip))
+        return state
+
+    def GetBitmapButton(self,window,style=0):
+        exeLAA = bosh.dirs['app'].join(bush.game.laa.exe)
+        if exeLAA.exists():
+            bitmap = images['checkbox.blue.off.%s'%settings['bash.statusbar.iconSize']].GetBitmap()
+            self.createButton(window,bitmap,style=style)
+            self.SetState()
+            return self.gButton
+        else:
+            return None
 
 #------------------------------------------------------------------------------
 class AutoQuit_Button(StatusBar_Button):
@@ -16127,6 +16192,13 @@ def InitImages():
     images['checkbox.green.off.24'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_off_24.png')),wx.BITMAP_TYPE_PNG))
     images['checkbox.green.on.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_on_32.png')),wx.BITMAP_TYPE_PNG))
     images['checkbox.green.off.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_green_off_32.png')),wx.BITMAP_TYPE_PNG))
+
+    images['checkbox.blue.on.16'] = (Image(GPath(bosh.dirs['images'].join('checkbox_blue_on.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.on.24'] = (Image(GPath(bosh.dirs['images'].join('checkbox_blue_on_24.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.on.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_blue_on_32.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.off.16'] = (Image(GPath(bosh.dirs['images'].join('checkbox_blue_off.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.off.24'] = (Image(GPath(bosh.dirs['images'].join('checkbox_blue_off_24.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.off.32'] = (Image(GPath(bosh.dirs['images'].join('checkbox_blue_off_32.png')),wx.BITMAP_TYPE_PNG))
     #--Bash
     images['bash.16'] = Image(GPath(bosh.dirs['images'].join('bash_16.png')),wx.BITMAP_TYPE_PNG)
     images['bash.24'] = Image(GPath(bosh.dirs['images'].join('bash_24.png')),wx.BITMAP_TYPE_PNG)
@@ -16167,23 +16239,28 @@ def InitStatusBar():
     def imageList(template):
         return [Image(GPath(bosh.dirs['images'].join(template % x))) for x in (16,24,32)]
     #--Bash Status/LinkBar
-    BashStatusBar.buttons.append(Obse_Button(uid='OBSE'))
+    global obseButton
+    obseButton = Obse_Button(uid='OBSE')
+    BashStatusBar.buttons.append(obseButton)
+    global laaButton
+    laaButton = LAA_Button(uid='LAA')
+    BashStatusBar.buttons.append(laaButton)
     BashStatusBar.buttons.append(AutoQuit_Button(uid='AutoQuit'))
     BashStatusBar.buttons.append( # Game
         Oblivion_Button(
             bosh.dirs['app'].join(bush.game.exe),
             imageList('%s%%s.png' % bush.game.name.lower()),
-            _("Launch") + ' %s' % bush.game.name,
-            _("Launch") + ' %s %%(version)s' % bush.game.name,
+            _("Launch") + ' ' + bush.game.name,
+            _("Launch") + ' ' + bush.game.name + ' %(version)s',
             '',
             uid = 'Oblivion'))
-    BashStatusBar.buttons.append( #TESCS
+    BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bosh.dirs['app'].join('TESConstructionSet.exe'),
-            imageList('tescs%s.png'),
-            _("Launch TESCS"),
-            _("Launch TESCS %(version)s"),
-            '-editor',
+            bosh.dirs['app'].join(bush.game.cs.exe),
+            imageList(bush.game.cs.imageName),
+            _("Launch") + ' ' + bush.game.cs.shortName,
+            _("Launch") + ' ' + bush.game.cs.shortName + ' %(version)s',
+            bush.game.cs.seArgs,
             uid='TESCS'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(
@@ -17241,7 +17318,10 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
     SettingsMenu.append(Settings_UseAltName())
-    SettingsMenu.append(Settings_CheckForUpdates())
+    if not hasattr(sys,'frozen'):
+        # py2exe messes with the multiprocessing some how,
+        # need to investigate and figure out a way to make it work correctly
+        SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
     """Call other link initializers."""

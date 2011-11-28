@@ -40,6 +40,14 @@ regInstallKeys = [
 patchURL = '' # Update via steam
 patchTip = 'Update via Steam'
 
+#--Creation Kit Set information
+class cs:
+    shortName = 'CK'                # Abbreviated name
+    longName = 'Creation Kit'       # Full name
+    exe = 'CreationKit.exe'         # Executable to run
+    seArgs = '-editor'              # Argument to pass to the SE to load the CS
+    imageName = 'tescs%s.png'       # Image name template for the status bar
+
 #--Script Extender information
 class se:
     shortName = 'SKSE'                      # Abbreviated name
@@ -56,6 +64,12 @@ class ge:
     exe = ''
     url = ''
     urlTip = ''
+
+#--4gb Launcher
+class laa:
+    name = '4GB Launcher'           # Name
+    exe = 'skyrim4gb.exe'           # Executable to run
+    launchesSE = True               # Whether the launcher will automatically launch the SE as well
 
 #--Wrye Bash capabilities with this game
 canBash = False      # No Bashed Patch creation or messing with mods
