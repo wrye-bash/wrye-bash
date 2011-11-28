@@ -16196,13 +16196,18 @@ def InitStatusBar():
             _("Launch") + ' %s %%(version)s' % bush.game.name,
             '',
             uid = 'Oblivion'))
-    BashStatusBar.buttons.append( #TESCS
+    BashStatusBar.buttons.append( # 4GB Loader
+        App_Button(
+            bosh.dirs['app'].join('skyrim4gb.exe'),
+            imageList('4gb%s.png'),
+            _("Launch Skyrim + 4GB Loader")))            
+    BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bosh.dirs['app'].join('TESConstructionSet.exe'),
-            imageList('tescs%s.png'),
-            _("Launch TESCS"),
-            _("Launch TESCS %(version)s"),
-            '-editor',
+            bosh.dirs['app'].join(bush.game.cs.exe),
+            imageList(bush.game.cs.imageName),
+            _("Launch") + ' ' + bush.game.cs.shortName,
+            _("Launch") + ' ' + bush.game.cs.shortName + "%(version)s",
+            bush.game.cs.seArgs,
             uid='TESCS'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(
