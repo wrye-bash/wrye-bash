@@ -39,42 +39,51 @@
     Var True
     Var Path_OB
     Var Path_Nehrim
+	Var Path_Skyrim
     Var Path_Ex1
     Var Path_Ex2
 
     ;Game specific Data:
     Var Check_OB
     Var Check_Nehrim
+	Var Check_Skyrim
     Var Check_Extra
     Var Check_Ex1
     Var Check_Ex2
     Var CheckState_OB
     Var CheckState_Nehrim
+	Var CheckState_Skyrim
     Var CheckState_Extra
     Var CheckState_Ex1
     Var CheckState_Ex2
     Var Check_OB_Py
     Var Check_Nehrim_Py
+	Var Check_Skyrim_Py
     Var Check_Ex1_Py
     Var Check_Ex2_Py
     Var CheckState_OB_Py
     Var CheckState_Nehrim_Py
+	Var CheckState_Skyrim_Py
     Var CheckState_Ex1_Py
     Var CheckState_Ex2_Py
     Var Check_OB_Exe
     Var Check_Nehrim_Exe
+	Var Check_Skyrim_Exe
     Var Check_Ex1_Exe
     Var Check_Ex2_Exe
     Var CheckState_OB_Exe
     Var CheckState_Nehrim_Exe
+	Var CheckState_Skyrim_Exe
     Var CheckState_Ex1_Exe
     Var CheckState_Ex2_Exe
     Var Reg_Value_OB_Py
     Var Reg_Value_Nehrim_Py
+	Var Reg_Value_Skyrim_Py
     Var Reg_Value_Ex1_Py
     Var Reg_Value_Ex2_Py
     Var Reg_Value_OB_Exe
     Var Reg_Value_Nehrim_Exe
+	Var Reg_Value_Skyrim_Exe
     Var Reg_Value_Ex1_Exe
     Var Reg_Value_Ex2_Exe
     Var Check_Python
@@ -87,10 +96,12 @@
     Var CheckState_Comtypes
     Var PathDialogue_OB
     Var PathDialogue_Nehrim
+	Var PathDialogue_Skyrim
     Var PathDialogue_Ex1
     Var PathDialogue_Ex2
     Var Browse_OB
     Var Browse_Nehrim
+	Var Browse_Skyrim
     Var Browse_Ex1
     Var Browse_Ex2
     Var Check_Readme
@@ -138,14 +149,17 @@
         StrCpy $True "True"
         ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
+		ReadRegStr $Path_Skyrim			 HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2             HKLM "Software\Wrye Bash" "Extra Path 2"
         ReadRegStr $Reg_Value_OB_Py      HKLM "Software\Wrye Bash" "Oblivion Python Version"
         ReadRegStr $Reg_Value_Nehrim_Py  HKLM "Software\Wrye Bash" "Nehrim Python Version"
+		ReadRegStr $Reg_Value_Skyrim_Py  HKLM "Software\Wrye Bash" "Skyrim Python Version"
         ReadRegStr $Reg_Value_Ex1_Py     HKLM "Software\Wrye Bash" "Extra Path 1 Python Version"
         ReadRegStr $Reg_Value_Ex2_Py     HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
         ReadRegStr $Reg_Value_OB_Exe     HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
         ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
+		ReadRegStr $Reg_Value_Skyrim_Exe HKLM "Software\Wrye Bash" "Skyrim Standalond Version"
         ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
     FunctionEnd
@@ -155,14 +169,17 @@
         StrCpy $True "True"
         ReadRegStr $Path_OB              HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim          HKLM "Software\Wrye Bash" "Nehrim Path"
+		ReadRegStr $Path_Skyrim          HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Ex1             HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2             HKLM "Software\Wrye Bash" "Extra Path 2"
         ReadRegStr $Reg_Value_OB_Py      HKLM "Software\Wrye Bash" "Oblivion Python Version"
         ReadRegStr $Reg_Value_Nehrim_Py  HKLM "Software\Wrye Bash" "Nehrim Python Version"
+		ReadRegStr $Reg_Value_Skyrim_Py  HKLM "Software\Wrye Bash" "Skyrim Python Version"
         ReadRegStr $Reg_Value_Ex1_Py     HKLM "Software\Wrye Bash" "Extra Path 1 Python Version"
         ReadRegStr $Reg_Value_Ex2_Py     HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
         ReadRegStr $Reg_Value_OB_Exe     HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
         ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
+		ReadRegStr $Reg_Value_Skyrim_Exe HKLM "Software\Wrye Bash" "Skyrim Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
 
@@ -189,6 +206,13 @@
         ${If} $Path_Nehrim != $Empty
             StrCpy $CheckState_Nehrim ${BST_CHECKED}
         ${EndIf}
+		
+		${If} $Path_Skyrim == $Empty
+		    ReadRegStr $Path_Skyrim HKLM "Software\Bethesda Softworks\Skyrim" "Installed Path"
+			${If} $Path_Skyrim == $Empty
+			    ReadRegStr $Path_Skyrim HKLM "SOFTWARE\Wow6432Node\Bethesda Softworks\Skyrim" "Installed Path"
+			${EndIf}
+		${EndIf}
 
         ${If} $Path_Ex1 != $Empty
             StrCpy $CheckState_Extra ${BST_CHECKED}
@@ -200,36 +224,44 @@
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
 
-        ${If} $Reg_Value_OB_Py == $True
-        ${OrIf} $Reg_Value_OB_Exe != $True
-            StrCpy $CheckState_OB_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_OB_Exe == $True
-            StrCpy $CheckState_OB_Exe ${BST_CHECKED}
-        ${EndIf}
+		${If} $Reg_Value_OB_Exe == $True
+		${OrIf} $Ref_Value_OB_Py != $True
+			StrCpy $CheckState_OB_Exe ${BST_CHECKED}
+		${EndIf}
+		${If} $Ref_Value_OB_Py == $True
+		    StrCpy $CheckState_OB_Py ${BST_CHECKED}
+		${EndIf}
 
-        ${If} $Reg_Value_Nehrim_Py == $True
-        ${OrIf} $Reg_Value_Nehrim_Exe != $True
-            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
-        ${EndIf}
         ${If} $Reg_Value_Nehrim_Exe == $True
+        ${OrIf} $Reg_Value_Nehrim_Py != $True
             StrCpy $CheckState_Nehrim_Exe ${BST_CHECKED}
         ${EndIf}
-
-        ${If} $Reg_Value_Ex1_Py == $True
-        ${OrIf} $Reg_Value_Ex1_Exe != $True
-            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
+        ${If} $Reg_Value_Nehrim_Py == $True
+            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
         ${EndIf}
+		
+		${If} $Reg_Value_Skyrim_Exe == $True
+		${OrIf} $Reg_Value_Skyrim_Py != $True
+		    StrCpy $CheckState_Skyrim_Exe ${BST_CHECKED}
+		${EndIf}
+		${If} $Reg_Value_Skyrim_Py == $True
+		    StrCpy $CheckState_Skyrim_Py ${BST_CHECKED}
+		${EndIf}
+
         ${If} $Reg_Value_Ex1_Exe == $True
+        ${OrIf} $Reg_Value_Ex1_Py != $True
             StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
         ${EndIf}
-
-        ${If} $Reg_Value_Ex2_Py == $True
-        ${OrIf} $Reg_Value_Ex2_Exe != $True
-            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
+        ${If} $Reg_Value_Ex1_Py == $True
+            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Reg_Value_Ex2_Exe == $True
+        ${OrIf} $Reg_Value_Ex2_Py != $True
             StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Ex2_Py == $True
+            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
         ${EndIf}
     FunctionEnd
 
@@ -253,13 +285,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Oblivion"
                 Pop $Check_OB
                 ${NSD_SetState} $Check_OB $CheckState_OB
-            ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_OB_Py
-                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
-            ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_OB_Exe
                 ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
-                IntOp $0 $0 + 13
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_OB_Py
+                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
+            IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -271,13 +303,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Nehrim"
                 Pop $Check_Nehrim
                 ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
-            ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Nehrim_Py
-                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
-            ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_Nehrim_Exe
                 ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
-                IntOp $0 $0 + 13
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_Nehrim_Py
+                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
+            IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -285,6 +317,24 @@
                 nsDialogs::OnClick $Browse_Nehrim $Function_Browse
             IntOp $0 $0 + 13
         ${EndIf}
+		${If} $Path_Skyrim != $Empty
+		    ${NSD_CreateCheckBox} 0 $0u 30% 13u "Skyrim"
+			    Pop $Check_Skyrim
+				${NSD_SetState} $Check_Skyrim $CheckState_Skyrim
+			${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+			    Pop $Check_Skyrim_Exe
+				${NSD_SetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
+			${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+			    Pop $Check_Skyrim_Py
+				${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
+			IntOp $0 $0 + 13
+			${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Skyrim"
+			    Pop $PathDialogue_Skyrim
+			${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+			    Pop $Browse_Skyrim
+				nsDialogs::OnClick $Browse_Skyrim $Function_Browse
+			IntOp $0 $0 + 13
+		${EndIf}
         ${NSD_CreateCheckBox} 0 $0u 100% 13u "Install to extra locations"
             Pop $Check_Extra
             ${NSD_SetState} $Check_Extra $CheckState_Extra
@@ -293,13 +343,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #1:"
                 Pop $Check_Ex1
                 ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
-                ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex1_Py
-                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
-                ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex1_Exe
                     ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
-                IntOp $0 $0 + 13
+                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                    Pop $Check_Ex1_Py
+                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
+				IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
                 ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -309,13 +359,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #2:"
                 Pop $Check_Ex2
                 ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
-                ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex2_Py
-                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
-                ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex2_Exe
                     ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
-                IntOp $0 $0 + 13
+                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                    Pop $Check_Ex2_Py
+                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
+				IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
                 ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -344,12 +394,14 @@
         ; Game paths
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
+		${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
         ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
 
         ; Game states
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
+		${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
@@ -357,6 +409,7 @@
         ; Python states
         ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
         ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
+		${NSD_GetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
         ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
         ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
         ${If} $CheckState_OB_Py == ${BST_CHECKED}
@@ -367,6 +420,10 @@
         ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
             StrCpy $PythonVersionInstall $True
         ${Endif}
+		${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
+		${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
+		    StrCpy $PythonVersionInstall $True
+		${EndIf}
         ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
         ${AndIf} $CheckState_Extra == ${BST_CHECKED}
         ${AndIf} $CheckState_Ex1 == ${BST_CHECKED}
@@ -381,6 +438,7 @@
         ; Standalone states
         ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
         ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
+		${NSD_GetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
         ${NSD_GetState} $Check_Ex1_Exe $CheckState_Ex1_Exe
         ${NSD_GetState} $Check_Ex2_Exe $CheckState_Ex2_Exe
         ${If} $CheckState_OB_Exe == ${BST_CHECKED}
@@ -391,6 +449,10 @@
         ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
             StrCpy $ExeVersionInstall $True
         ${Endif}
+		${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
+		${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
+		    StrCpy $ExeVersionInstall $True
+		${EndIf}
         ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
         ${AndIf} $CheckState_Extra == ${BST_CHECKED}
         ${AndIf} $CheckState_Ex1 == ${BST_CHECKED}
@@ -422,6 +484,12 @@
                 StrCpy $1 $True
             ${Endif}
         ${Endif}
+		${If} $CheckState_Skyrim == ${BST_CHECKED}
+		    ${StrLoc} $0 $Path_Skyrim "$PROGRAMFILES\" ">"
+			${If} "0" == $0
+			    StrCpy $1 $True
+			${EndIf}
+		${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${StrLoc} $0 $Path_Ex1 "$PROGRAMFILES\" ">"
             ${If} "0" == $0
@@ -720,6 +788,7 @@ NoComTypes:
 
         ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
+		ReadRegStr $Path_Skyrim HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
 
@@ -743,6 +812,11 @@ NoComTypes:
                 Pop $Check_Nehrim
             IntOp $0 $0 + 9
         ${EndIf}
+		${If} $Path_Skyrim != $Empty
+		    ${NSD_CreateCheckBox} 0 $0u 100% 8u "Skyrim"
+			    Pop $Check_Skyrim
+			IntOp $0 $0 + 9
+		${EndIf}
         ${If} $Path_Ex1 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u $Path_Ex1
                 Pop $Check_Ex1
@@ -768,6 +842,7 @@ NoComTypes:
     Function PAGE_FINISH_Leave
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
+		${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
 
@@ -787,6 +862,14 @@ NoComTypes:
                 ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
+		${If} $CheckState_Skyrim == ${BST_CHECKED}
+		    SetOutPath "$Path_Skyrim\Mopy"
+			${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
+			    ExecShell "open" '"%Path_Skyrim\Mopy\Wrye Bash Launcher.pyw"'
+			${ElseIf} $CheckState_Skyrim_Exe == ${BST_CHECKED}
+			    ExecShell "open" "$Path_Skyrim\Mopy\Wrye Bash.exe"
+			${EndIf}
+		${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             SetOutPath "$Path_Ex1\Mopy"
             ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
@@ -809,6 +892,8 @@ NoComTypes:
                 ExecShell "open" "$Path_OB\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Nehrim != $Empty
                 ExecShell "open" "$Path_Nehrim\Mopy\Wrye Bash.html"
+			${ElseIf} $Path_Skyrim != $Empty
+			    ExecShell "open" "$Path_Skyrim\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex1 != $Empty
                 ExecShell "open" "$Path_Ex1\Mopy\Wrye Bash.html"
             ${ElseIf} $Path_Ex2 != $Empty
@@ -979,6 +1064,87 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\images"
                 Delete "$Path_Nehrim\Mopy\lzma.exe"
             ${EndIf}
+			${If} $Path_Skyrim != $Empty
+                Delete "$Path_Skyrim\Data\Docs\Bashed Lists.txt"
+                Delete "$Path_Skyrim\Data\Docs\Bashed Lists.html"
+                Delete "$Path_Skyrim\Mopy\Data\Actor Levels\*"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Autosave, Never.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Autosave, ~Always.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Border Regions, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Border Regions, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Fonts 1, ~Default.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Fonts, ~Default.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Grass, Fade 4k-5k.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Intro Movies, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Intro Movies, Normal.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Joystick, ~Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Joystick, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Local Map Shader, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Local Map Shader, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Music, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Music, Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Refraction Shader, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Refraction Shader, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 1.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 2.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 3.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 5.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Screenshot, ~Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Screenshot, ~ENabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, 1024.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, 256 [default].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 8.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 16.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 24.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 48.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 64.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 96.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 128.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound, Enabled.ini"
+                RMDir "$Path_Skyrim\Mopy\Data\Actor Levels"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 15_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 30_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 30_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Roads Revamped_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Roads Revisited_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Roads Revisited_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\PTRoamingNPCs_Names.csv"
+                ;As of 294 the below are obselete locations or files.
+                Delete "$Path_Skyrim\Mopy\7z.*"
+                Delete "$Path_Skyrim\Mopy\CBash.dll"
+                Delete "$Path_Skyrim\Mopy\Data\Italian.*"
+                Delete "$Path_Skyrim\Mopy\Data\Oblivion_ids.pkl"
+                Delete "$Path_Skyrim\Mopy\Data\Russian.*"
+                Delete "$Path_Skyrim\Mopy\Data\de.*"
+                Delete "$Path_Skyrim\Mopy\Data\pt_opt.*"
+                Delete "$Path_Skyrim\Mopy\Data\Actor Levels\OOO, 1.23 Mincapped.csv"
+                Delete "$Path_Skyrim\Mopy\Data\Actor Levels\OOO, 1.23 Uncapped.csv"
+                RMDir  "$Path_Skyrim\Mopy\Data\Actor Levels"
+                RMDir  "$Path_Skyrim\Mopy\Data"
+                Delete "$Path_Skyrim\Mopy\DebugLog(Python2.6).bat"
+                Delete "$Path_Skyrim\Mopy\Extras\*"
+                RMDir  "$Path_Skyrim\Mopy\Extras"
+                Delete "$Path_Skyrim\Mopy\ScriptParser.p*"
+                Delete "$Path_Skyrim\Mopy\balt.p*"
+                Delete "$Path_Skyrim\Mopy\barb.p*"
+                Delete "$Path_Skyrim\Mopy\barg.p*"
+                Delete "$Path_Skyrim\Mopy\bash.p*"
+                Delete "$Path_Skyrim\Mopy\basher.p*"
+                Delete "$Path_Skyrim\Mopy\bashmon.p*"
+                Delete "$Path_Skyrim\Mopy\belt.p*"
+                Delete "$Path_Skyrim\Mopy\bish.p*"
+                Delete "$Path_Skyrim\Mopy\bolt.p*"
+                Delete "$Path_Skyrim\Mopy\bosh.p*"
+                Delete "$Path_Skyrim\Mopy\bush.p*"
+                Delete "$Path_Skyrim\Mopy\cint.p*"
+                Delete "$Path_Skyrim\Mopy\gpl.txt"
+                Delete "$Path_Skyrim\Mopy\images\*"
+                RMDir  "$Path_Skyrim\Mopy\images"
+                Delete "$Path_Skyrim\Mopy\lzma.exe"
+			${EndIf}
             ${If} $Path_Ex1 != $Empty
                 Delete "$Path_Ex1\Data\Docs\Bashed Lists.txt"
                 Delete "$Path_Ex1\Data\Docs\Bashed Lists.html"
@@ -1154,6 +1320,8 @@ NoComTypes:
             StrCpy $1 $PathDialogue_OB
         ${ElseIf} $0 == $Browse_Nehrim
             StrCpy $1 $PathDialogue_Nehrim
+		${ElseIf} $0 == $Browse_Skyrim
+		    StrCpy $1 $PathDialogue_Skyrim
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
@@ -1284,6 +1452,33 @@ NoComTypes:
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+		${If} $CheckState_Skyrim == ${BST_CHECKED}
+			; Install resources:
+			${If} Path_Skyrim != $Empty
+			    SetOutPath $Path_Skyrim\Mopy
+				File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+				SetOutPath $Path_Skyrim\Data
+				File /r /x "*.svn*" "Data\*.*"
+				; Write the installation path into the registry
+				WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Path" "$Path_Skyrim"
+				${If} $CheckState_Skyrim == ${BST_CHECKED}
+				    SetOutPath "$Path_Skyrim\Mopy"
+					File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
+					; Write the installation path into the registry
+					WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version" "True"
+				${ElseIf} $Reg_Value_Skyrim_Py == $Empty ; id don't overwrite it if it is installed but just not being installed that way this time.
+					WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version" ""
+				${EndIf}
+				${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
+				    SetOutPath "$Path_Skyrim\Mopy"
+					File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+					; Write the installation path into the registry
+					WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalone Version" "True"
+				${ElseIf} $Reg_Value_Skyrim_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
+					WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalond Version" ""
+				${EndIf}
+			${EndIf}
+		${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Ex1 != $Empty
@@ -1398,6 +1593,22 @@ NoComTypes:
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+		${If} $CheckState_Skyrim == ${BST_CHECKED}
+		    ${If} Path_Skyrim != $Empty
+			    SetOutPath $Path_Skyrim\Mopy
+				${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
+				    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim.lnk" "$Path_Skyrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Skyrim\Mopy\bash\images\bash_32.ico" 0
+					CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim (Debug Log).lnk" "$Path_Skyrim\Mopy\Wrye Bash Debug.bat" "" "$Path_Skyrim\Mopy\bash\images\bash_32.ico" 0
+					${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Skyrim.lnk" "$Path_Skyrim\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Skyrim (Debug Log).lnk" "$Path_Skyrim\Mopy\Wrye Bash.exe" "-d"
+                    ${EndIf}
+                ${ElseIf} $CheckState_Skyrim_Exe == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim.lnk" "$Path_Skyrim\Mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim (Debug Log).lnk" "$Path_Skyrim\Mopy\Wrye Bash.exe" "-d"
+                ${EndIf}
+            ${EndIf}
+        ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
@@ -1471,6 +1682,18 @@ NoComTypes:
                 nsDialogs::OnClick $Browse_Nehrim $Function_Browse
             IntOp $0 $0 + 13
         ${EndIf}
+		${If} $Path_Skyrim != $Empty
+		    ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Skyrim"
+			    Pop $Check_Skyrim
+				${NSD_SetState} $Check_Skyrim $CheckState_Skyrim
+			IntOp $0 $0 + 13
+			${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Skyrim"
+				Pop $PathDialogue_Skyrim
+			${NSD_CreateBrowseButton} -10% %0u 5% 13u "..."
+			    Pop $Browse_Skyrim
+				nsDialogs::OnClick $Browse_Skyrim $Function_Browse
+			IntOp $0 $0 + 13
+		${EndIf}
         ${If} $Path_Ex1 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 13u "Extra Location 1"
                 Pop $Check_Ex1
@@ -1504,10 +1727,12 @@ NoComTypes:
     Function un.PAGE_SELECT_GAMES_Leave
         ${NSD_GetText} $PathDialogue_OB $Path_OB
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
+		${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
         ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
+		${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
@@ -1519,6 +1744,8 @@ NoComTypes:
             StrCpy $1 $PathDialogue_OB
         ${ElseIf} $0 == $Browse_Nehrim
             StrCpy $1 $PathDialogue_Nehrim
+		${ElseIf} $0 == $Browse_Skyrim
+		    StrCpy $1 $PathDialogue_Skyrim
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
@@ -1953,6 +2180,213 @@ NoComTypes:
                 Delete "$SMPROGRAMS\Wrye Bash\*Nehrim*"
             ${EndIf}
         ${EndIf}
+        ${If} $CheckState_Skyrim == ${BST_CHECKED}
+            ${If} $Path_Skyrim != $Empty
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Skyrim Path"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version"
+                DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalone Version"
+                ;First delete OLD version files:
+                Delete "$Path_Skyrim\Data\Docs\Bashed Lists.txt"
+                Delete "$Path_Skyrim\Data\Docs\Bashed Lists.html"
+                Delete "$Path_Skyrim\Mopy\uninstall.exe"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Autosave, Never.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Autosave, ~Always.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Border Regions, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Border Regions, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Fonts 1, ~Default.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Fonts, ~Default.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Grass, Fade 4k-5k.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Intro Movies, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Intro Movies, Normal.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Joystick, ~Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Joystick, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Local Map Shader, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Local Map Shader, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Music, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Music, Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Refraction Shader, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Refraction Shader, ~Enabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 1.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 2.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 3.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 5.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Screenshot, ~Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Screenshot, ~ENabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, 1024.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, 256 [default].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 8.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 16.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 24.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 48.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 64.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 96.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 128.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 192.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, ~ [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels,  [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound, Disabled.ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound, Enabled.ini"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 15_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 30_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 30_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Roads Revamped_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Roads Revisited_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Crowded Roads Revisited_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\PTRoamingNPCs_Names.csv"
+                ;As of 294 the below are obselete locations or files.
+                Delete "$Path_Skyrim\Mopy\7z.*"
+                Delete "$Path_Skyrim\Mopy\CBash.dll"
+                Delete "$Path_Skyrim\Mopy\Data\Italian.*"
+                Delete "$Path_Skyrim\Mopy\Data\Oblivion_ids.pkl"
+                Delete "$Path_Skyrim\Mopy\Data\Russian.*"
+                Delete "$Path_Skyrim\Mopy\Data\de.*"
+                Delete "$Path_Skyrim\Mopy\Data\pt_opt.*"
+                Delete "$Path_Skyrim\Mopy\Data\Actor Levels\OOO, 1.23 Mincapped.csv"
+                Delete "$Path_Skyrim\Mopy\Data\Actor Levels\OOO, 1.23 Uncapped.csv"
+                RMDir  "$Path_Skyrim\Mopy\Data\Actor Levels"
+                RMDir  "$Path_Skyrim\Mopy\Data"
+                Delete "$Path_Skyrim\Mopy\DebugLog(Python2.6).bat"
+                Delete "$Path_Skyrim\Mopy\Extras\*"
+                Delete "$Path_Skyrim\Mopy\ScriptParser.p*"
+                Delete "$Path_Skyrim\Mopy\balt.p*"
+                Delete "$Path_Skyrim\Mopy\barb.p*"
+                Delete "$Path_Skyrim\Mopy\barg.p*"
+                Delete "$Path_Skyrim\Mopy\bash.p*"
+                Delete "$Path_Skyrim\Mopy\basher.p*"
+                Delete "$Path_Skyrim\Mopy\bashmon.p*"
+                Delete "$Path_Skyrim\Mopy\belt.p*"
+                Delete "$Path_Skyrim\Mopy\bish.p*"
+                Delete "$Path_Skyrim\Mopy\bolt.p*"
+                Delete "$Path_Skyrim\Mopy\bosh.p*"
+                Delete "$Path_Skyrim\Mopy\bush.p*"
+                Delete "$Path_Skyrim\Mopy\cint.p*"
+                Delete "$Path_Skyrim\Mopy\gpl.txt"
+                Delete "$Path_Skyrim\Mopy\images\*"
+                RMDir  "$Path_Skyrim\Mopy\images"
+                Delete "$Path_Skyrim\Mopy\lzma.exe"
+                ;Current files:
+                Delete "$Path_Skyrim\Data\ArchiveInvalidationInvalidated!.bsa"
+                Delete "$Path_Skyrim\Data\Bash Patches\Assorted to Cobl.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Assorted_Exhaust.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Bash_Groups.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Bash_MFact.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\ShiveringIsleTravellers_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\TamrielTravellers_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Guard_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Kmacg94_Exhaust.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\P1DCandles_Formids.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\OOO_Potion_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Random_NPC_Alternate_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Random_NPC_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\Rational_Names.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\TI to Cobl_Formids.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\taglist.txt"
+                Delete "$Path_Skyrim\Data\Bash Patches\OOO, 1.23 Mincapped_NPC_Levels.csv"
+                Delete "$Path_Skyrim\Data\Bash Patches\OOO, 1.23 Uncapped_NPC_Levels.csv"
+                Delete "$Path_Skyrim\Data\Docs\Bash Readme Template.html"
+                Delete "$Path_Skyrim\Data\Docs\Bash Readme Template.txt"
+                Delete "$Path_Skyrim\Data\Docs\wtxt_sand_small.css"
+                Delete "$Path_Skyrim\Data\Docs\wtxt_teal.css"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Autosave, Never [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Autosave, ~Always [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Border Regions, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Border Regions, ~Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Fonts 1, ~Default [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Fonts, ~Default [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Grass, Fade 4k-5k [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Grass, ~Fade 2k-3k [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Intro Movies, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Intro Movies, ~Normal [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Joystick, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Joystick, ~Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Local Map Shader, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Local Map Shader, ~Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Music, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Music, ~Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Refraction Shader, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Refraction Shader, ~Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 1 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 2 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 3 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Save Backups, 5 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Screenshot, Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
+                Delete "$Path_Skyrim\Mopy\bash\*.bat"
+                Delete "$Path_Skyrim\Mopy\bash\db\Oblivion_ids.pkl"
+                Delete "$Path_Skyrim\Mopy\bash\images\*"
+                Delete "$Path_Skyrim\Mopy\bash\l10n\de.*"
+                Delete "$Path_Skyrim\Mopy\bash\l10n\Italian.*"
+                Delete "$Path_Skyrim\Mopy\bash\l10n\pt_opt.*"
+                Delete "$Path_Skyrim\Mopy\bash\l10n\Russian.*"
+                Delete "$Path_Skyrim\Mopy\bash\compiled\lzma.exe"
+                Delete "$Path_Skyrim\Mopy\bash\compiled\7z.dll"
+                Delete "$Path_Skyrim\Mopy\bash\compiled\7z*exe"
+                Delete "$Path_Skyrim\Mopy\bash\Rename_CBash.dll"
+                Delete "$Path_Skyrim\Mopy\bash\compiled\CBash.dll"
+                Delete "$Path_Skyrim\Mopy\bash\ScriptParser.p*"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash Debug.p*"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash Launcher.p*"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash.html"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash.txt"
+                Delete "$Path_Skyrim\Mopy\bash\__init__.p*"
+                Delete "$Path_Skyrim\Mopy\bash\balt.p*"
+                Delete "$Path_Skyrim\Mopy\bash\barb.p*"
+                Delete "$Path_Skyrim\Mopy\bash\barg.p*"
+                Delete "$Path_Skyrim\Mopy\bash\bash.p*"
+                Delete "$Path_Skyrim\Mopy\bash_default.ini"
+                Delete "$Path_Skyrim\Mopy\bash_default_Russian.ini"
+                Delete "$Path_Skyrim\Mopy\bash.ini"
+                Delete "$Path_Skyrim\Mopy\bash\basher.p*"
+                Delete "$Path_Skyrim\Mopy\bash\bashmon.p*"
+                Delete "$Path_Skyrim\Mopy\bash\belt.p*"
+                Delete "$Path_Skyrim\Mopy\bash\bish.p*"
+                Delete "$Path_Skyrim\Mopy\bash\bolt.p*"
+                Delete "$Path_Skyrim\Mopy\bash\bosh.p*"
+                Delete "$Path_Skyrim\Mopy\bash\bush.p*"
+                Delete "$Path_Skyrim\Mopy\bash\cint.p*"
+                Delete "$Path_Skyrim\Mopy\bash\gpl.txt"
+                Delete "$Path_Skyrim\Mopy\w9xpopen.exe"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash.exe"
+                Delete "$Path_Skyrim\Mopy\wizards.html"
+                Delete "$Path_Skyrim\Mopy\wizards.txt"
+                Delete "$Path_Skyrim\Mopy\license.txt"
+                Delete "$Path_Skyrim\Mopy\DebugLog(Python2.7).bat"
+                Delete "$Path_Skyrim\Mopy\patch_option_reference.txt"
+                Delete "$Path_Skyrim\Mopy\patch_option_reference.html"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash.exe"
+                Delete "$Path_Skyrim\Mopy\w9xpopen.exe"
+                Delete "$Path_Skyrim\Mopy\Wizard Images\*.*"
+                Delete "$Path_Skyrim\Mopy\templates\*"
+                RMDir  "$Path_Skyrim\Mopy\bash\l10n"
+                RMDir  "$Path_Skyrim\Mopy\bash\compiled"
+                RMDir  "$Path_Skyrim\Mopy\bash\db"
+                RMDir  "$Path_Skyrim\Mopy\bash\images"
+                RMDir  "$Path_Skyrim\Mopy\bash"
+                RMDir  "$Path_Skyrim\Mopy\Apps"
+                RMDir  "$Path_Skyrim\Mopy\templates"
+                RMDir  "$Path_Skyrim\Mopy\Wizard Images"
+                RMDir  "$Path_Skyrim\Mopy"
+                RMDir  "$Path_Skyrim\Data\Docs"
+                RMDir  "$Path_Skyrim\Data\Bash Patches"
+                RMDir  "$Path_Skyrim\Data\Ini Tweaks"
+                Delete "$SMPROGRAMS\Wrye Bash\*Skyrim*"
+            ${EndIf}
+        ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} $Path_Ex1 != $Empty
                 DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
@@ -2372,31 +2806,30 @@ NoComTypes:
         ;If it is a complete uninstall remove the shared data:
         ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
+		ReadRegStr $Path_Skyrim HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
         ${If} $Path_OB == $Empty
-            ${If} $Path_Nehrim == $Empty
-                ${If} $Path_Ex1 == $Empty
-                    ${If} $Path_Ex2 == $Empty
-                        DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash"
-                        ReadRegStr $0 HKLM "Software\Wrye Bash" "Installer Path"
-                        DeleteRegKey HKLM "SOFTWARE\Wrye Bash"
-                        ;Delete stupid Windows created registry keys:
-                            DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\App Management\ARPCache\Wrye Bash"
-                            DeleteRegValue HKCR "Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$COMMONFILES\Wrye Bash\Uninstall.exe"
-                            DeleteRegValue HKCU "Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$COMMONFILES\Wrye Bash\Uninstall.exe"
-                            DeleteRegValue HKCU "Software\Microsoft\Windows\ShellNoRoam\MuiCache" "$COMMONFILES\Wrye Bash\Uninstall.exe"
-                            DeleteRegValue HKCR "Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$0"
-                            DeleteRegValue HKCU "Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$0"
-                            DeleteRegValue HKCU "Software\Microsoft\Windows\ShellNoRoam\MuiCache" "$0"
-                        Delete "$SMPROGRAMS\Wrye Bash\*.*"
-                        RMDir "$SMPROGRAMS\Wrye Bash"
-                        Delete "$COMMONFILES\Wrye Bash\*.*"
-                        RMDir "$COMMONFILES\Wrye Bash"
-                    ${EndIf}
-                ${EndIf}
-            ${EndIf}
-        ${EndIf}
+		${AndIf} $Path_Nehrim == $Empty
+		${AndIf} $Path_Skyrim == $Empty
+		${AndIf} $Path_Ex1 == $Empty
+		${AndIf} $Path_Ex2 == $Empty
+            DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash"
+			ReadRegStr $0 HKLM "Software\Wrye Bash" "Installer Path"
+			DeleteRegKey HKLM "SOFTWARE\Wrye Bash"
+			;Delete stupid Windows created registry keys:
+				DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\App Management\ARPCache\Wrye Bash"
+				DeleteRegValue HKCR "Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$COMMONFILES\Wrye Bash\Uninstall.exe"
+				DeleteRegValue HKCU "Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$COMMONFILES\Wrye Bash\Uninstall.exe"
+				DeleteRegValue HKCU "Software\Microsoft\Windows\ShellNoRoam\MuiCache" "$COMMONFILES\Wrye Bash\Uninstall.exe"
+				DeleteRegValue HKCR "Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$0"
+				DeleteRegValue HKCU "Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$0"
+				DeleteRegValue HKCU "Software\Microsoft\Windows\ShellNoRoam\MuiCache" "$0"
+			Delete "$SMPROGRAMS\Wrye Bash\*.*"
+			RMDir "$SMPROGRAMS\Wrye Bash"
+			Delete "$COMMONFILES\Wrye Bash\*.*"
+			RMDir "$COMMONFILES\Wrye Bash"
+		${EndIf}
     SectionEnd
 
 
