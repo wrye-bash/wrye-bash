@@ -39,6 +39,7 @@
     Var True
     Var Path_OB
     Var Path_Nehrim
+	Var Path_Skyrim
     Var Path_Ex1
     Var Path_Ex2
 
@@ -178,7 +179,7 @@
         ReadRegStr $Reg_Value_Ex2_Py     HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
         ReadRegStr $Reg_Value_OB_Exe     HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
         ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
-		ReadRegStr $Reg_Value_Skryim_Exe HKLM "Software\Wrye Bash" "Skyrim Standalone Version"
+		ReadRegStr $Reg_Value_Skyrim_Exe HKLM "Software\Wrye Bash" "Skyrim Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
 
@@ -223,44 +224,44 @@
             StrCpy $CheckState_Ex2 ${BST_CHECKED}
         ${EndIf}
 
-        ${If} $Reg_Value_OB_Py == $True
-        ${OrIf} $Reg_Value_OB_Exe != $True
-            StrCpy $CheckState_OB_Py ${BST_CHECKED}
-        ${EndIf}
-        ${If} $Reg_Value_OB_Exe == $True
-            StrCpy $CheckState_OB_Exe ${BST_CHECKED}
-        ${EndIf}
+		${If} $Reg_Value_OB_Exe == $True
+		${OrIf} $Ref_Value_OB_Py != $True
+			StrCpy $CheckState_OB_Exe ${BST_CHECKED}
+		${EndIf}
+		${If} $Ref_Value_OB_Py == $True
+		    StrCpy $CheckState_OB_Py ${BST_CHECKED}
+		${EndIf}
 
-        ${If} $Reg_Value_Nehrim_Py == $True
-        ${OrIf} $Reg_Value_Nehrim_Exe != $True
-            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
-        ${EndIf}
         ${If} $Reg_Value_Nehrim_Exe == $True
+        ${OrIf} $Reg_Value_Nehrim_Py != $True
             StrCpy $CheckState_Nehrim_Exe ${BST_CHECKED}
         ${EndIf}
+        ${If} $Reg_Value_Nehrim_Py == $True
+            StrCpy $CheckState_Nehrim_Py ${BST_CHECKED}
+        ${EndIf}
 		
-		${If} $Reg_Value_Skyrim_Py == $True
-		${OrIf} $Reg_Value_Skyrim_Exe != $True
-		    StrCpy $CheckState_Skyrim_Py ${BST_CHECKED}
-		${EndIf}
 		${If} $Reg_Value_Skyrim_Exe == $True
+		${OrIf} $Reg_Value_Skyrim_Py != $True
 		    StrCpy $CheckState_Skyrim_Exe ${BST_CHECKED}
 		${EndIf}
+		${If} $Reg_Value_Skyrim_Py == $True
+		    StrCpy $CheckState_Skyrim_Py ${BST_CHECKED}
+		${EndIf}
 
-        ${If} $Reg_Value_Ex1_Py == $True
-        ${OrIf} $Reg_Value_Ex1_Exe != $True
-            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
-        ${EndIf}
         ${If} $Reg_Value_Ex1_Exe == $True
+        ${OrIf} $Reg_Value_Ex1_Py != $True
             StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
         ${EndIf}
 
-        ${If} $Reg_Value_Ex2_Py == $True
-        ${OrIf} $Reg_Value_Ex2_Exe != $True
-            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
+        ${If} $Reg_Value_Ex1_Py == $True
+            StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
         ${EndIf}
         ${If} $Reg_Value_Ex2_Exe == $True
+        ${OrIf} $Reg_Value_Ex2_Py != $True
             StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Ex2_Py == $True
+            StrCpy $CheckState_Ex2_Py ${BST_CHECKED}
         ${EndIf}
     FunctionEnd
 
@@ -284,13 +285,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Oblivion"
                 Pop $Check_OB
                 ${NSD_SetState} $Check_OB $CheckState_OB
-            ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_OB_Py
-                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
-            ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_OB_Exe
                 ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
-                IntOp $0 $0 + 13
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_OB_Py
+                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
+            IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -302,13 +303,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Nehrim"
                 Pop $Check_Nehrim
                 ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
-            ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_Nehrim_Py
-                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
-            ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_Nehrim_Exe
                 ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
-                IntOp $0 $0 + 13
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_Nehrim_Py
+                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
+            IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -320,15 +321,15 @@
 		    ${NSD_CreateCheckBox} 0 $0u 30% 13u "Skyrim"
 			    Pop $Check_Skyrim
 				${NSD_SetState} $Check_Skyrim $CheckState_Skyrim
-			${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-			    Pop $Check_Skyrim_Py
-				${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
-			${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+			${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
 			    Pop $Check_Skyrim_Exe
 				${NSD_SetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
-				IntOp $0 $0 + 13
+			${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+			    Pop $Check_Skyrim_Py
+				${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
+			IntOp $0 $0 + 13
 			${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Skyrim"
-			    Pop $PathDialog_Skyrim
+			    Pop $PathDialogue_Skyrim
 			${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
 			    Pop $Browse_Skyrim
 				nsDialogs::OnClick $Browse_Skyrim $Function_Browse
@@ -342,13 +343,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #1:"
                 Pop $Check_Ex1
                 ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
-                ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex1_Py
-                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
-                ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex1_Exe
                     ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
-                IntOp $0 $0 + 13
+                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                    Pop $Check_Ex1_Py
+                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
+				IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
                 ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -358,13 +359,13 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #2:"
                 Pop $Check_Ex2
                 ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
-                ${NSD_CreateCheckBox} 30% $0u 30% 13u "Wrye Bash [Python]"
-                    Pop $Check_Ex2_Py
-                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
-                ${NSD_CreateCheckBox} 60% $0u 40% 13u "Wrye Bash [Standalone]"
+                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex2_Exe
                     ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
-                IntOp $0 $0 + 13
+                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                    Pop $Check_Ex2_Py
+                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
+				IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
                 ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
@@ -408,7 +409,7 @@
         ; Python states
         ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
         ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
-		${NSD_GetState} $Check_Skyrim_Py $CheckStaet_Skyrim_Py
+		${NSD_GetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
         ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
         ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
         ${If} $CheckState_OB_Py == ${BST_CHECKED}
@@ -787,7 +788,7 @@ NoComTypes:
 
         ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
         ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
-		ReadRegStr $Path_Skryim HKLM "Software\Wrye Bash" "Skyrim Path"
+		ReadRegStr $Path_Skyrim HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
 
@@ -1460,15 +1461,15 @@ NoComTypes:
 				File /r /x "*.svn*" "Data\*.*"
 				; Write the installation path into the registry
 				WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Path" "$Path_Skyrim"
-				${If} $CheckState_Skryim == ${BST_CHECKED}
+				${If} $CheckState_Skyrim == ${BST_CHECKED}
 				    SetOutPath "$Path_Skyrim\Mopy"
 					File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
 					; Write the installation path into the registry
 					WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version" "True"
-				${ElseIf} $Reg_Value_Skryim_Py == $Empty ; id don't overwrite it if it is installed but just not being installed that way this time.
+				${ElseIf} $Reg_Value_Skyrim_Py == $Empty ; id don't overwrite it if it is installed but just not being installed that way this time.
 					WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version" ""
 				${EndIf}
-				${If} $CheckState_Skryim_Exe == ${BST_CHECKED}
+				${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
 				    SetOutPath "$Path_Skyrim\Mopy"
 					File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
 					; Write the installation path into the registry
@@ -1593,9 +1594,9 @@ NoComTypes:
             ${EndIf}
         ${EndIf}
 		${If} $CheckState_Skyrim == ${BST_CHECKED}
-		    ${If} Path_Skryim != $Empty
+		    ${If} Path_Skyrim != $Empty
 			    SetOutPath $Path_Skyrim\Mopy
-				${If} $CheckState_Skryim_Py == ${BST_CHECKED}
+				${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
 				    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim.lnk" "$Path_Skyrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Skyrim\Mopy\bash\images\bash_32.ico" 0
 					CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim (Debug Log).lnk" "$Path_Skyrim\Mopy\Wrye Bash Debug.bat" "" "$Path_Skyrim\Mopy\bash\images\bash_32.ico" 0
 					${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
