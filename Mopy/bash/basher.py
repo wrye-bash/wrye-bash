@@ -16192,11 +16192,12 @@ def InitStatusBar():
         Oblivion_Button(
             bosh.dirs['app'].join(bush.game.exe),
             imageList('%s%%s.png' % bush.game.name.lower()),
-            _("Launch") + ' %s' % bush.game.name,
-            _("Launch") + ' %s %%(version)s' % bush.game.name,
+            _("Launch") + ' ' + bush.game.name,
+            _("Launch") + ' ' + bush.game.name + ' %(version)s',
             '',
             uid = 'Oblivion'))
     BashStatusBar.buttons.append( # 4GB Loader
+        # In the future, will want to incorperate this into the Oblivion_Button
         App_Button(
             bosh.dirs['app'].join('skyrim4gb.exe'),
             imageList('4gb%s.png'),
@@ -16206,7 +16207,7 @@ def InitStatusBar():
             bosh.dirs['app'].join(bush.game.cs.exe),
             imageList(bush.game.cs.imageName),
             _("Launch") + ' ' + bush.game.cs.shortName,
-            _("Launch") + ' ' + bush.game.cs.shortName + "%(version)s",
+            _("Launch") + ' ' + bush.game.cs.shortName + ' %(version)s',
             bush.game.cs.seArgs,
             uid='TESCS'))
     BashStatusBar.buttons.append( #OBMM
@@ -17265,7 +17266,10 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
     SettingsMenu.append(Settings_UseAltName())
-    SettingsMenu.append(Settings_CheckForUpdates())
+    if not hasattr(sys,'frozen'):
+        # py2exe messes with the multiprocessing some how,
+        # need to investigate and figure out a way to make it work correctly
+        SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
     """Call other link initializers."""
