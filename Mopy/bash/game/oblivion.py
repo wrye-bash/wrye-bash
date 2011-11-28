@@ -44,6 +44,15 @@ patchTip = 'http://www.elderscrolls.com/'
 #--Wrye Bash capabilities with this game
 canBash = True
 canEditSaves = True
+
+#--Construction Set information
+class cs:
+    shortName = 'TESCS'             # Abbreviated name
+    longName = 'Construction Set'   # Full name
+    exe = 'TESConstructionSet.exe'  # Executable to run
+    seArgs = '-editor'              # Argument to pass to the SE to load the CS
+    imageName = 'tescs%s.png'       # Image name template for the status bar
+
 #--Script Extender information
 class se:
     shortName = 'OBSE'                      # Abbreviated name

@@ -40,6 +40,14 @@ regInstallKeys = [
 patchURL = '' # Update via steam
 patchTip = 'Update via Steam'
 
+#--Creation Kit Set information
+class cs:
+    shortName = 'CK'                # Abbreviated name
+    longName = 'Creation Kit'       # Full name
+    exe = 'CreationKit.exe'         # Executable to run
+    seArgs = '-editor'              # Argument to pass to the SE to load the CS
+    imageName = 'tescs%s.png'       # Image name template for the status bar
+
 #--Script Extender information
 class se:
     shortName = 'SKSE'                      # Abbreviated name

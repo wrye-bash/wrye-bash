@@ -39,35 +39,43 @@ exe = ''
 ##  HKCU\Software\Wow6432Node
 regInstallKeys = [
     ]
-	
+
 #--Patch information
 ## URL to download patches for the main game.
 patchURL = ''
 ## Tooltip to display over the URL when displayed
 patchTip = ''
 
+#--Construction Set information
+class cs:
+    shortName = ''                  # Abbreviated name
+    longName = ''                   # Full name
+    exe = '*DNE*'                   # Executable to run
+    seArgs = ''                     # Argument to pass to the SE to load the CS
+    imageName = ''                  # Image name template for the status bar
+
 #--Script Extender information
 class se:
     shortName = ''       # Abbreviated name.  If this is empty, it signals that no SE is available
-	longname = ''        # Full name
-	exe = ''             # Exe to run
-	steamExe = ''        # Exe to run if a steam install
-	url = ''             # URL to download from
-	urlTip = ''          # Tooltip for mouse over the URL
-	
+    longname = ''        # Full name
+    exe = ''             # Exe to run
+    steamExe = ''        # Exe to run if a steam install
+    url = ''             # URL to download from
+    urlTip = ''          # Tooltip for mouse over the URL
+
 #--Graphics Extender information
 class ge:
     shortName = ''
-	longName = ''
-	## exe is treated specially here.  If it is a string, then it should
-	## be the path relative to the root directory of the game
-	## if it is list, each list element should be an iterable to pass to Path.join
-	## relative to the root directory of the game.  In this case, each filename
-	## will be tested in reverse order.  This was required for Oblivion, as the newer
-	## OBGE has a different filename than the older OBGE
-	exe = ''
-	url = ''
-	urlTip = ''
+    longName = ''
+    ## exe is treated specially here.  If it is a string, then it should
+    ## be the path relative to the root directory of the game
+    ## if it is list, each list element should be an iterable to pass to Path.join
+    ## relative to the root directory of the game.  In this case, each filename
+    ## will be tested in reverse order.  This was required for Oblivion, as the newer
+    ## OBGE has a different filename than the older OBGE
+    exe = ''
+    url = ''
+    urlTip = ''
 
 #--Wrye Bash capabilities with this game
 ## True/False
