@@ -420,6 +420,13 @@ The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButt
 * __Export list of allowed/disallowed OBSE plugin dlls:__ This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
 * __Import list of allowed/disallowed OBSE plugin dlls:__ This will import the list of Good/Bad OBSE dll definitions from a text file.
 * __Colors:__ Brings up the [[#|Colors Dialog]].
+* __Tabs:__ Select which Tabs are shown in the UI.
+* __Status Bar:__
+  * __Icon Size:__ Choose between 16x16, 24x24, or 32x32 Status Bar Icons.
+  * __Unhide Buttons:__ Unhide Status Bar buttons that you have hidden.
+  * __Show App Version:__ Shows the version of the Application in its tooltip.
+* __Use Alternate Wrye Bash Name:__ If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for <game name>".
+* __Check for updates:__ Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
 
 === Colors Dialog
 <img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
@@ -2405,7 +2412,42 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 **All versions by Wrye unless otherwise noted.**
 
 === 296 [XX/X/2011]
+* CBash updated to version 0.6
+
+=== 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
+* Skyrim support added:
+  * Can read basic information from Skyrim mods (author and description)
+  * Can read basic save game information (player name, level, play time)
+  * Can modify your Load Order
+    * Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.
+  * [[#InstallersTab|BAIN]] is supported, including the standard directories and SKSE plugins.
 * UI Improvements:
+  * Customizible Status Bar and Tabs:
+    * Drag and drop reordering
+    * Hideable
+* Bugfixes:
+  * Fixed a few [[#INIEditsTab|INI Edits]] tab related startup crashes.
+  * More information should be displayed when Wrye Bash fails to startup.
+  * More information is displayed in debug mode when a Tab fails to initialize.
+  * Fixed a crash on startup bug when no plugins are found in the Data directory.
+* [[wizards.html|BAIN Wizards]]:
+  * New function [[wizards.html#CompareGameVersion|[color=purple]CompareGameVersion[/color]]] replaces the older [[wizards.html#CompareObVersion|[color=purple]CompareObVersion[/color]]].  The older function is retained for backwards compatibility only.
+  * New function [[wizards.html#CompareSEVersion|[color=purple]CompareSEVersion[/color]]] replaces the older [[wizards.html#CompareOBSEVersion|[color=purple]CompareOBSEVersion[/color]]].  The older function is retained for backwards compatibility only.
+  * New function [[wizards.html#CompareGEVersion|[color=purple]CompareGEVersion[/color]]] replaces the older [[wizards.html#CompareGEVersion|[color=purple]CompareOBGEVersion[/color]]].  The older function is retained for backwards compatibility only.
+* Changes to the installation requirements:
+  * You may still install Wrye Bash to "path.to.you.game\Mopy" as before, and it will function normally.
+  * You may also install Wrye Bash to any other location.  In that case, here is how it will decide what game to manage:
+    * Read the Windows Registry to see what supported games you have installed.
+    * Also check one directory up relative to Wrye Bash to see if it contains a supported game.
+    * If only one supported game is detected:  Wrye Bash will manage that game.
+    * If multiple supported games are detected:
+      * If the '-g' command line argument is used, Wrye Bash will manage the game specified by '-g'.
+      * If the '-o' command line argument is specified, Wrye Bash will manage the game in the location specified by '-o'.
+      * If Wrye Bash is installed as a sub-directory to a detected game, Wrye Bash will manage that game.
+      * Finally, Wrye Bash will display a prompt asking which game to manage.
+* New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:
+  .  [code]"Wrye Bash.exe" -g oblivion[/code]
+  .  Will tell Wrye Bash to manage your Oblivion installation.  
 
 
 === 295 [30/9/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]
