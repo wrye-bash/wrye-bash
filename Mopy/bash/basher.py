@@ -204,6 +204,7 @@ settingDefaults = {
     'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
     'bash.page':1,
+    'bash.useAltName':True,
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -2285,7 +2286,6 @@ class INIPanel(SashPanel):
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
-        # Debug prints to track down a bug
         self.CheckTargets()
         self.lastDir = bosh.dirs['mods'].s
         self.SortChoices()
@@ -5159,10 +5159,12 @@ class BashFrame(wx.Frame):
         """Set title. Set to default if no title supplied."""
         if not title:
             ###Remove from Bash after CBash integrated
-            title = "Wrye Bash %s%s for %s" % (
-                settings['bash.readme'][1],
-                '(Standalone)' if settings['bash.standalone'] else '',
-                bush.game.name)
+            if bush.game.altName and settings['bash.useAltName']:
+                title = bush.game.altName + " %s%s"
+            else:
+                title = "Wrye Bash %s%s for " + bush.game.name
+            title = title % (settings['bash.readme'][1],
+                '(Standalone)' if settings['bash.standalone'] else '')
             if CBash:
                 title += ', CBash v%u.%u.%u: ' % (
                     CBash.GetVersionMajor(), CBash.GetVersionMinor(),
@@ -5255,6 +5257,7 @@ class BashFrame(wx.Frame):
                      _(r'Missing files have been removed from load list:'),
                      [message],liststyle='list',Cancel=False)
             dialog.ShowModal()
+            dialog.Destroy()
             del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.plugins.save()
         #--Was load list too long?
@@ -5265,6 +5268,7 @@ class BashFrame(wx.Frame):
                      _(r'Missing files have been removed from load list:'),
                      [message],liststyle='list',Cancel=False)
             dialog.ShowModal()
+            dialog.Destroy()
             del bosh.modInfos.plugins.selectedExtra[:]
             bosh.modInfos.plugins.save()
         #--Any new corrupted files?
@@ -5292,6 +5296,7 @@ class BashFrame(wx.Frame):
                      _(r'Some files have corrupted headers or TES4 header versions:'),
                      message,liststyle='list',Cancel=False)
             dialog.ShowModal()
+            dialog.Destroy()
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
@@ -5306,6 +5311,7 @@ class BashFrame(wx.Frame):
                      _(r'Modified dates have been reste to an earlier date for  these files'),
                      [message],liststyle='list',Cancel=False)
             dialog.ShowModal()
+            dialog.Destroy()
             del bolt.Path.mtimeResets[:]
         #--OBMM Warning?
         if settings['bosh.modInfos.obmmWarn'] == 1:
@@ -7787,6 +7793,7 @@ class File_Delete(Link):
                      if checks.IsChecked(i):
                         self.window.data.delete(mod)
             self.window.RefreshUI()
+        dialog.Destroy()
 #------------------------------------------------------------------------------
 class File_Duplicate(Link):
     """Create a duplicate of the file."""
@@ -11010,6 +11017,17 @@ class Settings_UnHideButton(Link):
     def Execute(self,event):
         bashFrame.GetStatusBar().UnhideButton(self.link)
 
+#------------------------------------------------------------------------------
+class Settings_UseAltName(BoolLink):
+    def __init__(self): BoolLink.__init__(
+        self,_('Use Alternate Wrye Bash Name'),
+        'bash.useAltName',
+        _('Use an alternate display name for Wrye Bash based on the game it is managing.'))
+
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        bashFrame.SetTitle()
+
 # StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
 class StatusBar_Hide(Link):
@@ -11985,6 +12003,7 @@ class Mods_CleanDummyMasters(Link):
                      _(r'Delete these items? This operation cannot be undone.'),
                      [message])
         if dialog.ShowModal() == wx.ID_CANCEL:
+            dialog.Destroy()
             return
         id = dialog.ids['']
         checks = dialog.FindWindowById(id)
@@ -11992,7 +12011,7 @@ class Mods_CleanDummyMasters(Link):
             for i,mod in enumerate(remove):
                 if checks.IsChecked(i):
                     self.window.data.delete(mod)
-
+        dialog.Destroy()
         bashFrame.RefreshData()
         self.window.RefreshUI()
 
@@ -17225,6 +17244,7 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_UnHideButtons())
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
+    SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
