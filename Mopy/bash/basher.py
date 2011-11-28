@@ -15974,7 +15974,7 @@ class Obse_Button(StatusBar_Button):
         return state
 
     def GetBitmapButton(self,window,style=0):
-        exeObse = bosh.dirs['app'].join(bush.game.se.shortName)
+        exeObse = bosh.dirs['app'].join(bush.game.se.exe)
         if exeObse.exists():
             bitmap = images['checkbox.green.off.%s'%settings['bash.statusbar.iconSize']].GetBitmap()
             self.createButton(window,bitmap,style=style)
