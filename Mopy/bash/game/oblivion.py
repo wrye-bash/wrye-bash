@@ -72,6 +72,12 @@ class ge:
     url = 'http://www.tesnexus.com/downloads/file.php?id=30054'
     urlTip = 'http://www.tesnexus.com/'
 
+#--4gb Launcher
+class laa:
+    name = ''           # Name
+    exe = '**DNE**'     # Executable to run
+    launchesSE = False  # Whether the launcher will automatically launch the SE as well
+
 
 #--The main plugin Wrye Bash should look for
 masterFiles = [
