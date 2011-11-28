@@ -65,6 +65,12 @@ class ge:
     url = ''
     urlTip = ''
 
+#--4gb Launcher
+class laa:
+    name = '4GB Launcher'           # Name
+    exe = 'skyrim4gb.exe'           # Executable to run
+    launchesSE = True               # Whether the launcher will automatically launch the SE as well
+
 #--Wrye Bash capabilities with this game
 canBash = False      # No Bashed Patch creation or messing with mods
 canEditSaves = False # Only basic understanding of save games
