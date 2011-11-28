@@ -8770,8 +8770,8 @@ class Installer_Wizard(InstallerLink):
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
             iniList.RefreshUI()
-            if iniFile in installer.data_sizeCrc or iniFile.cs == 'oblivion.ini':
-                if not ret.Install and iniFile.cs != 'oblivion.ini':
+            if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
+                if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since
                     # BAIN is setup to not auto install after the wizard, we'll show a message telling the
                     # User what tweaks to apply manually.
@@ -8779,7 +8779,7 @@ class Installer_Wizard(InstallerLink):
                     continue
                 # Editing an INI file from this installer is ok, but editing Oblivion.ini
                 # give a warning message
-                if iniFile.cs == 'oblivion.ini':
+                if any([iniFile == x for x in bush.game.iniFiles]):
                     message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                     if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_("INI Tweaks")):
                         continue
@@ -9180,6 +9180,20 @@ class Installer_OpenTesNexus(InstallerLink):
         if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_('Open at TES Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
             os.startfile('http://www.tesnexus.com/downloads/file.php?id='+id)
+
+class Installer_OpenSkyrimNexus(InstallerLink):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_('Skyrim Nexus...'))
+        menu.AppendItem(menuItem)
+        x = bosh.reTesNexus.search(data[0].s)
+        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
+
+    def Execute(self,event):
+        message = _("Attemp to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
+        if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_('Open at Skyrim Nexus')):
+            id = bosh.reTesNexus.search(self.selected[0].s).group(2)
+            os.startfile('http://www.skyrimnexus.com/downloads/file.php?id='+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
@@ -16771,6 +16785,7 @@ def InitInstallerLinks():
         openAtMenu = InstallerOpenAt_MainMenu(_("Open at"))
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenTesNexus())
+        openAtMenu.links.append(Installer_OpenSkyrimNexus())
         openAtMenu.links.append(Installer_OpenTESA())
         openAtMenu.links.append(Installer_OpenPES())
         InstallersPanel.itemMenu.append(openAtMenu)

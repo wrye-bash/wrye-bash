@@ -26,6 +26,8 @@
 
 #--Name of the game
 name = 'Oblivion'
+#--Alternate display name to use instead of "Wrye Bash for ***"
+altName = 'Wrye Bash'
 
 #--Exe to look for to see if this is the right game
 exe = 'Oblivion.exe'
@@ -37,8 +39,11 @@ regInstallKeys = [
 
 #--patch information
 patchURL = 'http://www.elderscrolls.com/downloads/updates_patches.htm'
-patchTip = 'http://www.elderscrolls.com/' 
+patchTip = 'http://www.elderscrolls.com/'
 
+#--Wrye Bash capabilities with this game
+canBash = True
+canEditSaves = True
 #--Script Extender information
 class se:
     shortName = 'OBSE'                      # Abbreviated name
@@ -58,9 +63,6 @@ class ge:
     url = 'http://www.tesnexus.com/downloads/file.php?id=30054'
     urlTip = 'http://www.tesnexus.com/'
 
-#--Wrye Bash capabilities with this game
-canBash = True
-canEditSaves = True
 
 #--The main plugin Wrye Bash should look for
 masterFiles = [
