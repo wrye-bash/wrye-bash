@@ -380,8 +380,12 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
       . Notepadpp24.png  &lt;- custom 24x24 icon to use
 
 === Bash Option Buttons
-* OBSE 16off <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24off <img src="bash/images/checkbox_green_off_24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 24on <img src="bash/images/checkbox_green_on_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32off <img src="bash/images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-  * When checked this will launch OBSE when either the Oblivion or TESCS buttons are clicked.
+* Script Extender 16off <img src="bash/images/checkbox_green_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_green_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24off <img src="bash/images/checkbox_green_off_24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 24on <img src="bash/images/checkbox_green_on_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32off <img src="bash/images/checkbox_green_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_green_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+  * When checked this will launch the game's Script Extender when either the game or game's editor (CS, CK) buttons are clicked.
+  * If the LAA Launcher also launches the game's Script Extender, then unchecking this button will also uncheck the LAA Launcher.
+* LAA Launcher 16off <img src="bash/images/checkbox_blue_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_blue_on.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24off <img src="bash/images/checkbox_blue_off_24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 24on <img src="bash/images/checkbox_blue_on_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32off <img src="bash/images/checkbox_blue_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_blue_on_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+  * When checked this will launch the LAA Launcher when the game button is clicked.
+  * If the LAA Launcher also launches the game's Script Extender, checking this will also check the Script Extender button.
 * Auto-Quit 16off <img src="bash/images/checkbox_red_off.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 16on <img src="bash/images/checkbox_red_x.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24off <img src="bash/images/checkbox_red_off_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 24on <img src="bash/images/checkbox_red_x_24.png" width="24" height="24" style="border: 0;" alt="tool image"></img> 32off <img src="bash/images/checkbox_red_off_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> 32on <img src="bash/images/checkbox_red_x_32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
   * If checked this will cause Bash to quit when launching Oblivion. This is useful if you're concerned about memory usage.
 * BashMon 16 <img src="bash/images/bashmon16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 24 <img src="bash/images/bashmon24.png" width="24" height="24" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/bashmon32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
@@ -2410,6 +2414,16 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 == Versions ===================================================================
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
+
+=== 295.2 [XX/XX/XXXX] [Lojack]
+* Bugfixes:
+  * [[#InstallersTab|Installers Tab]]: Fixed the 'List Sub-Packages' command.
+  * Fixed installation of Script Extender plugins when not in Oblivion game mode.
+  * Disabled the 'Check for Updates' option in the WBSA - it works in Python Wrye Bash, but causes errors in the WBSA.
+* New features:
+  * 4Gb/LAA Launcher supported:
+    * For games that have a LAA Launcher (Skyrim currently), launching the game will launch via the LAA Launcher.
+    * A new [[#BashOptionButtons|status bar button]] for enabling/disabling the LAA Launcher.
 
 === 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
 * Skyrim support added:
