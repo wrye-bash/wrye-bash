@@ -964,7 +964,7 @@ def parseRecords(fileName='Oblivion.esm'):
     if skipPrint == True:
         oOut = sys.stdout
         sys.stdout = disablePrint()
-    for typed in bush.topTypes:
+    for typed in bush.game.modFile.topTypes:
         if typed not in loadFactory.recTypes or typed not in modFile.tops: continue
         print typed
         if hasattr(getattr(modFile,typed), 'melSet'): readRecord(getattr(modFile,typed))

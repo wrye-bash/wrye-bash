@@ -5287,7 +5287,7 @@ class BashFrame(wx.Frame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.validHeaderVersions])
+        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.modFile.validHeaderVersions])
         if not invalidVersions <= self.knownInvalidVerions:
             m = [_('Unrecognized Versions'),_("The following mods have unrecognized TES4 header versions: ")]
             m.extend(sorted(invalidVersions))
