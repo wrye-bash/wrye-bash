@@ -24,6 +24,8 @@
 """This modules defines static data for use by bush, when
    TES V: Skyrim is set at the active game."""
 
+import struct
+
 #--Name of the game
 name = 'Skyrim'
 altName = 'Wrye Smash'
@@ -131,10 +133,33 @@ dataDirs = set(('bash patches','interface','meshes','strings','textures',
     'video','lodsettings','grass','scripts','shadersfx','music','sound',))
 dataDirsPlus = set(('ini tweaks','skse','ini'))
 
-#--Valid ESM/ESP header versions
-validHeaderVersions = (0.94,)
+#--Information about the mod file format
+class modFile:
+    #--Valid ESM/ESP header versions
+    validHeaderVersions = (0.94,)
 
-#--Class to use to read the TES4 record
-tes4ClassName = 'MreTes5'
-#--How to unpack the record header
-unpackRecordHeader = ('4s5I',24,'REC_HEAD')
+    #--Class to use to read the TES4 record
+    tes4ClassName = 'MreTes5'
+
+    #--How to unpack the record header
+    unpackRecordHeader = ('4s5I',24,'REC_HEAD')
+
+    #--Top types in Oblivion order.
+    topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
+        'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL',
+        'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC',
+        'APPA', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS', 'TREE', 'CLDC', 'FLOR', 'FURN',
+        'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM', 'COBJ', 'PROJ', 'HAZD',
+        'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD',
+        'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH',
+        'EXPL', 'DEBR', 'IMGS', 'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS',
+        'CPTH', 'VTYP', 'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'RGDL',
+        'DOBJ', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'DLBR', 'MUST',
+        'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA', 'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO',
+        'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB',]
+
+    #--Dict mapping 'ignored' top types to un-ignored top types.
+    topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
+
+    #-> this needs updating for Skyrim
+    recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))

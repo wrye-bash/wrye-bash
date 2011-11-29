@@ -545,10 +545,10 @@ class ModReader:
 
     def unpackRecHeader(self):
         """Unpack a record header."""
-        header = self.unpack(*bush.game.unpackRecordHeader)[0:5]
+        header = self.unpack(*bush.game.modFile.unpackRecordHeader)[0:5]
         (type,size,uint0,uint1,uint2) = header
         #--Bad?
-        if type not in bush.recordTypes:
+        if type not in bush.game.modFile.recordTypes:
             raise ModError(self.inName,_('Bad header type: ')+type)
         #--Record
         if type != 'GRUP':
@@ -556,10 +556,10 @@ class ModReader:
         #--Top Group
         elif uint1 == 0:
             str0 = struct.pack('I',uint0)
-            if str0 in bush.topTypes:
+            if str0 in bush.game.modFile.topTypes:
                 return (type,size,str0,uint1,uint2)
-            elif str0 in bush.topIgTypes:
-                return (type,size,bush.topIgTypes[str0],uint1,uint2)
+            elif str0 in bush.game.modFile.topIgTypes:
+                return (type,size,bush.game.modFile.topIgTypes[str0],uint1,uint2)
             else:
                 raise ModError(self.inName,_('Bad Top GRUP type: ')+str0)
         #--Other groups
@@ -5104,7 +5104,7 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = globals()[bush.game.tes4ClassName](('TES4',0,0,0,0))
+        self.tes4 = globals()[bush.game.modFile.tes4ClassName](('TES4',0,0,0,0))
         self.tes4.setChanged()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
@@ -5118,7 +5118,7 @@ class ModFile:
         """Returns top block of specified topType, creating it, if necessary."""
         if topType in self.tops:
             return self.tops[topType]
-        elif topType in bush.topTypes:
+        elif topType in bush.game.modFile.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
             self.tops[topType] = topClass(('GRUP',0,topType,0,0),self.loadFactory)
             self.tops[topType].setChanged()
@@ -5134,7 +5134,7 @@ class ModFile:
         #--Header
         ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
         header = ins.unpackRecHeader()
-        self.tes4 = globals()[bush.game.tes4ClassName](header,ins,True)
+        self.tes4 = globals()[bush.game.modFile.tes4ClassName](header,ins,True)
         #--Raw data read
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -5169,7 +5169,7 @@ class ModFile:
         """Unpacks blocks."""
         factoryTops = self.loadFactory.topTypes
         selfTops = self.tops
-        for type in bush.topTypes:
+        for type in bush.game.modFile.topTypes:
             if type in selfTops and type in factoryTops:
                 selfTops[type].load(None,True)
 
@@ -5212,7 +5212,7 @@ class ModFile:
         self.tes4.dump(out)
         #--Blocks
         selfTops = self.tops
-        for type in bush.topTypes:
+        for type in bush.game.modFile.topTypes:
             if type in selfTops:
                 selfTops[type].dump(out)
         out.close()
@@ -8021,7 +8021,7 @@ class ModInfo(FileInfo):
             recHeader = ins.unpackRecHeader()
             if recHeader[0] != 'TES4':
                 raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            self.header = globals()[bush.game.tes4ClassName](recHeader,ins,True)
+            self.header = globals()[bush.game.modFile.tes4ClassName](recHeader,ins,True)
         except struct.error, rex:
             raise ModError(self.name,_('Struct.error: ')+`rex`)
         finally:
@@ -10774,23 +10774,23 @@ class Installer(object):
                     continue
             elif fileStartsWith('--'):
                 continue
-            elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith('obse\\'):
+            elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith(bush.game.se.shortName.lower()+'\\'):
                 continue
             elif fileExt in ['.dll','.dlx']:
                 if not settings['bash.installers.allowOBSEPlugins']: continue
-                if not fileStartsWith('obse\\'):
+                if not fileStartsWith(bush.game.se.shortName.lower()+'\\'):
                     continue
                 if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
                 if not checkOBSE:
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    message = _('This installer (%s) has an OBSE plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, full)
+                    message = _('This installer (%s) has an %s plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, bush.game.se.shortName, full)
                     if fileLower in goodDlls:
                         message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,_('OBSE DLL Warning')):
+                    if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(' DLL Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
