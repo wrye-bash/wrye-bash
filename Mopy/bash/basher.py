@@ -9579,9 +9579,10 @@ class Installer_Subs_ListSubPackages(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        subs = _('Sub-Packages List for "%s":\n[spoiler]') % (gInstallers.data[gInstallers.detailsItem].archive)
+        installer = gInstallers.data[gInstallers.detailsItem]
+        subs = _('Sub-Packages List for "%s":\n[spoiler]') % (installer.archive)
         for index in range(gInstallers.gSubList.GetCount()):
-            subs += ['** ','   '][installer.subActives[index+1]] + gInstallers.gSubList.GetString(index) + '\n'
+            subs += ['   ','** '][gInstallers.gSubList.IsChecked(index)] + gInstallers.gSubList.GetString(index) + '\n'
         subs += '[/spoiler]'
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
