@@ -221,12 +221,16 @@ def main():
             frame = Tkinter.Frame(root)
             frame.pack()
 
-            canceled = False
-            def onClickQuit():
-                canceled = True
-                root.destroy()
+            class onQuit(object):
+                def __init__(self):
+                    self.canceled = False
 
-            button = Tkinter.Button(frame,text='Quit',fg='red',command=onClickQuit,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                def onClick(self):
+                    self.canceled = True
+                    root.destroy()
+            quit = onQuit()
+
+            button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
             class onClick(object):
                 def __init__(self,gameName):
@@ -245,7 +249,7 @@ def main():
             w.config(state=Tkinter.DISABLED)
             w.pack()
             root.mainloop()
-            if canceled:
+            if quit.canceled:
                 return
             del Tkinter # Unload TKinter, it's not needed anymore
         else:
