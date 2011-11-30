@@ -3043,6 +3043,16 @@ class InstallersList(balt.Tank):
         super(InstallersList, self).OnColumnResize(event)
         settings.setChanged('bash.installers.colWidths')
 
+    def MouseOverItem(self,item):
+        """Handle mouse entered item by showing tip or similar."""
+        if item < 0: return
+        item = self.GetItem(item)
+        text = self.mouseTexts.get(item) or ''
+        print 'text:', text
+        if text != self.mouseTextPrev:
+            statusBar.SetStatusText(text,1)
+            self.mouseTextPrev = text
+
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
         #--Only rename multiple items of the same type
