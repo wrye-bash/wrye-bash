@@ -2308,6 +2308,9 @@ class TankData:
         iconKey = textKey = backKey = None
         return (iconKey,textKey,backKey)
 
+    def getMouseText(self,*args,**kwdargs):
+        pass
+
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
 def copyattrs(source,dest,attrs):

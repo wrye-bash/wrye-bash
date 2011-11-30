@@ -12137,6 +12137,16 @@ class InstallersData(bolt.TankData, DataDict):
             iconKey += '.wiz'
         return (iconKey,textKey,backKey)
 
+    def getMouseText(self,iconKey,textKey,backKey):
+        """Returns mouse text to use, given the iconKey,textKey, and backKey."""
+        text = ''
+        if backKey == 'installers.bkgd.outOfOrder':
+            text += _('Needs Annealing due to a change in Install Order.')
+        elif backKey == 'installers.bkgd.dirty':
+            text += _('Needs Annealing due to a change in configuration.')
+        #--TODO: add mouse  mouse tips 
+        return text
+
     def getName(self,item):
         """Returns a string name of item for use in dialogs, etc."""
         return item.s
