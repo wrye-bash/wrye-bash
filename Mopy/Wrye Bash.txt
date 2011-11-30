@@ -2417,8 +2417,11 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 
 === 295.2 [XX/XX/XXXX] [Lojack]
 * Bugfixes:
-  * [[#InstallersTab|Installers Tab]]: Fixed the 'List Sub-Packages' command.
-  * Fixed installation of Script Extender plugins when not in Oblivion game mode.
+  * [[#InstallersTab|Installers Tab]]:
+    * Fixed the 'List Sub-Packages' command.
+    * Fixed installation of Script Extender plugins when not in Oblivion game mode.
+    * Fixed a refresh bug where changing the install order via Ctrl+Up or Ctrl+Down would not refresh the need to Anneal packages.
+    * Fixed an incorrect color being used for packages that need Annealing.  Previously a light gray background color was used to indicate a package has underrides that need to be corrected by Annealing.  now BAIN correctly uses a yello background, as described in this readme.
   * Disabled the 'Check for Updates' option in the WBSA - it works in Python Wrye Bash, but causes errors in the WBSA.
 * New features:
   * 4Gb/LAA Launcher supported:
