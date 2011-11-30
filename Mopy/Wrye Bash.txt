@@ -2430,6 +2430,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * 4Gb/LAA Launcher supported:
     * For games that have a LAA Launcher (Skyrim currently), launching the game will launch via the LAA Launcher.
     * A new [[#BashOptionButtons|status bar button]] for enabling/disabling the LAA Launcher.
+  * Added Status Bar mouse over texts for BAIN Packages.
 
 === 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
 * Skyrim support added:

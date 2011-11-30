@@ -1542,6 +1542,7 @@ class Tank(wx.Panel):
             gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
         gItem = gList.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
+        self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
         if textKey: gItem.SetTextColour(colors[textKey])
         else: gItem.SetTextColour(gList.GetTextColour())
@@ -1562,6 +1563,7 @@ class Tank(wx.Panel):
         #--Items to select afterwards. (Defaults to current selection.)
         if selected == 'SAME': selected = set(self.GetSelected())
         #--Update existing items.
+        self.mouseTexts.clear()
         while index < gList.GetItemCount():
             item = self.GetItem(index)
             if item not in items:
@@ -1578,7 +1580,6 @@ class Tank(wx.Panel):
         #--Cleanup
         self.UpdateIds()
         self.SortItems()
-        self.mouseTexts.clear()
 
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
@@ -1611,7 +1612,6 @@ class Tank(wx.Panel):
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
-        self.mouseTexts.clear()
 
     def SetColumnReverse(colummn, reverse):
         pass
