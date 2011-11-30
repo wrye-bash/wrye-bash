@@ -3316,7 +3316,7 @@ class InstallersList(balt.Tank):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
-            self.data.refresh(what='I')
+            self.data.refresh(what='IN')
             self.RefreshUI()
             if visibleIndex > maxPos: visibleIndex = maxPos
             elif visibleIndex < 0: visibleIndex = 0
