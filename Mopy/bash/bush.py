@@ -153,6 +153,7 @@ def setGame(gameName,workingDir=''):
     # Unload all the modules
     del allGames
     return foundGames.keys()
+
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
@@ -196,7 +197,6 @@ ignoreDataDirs = set((
     r'OBSE\Plugins\ComponentDLLs\CSE',
     r'LSData'
     ))
-
 
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
