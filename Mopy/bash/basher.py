@@ -239,11 +239,7 @@ settingDefaults = {
     #--BSA Redirection
     'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists
-    'bash.loadLists.data': {
-        'Bethesda ESMs': [
-            GPath('Oblivion.esm'),
-            ],
-        },
+    'bash.loadLists.data': {},
     #--Wrye Bash: Tabs
     'bash.tabs': {
         'Installers': True,
@@ -10138,6 +10134,10 @@ class Mods_LoadListData(balt.ListEditorData):
     def __init__(self,parent):
         """Initialize."""
         self.data = settings['bash.loadLists.data']
+        self.data['Bethesda ESMs'] = [
+            GPath(x) for x in bush.game.masterFiles
+            if x.lower() in bush.game.bethDataFiles
+            ]
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -10171,6 +10171,10 @@ class Mods_LoadList:
     """Add load list links."""
     def __init__(self):
         self.data = settings['bash.loadLists.data']
+        self.data['Bethesda ESMs'] = [
+            GPath(x) for x in bush.game.masterFiles
+            if x.lower() in bush.game.bethDataFiles
+            ]
 
     def GetItems(self):
         items = self.data.keys()
