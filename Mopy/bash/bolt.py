@@ -1514,7 +1514,7 @@ class DataDict:
             return self.data[key]
         else:
             if isinstance(key, Path):
-                return self.data[Path('Oblivion.esm')]
+                return self.data[Path(bush.game.masterFiles[0])]
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):

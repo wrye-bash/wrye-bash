@@ -545,10 +545,12 @@ class ModReader:
 
     def unpackRecHeader(self):
         """Unpack a record header."""
-        header = self.unpack(*bush.game.modFile.unpackRecordHeader)[0:5]
-        (type,size,uint0,uint1,uint2) = header
+        header = self.unpack(bush.game.esp.header.format,
+                             bush.game.esp.header.size,
+                             'REC_HEADER')
+        (type,size,uint0,uint1,uint2) = header[0:5]
         #--Bad?
-        if type not in bush.game.modFile.recordTypes:
+        if type not in bush.game.esp.recordTypes:
             raise ModError(self.inName,_('Bad header type: ')+type)
         #--Record
         if type != 'GRUP':
@@ -556,10 +558,14 @@ class ModReader:
         #--Top Group
         elif uint1 == 0:
             str0 = struct.pack('I',uint0)
-            if str0 in bush.game.modFile.topTypes:
-                return (type,size,str0,uint1,uint2)
-            elif str0 in bush.game.modFile.topIgTypes:
-                return (type,size,bush.game.modFile.topIgTypes[str0],uint1,uint2)
+            if str0 in bush.game.esp.topTypes:
+                header = list(header)
+                header[2] = str0
+                return tuple(header)
+            elif str0 in bush.game.esp.topIgTypes:
+                header = list(header)
+                header[2] = bush.game.esp.topIgTypes[str0]
+                return tuple(header)
             else:
                 raise ModError(self.inName,_('Bad Top GRUP type: ')+str0)
         #--Other groups
@@ -1630,14 +1636,16 @@ class MreRecord(object):
         (18,'compressed'),
         (19,'cantWait'),
         ))
-    __slots__ = ['recType','size','fid','flags2','flags1','changed','subrecords','data','inName','longFids',]
+    __slots__ = list(bush.game.esp.header.attrs) + ['changed','subrecords','data','inName','longFids',]
     #--Set at end of class data definitions.
     type_class = None
     simpleTypes = None
 
     def __init__(self,header,ins=None,unpack=False):
-        (self.recType,self.size,flags1,self.fid,self.flags2) = header
-        self.flags1 = MreRecord._flags1(flags1)
+        for i,attr in enumerate(bush.game.esp.header.attrs):
+            setattr(self,attr,header[i])
+        #(self.recType,self.size,flags1,self.fid,self.flags2) = header
+        self.flags1 = MreRecord._flags1(self.flags1)
         self.longFids = False #--False: Short (numeric); True: Long (espname,objectindex)
         self.changed = False
         self.subrecords = None
@@ -1654,7 +1662,7 @@ class MreRecord(object):
 
     def getHeader(self):
         """Returns header tuple."""
-        return (self.recType,self.size,int(self.flags1),self.fid,self.flags2)
+        return tuple([getattr(self,attr) for attr in bush.game.esp.header.attrs])
 
     def getBaseCopy(self):
         """Returns an MreRecord version of self."""
@@ -1795,7 +1803,8 @@ class MreRecord(object):
         if self.changed: raise StateError(_('Data changed: ')+ self.recType)
         if not self.data and not self.flags1.deleted and self.size > 0:
             raise StateError(_('Data undefined: ')+self.recType+' '+hex(self.fid))
-        out.write(struct.pack('=4s4I',self.recType,self.size,int(self.flags1),self.fid,self.flags2))
+        args = [getattr(self,attr) for attr in bush.game.esp.header.attrs]
+        out.write(struct.pack(bush.game.esp.header.format,*args))
         if self.size > 0: out.write(Encode(self.data))
 
     def getReader(self):
@@ -5104,7 +5113,7 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = globals()[bush.game.modFile.tes4ClassName](('TES4',0,0,0,0))
+        self.tes4 = globals()[bush.game.esp.tes4ClassName](*bush.game.esp.header.defaults)
         self.tes4.setChanged()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
@@ -5118,7 +5127,7 @@ class ModFile:
         """Returns top block of specified topType, creating it, if necessary."""
         if topType in self.tops:
             return self.tops[topType]
-        elif topType in bush.game.modFile.topTypes:
+        elif topType in bush.game.esp.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
             self.tops[topType] = topClass(('GRUP',0,topType,0,0),self.loadFactory)
             self.tops[topType].setChanged()
@@ -5134,7 +5143,7 @@ class ModFile:
         #--Header
         ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
         header = ins.unpackRecHeader()
-        self.tes4 = globals()[bush.game.modFile.tes4ClassName](header,ins,True)
+        self.tes4 = globals()[bush.game.esp.tes4ClassName](header,ins,True)
         #--Raw data read
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -5169,7 +5178,7 @@ class ModFile:
         """Unpacks blocks."""
         factoryTops = self.loadFactory.topTypes
         selfTops = self.tops
-        for type in bush.game.modFile.topTypes:
+        for type in bush.game.esp.topTypes:
             if type in selfTops and type in factoryTops:
                 selfTops[type].load(None,True)
 
@@ -5212,7 +5221,7 @@ class ModFile:
         self.tes4.dump(out)
         #--Blocks
         selfTops = self.tops
-        for type in bush.game.modFile.topTypes:
+        for type in bush.game.esp.topTypes:
             if type in selfTops:
                 selfTops[type].dump(out)
         out.close()
@@ -7961,7 +7970,7 @@ class ModInfo(FileInfo):
             recHeader = ins.unpackRecHeader()
             if recHeader[0] != 'TES4':
                 raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            self.header = globals()[bush.game.modFile.tes4ClassName](recHeader,ins,True)
+            self.header = globals()[bush.game.esp.tes4ClassName](recHeader,ins,True)
         except struct.error, rex:
             raise ModError(self.name,_('Struct.error: ')+`rex`)
         finally:
@@ -7973,35 +7982,27 @@ class ModInfo(FileInfo):
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
         filePath = self.getPath()
-        ins = filePath.open('rb')
-        out = filePath.temp.open('wb')
-        try:
-            #--Open original and skip over header
-            reader = ModReader(self.name,ins)
-            recHeader = reader.unpackRecHeader()
-            if recHeader[0] != 'TES4':
-                raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            reader.seek(recHeader[1],1)
-            #--Write new header
-            self.header.getSize()
-            self.header.dump(out)
-            #--Write remainder
-            insRead = ins.read
-            outWrite = out.write
-            while True:
-                buffer= insRead(0x5000000)
-                if not buffer: break
-                outWrite(buffer)
-            ins.close()
-            out.close()
-        except struct.error, rex:
-            ins.close()
-            out.close()
-            raise ModError(self.name,_('Struct.error: ')+`rex`)
-        except:
-            ins.close()
-            out.close()
-            raise
+        with filePath.open('rb') as ins:
+            with filePath.temp.open('wb') as out:
+                try:
+                    #--Open original and skip over header
+                    reader = ModReader(self.name,ins)
+                    recHeader = reader.unpackRecHeader()
+                    if recHeader[0] != 'TES4':
+                        raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
+                    reader.seek(recHeader[1],1)
+                    #--Write new header
+                    self.header.getSize()
+                    self.header.dump(out)
+                    #--Write remainder
+                    insRead = ins.read
+                    outWrite = out.write
+                    while True:
+                        buffer= insRead(0x5000000)
+                        if not buffer: break
+                        outWrite(buffer)
+                except struct.error, rex:
+                    raise ModError(self.name,_('Struct.error: ')+`rex`)
         #--Remove original and replace with temp
         filePath.untemp()
         self.setmtime()
