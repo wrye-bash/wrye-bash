@@ -2418,7 +2418,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 296 [XX/X/2011]
 * CBash updated to version 0.6
 
-=== 295.2 [XX/XX/XXXX] [Lojack,bluesky404]
+=== 295.2 [XX/XX/XXXX] [Lojack,bluesky404,Metallicow]
 * Bugfixes:
   * [[#InstallersTab|Installers Tab]]:
     * Fixed the 'List Sub-Packages' command.
@@ -2427,6 +2427,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Fixed an incorrect color being used for packages that need Annealing.  Previously a light gray background color was used to indicate a package has underrides that need to be corrected by Annealing.  Now BAIN correctly uses a yellow background, as described in this readme.
   * Fixed Save Profiles so they work even when the game's INI file doesn't initially have the 'sLocalSavePath' entry (ie: Skyrim).
   * Fixed the 'Check for Updates' option while running in Standalone mode.
+  * Fixed the spelling on the German Wizard Image
 * New features:
   * 4Gb/LAA Launcher supported:
     * For games that have a LAA Launcher (Skyrim currently), launching the game will launch via the LAA Launcher.
