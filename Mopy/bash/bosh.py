@@ -484,6 +484,16 @@ class ModReader:
         ins.seek(0,2)
         self.size = ins.tell()
         ins.seek(curPos)
+        self.strings = {}
+        self.hasStrings = False
+
+    def setStringTable(self,table={}):
+        if table is None:
+            self.hasStrings = False
+            self.strings = {}
+        else:
+            self.hasStrings = True
+            self.strings = table
 
     #--IO Stream ------------------------------------------
     def seek(self,offset,whence=0,recType='----'):
@@ -523,6 +533,20 @@ class ModReader:
         if endPos > self.size:
             raise ModSizeError(self.inName, recType,endPos,self.size)
         return self.ins.read(size)
+
+    def readLString(self,size,recType='----'):
+        deprint('hasStrings', self.hasStrings)
+        if self.hasStrings:
+            if size != 4:
+                raise ModReadError(self.inName,recType,endPos,self.size)
+            id, = self.unpack('I',4,recType)
+            deprint('stringId:', id)
+            if id == 0:
+                return ''
+            else:
+                return self.strings[id]
+        else:
+            return self.readString(size,recType)
 
     def readString(self,size,recType='----'):
         """Read string from file, stripping zero terminator."""
@@ -1039,6 +1063,14 @@ class MelString(MelBase):
                 value = bolt.winNewLines(value.rstrip())
                 value = value[:min(self.maxSize,len(value))]
             out.packSub0(self.subType,value)
+
+#------------------------------------------------------------------------------
+class MelLString(MelString):
+    """Represents a mod record localized string."""
+    def loadData(self,record,ins,type,size,readId):
+        value = ins.readLString(size,readId)
+        record.__setattr__(self.attr,value)
+        if self._debug: print ' ',record.__getattribute__(self.attr)
 
 #------------------------------------------------------------------------------
 class MelStrings(MelString):
@@ -2727,7 +2759,7 @@ class MreGmst(MelRecord):
         def loadData(self,record,ins,type,size,readId):
             format = record.eid[0] #-- s|i|f
             if format == 's':
-                record.value = ins.readString(size,readId)
+                record.value = ins.readLString(size,readId)
             else:
                 record.value, = ins.unpack(format,size,readId)
         def dumpData(self,record,out):
@@ -5127,6 +5159,7 @@ class ModFile:
         #--Variables to load
         self.tes4 = globals()[bush.game.esp.tes4ClassName](bush.game.esp.header.defaults)
         self.tes4.setChanged()
+        self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
         self.longFids = False
@@ -5156,6 +5189,15 @@ class ModFile:
         ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
         header = ins.unpackRecHeader()
         self.tes4 = globals()[bush.game.esp.tes4ClassName](header,ins,True)
+        #--Strings
+        if unpack and self.tes4.flags1[7]:
+            self.strings.load(self.fileInfo.getPath(),
+                              oblivionIni.getSetting('General','sLanguage','English'),
+                              progress)
+            ins.setStringTable(self.strings)
+        else:
+            self.strings.clear()
+            ins.setStringTable(None)
         #--Raw data read
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
