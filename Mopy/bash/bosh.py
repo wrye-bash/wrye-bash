@@ -8490,10 +8490,9 @@ class ModInfos(FileInfos):
             if len(bush.game.masterFiles) == 1:
                 deprint(_('Missing master file; %s does not exist in an unghosted state in %s') % (fname, dirs['mods'].s))
             else:
+                msg = bush.game.masterFiles[0]
                 if len(bush.game.masterFiles) > 2:
-                    msg = ', '.join(bush.game.masterFiles[0:-1])
-                else:
-                    msg = ''
+                    msg += ', '.join(bush.game.masterFiles[1:-1])
                 msg += ' or ' + bush.game.masterFiles[-1]
                 deprint(_('Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
                 self.masterName = GPath(bush.game.masterFiles[0])
@@ -10817,7 +10816,12 @@ class Installer(object):
                 if trackedInfos is not None:
                     # The 'INI Tweaks' directory is already tracked by INIInfos,
                     # But INIInfos wont update the Installers Tab UI on changes.
-                    track = dirs['mods'].join(dest)
+                    deprint('Attempting to track:', dest)
+                    try:
+                        track = dirs['mods'].join(dest)
+                    except:
+                        deprint('An error occured while creating the path:', traceback=True)
+                        raise
                     trackedInfos.track(track)
             #--Save
             key = GPath(dest)
