@@ -22,8 +22,12 @@
 # =============================================================================
 
 """This module starts the Wrye Bash application in GUI mode."""
-
-from bash import bash
+import multiprocessing
 
 if __name__ == '__main__':
+    # Need to call freeze_support before importing bash,
+    # so the arg parsing doesn't complain about how
+    # freeze_support does multiprocessing
+    multiprocessing.freeze_support()
+    from bash import bash
     bash.main()

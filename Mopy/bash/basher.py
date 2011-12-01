@@ -239,11 +239,7 @@ settingDefaults = {
     #--BSA Redirection
     'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists
-    'bash.loadLists.data': {
-        'Bethesda ESMs': [
-            GPath('Oblivion.esm'),
-            ],
-        },
+    'bash.loadLists.data': {},
     #--Wrye Bash: Tabs
     'bash.tabs': {
         'Installers': True,
@@ -1291,7 +1287,7 @@ class MasterList(List):
     #--Event: Left Down
     def OnLeftDown(self,event):
         #--Not edited yet?
-        if not self.edited:
+        if not self.edited and bush.game.ess.canEditMasters:
             message = (_("Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving."))
             if not balt.askContinue(self,message,'bash.masters.update',_('Update Masters')):
                 return
@@ -2098,7 +2094,7 @@ class ModDetails(SashPanel):
 
     def SetEdited(self):
         self.edited = True
-        if bush.game.canBash:
+        if bush.game.esp.canEditHeader:
             self.save.Enable()
         self.cancel.Enable()
 
@@ -2891,7 +2887,7 @@ class SaveDetails(SashPanel):
     def SetEdited(self):
         """Mark as edited."""
         self.edited = True
-        if bush.game.canEditSaves:
+        if bush.game.ess.canEditMasters:
             self.save.Enable()
         self.cancel.Enable()
 
@@ -2952,8 +2948,9 @@ class SaveDetails(SashPanel):
         except bosh.FileError:
             balt.showError(self,_('File corrupted on save!'))
             self.SetFile(None)
-        self.SetFile(self.saveInfo.name)
-        saveList.RefreshUI(saveInfo.name)
+            saveList.RefreshUI()
+        else:
+            saveList.RefreshUI(saveInfo.name)
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
@@ -2963,6 +2960,8 @@ class SaveDetails(SashPanel):
 class SavePanel(SashPanel):
     """Savegames tab."""
     def __init__(self,parent):
+        if not bush.game.ess.canReadBasic:
+            raise Exception(_('Wrye Bash cannot read save games for %s.') % bush.game.name)
         SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=200)
         left,right = self.left, self.right
         global saveList
@@ -3042,6 +3041,15 @@ class InstallersList(balt.Tank):
         """Column has been resized."""
         super(InstallersList, self).OnColumnResize(event)
         settings.setChanged('bash.installers.colWidths')
+
+    def MouseOverItem(self,item):
+        """Handle mouse entered item by showing tip or similar."""
+        if item < 0: return
+        item = self.GetItem(item)
+        text = self.mouseTexts.get(item) or ''
+        if text != self.mouseTextPrev:
+            statusBar.SetStatusText(text,1)
+            self.mouseTextPrev = text
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -5287,7 +5295,7 @@ class BashFrame(wx.Frame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.modFile.validHeaderVersions])
+        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions])
         if not invalidVersions <= self.knownInvalidVerions:
             m = [_('Unrecognized Versions'),_("The following mods have unrecognized TES4 header versions: ")]
             m.extend(sorted(invalidVersions))
@@ -6176,7 +6184,7 @@ class BashApp(wx.App):
         #bosh.BSAInfos.refresh()
         #--Patch check
         firstBashed = settings.get('bash.patch.firstBashed',False)
-        if not firstBashed and bush.game.canBash:
+        if not firstBashed and bush.game.esp.canBash:
             for modInfo in bosh.modInfos.values():
                 if modInfo.header.author == 'BASHED PATCH': break
             else:
@@ -9504,7 +9512,7 @@ class Installer_Espm_List(InstallerLink):
         """Handle selection."""
         subs = _('Esp/m List for "%s":\n[spoiler]') % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gEspmList.GetCount()):
-            subs += gInstallers.gEspmList.GetString(index) + '\n'
+            subs += ['   ','** '][gInstallers.gEspmList.IsChecked(index)] + gInstallers.gEspmList.GetString(index) + '\n'
         subs += '[/spoiler]'
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
@@ -10125,6 +10133,10 @@ class Mods_LoadListData(balt.ListEditorData):
     def __init__(self,parent):
         """Initialize."""
         self.data = settings['bash.loadLists.data']
+        self.data['Bethesda ESMs'] = [
+            GPath(x) for x in bush.game.masterFiles
+            if x.lower() in bush.game.bethDataFiles
+            ]
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -10158,6 +10170,10 @@ class Mods_LoadList:
     """Add load list links."""
     def __init__(self):
         self.data = settings['bash.loadLists.data']
+        self.data['Bethesda ESMs'] = [
+            GPath(x) for x in bush.game.masterFiles
+            if x.lower() in bush.game.bethDataFiles
+            ]
 
     def GetItems(self):
         items = self.data.keys()
@@ -16989,7 +17005,7 @@ def InitModLinks():
     #--ModList: Item Links
     if True: #--File
         fileMenu = MenuLink(_("File"))
-        if bush.game.canBash:
+        if bush.game.esp.canBash:
             fileMenu.links.append(Mod_CreateBlankBashedPatch())
             fileMenu.links.append(Mod_CreateBlank())
             fileMenu.links.append(Mod_CreateDummyMasters())
@@ -17018,7 +17034,7 @@ def InitModLinks():
         ModList.itemMenu.append(ratingMenu)
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
-    if bush.game.canBash:
+    if bush.game.esp.canBash:
         ModList.itemMenu.append(Mod_Details())
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
@@ -17029,7 +17045,7 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
     ModList.itemMenu.append(Mod_Ghost())
-    if bush.game.canBash:
+    if bush.game.esp.canBash:
         ModList.itemMenu.append(SeparatorLink())
         ModList.itemMenu.append(Mod_MarkMergeable(False))
         if CBash:
@@ -17158,7 +17174,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_LoadMasters())
     SaveList.itemMenu.append(File_ListMasters())
     SaveList.itemMenu.append(Save_DiffMasters())
-    if bush.game.canEditSaves:
+    if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(Save_Stats())
         SaveList.itemMenu.append(Save_StatObse())
         #--------------------------------------------
@@ -17176,7 +17192,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_ExportScreenshot())
     #--------------------------------------------
-    if bush.game.canEditSaves:
+    if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(SeparatorLink())
         SaveList.itemMenu.append(Save_Unbloat())
         SaveList.itemMenu.append(Save_RepairAbomb())
@@ -17319,10 +17335,7 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
     SettingsMenu.append(Settings_UseAltName())
-    if not hasattr(sys,'frozen'):
-        # py2exe messes with the multiprocessing some how,
-        # need to investigate and figure out a way to make it work correctly
-        SettingsMenu.append(Settings_CheckForUpdates())
+    SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
     """Call other link initializers."""

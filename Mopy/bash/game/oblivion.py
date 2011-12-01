@@ -43,10 +43,6 @@ regInstallKeys = [
 patchURL = 'http://www.elderscrolls.com/downloads/updates_patches.htm'
 patchTip = 'http://www.elderscrolls.com/'
 
-#--Wrye Bash capabilities with this game
-canBash = True
-canEditSaves = True
-
 #--Construction Set information
 class cs:
     shortName = 'TESCS'             # Abbreviated name
@@ -80,6 +76,72 @@ class laa:
     exe = '**DNE**'     # Executable to run
     launchesSE = False  # Whether the launcher will automatically launch the SE as well
 
+#--Save Game format stuff
+class ess:
+    # Save file capabilities
+    canReadBasic = True         # All the basic stuff needed for the Saves Tab
+    canEditMasters = True       # Adjusting save file masters
+    canEditMore = True          # advanced editing
+
+    @staticmethod
+    def load(ins,header):
+        """Extract info from save file."""
+        #--Header
+        if ins.read(12) != 'TES4SAVEGAME':
+            raise Exception('Save file is not an Oblivion save game.')
+        ins.seek(34)
+        headerSize, = struct.unpack('I',ins.read(4))
+        #--Name, location
+        ins.seek(42)
+        size, = struct.unpack('B',ins.read(1))
+        header.pcName = ins.read(size)
+        header.pcLevel, = struct.unpack('H',ins.read(2))
+        size, = struct.unpack('B',ins.read(4))
+        header.pcLocation = ins.read(size)
+        #--Image Data
+        (header.gameDays,header.gameTicks,header.gameTime,ssSize,ssWidth,
+         ssHeight) = struct.unpack('=fI16s3I',ins.read(36))
+        ssData = ins.read(3*ssWidth*ssHeight)
+        header.image = (ssWidth,ssHeight,ssData)
+        #--Masters
+        del header.masters[:]
+        numMasters, = struct.unpack('B',ins.read(1))
+        for count in xrange(numMasters):
+            size, = struct.unpack('B',ins.read(1))
+            header.masters.append(ins.read(size))
+
+    @staticmethod
+    def writeMasters(ins,out,header):
+        """Rewrites mastesr of existing save file."""
+        def unpack(format,size): return struct.unpack(format,ins.read(size))
+        def pack(format,*args): out.write(struct.pack(format,*args))
+        #--Header
+        out.write(ins.read(34))
+        #--SaveGameHeader
+        size, = unpack('I',4)
+        pack('I',size)
+        out.write(ins.read(size))
+        #--Skip old masters
+        numMasters, = unpack('B',1)
+        oldMasters = []
+        for count in xrange(numMasters):
+            size, = unpack('B',1)
+            oldMasters.append(ins.read(size))
+        #--Write new masters
+        pack('B',len(header.masters))
+        for master in header.masters:
+            pack('B',len(master))
+            out.write(master.s)
+        #--Fids Address
+        offset = out.tell() - ins.tell()
+        fidsAddress, = unpack('I',4)
+        pack('I',fidsAddress+offset)
+        #--Copy remainder
+        while True:
+            buffer = ins.read(0x5000000)
+            if not buffer: break
+            out.write(buffer)
+        return oldMasters
 
 #--The main plugin Wrye Bash should look for
 masterFiles = [
@@ -91,6 +153,9 @@ masterFiles = [
 iniFiles = [
     r'Oblivion.ini',
     ]
+
+#--INI setting to setup Save Profiles
+saveProfilesKey = ('General','SLocalSavePath')
 
 #--Game ESM/ESP/BSA files
 bethDataFiles = set((
@@ -214,16 +279,24 @@ dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
     'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
 dataDirsPlus = set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
 
-#--Information about the mod file format
-class modFile:
+#--Plugin format stuff
+class esp:
+    #--Wrye Bash capabilities
+    canBash = True          # Can create Bashed Patches
+    canEditHeader = True    # Can edit anything in the TES4 record
+
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.8,1.0)
 
     #--Class to use to read the TES4 record
     tes4ClassName = 'MreTes4'
 
-    #--How to unpack the record header
-    unpackRecordHeader = ('4s4I',20,'REC_HEAD')
+    #--Information on the ESP/ESM header format
+    class header:   
+        format = '4s4I'
+        size = 20
+        attrs = ('recType','size','flags1','fid','flags2')
+        defaults = ('TES4',0,0,0,0)
 
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',

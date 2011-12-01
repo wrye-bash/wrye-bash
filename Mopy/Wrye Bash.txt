@@ -2421,12 +2421,21 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Fixed the 'List Sub-Packages' command.
     * Fixed installation of Script Extender plugins when not in Oblivion game mode.
     * Fixed a refresh bug where changing the install order via Ctrl+Up or Ctrl+Down would not refresh the need to Anneal packages.
-    * Fixed an incorrect color being used for packages that need Annealing.  Previously a light gray background color was used to indicate a package has underrides that need to be corrected by Annealing.  now BAIN correctly uses a yello background, as described in this readme.
-  * Disabled the 'Check for Updates' option in the WBSA - it works in Python Wrye Bash, but causes errors in the WBSA.
+    * Fixed an incorrect color being used for packages that need Annealing.  Previously a light gray background color was used to indicate a package has underrides that need to be corrected by Annealing.  Now BAIN correctly uses a yellow background, as described in this readme.
+  * Fixed Save Profiles so they work even when the game's INI file doesn't initially have the 'sLocalSavePath' entry (ie: Skyrim).
+  * Fixed the 'Check for Updates' option while running in Standalone mode.
 * New features:
   * 4Gb/LAA Launcher supported:
     * For games that have a LAA Launcher (Skyrim currently), launching the game will launch via the LAA Launcher.
     * A new [[#BashOptionButtons|status bar button]] for enabling/disabling the LAA Launcher.
+  * Added Status Bar mouse over texts for BAIN Packages.
+* Skyrim specific:
+  * Basic editinf of Save Games:
+    * Masters
+  * Basic editing of Mod files:
+    * Author
+    * Description
+    * Masters
 
 === 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
 * Skyrim support added:
