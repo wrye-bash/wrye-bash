@@ -5732,70 +5732,10 @@ class SaveHeader:
         """Extract info from save file."""
         try:
             with path.open('rb') as ins:
-                if bush.game.name == 'Oblivion':
-                    #--Header
-                    ins.seek(34)
-                    headerSize, = struct.unpack('I',ins.read(4))
-                    #posMasters = 38 + headerSize
-                    #--Name, location
-                    ins.seek(38+4)
-                    size, = struct.unpack('B',ins.read(1))
-                    self.pcName = cstrip(ins.read(size))
-                    self.pcLevel, = struct.unpack('H',ins.read(2))
-                    size, = struct.unpack('B',ins.read(1))
-                    self.pcLocation = cstrip(ins.read(size))
-                    #--Image Data
-                    self.gameDays,self.gameTicks,self.gameTime,ssSize,ssWidth,ssHeight = struct.unpack('=fI16s3I',ins.read(36))
-                    ssData = ins.read(3*ssWidth*ssHeight)
-                    self.image = (ssWidth,ssHeight,ssData)
-                    #--Masters
-                    #ins.seek(posMasters)
-                    del self.masters[:]
-                    numMasters, = struct.unpack('B',ins.read(1))
-                    for count in range(numMasters):
-                        size, = struct.unpack('B',ins.read(1))
-                        self.masters.append(GPath(ins.read(size)))
-                else:
-                    #--Header
-                    if ins.read(13) != 'TESV_SAVEGAME':
-                        raise SaveFileError(path.tail,_('Save file is not a Skyrim save file.'))
-                    headerSize, = struct.unpack('I',ins.read(4))
-                    version,saveNumber,size = struct.unpack('2IH',ins.read(10))
-                    self.pcName = cstrip(ins.read(size))
-                    self.pcLevel, = struct.unpack('I',ins.read(4))
-                    size, = struct.unpack('H',ins.read(2))
-                    self.pcLocation = ins.read(size)
-                    size, = struct.unpack('H',ins.read(2))
-                    self.gameDate = ins.read(size)
-                    hours,minutes,seconds = [int(x) for x in self.gameDate.split('.')]
-                    playSeconds = hours*60*60 + minutes*60 + seconds
-                    self.gameDays = float(playSeconds)/(24*60*60)
-                    self.gameTicks = playSeconds * 1000
-                    size, = struct.unpack('H',ins.read(2))
-                    raceEdid = ins.read(size)
-                    unk0, = struct.unpack('H',ins.read(2))
-                    unk1, = struct.unpack('f',ins.read(4))
-                    unk2, = struct.unpack('f',ins.read(4))
-                    ftime, = struct.unpack('Q',ins.read(8))
-                    ssWidth, = struct.unpack('I',ins.read(4))
-                    ssHeight, = struct.unpack('I',ins.read(4))
-                    if ins.tell() != headerSize + 17:
-                        raise SaveFileError(path.tail,'Save game header size (%i) not as expected (%i).' % (ins.tell()-17,headerSize))
-                    #--Screenshot data
-                    ssData = ins.read(ssWidth*ssHeight*3)
-                    self.image = (ssWidth,ssHeight,ssData)
-                    #--unknown
-                    unk3, = struct.unpack('B',ins.read(1))
-                    #--Masters
-                    mastersSize, = struct.unpack('I',ins.read(4))
-                    mastersStart = ins.tell()
-                    del self.masters[:]
-                    numMasters, = struct.unpack('B',ins.read(1))
-                    for count in xrange(numMasters):
-                        size, = struct.unpack('H',ins.read(2))
-                        self.masters.append(GPath(ins.read(size)))
-                    if ins.tell() != mastersStart + mastersSize:
-                        deprint(path.tail,'Save masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
+                bush.game.ess.load(ins,self)
+                self.pcName = cstrip(self.pcName)
+                self.pcLocation = cstrip(self.pcLocation)
+                self.masters = [GPath(x) for x in self.masters]
         #--Errors
         except:
             deprint('save file error:',traceback=True)
@@ -5807,52 +5747,21 @@ class SaveHeader:
         """Rewrites masters of existing save file."""
         if not path.exists():
             raise SaveFileError(path.head,_('File does not exist.'))
-        ins = path.open('rb')
-        out = path.temp.open('wb')
-        def unpack(format,size):
-            return struct.unpack(format,ins.read(size))
-        def pack(format,*args):
-            out.write(struct.pack(format,*args))
-        #--Header
-        out.write(ins.read(34))
-        #--SaveGameHeader
-        size, = unpack('I',4)
-        pack('I',size)
-        out.write(ins.read(size))
-        #--Skip old masters
-        numMasters, = unpack('B',1)
-        oldMasters = []
-        for count in range(numMasters):
-            size, = unpack('B',1)
-            oldMasters.append(GPath(ins.read(size)))
-        #--Write new masters
-        pack('B',len(self.masters))
-        for master in self.masters:
-            pack('B',len(master))
-            out.write(master.s)
-        #--Fids Address
-        offset = out.tell() - ins.tell()
-        fidsAddress, = unpack('I',4)
-        pack('I',fidsAddress+offset)
-        #--Copy remainder
-        while True:
-            buffer= ins.read(0x5000000)
-            if not buffer: break
-            out.write(buffer)
-        #--Cleanup
-        ins.close()
-        out.close()
+        with path.open('rb') as ins:
+            with path.temp.open('wb') as out:
+                oldMasters = bush.game.ess.writeMasters(ins,out,self)
+        oldMasters = [GPath(x) for x in oldMasters]
         path.untemp()
         #--Cosaves
         masterMap = dict((x,y) for x,y in zip(oldMasters,self.masters) if x != y)
-        #--Pluggy File?
+        #--Pluggy file?
         pluggyPath = CoSaves.getPaths(path)[0]
         if masterMap and pluggyPath.exists():
             pluggy = PluggyFile(pluggyPath)
             pluggy.load()
             pluggy.mapMasters(masterMap)
             pluggy.safeSave()
-        #--OBSE File?
+        #--OBSE/SKSE file?
         obsePath = CoSaves.getPaths(path)[1]
         if masterMap and obsePath.exists():
             obse = ObseFile(obsePath)
@@ -6590,7 +6499,7 @@ class SaveFile:
 
 #--------------------------------------------------------------------------------
 class CoSaves:
-    """Handles co-files (.pluggy, .obse) for saves."""
+    """Handles co-files (.pluggy, .obse, .skse) for saves."""
     reSave  = re.compile(r'\.ess(f?)$',re.I)
 
     @staticmethod
@@ -6599,7 +6508,8 @@ class CoSaves:
         maSave = CoSaves.reSave.search(savePath.s)
         if maSave: savePath = savePath.root
         first = maSave and maSave.group(1) or ''
-        return tuple(savePath+ext+first for ext in  ('.pluggy','.obse'))
+        return tuple(savePath+ext+first
+                     for ext in ('.pluggy','.'+bush.game.se.shortName.lower()))
 
     def __init__(self,savePath,saveName=None):
         """Initialize with savePath."""
@@ -6955,6 +6865,38 @@ class IniFile(object):
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
+    def saveNewSetting(self,section,key,value):
+        """Adds a new single setting to the file."""
+        #--Check if the setting already exists
+        settings = self.getSettings()
+        s = LString(section)
+        k = LString(key)
+        #--It's already there, so just use the standard method
+        if s in settings and k in settings[s]:
+            self.saveSetting(section,key,value)
+        else:
+            if s in settings:
+                #--It's not, but the section is
+                reComment = self.reComment
+                reSection = self.reSection
+                reSetting = self.reSetting
+                with self.path.open('r') as iniFile:
+                    with self.path.temp.open('w') as tmpFile:
+                        for line in iniFile:
+                            stripped = reComment.sub('',line).strip()
+                            maSection = reSection.match(stripped)
+                            if maSection:
+                                section = LString(maSection.group(1))
+                                if section == s:
+                                    #--Found the section
+                                    line += '%s=%s\n' % (key,value)
+                            tmpFile.write(line)
+                self.path.untemp()
+            else:
+                #--It's not, and the section isn't, so we'll add it to the end
+                tmpFile.write(iniFile.read())
+                tmpFile.write('\n[%s]\n%s=%s' % (section, key, value))
+
     def saveSettings(self,ini_settings):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
@@ -6967,26 +6909,24 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read init, write temp
-        iniFile = self.path.open('r')
-        tmpFile = self.path.temp.open('w')
         section = sectionSettings = None
-        for line in iniFile:
-            stripped = reComment.sub('',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
-            if maSection:
-                section = LString(maSection.group(1))
-                sectionSettings = ini_settings.get(section,{})
-            elif maSetting and sectionSettings and LString(maSetting.group(1)) in sectionSettings:
-                key = LString(maSetting.group(1))
-                value = sectionSettings[key]
-                if isinstance(value,str) and value[-1] == '\n':
-                    line = value
-                else:
-                    line = '%s=%s\n' % (key,value)
-            tmpFile.write(line)
-        tmpFile.close()
-        iniFile.close()
+        with self.path.open('r') as iniFile:
+            with self.path.temp.open('w') as tmpFile:
+                for line in iniFile:
+                    stripped = reComment.sub('',line).strip()
+                    maSection = reSection.match(stripped)
+                    maSetting = reSetting.match(stripped)
+                    if maSection:
+                        section = LString(maSection.group(1))
+                        sectionSettings = ini_settings.get(section,{})
+                    elif maSetting and sectionSettings and LString(maSetting.group(1)) in sectionSettings:
+                        key = LString(maSetting.group(1))
+                        value = sectionSettings[key]
+                        if isinstance(value,str) and value[-1] == '\n':
+                            line = value
+                        else:
+                            line = '%s=%s\n' % (key,value)
+                    tmpFile.write(line)
         #--Done
         self.path.untemp()
 
@@ -9389,7 +9329,9 @@ class SaveInfos(FileInfos):
         self.dir = dirs['saveBase'].join(self.localSave)
         self.bashDir = self.getBashDir()
         if oblivionIni.path.exists() and (oblivionIni.path.mtime != self.iniMTime):
-            self.localSave = oblivionIni.getSetting('General','SLocalSavePath','Saves\\')
+            self.localSave = oblivionIni.getSetting(bush.game.saveProfilesKey[0],
+                                                    bush.game.saveProfilesKey[1],
+                                                    'Saves\\')
             self.iniMTime = oblivionIni.path.mtime
             return True
         else:
@@ -9399,7 +9341,12 @@ class SaveInfos(FileInfos):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
         self.localSave = localSave
-        oblivionIni.saveSetting('General','SLocalSavePath',localSave)
+        #--Need 'saveNewSetting', because some games (Skyrim) don't
+        #  have that setting in the INI file initially, but it does
+        #  work.
+        oblivionIni.saveNewSetting(bush.game.saveProfilesKey[0],
+                                   bush.game.saveProfilesKey[1],
+                                   localSave)
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join('Table.dat')))

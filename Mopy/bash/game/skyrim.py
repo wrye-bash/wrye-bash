@@ -73,6 +73,53 @@ class laa:
     exe = 'skyrim4gb.exe'           # Executable to run
     launchesSE = True               # Whether the launcher will automatically launch the SE as well
 
+#--Save Game format stuff
+class ess:
+    @staticmethod
+    def load(ins,header):
+        """Extract info from save file."""
+        #--Header
+        if ins.read(13) != 'TESV_SAVEGAME':
+            raise Exception('Save file is not a Skyrim save game.')
+        headerSize, = struct.unpack('I',ins.read(4))
+        #--Name, location
+        version,saveNumber,size = struct.unpack('2IH',ins.read(10))
+        header.pcName = ins.read(size)
+        header.pcLevel, = struct.unpack('I',ins.read(4))
+        size, = struct.unpack('H',ins.read(2))
+        header.pcLocation = ins.read(size)
+        size, = struct.unpack('H',ins.read(2))
+        header.gameDate = ins.read(size)
+        hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
+        playSeconds = hours*60*60 + minutes*60 + seconds
+        header.gameDays = float(playSeconds)/(24*60*60)
+        header.gameTicks = playSeconds * 1000
+        size, = struct.unpack('H',ins.read(2))
+        ins.seek(ins.tell()+size+2+4+4+8) # raceEdid, unk0, unk1, unk2, ftime
+        ssWidth, = struct.unpack('I',ins.read(4))
+        ssHeight, = struct.unpack('I',ins.read(4))
+        if ins.tell() != headerSize + 17:
+            raise Exception('Save game header size (%s) not as expected (%s).' % (ins.tell()-17,headerSize))
+        #--Image Data
+        ssData = ins.read(3*ssWidth*ssHeight)
+        header.image = (ssWidth,ssHeight,ssData)
+        #--unknown
+        unk3 = ins.read(1)
+        #--Masters
+        mastersSize, = struct.unpack('I',ins.read(4))
+        mastersStart = ins.tell()
+        del header.masters[:]
+        numMasters, = struct.unpack('B',ins.read(1))
+        for count in xrange(numMasters):
+            size, = struct.unpack('H',ins.read(2))
+            header.masters.append(ins.read(size))
+        if ins.tell() != mastersStart + mastersSize:
+            raise Exception('Save game masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
+
+    def writeMasters(ins,out,header):
+        return header.masters[:]
+
+
 #--Wrye Bash capabilities with this game
 canBash = False      # No Bashed Patch creation or messing with mods
 canEditSaves = False # Only basic understanding of save games
@@ -82,6 +129,9 @@ iniFiles = [
     r'Skyrim.ini',
     r'SkyrimPrefs.ini',
     ]
+
+#--INI setting to setup Save Profiles
+saveProfilesKey = ('General','SLocalSavePath')
 
 #--The main plugin file Wrye Bash should look for
 masterFiles = [
