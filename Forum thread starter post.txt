@@ -27,6 +27,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [b]Documentation[/b]:
 [list]
   [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
+  [*][url=http://tes.ag.ru/oblivion/mods/bash/readme.shtml]Russian Readme (295.1)[/url]: Translated version of the 295.1 readme.
   [*]Waruddar's [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/patch_option_reference.html]Patch Option Reference[/url] (also included in the download as "patch_option_reference.html" in the Mopy folder)
   [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
   [*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
