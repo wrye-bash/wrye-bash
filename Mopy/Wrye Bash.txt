@@ -2418,7 +2418,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 296 [XX/X/2011]
 * CBash updated to version 0.6
 
-=== 295.2 [XX/XX/XXXX] [Lojack]
+=== 295.2 [XX/XX/XXXX] [Lojack,bluesky404]
 * Bugfixes:
   * [[#InstallersTab|Installers Tab]]:
     * Fixed the 'List Sub-Packages' command.
@@ -2439,6 +2439,8 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Author
     * Description
     * Masters
+  * Bashed Patches:
+    * Can merge GMST and GLOB records.
 
 === 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
 * Skyrim support added:

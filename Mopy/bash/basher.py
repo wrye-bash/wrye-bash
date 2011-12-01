@@ -7520,81 +7520,14 @@ class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
-PatchDialog.patchers.extend((
-    AliasesPatcher(),
-    AssortedTweaker(),
-    PatchMerger(),
-    AlchemicalCatalogs(),
-    KFFZPatcher(),
-    ActorImporter(),
-    DeathItemPatcher(),
-    NPCAIPackagePatcher(),
-    CoblExhaustion(),
-    UpdateReferences(),
-    CellImporter(),
-    ClothesTweaker(),
-    GlobalsTweaker(),
-    GmstTweaker(),
-    GraphicsPatcher(),
-    ImportFactions(),
-    ImportInventory(),
-    SpellsPatcher(),
-    TweakActors(),
-    ImportRelations(),
-    ImportScripts(),
-    ImportScriptContents(),
-    ImportActorsSpells(),
-    ListsMerger(),
-    MFactMarker(),
-    NamesPatcher(),
-    NamesTweaker(),
-    NpcFacePatcher(),
-    PowerExhaustion(),
-    RacePatcher(),
-    RoadImporter(),
-    SoundPatcher(),
-    StatsPatcher(),
-    SEWorldEnforcer(),
-    ContentsChecker(),
-    ))
-PatchDialog.CBash_patchers.extend((
-    CBash_AliasesPatcher(),
-    CBash_AssortedTweaker(),
-    CBash_PatchMerger(),
-    CBash_AlchemicalCatalogs(),
-    CBash_KFFZPatcher(),
-    CBash_ActorImporter(),
-    CBash_DeathItemPatcher(),
-    CBash_NPCAIPackagePatcher(),
-    CBash_CoblExhaustion(),
-    CBash_UpdateReferences(),
-    CBash_CellImporter(),
-    CBash_ClothesTweaker(),
-    CBash_GlobalsTweaker(),
-    CBash_GmstTweaker(),
-    CBash_GraphicsPatcher(),
-    CBash_ImportFactions(),
-    CBash_ImportInventory(),
-    CBash_SpellsPatcher(),
-    CBash_TweakActors(),
-    CBash_ImportRelations(),
-    CBash_ImportScripts(),
-##    CBash_ImportScriptContents(),
-    CBash_ImportActorsSpells(),
-    CBash_ListsMerger(),
-    CBash_MFactMarker(),
-    CBash_NamesPatcher(),
-    CBash_NamesTweaker(),
-    CBash_NpcFacePatcher(),
-    CBash_PowerExhaustion(),
-    CBash_RacePatcher(),
-    CBash_RoadImporter(),
-    CBash_SoundPatcher(),
-    CBash_StatsPatcher(),
-    CBash_SEWorldEnforcer(),
-    CBash_ContentsChecker(),
-##    CBash_ForceMerger(),
-    ))
+def initPatchers():
+    PatchDialog.patchers.extend((
+        globals()[x]() for x in bush.game.patchers
+        ))
+    PatchDialog.CBash_patchers.extend((
+        globals()[x]() for x in bush.game.CBash_patchers
+        ))
+
 otherPatcherDict = {AliasesPatcher().__class__.__name__ : CBash_AliasesPatcher(),
                     AssortedTweaker().__class__.__name__ : CBash_AssortedTweaker(),
                     PatchMerger().__class__.__name__ : CBash_PatchMerger(),
@@ -12247,23 +12180,20 @@ class Mod_MarkMergeable(Link):
         for fileName in map(GPath,self.data):
             if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
             fileInfo = bosh.modInfos[fileName]
-
-            if fileName == "Oscuro's_Oblivion_Overhaul.esp":
-                canMerge = _("\n.    Marked non-mergeable at request of mod author.")
-            elif self.doCBash:
-                canMerge = bosh.CBash_PatchFile.modIsMergeable(fileInfo)
+            if self.doCBash:
+                reason = bosh.CBash_PatchFile.modIsMergeable(fileInfo,True)
             else:
-                canMerge = bosh.PatchFile.modIsMergeable(fileInfo)
+                reason = bosh.PatchFile.modIsMergeable(fileInfo,True)
 
-            if canMerge == True:
+            if reason == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
                 yes.append(fileName)
             else:
-                if canMerge == _("\n.    Has 'NoMerge' tag."):
+                if _("\n.    Has 'NoMerge' tag.") in reason:
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
-                no.append("%s:%s" % (fileName.s,canMerge))
+                no.append("%s:%s" % (fileName.s,reason))
         message = '== %s ' % (['Python','CBash'][self.doCBash])+_('Mergeability')+'\n\n'
         if yes:
             message += _('=== Mergeable\n* ') + '\n\n* '.join(x.s for x in yes)
@@ -16198,6 +16128,7 @@ def InitSettings():
     settings['balt.WryeLog.cssDir'] = bosh.dirs['mods'].join('Docs')
     #--StandAlone version?
     settings['bash.standalone'] = hasattr(sys,'frozen')
+    initPatchers()
 
 def InitImages():
     """Initialize color and image collections."""
