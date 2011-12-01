@@ -96,7 +96,7 @@ class ess:
         size, = struct.unpack('B',ins.read(1))
         header.pcName = ins.read(size)
         header.pcLevel, = struct.unpack('H',ins.read(2))
-        size, = struct.unpack('B',ins.read(4))
+        size, = struct.unpack('B',ins.read(1))
         header.pcLocation = ins.read(size)
         #--Image Data
         (header.gameDays,header.gameTicks,header.gameTime,ssSize,ssWidth,
