@@ -43,10 +43,6 @@ regInstallKeys = [
 patchURL = 'http://www.elderscrolls.com/downloads/updates_patches.htm'
 patchTip = 'http://www.elderscrolls.com/'
 
-#--Wrye Bash capabilities with this game
-canBash = True
-canEditSaves = True
-
 #--Construction Set information
 class cs:
     shortName = 'TESCS'             # Abbreviated name
@@ -82,6 +78,11 @@ class laa:
 
 #--Save Game format stuff
 class ess:
+    # Save file capabilities
+    canReadBasic = True         # All the basic stuff needed for the Saves Tab
+    canEditMasters = True       # Adjusting save file masters
+    canEditMore = True          # advanced editing
+
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
@@ -278,16 +279,24 @@ dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
     'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
 dataDirsPlus = set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
 
-#--Information about the mod file format
-class modFile:
+#--Plugin format stuff
+class esp:
+    #--Wrye Bash capabilities
+    canBash = True          # Can create Bashed Patches
+    canEditHeader = True    # Can edit anything in the TES4 record
+
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.8,1.0)
 
     #--Class to use to read the TES4 record
     tes4ClassName = 'MreTes4'
 
-    #--How to unpack the record header
-    unpackRecordHeader = ('4s4I',20,'REC_HEAD')
+    #--Information on the ESP/ESM header format
+    class header:   
+        format = '4s4I'
+        size = 20
+        attrs = ('recType','size','flags1','fid','flags2')
+        defaults = ('TES4',0,0,0,0)
 
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',

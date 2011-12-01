@@ -75,6 +75,11 @@ class laa:
 
 #--Save Game format stuff
 class ess:
+    # Save file capabilities
+    canReadBasic = True         # All the basic stuff needed for the Saves Tab
+    canEditMasters = True       # Adjusting save file masters
+    canEditMore = False         # No advanced editing
+
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
@@ -116,13 +121,53 @@ class ess:
         if ins.tell() != mastersStart + mastersSize:
             raise Exception('Save game masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
 
+    @staticmethod
     def writeMasters(ins,out,header):
-        return header.masters[:]
-
-
-#--Wrye Bash capabilities with this game
-canBash = False      # No Bashed Patch creation or messing with mods
-canEditSaves = False # Only basic understanding of save games
+        """Rewrites masters of existing save file."""
+        def unpack(format,size): return struct.unpack(format,ins.read(size))
+        def pack(format,*args): out.write(struct.pack(format,*args))
+        #--Magic (TESV_SAVEGAME)
+        out.write(ins.read(13))
+        #--Header
+        size, = unpack('I',4)
+        pack('I',size)
+        out.write(ins.read(size-8))
+        ssWidth,ssHeight = unpack('2I',8)
+        pack('2I',ssWidth,ssHeight)
+        #--Screenshot
+        out.write(ins.read(3*ssWidth*ssHeight))
+        #--formVersion
+        out.write(ins.read(1))
+        #--plugin info
+        oldSize, = unpack('I',4)
+        newSize = 1 + sum(len(x)+2 for x in header.masters)
+        pack('I',newSize)
+        #  Skip old masters
+        oldMasters = []
+        numMasters, = unpack('B',1)
+        pack('B',len(header.masters))
+        for x in xrange(numMasters):
+            size, = unpack('H',2)
+            oldMasters.append(ins.read(size))
+        #  Write new masters
+        for master in header.masters:
+            pack('H',len(master))
+            out.write(master.s)
+        #--Offsets
+        offset = out.tell() - ins.tell()
+        #--File Location Table
+        for i in xrange(6):
+            # formIdArrayCount offset, unkownTable3Offset,
+            # globalDataTable1Offset, globalDataTable2Offset,
+            # changeFormsOffset, globalDataTable3Offset
+            oldOffset, = unpack('I',4)
+            pack('I',oldOffset+offset)
+        #--Copy the rest
+        while True:
+            buffer = ins.read(0x5000000)
+            if not buffer: break
+            out.write(buffer)
+        return oldMasters
 
 #--INI files that should show up in the INI Edits tab
 iniFiles = [
@@ -183,16 +228,24 @@ dataDirs = set(('bash patches','interface','meshes','strings','textures',
     'video','lodsettings','grass','scripts','shadersfx','music','sound',))
 dataDirsPlus = set(('ini tweaks','skse','ini'))
 
-#--Information about the mod file format
-class modFile:
+#--Plugin format stuff
+class esp:
+    #--Wrye Bash capabilities
+    canBash = False         # No Bashed Patch creation
+    canEditHeader = True    # Can edit anything in the TES4 record
+
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.94,)
 
     #--Class to use to read the TES4 record
     tes4ClassName = 'MreTes5'
 
-    #--How to unpack the record header
-    unpackRecordHeader = ('4s5I',24,'REC_HEAD')
+    #--Information on the ESP/ESM header format
+    class header:
+        format = '4s5I'
+        size = 24
+        attrs = ('recType','size','flags1','fid','flags2','unk')
+        defaults = ('TES4',0,0,0,0,0)
 
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',

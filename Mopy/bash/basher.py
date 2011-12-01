@@ -1287,7 +1287,7 @@ class MasterList(List):
     #--Event: Left Down
     def OnLeftDown(self,event):
         #--Not edited yet?
-        if not self.edited:
+        if not self.edited and bush.game.ess.canEditMasters:
             message = (_("Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving."))
             if not balt.askContinue(self,message,'bash.masters.update',_('Update Masters')):
                 return
@@ -2094,7 +2094,7 @@ class ModDetails(SashPanel):
 
     def SetEdited(self):
         self.edited = True
-        if bush.game.canBash:
+        if bush.game.esp.canEditHeader:
             self.save.Enable()
         self.cancel.Enable()
 
@@ -2887,7 +2887,7 @@ class SaveDetails(SashPanel):
     def SetEdited(self):
         """Mark as edited."""
         self.edited = True
-        if bush.game.canEditSaves:
+        if bush.game.ess.canEditMasters:
             self.save.Enable()
         self.cancel.Enable()
 
@@ -2948,8 +2948,9 @@ class SaveDetails(SashPanel):
         except bosh.FileError:
             balt.showError(self,_('File corrupted on save!'))
             self.SetFile(None)
-        self.SetFile(self.saveInfo.name)
-        saveList.RefreshUI(saveInfo.name)
+            saveList.RefreshUI()
+        else:
+            saveList.RefreshUI(saveInfo.name)
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
@@ -2959,6 +2960,8 @@ class SaveDetails(SashPanel):
 class SavePanel(SashPanel):
     """Savegames tab."""
     def __init__(self,parent):
+        if not bush.game.ess.canReadBasic:
+            raise Exception(_('Wrye Bash cannot read save games for %s.') % bush.game.name)
         SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=200)
         left,right = self.left, self.right
         global saveList
@@ -5293,7 +5296,7 @@ class BashFrame(wx.Frame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.modFile.validHeaderVersions])
+        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions])
         if not invalidVersions <= self.knownInvalidVerions:
             m = [_('Unrecognized Versions'),_("The following mods have unrecognized TES4 header versions: ")]
             m.extend(sorted(invalidVersions))
@@ -6182,7 +6185,7 @@ class BashApp(wx.App):
         #bosh.BSAInfos.refresh()
         #--Patch check
         firstBashed = settings.get('bash.patch.firstBashed',False)
-        if not firstBashed and bush.game.canBash:
+        if not firstBashed and bush.game.esp.canBash:
             for modInfo in bosh.modInfos.values():
                 if modInfo.header.author == 'BASHED PATCH': break
             else:
@@ -17022,7 +17025,7 @@ def InitModLinks():
     #--ModList: Item Links
     if True: #--File
         fileMenu = MenuLink(_("File"))
-        if bush.game.canBash:
+        if bush.game.esp.canBash:
             fileMenu.links.append(Mod_CreateBlankBashedPatch())
             fileMenu.links.append(Mod_CreateBlank())
             fileMenu.links.append(Mod_CreateDummyMasters())
@@ -17051,7 +17054,7 @@ def InitModLinks():
         ModList.itemMenu.append(ratingMenu)
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
-    if bush.game.canBash:
+    if bush.game.esp.canBash:
         ModList.itemMenu.append(Mod_Details())
     ModList.itemMenu.append(File_ListMasters())
     ModList.itemMenu.append(Mod_ShowReadme())
@@ -17062,7 +17065,7 @@ def InitModLinks():
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())
     ModList.itemMenu.append(Mod_Ghost())
-    if bush.game.canBash:
+    if bush.game.esp.canBash:
         ModList.itemMenu.append(SeparatorLink())
         ModList.itemMenu.append(Mod_MarkMergeable(False))
         if CBash:
@@ -17191,7 +17194,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_LoadMasters())
     SaveList.itemMenu.append(File_ListMasters())
     SaveList.itemMenu.append(Save_DiffMasters())
-    if bush.game.canEditSaves:
+    if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(Save_Stats())
         SaveList.itemMenu.append(Save_StatObse())
         #--------------------------------------------
@@ -17209,7 +17212,7 @@ def InitSaveLinks():
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_ExportScreenshot())
     #--------------------------------------------
-    if bush.game.canEditSaves:
+    if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(SeparatorLink())
         SaveList.itemMenu.append(Save_Unbloat())
         SaveList.itemMenu.append(Save_RepairAbomb())
