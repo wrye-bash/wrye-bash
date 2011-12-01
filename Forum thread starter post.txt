@@ -1,4 +1,4 @@
-Continuing from the [topic=]previous thread[/topic]...
+﻿Continuing from the [topic=]previous thread[/topic]...
 
 [b]What does Wrye Bash do?[/b]
 [list]
@@ -31,7 +31,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
   [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
   [*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
   [*][url=http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash]UESP Wrye Bash unofficial wiki[/url]
-  [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]簡體中文[/url]
+  [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]简体中文[/url]
 [/list]
 [b]Screenshots[/b]:[list]
   [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_1.png]Building a bashed patch[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_2.png]2[/url] [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/building_bashed_patch_3.png]3[/url]
