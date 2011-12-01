@@ -678,12 +678,18 @@ class ModWriter:
 
     def writeGroup(self,size,label,groupType,stamp):
         if type(label) is str:
-            self.pack('=4sI4sII','GRUP',size,label,groupType,stamp)
+            format = bush.game.esp.header.formatTopGrup
+            args = ['GRUP',size,label,groupType,stamp]
         elif type(label) is tuple:
-            self.pack('=4sIhhII','GRUP',size,label[1],label[0],groupType,stamp)
+            format = bush.game.esp.header.formatTupleGrup
+            args = ['GRUP',size,label[1],label[0],groupType,stamp]
         else:
-            self.pack('=4s4I','GRUP',size,label,groupType,stamp)
-
+            format = bush.game.esp.header.format
+            args = ['GRUP',size,label,groupType,stamp]
+        fsize = struct.calcsize(format)
+        args.extend([0 for x in xrange((fsize-20)/4)])
+        print 'writing grup:', format, args
+        self.pack(format,*args)
 
 # Mod Record Elements ---------------------------------------------------------
 # Constants
@@ -2741,16 +2747,17 @@ class MreGmst(MelRecord):
         myClass = self.__class__
         if not myClass.oblivionIds:
             try:
-                myClass.oblivionIds = cPickle.load(dirs['db'].join('Oblivion_ids.pkl').open())['GMST']
+                fileName = bush.game.name + '_ids.pkl'
+                myClass.oblivionIds = cPickle.load(dirs['db'].join(fileName).open())['GMST']
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True
                 print
-                print _('Error loading Oblivion_ids.pkl:')
+                print _('Error loading %s:') % fileName
                 deprint(' ',traceback=True)
                 bolt.deprintOn = old
                 print
-                print _('Manually testing if file exists:'), dirs['db'].join('Oblivion_ids.pkl').exists()
+                print _('Manually testing if file exists:'), dirs['db'].join(fileName).exists()
                 print _('Current working directory:'), os.getcwd()
                 print "dirs['db']:", dirs['db']
                 print
@@ -4156,7 +4163,7 @@ class MobBase(object):
 
     def __init__(self,header,loadFactory,ins=None,unpack=False):
         """Initialize."""
-        (grup, self.size, self.label, self.groupType, self.stamp) = header
+        (grup, self.size, self.label, self.groupType, self.stamp) = header[0:5]
         self.debug = False
         self.data = None
         self.changed = False
@@ -4170,10 +4177,10 @@ class MobBase(object):
         if self.debug: print 'GRUP load:',self.label
         #--Read, but don't analyze.
         if not unpack:
-            self.data = ins.read(self.size-20,type)
+            self.data = ins.read(self.size-bush.game.esp.header.size,type)
         #--Analyze ins.
         elif ins is not None:
-            self.loadData(ins, ins.tell()+self.size-20)
+            self.loadData(ins, ins.tell()+self.size-bush.game.esp.header.size)
         #--Analyze internal buffer.
         else:
             reader = self.getReader()
@@ -4295,7 +4302,8 @@ class MobObjects(MobBase):
         if not self.changed:
             return self.size
         else:
-            return 20 + sum((20 + record.getSize()) for record in self.records)
+            hsize = bush.game.esp.header.size
+            return hsize + sum((hsize + record.getSize()) for record in self.records)
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -4304,8 +4312,12 @@ class MobObjects(MobBase):
             out.write(self.data)
         else:
             size = self.getSize()
-            if size == 20: return
-            out.pack('4sI4sII','GRUP',size,self.label,0,self.stamp)
+            if size == bush.game.esp.header.size: return
+            format = bush.game.esp.header.formatTopGrup
+            fsize = struct.calcsize(format)
+            args = ['GRUP',size,self.label,0,self.stamp]
+            args.extend([0 for x in xrange((fsize-20)/4)])
+            out.pack(format,*args)
             for record in self.records:
                 record.dump(out)
 
@@ -5113,7 +5125,7 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = globals()[bush.game.esp.tes4ClassName](*bush.game.esp.header.defaults)
+        self.tes4 = globals()[bush.game.esp.tes4ClassName](bush.game.esp.header.defaults)
         self.tes4.setChanged()
         self.tops = {} #--Top groups.
         self.topsSkipped = set() #--Types skipped
@@ -5153,7 +5165,8 @@ class ModFile:
         selfLoadFactory = self.loadFactory
         while not insAtEnd():
             #--Get record info and handle it
-            (type,size,label,groupType,stamp) = header = insRecHeader()
+            header = insRecHeader()
+            (type,size,label,groupType,stamp) = header[0:5]
             if type != 'GRUP' or groupType != 0:
                 raise ModError(self.fileInfo.name,_('Improperly grouped file.'))
             topClass = selfGetTopClass(label)
@@ -5163,7 +5176,7 @@ class ModFile:
                     self.tops[label].load(ins,unpack and (topClass != MobBase))
                 else:
                     selfTopsSkipAdd(label)
-                    insSeek(size-20,1,type + '.' + label)
+                    insSeek(size-bush.game.esp.header.size,1,type + '.' + label)
             except:
                 if isinstance(self.fileInfo.name,str):
                     print _("Error in %s") % self.fileInfo.name
@@ -5271,10 +5284,10 @@ class ModFile:
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError(_("ModFile fids not in long form."))
-        if dirs['mods'].join('Oblivion.esm').exists():
-            masters = MasterSet([GPath('Oblivion.esm')])
-        elif dirs['mods'].join('Nehrim.esm').exists():
-            masters = MasterSet([GPath('Nehrim.esm')]) # insert witty joke here about the old comment
+        for fname in bush.game.masterFiles:
+            if dirs['mods'].join(fname).exists():
+                masters = MasterSet([GPath(fname)])
+                break
         for block in self.tops.values():
             block.updateMasters(masters)
         return masters.getOrdered()
@@ -8709,8 +8722,7 @@ class ModInfos(FileInfos):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
-            if not bush.game.canBash:
-
+            if not bush.game.esp.canBash:
                 canMerge = False
             else:
                 try:
@@ -17345,13 +17357,12 @@ class Save_NPCEdits:
 class PatchFile(ModFile):
     """Defines and executes patcher configuration."""
     #--Class
-    mergeClasses = (
-        MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn, MreClas,
-        MreClot, MreCont, MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn,
-        MreGlob, MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
-        MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreScpt, MreSgst,
-        MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreWatr, MreWeap, MreWthr,
-        MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil)
+    mergeClasses = tuple()
+
+    @staticmethod
+    def initGameData():
+        """Needs to be called after bush.game has been set"""
+        PatchFile.mergeClasses = tuple([globals()[className] for className in bush.game.esp.mergeClasses])
 
     @staticmethod
     def generateNextBashedPatch(wxParent=None):
@@ -17412,7 +17423,7 @@ class PatchFile(ModFile):
             if not verbose: return False
             reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(modFile.topsSkipped))+'.')
         #--Empty mod
-        if not modFile.tops:
+        elif not modFile.tops:
             if not verbose: return False
             reasons += _("\n.    Empty mod.")
         #--New record
@@ -17496,8 +17507,8 @@ class PatchFile(ModFile):
                     type_classes[item] = item
         readClasses = {}
         writeClasses = {}
-        updateClasses(readClasses,(MreMgef,MreScpt)) #--Need info from magic effects.
-        updateClasses(writeClasses,(MreMgef,)) #--Need info from magic effects.
+        updateClasses(readClasses, [globals()[x] for x in bush.game.esp.readClasses])
+        updateClasses(writeClasses, [globals()[x] for x in bush.game.esp.writeClasses])
         for patcher in self.patchers:
             updateClasses(readClasses, patcher.getReadClasses())
             updateClasses(writeClasses, patcher.getWriteClasses())
@@ -33182,7 +33193,6 @@ def getOblivionPath(bashIni, path):
     #--Error check
     if not path.join(bush.game.exe).exists():
         raise BoltError(_("Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe))
-    Installer.initData()
     return path
 
 def getPersonalPath(bashIni, path):
@@ -33527,6 +33537,8 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
     initDirs(bashIni,personal,localAppData, oblivionPath)
     initOptions(bashIni)
     initLogFile()
+    Installer.initData()
+    PatchFile.initGameData()
 
 def initSettings(readOnly=False):
     global settings
