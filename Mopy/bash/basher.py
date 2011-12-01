@@ -3047,7 +3047,6 @@ class InstallersList(balt.Tank):
         if item < 0: return
         item = self.GetItem(item)
         text = self.mouseTexts.get(item) or ''
-        print 'text:', text
         if text != self.mouseTextPrev:
             statusBar.SetStatusText(text,1)
             self.mouseTextPrev = text
@@ -9516,7 +9515,7 @@ class Installer_Espm_List(InstallerLink):
         """Handle selection."""
         subs = _('Esp/m List for "%s":\n[spoiler]') % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gEspmList.GetCount()):
-            subs += gInstallers.gEspmList.GetString(index) + '\n'
+            subs += ['   ','** '][gInstallers.gEspmList.IsChecked(index)] + gInstallers.gEspmList.GetString(index) + '\n'
         subs += '[/spoiler]'
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
