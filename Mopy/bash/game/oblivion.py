@@ -347,6 +347,8 @@ class esp:
     #--Information on the ESP/ESM header format
     class header:   
         format = '=4s4I'
+        formatTopGrup = '=4sI4sII'
+        formatTupleGrup = '=4sIhhII'
         size = 20
         attrs = ('recType','size','flags1','fid','flags2')
         defaults = ('TES4',0,0,0,0)
