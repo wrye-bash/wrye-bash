@@ -17355,10 +17355,7 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
     SettingsMenu.append(Settings_UseAltName())
-    if not hasattr(sys,'frozen'):
-        # py2exe messes with the multiprocessing some how,
-        # need to investigate and figure out a way to make it work correctly
-        SettingsMenu.append(Settings_CheckForUpdates())
+    SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
     """Call other link initializers."""
