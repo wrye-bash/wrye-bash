@@ -2441,7 +2441,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * Description
     * Masters
   * Bashed Patches:
-    * Can merge GMST and GLOB records.
+    * Can merge GMST, GLOB, AMMO, and COBJ records.
 
 === 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
 * Skyrim support added:

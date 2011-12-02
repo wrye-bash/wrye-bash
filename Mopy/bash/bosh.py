@@ -2176,6 +2176,25 @@ class MreAmmo(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreAmmoSkyrim(MelRecord):
+    """Ammo (arrow) record."""
+    classType = 'AMMO'
+    _flags = Flags(0L,Flags.getNames('notNormalWeapon'))
+    melSet = MelSet(
+        MelString('EDID','edid'),
+        MelStruct('OBND','=6h','x1','y1','z1','x2','y2','z2'),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelLString('DESC','description'),
+        MelBase('KSIZ','numKeywords'),
+        MelFidList('KWDA','keywords'),
+        MelStruct('DATA','fIff','speed',(_flags,'flags',0L),'damage','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreAnio(MelRecord):
     """Animation object record."""
     classType = 'ANIO'
@@ -4049,6 +4068,21 @@ class MreWthr(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+#------------------------------------------------------------------------------
+class MreCobj(MelRecord):
+    """Constructible Object (recipies - Skyrim)."""
+    classType = 'COBJ'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBase('COCT','componentCount'),
+        MelStructs('CNTO','II','components',(FID,'item',None),'count'),
+        MelBase('CTDA','conditions'),
+        MelFid('CNAM','resultingItem'),
+        MelBase('NAM1','resultingQuantity'),
+        MelFid('BNAM','craftingStation'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
 # MreRecord.type_class
 MreRecord.type_class = dict((x.classType,x) for x in (
     MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
@@ -4057,7 +4091,7 @@ MreRecord.type_class = dict((x.classType,x) for x in (
     MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreRefr,
     MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreTes4,
     MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp,
-    MreDial, MreInfo
+    MreDial, MreInfo, MreCobj, MreAmmoSkyrim,
     ))
 MreRecord.simpleTypes = (set(MreRecord.type_class) -
     set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
