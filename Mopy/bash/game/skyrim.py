@@ -228,10 +228,25 @@ dataDirs = set(('bash patches','interface','meshes','strings','textures',
     'video','lodsettings','grass','scripts','shadersfx','music','sound',))
 dataDirsPlus = set(('ini tweaks','skse','ini'))
 
+#--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
+#  as the form id.  Any GMST as such needs it Editor Id listed here.
+gmstEids = [
+    # None
+    ]
+
+#--Patchers available when building a Bashed Patch
+patchers = (
+    'AliasesPatcher', 'PatchMerger',
+    )
+
+#--CBash patchers available when building a Bashed Patch
+CBash_patchers = tuple()
+
 #--Plugin format stuff
 class esp:
     #--Wrye Bash capabilities
-    canBash = False         # No Bashed Patch creation
+    canBash = True         # No Bashed Patch creation
+    canCBash = False        # CBash cannot handle this game's records
     canEditHeader = True    # Can edit anything in the TES4 record
 
     #--Valid ESM/ESP header versions
@@ -242,10 +257,16 @@ class esp:
 
     #--Information on the ESP/ESM header format
     class header:
-        format = '4s5I'
+        format = '=4s5I'
+        formatTopGrup = '=4sI4sIII'
+        formatTupleGrup = '=4sIhhIII'
         size = 24
         attrs = ('recType','size','flags1','fid','flags2','unk')
         defaults = ('TES4',0,0,0,0,0)
+
+    #--Extra read/write classes
+    readClasses = tuple()
+    writeClasses = tuple()
 
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
@@ -266,3 +287,7 @@ class esp:
 
     #-> this needs updating for Skyrim
     recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
+
+    #--class names for mergeable records
+    mergeClasses = ('MreGlob','MreGmst','MreCobj','MreAmmoSkyrim',
+                    )

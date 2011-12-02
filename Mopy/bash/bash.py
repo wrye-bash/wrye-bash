@@ -272,7 +272,8 @@ def main():
     SetUserPath('bash.ini',opts.userPath)
 
     try:
-        bolt.CBash = opts.mode
+        # Force Python mode if CBash can't work with this game
+        bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
         bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s

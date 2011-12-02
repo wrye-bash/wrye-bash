@@ -96,7 +96,7 @@ class ess:
         size, = struct.unpack('B',ins.read(1))
         header.pcName = ins.read(size)
         header.pcLevel, = struct.unpack('H',ins.read(2))
-        size, = struct.unpack('B',ins.read(4))
+        size, = struct.unpack('B',ins.read(1))
         header.pcLocation = ins.read(size)
         #--Image Data
         (header.gameDays,header.gameTicks,header.gameTime,ssSize,ssWidth,
@@ -279,10 +279,63 @@ dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
     'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
 dataDirsPlus = set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
 
+#--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
+#  as the form id.  Any GMST as such needs it Editor Id listed here.
+gmstEids = ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal',
+    'iAllowAlchemyDuringCombat','iNumberActorsAllowedToFollowPlayer',
+    'iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures',
+    'iAICombatMaxAllySummonCount','iAINumberActorsComplexScene',
+    'fHostileActorExteriorDistance','fHostileActorInteriorDistance',
+    'iVampirismAgeOffset','iRemoveExcessDeadCount',
+    'iRemoveExcessDeadTotalActorCount',
+    'iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
+    'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime',
+    'iInventoryAskQuantityAt','iCrimeGoldPickpocket','iCrimeGoldTresspass',
+    'sBloodTextureDefault','sBloodTextureExtra1','sBloodTextureExtra2',
+    'sBloodParticleDefault','sBloodParticleExtra1','sBloodParticleExtra2',
+    'iAllyHitAllowed','sAutoSaving','sFloraFailureMessage',
+    'sFloraSuccessMessage','sQuickSaving','sFastTravelHorseatGate',
+    'sLoadingArea','sQuickLoading','sNoCharge',
+    'fAISocialchanceForConversationInterior',
+    ]
+
+#--Patchers available when building a Bashed Patch
+patchers = (
+    'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
+    'KFFZPatcher', 'ActorImporter', 'DeathItemPatcher', 'NPCAIPackagePatcher',
+    'CoblExhaustion', 'UpdateReferences', 'CellImporter', 'ClothesTweaker',
+    'GlobalsTweaker', 'GmstTweaker', 'GraphicsPatcher', 'ImportFactions',
+    'ImportInventory', 'SpellsPatcher', 'TweakActors', 'ImportRelations',
+    'ImportScripts', 'ImportScriptContents', 'ImportActorsSpells',
+    'ListsMerger', 'MFactMarker', 'NamesPatcher', 'NamesTweaker',
+    'NpcFacePatcher', 'PowerExhaustion', 'RacePatcher', 'RoadImporter',
+    'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
+    )
+
+#--CBash patchers available when building a Bashed Patch
+CBash_patchers = (
+    'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
+    'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
+    'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
+    'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
+    'CBash_ClothesTweaker', 'CBash_GlobalsTweaker', 'CBash_GmstTweaker',
+    'CBash_GraphicsPatcher', 'CBash_ImportFactions', 'CBash_ImportInventory',
+    'CBash_SpellsPatcher', 'CBash_TweakActors', 'CBash_ImportRelations',
+    'CBash_ImportScripts',
+    ##    CBash_ImportScriptContents(),
+    'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
+    'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
+    'CBash_PowerExhaustion', 'CBash_RacePatcher', 'CBash_RoadImporter',
+    'CBash_SoundPatcher', 'CBash_StatsPatcher', 'CBash_SEWorldEnforcer',
+    'CBash_ContentsChecker',
+    ##    CBash_ForceMerger(),
+    )
+
 #--Plugin format stuff
 class esp:
     #--Wrye Bash capabilities
     canBash = True          # Can create Bashed Patches
+    canCBash = True         # CBash can handle this game's records
     canEditHeader = True    # Can edit anything in the TES4 record
 
     #--Valid ESM/ESP header versions
@@ -293,10 +346,16 @@ class esp:
 
     #--Information on the ESP/ESM header format
     class header:   
-        format = '4s4I'
+        format = '=4s4I'
+        formatTopGrup = '=4sI4sII'
+        formatTupleGrup = '=4sIhhII'
         size = 20
         attrs = ('recType','size','flags1','fid','flags2')
         defaults = ('TES4',0,0,0,0)
+
+    #--Extra read classes: need info from magic effects
+    readClasses = ('MreMgef','MreScpt')
+    writeClasses = ('MreMgef',)
 
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
@@ -310,3 +369,16 @@ class esp:
     topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
 
     recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
+
+    #--class names for mergeable records
+    mergeClasses = ('MreActi', 'MreAlch', 'MreAmmo', 'MreAnio', 'MreAppa',
+                    'MreArmo', 'MreBook', 'MreBsgn', 'MreClas', 'MreClot',
+                    'MreCont', 'MreCrea', 'MreDoor', 'MreEfsh', 'MreEnch',
+                    'MreEyes', 'MreFact', 'MreFlor', 'MreFurn', 'MreGlob',
+                    'MreGras', 'MreHair', 'MreIngr', 'MreKeym', 'MreLigh',
+                    'MreLscr', 'MreLvlc', 'MreLvli', 'MreLvsp', 'MreMgef',
+                    'MreMisc', 'MreNpc',  'MrePack', 'MreQust', 'MreRace',
+                    'MreScpt', 'MreSgst', 'MreSlgm', 'MreSoun', 'MreSpel',
+                    'MreStat', 'MreTree', 'MreWatr', 'MreWeap', 'MreWthr',
+                    'MreClmt', 'MreCsty', 'MreIdle', 'MreLtex', 'MreRegn',
+                    'MreSbsp', 'MreSkil',)

@@ -2564,6 +2564,49 @@ class ProgressFile(Progress):
     def doProgress(self,progress,message):
         self.out.write('%0.2f %s\n' % (progress,message))
 
+#------------------------------------------------------------------------------
+class StringTable(dict):
+    """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
+    def load(self,modFilePath,language='English',progress=Progress()):
+        baseName = modFilePath.tail.body
+        baseDir = modFilePath.head.join('Strings')
+        files = (baseName+'_'+language+x for x in ('.STRINGS','.DLSTRINGS',
+                                                   '.ILSTRINGS'))
+        files = (baseDir.join(file) for file in files)
+        self.clear()
+        progress.setFull(3)
+        for i,file in enumerate(files):
+            progress(i)
+            self.loadFile(file,SubProgress(progress,i,i+1))
+
+    def loadFile(self,path,progress):
+        if path.cext == '.strings': format = 0
+        else: format = 1
+        with BinaryFile(path.s) as ins:
+            ins.seek(0,os.SEEK_END)
+            eof = ins.tell()
+            ins.seek(0)
+
+            numIds, = ins.unpack('I',4)
+            progress.setFull(max(numIds,1))
+            dataSize, = ins.unpack('I',4)
+            stringsStart = eof - dataSize
+
+            for x in xrange(numIds):
+                progress(x)
+                id, = ins.unpack('I',4)
+                offset, = ins.unpack('I',4)
+                pos = ins.tell()
+                ins.seek(stringsStart+offset)
+                if format:
+                    strLen, = ins.unpack('I',4)
+                    value = ins.read(strLen)
+                else:
+                    value = ins.readCString()
+                value = unicode(cstrip(value),'cp1252')
+                ins.seek(pos)
+                self[id] = value
+
 # WryeText --------------------------------------------------------------------
 codebox = None
 class WryeText:
