@@ -712,7 +712,6 @@ class ModWriter:
             args = ['GRUP',size,label,groupType,stamp]
         fsize = struct.calcsize(format)
         args.extend([0 for x in xrange((fsize-20)/4)])
-        print 'writing grup:', format, args
         self.pack(format,*args)
 
 # Mod Record Elements ---------------------------------------------------------
