@@ -4091,8 +4091,12 @@ MreRecord.type_class = dict((x.classType,x) for x in (
     MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreRefr,
     MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreTes4,
     MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp,
-    MreDial, MreInfo, MreCobj, MreAmmoSkyrim,
+    MreDial, MreInfo, MreCobj,
     ))
+# Hacky for now, will fix this up when I refactory this section
+if bush.game.name == 'Skyrim':
+    MreRecord.type_class['AMMO'] = MreAmmoSkyrim
+
 MreRecord.simpleTypes = (set(MreRecord.type_class) -
     set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
 
