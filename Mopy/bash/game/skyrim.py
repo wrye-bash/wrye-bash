@@ -289,4 +289,5 @@ class esp:
     recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
 
     #--class names for mergeable records
-    mergeClasses = ('MreGlob','MreGmst',)
+    mergeClasses = ('MreGlob','MreGmst','MreCobj','MreAmmoSkyrim',
+                    )
