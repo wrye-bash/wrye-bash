@@ -2430,6 +2430,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
     * For games that have a LAA Launcher (Skyrim currently), launching the game will launch via the LAA Launcher.
     * A new [[#BashOptionButtons|status bar button]] for enabling/disabling the LAA Launcher.
   * Added Status Bar mouse over texts for BAIN Packages.
+  * BAIN will silently ignore the "config" file that NMM places into downloaded packages.
 * Skyrim specific:
   * Basic editinf of Save Games:
     * Masters
