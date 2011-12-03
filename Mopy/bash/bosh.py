@@ -3913,7 +3913,7 @@ class MreTes5(MreTes4Base):
         MelString('SNAM','description','',512),
         MreTes4Base.MelTes4Name('MAST','masters'),
         MelNull('DATA'),
-        MelNull('INTV'),
+        MelBase('INTV','intv'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
