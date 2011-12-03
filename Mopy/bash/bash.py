@@ -215,43 +215,86 @@ def main():
     ret = bush.setGame(opts.gameName,opts.oblivionPath)
     if ret != False: # False == success
         if len(ret) != 1:
-            # Use Tkinter here, since we haven't started the wxApp yet
-            import Tkinter
-            root = Tkinter.Tk()
-            frame = Tkinter.Frame(root)
-            frame.pack()
+            if hasattr(sys,'frozen'):
+                # Standalone is guaranteed to have wxPython, so use that
+                import wx
 
-            class onQuit(object):
-                def __init__(self):
-                    self.canceled = False
+                class AppReturnCode(object):
+                    def __init__(self,default=None):
+                        self.value = default
 
-                def onClick(self):
-                    self.canceled = True
-                    root.destroy()
-            quit = onQuit()
+                    def get(self): return self.value
+                    def set(self,value): self.value = value
 
-            button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
-            button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
-            class onClick(object):
-                def __init__(self,gameName):
-                    self.gameName = gameName
+                class GameSelect(wx.Frame):
+                    def __init__(self,gameNames,callback):
+                        wx.Frame.__init__(self,None,wx.ID_ANY,'Wrye Bash')
+                        self.callback = callback
+                        self.panel = panel = wx.Panel(self,wx.ID_ANY)
+                        sizer = wx.BoxSizer(wx.VERTICAL)
+                        sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,
+                                              "Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game",
+                                              style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_BESTWRAP),
+                                  1,wx.GROW|wx.ALL,5)
+                        for gameName in gameNames:
+                            gameName = gameName[0].upper() + gameName[1:]
+                            sizer.Add(wx.Button(panel,wx.ID_ANY,gameName),0,wx.GROW|wx.ALL^wx.TOP,5)
+                        button = wx.Button(panel,wx.ID_CANCEL)
+                        button.SetDefault()
+                        sizer.Add(button,0,wx.GROW|wx.ALL^wx.TOP,5)
+                        self.Bind(wx.EVT_BUTTON,self.OnButton)
+                        panel.SetSizer(sizer)
 
-                def onClick(self):
-                    bush.setGame(self.gameName,opts.oblivionPath)
-                    root.destroy()
-            for gameName in ret:
-                text = gameName[0].upper() + gameName[1:]
-                command = onClick(gameName).onClick
-                button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                    def OnButton(self,event):
+                        if event.GetId() != wx.ID_CANCEL:
+                            self.callback(self.FindWindowById(event.GetId()).GetLabel())
+                        self.Close(True)
+                _app = wx.App(False)
+                retCode = AppReturnCode()
+                frame = GameSelect(ret,retCode.set)
+                frame.Show()
+                frame.Center()
+                _app.MainLoop()
+                if retCode.get() is None: return
+                bush.setGame(retCode.get(),opts.oblivionPath)
+            else:
+                # Python mode, use Tkinter here, since we don't know for sure if wx is present
+                import Tkinter
+                root = Tkinter.Tk()
+                frame = Tkinter.Frame(root)
+                frame.pack()
+
+                class onQuit(object):
+                    def __init__(self):
+                        self.canceled = False
+
+                    def onClick(self):
+                        self.canceled = True
+                        root.destroy()
+                quit = onQuit()
+
+                button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                 button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
-            w = Tkinter.Text(frame)
-            w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
-            w.config(state=Tkinter.DISABLED)
-            w.pack()
-            root.mainloop()
-            if quit.canceled:
-                return
-            del Tkinter # Unload TKinter, it's not needed anymore
+                class onClick(object):
+                    def __init__(self,gameName):
+                        self.gameName = gameName
+
+                    def onClick(self):
+                        bush.setGame(self.gameName,opts.oblivionPath)
+                        root.destroy()
+                for gameName in ret:
+                    text = gameName[0].upper() + gameName[1:]
+                    command = onClick(gameName).onClick
+                    button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                    button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+                w = Tkinter.Text(frame)
+                w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
+                w.config(state=Tkinter.DISABLED)
+                w.pack()
+                root.mainloop()
+                if quit.canceled:
+                    return
+                del Tkinter # Unload TKinter, it's not needed anymore
         else:
             bush.setGame(ret[0],opts.oblivionPath)
 
