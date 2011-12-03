@@ -8582,7 +8582,7 @@ class ModInfos(FileInfos):
                     msg += ', '.join(bush.game.masterFiles[1:-1])
                 msg += ' or ' + bush.game.masterFiles[-1]
                 deprint(_('Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
-                self.masterName = GPath(bush.game.masterFiles[0])
+            self.masterName = GPath(bush.game.masterFiles[0])
         self.mtime_mods = {}
         self.mtime_selected = {}
         self.exGroup_mods = {}
