@@ -9834,7 +9834,7 @@ class ConfigHelpers:
         shouldDeactivateB = [x for x in active if 'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
         shouldActivateA = [x for x in imported if 'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
         #--Mods with invalid TES4 version
-        invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in (0.8,1.0)]
+        invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
         if True:
             #--Look for dirty edits
             shouldClean = {}
