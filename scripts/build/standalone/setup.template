@@ -42,6 +42,10 @@ setup(
                 'pywin.debugger.dbgcon',# Suggested in the wxPython example
                 'pywin.dialogs',        # Suggested in the wxPython example
                 'pywin.dialogs.list',   # Suggested in the wxPython example
+				# Don't need Tkinter in the standalone, since wxPython is present for sure
+				'Tkinter',
+				'Tkconstants',
+				'tcl',
                 ],
             'ignores': [
                 'psyco'
