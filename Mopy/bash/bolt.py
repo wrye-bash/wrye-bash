@@ -2343,7 +2343,17 @@ def deprint(*args,**keyargs):
     import inspect
     stack = inspect.stack()
     file,line,function = stack[1][1:4]
-    msg = '%s %4d %s: %s' % (GPath(file).tail.s,line,function,' '.join(map(str,args)))
+    def safestr(arg):
+        try:
+            return str(arg)
+        except UnicodeEncodeError:
+            return arg.encode('mbcs')
+        except:
+            try:
+                return str(repr(arg))
+            except:
+                return '<<unable to convert to str>>'
+    msg = '%s %4d %s: %s' % (GPath(file).tail.s,line,function,' '.join(map(safestr,args)))
 
     if keyargs.get('traceback',False):
         import traceback, cStringIO
