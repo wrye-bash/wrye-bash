@@ -429,7 +429,7 @@ The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButt
   * __Icon Size:__ Choose between 16x16, 24x24, or 32x32 Status Bar Icons.
   * __Unhide Buttons:__ Unhide Status Bar buttons that you have hidden.
   * __Show App Version:__ Shows the version of the Application in its tooltip.
-* __Use Alternate Wrye Bash Name:__ If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for <game name>".
+* __Use Alternate Wrye Bash Name:__ If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for &lt;game name&gt;".
 * __Check for updates:__ Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
 
 === Colors Dialog
@@ -2418,7 +2418,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
 === 296 [XX/X/2011]
 * CBash updated to version 0.6
 
-=== 295.2 [XX/XX/XXXX] [Lojack,bluesky404,Metallicow]
+=== 295.2 [2/12/2011] [Lojack,bluesky404,Metallicow]
 * Bugfixes:
   * [[#InstallersTab|Installers Tab]]:
     * Fixed the 'List Sub-Packages' command.
@@ -2435,7 +2435,7 @@ DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
   * Added Status Bar mouse over texts for BAIN Packages.
   * BAIN will silently ignore the "config" file that NMM places into downloaded packages.
 * Skyrim specific:
-  * Basic editinf of Save Games:
+  * Basic editing of Save Games:
     * Masters
   * Basic editing of Mod files:
     * Author
