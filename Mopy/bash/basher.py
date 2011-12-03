@@ -15946,7 +15946,7 @@ class Obse_Button(StatusBar_Button):
         elif state == -1: #--Invert
             state = not settings.get('bash.obse.on',False)
         settings['bash.obse.on'] = state
-        if bush.game.laa.launchesSE and not state:
+        if bush.game.laa.launchesSE and not state and laaButton.gButton is not None:
             # 4GB Launcher automatically launches the SE, so turning of the SE
             # required turning off the 4GB Laucner as well
             laaButton.SetState(state)
@@ -15990,7 +15990,7 @@ class LAA_Button(Obse_Button):
         elif state == -1: #--Invert
             state = not settings.get('bash.laa.on',False)
         settings['bash.laa.on'] = state
-        if bush.game.laa.launchesSE:
+        if bush.game.laa.launchesSE and obseButton.gButton is not None:
             if state:
                 # If the 4gb launcher launces the SE, enable the SE when enabling this
                 obseButton.SetState(state)
