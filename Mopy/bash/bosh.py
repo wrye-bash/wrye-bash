@@ -4306,7 +4306,11 @@ class MobBase(object):
         if self.numRecords == -1:
             self.getNumRecords()
         if self.numRecords > 0:
-            out.pack('4sI4sII','GRUP',self.size,self.label,self.groupType,self.stamp)
+            format = bush.game.esp.header.formatTopGrup
+            fsize = struct.calcsize(format)
+            args = ['GRUP',self.size,self.label,self.groupType,self.stamp]
+            args.extend([0 for x in xrange((fsize-20)/4)])
+            out.pack(format,*args)
             out.write(self.data)
 
     def getReader(self):
@@ -4377,7 +4381,11 @@ class MobObjects(MobBase):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.pack('4sI4sII','GRUP',self.size,self.label,0,self.stamp)
+            format = bush.game.esp.header.formatTopGrup
+            fsize = struct.calcsize(format)
+            args = ['GRUP',self.size,self.label,0,self.stamp]
+            args.extend([0 for x in xrange((fsize-20)/4)])
+            out.pack(format,*args)
             out.write(self.data)
         else:
             size = self.getSize()
@@ -10784,7 +10792,7 @@ class Installer(object):
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
             #--Silent skips
-            if fileEndsWith(('thumbs.db','desktop.ini')):
+            if fileEndsWith(('thumbs.db','desktop.ini','config')):
                 continue #--Silent skip
             elif skipDistantLOD and fileStartsWith('distantlod'):
                 continue
