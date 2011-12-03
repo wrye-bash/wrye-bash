@@ -5227,7 +5227,7 @@ class ModFile:
         else:
             raise ArgumentError(_('Invalid top group type: ')+topType)
 
-    def load(self,unpack=False,progress=None):
+    def load(self,unpack=False,progress=None,loadStrings=True):
         """Load file."""
         progress = progress or bolt.Progress()
         #--Header
@@ -5235,7 +5235,7 @@ class ModFile:
         header = ins.unpackRecHeader()
         self.tes4 = globals()[bush.game.esp.tes4ClassName](header,ins,True)
         #--Strings
-        if unpack and self.tes4.flags1[7]:
+        if unpack and self.tes4.flags1[7] and loadStrings:
             self.strings.load(self.fileInfo.getPath(),
                               oblivionIni.getSetting('General','sLanguage','English'),
                               progress)
@@ -10791,6 +10791,14 @@ class Installer(object):
             fileExt = (extPos > 0 and fileLower[extPos:]) or ''
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
+            try:
+                deprint('testing file:', fileLower)
+            except:
+                if isinstance(fileLower,unicode):
+                    deprint('error printing filename:', fileLower.encode('mbcs'),traceback=True)
+                else:
+                    deprint('unknown error printing filename:', traceback=True)
+                raise
             #--Silent skips
             if fileEndsWith(('thumbs.db','desktop.ini','config')):
                 continue #--Silent skip
@@ -17505,7 +17513,7 @@ class PatchFile(ModFile):
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
         modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
         try:
-            modFile.load(True)
+            modFile.load(True,loadStrings=False)
         except ModError, error:
             if not verbose: return False
             reasons += '\n.    ' + Unicode(str(error))+'.'
