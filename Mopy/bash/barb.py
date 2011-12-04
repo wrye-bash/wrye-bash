@@ -95,8 +95,8 @@ class BaseBackupSettings:
         return cmp(self.verDat, basher.settings['bash.version'])
 
     def CmpAppVersion(self):
-        return cmp(self.verApp.split('.')[0], basher.settings['bash.readme'][1].split('.')[0])
-        #return cmp(self.verApp, basher.settings['bash.readme'][1])
+        # Changed to prompt updating on any version change
+        return cmp(self.verApp.split('.'), basher.settings['bash.readme'][1].split('.'))
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
