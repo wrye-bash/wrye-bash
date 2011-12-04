@@ -10792,77 +10792,78 @@ class Installer(object):
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
             try:
-                deprint('testing file:', fileLower)
+                #--Silent skips
+                if fileEndsWith(('thumbs.db','desktop.ini','config')):
+                    continue #--Silent skip
+                elif skipDistantLOD and fileStartsWith('distantlod'):
+                    continue
+                elif skipLandscapeLODMeshes and fileStartsWith(r'meshes\landscape\lod'):
+                    continue
+                elif fileStartsWith(r'textures\landscapelod\generated'):
+                    if skipLandscapeLODNormals and fileEndsWith(r'_fn.dds'):
+                        continue
+                    elif skipLandscapeLODTextures and not fileEndsWith(r'_fn.dds'):
+                        continue
+                elif skipVoices and fileStartsWith('sound\\voice'):
+                    continue
+                elif skipScreenshots and fileStartsWith('screenshots'):
+                    continue
+                elif fileLower == 'wizard.txt':
+                    self.hasWizard = full
+                    continue
+                elif skipImages and fileExt in imageExts:
+                    continue
+                elif fileExt in docExts:
+                    maReadMe = reReadMeMatch(file)
+                    if maReadMe:
+                        self.hasReadme = full
+                    if skipDocs:
+                        continue
+                elif fileStartsWith('--'):
+                    continue
+                elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith(bush.game.se.shortName.lower()+'\\'):
+                    continue
+                elif fileExt in ['.dll','.dlx']:
+                    if not settings['bash.installers.allowOBSEPlugins']: continue
+                    if not fileStartsWith(bush.game.se.shortName.lower()+'\\'):
+                        continue
+                    if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
+                    if not checkOBSE:
+                        pass
+                    elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
+                    elif checkOBSE:
+                        message = _('This installer (%s) has an %s plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, bush.game.se.shortName, full)
+                        if fileLower in goodDlls:
+                            message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
+                        elif fileLower in badDlls:
+                            message += _(' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
+                        if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(' DLL Warning')):
+                            badDlls.setdefault(fileLower,[])
+                            badDlls[fileLower].append([archiveRoot,size,crc])
+                            continue
+                        goodDlls.setdefault(fileLower,[])
+                        goodDlls[fileLower].append([archiveRoot,size,crc])
+                #--Noisy skips
+                elif file in bethFiles:
+                    if not bSkip: skipDirFilesAdd(full)
+                    continue
+                elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
+                    if not bSkip: skipDirFilesAdd(full)
+                    continue
+                elif hasExtraData and rootLower and rootLower in dataDirsMinus:
+                    if not bSkip: skipDirFilesAdd(full)
+                    continue
+                elif fileExt in skipExts:
+                    if not bSkip: skipExtFilesAdd(full)
+                    continue
             except:
                 if isinstance(fileLower,unicode):
                     deprint('error printing filename:', fileLower.encode('mbcs'),traceback=True)
                 else:
-                    deprint('unknown error printing filename:', traceback=True)
+                    deprint('unknown error printing filename:', str(fileLower), traceback=True)
                 raise
-            #--Silent skips
-            if fileEndsWith(('thumbs.db','desktop.ini','config')):
-                continue #--Silent skip
-            elif skipDistantLOD and fileStartsWith('distantlod'):
-                continue
-            elif skipLandscapeLODMeshes and fileStartsWith(r'meshes\landscape\lod'):
-                continue
-            elif fileStartsWith(r'textures\landscapelod\generated'):
-                if skipLandscapeLODNormals and fileEndsWith(r'_fn.dds'):
-                    continue
-                elif skipLandscapeLODTextures and not fileEndsWith(r'_fn.dds'):
-                    continue
-            elif skipVoices and fileStartsWith('sound\\voice'):
-                continue
-            elif skipScreenshots and fileStartsWith('screenshots'):
-                continue
-            elif fileLower == 'wizard.txt':
-                self.hasWizard = full
-                continue
-            elif skipImages and fileExt in imageExts:
-                continue
-            elif fileExt in docExts:
-                maReadMe = reReadMeMatch(file)
-                if maReadMe:
-                    self.hasReadme = full
-                if skipDocs:
-                    continue
-            elif fileStartsWith('--'):
-                continue
-            elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith(bush.game.se.shortName.lower()+'\\'):
-                continue
-            elif fileExt in ['.dll','.dlx']:
-                if not settings['bash.installers.allowOBSEPlugins']: continue
-                if not fileStartsWith(bush.game.se.shortName.lower()+'\\'):
-                    continue
-                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
-                if not checkOBSE:
-                    pass
-                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
-                elif checkOBSE:
-                    message = _('This installer (%s) has an %s plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, bush.game.se.shortName, full)
-                    if fileLower in goodDlls:
-                        message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
-                    elif fileLower in badDlls:
-                        message += _(' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(' DLL Warning')):
-                        badDlls.setdefault(fileLower,[])
-                        badDlls[fileLower].append([archiveRoot,size,crc])
-                        continue
-                    goodDlls.setdefault(fileLower,[])
-                    goodDlls[fileLower].append([archiveRoot,size,crc])
-            #--Noisy skips
-            elif file in bethFiles:
-                if not bSkip: skipDirFilesAdd(full)
-                continue
-            elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                if not bSkip: skipDirFilesAdd(full)
-                continue
-            elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                if not bSkip: skipDirFilesAdd(full)
-                continue
-            elif fileExt in skipExts:
-                if not bSkip: skipExtFilesAdd(full)
-                continue
+
+
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
