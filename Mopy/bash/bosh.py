@@ -90,14 +90,9 @@ from cint import *
 startupinfo = bolt.startupinfo
 
 #--Unicode
-if bolt.bUseUnicode:
-    exe7z = '7zUnicode.exe'
-    unicodeConvert = lambda text: unicode(text,'UTF-8')
-    stringBuffer = StringIO.StringIO
-else:
-    exe7z = '7z.exe'
-    unicodeConvert = lambda text: text
-    stringBuffer = cStringIO.StringIO
+exe7z = '7zUnicode.exe'
+unicodeConvert = lambda text: unicode(text,'UTF-8')
+stringBuffer = StringIO.StringIO
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -120,8 +115,7 @@ configHelpers = None #--Config Helper files (Boss Master List, etc.)
 links = None
 
 def listArchiveContents(fileName):
-    command = r'"%s" l -slt "%s"' % (exe7z, fileName)
-    command = Encode(command,'mbcs')
+    command = ur'"%s" l -slt "%s"' % (exe7z, fileName)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
 
@@ -324,6 +318,15 @@ null1 = '\x00'
 null2 = null1*2
 null3 = null1*3
 null4 = null1*4
+
+#--decode unicode strings
+#  This is only useful when reading fields from mods, as the encoding is not
+#  known.  For normal filesystem interaction, these functions are not needed
+def _unicode(text):
+    for encoding in ('cp1252','utf8','utf16','cp500','cp932'):
+        try: return unicode(text,encoding)
+        except UnicodeDecodeError: pass
+    return unicode(text,'mbcs')
 
 #--Header tags
 reGroup = re.compile(r'^Group: *(.*)',re.M)
@@ -550,11 +553,11 @@ class ModReader:
 
     def readString(self,size,recType='----'):
         """Read string from file, stripping zero terminator."""
-        return cstrip(self.read(size,recType))
+        return _unicode(cstrip(self.read(size,recType)))
 
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
-        return self.read(size,recType).rstrip(null1).split(null1)
+        return [_unicode(x) for x in self.read(size,recType).rstrip(null1).split(null1)]
 
     def unpack(self,format,size,recType='----'):
         """Read file and unpack according to struct format."""
@@ -1060,6 +1063,8 @@ class MelString(MelBase):
         if value != None:
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
+                value = value[:min(self.maxSize,len(value))]
+                value = value.encode('utf8')
                 value = value[:min(self.maxSize,len(value))]
             out.packSub0(self.subType,value)
 
@@ -10402,58 +10407,52 @@ class Installer(object):
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap','hasReadme')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
-    docDirs = set(('screenshots',))
-    dataDirsMinus = set(('bash','replacers','--')) #--Will be skipped even if hasExtraData == True.
-    reDataFile = re.compile(r'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I)
-    reReadMe = re.compile(r'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I)
-    skipExts = set(('.exe','.py','.pyc','.7z','.zip','.rar','.db','.ace','.tgz','.tar','.gz','.bz2','.omod','.tb2','.lzma'))
+    docDirs = set((u'screenshots',))
+    dataDirsMinus = set((u'bash',u'replacers',u'--')) #--Will be skipped even if hasExtraData == True.
+    reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
+    reReadMe = re.compile(ur'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
+    skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
+                    u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.tb2',
+                    u'.lzma'))
     skipExts.update(set(readExts))
-    docExts = set(('.txt','.rtf','.htm','.html','.doc','.docx','.odt','.mht','.pdf','.css','.xls','.xlsx','.ods','.odp','.ppt','.pptx'))
-    imageExts = set(('.gif','.jpg','.png','.jpeg','.bmp'))
-    scriptExts = set(('.txt','.ini'))
-    commonlyEditedExts = scriptExts | set(('.xml',))
+    docExts = set((u'.txt',u'.rtf',u'.htm',u'.html',u'.doc',u'.docx',u'.odt',
+                   u'.mht',u'.pdf',u'.css',u'.xls',u'.xlsx',u'.ods',u'.odp',
+                   u'.ppt',u'.pptx'))
+    imageExts = set((u'.gif',u'.jpg',u'.png',u'.jpeg',u'.bmp'))
+    scriptExts = set((u'.txt',u'.ini'))
+    commonlyEditedExts = scriptExts | set((u'.xml',))
     #--Needs to be called after bush.game has been set
     @staticmethod
     def initData():
         Installer.dataDirs = bush.game.dataDirs
         Installer.dataDirsPlus = Installer.dataDirs | Installer.docDirs | bush.game.dataDirsPlus
     #--Temp Files/Dirs
-    tempDir = GPath('InstallerTemp')
-    tempList = GPath('InstallerTempList.txt')
+    tempDir = GPath(u'InstallerTemp')
+    tempList = GPath(u'InstallerTempList.txt')
 
     #--Class Methods ----------------------------------------------------------
     @staticmethod
     def getGhosted():
         """Returns map of real to ghosted files in mods directory."""
         dataDir = dirs['mods']
-        ghosts = [x for x in dataDir.list() if x.cs[-6:] == '.ghost']
+        ghosts = [x for x in dataDir.list() if x.cs[-6:] == u'.ghost']
         return dict((x.root,x) for x in ghosts if not dataDir.join(x).root.exists())
 
     @staticmethod
     def clearTemp():
         """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
         try:
-            InstallerConverter.tempDir.rmtree(safety='Temp')
+            InstallerConverter.tempDir.rmtree(safety=u'Temp')
         except:
-            InstallerConverter.tempDir.rmtree(safety='Temp')
+            InstallerConverter.tempDir.rmtree(safety=u'Temp')
 
     @staticmethod
     def sortFiles(files):
         """Utility function. Sorts files by directory, then file name."""
-        if inisettings['EnableUnicode']:
-            def sortKey(file):
-                dirFile = file.lower().rsplit('\\',1)
-                if len(dirFile) == 1: dirFile.insert(0,'')
-                return dirFile
-        else:
-            splitter = bolt.Path.mbSplit
-            def sortKey(file):
-                pathParts = splitter(file)
-                if len(pathParts) == 1:
-                    dirFile = ['', pathParts[0]]
-                else:
-                    dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
-                return dirFile
+        def sortKey(file):
+            dirFile = os.path.split(file)
+            if len(dirFile) == 1: dirFile.insert(0,'')
+            return dirFile
         sortKeys = dict((x,sortKey(x)) for x in files)
         return sorted(files,key=lambda x: sortKeys[x])
 
@@ -10487,28 +10486,34 @@ class Installer(object):
         normGet = norm_ghost.get
         pendingAdd = pending.add
         apRootJoin = apRoot.join
+        obse = bush.game.se.shortName.lower()
+        setSkipLod = settings['bash.installers.skipDistantLOD']
+        setSkipScreen = settings['bash.installers.skipScreenshots']
+        setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
+        setSkipDocs = settings['bash.installers.skipDocs']
+        setSkipImages = settings['bash.installers.skipImages']
+        transProgress = _("%s: Pre-Scanning...\n%s")
+        if inisettings['KeepLog'] > 1:
+            try: log = inisettings['LogFile'].open('a')
+            except: log = None
+        else: log = None
         for asDir,sDirs,sFiles in os.walk(asRoot):
-            progress(0.05,_("%s: Pre-Scanning...\n%s") % (rootName,asDir[relPos:]))
+            progress(0.05,transProgress % (rootName,asDir[relPos:]))
             if rootIsMods and asDir == asRoot:
-                sDirs[:] = [x for x in sDirs if x.lower() not in Installer.dataDirsMinus]
-                if inisettings['KeepLog'] >= 1:
-                    log = inisettings['LogFile'].open("a")
-                    log.write('(in refreshSizeCRCDate) sDirs = %s\n'%(sDirs[:]))
-                    log.close()
-                if settings['bash.installers.skipDistantLOD']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'distantlod']
-                if settings['bash.installers.skipScreenshots']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'screenshots']
-                if not settings['bash.installers.allowOBSEPlugins']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'obse']
-                if settings['bash.installers.skipDocs'] and settings['bash.installers.skipImages']:
-                    sDirs[:] = [x for x in sDirs if x.lower() != 'docs']
-                if inisettings['KeepLog'] >= 1:
-                    log = inisettings['LogFile'].open("a")
-                    log.write('(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
-                    log.close()
+                newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
+                if setSkipLod:
+                    newSDirs = (x for x in newSDirs if x.lower() != 'distandlod')
+                if setSkipScreen:
+                    newSDirs = (x for x in newSDirs if x.lower() != 'screenshots')
+                if setSkipOBSE:
+                    newSDirs = (x for x in newSDirs if x.lower() != obse)
+                if setSkipDocs and setSkipImages:
+                    newSDirs = (x for x in newSDirs if x.lower() != 'docs')
+                sDirs[:] = [x for x in newSDirs]
+                if log: log.write('(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
+        if log: log.close()
         progress(0,_("%s: Scanning...") % rootName)
         progress.setFull(1+len(dirDirsFiles))
         for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
@@ -10700,7 +10705,7 @@ class Installer(object):
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         bethFiles = bush.game.bethDataFiles
-        packageFiles = set(('package.txt','package.jpg'))
+        packageFiles = set((u'package.txt',u'package.jpg'))
         unSize = 0
         espmNots = self.espmNots
         if self.overrideSkips:
@@ -10723,6 +10728,7 @@ class Installer(object):
             skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
+        skipObse = not settings['bash.installers.allowOBSEPlugins']
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -10742,9 +10748,6 @@ class Installer(object):
         goodDlls, badDlls = settings['bash.installers.goodDlls'],settings['bash.installers.badDlls']
         espms = self.espms
         espmsAdd = espms.add
-        bUseUnicode = inisettings['EnableUnicode']
-        if not bUseUnicode:
-            splitter = bolt.Path.mbSplit
         espmMap = self.espmMap = {}
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
@@ -10756,59 +10759,46 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             file = full
             fileLower = file.lower()
-            if fileLower.startswith(('--','omod conversion data','wizard images')):
+            if fileLower.startswith((u'--',u'omod conversion data',u'wizard images')):
                 continue
             sub = ''
             bSkip = False
             if type == 2: #--Complex archive
-                if bUseUnicode:
-                    subFile = full.split('\\',1)
-                    if len(subFile) == 2:
-                        sub,file = subFile
-                        if sub not in activeSubs:
-                            if sub not in allSubs:
-                                skipDirFilesAdd(file)
-                            bSkip = True
-                        fileLower = file.lower()
+                sub = full.split(u'\\',1)
+                if len(sub) == 1:
+                    file, = sub
+                    sub = ''
                 else:
-                    pathParts = splitter(full)
-                    if len(pathParts) > 1:
-                        sub = pathParts[0]
-                        file = '\\'.join(pathParts[1:])
-                        if sub not in activeSubs:
-                            if sub not in allSubs:
-                                skipDirFilesAdd(file)
-                            bSkip = True
-                        fileLower = file.lower()
+                    sub,file = sub
+                if sub and sub not in activeSubs and sub not in allSubs:
+                    skipDirFilesAdd(file)
+                    bSkip = True
+                fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
-            if bUseUnicode:
-                rootPos = file.find('\\')
-            else:
-                pathParts = splitter(file)
-                rootPos = len(pathParts[0]) if len(pathParts) > 1 else -1
-            extPos = file.rfind('.')
-            rootLower = (rootPos > 0 and fileLower[:rootPos]) or ''
-            fileExt = (extPos > 0 and fileLower[extPos:]) or ''
+            rootLower,fileExt = os.path.splitext(fileLower)
+            rootLower = rootLower.split(u'\\',1)
+            if len(rootLower) == 1: rootLower = ''
+            else: rootLower = rootLower[0]
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
             try:
                 #--Silent skips
-                if fileEndsWith(('thumbs.db','desktop.ini','config')):
+                if fileEndsWith((u'thumbs.db',u'desktop.ini',u'config')):
                     continue #--Silent skip
-                elif skipDistantLOD and fileStartsWith('distantlod'):
+                elif skipDistantLOD and fileStartsWith(u'distantlod'):
                     continue
-                elif skipLandscapeLODMeshes and fileStartsWith(r'meshes\landscape\lod'):
+                elif skipLandscapeLODMeshes and fileStartsWith(ur'meshes\landscape\lod'):
                     continue
-                elif fileStartsWith(r'textures\landscapelod\generated'):
-                    if skipLandscapeLODNormals and fileEndsWith(r'_fn.dds'):
+                elif fileStartsWith(ur'textures\landscapelod\generated'):
+                    if skipLandscapeLODNormals and fileEndsWith(ur'_fn.dds'):
                         continue
-                    elif skipLandscapeLODTextures and not fileEndsWith(r'_fn.dds'):
+                    elif skipLandscapeLODTextures and not fileEndsWith(ur'_fn.dds'):
                         continue
-                elif skipVoices and fileStartsWith('sound\\voice'):
+                elif skipVoices and fileStartsWith(ur'sound\voice'):
                     continue
-                elif skipScreenshots and fileStartsWith('screenshots'):
+                elif skipScreenshots and fileStartsWith(u'screenshots'):
                     continue
-                elif fileLower == 'wizard.txt':
+                elif fileLower == u'wizard.txt':
                     self.hasWizard = full
                     continue
                 elif skipImages and fileExt in imageExts:
@@ -10819,13 +10809,13 @@ class Installer(object):
                         self.hasReadme = full
                     if skipDocs:
                         continue
-                elif fileStartsWith('--'):
+                elif fileStartsWith(u'--'):
                     continue
-                elif not settings['bash.installers.allowOBSEPlugins'] and fileStartsWith(bush.game.se.shortName.lower()+'\\'):
+                elif skipObse and fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
                     continue
-                elif fileExt in ['.dll','.dlx']:
-                    if not settings['bash.installers.allowOBSEPlugins']: continue
-                    if not fileStartsWith(bush.game.se.shortName.lower()+'\\'):
+                elif fileExt in (u'.dll',u'.dlx'):
+                    if skipObse: continue
+                    if not fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
                         continue
                     if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
                     if not checkOBSE:
@@ -10876,43 +10866,38 @@ class Installer(object):
                 espmsAdd(pFile)
                 if pFile in espmNots: continue
             elif bSkip: continue
-            if skipEspmVoices and fileStartsWith('sound\\voice\\'):
-                if bUseUnicode:
-                    farPos = file.find('\\',12)
-                else:
-                    pathParts = splitter(file[12:])
-                    farPos = len(pathParts[0])+12 if len(pathParts) > 1 else -1
+            if skipEspmVoices and fileStartsWith(u'sound\\voice\\'):
+                farPos = file.find(u'\\',12)
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
                     continue
             #--Remap docs
             dest = file
             if rootLower in docDirs:
-                dest = 'Docs\\'+file[rootPos+1:]
+                dest = u'Docs\\'+file[rootPos+1:]
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
                 maReadMe = reReadMeMatch(file)
-                if fileLower in ('masterlist.txt','dlclist.txt'):
+                if fileLower in (u'masterlist.txt',u'dlclist.txt'):
                     pass
                 elif maReadMe:
                     if not (maReadMe.group(1) or maReadMe.group(3)):
-                        dest = 'Docs\\%s%s' % (archiveRoot,fileExt)
+                        dest = u'Docs\\'+archiveRoot+fileExt
                     else:
-                        dest = 'Docs\\'+file
+                        dest = u'Docs\\'+file
                     self.readMe = dest
-                elif fileLower == 'package.txt':
-                    dest = self.packageDoc = 'Docs\\'+archiveRoot+'.package.txt'
-                elif fileLower == 'package.jpg':
-                    dest = self.packagePic = 'Docs\\'+archiveRoot+'.package.jpg'
+                elif fileLower == u'package.txt':
+                    dest = self.packageDoc = u'Docs\\'+archiveRoot+u'.package.txt'
+                elif fileLower == u'package.jpg':
+                    dest = self.packagePic = u'Docs\\'+archiveRoot+u'.package.jpg'
                 elif fileExt in docExts:
-                    dest = 'Docs\\'+file
+                    dest = u'Docs\\'+file
                 elif fileExt in imageExts:
-                    dest = 'Docs\\'+file
+                    dest = u'Docs\\'+file
             if fileExt in Installer.commonlyEditedExts:
                 if trackedInfos is not None:
                     # The 'INI Tweaks' directory is already tracked by INIInfos,
                     # But INIInfos wont update the Installers Tab UI on changes.
-                    deprint('Attempting to track:', dest)
                     try:
                         track = dirs['mods'].join(dest)
                     except:
@@ -10943,20 +10928,10 @@ class Installer(object):
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
-        if inisettings['EnableUnicode']:
-            def fscSortKey(fsc):
-                dirFile = fsc[0].lower().rsplit('\\',1)
-                if len(dirFile) == 1: dirFile.insert(0,'')
-                return dirFile
-        else:
-            splitter = bolt.Path.mbSplit
-            def fscSortKey(fsc):
-                pathParts = splitter(fsc[0])
-                if len(pathParts) == 1:
-                    dirFile = ['', pathParts[0]]
-                else:
-                    dirFile = ['\\'.join(pathParts[0:-1]), pathParts[-1]]
-                return dirFile
+        def fscSortKey(fsc):
+            dirFile = fsc[0].lower().rsplit(u'\\',1)
+            if len(dirFile) == 1: dirFile.insert(0,u'')
+            return dirFile
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
@@ -10966,14 +10941,10 @@ class Installer(object):
         type = 0
         subNameSet = set()
         subNameSet.add('')
-        bUseUnicode = inisettings['EnableUnicode']
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
             if type != 1:
-                if bUseUnicode:
-                    frags = file.split('\\')
-                else:
-                    frags = splitter(file)
+                frags = file.split(u'\\')
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFile.search(frags[0]) or
@@ -11501,27 +11472,14 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         oldstylefileSizeCrcs = []
-        if inisettings['EnableUnicode']:
-            reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
-        else:
-            reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)',re.U)
         file = size = crc = isdir = 0
         self.isSolid = False
-        if inisettings['EnableUnicode']:
-            ins = listArchiveContents(archive.s)
-        else:
-            command = r'"%s" l -slt "%s"' % (exe7z, archive.s)
+        tempArch = archive.temp
+        with archive.tempMoveTo(tempArch):
+            ins = listArchiveContents(tempArch.s)
             try:
-                ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-            except WindowsError as e:
-                errorMessage = _("%s: Unable to process archive '%s' with the command: '%s'.") % (e,archive.s,command)
-                deprint(errorMessage)
-                raise InstallerArchiveError(errorMessage)
-            ins = stringBuffer(ins)
-        fail = False
-        try:
-            cumCRC = 0
-            if inisettings['EnableUnicode']:
+                cumCRC = 0
                 for line in ins.splitlines(True):
                     maList = reList.match(line)
                     if maList:
@@ -11538,107 +11496,65 @@ class InstallerArchive(Installer):
                                 fileSizeCrcs.append((file,size,crc))
                                 cumCRC += crc
                             file = size = crc = isdir = 0
-            else:
-                for line in ins:
-                    maList = reList.match(line)
-                    if maList:
-                        key,value = maList.groups()
-                        if key == 'Solid': self.isSolid = (value[0] == '+')
-                        elif key == 'Path':
-                            #--Should be able to twist 7z to export names in UTF-8, but can't (at
-                            #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
-                            #  assume file is encoded in cp437 and that we want to decode to cp1252.
-                            #--Hopefully this will mostly resolve problem with german umlauts, etc.
-                            #  It won't solve problems with non-european characters though.
-                           ## try: file = value.decode('cp437').encode('cp1252')
-                           ## except: pass
-                            file = value
-                        elif key == 'Size': size = int(value)
-                        elif key == 'Attributes': isdir = (value[0] == 'D')
-                        elif key == 'CRC' and value:
-                            crc = int(value,16)
-                        elif key == 'Method':
-                            if file and not isdir and file != archive.s:
-                                fileSizeCrcs.append((file,size,crc))
-                                cumCRC += crc
-                            file = size = crc = isdir = 0
-            self.crc = cumCRC & 0xFFFFFFFFL
-        except:
-            fail = True
-        finally:
-            if not inisettings['EnableUnicode']:
-                result = ins.close()
-                if fail or result:
-                    raise InstallerArchiveError(_("Unable to read archive '%s' (exit:%s).") % (archive.s,result))
-            if fail: raise InstallerArchiveError(_("Unable to read archive '%s'.") % archive.s)
+                self.crc = cumCRC & 0xFFFFFFFFL
+            except:
+                deprint('error:',traceback=True)
+                raise InstallerArchiveError(_("Unable to read archive '%s'.") % archive.s)
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
         from archive to self.tempDir.
         fileNames: File names (not paths)."""
-        if not fileNames: raise ArgumentError(_("No files to extract for %s.") % archive.s)
+        if not fileNames: raise ArgumentError(_(u'No files to extract for %s.') % archive.s)
         # expand wildcards in fileNames to get actual count of files to extract
-        bUseUnicode = inisettings['EnableUnicode']
         #--Dump file list
-        if bUseUnicode:
-            out = codecs.open(self.tempList.s, encoding='utf8', mode='w')
-        else:
-            out = self.tempList.open('w')
-        out.write('\n'.join(fileNames))
-        out.close()
+        with codecs.open(self.tempList.s, encoding='utf8', mode='w') as out:
+            out.write(u'\n'.join(fileNames))
         apath = dirs['installers'].join(archive)
-        if bUseUnicode:
-            args = '"%s" -y -o%s @%s -scsUTF8' % (apath.s, self.tempDir.s, self.tempList.s)
-            args = Encode(args,'mbcs')
-        else:
-            args = '"%s" -y -o%s @%s -scsWIN' % (apath.s, self.tempDir.s, self.tempList.s)
-        if recurse:
-            args += ' -r'
-        command = '"%s" l %s' % (exe7z, args)
-        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-        if bUseUnicode:
-            reExtracting = re.compile(u'^Extracting\s+(.+)')
-            reError = re.compile(u'^Error:')
-        else:
-            reExtracting = re.compile('^Extracting\s+(.+)')
-            reError = re.compile('^Error:')
-        numFiles = 0
-        errorLine = []
-        for line in ins:
-            if len(errorLine) or reError.match(line):
-                errorLine.append(line)
-            # we'll likely get a few extra lines, but that's ok
-            numFiles += 1
-        if ins.close():
-            raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
-        progress = progress or bolt.Progress()
-        progress.state = 0
-        progress.setFull(numFiles)
-        #--Extract files
-        self.clearTemp()
+        arch = apath.temp
+        with apath.tempMoveTo(arch):
+            args = u'"%s" -y -o%s @%s -scsUTF8' % (arch.s, self.tempDir.s, self.tempList.s)
+            if recurse:
+                args += u' -r'
+            command = u'"%s" l %s' % (exe7z, args)
+            ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+            reExtracting = re.compile(u'^Extracting\s+(.+)',re.U)
+            reError = re.compile(u'^Error:',re.U)
+            numFiles = 0
+            errorLine = []
+            for line in ins:
+                if len(errorLine) or reError.match(line):
+                    errorLine.append(line)
+                # we'll likely get a few extra lines, but that's ok
+                numFiles += 1
+            if ins.close():
+                raise StateError(_(u'%s: Extraction failed\n%s') % (archive.s,u'\n'.join(errorLine)))
+            progress = progress or bolt.Progress()
+            progress.state = 0
+            progress.setFull(numFiles)
+            #--Extract files
+            self.clearTemp()
 
-        command = '"%s" x %s' % (exe7z, args)
-        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-        extracted = []
-        index = 0
-        for line in ins:
-            if bUseUnicode:
-                line = unicode(line,'UTF8')
-            maExtracting = reExtracting.match(line)
-            if len(errorLine) or reError.match(line):
-                errorLine.append(line)
-            if maExtracting:
-                extracted.append(maExtracting.group(1).strip())
-                progress(index,_("%s\nExtracting files...\n%s") % (archive.s, maExtracting.group(1).strip()))
-                index += 1
-        result = ins.close()
-        self.tempList.remove()
-        # Clear ReadOnly flag if set
-        cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
-        cmd = Encode(cmd)
-        ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
-        if result:
-            raise StateError(_("%s: Extraction failed\n%s") % (archive.s,"\n".join(errorLine)))
+            command = u'"%s" x %s' % (exe7z, args)
+            ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+            extracted = []
+            index = 0
+            for line in ins:
+                line = unicode(line,'utf8')
+                maExtracting = reExtracting.match(line)
+                if len(errorLine) or reError.match(line):
+                    errorLine.append(line)
+                if maExtracting:
+                    extracted.append(maExtracting.group(1).strip())
+                    progress(index,_(u'%s\nExtracting files...\n%s') % (archive.s, maExtracting.group(1).strip()))
+                    index += 1
+            result = ins.close()
+            self.tempList.remove()
+            # Clear ReadOnly flag if set
+            cmd = ur'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+            ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
+            if result:
+                raise StateError(_(u'%s: Extraction failed\n%s') % (archive.s,u'\n'.join(errorLine)))
         #--Done
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -11691,15 +11607,15 @@ class InstallerArchive(Installer):
         destDir = dirs['installers'].join(project)
         if destDir.exists(): destDir.rmtree(safety='Installers')
         #--Extract
-        progress(0,project.s+_("\nExtracting files..."))
+        progress(0,project.s+_(u'\nExtracting files...'))
         self.unpackToTemp(archive,files,SubProgress(progress,0,0.9))
         #--Move
-        progress(0.9,project.s+_("\nMoving files..."))
+        progress(0.9,project.s+_(u'\nMoving files...'))
         count = 0
         tempDir = self.tempDir
         # Clear ReadOnly flag if set
-        cmd = r'attrib -R "%s\*" /S /D' % (self.tempDir.s)
-        cmd = Encode(cmd)
+        cmd = ur'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+        #cmd = Encode(cmd)
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         for file in files:
             srcFull = tempDir.join(file)
@@ -11713,29 +11629,18 @@ class InstallerArchive(Installer):
     def listSource(self, archive):
         """Returns package structure as text."""
         #--Setup
-        bUseUnicode = inisettings['EnableUnicode']
-        log = bolt.LogFile(stringBuffer())
-        if bUseUnicode:
-            log.setHeader(_(u'Package Structure:'))
-            log(u'[spoiler][xml]', False)
-            reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
-            file = u''
-        else:
-            log.setHeader(_('Package Structure:'))
-            log('[spoiler][xml]', False)
-            reList = re.compile('(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
-            file = ''
+        log = bolt.LogFile(StringIO.StringIO())
+        log.setHeader(_(u'Package Structure:'))
+        log(u'[spoiler][xml]', False)
+        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+        file = u''
         isdir = False
         apath = dirs['installers'].join(archive)
-        if bUseUnicode:
-            ins = listArchiveContents(apath.s)
-        else:
-            command = '"%s" l -slt "%s"' % (exe7z, apath.s)
-            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-            ins = stringBuffer(ins)
-
-        text = []
-        if bUseUnicode:
+        tempArch = apath.temp
+        with apath.tempMoveTo(tempArch):
+            ins = listArchiveContents(tempArch.s)
+            #--Parse
+            text = []
             for line in ins.splitlines(True):
                 maList = reList.match(line)
                 if maList:
@@ -11748,45 +11653,18 @@ class InstallerArchive(Installer):
                     elif key == u'Method':
                         file = u''
                         isdir = False
-        else:
-            for line in ins:
-                maList = reList.match(line)
-                if maList:
-                    key,value = maList.groups()
-                    if key == 'Path':
-                        #--Should be able to twist 7z to export names in UTF-8, but can't (at
-                        #  least not prior to 7z 9.04 with -sccs(?) argument?) So instead,
-                        #  assume file is encoded in cp437 and that we want to decode to cp1252.
-                        #--Hopefully this will mostly resolve problem with german umlauts, etc.
-                        #  It won't solve problems with non-european characters though.
-                        try: file = value.decode('cp437').encode('cp1252')
-                        except: pass
-                    elif key == 'Attributes':
-                        isdir = (value[0] == 'D')
-                        text.append(('%s' % (file), isdir))
-                    elif key == 'Method':
-                        file = ''
-                        isdir = False
-            result = ins.close()
-            if result:
-                raise InstallerArchiveError(_('Unable to read archive %s (exit:%s).') % (apath.s,result))
-
         text.sort()
+        #--Output
         for line in text:
             dir = line[0]
             isdir = line[1]
-            if bUseUnicode:
-                if isdir:
-                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
-                else:
-                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
+            if isdir:
+                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
             else:
-                if isdir:
-                    log('  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
-                else:
-                    log('  ' * dir.count(os.sep) + os.path.split(dir)[1])
-        log('[/xml][/spoiler]')
+                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
+        log(u'[/xml][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
+
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
@@ -11887,55 +11765,61 @@ class InstallerProject(Installer):
             archive = GPath(archive.sbody + defaultExt).tail
             archiveType = writeExts.get(archive.cext)
         outDir = dirs['installers']
-        outFile = outDir.join(archive)
+        realOutFile = outDir.join(archive)
+        outFile = outDir.join('bash_temp_nonunicode_name.tmp')
+        num = 0
+        while outFile.exists():
+            outFile += `num`
+            num += 1
         project = outDir.join(project)
-        if archive.cext in noSolidExts:
-            solid = ''
-        else:
-            if isSolid:
-                if blockSize:
-                    solid = '-ms=on -ms=%dm' % blockSize
-                else:
-                    solid = '-ms=on'
+        projectDir = project.temp
+        with project.tempMoveTo(projectDir):
+            if archive.cext in noSolidExts:
+                solid = u''
             else:
-                solid = '-ms=off'
-        if inisettings['7zExtraCompressionArguments']:
-            if '-ms=' in inisettings['7zExtraCompressionArguments']:
-                solid = ' %s' % inisettings['7zExtraCompressionArguments']
-            else: solid += ' %s' % inisettings['7zExtraCompressionArguments']
-        #--Dump file list
-        out = self.tempList.open('w')
-        if release:
-            out.write('*thumbs.db\n')
-            out.write('*desktop.ini\n')
-            out.write('--*\\')
-        out.close()
-        #--Compress
-        command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, project.s, self.tempList.s)
-        command = Encode(command,'mbcs')
-        progress(0,_("%s\nCompressing files...") % archive.s)
-        progress.setFull(1+length)
-        ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-        reCompressing = re.compile('Compressing\s+(.+)')
-        regMatch = reCompressing.match
-        reError = re.compile('Error: (.*)')
-        regErrMatch = reError.match
-        errorLine = []
-        index = 0
-        for line in ins:
-            # TODO: figure out why 7z isn't puttin anything out to stdout
-            maCompressing = regMatch(line)
-            if len(errorLine) or regErrMatch(line):
-                errorLine.append(line)
-            if maCompressing:
-                progress(index,Unicode(archive.s)+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1)).strip())
-                index += 1
-        result = ins.close()
-        self.tempList.remove()
-        if result:
-            outFile.temp.remove()
-            raise StateError(_("%s: Compression failed:\n%s") % (archive.s, "\n".join(errorLine)))
-        outFile.untemp()
+                if isSolid:
+                    if blockSize:
+                        solid = u'-ms=on -ms=%dm' % blockSize
+                    else:
+                        solid = u'-ms=on'
+                else:
+                    solid = u'-ms=off'
+            if inisettings['7zExtraCompressionArguments']:
+                if u'-ms=' in inisettings['7zExtraCompressionArguments']:
+                    solid = u' '+inisettings['7zExtraCompressionArguments']
+                else: solid += u' '+inisettings['7zExtraCompressionArguments']
+            #--Dump file list
+            with codecs.open(self.tempList.s,'w','utf8') as out:
+                if release:
+                    out.write(u'*thumbs.db\n')
+                    out.write(u'*desktop.ini\n')
+                    out.write(u'--*\\')
+            #--Compress
+            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+            progress(0,_(u'%s\nCompressing files...') % archive.s)
+            progress.setFull(1+length)
+            ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+            reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
+            regMatch = reCompressing.match
+            reError = re.compile(u'Error: (.*)',re.U)
+            regErrMatch = reError.match
+            errorLine = []
+            index = 0
+            for line in ins:
+                # TODO: figure out why 7z isn't puttin anything out to stdout
+                maCompressing = regMatch(line)
+                if len(errorLine) or regErrMatch(line):
+                    errorLine.append(line)
+                if maCompressing:
+                    progress(index,Unicode(archive.s)+_(u'\nCompressing files...\n%s') % maCompressing.group(1)).strip()
+                    index += 1
+            result = ins.close()
+            self.tempList.remove()
+            if result:
+                outFile.temp.remove()
+                raise StateError(_(u'%s: Compression failed:\n%s') % (archive.s, u'\n'.join(errorLine)))
+            outFile.untemp()
+            outFile.moveTo(realOutFile)
 
     #--Omod Config ------------------------------------------------------------
     class OmodConfig:
@@ -11991,21 +11875,22 @@ class InstallerProject(Installer):
          for file in os.listdir(dir):
              path = os.path.join(dir, file)
              if os.path.isdir(path):
-                 log(' ' * depth + file + '\\')
+                 log(u' ' * depth + file + u'\\')
                  depth += 2
                  walkPath(path, depth)
                  depth -= 2
              else:
-                 log(' ' * depth + file)
+                 log(u' ' * depth + file)
         #--Setup
-        log = bolt.LogFile(stringBuffer())
-        log.setHeader(_('Package Structure:'))
-        log('[spoiler][xml]', False)
+        log = bolt.LogFile(StringIO.StringIO())
+        log.setHeader(_(u'Package Structure:'))
+        log(u'[spoiler][xml]', False)
         apath = dirs['installers'].join(archive)
 
         walkPath(apath.s, 0)
-        log('[/xml][/spoiler]')
+        log(u'[/xml][/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
+
 #------------------------------------------------------------------------------
 class InstallersData(bolt.TankData, DataDict):
     """Installers tank data. This is the data source for """

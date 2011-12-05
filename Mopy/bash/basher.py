@@ -3678,29 +3678,29 @@ class InstallersPanel(SashTankPanel):
         pageName = gPage.GetName()
         sNone = _('[None]')
         def sortKey(file):
-            dirFile = file.lower().rsplit('\\',1)
-            if len(dirFile) == 1: dirFile.insert(0,'')
+            dirFile = file.lower().rsplit(u'\\',1)
+            if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
-        def dumpFiles(installer,files,default='',header='',isPath=False):
+        def dumpFiles(installer,files,default=u'',header=u'',isPath=False):
             if files:
-                buff = stringBuffer()
+                buff = StringIO.StringIO()
                 if isPath: files = [x.s for x in files]
                 else: files = list(files)
                 sortKeys = dict((x,sortKey(x)) for x in files)
                 files.sort(key=lambda x: sortKeys[x])
-                if header: buff.write(header+'\n')
+                if header: buff.write(header+u'\n')
                 for file in files:
                     oldName = installer.getEspmName(file)
                     buff.write(oldName)
                     if oldName != file:
-                        buff.write(' -> ')
+                        buff.write(u' -> ')
                         buff.write(file)
-                    buff.write('\n')
+                    buff.write(u'\n')
                 return buff.getvalue()
             elif header:
-                return header+'\n'
+                return header+u'\n'
             else:
-                return ''
+                return u''
         if pageName == 'gGeneral':
             info = _("== Overview\n")
             info += _("Type: ")

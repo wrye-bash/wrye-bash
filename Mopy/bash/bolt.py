@@ -834,10 +834,6 @@ class Path(object):
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
     mtimeResets = [] #--Used by getmtime
-    ascii = '[\x00-\x7F]'
-    japanese_hankana = '[\xA1-\xDF]'
-    japanese_zenkaku ='[\x81-\x9F\xE0-\xFC][\x40-\x7E\x80-\xFC]'
-    reChar = re.compile('('+ascii+'|'+japanese_hankana+'|'+japanese_zenkaku+')', re.M)
 
     @staticmethod
     def get(name):
@@ -862,30 +858,13 @@ class Path(object):
 
     @staticmethod
     def getcwd():
-        return Path(os.getcwd())
+        return Path(os.getcwdu())
 
     def setcwd(self):
         """Set cwd. Works as either instance or class method."""
         if isinstance(self,Path): dir = self._s
         else: dir = self
         os.chdir(dir)
-
-    @staticmethod
-    def mbSplit(path):
-        """Split path to consider multibyte character boundary."""
-        # Should also add Chinese fantizi and zhengtizi, Korean Hangul, etc.
-        match = Path.reChar.split(path)
-        result = []
-        curResult = ''
-        resultAppend = result.append
-        for c in match:
-            if c == '\\':
-                resultAppend(curResult)
-                curResult = ''
-            else:
-                curResult += c
-        resultAppend(curResult)
-        return result
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
@@ -894,32 +873,12 @@ class Path(object):
 
     def __init__(self, name):
         """Initialize."""
-        if bUseUnicode:
-            if isinstance(name,Path):
-                self.__setstate__(unicode(name._s,'UTF8'))
-            elif isinstance(name,unicode):
-                self.__setstate__(name)
-            else:
-                self.__setstate__(Unicode(name))
-                ##try:
-                ##    self.__setstate__(unicode(str(name),'UTF8'))
-                ##except UnicodeDecodeError:
-                ##    try:
-                ##        # A fair number of file names require UTF16 instead...
-                ##        self.__setstate__(unicode(str(name),'U16'))
-                ##    except UnicodeDecodeError:
-                ##        try:
-                ##            self.__setstate__(unicode(str(name),'cp1252'))
-                ##        except UnicodeDecodeError:
-                ##            # and one really really odd one (in SOVVM mesh bundle) requires cp500 (well at least that works unlike UTF8,16,32,32BE (the others I tried first))!
-                ##            self.__setstate__(unicode(str(name),'cp500'))
+        if isinstance(name,Path):
+            self.__setstate__(name._s)
+        elif isinstance(name,unicode):
+            self.__setstate__(name)
         else:
-            if isinstance(name,Path):
-                self.__setstate__(name._s)
-            elif isinstance(name,unicode):
-                self.__setstate__(name)
-            else:
-                self.__setstate__(str(name))
+            self.__setstate__(unicode(name))
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
@@ -930,16 +889,7 @@ class Path(object):
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
-        if bUseUnicode:
-            self._shead,self._stail = os.path.split(self._s)
-        else:
-            pathParts = Path.mbSplit(self._s)
-            if len(pathParts) == 1:
-                self._shead = ''
-                self._stail = pathParts[0]
-            else:
-                self._shead = '\\'.join(pathParts[0:-1])
-                self._stail = pathParts[-1]
+        self._shead,self._stail = os.path.split(self._s)
         self._cext = os.path.normcase(self._ext)
         self._csroot = os.path.normcase(self._sroot)
         self._sbody = os.path.basename(os.path.splitext(self._s)[0])
@@ -1023,13 +973,31 @@ class Path(object):
         "Extension in normalized case."
         return self._cext
     @property
-    def temp(self):
-        "Temp file path.."
-        return self+'.tmp'
+    def temp(self,unicodeSafe=True):
+        """Temp file path.  If unicodeSafe is True, the returned
+        temp file will be a fileName that can be passes through Popen
+        (Popen automatically tries to encode the name)"""
+        if unicodeSafe:
+            try:
+                self._s.encode(locale.getpreferredencoding())
+                return self+u'.tmp'
+            except UnicodeEncodeError:
+                baseName = u'bash_unicode_safe'
+                head = self.head
+                join = self.head.join
+                num = 0
+                tempName = join(baseName+`num`+u'.tmp')
+                while tempName.exists():
+                    num += 1
+                    tempName = join(baseName+`num`+u'.tmp')
+                return tempName
+        else:
+            return self+u'.tmp'
+
     @property
     def backup(self):
         "Backup file path."
-        return self+'.bak'
+        return self+u'.bak'
 
     #--size, atime, ctime
     @property
@@ -1111,7 +1079,7 @@ class Path(object):
         """File version (exe/dll) embeded in the file properties (windows only)."""
         try:
             import win32api
-            info = win32api.GetFileVersionInfo(self.s,'\\')
+            info = win32api.GetFileVersionInfo(self.s,u'\\')
             ms = info['FileVersionMS']
             ls = info['FileVersionLS']
             version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
@@ -1299,12 +1267,26 @@ class Path(object):
                 ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
                 shutil.move(self._s,destPath._s)
                 deprint(_('Successfully moved %s') % self._s)
+
+    def tempMoveTo(self,destName):
+        """Temporarily rename/move an object.  Use with the 'with' statement"""
+        class temp(object):
+            def __init__(self,oldPath,newPath):
+                self.newPath = newPath
+                self.oldPath = oldPath
+
+            def __enter__(self): return self
+            def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
+        self.moveTo(destName)
+        return temp(self,destName)
+
     def touch(self):
         """Like unix 'touch' command. Creates a file with current date/time."""
         if self.exists():
             self.mtime = time.time()
         else:
-            self.temp.open('w').close()
+            with self.temp.open('w'):
+                pass
             self.untemp()
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
@@ -1351,7 +1333,7 @@ class Path(object):
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
-reUnixNewLine = re.compile(r'(?<!\r)\n')
+reUnixNewLine = re.compile(ur'(?<!\r)\n',re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2443,7 +2425,7 @@ def unQuote(inString):
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
-    return reUnixNewLine.sub('\r\n',inString)
+    return reUnixNewLine.sub(u'\r\n',inString)
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
