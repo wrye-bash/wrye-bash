@@ -323,6 +323,7 @@ null4 = null1*4
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 def _unicode(text):
+    if isinstance(text,unicode): return text
     for encoding in ('cp1252','utf8','utf16','cp500','cp932'):
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
@@ -7570,7 +7571,7 @@ class Plugins:
             self.dir = dirs['app']
         else:
             self.dir = dirs['userApp']
-        self.path = self.dir.join('Plugins.txt')
+        self.path = self.dir.join(u'Plugins.txt')
         self.mtime = 0
         self.size = 0
         self.selected = []
@@ -7587,36 +7588,36 @@ class Plugins:
         #--Read file
         self.mtime = self.path.mtime
         self.size = self.path.size
-        ins = self.path.open('r')
-        #--Load Files
-        modNames = set()
-        modsDir = dirs['mods']
-        del self.selected[:]
-        del self.selectedBad[:]
-        for line in ins:
-            modName = reComment.sub('',line).strip()
-            if not modName: continue
-            modName = GPath(modName)
-            if modName in modNames: #--In case it's listed twice.
-                pass
-            elif len(self.selected) == 255:
-                self.selectedExtra.append(modName)
-            elif modName in modInfos:
-                self.selected.append(modName)
-            else:
-                self.selectedBad.append(modName)
-            modNames.add(modName)
-        #--Done
-        ins.close()
+        with self.path.open('r') as ins:
+            #--Load Files
+            modNames = set()
+            modsDir = dirs['mods']
+            del self.selected[:]
+            del self.selectedBad[:]
+            for line in ins:
+                # Need to use this unicode function, since we can't
+                # be sure the plugins.txt will be UTF-8 encoded
+                modName = _unicode(reComment.sub(u'',line).strip())
+                if not modName: continue
+                modName = GPath(modName)
+                if modName in modNames: #--In case it's listed twice.
+                    pass
+                elif len(self.selected) == 255:
+                    self.selectedExtra.append(modName)
+                elif modName in modInfos:
+                    self.selected.append(modName)
+                else:
+                    self.selectedBad.append(modName)
+                modNames.add(modName)
+            #--Done
 
     def save(self):
         """Write data to Plugins.txt file."""
         self.selected.sort()
-        out = self.path.open('w')
-        out.write('# This file is used to tell Oblivion which data files to load.\n\n')
-        for modName in self.selected:
-            out.write(Encode(modName.s+'\n'))
-        out.close()
+        with codecs.open(self.path.s,'w','utf8') as out:
+            out.write(u'# This file is used to tell %s which data files to load.\n\n' % bush.game.name)
+            for modName in self.selected:
+                out.write(modName.s+u'\n')
         self.mtime = self.path.mtime
         self.size = self.path.size
 
