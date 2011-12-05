@@ -10546,7 +10546,7 @@ class Mods_DumpTranslator(Link):
         with balt.BusyCursor():
             bolt.dumpTranslator(outPath.s,*files)
         balt.showOk(self.window,
-            (_(u'Translation keys written to Mopy\\Data\\%s.') % outPath.stail),
+            (_(u'Translation keys written to Mopy\\bash\\l10n\\%s.') % outPath.stail),
             _(u'Dump Translator')+u': '+outPath.stail)
 
 #------------------------------------------------------------------------------
