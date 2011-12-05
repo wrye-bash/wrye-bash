@@ -78,7 +78,7 @@ def Unicode(name,tryFirstEncoding=False):
             try:
                 return unicode(name,tryFirstEncoding)
             except UnicodeDecodeError:
-                deprint(_("Unable to decode '%s' in %s.") % (name, tryFirstEncoding))
+                deprint(u'Unable to decode "%s" in %s.' % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
             try:
@@ -97,7 +97,7 @@ def Encode(name,tryFirstEncoding=False):
             try:
                 return name.encode(tryFirstEncoding)
             except UnicodeEncodeError:
-                deprint(_("Unable to encode '%s' in %s.") % (name, tryFirstEncoding))
+                deprint(u'Unable to encode "%s" in %s.' % (name, tryFirstEncoding))
                 pass
         for i in range(NumEncodings):
             try:
@@ -714,43 +714,43 @@ class BoltError(Exception):
 #------------------------------------------------------------------------------
 class AbstractError(BoltError):
     """Coding Error: Abstract code section called."""
-    def __init__(self,message=_('Abstract section called.')):
+    def __init__(self,message='Abstract section called.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class ArgumentError(BoltError):
     """Coding Error: Argument out of allowed range of values."""
-    def __init__(self,message=_('Argument is out of allowed ranged of values.')):
+    def __init__(self,message='Argument is out of allowed ranged of values.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class StateError(BoltError):
     """Error: Object is corrupted."""
-    def __init__(self,message=_('Object is in a bad state.')):
+    def __init__(self,message='Object is in a bad state.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class UncodedError(BoltError):
     """Coding Error: Call to section of code that hasn't been written."""
-    def __init__(self,message=_('Section is not coded yet.')):
+    def __init__(self,message='Section is not coded yet.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class CancelError(BoltError):
     """User pressed 'Cancel' on the progress meter."""
-    def __init__(self,message=_('Action aborted by user.')):
+    def __init__(self,message='Action aborted by user.'):
         BoltError.__init__(self, message)
 
 class SkipError(BoltError):
     """User pressed 'Skip' on the progress meter."""
-    def __init__(self,message=_('Action skipped by user.')):
+    def __init__(self,message='Action skipped by user.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class PermissionError(BoltError):
     """Wrye Bash doesn't have permission to access the specified file/directory."""
     def __init__(self,message=None):
-        message = message or _('Access is denied.')
+        message = message or 'Access is denied.'
         BoltError.__init__(self,message)
 
 # LowStrings ------------------------------------------------------------------
@@ -779,7 +779,7 @@ class LString(object):
         return self._s
 
     def __repr__(self):
-        return "bolt.LString("+repr(self._s)+")"
+        return 'bolt.LString('+repr(self._s)+')'
 
     def __add__(self,other):
         return LString(self._s + other)
@@ -998,7 +998,7 @@ class Path(object):
                 return os.path.getsize(self._s)
             except WindowsError, werr:
                     if werr.winerror != 123: raise
-                    deprint(_("Unable to determine size of %s - probably a unicode error") % self._s)
+                    deprint(u'Unable to determine size of %s - probably a unicode error' % self._s)
                     return 0
     @property
     def atime(self):
@@ -1006,7 +1006,7 @@ class Path(object):
             return os.path.getatime(self._s)
         except WindowsError, werr:
             if werr.winerror != 123: raise
-            deprint(_("Unable to determine atime of %s - probably a unicode error") % self._s)
+            deprint(u'Unable to determine atime of %s - probably a unicode error' % self._s)
             return 1309853942.895 #timestamp of oblivion.exe (also known as any random time may work).
     @property
     def ctime(self):
@@ -1034,7 +1034,7 @@ class Path(object):
             mtime = int(os.path.getmtime(self._s))
         except WindowsError, werr:
                 if werr.winerror != 123: raise
-                deprint(_("Unable to determine modified time of %s - probably a unicode error") % self._s)
+                deprint(u'Unable to determine modified time of %s - probably a unicode error' % self._s)
                 mtime = 1146007898.0 #0blivion.exe's time... random basically.
         #--Y2038 bug? (os.path.getmtime() can't handle years over unix epoch)
         if mtime <= 0:
@@ -1050,7 +1050,7 @@ class Path(object):
             os.utime(self._s,(self.atime,int(mtime)))
         except WindowsError, werr:
             if werr.winerror != 123: raise
-            deprint(_("Unable to set modified time of %s - probably a unicode error") % self._s)
+            deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
     @property
@@ -1103,7 +1103,7 @@ class Path(object):
                     progress(ins.tell())
         except IOError, ierr:
            # if werr.winerror != 123: raise
-            deprint(_("Unable to get crc of %s - probably a unicode error") % self._s)
+            deprint(u'Unable to get crc of %s - probably a unicode error' % self._s)
         return crc & 0xFFFFFFFF
 
     #--Path stuff -------------------------------------------------------
@@ -1182,28 +1182,28 @@ class Path(object):
         try:
             if self.exists(): os.remove(self._s)
         except WindowsError:
-            deprint(_('Error removing %s...  attempting to clear ReadOnly flag') % self._s)
+            deprint(u'Error removing %s...  attempting to clear ReadOnly flag' % self._s)
             ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
             os.remove(self._s)
-            deprint(_('Successfully removed %s') % self._s)
+            deprint(u'Successfully removed '+self._s)
     def removedirs(self):
         try:
             if self.exists(): os.removedirs(self._s)
         except WindowsError:
-            deprint(_('Error removing %s...  attempting to clear ReadOnly flag') % self._s)
+            deprint(u'Error removing %s...  attempting to clear ReadOnly flag' % self._s)
             ins,err = subprocess.Popen(Encode(r'attrib -R "%s\*" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
             os.remove(self._s)
-            deprint(_('Successfully removed %s') % self._s)
+            deprint(u'Successfully removed %s' % self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
             try:
                 shutil.rmtree(self._s)
             except WindowsError:
-                deprint(_('Error removing %s... attempting to clear ReadOnly flag') % self._s)
+                deprint(u'Error removing %s... attempting to clear ReadOnly flag' % self._s)
                 ins,err = subprocess.Popen(Encode(r'attrib -R "%s\*" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
                 shutil.rmtree(self._s)
-                deprint(_('Successfully removed %s') % self._s)
+                deprint(u'Successfully removed %s' % self._s)
 
     #--start, move, copy, touch, untemp
     def start(self, exeArgs=None):
@@ -1226,7 +1226,7 @@ class Path(object):
             destName.mtime = self.mtime
     def moveTo(self,destName):
         if not self.exists():
-            raise StateError(self._s + _(" cannot be moved because it does not exist."))
+            raise StateError(self._s + u' cannot be moved because it does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
         if destPath._shead and not os.path.exists(destPath._shead):
@@ -1235,17 +1235,17 @@ class Path(object):
             try:
                 os.remove(destPath._s)
             except WindowsError:
-                deprint(_('Error removing %s... attempting to clear ReadOnly flag') % destPath._s)
+                deprint(u'Error removing %s... attempting to clear ReadOnly flag' % destPath._s)
                 ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (destPath._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
                 os.remove(destPath._s)
-                deprint(_('Successfully removed %s') % destPath._s)
+                deprint(u'Successfully removed %s' % destPath._s)
         try:
             shutil.move(self._s,destPath._s)
         except WindowsError:
-                deprint(_('Error moving %s... attempting to clear ReadOnly flag') % self._s)
+                deprint(u'Error moving %s... attempting to clear ReadOnly flag' % self._s)
                 ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
                 shutil.move(self._s,destPath._s)
-                deprint(_('Successfully moved %s') % self._s)
+                deprint(u'Successfully moved %s' % self._s)
 
     def tempMoveTo(self,destName):
         """Temporarily rename/move an object.  Use with the 'with' statement"""
@@ -1296,8 +1296,8 @@ class Path(object):
                 try:
                     return cmp(Encode(self._cs), Encode(other._cs))
                 except UnicodeError:
-                    deprint(_("Wrye Bash Unicode mode is currently %s") % (['off.','on.'][bUseUnicode]))
-                    deprint(_("unrecovered Unicode error when dealing with %s - presuming non equal.") % (self._cs))
+                    deprint(u"Wrye Bash Unicode mode is currently "+[u'off.',u'on.'][bUseUnicode])
+                    deprint(u"unrecovered Unicode error when dealing with %s - presuming non equal." % (self._cs))
                     return False
         else:
             try:
@@ -1306,8 +1306,8 @@ class Path(object):
                 try:
                     return cmp(Encode(self._cs), Encode(Path.getCase(other)))
                 except UnicodeError:
-                    deprint(_("Wrye Bash Unicode mode is currently %s.") % (['off','on'][bUseUnicode]))
-                    deprint(_("unrecovered Unicode error when dealing with %s - presuming non equal.'") % (self._cs))
+                    deprint(u"Wrye Bash Unicode mode is currently "+[u'off.',u'on.'][bUseUnicode])
+                    deprint(u"unrecovered Unicode error when dealing with %s - presuming non equal.'" % (self._cs))
                     return False
 
 # Util Constants --------------------------------------------------------------
@@ -1329,6 +1329,9 @@ class CsvReader:
         else:
             self.ins.seek(0)
             self.reader = csv.reader(self.ins,format)
+
+    def __enter__(self): return self
+    def __exit__(self,*args,**kwdargs): self.ins.clos()
 
     def __iter__(self):
         return self
@@ -1851,7 +1854,7 @@ class PickleDict:
                             self.vdata.update(cPickle.load(translator))
                             self.data.update(cPickle.load(translator))
                         except:
-                            deprint(_("unable to unpickle data"), traceback=True)
+                            deprint(u'unable to unpickle data', traceback=True)
                             raise
                     else:
                         self.data.update(header)
@@ -1928,7 +1931,7 @@ class Settings(DataDict):
     def setChanged(self,key):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
         if key not in self.data:
-            raise ArgumentError(_("No settings data for ")+key)
+            raise ArgumentError(u'No settings data for '+key)
         if key not in self.changed:
             self.changed.append(key)
 
@@ -1986,7 +1989,7 @@ class StructFile(file):
             strLen, = self.unpack('H',2)
             strLen = strLen & 0x7f | (strLen >> 1) & 0xff80
             if strLen > 0x7FFF:
-                raise UncodedError(_('String too long to convert.'))
+                raise UncodedError(u'String too long to convert.')
         return self.read(strLen)
 
     def writeNetString(self,str):
@@ -1995,7 +1998,7 @@ class StructFile(file):
         if strLen < 128:
             self.pack('b',strLen)
         elif strLen > 0x7FFF: #--Actually probably fails earlier.
-            raise UncodedError(_('String too long to convert.'))
+            raise UncodedError(u'String too long to convert.')
         else:
             strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
             self.pack('H',strLen)
@@ -2472,7 +2475,7 @@ class LogFile(Log):
 class Progress:
     """Progress Callable: Shows progress when called."""
     def __init__(self,full=1.0):
-        if (1.0*full) == 0: raise ArgumentError(_('Full must be non-zero!'))
+        if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
         self.message = ''
         self.full = full
         self.state = 0
@@ -2480,7 +2483,7 @@ class Progress:
 
     def setFull(self,full):
         """Set's full and for convenience, returns self."""
-        if (1.0*full) == 0: raise ArgumentError(_('Full must be non-zero!'))
+        if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
         self.full = full
         return self
 
@@ -2490,7 +2493,7 @@ class Progress:
 
     def __call__(self,state,message=''):
         """Update progress with current state. Progress is state/full."""
-        if (1.0*self.full) == 0: raise ArgumentError(_('Full must be non-zero!'))
+        if (1.0*self.full) == 0: raise ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
         if self.debug: deprint('%0.3f %s' % (1.0*state/self.full, self.message))
         self.doProgress(1.0*state/self.full, self.message)
@@ -2513,7 +2516,7 @@ class SubProgress(Progress):
         Progress.__init__(self,full)
         if baseTo == '+1': baseTo = baseFrom + 1
         if (baseFrom < 0 or baseFrom >= baseTo):
-            raise ArgumentError(_('BaseFrom must be >= 0 and BaseTo must be > BaseFrom'))
+            raise ArgumentError(u'BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
         self.parent = parent
         self.baseFrom = baseFrom
         self.scale = 1.0*(baseTo-baseFrom)
@@ -2916,15 +2919,15 @@ class WryeText:
             css = WryeText.defaultCss
         else:
             if cssName.ext != '.css':
-                raise BoltError(_("Invalid Css file: ")+cssName.s)
+                raise BoltError(u'Invalid Css file: '+cssName.s)
             for dir in cssDirs:
                 cssPath = GPath(dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise BoltError(_('Css file not found: ')+cssName.s)
+                raise BoltError(u'Css file not found: '+cssName.s)
             css = ''.join(cssPath.open().readlines())
             if '<' in css:
-                raise BoltError(_("Non css tag in ")+cssPath.s)
+                raise BoltError(u'Non css tag in '+cssPath.s)
         #--Write Output ------------------------------------------------------
         def toutf8(line):
             if not (bUseUnicode or isinstance(line, unicode)):

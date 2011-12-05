@@ -228,46 +228,46 @@ class BackupSettings(BaseBackupSettings):
         return True
 
     def PromptConfirm(self,msg=None):
-        msg = msg or _('Do you want to backup your Bash settings now?')
-        return askYes(self.parent,msg,_('Backup Bash Settings?'))
+        msg = msg or _(u'Do you want to backup your Bash settings now?')
+        return askYes(self.parent,msg,_(u'Backup Bash Settings?'))
 
     def PromptMismatch(self):
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
         if basher.settings['bash.readme'][1] == '0': return False
         return not self.SameAppVersion() and self.PromptConfirm(
-            _('A different version of Wrye Bash was previously installed.\n') +
-            _('Previous Version: %s\n') % (basher.settings['bash.readme'][1]) +
-            _('Current Version: %s\n') % (self.verApp) +
-            _('Do you want to create a backup of your Bash settings before they are overwritten?'))
+            _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
+            _(u'Previous Version: ')+basher.settings['bash.readme'][1]+u'\n' +
+            _(u'Current Version: ')+self.verApp+u'\n'+
+            _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
     def PromptContinue(self):
         #returns False if user quits
         return not askYes(self.parent,
-            _('You did not create a backup of the Bash settings.\n') +
-            _('If you continue, your current settings may be overwritten.\n') +
-            _('Do you want to quit Wrye Bash now?'),
-            _('No backup created!'))
+            _(u'You did not create a backup of the Bash settings.')+u'\n' +
+            _(u'If you continue, your current settings may be overwritten.')+u'\n' +
+            _(u'Do you want to quit Wrye Bash now?'),
+            _(u'No backup created!'))
 
     def PromptQuit(self):
         #returns True if user quits
         return askYes(self.parent,
-            _('There was an error while trying to backup the Bash settings!\n') +
-            _('If you continue, your current settings may be overwritten.\n') +
-            _('Do you want to quit Wrye Bash now?'),
-            _('Unable to create backup!'))
+            _(u'There was an error while trying to backup the Bash settings!')+u'\n' +
+            _(u'If you continue, your current settings may be overwritten.')+u'\n' +
+            _(u'Do you want to quit Wrye Bash now?'),
+            _(u'Unable to create backup!'))
 
     def WarnFailed(self):
         showWarning(self.parent,
-            _('There was an error while trying to backup the Bash settings!\n') +
-            _('No backup was created.'),
-            _('Unable to create backup!'))
+            _(u'There was an error while trying to backup the Bash settings!')+u'\n' +
+            _(u'No backup was created.'),
+            _(u'Unable to create backup!'))
 
     def InfoSuccess(self):
         if self.quit: return
         showInfo(self.parent,
-            _('Your Bash settings have been backed up successfully.\n') +
-            _('Backup Path: %s\n') % (self.dir.join(self.archive).s),
-            _('Backup File Created'))
+            _(u'Your Bash settings have been backed up successfully.')+u'\n' +
+            _(u'Backup Path: ')+self.dir.join(self.archive.s)+u'\n',
+            _(u'Backup File Created'))
 
 #------------------------------------------------------------------------------
 class RestoreSettings(BaseBackupSettings):
@@ -353,7 +353,7 @@ class RestoreSettings(BaseBackupSettings):
             for root, folders, files in path.walk(True,None,True):
                 root = GPath('.'+root.s)
                 for name in files:
-                    deprint(tpath.join(root,name).s + ' --> ' + fpath.join(root,name).s)
+                    deprint(tpath.join(root,name).s + u' --> ' + fpath.join(root,name).s)
                     path.join(root,name).copyTo(fpath.join(root,name))
 
         # tell the user the restore is compete and warn about restart
@@ -365,7 +365,7 @@ class RestoreSettings(BaseBackupSettings):
         #prompt for backup filename
         #returns False if user cancels
         if self.archive == None or not self.dir.join(self.archive).exists():
-            path = askOpen(self.parent,_('Restore Bash Settings'),self.dir,'','*.7z')
+            path = askOpen(self.parent,_(u'Restore Bash Settings'),self.dir,u'',u'*.7z')
             if not path: return False
             self.dir = path.head
             self.archive = path.tail
@@ -375,47 +375,47 @@ class RestoreSettings(BaseBackupSettings):
 
     def PromptConfirm(self,msg=None):
         # returns False if user cancels
-        msg = msg or _('Do you want to restore your Bash settings from a backup?')
-        return askYes(self.parent,msg,_('Restore Bash Settings?'))
+        msg = msg or _(u'Do you want to restore your Bash settings from a backup?')
+        return askYes(self.parent,msg,_(u'Restore Bash Settings?'))
 
     def PromptMismatch(self):
         # return True if same app version or user confirms
         return self.SameAppVersion() or askWarning(self.parent,
-              _('The version of Bash used to create the selected backup file does not match the current Bash version!\n') +
-              _('Backup v%s does not match v%s\n') % (self.verApp, basher.settings['bash.readme'][1]) +
-              _('\n') +
-              _('Do you want to restore this backup anyway?'),
-              _('Warning: Version Mismatch!'))
+              _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
+              _(u'Backup v%s does not match v%s') % (self.verApp, basher.settings['bash.readme'][1]) + u'\n' +
+              u'\n' +
+              _(u'Do you want to restore this backup anyway?'),
+              _(u'Warning: Version Mismatch!'))
 
     def ErrorConflict(self):
         #returns True if the data format doesn't match
         if self.CmpDataVersion() > 0:
             showError(self.parent,
-                  _('The data format of the selected backup file is newer than the current Bash version!\n') +
-                  _('Backup v%s is not compatible with v%s\n') % (self.verApp, basher.settings['bash.readme'][1]) +
-                  _('\n') +
-                  _('You cannot use this backup with this version of Bash.'),
-                  _('Error: Version Conflict!'))
+                  _(u'The data format of the selected backup file is newer than the current Bash version!')+u'\n' +
+                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, basher.settings['bash.readme'][1]) + u'\n' +
+                  u'\n' +
+                  _(u'You cannot use this backup with this version of Bash.'),
+                  _(u'Error: Version Conflict!'))
             return True
         #end if
         return False
 
     def WarnFailed(self):
         showWarning(self.parent,
-            _('There was an error while trying to restore your settings from the backup file!\n') +
-            _('No settings were restored.'),
-            _('Unable to restore backup!'))
+            _(u'There was an error while trying to restore your settings from the backup file!')+u'\n' +
+            _(u'No settings were restored.'),
+            _(u'Unable to restore backup!'))
 
     def WarnRestart(self):
         if self.quit: return
         basher.appRestart = True
         showWarning(self.parent,
-            _('Your Bash settings have been successfuly restored.\n') +
-            _('Backup Path: %s\n') % (self.dir.join(self.archive).s) +
-            _('\n') +
-            _('Before the settings can take effect, Wrye Bash must restart.\n') +
-            _('Click OK to restart now.'),
-            _('Bash Settings Restored'))
+            _(u'Your Bash settings have been successfuly restored.')+u'\n' +
+            _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n' +
+            u'\n' +
+            _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
+            _(u'Click OK to restart now.'),
+            _(u'Bash Settings Restored'))
 
 #------------------------------------------------------------------------------
 def pack7z(dstFile, srcDir, progress=None):
@@ -426,12 +426,12 @@ def pack7z(dstFile, srcDir, progress=None):
     length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
 
     if bosh.inisettings['EnableUnicode']:
-        app7z = dirs['compiled'].join('7zUnicode.exe').s
+        app7z = dirs['compiled'].join(u'7zUnicode.exe').s
     else:
-        app7z = dirs['compiled'].join('7z.exe').s
+        app7z = dirs['compiled'].join(u'7z.exe').s
     command = '"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
 
-    progress(0,_("%s\nCompressing files...") % dstFile.s)
+    progress(0,dstFile.s+u'\n'+_(u'Compressing files...'))
     progress.setFull(1+length)
 
     #--Pack the files
@@ -448,14 +448,14 @@ def pack7z(dstFile, srcDir, progress=None):
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
         if maCompressing:
-            progress(index,dstFile.s+_("\nCompressing files...\n%s") % maCompressing.group(1).strip())
+            progress(index,dstFile.s+u'\n'+_('Compressing files...')+u'\n'+maCompressing.group(1).strip())
             index += 1
         #end if
     #end for
     result = ins.close()
     if result:
         dstFile.temp.remove()
-        raise StateError(_("%s: Compression failed:\n%s") % (dstFile.s, "\n".join(errorLine)))
+        raise StateError(dstFile.s+u': Compression failed:\n'+u'\n'.join(errorLine))
     #end if
     #--Finalize the file, and cleanup
     dstFile.untemp()
@@ -478,12 +478,12 @@ def unpack7z(srcFile, dstDir, progress=None):
     ins.close()
 
     if progress:
-        progress(0,_("%s\nExtracting files...") % srcFile.s)
+        progress(0,srcFile.s+u'\n'+_(u'Extracting files...'))
         progress.setFull(1+length)
     #end if
 
     if bosh.inisettings['EnableUnicode']:
-        app7z = dirs['compiled'].join('7zUnicode.exe').s
+        app7z = dirs['compiled'].join(u'7zUnicode.exe').s
     else:
         app7z = dirs['compiled'].join('7z.exe').s
     command = '"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
@@ -505,16 +505,16 @@ def unpack7z(srcFile, dstDir, progress=None):
         if maExtracting:
             extracted = GPath(maExtracting.group(1).strip())
             if progress:
-                progress(index,_("%s\nExtracting files...\n%s") % (srcFile.s,extracted.s))
+                progress(index,srcFile.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
             #end if
             index += 1
         #end if
     #end for
     result = ins.close()
     if result:
-        raise StateError(_("%s: Extraction failed:\n%s") % (srcFile.s, "\n".join(errorLine)))
+        raise StateError(srcFile.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
     #end if
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
-    print _('Compiled')
+    print _(u'Compiled')

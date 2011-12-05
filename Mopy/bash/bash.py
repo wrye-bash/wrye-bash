@@ -289,7 +289,9 @@ def main():
                     button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                     button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 w = Tkinter.Text(frame)
-                w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
+                w.insert(Tkinter.END, _('Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.')
+                                      + u'\n\n' +
+                                      _(u'To preven this message in the future, use the -g command line argument to specify the game'))
                 w.config(state=Tkinter.DISABLED)
                 w.pack()
                 root.mainloop()
@@ -370,7 +372,10 @@ def main():
             msg = o.getvalue()
             o.close()
             w = Tkinter.Text(frame)
-            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (msg,))
+            w.insert(Tkinter.END, _(u'Error! Unable to start Wrye Bash.')
+                                  + u'\n\n' +
+                                  _(u'Please ensure Wrye Bash is correctly installed.')
+                                  + u'\n\n\n%s' % (msg,))
             w.config(state=Tkinter.DISABLED)
             w.pack()
             root.mainloop()

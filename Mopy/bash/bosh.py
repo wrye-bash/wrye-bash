@@ -11138,13 +11138,13 @@ class InstallerConverter(object):
         self.load(True)
         self.clearTemp()
         progress = progress or bolt.Progress()
-        progress(0,_("%s\nExtracting files...") % self.fullPath.stail)
+        progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         command = '"%s" x "%s" -y -o"%s"' % (exe7z, self.fullPath.s, self.tempDir.s)
         command = Encode(command,'mbcs')
         ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         ins = stringBuffer(ins)
         #--Error checking
-        reError = re.compile('Error:')
+        reError = re.compile(u'Error:',re.U)
         regMatch = reError.match
         errorLine = []
         for line in ins:
@@ -11152,7 +11152,7 @@ class InstallerConverter(object):
                 errorLine.append(line)
         result = ins.close()
         if result:
-            raise StateError(_("%s: Extraction failed:\n%s") % (self.fullPath.s, "\n".join(errorLine)))
+            raise StateError(self.fullPath.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Extract source archives
         lastStep = 0
         nextStep = step = 0.4 / len(self.srcCRCs)
@@ -11160,13 +11160,13 @@ class InstallerConverter(object):
             srcInstaller = crc_installer[srcCRC]
             files = srcInstaller.sortFiles([x[0] for x in srcInstaller.fileSizeCrcs])
             if not files: continue
-            progress(0,srcInstaller.archive+_("\nExtracting files..."))
+            progress(0,srcInstaller.archive+u'\n'+_(u'Extracting files...'))
             self.unpack(srcInstaller,files,SubProgress(progress,lastStep,nextStep))
             lastStep = nextStep
             nextStep += step
         #--Move files around and pack them
         self.arrangeFiles(SubProgress(progress,lastStep,0.7))
-        self.pack(self.tempDir.join("BCF-Temp"), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
+        self.pack(self.tempDir.join(u'BCF-Temp'), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
         #--Lastly, apply the settings.
         #--That is done by the calling code, since it requires an InstallerArchive object to work on
 
@@ -11349,7 +11349,7 @@ class InstallerConverter(object):
         command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
         command = Encode(command,'mbcs')
 
-        progress(0,_("%s\nCompressing files...") % destArchive.s)
+        progress(0,destArchive.s+u'\n'+_('Compressing files...'))
         progress.setFull(1+length)
         #--Pack the files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
@@ -11365,12 +11365,12 @@ class InstallerConverter(object):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                progress(index,Unicode(destArchive.s)+_("\nCompressing files...\n%s") % Unicode(maCompressing.group(1),'UTF8').strip())
+                progress(index,destArchive.s+u'\n'+_('Compressing files...')+u'\n'+maCompressing.group(1).strip())
                 index += 1
         result = ins.close()
         if result:
             outFile.temp.remove()
-            raise StateError(_("%s: Compression failed:\n%s") % (destArchive.s, "\n".join(errorLine)))
+            raise StateError(destArchive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
         #--Finalize the file, and cleanup
         outFile.untemp()
         self.clearTemp()
@@ -11420,9 +11420,9 @@ class InstallerConverter(object):
             if maExtracting:
                 extracted = GPath(maExtracting.group(1).strip())
                 if progress:
-                    progress(index,_("%s\nExtracting files...\n%s") % (srcInstaller.s,extracted.s))
+                    progress(index,srcInstaller.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
                 if extracted.cext in readExts:
-                    subArchives.append(self.tempDir.join("%08X" % installerCRC, extracted.s))
+                    subArchives.append(self.tempDir.join(u'%08X' % installerCRC, extracted.s))
                 index += 1
         result = ins.close()
         self.tempList.remove()
@@ -11431,7 +11431,7 @@ class InstallerConverter(object):
         cmd = Encode(cmd,'mbcs')
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
-            raise StateError(_("%s: Extraction failed:\n%s") % (srcInstaller.s, "\n".join(errorLine)))
+            raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Done
         #--Recursively unpack subArchives
         if len(subArchives):
@@ -11797,7 +11797,7 @@ class InstallerProject(Installer):
                     out.write(u'--*\\')
             #--Compress
             command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
-            progress(0,_(u'%s\nCompressing files...') % archive.s)
+            progress(0,archive.s+u'\n'+_(u'Compressing files...'))
             progress.setFull(1+length)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
             reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
@@ -11812,13 +11812,13 @@ class InstallerProject(Installer):
                 if len(errorLine) or regErrMatch(line):
                     errorLine.append(line)
                 if maCompressing:
-                    progress(index,Unicode(archive.s)+_(u'\nCompressing files...\n%s') % maCompressing.group(1)).strip()
+                    progress(index,archive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1)).strip()
                     index += 1
             result = ins.close()
             self.tempList.remove()
             if result:
                 outFile.temp.remove()
-                raise StateError(_(u'%s: Compression failed:\n%s') % (archive.s, u'\n'.join(errorLine)))
+                raise StateError(archive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
             outFile.untemp()
             outFile.moveTo(realOutFile)
 

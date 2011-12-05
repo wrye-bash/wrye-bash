@@ -564,9 +564,9 @@ def showList(parent,header,items,maxItems=0,title=''):
     numItems = len(items)
     if maxItems <= 0: maxItems = numItems
     message = string.Template(header).substitute(count=numItems)
-    message += '\n* '+'\n* '.join(items[:min(numItems,maxItems)])
+    message += u'\n* '+u'\n* '.join(items[:min(numItems,maxItems)])
     if numItems > maxItems:
-        message += _('\n(And %d others.)') % (numItems - maxItems,)
+        message += u'\n'+_(u'(And %d others.)') % (numItems - maxItems,)
     return askStyled(parent,message,title,wx.OK)
 
 #------------------------------------------------------------------------------
