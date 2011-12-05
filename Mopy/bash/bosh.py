@@ -10912,7 +10912,6 @@ class Installer(object):
                 if trackedInfos is not None:
                     # The 'INI Tweaks' directory is already tracked by INIInfos,
                     # But INIInfos wont update the Installers Tab UI on changes.
-                    deprint('Attempting to track:', dest)
                     try:
                         track = dirs['mods'].join(dest)
                     except:
