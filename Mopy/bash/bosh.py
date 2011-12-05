@@ -85,7 +85,7 @@ import balt
 import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError
-from bolt import _, LString, Unicode, Encode, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
+from bolt import LString, Unicode, Encode, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -215,7 +215,7 @@ class PickleDict(bolt.PickleDict):
     def __init__(self,path,oldPath=None,readOnly=False):
         """Initialize."""
         bolt.PickleDict.__init__(self,path,readOnly)
-        self.oldPath = oldPath or GPath('')
+        self.oldPath = oldPath or GPath(u'')
 
     def exists(self):
         """See if pickle file exists."""
@@ -9116,9 +9116,9 @@ class ModInfos(FileInfos):
             text = '%s  %s' % (prefix,name.s,)
             if showVersion:
                 version = self.getVersion(name)
-                if version: text += _('  [Version %s]' % (version))
+                if version: text += _('  [Version %s]') % (version)
             if showCRC:
-                text +=_('  [CRC: %08X]' % (self[name].cachedCrc()))
+                text +=_('  [CRC: %08X]') % (self[name].cachedCrc())
             log(text)
             if name in masters:
                 for master2 in self[name].header.masters:
@@ -33516,9 +33516,9 @@ def initLogFile():
 def initBosh(personal='',localAppData='',oblivionPath=''):
     #--Bash Ini
     bashIni = None
-    if GPath('bash.ini').exists():
+    if GPath(u'bash.ini').exists():
         bashIni = ConfigParser.ConfigParser()
-        bashIni.read('bash.ini')
+        bashIni.read(u'bash.ini')
 
     initDirs(bashIni,personal,localAppData, oblivionPath)
     initOptions(bashIni)

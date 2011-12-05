@@ -36,6 +36,8 @@ import sys
 import time
 import subprocess
 import collections
+import codecs
+import gettext
 from subprocess import Popen, PIPE
 close_fds = True
 import types
@@ -110,84 +112,61 @@ def Encode(name,tryFirstEncoding=False):
 #has to be set by bolt before any Path's are instantiated
 #ini gets read twice, but that's a minor hit at startup
 bUseUnicode = False
-if os.path.exists('bash.ini'):
-    bashIni = ConfigParser.ConfigParser()
-    bashIni.read('bash.ini')
-    for section in bashIni.sections():
-        options = bashIni.items(section)
-        for key,value in options:
-            if key == 'benableunicode':
-                bUseUnicode = bashIni.getboolean(section,key)
-                break
 
-reTrans = re.compile(r'^([ :=\.]*)(.+?)([ :=\.]*$)')
-def compileTranslator(txtPath,pklPath):
-    """Compiles specified txtFile into pklFile."""
-    reSource = re.compile(r'^=== ')
-    reValue = re.compile(r'^>>>>\s*$')
-    reNewLine = re.compile(r'\\n')
-    #--Scan text file
-    translator = {}
-    def addTranslation(key,value):
-        key,value   = key[:-1],value[:-1]
-        if key and value:
-            key = reTrans.match(key).group(2)
-            value = reTrans.match(value).group(2)
-            translator[key] = value
-    key,value,mode = '','',0
-    textFile = file(txtPath)
-    for line in textFile:
-        #--Begin key input?
-        if reSource.match(line):
-            addTranslation(key,value)
-            key,value,mode = '','',1
-        #--Begin value input?
-        elif reValue.match(line):
-            mode = 2
-        elif mode == 1:
-            key += line
-        elif mode == 2:
-            value += line
-    addTranslation(key,value) #--In case missed last pair
-    textFile.close()
-    #--Write translator to pickle
-    filePath = pklPath
-    tempPath = filePath+'.tmp'
-    cPickle.dump(translator,open(tempPath,'w'))
-    if os.path.exists(filePath): os.remove(filePath)
-    os.rename(tempPath,filePath)
+def dumpTranslator(outTxt,*files):
+    if not files:
+        file = os.path.split(__file__)[1]
+        files = [x for x in os.listdir(os.getcwdu()) if (x.lower().endswith(u'.py') or x.lower().endswith(u'.pyw'))]
+    args = [u'p',u'-a',u'-o',os.path.join(u'bash',u'l10n',outTxt)]
+    args.extend(files)
+    if hasattr(sys,'frozen'):
+        import pygettext
+        old_argv = sys.argv[:]
+        sys.argv = args
+        pygettext.main()
+        sys.argv = old_argv
+    else:
+        p = os.path.join(sys.prefix,u'Tools',u'i18n',u'pygettext.py')
+        args[0] = p
+        subprocess.call(args,shell=True)
+
+def initTranslator(language=None,path=None):
+    language = language or locale.getlocale()[0].split(u'_',1)[0]
+    path = path or os.path.join(u'bash',u'l10n')
+    if language.lower() == u'german': language = u'de'
+    txt,po,mo = (os.path.join(path,language+ext)
+                 for ext in (u'.txt',u'.po',u'.mo'))
+    try:
+        if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
+            # Compile
+            shutil.copy(txt,po)
+            args = [u'm',u'-o',mo,po]
+            if hasattr(sys,'frozen'):
+                import msgfmt
+                old_argv = sys.argv[:]
+                sys.argv = args
+                msgfmt.main()
+                sys.argv = old_argv
+            else:
+                m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
+                subprocess.call([m,u'-o',mo,po],shell=True)
+            os.remove(po)
+        # install translator
+        with open(mo,'rb') as file:
+            trans = gettext.GNUTranslations(file)
+    except:
+        #print 'Error loading translation file:'
+        #import traceback
+        #traceback.print_exc()
+        trans = gettext.NullTranslations()
+    trans.install(unicode=True)
 
 #--Do translator test and set
 if locale.getlocale() == (None,None):
-    locale.setlocale(locale.LC_ALL,'')
-language = bass.language or locale.getlocale()[0].split('_',1)[0]
-if language.lower() == 'german': language = 'de' #--Hack for German speakers who aren't 'DE'.
-# TODO: use bosh.dirs['l10n'] once we solve the circular import
-languagePkl, languageTxt = (os.path.join('bash','l10n',language+ext) for ext in ('.pkl','.txt'))
-#--Recompile pkl file?
-if os.path.exists(languageTxt) and (
-    not os.path.exists(languagePkl) or (
-        os.path.getmtime(languageTxt) > os.path.getmtime(languagePkl)
-        )
-    ):
-    compileTranslator(languageTxt,languagePkl)
-#--Use dictionary from pickle as translator
-if os.path.exists(languagePkl):
-    pklFile = open(languagePkl)
-    reEscQuote = re.compile(r"\\'")
-    _translator = cPickle.load(pklFile)
-    pklFile.close()
-    def _(text,encode=True):
-        text = Encode(text,'mbcs')
-        if encode: text = reEscQuote.sub("'",text.encode('string_escape'))
-        head,core,tail = reTrans.match(text).groups()
-        if core and core in _translator:
-            text = head+_translator[core]+tail
-        if encode: text = text.decode('string_escape')
-        if bUseUnicode: text = unicode(text,'mbcs')
-        return text
-else:
-    def _(text,encode=True): return text
+    locale.setlocale(locale.LC_ALL,u'')
+language = bass.language or locale.getlocale()[0].split(u'_',1)[0]
+if language.lower() == u'german': language = u'de' #--Hack for German speakers who aren't 'DE'.
+initTranslator(language)
 
 CBash = 0
 images_list = {
@@ -821,9 +800,9 @@ def GPath(name):
     if name is None: return None
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
-    else: norm = os.path.normpath(name)
+    else: norm = os.path.normpath(unicode(name))
     path = _gpaths.get(norm)
-    if path != None: return path
+    if path is not None: return path
     else: return _gpaths.setdefault(norm,Path(norm))
 
 #------------------------------------------------------------------------------

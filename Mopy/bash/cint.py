@@ -7,7 +7,7 @@ from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, _, Path, Encode
+    from bolt import GPath, deprint, Path, Encode
 except:
     #It isn't, so replace the imported items with bare definitions
     CBashEnabled = "."

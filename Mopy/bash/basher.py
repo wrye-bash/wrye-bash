@@ -46,7 +46,7 @@ import barb
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
-from bolt import _, LString, Unicode, Encode, GPath, SubProgress, deprint, delist
+from bolt import LString, Unicode, Encode, GPath, SubProgress, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -6722,7 +6722,7 @@ class PatchDialog(wx.Dialog):
         self.SetOkEnable()
 
     def UpdateConfig(self,patchConfigs,event=None):
-        if not balt.askYes(self.parent,_("Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)" % (['CBash','Python'][self.doCBash], ['Python','CBash'][self.doCBash]))): return
+        if not balt.askYes(self.parent,_("Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)") % (['CBash','Python'][self.doCBash], ['Python','CBash'][self.doCBash])): return
         if self.doCBash:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
         else:
@@ -9872,7 +9872,7 @@ class InstallerConverter_Apply(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         InstallerLink.AppendToMenu(self,menu,window,data)
         self.title = _("Apply BCF...")
-        menuItem = wx.MenuItem(menu,self.id,_(self.dispName))
+        menuItem = wx.MenuItem(menu,self.id,self.dispName)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10431,9 +10431,11 @@ class Mods_FullBalo(BoolLink):
 class Mods_DumpTranslator(Link):
     """Dumps new translation key file using existing key, value pairs."""
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_('Dump Translator'))
-        menu.AppendItem(menuItem)
+        if not hasattr(sys,'frozen'):
+            # Can't dump the strings if the files don't exist.
+            Link.AppendToMenu(self,menu,window,data)
+            menuItem = wx.MenuItem(menu,self.id,_('Dump Translator'))
+            menu.AppendItem(menuItem)
 
     def Execute(self,event):
         message = _("Generate Bash program translator file?\n\nThis function is for translating Bash itself (NOT mods) into non-English languages. For more info, see Internationalization section of Bash readme.")
@@ -10441,34 +10443,13 @@ class Mods_DumpTranslator(Link):
             return
         import locale
         language = locale.getlocale()[0].split('_',1)[0]
-        outPath = bosh.dirs['l10n'].join('NEW%s.txt' % (language,))
-        outFile = outPath.open('w')
-        #--Scan for keys and dump to
-        keyCount = 0
-        dumpedKeys = set()
-        reKey = re.compile(r'_\([\'\"](.+?)[\'\"]\)')
-        reTrans = bolt.reTrans
-        for pyPath in (GPath('bash').join(x+'.py') for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt','bish','barg','barb','bass','cint','ScriptParser')):
-            with pyPath.open() as pyText:
-                for lineNum,line in enumerate(pyText):
-                    line = re.sub('#.*','',line)
-                    for key in reKey.findall(line):
-                        key = reTrans.match(key).group(2)
-                        if key in dumpedKeys: continue
-                        outFile.write('=== %s, %d\n' % (pyPath.s,lineNum+1))
-                        outFile.write(key+'\n>>>>\n')
-                        value = _(key,False)
-                        if value != key:
-                            value = Encode(value,'mbcs')
-                            outFile.write(value)
-                        outFile.write('\n')
-                        dumpedKeys.add(key)
-                        keyCount += 1
-            #pyText.close()
-        outFile.close()
+        outPath = bosh.dirs['l10n'].join(u'NEW%s.txt' % (language,))
+        files = [GPath(u'bash').join(x+u'.py').s for x in ('bolt','balt','bush','bosh','bash','basher','bashmon','belt','bish','barg','barb','bass','cint','ScriptParser')]
+        with balt.BusyCursor():
+            bolt.dumpTranslator(outPath.s,*files)
         balt.showOk(self.window,
-            (_('%d translation keys written to Mopy\\Data\\%s.') % (keyCount,outPath.stail)),
-            _('Dump Translator')+': '+outPath.stail)
+            (_(u'Translation keys written to Mopy\\Data\\%s.') % outPath.stail),
+            _(u'Dump Translator')+u': '+outPath.stail)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(Link):

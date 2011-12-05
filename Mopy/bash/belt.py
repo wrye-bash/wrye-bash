@@ -30,7 +30,6 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, basher, bush
-from bolt import _
 import struct, string
 import win32api
 import cStringIO

@@ -35,7 +35,7 @@ import bosh
 import basher
 import bolt
 from bosh import startupinfo, dirs
-from bolt import _, BoltError, AbstractError, StateError, GPath, Progress, deprint, bUseUnicode
+from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint, bUseUnicode
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
 
 if bUseUnicode:

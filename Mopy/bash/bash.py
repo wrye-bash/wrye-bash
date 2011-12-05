@@ -41,7 +41,7 @@ import barg
 opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
-from bolt import _, GPath, deprint
+from bolt import GPath, deprint
 basherImported = False
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):

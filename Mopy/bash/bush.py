@@ -30,7 +30,7 @@ import struct
 import ctypes
 import _winreg
 
-from bolt import _,GPath,Path,deprint
+from bolt import GPath,Path,deprint
 
 # Setup -----------------------------------------------------------------------
 # Call this with the name of the game to setup bush.game for.

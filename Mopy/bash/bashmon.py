@@ -41,7 +41,7 @@ import traceback
 import bosh
 import bolt
 from bosh import PCFaces
-from bolt import _, GPath, intArg
+from bolt import GPath, intArg
 
 #--Debugging/Info
 bolt.deprintOn = True
