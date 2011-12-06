@@ -15263,7 +15263,7 @@ class ObCollection:
 
     def LookupModFile(self, ModName):
         ModID = _CGetModIDByName(self._CollectionID, Encode(ModName,'mbcs'))
-        if ModID == 0: raise KeyError(_("ModName(%s) not found in collection (%08X)\n") % (ModName, self._CollectionID) + self.Debug_DumpModFiles())
+        if ModID == 0: raise KeyError(_("ModName(%s) not found in collection (%08X)") % (ModName, self._CollectionID) + self.Debug_DumpModFiles() + u'\n')
         return self._ModType(ModID)
 
     def LookupModFileLoadOrder(self, ModName):

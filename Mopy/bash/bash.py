@@ -29,12 +29,9 @@ import atexit
 import os
 from time import time, sleep
 import sys
-if sys.version[:3] == '2.4':
-    import wxversion
-    wxversion.select("2.5.3.1")
 import re
 import traceback
-import cStringIO
+import StringIO
 
 import bass
 import barg
@@ -65,8 +62,8 @@ def SetUserPath(iniPath, uArg=None):
         SetHomePath(uArg)
     elif os.path.exists(iniPath):
         bashIni = GetBashIni(iniPath)
-        if bashIni and bashIni.has_option('General', 'sUserPath') and not bashIni.get('General', 'sUserPath') == '.':
-            SetHomePath(bashIni.get('General', 'sUserPath'))
+        if bashIni and bashIni.has_option(u'General', u'sUserPath') and not bashIni.get(u'General', u'sUserPath') == u'.':
+            SetHomePath(bashIni.get(u'General', u'sUserPath'))
 
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
@@ -112,7 +109,7 @@ def cmdRestore():
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
 def oneInstanceChecker():
     global pidpath, lockfd
-    pidpath = bolt.Path.getcwd().root.join('pidfile.tmp')
+    pidpath = bolt.Path.getcwd().root.join(u'pidfile.tmp')
     lockfd = None
 
     if opts.restarting: # wait up to 10 seconds for previous instance to close
@@ -126,7 +123,7 @@ def oneInstanceChecker():
         os.write(lockfd, "%d" % os.getpid())
     except OSError, e:
         # lock file exists and is currently locked by another process
-        print _('already started')
+        print _(u'Already started')
         return False
 
     return True
@@ -150,16 +147,13 @@ def exit():
         if appRestart:
             exePath = GPath(sys.executable)
             sys.argv = [exePath.stail] + sys.argv + ['--restarting']
-            # For some reason, quoting the sys.argv items caused it not to work for me.
-            # Is this correct?
-            #sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
             try:
                 import subprocess
                 subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
             except Exception, error:
                 print error
-                print _("Error Attempting to Restart Wrye Bash!")
-                print _("cmd line: "), exePath.s, sys.argv
+                print 'Error Attempting to Restart Wrye Bash!'
+                print u'cmd line: ', exePath.s, sys.argv
                 print
                 raise
 
@@ -233,7 +227,9 @@ def main():
                         self.panel = panel = wx.Panel(self,wx.ID_ANY)
                         sizer = wx.BoxSizer(wx.VERTICAL)
                         sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,
-                                              "Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game",
+                                              _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.")
+                                              + u'\n\n' +
+                                              _(u'To preven this message in the future, use the -g command line argument to specify the game'),
                                               style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_BESTWRAP),
                                   1,wx.GROW|wx.ALL,5)
                         for gameName in gameNames:
@@ -274,7 +270,7 @@ def main():
                         root.destroy()
                 quit = onQuit()
 
-                button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                button = Tkinter.Button(frame,text=_(u'Quit'),fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                 button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 class onClick(object):
                     def __init__(self,gameName):
@@ -326,10 +322,10 @@ def main():
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
-            print _("generating HTML file from: '%s'") % opts.genHtml
+            print _(u"generating HTML file from: '%s'") % opts.genHtml
             import belt
             bolt.WryeText.genHtml(opts.genHtml)
-            print _("done")
+            print _(u"done")
             return
 
         import basher
@@ -338,7 +334,7 @@ def main():
     except (bolt.PermissionError, bolt.BoltError), e:
         # try really hard to be able to show the error in the GUI
         try:
-            if "basher" not in locals():
+            if 'basher' not in locals():
                 # we get here if initBosh threw
                 import basher
                 import barb
@@ -364,10 +360,10 @@ def main():
             frame = Tkinter.Frame(root)
             frame.pack()
 
-            button = Tkinter.Button(frame, text="QUIT", fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+            button = Tkinter.Button(frame, text=_(u"QUIT"), fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
 
-            o = cStringIO.StringIO()
+            o = StringIO.StringIO()
             traceback.print_exc(file=o)
             msg = o.getvalue()
             o.close()
@@ -405,9 +401,15 @@ def main():
     if sys.version[0:3] < '2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
         if sys.version[0:3] == 2.5:
-            run = balt.askYes(None,"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur. Updating to Python 2.7x is recommended but not imperative. Do you still want to run Wrye Bash right now?","Warning OLD Python version detected")
+            run = balt.askYes(None,
+                              _(u"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur.  Updating to Python 2.7x is recommended but not imperative.  Do you still want to run Wrye Bash right now?"),
+                              _(u"Warning OLD Python version detected")
+                              )
         else:
-            run = balt.askYes(None,"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work. Please update to a more recent version of Python(2.7x is preferred). Do you still want to run Wrye Bash?", "Warning OLD Python version detected")
+            run = balt.askYes(None,
+                              _(u"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work.  Please update to a more recent version of Python(2.7x is preferred).  Do you still want to run Wrye Bash?"),
+                              _(u"Warning OLD Python version detected")
+                              )
         if not run:
             return
 

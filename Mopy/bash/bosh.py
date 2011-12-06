@@ -5577,38 +5577,40 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        buff = stringBuffer()
+        buff = StringIO.StringIO()
         fids = saveFile.fids
         if self.form != None:
-            buff.write('Form:\n  %d' % self.form)
+            buff.write(u'Form:\n  %d' % self.form)
         if self.attributes != None:
-            buff.write('Attributes\n  strength %3d\n  intelligence %3d\n  willpower %3d\n  agility %3d\n  speed %3d\n  endurance %3d\n  personality %3d\n  luck %3d\n' % tuple(self.attributes))
+            buff.write(u'Attributes\n  strength %3d\n  intelligence %3d\n  willpower %3d\n  agility %3d\n  speed %3d\n  endurance %3d\n  personality %3d\n  luck %3d\n' % tuple(self.attributes))
         if self.acbs != None:
-            buff.write('ACBS:\n')
+            buff.write(u'ACBS:\n')
             for attr in SreNPC.ACBS.__slots__:
-                buff.write('  '+attr+' '+`getattr(self.acbs,attr)`+'\n')
+                buff.write(u'  '+attr+u' '+`getattr(self.acbs,attr)`+u'\n')
         if self.factions != None:
-            buff.write('Factions:\n')
+            buff.write(u'Factions:\n')
             for faction in self.factions:
-                buff.write('  %8X %2X\n' % (fids[faction[0]],faction[1]))
+                buff.write(u'  %8X %2X\n' % (fids[faction[0]],faction[1]))
         if self.spells != None:
-            buff.write('Spells:\n')
+            buff.write(u'Spells:\n')
             for spell in self.spells:
-                buff.write('  %8X\n' % fids[spell])
+                buff.write(u'  %8X\n' % fids[spell])
         if self.ai != None:
-            buff.write(_('AI:\n  ') + self.ai + '\n')
+            buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
         if self.health != None:
-            buff.write('Health\n  '+`self.health`+'\n')
-            buff.write('Unused2\n  '+`self.unused2`+'\n')
+            buff.write(u'Health\n  '+`self.health`+u'\n')
+            buff.write(u'Unused2\n  '+`self.unused2`+u'\n')
         if self.modifiers != None:
-            buff.write('Modifiers:\n')
+            buff.write(u'Modifiers:\n')
             for modifier in self.modifiers:
-                buff.write('  %s\n' % `modifier`)
+                buff.write(u'  %s\n' % `modifier`)
         if self.full != None:
-            buff.write('Full:\n  '+`self.full`+'\n')
+            buff.write(u'Full:\n  '+`self.full`+u'\n')
         if self.skills != None:
-            buff.write('Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n  block %3d\n  blunt %3d\n  handToHand %3d\n  heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  conjuration %3d\n  destruction %3d\n  illusion %3d\n  mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(self.skills))
-        return buff.getvalue()
+            buff.write(u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n  block %3d\n  blunt %3d\n  handToHand %3d\n  heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  conjuration %3d\n  destruction %3d\n  illusion %3d\n  mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(self.skills))
+        ret = buff.getvalue()
+        buff.close()
+        return ret
 
 # Save File -------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -5854,14 +5856,14 @@ class SaveHeader:
         #--Errors
         except:
             deprint('save file error:',traceback=True)
-            raise SaveFileError(path.tail,_('File header is corrupted.'))
+            raise SaveFileError(path.tail,u'File header is corrupted.')
         #--Done
         ins.close()
 
     def writeMasters(self,path):
         """Rewrites masters of existing save file."""
         if not path.exists():
-            raise SaveFileError(path.head,_('File does not exist.'))
+            raise SaveFileError(path.head,u'File does not exist.')
         with path.open('rb') as ins:
             with path.temp.open('wb') as out:
                 oldMasters = bush.game.ess.writeMasters(ins,out,self)
@@ -5905,7 +5907,7 @@ class BSAHeader:
             (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
         #--Errors
         except:
-            raise BSAFileError(path.tail,_('File header is corrupted..'))
+            raise BSAFileError(path.tail,u'File header is corrupted.')
         #--Done
         ins.close()
 
@@ -5954,7 +5956,7 @@ class SaveFile:
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
             #--Header
-            progress(0,_('Reading Header.'))
+            progress(0,_(u'Reading Header.'))
             self.header = ins.read(34)
 
             #--Save Header, pcName
@@ -5993,7 +5995,7 @@ class SaveFile:
             modReader = ModReader(self.fileInfo.name,ins)
             createdNum, = ins.unpack('I',4)
             for count in xrange(createdNum):
-                progress(ins.tell(),_('Reading created...'))
+                progress(ins.tell(),_(u'Reading created...'))
                 header = ins.unpack('4s4I',20)
                 self.created.append(MreRecord(header,modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
@@ -6005,13 +6007,13 @@ class SaveFile:
 
             #--Records
             for count in xrange(recordsNum):
-                progress(ins.tell(),_('Reading records...'))
+                progress(ins.tell(),_(u'Reading records...'))
                 (fid,recType,flags,version,size) = ins.unpack('=IBIBH',12)
                 data = ins.read(size)
                 self.records.append((fid,recType,flags,version,data))
 
             #--Temp Effects, fids, worldids
-            progress(ins.tell(),_('Reading fids, worldids...'))
+            progress(ins.tell(),_(u'Reading fids, worldids...'))
             size, = ins.unpack('I',4)
             self.tempEffects = ins.read(size)
             #--Fids
@@ -6026,12 +6028,12 @@ class SaveFile:
             self.worldSpaces = array.array('I')
             self.worldSpaces.fromfile(ins,num)
         #--Done
-        progress(progress.full,_('Finished reading.'))
+        progress(progress.full,_(u'Finished reading.'))
 
     def save(self,outPath=None,progress=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if (not self.canSave): raise StateError(_("Insufficient data to write file."))
+        if (not self.canSave): raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         out = outPath.open('wb')
         def pack(format,*data):
@@ -6041,13 +6043,13 @@ class SaveFile:
         progress = progress or bolt.Progress()
         progress.setFull(self.fileInfo.size)
         #--Header
-        progress(0,_('Writing Header.'))
+        progress(0,_(u'Writing Header.'))
         out.write(self.header)
         #--Save Header
-        pcName = Encode(self.pcName,'mbcs')
+        pcName = self.pcName
         pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
             self.saveNum, len(pcName)+1)
-        out.write(pcName+'\x00')
+        out.write(pcName+u'\x00')
         out.write(self.postNameHeader)
         #--Masters
         pack('B',len(self.masters))
@@ -7420,9 +7422,9 @@ class OmodFile:
                 line = unicodeConvert(line)
                 maExtracting = reExtracting.match(line)
                 if maExtracting:
-                    name = maExtracting.group(1).strip().strip('\r')
+                    name = maExtracting.group(1).strip().strip(u'\r')
                     size = sizes[name]
-                    subprogress(float(current)/total,_("%s\nExtracting...\n%s") % (self.path.stail, name))
+                    subprogress(float(current)/total,self.path.stail+u'\n'+_(u'Extracting...')+u'\n'+name)
                     current += size
 
         # Get compression type
@@ -7597,7 +7599,7 @@ class Plugins:
             for line in ins:
                 # Need to use this unicode function, since we can't
                 # be sure the plugins.txt will be UTF-8 encoded
-                modName = _unicode(reComment.sub(u'',line).strip())
+                modName = brec.Unicode(reComment.sub(u'',line).strip())
                 if not modName: continue
                 modName = GPath(modName)
                 if modName in modNames: #--In case it's listed twice.
@@ -8274,28 +8276,37 @@ class INIInfo(FileInfo):
                     # Tweak is also a "true" INI format
                     text.append(_(' No valid INI format lines.'))
                 else:
-                    text.append(_(' Format mismatch:\n  Target format: INI\n  Tweak format: Batch Script'))
+                    text.append((u' '+_(u'Format mismatch:')
+                                 + u'\n  ' +
+                                 _(u'Target format: INI')
+                                 + u'\n  ' +
+                                 _(u'Tweak format: Batch Script')))
             else:
                 if type(tweak) == OBSEIniFile:
                     text.append(_(' No valid Batch Script format lines.'))
                 else:
-                    text.append(_(' Format mismatch:\n  Target format: Batch Script\n  Tweak format: INI'))
+                    text.append((u' '+_(u'Format mismatch:')
+                                 + u'\n  ' +
+                                 _(u'Target format: Batch Script')
+                                 + u'\n  ' +
+                                 _(u'Tweak format: INI')))
         else:
             for key in tweak:
                 if key not in settings:
-                    text.append(' [%s] - Invalid Header' % key)
+                    text.append(u' ['+key+u'] - ' + _(u'Invalid Header'))
                 else:
                     for item in tweak[key]:
                         if item not in settings[key]:
-                            text.append(' [%s] %s' % (key, item))
+                            text.append(u' [%s] %s' % (key, item))
         if len(text) == 1:
-            text.append(' None')
+            text.append(u' None')
 
-        log = bolt.LogFile(stringBuffer())
+        log = bolt.LogFile(StringIO.StringIO())
         for line in text:
             log(line)
-        return bolt.winNewLines(log.out.getvalue())
-
+        ret = bolt.winNewLines(log.out.getvalue())
+        log.out.close()
+        return ret
 
 class SaveInfo(FileInfo):
     def getFileInfos(self):
@@ -8828,13 +8839,13 @@ class ModInfos(FileInfos):
                     canMerge = False #presume non-mergeable.
 
                 #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
-                if fileName == "Oscuro's_Oblivion_Overhaul.esp":
+                if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
                     canMerge = False
             if canMerge == True:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
             else:
-                if canMerge == _("\n.    Has 'NoMerge' tag."):
+                if canMerge == u'\n.    '+_(u"Has 'NoMerge' tag."):
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
                     self.mergeable.add(fileName)
                 else:
@@ -9056,12 +9067,12 @@ class ModInfos(FileInfos):
         if missing or extra:
             message = ''
             if missing:
-                message += _("Some mods were unavailable and were skipped:\n* ")
-                message += '\n* '.join(x.s for x in missing)
+                message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
+                message += u'\n* '.join(x.s for x in missing)
             if extra:
-                if missing: message += '\n'
-                message += _("Mod list is full, so some mods were skipped:\n")
-                message += '\n* '.join(x.s for x in extra)
+                if missing: message += u'\n'
+                message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+                message += u'\n* '.join(x.s for x in extra)
             return message
         else:
             return None
@@ -9133,37 +9144,37 @@ class ModInfos(FileInfos):
         """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
         Either for all mods in the data folder or if specified for one specific mod.
         """
-        tagList = _('=== Current Bash Tags:\n')
-        tagList += '[spoiler][xml]'
+        tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
+        tagList += u'[spoiler][xml]'
         if modList:
             for modInfo in modList:
-                tagList += '\n* ' + modInfo.name.s + '\n'
+                tagList += u'\n* ' + modInfo.name.s + u'\n'
                 if modInfo.getBashTags():
-                    if modInfos.table.getItem(modInfo.name,'bashTags',''):
-                        tagList += _('  * From Manual (if any this overrides Description/BOSS sourced tags): ') + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                    if modInfos.table.getItem(modInfo.name,'bashTags',u''):
+                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/BOSS sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
                     if modInfo.getBashTagsDesc():
-                        tagList += _('  * From Description: ') + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
+                        tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
                     if configHelpers.getBashTags(modInfo.name):
-                        tagList += _('  * From BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
+                        tagList += u'  * '+_(u'From BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += _('  * Removed by BOSS Masterlist and or userlist:) ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
-                    tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
-                else: tagList += _('    No tags')
+                        tagList += u'  * '+_(u'Removed by BOSS Masterlist and or userlist:) ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
+                    tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
+                else: tagList += u'    '+_(u'No tags')
         else:
             # sort output by load order
             for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.mtime, y.mtime)):
                 if modInfo.getBashTags():
-                    tagList += '\n* ' + modInfo.name.s + '\n'
-                    if modInfos.table.getItem(modInfo.name,'bashTags',''):
-                        tagList += _('  * From Manual (if any this overrides Description/BOSS sourced tags): ') + ', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',''))) + '\n'
+                    tagList += u'\n* ' + modInfo.name.s + u'\n'
+                    if modInfos.table.getItem(modInfo.name,'bashTags',u''):
+                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/BOSS sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
                     if modInfo.getBashTagsDesc():
-                        tagList += _('  * From Description: ') + ', '.join(sorted(modInfo.getBashTagsDesc())) + '\n'
+                        tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
                     if configHelpers.getBashTags(modInfo.name):
-                        tagList += _('  * From BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + '\n'
+                        tagList += u'  * '+_(u'From BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += _('  * Removed by BOSS Masterlist and or userlist: ') + ', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + '\n'
-                    tagList += _('  * Result: ') + ', '.join(sorted(modInfo.getBashTags())) + '\n'
-        tagList += '[/xml][/spoiler]'
+                        tagList += u'  * '+_(u'Removed by BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
+                    tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
+        tagList += u'[/xml][/spoiler]'
         return tagList
 
     #--Mod Specific ----------------------------------------------------------
@@ -9339,7 +9350,14 @@ class ModInfos(FileInfos):
             basePath.moveTo(oldPath)
         except WindowsError, werr:
             if werr.winerror != 32: raise
-            while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (basePath.s,oldPath.s,basePath.s),_('Bash Patch - Rename Error')):
+            while balt.askYes(self,(_(u'Bash encountered an error when renaming %s to %s.')
+                                    + u'\n\n' +
+                                    _(u'The file is in use by another process such as TES4Edit.')
+                                    + u'\n' +
+                                    _(u'Please close the other program that is accessing %s.')
+                                    + u'\n\n' +
+                                    _(u'Try again?')) % (basePath.s,oldPath.s,basePath.s),
+                              _(u'Bash Patch - Rename Error')):
                 try:
                     basePath.moveTo(oldPath)
                 except WindowsError, werr:
@@ -9351,7 +9369,14 @@ class ModInfos(FileInfos):
             newPath.moveTo(basePath)
         except WindowsError, werr:
             if werr.winerror != 32: raise
-            while balt.askYes(self,_('Bash encountered an error when renaming %s to %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (newPath.s,basePath.s,newPath.s),_('Bash Patch - Rename Error')):
+            while balt.askYes(self,(_(u'Bash encountered an error when renaming %s to %s.')
+                                    + u'\n\n' +
+                                    _(u'The file is in use by another process such as TES4Edit.')
+                                    + u'\n' +
+                                    _(u'Please close the other program that is accessing %s.')
+                                    + u'\n\n' +
+                                    _(u'Try again?')) % (basePath.s,oldPath.s,basePath.s),
+                              _(u'Bash Patch - Rename Error')):
                 try:
                     newPath.moveTo(basePath)
                 except WindowsError, werr:
@@ -9755,7 +9780,7 @@ class ConfigHelpers:
                                 cleanIt = False
                             self.bossDirtyMods[crc] = (cleanIt, action)
                         except:
-                            deprint(_("An error occured parsing BOSS's masterlist for dirty crc's:\n"), traceback=True)
+                            deprint(_(u"An error occured parsing BOSS's masterlist for dirty crc's:")+u'\n', traceback=True)
                 ins.close()
                 self.bossMasterTime = path.mtime
         if userpath.exists():
@@ -10476,7 +10501,7 @@ class Installer(object):
         relPos = len(apRoot.s)+1
         pending = set()
         #--Scan for changed files
-        progress(0,_("%s: Pre-Scanning...") % rootName)
+        progress(0,rootName+u': '+_(u'Pre-Scanning...'))
         progress.setFull(1)
         dirDirsFiles = []
         emptyDirs = set()
@@ -10493,7 +10518,7 @@ class Installer(object):
         setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
         setSkipDocs = settings['bash.installers.skipDocs']
         setSkipImages = settings['bash.installers.skipImages']
-        transProgress = _("%s: Pre-Scanning...\n%s")
+        transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
         if inisettings['KeepLog'] > 1:
             try: log = inisettings['LogFile'].open('a')
             except: log = None
@@ -10532,7 +10557,7 @@ class Installer(object):
                     if ext in skipExts: continue
                     if not rsDir and sFile.lower() in bethFiles: continue
                     rpFile = ghostGet(rpFile,rpFile)
-                isEspm = not rsDir and (ext == '.esp' or ext == '.esm')
+                isEspm = not rsDir and ext in (u'.esp',u'.esm')
                 apFile = apDirJoin(sFile)
                 size = apFile.size
                 date = apFile.mtime
@@ -10553,13 +10578,13 @@ class Installer(object):
         if pending:
             totalSize = sum([apRootJoin(normGet(x,x)).size for x in pending])
             done = 0
-            progress(0,_("%s\nCalculating CRCs...\n") % rootName)
+            progress(0,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n')
             # each mod increments the progress bar by at least one, even if it is size 0
             # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
             # to prematurely disappear
             progress.setFull(max(totalSize+len(pending),1))
             for index,rpFile in enumerate(sorted(pending)):
-                progress(done,_("%s\nCalculating CRCs...\n%s") % (rootName,rpFile.s))
+                progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
                 try:
                     apFile = apRootJoin(normGet(rpFile,rpFile))
                     size = apFile.size
@@ -10823,7 +10848,14 @@ class Installer(object):
                         pass
                     elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                     elif checkOBSE:
-                        message = _('This installer (%s) has an %s plugin DLL.\nThe file is %s\nSuch files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.\nAre you sure you want to install this?') % (archiveRoot, bush.game.se.shortName, full)
+                        message = (_(u'This installer (%s) has an %s plugin DLL.')
+                                   + u'\n' +
+                                   _(u'The file is %s')
+                                   + u'\n' +
+                                   _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.')
+                                   + u'\n' +
+                                   _(u'Are you sure you want to install this?')
+                                   ) % (archiveRoot, bush.game.se.shortName, full)
                         if fileLower in goodDlls:
                             message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
                         elif fileLower in badDlls:
@@ -11087,13 +11119,13 @@ class InstallerConverter(object):
 
     def load(self,fullLoad=False):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
-        if not self.fullPath.exists(): raise StateError(_("\nLoading %s:\nBCF doesn't exist.") % self.fullPath.s)
+        if not self.fullPath.exists(): raise StateError(u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
         command = '"%s" x "%s" BCF.dat -y -so' % (exe7z, self.fullPath.s)
         command = Encode(command,'mbcs')
         try:
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
         except:
-            raise StateError(_("\nLoading %s:\nBCF extraction failed.") % self.fullPath.s)
+            raise StateError(u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
         ins = cStringIO.StringIO(Encode(ins))
         setter = object.__setattr__
         # translate data types to new hierarchy
@@ -11122,7 +11154,7 @@ class InstallerConverter(object):
         finally:
             if f: f.close()
             if result:
-                raise StateError(_("Error creating BCF.dat:\nError Code: %s") % (result))
+                raise StateError(u"Error creating BCF.dat:\nError Code: %s" % result)
 
     @staticmethod
     def clearTemp():
@@ -11195,18 +11227,18 @@ class InstallerConverter(object):
                 srcFile = tempJoin("%08X" % srcDir,srcFile)
             destFile = destJoin(Unicode(destFile,'mbcs'))
             if not srcFile.exists():
-                raise StateError(_("%s: Missing source file:\n%s") % (self.fullPath.stail, srcFile.s))
+                raise StateError(u"%s: Missing source file:\n%s" % (self.fullPath.stail, srcFile.s))
             if destFile == None:
-                raise StateError(_("%s: Unable to determine file destination for:\n%s") % (self.fullPath.stail, srcFile.s))
+                raise StateError(u"%s: Unable to determine file destination for:\n%s" % (self.fullPath.stail, srcFile.s))
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by convertedFiles
             #--This allows files to be moved whenever possible, speeding file operations up
             if numDupes > 1:
-                progress(index,_("Copying file...\n%s") % destFile.stail)
+                progress(index,_(u'Copying file...')+u'\n'+destFile.stail)
                 dupes[crcValue] = numDupes - 1
                 srcFile.copyTo(destFile)
             else:
-                progress(index,_("Moving file...\n%s") % destFile.stail)
+                progress(index,_(u'Moving file...')+u'\n'+destFile.stail)
                 srcFile.moveTo(destFile)
 
     def build(self, srcArchives, data, destArchive, BCFArchive, blockSize, progress=None):
@@ -11296,12 +11328,12 @@ class InstallerConverter(object):
                 #--No files to pack, but subArchives were unpacked
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.5)
                 lastStep += 0.5
-        sProgress(0,_("%s\nMapping files...") % BCFArchive.s)
+        sProgress(0,BCFArchive.s+u'\n'+_(u'Mapping files...'))
         sProgress.setFull(1+len(destFiles))
         #--Map the files
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC,srcGet(fileCRC),fileName))
-            sProgress(index,_("%s\nMapping files...\n%s") % (BCFArchive.s,fileName))
+            sProgress(index,BCFArchive.s+u'\n'+_(u'Mapping files...')+u'\n'+fileName)
         #--Build the BCF
         if len(self.missingFiles):
             #--Unpack missing files
@@ -11309,9 +11341,9 @@ class InstallerConverter(object):
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing
             #--Work around since moveTo doesn't allow direct moving of a directory into its own subdirectory
-            tempDir2 = GPath('BCF-Missing')
+            tempDir2 = GPath(u'BCF-Missing')
             destInstaller.tempDir.moveTo(tempDir2)
-            tempDir2.moveTo(destInstaller.tempDir.join('BCF-Missing'))
+            tempDir2.moveTo(destInstaller.tempDir.join(u'BCF-Missing'))
         #--Make the temp dir in case it doesn't exist
         destInstaller.tempDir.makedirs()
         self.save(destInstaller)
@@ -11387,7 +11419,7 @@ class InstallerConverter(object):
             out.write(Encode('\n'.join(fileNames),'UTF8'))
         finally:
             result = out.close()
-            if result: raise StateError(_("Error creating file list for 7z:\nError Code: %s") % (result))
+            if result: raise StateError(u"Error creating file list for 7z:\nError Code: %s" % result)
             result = 0
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
@@ -11396,9 +11428,9 @@ class InstallerConverter(object):
             apath = dirs['installers'].join(srcInstaller)
         else:
             apath = srcInstaller
-        subTempDir = GPath('InstallerTemp').join("%08X" % installerCRC)
+        subTempDir = GPath('InstallerTemp').join(u"%08X" % installerCRC)
         if progress:
-            progress(0,_("%s\nExtracting files...") % srcInstaller.s)
+            progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
         command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
         command = Encode(command,'mbcs')
@@ -11529,7 +11561,7 @@ class InstallerArchive(Installer):
                 # we'll likely get a few extra lines, but that's ok
                 numFiles += 1
             if ins.close():
-                raise StateError(_(u'%s: Extraction failed\n%s') % (archive.s,u'\n'.join(errorLine)))
+                raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
             progress = progress or bolt.Progress()
             progress.state = 0
             progress.setFull(numFiles)
@@ -11547,7 +11579,7 @@ class InstallerArchive(Installer):
                     errorLine.append(line)
                 if maExtracting:
                     extracted.append(maExtracting.group(1).strip())
-                    progress(index,_(u'%s\nExtracting files...\n%s') % (archive.s, maExtracting.group(1).strip()))
+                    progress(index,archive.s+u'\n'+_(u'Extracting files...')+u'\n'+maExtracting.group(1).strip())
                     index += 1
             result = ins.close()
             self.tempList.remove()
@@ -11555,7 +11587,7 @@ class InstallerArchive(Installer):
             cmd = ur'attrib -R "%s\*" /S /D' % (self.tempDir.s)
             ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
             if result:
-                raise StateError(_(u'%s: Extraction failed\n%s') % (archive.s,u'\n'.join(errorLine)))
+                raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
         #--Done
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -11568,11 +11600,11 @@ class InstallerArchive(Installer):
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
         #--Extract
-        progress(0,archive.s+_("\nExtracting files..."))
+        progress(0,archive.s+u'\n'+_(u'Extracting files...'))
         fileNames = [x[0] for x in dest_src.itervalues()]
         self.unpackToTemp(archive,dest_src.values(),SubProgress(progress,0,0.9))
         #--Move
-        progress(0.9,archive.s+_("\nMoving files..."))
+        progress(0.9,archive.s+u'\n'+_(u'Moving files...'))
         count = 0
         tempDir = self.tempDir
         norm_ghost = Installer.getGhosted()
@@ -11581,7 +11613,7 @@ class InstallerArchive(Installer):
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(max(len(dest_src),1))
         for dest,src in dest_src.iteritems():
-            subprogress(i,Unicode(archive.s)+_("\nMoving files...")+'\n'+dest.s)
+            subprogress(i,archive.s+u'\n'+_(u'Moving files...')+u'\n'+dest.s)
             i += 1
             size,crc = data_sizeCrc[dest]
             srcFull = tempDir.join(src)
@@ -11608,10 +11640,10 @@ class InstallerArchive(Installer):
         destDir = dirs['installers'].join(project)
         if destDir.exists(): destDir.rmtree(safety='Installers')
         #--Extract
-        progress(0,project.s+_(u'\nExtracting files...'))
+        progress(0,project.s+u'\n'+_(u'Extracting files...'))
         self.unpackToTemp(archive,files,SubProgress(progress,0,0.9))
         #--Move
-        progress(0.9,project.s+_(u'\nMoving files...'))
+        progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
         tempDir = self.tempDir
         # Clear ReadOnly flag if set
@@ -11709,7 +11741,7 @@ class InstallerProject(Installer):
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
         progress.setFull(len(dest_src))
-        progress(0,name.stail+_("\nMoving files..."))
+        progress(0,name.stail+u'\n'+_(u'Moving files...'))
         #--Copy Files
         count = 0
         norm_ghost = Installer.getGhosted()
@@ -11717,7 +11749,7 @@ class InstallerProject(Installer):
         mtimes = set()
         i = 0
         for dest,src in dest_src.iteritems():
-            progress(i,name.stail+_("\nMoving files...")+'\n'+dest.s)
+            progress(i,name.stail+u'\n'+_(u'Moving files...')+u'\n'+dest.s)
             i += 1
             size,crc = data_sizeCrc[dest]
             srcFull = srcDir.join(src)
@@ -12173,7 +12205,7 @@ class InstallersData(bolt.TankData, DataDict):
             progress(0,_("Scanning Packages..."))
             progressSetFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
-                progress(index,_("Scanning Packages...\n")+package.s)
+                progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
                 installer = newDataGet(package)
                 if not installer:
                     installer = newDataSetDefault(package,iClass(package))
@@ -12338,7 +12370,7 @@ class InstallersData(bolt.TankData, DataDict):
             progress(0,_("Scanning Converters..."))
             progress.setFull(len(pending))
             for index,archive in enumerate(sorted(pending)):
-                progress(index,_("Scanning Converter...\n")+archive.s)
+                progress(index,_(u'Scanning Converter...')+u'\n'+archive.s)
                 pendingChanged |= self.addConverter(archive)
         changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self.pruneConverters()
@@ -15598,10 +15630,10 @@ class ScriptText:
                     num += 1
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
                     with outpath.open('wb') as out:
-                        formid = '0x%06X' %(longid[1])
-                        out.write(';'+Encode(longid[0].s,'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                        formid = u'0x%06X' %(longid[1])
+                        out.write(';'+Encode(longid[0].s,'mbcs')+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
                     exportedScripts.append(eid)
-        return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
+        return (_('Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
 
 class CBash_ScriptText:
     """import & export functions for script text."""
@@ -15736,7 +15768,7 @@ class CBash_ScriptText:
                                 print outpath
                                 print ';',str(longid[0]),'\r\n;',formid,'\r\n;',eid,'\r\n',text
                     exportedScripts.append(eid)
-        return (_('Exported %d scripts from %s:\n') % (num,esp)+'\n'.join(exportedScripts))
+        return (_(u'Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
 
 #------------------------------------------------------------------------------
 class SpellRecords(UsesEffectsMixin):
@@ -17176,7 +17208,14 @@ class ModCleaner:
                         path.untemp()
                     except WindowsError, werr:
                         if werr.winerror != 32: raise
-                        while balt.askYes(None,_('Bash encountered an error when saving %s.\n\nThe file is in use by another process such as TES4Edit.\nPlease close the other program that is accessing %s.\n\nTry again?') % (modPath.stail,modPath.stail),_('%s - Save Error') % modPath.stail):
+                        while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
+                                                + u'\n\n' +
+                                                _(u'The file is in use by another process such as TES4Edit.')
+                                                + u'\n' +
+                                                _(u'Please close the other program that is accessing %s.')
+                                                + u'\n\n' +
+                                                _(u'Try again?')
+                                                ) % (modPath.stail,modPath.stail),modPath.stail+_(u' - Save Error')):
                             try:
                                 path.untemp()
                             except WindowsError,werr:
@@ -17373,29 +17412,29 @@ class PatchFile(ModFile):
     @staticmethod
     def modIsMergeable(modInfo,verbose=True):
         """Returns True or error message indicating whether specified mod is mergeable."""
-        reasons = ''
+        reasons = u''
 
         if modInfo.isEsm():
             if not verbose: return False
-            reasons += _("\n.    Is esm.")
+            reasons += u'\n.    '+_(u'Is esm.')
         #--Bashed Patch
-        if modInfo.header.author == "BASHED PATCH":
+        if modInfo.header.author == u"BASHED PATCH":
             if not verbose: return False
-            reasons += _("\n.    Is Bashed Patch.")
+            reasons += u'\n.    '+_(u'Is Bashed Patch.')
 
         #--Bsa / voice?
         if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
             if not verbose: return False
             hasBsa, hasVoices = modInfo.hasResources()
             if hasBsa:
-                reasons += _("\n.    Has BSA archive.")
+                reasons += u'\n.    '+_(u'Has BSA archive.')
             if hasVoices:
-                reasons += _("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s
+                reasons += u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s
 
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
             if not verbose: return False
-            reasons += _("\n.    Has 'NoMerge' tag.")
+            reasons += u'\n.    '+_(u"Has 'NoMerge' tag.")
         #--Load test
         mergeTypes = set([recClass.classType for recClass in PatchFile.mergeClasses])
         modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
@@ -17403,15 +17442,15 @@ class PatchFile(ModFile):
             modFile.load(True,loadStrings=False)
         except ModError, error:
             if not verbose: return False
-            reasons += '\n.    ' + Unicode(str(error))+'.'
+            reasons += u'\n.    %s.' % error
         #--Skipped over types?
         if modFile.topsSkipped:
             if not verbose: return False
-            reasons += (_("\n.    Unsupported types: ") + ', '.join(sorted(modFile.topsSkipped))+'.')
+            reasons += u'\n.    '+_(u'Unsupported types: ')+u', '.join(sorted(modFile.topsSkipped))+u'.'
         #--Empty mod
         elif not modFile.tops:
             if not verbose: return False
-            reasons += _("\n.    Empty mod.")
+            reasons += u'\n.    '+(u'Empty mod.')
         #--New record
         lenMasters = len(modFile.tes4.masters)
         newblocks = []
@@ -17421,11 +17460,11 @@ class PatchFile(ModFile):
                     if not verbose: return False
                     newblocks.append(type)
                     break
-        if newblocks: reasons += (_("\n.    New record(s) in block(s): ") + ', '.join(sorted(newblocks))+'.')
-        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" if GPath(modInfo.name.s) in curModInfo.header.masters]
+        if newblocks: reasons += u'\n.    '+_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.'
+        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != u'BASHED PATCH' if GPath(modInfo.name.s) in curModInfo.header.masters]
         if dependent:
             if not verbose: return False
-            reasons += (_("\n.    Is a master of mod(s): ") + ', '.join(sorted(dependent))+'.')
+            reasons += u'\n.    '+_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.'
         if reasons: return reasons
         return True
 
@@ -17477,7 +17516,7 @@ class PatchFile(ModFile):
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
         for index,patcher in enumerate(self.patchers):
-            progress(index,_("Preparing\n%s") % patcher.getName())
+            progress(index,_(u'Preparing')+u'\n'+patcher.getName())
             patcher.initData(SubProgress(progress,index))
         progress(progress.full,_('Patchers prepared.'))
 
@@ -17514,7 +17553,7 @@ class PatchFile(ModFile):
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
-                progress(index,_("%s\nLoading...") % modName.s)
+                progress(index,modName.s+u'\n'+_(u'Loading...'))
                 modInfo = modInfos[GPath(modName)]
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
@@ -17535,14 +17574,14 @@ class PatchFile(ModFile):
                 #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
                 iiMode = isMerged and bool(set(('InventOnly','IIM')) & bashTags)
                 if isMerged:
-                    progress(pstate,_("%s\nMerging...") % modName.s)
+                    progress(pstate,modName.s+u'\n'+_(u'Merging...'))
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
                 else:
-                    progress(pstate,_("%s\nScanning...") % modName.s)
+                    progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
                     self.scanModFile(modFile,nullProgress)
                 for patcher in sorted(self.patchers,key=attrgetter('scanOrder')):
                     if iiMode and not patcher.iiMode: continue
-                    progress(pstate,_("%s\n%s") % (modName.s,patcher.name))
+                    progress(pstate,u'%s\n%s' % (modName.s,patcher.name))
                     patcher.scanModFile(modFile,nullProgress)
                 # Clip max version at 1.0.  See explanation in the CBash version as to why.
                 self.tes4.version = min(max(modFile.tes4.version, self.tes4.version),1.0)
@@ -17656,20 +17695,23 @@ class PatchFile(ModFile):
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
-            subProgress(index,_("Completing\n%s...") % (patcher.getName(),))
+            subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatch(log,SubProgress(subProgress,index))
         #--Trim records
-        progress(0.9,_("Completing\nTrimming records..."))
+        progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
         for block in self.tops.values():
             block.keepRecords(self.keepIds)
-        progress(0.95,_("Completing\nConverting fids..."))
+        progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
         #--Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
         self.convertToShortFids()
         progress(1.0,"Compiled.")
         #--Description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
-        self.tes4.description = Encode(_("Updated: %s\n\nRecords Changed: %d") % (formatDate(time.time()),numRecords),'mbcs')
+        self.tes4.description = (_(u'Updated: ')+formatDate(time.time())
+                                 + u'\n\n' +
+                                 _(u'Records Changed: %d') % numRecords
+                                 )
 
 class CBash_PatchFile(ObModFile):
     """Defines and executes patcher configuration."""
@@ -17688,26 +17730,26 @@ class CBash_PatchFile(ObModFile):
 
         if modInfo.isEsm():
             if not verbose: return False
-            reasons.append(_("\n.    Is esm."))
+            reasons.append(u'\n.    '+_(u'Is esm.'))
         #--Bashed Patch
-        if modInfo.header.author == "BASHED PATCH":
+        if modInfo.header.author == u'BASHED PATCH':
             if not verbose: return False
-            reasons.append(_("\n.    Is Bashed Patch."))
+            reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
 
         #--Bsa / voice?
         if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
             if not verbose: return False
             hasBsa, hasVoices = modInfo.hasResources()
             if hasBsa:
-                reasons.append(_("\n.    Has BSA archive."))
+                reasons.append(u'\n.    '+_(u'Has BSA archive.'))
             if hasVoices:
-                reasons.append(_("\n.    Has associated voice directory (Sound\\Voice\\%s).") % modInfo.name.s)
+                reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
 
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         tags = modInfos[modInfo.name].getBashTags()
         if 'NoMerge' in tags:
             if not verbose: return False
-            reasons.append(_("\n.    Has 'NoMerge' tag."))
+            reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
         if reasons: return reasons
         return True
 
@@ -17738,25 +17780,25 @@ class CBash_PatchFile(ObModFile):
             #--masters not present in mod list?
             if len(missingMasters):
                 if not verbose: return False
-                reasons.append(_("\n.    Masters missing: \n    * %s") % ('\n    * '.join(sorted(missingMasters))))
+                reasons.append(u'\n.    '+_(u'Masters missing: ')+u'\n    * %s' % (u'\n    * '.join(sorted(missingMasters))))
             if len(nonActiveMasters):
                 if not verbose: return False
-                reasons.append(_("\n.    Masters not active: \n    * %s") % ('\n    * '.join(sorted(nonActiveMasters))))
+                reasons.append(u'\n.    '+_(u'Masters not active: ')+u'\n    * %s' % (u'\n    * '.join(sorted(nonActiveMasters))))
             #--Empty mod
             if modFile.IsEmpty():
                 if not verbose: return False
-                reasons.append(_("\n.    Empty mod."))
+                reasons.append(u'\n.    '+_(u'Empty mod.'))
             #--New record
             else:
                 if not tags & allowMissingMasters:
                     newblocks = modFile.GetNewRecordTypes()
                     if newblocks:
                         if not verbose: return False
-                        reasons.append(_("\n.    New record(s) in block(s): %s.") % (', '.join(sorted(newblocks))))
-            dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != "BASHED PATCH" and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
+                        reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
+            dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != u'BASHED PATCH' and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
             if dependent:
                 if not verbose: return False
-                reasons.append(_("\n.    Is a master of non-mergeable mod(s): %s.") % (', '.join(sorted(dependent))))
+                reasons.append(u'\n.    '+_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))
             if reasons: return reasons
             return True
 
@@ -17821,7 +17863,7 @@ class CBash_PatchFile(ObModFile):
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
-            progress(index,_("Preparing\n%s") % patcher.getName())
+            progress(index,_(u'Preparing')+u'\n'+patcher.getName())
             patcher.initData(self.group_patchers,SubProgress(progress,index))
         progress(progress.full,_('Patchers prepared.'))
 
@@ -17897,12 +17939,20 @@ class CBash_PatchFile(ObModFile):
         self.Current.load()
 
         if self.Current.LookupModFileLoadOrder(Encode(self.patchName.temp.s,'mbcs')) <= 0:
-            print _("Please copy this entire message and report it on the current official thread at "
-                    "http://forums.bethsoft.com/index.php?/forum/25-mods/.\n Also with:\n1. Your OS:"
-                    "\n2. Your installed MS Visual C++ redistributable versions:\n3. Your system RAM "
-                    "amount:\n4. How much memory Python.exe\pythonw.exe or Wrye Bash.exe is using\n5."
-                    " and finally... if restarting Wrye Bash and trying again and building the CBash "
-                    "Bashed Patch right away works fine\n")
+            print (_("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.") +
+                   u'\n' +
+                   _(u'Also with:') +
+                   u'\n' +
+                   _(u'1. Your OS:') +
+                   u'\n' +
+                   _(u'2. Your installed MS Visual C++ redistributable versions:') +
+                   u'\n' +
+                   _(u'3. Your system RAM amount:') +
+                   u'\n' +
+                   _(u'4. How much memory Python.exe\pythonw.exe or Wrye Bash.exe is using') +
+                   u'\n' +
+                   _(u'5. and finally... if restarting Wrye Bash and trying again and building the CBash Bashed Patch right away works fine') +
+                   u'\n')
             print self.Current.Debug_DumpModFiles()
             raise StateError()
         ObModFile.__init__(self, patchFile._ModID)
@@ -17982,7 +18032,7 @@ class CBash_PatchFile(ObModFile):
                 modGName = modFile.GName
 
                 if patchers:
-                    subProgress(pstate,_("Patching...\n%s::%s") % (modName.s,group))
+                    subProgress(pstate,_(u'Patching...')+u'\n%s::%s' % (modName.s,group))
                     pstate += 1
                     #Filter the used patchers as needed
                     if iiMode:
@@ -18034,7 +18084,7 @@ class CBash_PatchFile(ObModFile):
                             patcher(modFile, record, bashTags)
                         record.UnloadRecord()
                 if isMerged:
-                    progress(index,_("%s\nMerging...\n%s") % (modFile.ModName,group))
+                    progress(index,modFile.ModName+u'\n'+_(u'Merging...')+u'\n'+group)
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode,group)
                 maxVersion = max(modFile.TES4.version, maxVersion)
         # Force 1.0 as max TES4 version for now, as we don't expext any new esp format changes,
@@ -18050,12 +18100,12 @@ class CBash_PatchFile(ObModFile):
         for group, patchers in group_patchers.iteritems():
             finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
             if finishPatchers:
-                subProgress(pstate,_("Final Patching...\n%s::%s") % (self.ModName,group))
+                subProgress(pstate,_(u'Final Patching...')+u'\n%s::%s' % (self.ModName,group))
                 pstate += 1
                 for patcher in finishPatchers:
                     patcher(self, subProgress)
         #--Fix UDR's
-        progress(0,_('Cleaning...'))
+        progress(0,_(u'Cleaning...'))
         records = self.ACRES + self.ACHRS + self.REFRS
         progress.setFull(max(len(records),1))
         for i,record in enumerate(records):
@@ -18121,12 +18171,15 @@ class CBash_PatchFile(ObModFile):
         #--Patchers
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
-            subProgress(index,_("Completing\n%s...") % (patcher.getName(),))
+            subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatchLog(log)
         progress(1.0,"Compiled.")
         #--Description
         numRecords = sum([len(x) for x in self.aggregates.values()])
-        self.TES4.description = Encode(_("Updated: %s\n\nRecords Changed: %d") % (formatDate(time.time()),numRecords),'mbcs')
+        self.TES4.description = Encode((_("Updated: %s") +
+                                        u'\n\n' +
+                                        _(u'Records Changed: %d')
+                                        ) % (formatDate(time.time()),numRecords),'mbcs')
 #------------------------------------------------------------------------------
 class Patcher:
     """Abstract base class for patcher elements."""
@@ -18349,7 +18402,7 @@ class ListPatcher(Patcher):
 
 class CBash_ListPatcher(CBash_Patcher):
     """Subclass for patchers that have GUI lists of objects."""
-    unloadedText = _("\n\nAny non-active, non-merged mods in the following list will be IGNORED.")
+    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the following list will be IGNORED.')
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
@@ -18927,13 +18980,13 @@ class UpdateReferences(ListPatcher):
             if keepWorld:
                 keep(worldBlock.world.fid)
 
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.getConfigChecked():
-            log("* " +mod.s)
-        log(_("\n=== Records Patched"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Records Patched'))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('* %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_UpdateReferences(CBash_ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
@@ -18944,7 +18997,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     text = _("Imports FormId replacers from csv files into the Bashed Patch.")
     autoKey = set(('Formids',))
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
-    unloadedText = _("\n\nAny non-active, non-merged mods referenced by files selected in the following list will be IGNORED.")
+    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19275,13 +19328,13 @@ class CellImporter(ImportPatcher):
             if keepWorld:
                 keep(worldBlock.world.fid)
 
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Cells/Worlds Patched"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Cells/Worlds Patched'))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('* %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_CellImporter(CBash_ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
     name = _('Import Cells')
@@ -19531,13 +19584,13 @@ class GraphicsPatcher(ImportPatcher):
                 keep(fid)
                 type_count[type] += 1
         id_data = None
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 class CBash_GraphicsPatcher(CBash_ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -19643,15 +19696,15 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type in class_mod_count.keys():
-            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -19826,13 +19879,13 @@ class ActorImporter(ImportPatcher):
                     setattr(reduce(getattr,attr.split('.')[:-1],record),attr.split('.')[-1], value)
                 keep(fid)
                 type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 class CBash_ActorImporter(CBash_ImportPatcher):
     """Merges changes to actors."""
@@ -19923,15 +19976,15 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type in class_mod_count.keys():
-            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -20058,13 +20111,13 @@ class KFFZPatcher(ImportPatcher):
                     record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 class CBash_KFFZPatcher(CBash_ImportPatcher):
     """Merges changes to actor animations."""
@@ -20286,13 +20339,13 @@ class NPCAIPackagePatcher(ImportPatcher):
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
         #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcMods:
-            log("* " +mod.s)
-        log(_("\n=== AI Package Lists Changed: %d") % (sum(mod_count.values()),))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'AI Package Lists Changed: %d') % sum(mod_count.values()))
         for mod in modInfos.getOrdered(mod_count):
-            log('* %s: %3d' % (mod.s,mod_count[mod]))
+            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
 class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
@@ -20511,13 +20564,14 @@ class DeathItemPatcher(ImportPatcher):
                     record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " + mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* ' + mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.items()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
+
 class CBash_DeathItemPatcher(CBash_ImportPatcher):
     """Imports actor death items."""
     name = _('Import Actors: Death Items')
@@ -20682,13 +20736,13 @@ class ImportFactions(ImportPatcher):
                         record.factions = [x for x in record.factions if x.rank != -1]
                         type_count[type] += 1
                         keep(fid)
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Refactioned Actors"))
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Refactioned Actors'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
@@ -20896,11 +20950,11 @@ class ImportRelations(ImportPatcher):
                     if doKeep:
                         type_count[type] += 1
                         keep(fid)
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Modified Factions: %d") % type_count['FACT'])
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Modified Factions: %d') % type_count['FACT'])
 
 class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
@@ -21108,13 +21162,13 @@ class ImportScripts(ImportPatcher):
         #cleanup to save memory
         id_data = None
         #logging
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 class CBash_ImportScripts(CBash_ImportPatcher):
     """Imports attached scripts on objects."""
@@ -21175,15 +21229,15 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type in class_mod_count.keys():
-            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -21327,13 +21381,13 @@ class ImportScriptContents(ImportPatcher):
                 keep(fid)
                 type_count[type] += 1
         id_data = None
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 #------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
@@ -21457,13 +21511,13 @@ class ImportInventory(ImportPatcher):
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
         #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcMods:
-            log("* " +mod.s)
-        log(_("\n=== Inventories Changed: %d") % (sum(mod_count.values()),))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Inventories Changed: %d') % sum(mod_count.values()))
         for mod in modInfos.getOrdered(mod_count):
-            log('* %s: %3d' % (mod.s,mod_count[mod]))
+            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
 class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
@@ -21733,13 +21787,14 @@ class ImportActorsSpells(ImportPatcher):
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
         #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcMods:
-            log("* " +mod.s)
-        log(_("\n=== Spell Lists Changed: %d") % (sum(mod_count.values()),))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Spell Lists Changed: %d') % sum(mod_count.values()))
         for mod in modInfos.getOrdered(mod_count):
-            log('* %s: %3d' % (mod.s,mod_count[mod]))
+            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
+
 class CBash_ImportActorsSpells(CBash_ImportPatcher):
     """Merges changes to the spells lists of Actors."""
     name = _('Import Actors: Spells')
@@ -21907,13 +21962,13 @@ class NamesPatcher(ImportPatcher):
                     record.full = id_full[fid]
                     keep(fid)
                     type_count[type] += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Renamed Items"))
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Renamed Items'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
@@ -21988,15 +22043,15 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcs:
-            log("* " +file.s)
-        log(_("\n=== Renamed Items"))
+            log(u'* ' +file.s)
+        log(u'\n=== '+_(u'Renamed Items'))
         for type in class_mod_count.keys():
-            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -22115,11 +22170,11 @@ class NpcFacePatcher(ImportPatcher):
                     npc.setChanged()
                     keep(npc.fid)
                     count += 1
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.faceMods:
-            log("* " +mod.s)
-        log(_("\n=== Faces Patched: %d") % count)
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Faces Patched: %d') % count)
 
 class CBash_NpcFacePatcher(CBash_ImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
@@ -22287,13 +22342,13 @@ class RoadImporter(ImportPatcher):
                 keep(worldId)
                 keep(newRoad.fid)
                 worldsPatched.add((worldId[0].s,worldBlock.world.eid))
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Worlds Patched"))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Worlds Patched'))
         for modWorld in sorted(worldsPatched):
-            log('* %s: %s' % modWorld)
+            log(u'* %s: %s' % modWorld)
 
 class CBash_RoadImporter(CBash_ImportPatcher):
     """Imports roads."""
@@ -22506,13 +22561,13 @@ class SoundPatcher(ImportPatcher):
                 keep(fid)
                 type_count[type] += 1
         id_data = None
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
-            if count: log("* %s: %d" % (type,count))
+            if count: log(u'* %s: %d' % (type,count))
 
 
 class CBash_SoundPatcher(CBash_ImportPatcher):
@@ -22578,13 +22633,13 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_("\n=== Modified Records"))
+            log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Modified Records'))
         for type in class_mod_count.keys():
-            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
                 log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
@@ -22691,17 +22746,17 @@ class StatsPatcher(ImportPatcher):
                     count += 1
                     counts[fid[0]] = 1 + counts.get(fid[0],0)
             allCounts.append((group,count,counts))
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Modified Stats"))
+            log(u'* ' +file.s)
+        log(u'\n=== '+_(u'Modified Stats'))
         for type,count,counts in allCounts:
             if not count: continue
             typeName = {'ALCH':_('Potions'),'AMMO':_('Ammo'),'ARMO':_('Armors'),'INGR':_('Ingredients'),'MISC':_('Misc'),'WEAP':_('Weapons'),'SLGM':_('Soulgems'),'SGST':_('Sigil Stones'),'LIGH':_('Lights'),'KEYM':_('Keys'),'CLOT':_('Clothes'),'BOOK':_('Books'),'APPA':_('Apparatuses')}[type]
-            log("* %s: %d" % (typeName,count))
+            log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
-                log("  * %s: %d" % (modName.s,counts[modName]))
+                log(u'  * %s: %d' % (modName.s,counts[modName]))
 
 class CBash_StatsPatcher(CBash_ImportPatcher):
     """Import stats from mod file."""
@@ -22784,15 +22839,15 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcs:
-            log("* " +file.s)
-        log(_("\n=== Imported Stats"))
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Imported Stats'))
         for type in class_mod_count.keys():
-            log(_('* Modified %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 
@@ -22888,17 +22943,17 @@ class SpellsPatcher(ImportPatcher):
             count += 1
             counts[fid[0]] = 1 + counts.get(fid[0],0)
         allCounts.append(('SPEL',count,counts))
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Modified Stats"))
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Modified Stats'))
         for type,count,counts in allCounts:
             if not count: continue
             typeName = {'SPEL':_('Spells'),}[type]
-            log("* %s: %d" % (typeName,count))
+            log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
-                log("  * %s: %d" % (modName.s,counts[modName]))
+                log(u'  * %s: %d' % (modName.s,counts[modName]))
 
 
 class CBash_SpellsPatcher(CBash_ImportPatcher):
@@ -30392,8 +30447,11 @@ class SpecialPatcher:
 #------------------------------------------------------------------------------
 class AlchemicalCatalogs(SpecialPatcher,Patcher):
     """Updates COBL alchemical catalogs."""
-    name = _('Cobl Catalogs')
-    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
+    name = _(u'Cobl Catalogs')
+    text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.") +
+            u'\n\n' +
+            _(u'Will only run if Cobl Main.esm is loaded.')
+            )
     defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
@@ -30445,9 +30503,9 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             book.full = Encode(full, 'mbcs')
             book.value = value
             book.weight = 0.2
-            book.fid = keep((GPath('Cobl Main.esm'),objectId))
+            book.fid = keep((GPath(u'Cobl Main.esm'),objectId))
             book.text = '<div align="left"><font face=3 color=4444>'
-            book.text += Encode(_("Salan's Catalog of %s\r\n\r\n") % full, 'mbcs')
+            book.text += Encode(_(u"Salan's Catalog of ")+u'%s\r\n\r\n' % full, 'mbcs')
             book.iconPath = iconPath
             book.model = book.getDefault('model')
             book.model.modPath = modelPath
@@ -30501,7 +30559,10 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
 class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     """Updates COBL alchemical catalogs."""
     name = _('Cobl Catalogs')
-    text = _("Update COBL's catalogs of alchemical ingredients and effects.\n\nWill only run if Cobl Main.esm is loaded.")
+    text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.") +
+            u'\n\n' +
+            _(u'Will only run if Cobl Main.esm is loaded.')
+            )
     unloadedText = ""
     srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
     defaultConfig = {'isEnabled':True}
@@ -30573,12 +30634,12 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         #--Ingredients Catalog
         id_ingred = self.id_ingred
         for (num,objectId,full,value) in bush.ingred_alchem:
-            subProgress(pstate, _("Cataloging Ingredients...\n%s") % full)
+            subProgress(pstate, _(u'Cataloging Ingredients...')+u'\n%s' % full)
             pstate += 1
             book = getBook(patchFile, objectId)
             if not book: continue
             buff = stringBuffer()
-            buff.write('<div align="left"><font face=3 color=4444>' + Encode(_("Salan's Catalog of %s\r\n\r\n") % full,'mbcs'))
+            buff.write('<div align="left"><font face=3 color=4444>' + Encode(_(u"Salan's Catalog of ")+u"%s\r\n\r\n" % full,'mbcs'))
             for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(Encode(full,'mbcs')+'\r\n')
                 for effect in effects_list[:num]:
@@ -30636,10 +30697,10 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                 effect_ingred.setdefault(effectName, []).append((index,full))
         #--Effect catalogs
         for (num,objectId,full,value) in bush.effect_alchem:
-            subProgress(pstate, _("Cataloging Effects...\n%s") % full)
+            subProgress(pstate, _(u'Cataloging Effects...')+u'\n%s' % full)
             book = getBook(patchFile,objectId)
             buff = stringBuffer()
-            buff.write('<div align="left"><font face=3 color=4444>' + Encode(_("Salan's Catalog of %s\r\n\r\n") % full, 'mbcs'))
+            buff.write('<div align="left"><font face=3 color=4444>' + Encode((_("Salan's Catalog of ")+u"%s\r\n\r\n") % full, 'mbcs'))
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
                 if effects:
@@ -30663,8 +30724,11 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
 #------------------------------------------------------------------------------
 class CoblExhaustion(SpecialPatcher,ListPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion feature."""
-    name = _('Cobl Exhaustion')
-    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
+    name = _(u'Cobl Exhaustion')
+    text = (_(u"Modify greater powers to use Cobl's Power Exhaustion feature.") +
+            u'\n\n' +
+            _(u'Will only run if Cobl Main v1.66 (or higher) is active.')
+            )
     autoKey = 'Exhaust'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
@@ -30673,7 +30737,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.cobl = GPath('Cobl Main.esm')
+        self.cobl = GPath(u'Cobl Main.esm')
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles) and (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
         self.id_exhaustion = {}
@@ -30766,8 +30830,11 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
             log('  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion feature."""
-    name = _('Cobl Exhaustion')
-    text = _("Modify greater powers to use Cobl's Power Exhaustion feature.\n\nWill only run if Cobl Main v1.66 (or higher) is active.")
+    name = _(u'Cobl Exhaustion')
+    text = (_(u"Modify greater powers to use Cobl's Power Exhaustion feature.") +
+            u'\n\n' +
+            _(u'Will only run if Cobl Main v1.66 (or higher) is active.')
+            )
     autoKey = set(('Exhaust',))
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
@@ -30860,9 +30927,12 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     """Merged leveled lists mod file."""
     scanOrder = 45
     editOrder = 45
-    name = _('Leveled Lists')
-    text = _("Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.")
-    tip = _("Merges changes to leveled lists from all active mods.")
+    name = _(u'Leveled Lists')
+    text = (_(u"Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.") +
+            u'\n\n' +
+            _(u'Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.')
+            )
+    tip = _(u"Merges changes to leveled lists from all active mods.")
     choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
     autoKey = ('Delev','Relev')
     forceAuto = False
@@ -31037,24 +31107,24 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         """Adds merged lists to patchfile."""
         keep = self.patchFile.getKeeper()
         #--Relevs/Delevs List
-        log.setHeader('= '+self.__class__.name,True)
-        log.setHeader(_('=== Delevelers/Relevelers'))
+        log.setHeader(u'= '+self.__class__.name,True)
+        log.setHeader(u'=== '+_(u'Delevelers/Relevelers'))
         for leveler in (self.levelers or []):
-            log('* '+self.getItemLabel(leveler))
+            log(u'* '+self.getItemLabel(leveler))
         #--Save to patch file
-        for label, type in ((_('Creature'),'LVLC'), (_('Item'),'LVLI'), (_('Spell'),'LVSP')):
-            log.setHeader(_('=== Merged %s Lists') % label)
+        for label, type in ((_(u'Creature'),'LVLC'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
+            log.setHeader(u'=== '+_(u'Merged %s Lists') % label)
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
             for record in sorted(levLists.values(),key=attrgetter('eid')):
                 if not record.mergeOverLast: continue
                 fid = keep(record.fid)
                 patchBlock.setRecord(levLists[fid])
-                log('* '+record.eid)
+                log(u'* '+record.eid)
                 for mod in record.mergeSources:
-                    log('  * ' + self.getItemLabel(mod))
+                    log(u'  * ' + self.getItemLabel(mod))
         #--Discard empty sublists
-        for label, type in ((_('Creature'),'LVLC'), (_('Item'),'LVLI'), (_('Spell'),'LVSP')):
+        for label, type in ((_(u'Creature'),'LVLC'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
             #--Empty lists
@@ -31084,20 +31154,23 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                     cleaned.add(record.eid)
                     removed.add(levLists[empty].eid)
                     keep(super)
-            log.setHeader(_('=== Empty %s Sublists') % label)
+            log.setHeader(u'=== '+_(u'Empty %s Sublists') % label)
             for eid in sorted(removed,key=string.lower):
-                log('* '+eid)
-            log.setHeader(_('=== Empty %s Sublists Removed') % label)
+                log(u'* '+eid)
+            log.setHeader(u'=== '+_(u'Empty %s Sublists Removed') % label)
             for eid in sorted(cleaned,key=string.lower):
-                log('* '+eid)
+                log(u'* '+eid)
 
 class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     """Merged leveled lists mod file."""
     scanOrder = 45
     editOrder = 45
-    name = _('Leveled Lists')
-    text = _("Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.\n\nAdvanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.")
-    tip = _("Merges changes to leveled lists from all active mods.")
+    name = _(u'Leveled Lists')
+    text = (_(u"Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.") +
+            u'\n\n' +
+            _(u'Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.')
+            )
+    tip = _(u"Merges changes to leveled lists from all active mods.")
     choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
     autoKey = set(('Delev','Relev'))
     forceAuto = False
@@ -31296,7 +31369,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         emptiesAdd = empties.add
         emptiesDiscard = empties.discard
         for type in self.getTypes():
-            subProgress(pstate, _("Looking for empty %s sublists...\n") % type)
+            subProgress(pstate, _(u'Looking for empty %s sublists...')%type + u'\n')
             #Remove any empty sublists
             madeChanges = True
             while madeChanges:
@@ -31356,8 +31429,11 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
 #------------------------------------------------------------------------------
 class MFactMarker(SpecialPatcher,ListPatcher):
     """Mark factions that player can acquire while morphing."""
-    name = _('Morph Factions')
-    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 1.28 and Wrye Morph or similar.")
+    name = _(u'Morph Factions')
+    text = (_(u"Mark factions that player can acquire while morphing.") +
+            u'\n\n' +
+            _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
+            )
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = 'MFact'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
@@ -31462,18 +31538,21 @@ class MFactMarker(SpecialPatcher,ListPatcher):
                 relation.mod = 10
                 relations.append(relation)
             keep(record.fid)
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcFiles:
-            log("* " +file.s)
-        log(_("\n=== Morphable Factions"))
+            log(u'* ' +file.s)
+        log(u'\n=== '+_(u'Morphable Factions'))
         for mod in sorted(changed):
-            log("* %s: %d" % (mod.s,changed[mod]))
+            log(u'* %s: %d' % (mod.s,changed[mod]))
 
 class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
     """Mark factions that player can acquire while morphing."""
-    name = _('Morph Factions')
-    text = _("Mark factions that player can acquire while morphing.\n\nRequires Cobl 1.28 and Wrye Morph or similar.")
+    name = _(u'Morph Factions')
+    text = (_(u"Mark factions that player can acquire while morphing.") +
+            u'\n\n' +
+            _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
+            )
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('MFact',))
     unloadedText = ""
@@ -31576,7 +31655,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
             override.relations = None
             pstate = 0
             for faction in mFactable:
-                subProgress(pstate, _("Marking Morphable Factions...\n"))
+                subProgress(pstate, _(u'Marking Morphable Factions...')+u'\n')
                 relation = override.create_relation()
                 relation.faction = faction
                 relation.mod = 10
@@ -31588,20 +31667,23 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods/Files"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
         for file in self.srcs:
-            log("* " +file.s)
-        log(_("\n=== Morphable Factions"))
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Morphable Factions'))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log("* %s: %d" % (srcMod.s,mod_count[srcMod]))
+            log(u'* %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class PowerExhaustion(SpecialPatcher,Patcher):
     """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
-    name = _('Power Exhaustion')
-    text = _("Modify greater powers to work with Power Exhaustion mod.\n\nWill only run if Power Exhaustion mod is installed and active.")
+    name = _(u'Power Exhaustion')
+    text = (_(u"Modify greater powers to work with Power Exhaustion mod.") +
+            u'\n\n' +
+            _(u"Will only run if Power Exhaustion mod is installed and active.")
+            )
 
     #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
@@ -31679,8 +31761,11 @@ class PowerExhaustion(SpecialPatcher,Patcher):
 
 class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
     """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
-    name = _('Power Exhaustion')
-    text = _("Modify greater powers to work with Power Exhaustion mod.\n\nWill only run if Power Exhaustion mod is installed and active.")
+    name = _(u'Power Exhaustion')
+    text = (_(u"Modify greater powers to work with Power Exhaustion mod.") +
+            u'\n\n' +
+            _(u"Will only run if Power Exhaustion mod is installed and active.")
+            )
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -31746,9 +31831,12 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
 #------------------------------------------------------------------------------
 class RacePatcher(SpecialPatcher,ListPatcher):
     """Merged leveled lists mod file."""
-    name = _('Race Records')
-    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED.\n\nEven if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
-    tip = _("Merge race eyes, hair, body, voice from mods.")
+    name = _(u'Race Records')
+    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
+            u'\n\n' +
+            _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
+            )
+    tip = _(u"Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
         'Body-Size-M','Body-Size-F','Voice-M','Voice-F','R.Relations','R.Teeth',
@@ -32136,33 +32224,33 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 mod_npcsFixed[srcMod].add(npc.fid)
 
         #--Done
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcMods:
-            log("* " +mod.s)
-        log(_("\n=== Merged"))
+            log(u'* ' +mod.s)
+        log(u'\n=== '+_(u'Merged'))
         if not racesPatched:
-            log(_(". ~~None~~"))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
             for eid in sorted(racesPatched):
-                log("* "+eid)
-        log(_("\n=== Eyes/Hair Sorted"))
+                log(u'* '+eid)
+        log(u'\n=== '+_(u'Eyes/Hair Sorted'))
         if not racesSorted:
-            log(_(". ~~None~~"))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
             for eid in sorted(racesSorted):
-                log("* "+eid)
-        log(_("\n=== Eye Meshes Filtered"))
+                log(u'* '+eid)
+        log(u'\n=== '+_(u'Eye Meshes Filtered'))
         if not racesFiltered:
-            log(_(". ~~None~~"))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
-            log(_("In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
+            log(_(u"In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
             for eid in sorted(racesFiltered):
-                log("* "+eid)
+                log(u'* '+eid)
         if mod_npcsFixed:
-            log(_("\n=== Eyes/Hair Assigned for NPCs"))
+            log(u'\n=== '+_(u'Eyes/Hair Assigned for NPCs'))
             for srcMod in sorted(mod_npcsFixed):
-                log("* %s: %d" % (srcMod.s,len(mod_npcsFixed[srcMod])))
+                log(u'* %s: %d' % (srcMod.s,len(mod_npcsFixed[srcMod])))
 
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
@@ -32511,7 +32599,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         noEyes = 0
         noHair = 0
         for modFile in Current.LoadOrderMods:
-            subProgress(pstate, _("Filtering eyes...\n"))
+            subProgress(pstate, _(u'Filtering eyes...')+u'\n')
             for race in modFile.RACE:
                 recordId = race.fid
                 if race.IsPlayable:
@@ -32597,7 +32685,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         for modFile in Current.LoadOrderMods:
             #--Npcs with unassigned eyes/hair
             #--Must run after all race records have been processed
-            subProgress(pstate, _("Assigning random eyes and hairs to npcs missing them...\n"))
+            subProgress(pstate, _(u'Assigning random eyes and hairs to npcs missing them...')+u'\n')
             reProcess = re.compile(r'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I)
             for npc in modFile.NPC_:
                 recordId = npc.fid
@@ -32632,9 +32720,12 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 
 class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
     """Merged leveled lists mod file."""
-    name = _('Race Records')
-    text = _("Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.\n\nEven if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
-    tip = _("Merge race eyes, hair, body, voice from mods.")
+    name = _(u'Race Records')
+    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
+            u'\n\n' +
+            _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
+            )
+    tip = _(u"Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = set(('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
         'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
@@ -32680,41 +32771,41 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
             if hasattr(tweak, 'mod_npcsFixed'):
                 mod_npcsFixed.update(tweak.mod_npcsFixed)
         #--Done
-        log.setHeader('= '+self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         if not self.srcs:
-            log(_(". ~~None~~"))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
             for mod in self.srcs:
-                log("* " +mod.s)
-        log(_("\n=== Merged"))
+                log(u'* '+mod.s)
+        log(u'\n=== '+_(u'Merged'))
 
         if not racesPatched:
-            log(_(". ~~None~~"))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
             for eid in sorted(racesPatched):
-                log("* "+eid)
-        log(_("\n=== Eyes/Hair Sorted"))
+                log(u'* '+eid)
+        log(u'\n=== '+_(u'Eyes/Hair Sorted'))
         if not racesSorted:
-            log(_(". ~~None~~"))
+            log(u'. ~~%d~~'%_(u'None'))
         else:
             for eid in sorted(racesSorted):
-                log("* "+eid)
-        log(_("\n=== Eye Meshes Filtered"))
+                log(u'* '+eid)
+        log(u'\n=== '+_(u'Eye Meshes Filtered'))
         if not racesFiltered:
-            log(_(". ~~None~~"))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
-            log(_("In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
+            log(_(u"In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
             for eid in sorted(racesFiltered):
-                log("* "+eid)
+                log(u'* '+eid)
         if mod_npcsFixed:
-            log(_("\n=== Eyes/Hair Assigned for NPCs"))
+            log(u'\n=== '+_(u'Eyes/Hair Assigned for NPCs'))
             for srcMod in sorted(mod_npcsFixed):
-                if srcMod.cext == '.tmp':
+                if srcMod.cext == u'.tmp':
                     name = srcMod.sbody
                 else:
                     name = srcMod.s
-                log("* %s: %d" % (name,len(mod_npcsFixed[srcMod])))
+                log(u'* %s: %d' % (name,len(mod_npcsFixed[srcMod])))
 
 #--------------------------------------------
 #------------------------------------------------------------------------------
@@ -32843,13 +32934,14 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         if not self.isActive: return
         #--Log
         mod_eids = self.mod_eids
-        log.setHeader('= ' +self.__class__.name)
-        log(_("\n=== Quests Patched"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'\n=== '+_(u'Quests Patched'))
         for mod,eids in mod_eids.iteritems():
-            log(_('* %s: %d') % (mod.s,len(eids)))
+            log(u'* %s: %d' % (mod.s,len(eids)))
             for eid in sorted(eids):
-                log('  * %s' % (eid))
+                log(u'  * %s' % (eid))
         self.mod_eids = {}
+
 #------------------------------------------------------------------------------
 class ContentsChecker(SpecialPatcher,Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
@@ -33071,7 +33163,7 @@ except ImportError:
         def subEnv(match):
             key = match.group(1).upper()
             if not envDefs.get(key):
-                raise BoltError(_("Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help."))
+                raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             return envDefs[key]
         def getShellPath(folderKey):
             import _winreg
@@ -33080,7 +33172,7 @@ except ImportError:
             try:
                 path = _winreg.QueryValueEx(regKey,folderKey)[0]
             except WindowsError:
-                raise BoltError(_("Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help."))
+                raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             regKey.Close()
             path = path.encode(locale.getpreferredencoding())
             path = reEnv.sub(subEnv,path)
@@ -33178,7 +33270,7 @@ def getOblivionPath(bashIni, path):
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
     if not path.join(bush.game.exe).exists():
-        raise BoltError(_("Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe))
+        raise BoltError(u"Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe)
     return path
 
 def getPersonalPath(bashIni, path):
@@ -33201,7 +33293,7 @@ def getPersonalPath(bashIni, path):
         path = dirs['app'].join(path)
     #  Error check
     if not path.exists():
-        raise BoltError(_("Personal folder does not exist.\nPersonal folder: %s\nAdditional info:\n%s")
+        raise BoltError(u"Personal folder does not exist.\nPersonal folder: %s\nAdditional info:\n%s"
             % (path.s, sErrorInfo))
     return path
 
@@ -33225,7 +33317,7 @@ def getLocalAppDataPath(bashIni, path):
         path = dirs['app'].join(path)
     #  Error check
     if not path.exists():
-        raise BoltError(_("Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s")
+        raise BoltError(u"Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s"
             % (path.s, sErrorInfo))
     return path
 
@@ -33509,9 +33601,9 @@ def initLogFile():
         if inisettings['LogFile'].exists():
             os.remove(inisettings['LogFile'].s)
     else:
-        log = inisettings['LogFile'].open("a")
-        log.write(Encode(_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r\n') % (datetime.datetime.now(),inisettings['KeepLog']),'mbcs'))
-        log.close()
+        with inisettings['LogFile'].open('a') as log:
+            log.write(Encode(
+                (_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.')+u'\r\n') % (datetime.datetime.now(),inisettings['KeepLog']),'mbcs'))
 
 def initBosh(personal='',localAppData='',oblivionPath=''):
     #--Bash Ini

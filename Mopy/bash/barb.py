@@ -27,31 +27,27 @@ import os
 import re
 import datetime
 import cPickle
-import cStringIO
 import StringIO
 from subprocess import Popen, PIPE
 import bash
 import bosh
 import basher
 import bolt
+import bush
 from bosh import startupinfo, dirs
 from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint, bUseUnicode
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
 
-if bUseUnicode:
-    stringBuffer = StringIO.StringIO
-else:
-    stringBuffer = cStringIO.StringIO
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
 # user cancelled operation
-    def __init__(self,message=_('Cancelled')):
+    def __init__(self,message=u'Cancelled'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class BaseBackupSettings:
     def __init__(self, parent=None, path=None, quit=False):
-        if path != None and path.ext == '' and not path.exists(): path = None
+        if path != None and path.ext == u'' and not path.exists(): path = None
         if path == None: path = basher.settings['bash.backupPath']
         if path == None: path = dirs['modsBash']
         self.quit = quit
@@ -63,17 +59,17 @@ class BaseBackupSettings:
         #end if
         self.parent = parent
         self.verDat = basher.settings['bash.version']
-        self.verApp = basher.settings['bash.readme'][1].split('.')[0]
+        self.verApp = basher.settings['bash.readme'][1].split(u'.')[0]
         self.files = {}
         self.tmp = None
 
     def __del__(self):
-        if self.tmp and self.tmp.exists(): self.tmp.rmtree('~tmp')
+        if self.tmp and self.tmp.exists(): self.tmp.rmtree(u'~tmp')
 
     def maketmp(self):
         # create a ~tmp directory
-        self.tmp = self.dir.join('~tmp')
-        if self.tmp.exists(): self.tmp.rmtree('~tmp')
+        self.tmp = self.dir.join(u'~tmp')
+        if self.tmp.exists(): self.tmp.rmtree(u'~tmp')
         self.tmp.makedirs()
 
     def Apply(self):
@@ -96,7 +92,7 @@ class BaseBackupSettings:
 
     def CmpAppVersion(self):
         # Changed to prompt updating on any version change
-        return cmp(self.verApp.split('.'), basher.settings['bash.readme'][1].split('.'))
+        return cmp(self.verApp.split(u'.'), basher.settings['bash.readme'][1].split(u'.'))
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
@@ -108,27 +104,28 @@ class BaseBackupSettings:
 class BackupSettings(BaseBackupSettings):
     def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
+        game = bush.game.name
         for path, name, tmpdir in (
-              (dirs['mopy'],                      'bash.ini',             'Oblivion\\Mopy'),
-              (dirs['mods'].join('Bash'),         'Table',                'Oblivion\\Data\\Bash'),
-              (dirs['mods'].join('Docs'),         'Bash Readme Template', 'Oblivion\\Data\\Docs'),
-              (dirs['mods'].join('Docs'),         'Bashed Lists',         'Oblivion\\Data\\Docs'),
-              (dirs['mods'].join('Docs'),         'wtxt_sand_small.css',  'Oblivion\\Data\\Docs'),
-              (dirs['mods'].join('Docs'),         'wtxt_teal.css',        'Oblivion\\Data\\Docs'),
-              (dirs['modsBash'],                  'Table',                'Oblivion Mods\\Bash Mod Data'),
-              (dirs['modsBash'].join('INI Data'), 'Table',                'Oblivion Mods\\Bash Mod Data\\INI Data'),
-              (dirs['installers'].join('Bash'),   'Converters',           'Oblivion Mods\\Bash Installers\\Bash'),
-              (dirs['installers'].join('Bash'),   'Installers',           'Oblivion Mods\\Bash Installers\\Bash'),
-              (dirs['userApp'],                   'Profiles',             'LocalAppData\\Oblivion'),
-              (dirs['userApp'],                   'bash config',          'LocalAppData\\Oblivion'),
-              (dirs['saveBase'],                  'BashProfiles',         'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'BashSettings',         'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'Messages',             'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'ModeBase',             'My Games\\Oblivion'),
-              (dirs['saveBase'],                  'People',               'My Games\\Oblivion'),
+              (dirs['mopy'],                      u'bash.ini',             game+u'\\Mopy'),
+              (dirs['mods'].join(u'Bash'),        u'Table',                game+u'\\Data\\Bash'),
+              (dirs['mods'].join(u'Docs'),        u'Bash Readme Template', game+u'\\Data\\Docs'),
+              (dirs['mods'].join(u'Docs'),        u'Bashed Lists',         game+u'\\Data\\Docs'),
+              (dirs['mods'].join(u'Docs'),        u'wtxt_sand_small.css',  game+u'\\Data\\Docs'),
+              (dirs['mods'].join(u'Docs'),        u'wtxt_teal.css',        game+u'\\Data\\Docs'),
+              (dirs['modsBash'],                  u'Table',                game+u' Mods\\Bash Mod Data'),
+              (dirs['modsBash'].join(u'INI Data'),u'Table',                game+u' Mods\\Bash Mod Data\\INI Data'),
+              (dirs['installers'].join(u'Bash'),  u'Converters',           game+u' Mods\\Bash Installers\\Bash'),
+              (dirs['installers'].join(u'Bash'),  u'Installers',           game+u' Mods\\Bash Installers\\Bash'),
+              (dirs['userApp'],                   u'Profiles',             u'LocalAppData\\'+game),
+              (dirs['userApp'],                   u'bash config',          u'LocalAppData\\'+game),
+              (dirs['saveBase'],                  u'BashProfiles',         u'My Games\\'+game),
+              (dirs['saveBase'],                  u'BashSettings',         u'My Games\\'+game),
+              (dirs['saveBase'],                  u'Messages',             u'My Games\\'+game),
+              (dirs['saveBase'],                  u'ModeBase',             u'My Games\\'+game),
+              (dirs['saveBase'],                  u'People',               u'My Games\\'+game),
                 ):
             tmpdir = GPath(tmpdir)
-            for ext in ('','.dat','.pkl','.html','.txt'): # hack so the above file list can be shorter, could include rogue files but not very likely
+            for ext in (u'',u'.dat',u'.pkl',u'.html',u'.txt'): # hack so the above file list can be shorter, could include rogue files but not very likely
                 tpath = tmpdir.join(name+ext)
                 fpath = path.join(name+ext)
                 if fpath.exists(): self.files[tpath] = fpath
@@ -138,9 +135,9 @@ class BackupSettings(BaseBackupSettings):
 
         #backup all files in Mopy\Data, Data\Bash Patches and Data\INI Tweaks
         for path, tmpdir in (
-              (dirs['l10n'],                              'Oblivion\\Mopy\\bash\\l10n'),
-              (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
-              (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
+              (dirs['l10n'],                      game+u'\\Mopy\\bash\\l10n'),
+              (dirs['mods'].join(u'Bash Patches'),game+u'\\Data\\Bash Patches'),
+              (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks'),
                 ):
             tmpdir = GPath(tmpdir)
             for name in path.list():
@@ -149,7 +146,7 @@ class BackupSettings(BaseBackupSettings):
 
         #backup image files if told to
         if backup_images == 1: #changed images only
-            tmpdir = GPath('Oblivion\\Mopy\\bash\\images')
+            tmpdir = GPath(game+u'\\Mopy\\bash\\images')
             path = dirs['images']
             for name in path.list():
                 fullname = path.join(name)
@@ -158,25 +155,25 @@ class BackupSettings(BaseBackupSettings):
                     for ver_list in bolt.images_list:
                         if name.s in bolt.images_list[ver_list] and bolt.images_list[ver_list][name.s] == fullname.size:
                             changed = False
-                    if changed and not name.s.lower() == 'thumbs.db':
+                    if changed and not name.s.lower() == u'thumbs.db':
                         self.files[tmpdir.join(name)] = fullname
         elif backup_images == 2: #all images
-            tmpdir = GPath('Oblivion\\Mopy\\bash\\images')
+            tmpdir = GPath(game+u'\\Mopy\\bash\\images')
             path = dirs['images']
             for name in path.list():
-                if path.join(name).isfile() and not name.s.lower() == 'thumbs.db':
+                if path.join(name).isfile() and not name.s.lower() == u'thumbs.db':
                     self.files[tmpdir.join(name)] = path.join(name)
 
         #backup save profile settings
-        savedir = GPath('My Games\\Oblivion')
-        profiles = [''] + [x for x in dirs['saveBase'].join('Saves').list() if dirs['saveBase'].join('Saves',x).isdir() and str(x).lower() != 'bash']
+        savedir = GPath(u'My Games\\'+game)
+        profiles = [u''] + [x for x in dirs['saveBase'].join(u'Saves').list() if dirs['saveBase'].join(u'Saves',x).isdir() and str(x).lower() != u'bash']
         for profile in profiles:
-            tpath = savedir.join('Saves',profile,'plugins.txt')
-            fpath = dirs['saveBase'].join('Saves',profile,'plugins.txt')
+            tpath = savedir.join('Saves',profile,u'plugins.txt')
+            fpath = dirs['saveBase'].join(u'Saves',profile,u'plugins.txt')
             if fpath.exists(): self.files[tpath] = fpath
-            for ext in ('.dat','.pkl'):
-                tpath = savedir.join('Saves',profile,'Bash','Table'+ext)
-                fpath = dirs['saveBase'].join('Saves',profile,'Bash','Table'+ext)
+            for ext in (u'.dat',u'.pkl'):
+                tpath = savedir.join(u'Saves',profile,u'Bash',u'Table'+ext)
+                fpath = dirs['saveBase'].join(u'Saves',profile,u'Bash',u'Table'+ext)
                 if fpath.exists(): self.files[tpath] = fpath
                 if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
             #end for
@@ -185,20 +182,19 @@ class BackupSettings(BaseBackupSettings):
     def Apply(self):
         if not self.PromptFile(): return
 
-        deprint('')
-        deprint(_('BACKUP BASH SETTINGS: ') + self.dir.join(self.archive).s)
+        deprint(u'')
+        deprint(_(u'BACKUP BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # copy all files to ~tmp backup dir
         for tpath,fpath in self.files.iteritems():
-            deprint(tpath.s + ' <-- ' + fpath.s)
+            deprint(tpath.s + u' <-- ' + fpath.s)
             fpath.copyTo(self.tmp.join(tpath))
         #end for
 
         # dump the version info and file listing
-        out = self.tmp.join('backup.dat').open('wb')
-        cPickle.dump(self.verDat, out, -1) #data version, if this doesn't match the installed data version, do not allow restore
-        cPickle.dump(self.verApp, out, -1) #app version, if this doesn't match the installer app version, warn the user on restore
-        out.close()
+        with self.tmp.join(u'backup.dat').open('wb') as out:
+            cPickle.dump(self.verDat, out, -1) #data version, if this doesn't match the installed data version, do not allow restore
+            cPickle.dump(self.verApp, out, -1) #app version, if this doesn't match the installer app version, warn the user on restore
 
         # create the backup archive
         try:
@@ -215,9 +211,9 @@ class BackupSettings(BaseBackupSettings):
         #returns False if user cancels
         if self.archive == None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
-            file = 'Backup Bash Settings v%s (%s).7z' % (self.verApp,dt.strftime('%d-%m-%Y %H%M.%S'))
+            file = u'Backup Bash Settings v%s (%s).7z' % (self.verApp,dt.strftime('%d-%m-%Y %H%M.%S'))
             if not self.quit:
-                path = askSave(self.parent,_('Backup Bash Settings'),self.dir,file,'*.7z')
+                path = askSave(self.parent,_(u'Backup Bash Settings'),self.dir,file,u'*.7z')
                 if not path: return False
                 self.dir = path.head
                 self.archive = path.tail
@@ -285,11 +281,10 @@ class RestoreSettings(BaseBackupSettings):
             self.WarnFailed()
             return
         #end try
-        ins = self.tmp.join('backup.dat').open('rb')
-        self.verDat = cPickle.load(ins)
-        self.verApp = cPickle.load(ins)
-        self.restore_images = restore_images
-        ins.close()
+        with self.tmp.join(u'backup.dat').open('rb') as ins:
+            self.verDat = cPickle.load(ins)
+            self.verApp = cPickle.load(ins)
+            self.restore_images = restore_images
 
     def Apply(self):
         if self.ErrorConflict():
@@ -299,11 +294,12 @@ class RestoreSettings(BaseBackupSettings):
             raise BackupCancelled()
             return
 
-        deprint('')
-        deprint(_('RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
+        deprint(u'')
+        deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
-        tmpBash = self.tmp.join('Oblivion\\Mopy\\bash.ini')
+        game = bush.game.name
+        tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
         opts, args = bash.opts, bash.extra
 
         bash.SetUserPath(tmpBash.s,opts.userPath)
@@ -313,45 +309,45 @@ class RestoreSettings(BaseBackupSettings):
 
         # restore all the settings files
         restore_paths = (
-                (dirs['mopy'],                              'Oblivion\\Mopy'),
-                (dirs['mods'].join('Bash'),                 'Oblivion\\Data\\Bash'),
-                (dirs['mods'].join('Bash Patches'),         'Oblivion\\Data\\Bash Patches'),
-                (dirs['mods'].join('Docs'),                 'Oblivion\\Data\\Docs'),
-                (dirs['mods'].join('INI Tweaks'),           'Oblivion\\Data\\INI Tweaks'),
-                (dirs['modsBash'],                          'Oblivion Mods\\Bash Mod Data'),
-                (dirs['modsBash'].join('INI Data'),         'Oblivion Mods\\Bash Mod Data\\INI Data'),
-                (dirs['installers'].join('Bash'),           'Oblivion Mods\\Bash Installers\\Bash'),
-                (dirs['userApp'],                           'LocalAppData\\Oblivion'),
-                (dirs['saveBase'],                          'My Games\\Oblivion'),
+                (dirs['mopy'],                      game+u'\\Mopy'),
+                (dirs['mods'].join(u'Bash'),        game+u'\\Data\\Bash'),
+                (dirs['mods'].join(u'Bash Patches'),game+u'\\Data\\Bash Patches'),
+                (dirs['mods'].join(u'Docs'),        game+u'\\Data\\Docs'),
+                (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks'),
+                (dirs['modsBash'],                  game+u' Mods\\Bash Mod Data'),
+                (dirs['modsBash'].join(u'INI Data'),game+u' Mods\\Bash Mod Data\\INI Data'),
+                (dirs['installers'].join(u'Bash'),  game+u' Mods\\Bash Installers\\Bash'),
+                (dirs['userApp'],                   u'LocalAppData\\'+game),
+                (dirs['saveBase'],                  u'My Games\\'+game),
                 )
         if 293 >= self.verApp:
             # restore from old data paths
             restore_paths += (
-                (dirs['l10n'],                              'Oblivion\\Data'),)
+                (dirs['l10n'],                      game+u'\\Data'),)
             if self.restore_images:
                 restore_paths += (
-                    (dirs['images'],                        'Oblivion\\Mopy\\images'),)
+                    (dirs['images'],                game+u'\\Mopy\\images'),)
         else:
             restore_paths += (
-                (dirs['l10n'],                              'Oblivion\\bash\\l10n'),)
+                (dirs['l10n'],                      game+u'\\bash\\l10n'),)
             if self.restore_images:
                 restore_paths += (
-                    (dirs['images'],                        'Oblivion\\Mopy\\bash\\images'),)
+                    (dirs['images'],                game+u'\\Mopy\\bash\\images'),)
         for fpath, tpath in restore_paths:
             path = self.tmp.join(tpath)
             if path.exists():
                 for name in path.list():
                     if path.join(name).isfile():
-                        deprint(GPath(tpath).join(name).s + ' --> ' + fpath.join(name).s)
+                        deprint(GPath(tpath).join(name).s + u' --> ' + fpath.join(name).s)
                         path.join(name).copyTo(fpath.join(name))
 
         #restore savegame profile settings
-        tpath = GPath('My Games\\Oblivion\\Saves')
-        fpath = dirs['saveBase'].join('Saves')
+        tpath = GPath(u'My Games\\'+game+u'\\Saves')
+        fpath = dirs['saveBase'].join(u'Saves')
         path = self.tmp.join(tpath)
         if path.exists():
             for root, folders, files in path.walk(True,None,True):
-                root = GPath('.'+root.s)
+                root = GPath(u'.'+root.s)
                 for name in files:
                     deprint(tpath.join(root,name).s + u' --> ' + fpath.join(root,name).s)
                     path.join(root,name).copyTo(fpath.join(root,name))
@@ -425,11 +421,8 @@ def pack7z(dstFile, srcDir, progress=None):
     #--Used solely for the progress bar
     length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
 
-    if bosh.inisettings['EnableUnicode']:
-        app7z = dirs['compiled'].join(u'7zUnicode.exe').s
-    else:
-        app7z = dirs['compiled'].join(u'7z.exe').s
-    command = '"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
+    app7z = dirs['compiled'].join(u'7zUnicode.exe').s
+    command = u'"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
 
     progress(0,dstFile.s+u'\n'+_(u'Compressing files...'))
     progress.setFull(1+length)
@@ -437,9 +430,9 @@ def pack7z(dstFile, srcDir, progress=None):
     #--Pack the files
     ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
     #--Error checking and progress feedback
-    reCompressing = re.compile('Compressing\s+(.+)')
+    reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
     regMatch = reCompressing.match
-    reError = re.compile('Error: (.*)')
+    reError = re.compile(u'Error: (.*)',re.U)
     regErrMatch = reError.match
     errorLine = []
     index = 0
@@ -467,13 +460,10 @@ def unpack7z(srcFile, dstDir, progress=None):
 
     # count the files in the archive
     length = 0
-    reList = re.compile('Path = (.*?)(?:\r\n|\n)')
-    if bosh.inisettings['EnableUnicode']:
-        command = r'"%s" l -slt "%s"' % (dirs['compiled'].join('7zUnicode.exe').s, srcFile.s)
-    else:
-        command = r'"%s" l -slt "%s"' % (dirs['compiled'].join('7z.exe').s, srcFile.s)
+    reList = re.compile(u'Path = (.*?)(?:\r\n|\n)',re.U)
+    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7zUnicode.exe').s, srcFile.s)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-    ins = stringBuffer(ins)
+    ins = StringIO.StringIO(ins)
     for line in ins: length += 1
     ins.close()
 
@@ -482,19 +472,16 @@ def unpack7z(srcFile, dstDir, progress=None):
         progress.setFull(1+length)
     #end if
 
-    if bosh.inisettings['EnableUnicode']:
-        app7z = dirs['compiled'].join(u'7zUnicode.exe').s
-    else:
-        app7z = dirs['compiled'].join('7z.exe').s
-    command = '"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
+    app7z = dirs['compiled'].join(u'7zUnicode.exe').s
+    command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
 
     #--Extract files
     ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
     #--Error Checking, and progress feedback
     #--Note subArchives for recursive unpacking
-    reExtracting = re.compile('Extracting\s+(.+)')
+    reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
     regMatch = reExtracting.match
-    reError = re.compile('Error: (.*)')
+    reError = re.compile(u'Error: (.*)',re.U)
     regErrMatch = reError.match
     errorLine = []
     index = 0

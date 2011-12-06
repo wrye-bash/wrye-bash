@@ -29,7 +29,6 @@ Note: bashmon is based on Breeze582000's brzMonitor (which it replaces).
 """
 # Imports ----------------------------------------------------------------------
 #--Standard
-import cStringIO
 import StringIO
 import string
 import struct
@@ -45,10 +44,6 @@ from bolt import GPath, intArg
 
 #--Debugging/Info
 bolt.deprintOn = True
-if bolt.bUseUnicode:
-    stringBuffer = StringIO.StringIO
-else:
-    stringBuffer = cStringIO.StringIO
 
 # Utils -----------------------------------------------------------------------
 class Data:
@@ -70,9 +65,9 @@ class Data:
         ini = bosh.oblivionIni
         if not self.savesDir or ini.mtime != ini.path.mtime:
             ini.mtime = ini.path.mtime
-            savesDir = bosh.dirs['saveBase'].join(ini.getSetting('General','SLocalSavePath','Saves\\'))
+            savesDir = bosh.dirs['saveBase'].join(ini.getSetting(u'General',u'SLocalSavePath',u'Saves\\'))
             if savesDir != self.savesDir:
-                print _('\nMonitoring:'),savesDir.stail
+                print u'\n'+_(u'Monitoring:'),savesDir.stail
                 self.setSavesDir(savesDir)
                 self.setSignals()
                 self.clearSignals()
@@ -82,21 +77,21 @@ class Data:
         self.savesDir = savesDir
         #--Breeze
         signalDir = savesDir
-        self.brz_ping        = signalDir.join('.ping')
-        self.brz_pong        = signalDir.join('.pong')
-        self.brz_request     = signalDir.join('.request')
-        self.brz_completed   = signalDir.join('.completed')
-        self.brz_failed      = signalDir.join('.failed')
-        self.brz_shapeIsMale = signalDir.join('.shapeIsMale')
+        self.brz_ping        = signalDir.join(u'.ping')
+        self.brz_pong        = signalDir.join(u'.pong')
+        self.brz_request     = signalDir.join(u'.request')
+        self.brz_completed   = signalDir.join(u'.completed')
+        self.brz_failed      = signalDir.join(u'.failed')
+        self.brz_shapeIsMale = signalDir.join(u'.shapeIsMale')
         self.removeRequest   = True
         #--Pluggy text
-        signalDir = bosh.dirs['saveBase'].join('Pluggy','User Files','BashMon')
-        self.plt_ping        = signalDir.join('ping.txt')
-        self.plt_pong        = signalDir.join('pong.txt')
-        self.plt_request     = signalDir.join('request.txt')
-        self.plt_completed   = signalDir.join('completed.txt')
-        self.plt_failed      = signalDir.join('failed.txt')
-        self.plt_shapeIsMale = signalDir.join('shapeIsMale.txt')
+        signalDir = bosh.dirs['saveBase'].join(u'Pluggy',u'User Files',u'BashMon')
+        self.plt_ping        = signalDir.join(u'ping.txt')
+        self.plt_pong        = signalDir.join(u'pong.txt')
+        self.plt_request     = signalDir.join(u'request.txt')
+        self.plt_completed   = signalDir.join(u'completed.txt')
+        self.plt_failed      = signalDir.join(u'failed.txt')
+        self.plt_shapeIsMale = signalDir.join(u'shapeIsMale.txt')
         self.removeRequest   = False
 
     def clearSignals(self):
@@ -156,9 +151,9 @@ def printFace(face):
     """Print data on face for debugging."""
     print face.pcName
     for attr in ('iclass','baseSpell','fatigue'):
-        print ' ',attr,getattr(face,attr)
+        print u' ',attr,getattr(face,attr)
     for entry in face.factions:
-        print ' %08X %2i' % entry
+        print u' %08X %2i' % entry
     print
 
 # Monitor Commands ------------------------------------------------------------
@@ -186,7 +181,7 @@ def deleteForm(saveKey,formid):
     saveFile = data.getSaveFile(saveName)
     removedRecord = saveFile.removeRecord(formid)
     removedCreated = saveFile.removeCreated(formid)
-    print ("  No such record.","  Removed")[removedRecord or removedCreated]
+    print (u"  No such record.",u"  Removed")[removedRecord or removedCreated]
 
 @monitorCommand
 def ripAppearance(srcName,destName,srcForm='player',destForm='player',flags=`0x2|0x4|0x8|0x10`):
@@ -216,7 +211,7 @@ def ripAppearance(srcName,destName,srcForm='player',destForm='player',flags=`0x2
     if destName not in data.saves:
         destFile.safeSave()
     #--Done
-    print face.pcName,'...',
+    print face.pcName,u'...',
 
 @monitorCommand
 def swapPlayer(saveName,oldForm,newForm,flags=0x1|0x2|0x4|0x8|0x10|0x20|0x40):
@@ -243,7 +238,7 @@ def swapPlayer(saveName,oldForm,newForm,flags=0x1|0x2|0x4|0x8|0x10|0x20|0x40):
     #--Save and done
     if saveName not in data.saves:
         saveFile.safeSave()
-    print '  %s >> %s...' % (oldFace.pcName,newFace.pcName)
+    print u'  %s >> %s...' % (oldFace.pcName,newFace.pcName)
 
 @monitorCommand
 def moveSave(oldSave,newSave):
@@ -252,14 +247,14 @@ def moveSave(oldSave,newSave):
     oldPath = data.savesDir.join(GPath(oldSave).tail)
     newPath = data.savesDir.join(GPath(newSave).tail)
     if newPath.exists() and not newPath.isfile():
-        raise bolt.BoltError(newPath+_(' exists and is not a save file.'))
+        raise bolt.BoltError(newPath+_(u' exists and is not a save file.'))
     if oldPath.exists():
-        if not oldPath.isfile(): raise bolt.BoltError(oldPath+_(' is not a save file.'))
+        if not oldPath.isfile(): raise bolt.BoltError(oldPath+_(u' is not a save file.'))
         oldPath.moveTo(newPath)
         bosh.CoSaves(oldPath).move(newPath)
 
 # Monitor ---------------------------------------------------------------------
-header = """== STARTING BASHMON ==
+header = u"""== STARTING BASHMON ==
   bashmon is a monitor program which handles requests from Breeze582000's OBSE
   extension. Currently (Dec. 2007), the monitor is focused exclusively on
   shapeshifting the  player, hence it is only useful in combination with
@@ -278,17 +273,17 @@ def monitor(sleepSeconds=0.25):
             time.sleep(sleepSeconds)
             data.update()
             if data.hasPing():
-                print time.strftime('%H:%M:%S',time.localtime()), 'ping'
+                print time.strftime('%H:%M:%S',time.localtime()), u'ping'
                 data.ping.moveTo(data.pong)
                 data.setSignals()
             if not data.hasRequest():
                 continue
         except KeyboardInterrupt:
-            print time.strftime('\n%H:%M:%S',time.localtime()),_("Bashmon stopped.")
+            print time.strftime('\n%H:%M:%S',time.localtime()),_(u"Bashmon stopped.")
             running = False
             continue
         except IOError:
-            print time.strftime('\n%H:%M:%S',time.localtime()),_("Oblivion.ini is busy.")
+            print time.strftime('\n%H:%M:%S',time.localtime()),_(u"Oblivion.ini is busy.")
             continue
         except:
             data.failed.touch()
@@ -309,7 +304,7 @@ def monitor(sleepSeconds=0.25):
                 command = monitorCommands[command]
                 command(*args)
             ins.close()
-            print _('  Completed\n')
+            print u' ',_(u'Completed')+u'\n'
             data.completed.touch()
             if data.removeRequest:
                 data.request.remove()
@@ -317,9 +312,9 @@ def monitor(sleepSeconds=0.25):
                 time.sleep(0.1)
             data.setSignals()
         except:
-            print _('  Failed\n')
+            print u' ',_(u'Failed')+u'\n'
             data.failed.touch()
             traceback.print_exc()
             running = False
             break
-    raw_input('\nSTOPPED: Press any key to exit.')
+    raw_input(u'\nSTOPPED: Press any key to exit.')
