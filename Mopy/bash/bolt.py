@@ -1212,10 +1212,13 @@ class Path(object):
         else:
             raise
 
-    def open(self,*args):
+    def open(self,*args,**kwdargs):
         if self._shead and not os.path.exists(self._shead):
             os.makedirs(self._shead)
-        return open(self._s,*args)
+        if 'encoding' in kwdargs:
+            return codecs.open(self._s,*args,**kwdargs)
+        else:
+            return open(self._s,*args,**kwdargs)
     def makedirs(self):
         if not self.exists(): os.makedirs(self._s)
     def remove(self):
