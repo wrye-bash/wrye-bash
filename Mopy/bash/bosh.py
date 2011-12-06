@@ -10909,10 +10909,9 @@ class Installer(object):
                     # The 'INI Tweaks' directory is already tracked by INIInfos,
                     # But INIInfos wont update the Installers Tab UI on changes.
                     try:
-                        track = dirs['mods'].join(dest)
+                        trackedInfos.track(dirs['mods'].join(dest))
                     except:
                         deprint('An error occured while creating the path:', repr(dest), traceback=True)
-                    trackedInfos.track(track)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
