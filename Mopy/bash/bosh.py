@@ -3883,7 +3883,7 @@ class MreTes4Base(MelRecord):
             pack1 = out.packSub0
             pack2 = out.packSub
             for name in record.masters:
-                pack1('MAST',name.s)
+                pack1('MAST',name.s.encode('utf8'))
                 pack2('DATA','Q',0)
 
     def getNextObject(self):
