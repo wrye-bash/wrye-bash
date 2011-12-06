@@ -7616,7 +7616,7 @@ class Plugins:
     def save(self):
         """Write data to Plugins.txt file."""
         self.selected.sort()
-        with self.path.open('w',encoding='utf8') as out
+        with self.path.open('w',encoding='utf8') as out:
             out.write(u'# This file is used to tell %s which data files to load.\n\n' % bush.game.name)
             for modName in self.selected:
                 out.write(modName.s+u'\n')
