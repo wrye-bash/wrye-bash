@@ -55,13 +55,13 @@ CBash = None
 # path to compiled dir hardcoded since importing bosh would be circular
 # TODO: refactor to avoid circular deps
 if CBashEnabled == 0: #regular depends on the filepath existing.
-    paths = [join("bash", "compiled", "CBash.dll")]
+    paths = [join("bash", "compiled", "CBash.dll"),join("compiled", "CBash.dll")]
 elif CBashEnabled == 1: #force python mode
     paths = []
 elif CBashEnabled == 2: #attempt to force CBash mode
     paths = [join("bash", "compiled", filename) for filename in ["CBash.dll","rename_CBash.dll","_CBash.dll"]]
 else: #attempt to force path to CBash dll
-    paths = [join(CBashEnabled,"CBash.dll")]
+    paths = [join(path,"CBash.dll") for path in CBashEnabled]
 
 try:
     for path in paths:
@@ -15230,7 +15230,7 @@ class ObCollection:
 ##        fIsCreateNew             = 0x00000800
 ##        fIsIgnoreInactiveMasters = 0x00001000
 ##        fIsSkipAllRecords        = 0x00002000
-
+        
         if Flags is None: Flags = 0x00000069 | (0x00000800 if CreateNew else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
         return self._ModType(_CAddMod(self._CollectionID, Encode(FileName,'mbcs'), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002)))
 
@@ -15250,7 +15250,9 @@ class ObCollection:
             cModIDs = (c_ulong * _NumModsIDs)()
             _CGetLoadOrderModIDs(self._CollectionID, byref(cModIDs))
             self.LoadOrderMods = [self._ModType(ModID) for ModID in cModIDs]
-
+            print self.LoadOrderMods[0].GName
+            self.LoadOrderMods[0].Load()
+            print self.LoadOrderMods[0].IsEmpty()
         _NumModsIDs = _CGetAllNumMods(self._CollectionID)
         if _NumModsIDs > 0:
             cModIDs = (c_ulong * _NumModsIDs)()

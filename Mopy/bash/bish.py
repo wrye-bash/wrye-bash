@@ -55,9 +55,51 @@ from operator import attrgetter,itemgetter
 
 #--Local
 import bolt
-bolt.CBash = os.path.join(os.getcwd(),'..','bash','compiled')
-import bosh
+bolt.CBash = [os.path.join(os.getcwd(),'bash','compiled'),os.path.join(os.getcwd(),'compiled')]
 import bush
+ret = bush.setGame('')
+if ret != False: # False == success
+    if len(ret) != 1:
+        # Python mode, use Tkinter here, since we don't know for sure if wx is present
+        import Tkinter
+        root = Tkinter.Tk()
+        frame = Tkinter.Frame(root)
+        frame.pack()
+
+        class onQuit(object):
+            def __init__(self):
+                self.canceled = False
+
+            def onClick(self):
+                self.canceled = True
+                root.destroy()
+        quit = onQuit()
+
+        button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+        button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+        class onClick(object):
+            def __init__(self,gameName):
+                self.gameName = gameName
+
+            def onClick(self):
+                bush.setGame(self.gameName)
+                root.destroy()
+        for gameName in ret:
+            text = gameName[0].upper() + gameName[1:]
+            command = onClick(gameName).onClick
+            button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+            button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+        w = Tkinter.Text(frame)
+        w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
+        w.config(state=Tkinter.DISABLED)
+        w.pack()
+        root.mainloop()
+        #if quit.canceled:
+            #return
+        del Tkinter # Unload TKinter, it's not needed anymore
+    else:
+        bush.setGame(ret[0])
+import bosh
 from bolt import _, GPath, Path, mainfunc
 
 indent = 0
@@ -1009,6 +1051,8 @@ def dumpLSCR(fileName='Oblivion.esm'):
     with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
         modFile = Current.addMod(fileName.stail)
         Current.load()
+        print Current.Debug_DumpModFiles()
+        print modFile.LSCR
         #--Dump the info
         outFile = GPath(fileName.root+'.csv')
         with outFile.open('w') as file:
