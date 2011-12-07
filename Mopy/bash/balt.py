@@ -1142,7 +1142,7 @@ class Progress(bolt.Progress):
         if abort:
             style |= wx.PD_CAN_ABORT
             self.fnAbort = onAbort
-            self.dialog = wx.ProgressDialog(title,message,100,parent,style)
+        self.dialog = wx.ProgressDialog(title,message,100,parent,style)
         self.dialog.SetFocus()
         bolt.Progress.__init__(self)
         self.message = message

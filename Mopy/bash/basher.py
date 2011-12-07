@@ -988,7 +988,10 @@ class List(wx.Panel):
                     balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
             #--Select?
             else:
-                if fileName in self.data.bad_names: return
+                ## For now, allow selecting unicode named files, for testing
+                ## I'll leave the warning in place, but maybe we can get the
+                ## game to load these files.s
+                #if fileName in self.data.bad_names: return
                 try:
                     self.data.select(fileName)
                     changed = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
@@ -1225,7 +1228,7 @@ class MasterList(List):
             item.SetTextColour(colors['default.text'])
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
-            if masterName in bosh.modInfos.sorted:
+            if bosh.modInfos.isSelected(masterName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
@@ -5321,13 +5324,15 @@ class BashFrame(wx.Frame):
             del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.plugins.save()
         #--Was load list too long? or bad filenames?
-        if bosh.modInfos.plugins.selectedExtra or bosh.modInfos.activeBad:
+        if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
             message = []
-            if bosh.modInfos.activeBad:
-                msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
-                msg.extend(bosh.modInfos.bad_names)
-                bosh.modInfos.activeBad = set()
-                message.append(msg)
+            ## Disable this message for now, until we're done testing if
+            ## we can get the game to load these files
+            #if bosh.modInfos.activeBad:
+            #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
+            #    msg.extend(bosh.modInfos.bad_names)
+            #    bosh.modInfos.activeBad = set()
+            #    message.append(msg)
             if bosh.modInfos.plugins.selectedExtra:
                 msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
                 msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))

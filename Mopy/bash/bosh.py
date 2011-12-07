@@ -8678,7 +8678,9 @@ class ModInfos(FileInfos):
         for fileName in self.data:
             if self.isBadFileName(fileName.s):
                 if fileName in self.ordered:
-                    self.unselect(fileName)
+                    ## For now, we'll leave them active, until
+                    ## we finish testing what the game will support
+                    #self.unselect(fileName)
                     activeBad.add(fileName)
                 else:
                     bad.add(fileName)
