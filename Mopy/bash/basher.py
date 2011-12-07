@@ -795,6 +795,7 @@ class List(wx.Panel):
         #--Events: Items
         self.hitIcon = 0
         wx.EVT_LEFT_DOWN(self.list,self.OnLeftDown)
+        self.list.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.list.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         #--Events: Columns
         wx.EVT_LIST_COL_CLICK(self, listId, self.DoItemSort)
@@ -1055,6 +1056,11 @@ class List(wx.Panel):
 
     #--Event: Left Down
     def OnLeftDown(self,event):
+        #self.hitTest = self.list.HitTest((event.GetX(),event.GetY()))
+        event.Skip()
+        
+    #--Event: Double Click
+    def OnDoubleClick(self,event):
         #self.hitTest = self.list.HitTest((event.GetX(),event.GetY()))
         event.Skip()
 
@@ -1469,6 +1475,23 @@ class INIList(List):
         if self.sortValid:
             self.items.sort(key=lambda a: self.data[a].status < 0)
 
+    def OnDoubleClick(self,event):
+        """Handle doubclick event."""
+        (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
+        if hitItem < 0: return
+        #-- If we're applying to Oblivion.ini, show the warning
+        if self.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
+            message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
+            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_("INI Tweaks")):
+                return
+        dir = self.data.dir
+        #--No point applying a tweak that's already applied
+        if bosh.iniInfos[self.items[hitItem]].status == 20: return
+        file = dir.join(self.items[hitItem])
+        iniList.data.ini.applyTweakFile(file)
+        iniList.RefreshUI('VALID')
+        self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
+        self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
@@ -1612,7 +1635,6 @@ class ModList(List):
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        self.list.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.mods.scrollPos',0))
@@ -3878,7 +3900,6 @@ class ScreensList(List):
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
-        self.list.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
 
     def OnDoubleClick(self,event):
         """Double click a screeshot"""
