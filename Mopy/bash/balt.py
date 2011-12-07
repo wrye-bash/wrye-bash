@@ -692,7 +692,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
         ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
         with logPath.open('w',encoding='utf8') as out:
             bolt.WryeText.genHtml(ins,out,cssDir)
-        ins.clos()
+        ins.close()
         logText = logPath
     textCtrl.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons

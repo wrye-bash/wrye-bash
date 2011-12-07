@@ -9110,7 +9110,7 @@ class ModInfos(FileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        log = bolt.LogFile(stringBuffer())
+        log = bolt.LogFile(StringIO.StringIO())
         head = ('','=== ')[wtxt]
         bul = ('','* ')[wtxt]
         sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
@@ -10263,7 +10263,7 @@ class Messages(DataDict):
                 if mode == BODY:
                     if reMessage.search(line):
                         subject = "<No Subject>"
-                        buff = stringBuffer()
+                        buff = StringIO.StringIO()
                         buff.write(reWrapper.sub('',line))
                         mode = MESSAGE
                 elif mode == MESSAGE:
@@ -10305,7 +10305,7 @@ class Messages(DataDict):
                         mode = MESSAGE
                 elif mode == MESSAGE:
                     if reMessageNew.search(line):
-                        buff = stringBuffer()
+                        buff = StringIO.StringIO()
                         buff.write('<br /><div class="borderwrapm">\n')
                         buff.write('    <div class="maintitle">PM: %s</div>\n' % subject)
                         buff.write('    <div class="tablefill"><div class="postcolor">')
@@ -10447,7 +10447,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
                 buffer.close()
                 buffer = None
             name = maName.group(1).strip()
-            if name: buffer = stringBuffer()
+            if name: buffer = StringIO.StringIO()
         ins.close()
         if newNames: self.setChanged()
         return newNames
@@ -12798,7 +12798,7 @@ class InstallersData(bolt.TankData, DataDict):
             if curConflicts: packConflicts.append((installer,package.s,curConflicts))
         #--Unknowns
         isHigher = -1
-        buff = stringBuffer()
+        buff = StringIO.StringIO()
         for installer,package,files in packConflicts:
             order = installer.order
             if showLower and (order > srcOrder) != isHigher:
@@ -12821,7 +12821,7 @@ class InstallersData(bolt.TankData, DataDict):
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        log = bolt.LogFile(stringBuffer())
+        log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(_('Bain Packages:'))
         orderKey = lambda x: self.data[x].order
         allPackages = sorted(self.data,key=orderKey)
@@ -30578,7 +30578,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.ingred_alchem:
             book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = stringBuffer()
+            buff = StringIO.StringIO()
             buff.write(book.text)
             for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(full+'\r\n')
@@ -30600,7 +30600,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
             book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = stringBuffer()
+            buff = StringIO.StringIO()
             buff.write(book.text)
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -30698,7 +30698,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             pstate += 1
             book = getBook(patchFile, objectId)
             if not book: continue
-            buff = stringBuffer()
+            buff = StringIO.StringIO()
             buff.write('<div align="left"><font face=3 color=4444>' + Encode(_(u"Salan's Catalog of ")+u"%s\r\n\r\n" % full,'mbcs'))
             for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                 buff.write(Encode(full,'mbcs')+'\r\n')
@@ -30759,7 +30759,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         for (num,objectId,full,value) in bush.effect_alchem:
             subProgress(pstate, _(u'Cataloging Effects...')+u'\n%s' % full)
             book = getBook(patchFile,objectId)
-            buff = stringBuffer()
+            buff = StringIO.StringIO()
             buff.write('<div align="left"><font face=3 color=4444>' + Encode((_("Salan's Catalog of ")+u"%s\r\n\r\n") % full, 'mbcs'))
             for effectName in sorted(effect_ingred.keys()):
                 effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
