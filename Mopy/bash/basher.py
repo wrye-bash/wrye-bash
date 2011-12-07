@@ -1493,6 +1493,26 @@ class INIList(List):
         self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
         self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
 
+    def OnLeftDown(self,event):
+        """Left Down: Apply edit if not applied."""
+        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
+        if hitItem >= 0 and hitFlag == wx.LIST_HITTEST_ONITEMICON:
+            #-- If we're applying to Oblivion.ini, show the warning
+            if self.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
+                message = _("Apply an ini tweak to Oblivion.ini?\n\nWARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
+                if not balt.askContinue(self,message,'bash.iniTweaks.continue',_("INI Tweaks")):
+                    return
+            dir = self.data.dir
+            #--No point applying a tweak that's already applied
+            if bosh.iniInfos[self.items[hitItem]].status != 20:
+                file = dir.join(self.items[hitItem])
+                iniList.data.ini.applyTweakFile(file)
+                iniList.RefreshUI('VALID')
+                self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
+                self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+        #--Pass Event onward
+        event.Skip()
+
     def OnKeyUp(self,event):
         """Char event: select all items"""
         ##Ctrl+A
