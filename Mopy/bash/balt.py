@@ -31,7 +31,6 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 
 #--Python
 import cPickle
-import cStringIO
 import StringIO
 import string
 import struct
@@ -41,11 +40,6 @@ import time
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 import wx.lib.newevent
-
-if bolt.bUseUnicode:
-    stringBuffer = StringIO.StringIO
-else:
-    stringBuffer = cStringIO.StringIO
 
 # Basics ---------------------------------------------------------------------
 class IdList:
@@ -71,11 +65,11 @@ class IdList:
 
     def __iter__(self):
         """Return iterator."""
-        for id in range(self.BASE,self.MAX+1):
+        for id in xrange(self.BASE,self.MAX+1):
             yield id
 
 # Constants -------------------------------------------------------------------
-defId = -1
+defId = wx.ID_ANY
 defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
@@ -141,7 +135,7 @@ class Image:
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
-        if not GPath(self.file.s.split(';')[0]).exists():
+        if not GPath(self.file.s.split(u';')[0]).exists():
             raise ArgumentError(u"Missing resource file: %s." % self.file)
 
     def GetBitmap(self):
@@ -218,8 +212,8 @@ class ImageList:
 # Functions -------------------------------------------------------------------
 def fill(text,width=60):
     """Wraps paragraph to width characters."""
-    pars = [textwrap.fill(text,width) for text in text.split('\n')]
-    return '\n'.join(pars)
+    pars = [textwrap.fill(text,width) for text in text.split(u'\n')]
+    return u'\n'.join(pars)
 
 def ensureDisplayed(frame,x=100,y=100):
     """Ensure that frame is displayed."""
@@ -269,7 +263,7 @@ class textCtrl(wx.TextCtrl):
         if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
             self.SetToolTip(tooltip(text))
         else:
-            self.SetToolTip(tooltip(''))
+            self.SetToolTip(tooltip(u''))
 
     def OnTextChange(self,event):
         self.UpdateToolTip(event.GetString())
@@ -293,11 +287,11 @@ class comboBox(wx.ComboBox):
         if self.GetClientSize()[0] < self.GetTextExtent(self.GetValue())[0]+30:
             self.SetToolTip(tooltip(self.GetValue()))
         else:
-            self.SetToolTip(tooltip(''))
+            self.SetToolTip(tooltip(u''))
         event.Skip()
 
 def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=defVal,
-        name='button',id=defId,onClick=None,tip=None,onRClick=None):
+        name=u'button',id=defId,onClick=None,tip=None,onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,id,bitmap,pos,size,style,val,name)
     if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
@@ -305,7 +299,7 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def button(parent,label='',pos=defPos,size=defSize,style=0,val=defVal,
+def button(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
         name='button',id=defId,onClick=None,tip=None):
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.Button(parent,id,label,pos,size,style,val,name)
@@ -313,7 +307,7 @@ def button(parent,label='',pos=defPos,size=defSize,style=0,val=defVal,
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def toggleButton(parent,label='',pos=defPos,size=defSize,style=0,val=defVal,
+def toggleButton(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
         name='button',id=defId,onClick=None,tip=None):
     """Creates a toggle button, binds toggle function, then returns bound button."""
     gButton = wx.ToggleButton(parent,id,label,pos,size,style,val,name)
@@ -321,7 +315,7 @@ def toggleButton(parent,label='',pos=defPos,size=defSize,style=0,val=defVal,
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def checkBox(parent,label='',pos=defPos,size=defSize,style=0,val=defVal,
+def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
         name='checkBox',id=defId,onCheck=None,tip=None):
     """Creates a checkBox, binds check function, then returns bound button."""
     gCheckBox = wx.CheckBox(parent,id,label,pos,size,style,val,name)
@@ -329,12 +323,12 @@ def checkBox(parent,label='',pos=defPos,size=defSize,style=0,val=defVal,
     if tip: gCheckBox.SetToolTip(tooltip(tip))
     return gCheckBox
 
-def staticText(parent,label='',pos=defPos,size=defSize,style=0,name="staticText",id=defId,):
+def staticText(parent,label=u'',pos=defPos,size=defSize,style=0,name=u"staticText",id=defId,):
     """Static text element."""
     return wx.StaticText(parent,id,label,pos,size,style,name)
 
-def spinCtrl(parent,value='',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
-        min=0,max=100,initial=0,name='wxSpinctrl',id=defId,onSpin=None,tip=None):
+def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
+        min=0,max=100,initial=0,name=u'wxSpinctrl',id=defId,onSpin=None,tip=None):
     """Spin control with event and tip setting."""
     gSpinCtrl=wx.SpinCtrl(parent,id,value,pos,size,style,min,max,initial,name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL,onSpin)
@@ -397,7 +391,7 @@ def vsbSizer(boxArgs,*elements):
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=''):
+def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
     """Shows a modal directory dialog and return the resulting path, or None if canceled."""
     dialog = wx.DirDialog(parent,message,GPath(defaultPath).s,style=wx.DD_NEW_DIR_BUTTON)
     if dialog.ShowModal() != wx.ID_OK:
@@ -468,7 +462,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning')):
         return True
     return False
 #------------------------------------------------------------------------------
-def askOpen(parent,title='',defaultDir='',defaultFile='',wildcard='',style=wx.FD_OPEN,mustExist=False):
+def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
     defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
     dialog = wx.FileDialog(parent,title,defaultDir,defaultFile,wildcard, style)
@@ -488,16 +482,16 @@ def askOpen(parent,title='',defaultDir='',defaultFile='',wildcard='',style=wx.FD
     dialog.Destroy()
     return result
 
-def askOpenMulti(parent,title='',defaultDir='',defaultFile='',wildcard='',style=wx.FD_FILE_MUST_EXIST):
+def askOpenMulti(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_FILE_MUST_EXIST):
     """Show as open dialog and return selected path(s)."""
     return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_OPEN|wx.FD_MULTIPLE|style)
 
-def askSave(parent,title='',defaultDir='',defaultFile='',wildcard='',style=wx.FD_OVERWRITE_PROMPT):
+def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OVERWRITE_PROMPT):
     """Show as save dialog and return selected path(s)."""
     return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_SAVE|style)
 
 #------------------------------------------------------------------------------
-def askText(parent,message,title='',default=''):
+def askText(parent,message,title=u'',default=u''):
     """Shows a text entry dialog and returns result or None if canceled."""
     dialog = wx.TextEntryDialog(parent,message,title,default)
     if dialog.ShowModal() != wx.ID_OK:
@@ -509,7 +503,7 @@ def askText(parent,message,title='',default=''):
         return value
 
 #------------------------------------------------------------------------------
-def askNumber(parent,message,prompt='',title='',value=0,min=0,max=10000):
+def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
     dialog = wx.NumberEntryDialog(parent,message,prompt,title,value,min,max)
     if dialog.ShowModal() != wx.ID_OK:
@@ -530,11 +524,11 @@ def askStyled(parent,message,title,style):
     dialog.Destroy()
     return result in (wx.ID_OK,wx.ID_YES)
 
-def askOk(parent,message,title=''):
+def askOk(parent,message,title=u''):
     """Shows a modal error message."""
     return askStyled(parent,message,title,wx.OK|wx.CANCEL)
 
-def askYes(parent,message,title='',default=True,icon=wx.ICON_EXCLAMATION):
+def askYes(parent,message,title=u'',default=True,icon=wx.ICON_EXCLAMATION):
     """Shows a modal warning or question message."""
     style = wx.YES_NO|icon|((wx.NO_DEFAULT,wx.YES_DEFAULT)[default])
     return askStyled(parent,message,title,style)
@@ -543,7 +537,7 @@ def askWarning(parent,message,title=_(u'Warning')):
     """Shows a modal warning message."""
     return askStyled(parent,message,title,wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
 
-def showOk(parent,message,title=''):
+def showOk(parent,message,title=u''):
     """Shows a modal error message."""
     return askStyled(parent,message,title,wx.OK)
 
@@ -559,7 +553,7 @@ def showInfo(parent,message,title=_(u'Information')):
     """Shows a modal information message."""
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION)
 
-def showList(parent,header,items,maxItems=0,title=''):
+def showList(parent,header,items,maxItems=0,title=u''):
     """Formats a list of items into a message for use in a Message."""
     numItems = len(items)
     if maxItems <= 0: maxItems = numItems
@@ -596,7 +590,7 @@ def showQuestionLogCloseNo(Event,window):
         window.Destroy()
     bosh.question = False
 
-def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=None,size=True,question=False):
+def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons=None,size=True,question=False):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
@@ -659,7 +653,7 @@ def showLog(parent,logText,title='',style=0,asDialog=True,fixedFont=False,icons=
     return bosh.question
 
 #------------------------------------------------------------------------------
-def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
+def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     """Convert logText from wtxt to html and display. Optionally, logText can be path to an html file."""
     try:
         import wx.lib.iewin
@@ -667,12 +661,12 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
         # Comtypes not available most likely! so do it this way:
         import os
         if not isinstance(logText,bolt.Path):
-            logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
-            cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
-            ins = stringBuffer(logText+'\n{{CSS:wtxt_sand_small.css}}')
-            out = logPath.open('w')
-            bolt.WryeText.genHtml(ins,out,cssDir)
-            out.close()
+            logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
+            cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
+            ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
+            with logPath.open('w',encoding='utf8') as out:
+                bolt.WryeText.genHtml(ins,out,cssDir)
+            ins.close()
             logText = logPath
         os.startfile(logText.s)
         return
@@ -693,12 +687,12 @@ def showWryeLog(parent,logText,title='',style=0,asDialog=True,icons=None):
     #--Text
     textCtrl = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
     if not isinstance(logText,bolt.Path):
-        logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join('WryeLogTemp.html'))
-        cssDir = _settings.get('balt.WryeLog.cssDir', GPath(''))
-        ins = stringBuffer(logText+'\n{{CSS:wtxt_sand_small.css}}')
-        out = logPath.open('w')
-        bolt.WryeText.genHtml(ins,out,cssDir)
-        out.close()
+        logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
+        cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
+        ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
+        with logPath.open('w',encoding='utf8') as out:
+            bolt.WryeText.genHtml(ins,out,cssDir)
+        ins.clos()
         logText = logPath
     textCtrl.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
@@ -794,7 +788,7 @@ class ListEditorData:
     #--Info box
     def getInfo(self,item):
         """Returns string info on specified item."""
-        return ''
+        return u''
     def setInfo(self,item,text):
         """Sets string info on specified item."""
         raise AbstractError
@@ -840,17 +834,17 @@ class ListEditor(wx.Dialog):
             captionText = None
         #--List Box
         if type == 'checklist':
-            self.list = wx.CheckListBox(self,-1,choices=self.items,style=wx.LB_SINGLE)
+            self.list = wx.CheckListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
             for index,checked in enumerate(self.data.getChecks()):
                 self.list.Check(index,checked)
             self.Bind(wx.EVT_CHECKLISTBOX, self.DoCheck, self.list)
         else:
-            self.list = wx.ListBox(self,-1,choices=self.items,style=wx.LB_SINGLE)
+            self.list = wx.ListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
         self.list.SetSizeHints(125,150)
         self.list.Bind(wx.EVT_LISTBOX,self.OnSelect)
         #--Infobox
         if data.showInfo:
-            self.gInfoBox = wx.TextCtrl(self,-1," ",size=(130,-1),
+            self.gInfoBox = wx.TextCtrl(self,wx.ID_ANY,u" ",size=(130,-1),
                 style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.SUNKEN_BORDER)
             if not self.data.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
@@ -956,7 +950,7 @@ class ListEditor(wx.Dialog):
         self.list.Delete(itemDex)
         if self.gInfoBox:
             self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue('')
+            self.gInfoBox.SetValue(u'')
 
     #--Show Info
     def OnSelect(self,event):
@@ -1142,18 +1136,18 @@ class BusyCursor(object):
 #------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
-    def __init__(self,title=_(u'Progress'),message=' '*60,parent=None,
-        style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE, abort=False, onAbort=None):
+    def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
+            style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_SMOOTH,
+            abort=False, onAbort=None):
         if abort:
             style |= wx.PD_CAN_ABORT
             self.fnAbort = onAbort
-        if sys.version[:3] != '2.4': style |= wx.PD_SMOOTH
-        self.dialog = wx.ProgressDialog(title,bolt.Unicode(message),100,parent,style)
+            self.dialog = wx.ProgressDialog(title,message,100,parent,style)
         self.dialog.SetFocus()
         bolt.Progress.__init__(self)
         self.message = message
         self.isDestroyed = False
-        self.prevMessage = ''
+        self.prevMessage = u''
         self.prevState = -1
         self.prevTime = 0
 
@@ -1179,7 +1173,7 @@ class Progress(bolt.Progress):
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
             self.dialog.SetFocus()
             if message != self.prevMessage:
-                ret = self.dialog.Update(int(state*100),bolt.Unicode(message))
+                ret = self.dialog.Update(int(state*100),message)
                 if not ret[0]:
                     if self.onAbort():
                         raise CancelError
@@ -1321,59 +1315,45 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         stop = indexes[-1]
 
         index, flags = self.HitTest((x, y))
-        deprint('index:',index)
-        deprint('flags:',flags)
         if index == wx.NOT_FOUND:   # Didn't drop it on an item
-            deprint('index: wx.NOT_FOUND')
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
                     # Dropped it before the first item
-                    deprint('NOT_FOUND: before first item')
                     index = 0
                 elif y >= self.GetItemRect(self.GetItemCount() - 1).y:
                     # Dropped it after the last item
-                    deprint('NOT_FOUND: after the last item')
                     index = self.GetItemCount()
                 else:
                     # Dropped it on the edge of the list, but not above or below
-                    deprint('NOT_FOUND: ack!')
                     return
             else:
-                deprint('NOT_FOUND: empty list?')
                 # Empty list
                 index = 0
         else:
             # Dropped on top of an item
             target = index
             if target >= start and target <= stop:
-                deprint('target is on itself')
                 # Trying to drop it back on itself
                 return
             elif target < start:
-                deprint('dragging upward')
                 # Trying to drop it furthur up in the list
                 pass
             elif target > stop:
                 # Trying to drop it further down the list
                 index -= 1 + (stop-start)
-                deprint('dragging downward.  new index:', index)
 
             # If dropping on the top half of the item, insert above it,
             # otherwise insert below it
             rect = self.GetItemRect(target)
             if y > rect.y + rect.height/2:
-                deprint('dragged past the bottom half of the target')
                 index += 1
 
         # Do the moving
-        deprint('sending items:', indexes)
-        deprint('to index:', index)
         self.OnDropIndexes(indexes, index)
 
     def OnDropIndexes(self, indexes, newPos):
         if self.fnDropIndexes:
             wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
-            #self.fnDropIndexes(indexes, newPos)
 
     def dndAllow(self):
         if self.doDnD:
@@ -1390,7 +1370,7 @@ class Tank(wx.Panel):
 
     #--Instance ---------------------------------------------------------------
     def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
-            details=None,id=-1,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
+            details=None,id=wx.ID_ANY,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
             dndList=False,dndFiles=False,dndColumns=[]):
         wx.Panel.__init__(self,parent,id,style=wx.WANTS_CHARS)
         #--Data
@@ -1410,7 +1390,7 @@ class Tank(wx.Panel):
         self.SetSizer(sizer)
         self.SetSizeHints(50,50)
         #--ListCtrl
-        self.gList = gList = ListCtrl(self, -1, style=style,
+        self.gList = gList = ListCtrl(self, wx.ID_ANY, style=style,
                                       dndFiles=dndFiles, dndList=dndList,
                                       fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes, fnDropFiles=self.OnDropFiles)
         if self.icons:
@@ -1418,7 +1398,7 @@ class Tank(wx.Panel):
         #--State info
         self.mouseItem = None
         self.mouseTexts = {}
-        self.mouseTextPrev = ''
+        self.mouseTextPrev = u''
         #--Columns
         self.UpdateColumns()
         #--Items
@@ -1574,7 +1554,7 @@ class Tank(wx.Panel):
                 index += 1
         #--Add remaining new items
         for item in items:
-            gList.InsertStringItem(index,'')
+            gList.InsertStringItem(index,u'')
             self.UpdateItem(index,item,selected)
             index += 1
         #--Cleanup
@@ -1639,7 +1619,7 @@ class Tank(wx.Panel):
         elif items in self.data:
             self.UpdateItem(self.GetIndex(items),items,selected=selected)
         else: #--Iterable
-            for index in range(self.gList.GetItemCount()):
+            for index in xrange(self.gList.GetItemCount()):
                 if self.GetItem(index) in set(items):
                     self.UpdateItem(index,None,selected=selected)
         self.RefreshDetails(details)
@@ -1660,7 +1640,7 @@ class Tank(wx.Panel):
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
         gList = self.gList
-        return [self.GetItem(x) for x in range(gList.GetItemCount())
+        return [self.GetItem(x) for x in xrange(gList.GetItemCount())
             if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
     def ClearSelected(self):
@@ -1749,8 +1729,8 @@ class Tank(wx.Panel):
         """Deletes selected items."""
         items = self.GetSelected()
         if not items: return
-        message = _(r'Delete these items? This operation cannot be undone.')
-        message += '\n* ' + '\n* '.join([self.data.getName(x) for x in items])
+        message = _(u'Delete these items? This operation cannot be undone.')
+        message += u'\n* ' + u'\n* '.join([self.data.getName(x) for x in items])
         if not askYes(self,message,_(u'Delete Items')): return False
         for item in items:
             del self.data[item]
@@ -1839,7 +1819,7 @@ class Link:
             if item:
                 Link.Frame.GetStatusBar().SetText(item.GetHelp())
             else:
-                Link.Frame.GetStatusBar().SetText('')
+                Link.Frame.GetStatusBar().SetText(u'')
 
 #------------------------------------------------------------------------------
 class SeparatorLink(Link):
@@ -1933,7 +1913,7 @@ class Tank_Duplicate(Link):
         srcDir = self.data.dir
         srcName = self.selected[0]
         (root,ext) = srcName.rootExt
-        (destDir,destName,wildcard) = (srcDir, root+' Copy'+ext,'*'+ext)
+        (destDir,destName,wildcard) = (srcDir, root+u' Copy'+ext,u'*'+ext)
         destPath = askSave(self.gTank,_(u'Duplicate as:'),destDir,destName,wildcard)
         if not destPath: return
         destDir,destName = destPath.headTail

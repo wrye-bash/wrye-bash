@@ -38,22 +38,22 @@ import operator
 
 def formatInteger(value):
     """Convert integer to string formatted to locale."""
-    return locale.format('%d',int(value),1)
+    return locale.format(u'%d',int(value),1)
 
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
     localtime = time.localtime(value)
-    return time.strftime('%c',localtime)
+    return time.strftime(u'%c',localtime)
 
 def unformatDate(str,format):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale."""
     try:
-        return time.strptime(str,'%c')
+        return time.strptime(str,u'%c')
     except ValueError:
-        if format == '%c' and 'Japanese' in locale.getlocale()[0]:
-            str = re.sub('^([0-9]{4})/([1-9])',r'\1/0\2',str)
-            return time.strptime(str,'%c')
+        if format == u'%c' and u'Japanese' in locale.getlocale()[0]:
+            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str)
+            return time.strptime(str,u'%c')
         else:
             raise
 
@@ -85,14 +85,13 @@ import balt
 import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError
-from bolt import LString, Unicode, Encode, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
+from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
 from cint import *
 startupinfo = bolt.startupinfo
 
 #--Unicode
-exe7z = '7zUnicode.exe'
+exe7z = u'7zUnicode.exe'
 unicodeConvert = lambda text: unicode(text,'UTF-8')
-stringBuffer = StringIO.StringIO
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -123,30 +122,30 @@ def listArchiveContents(fileName):
 dirs = {} #--app, user, mods, saves, userApp
 tooldirs = {}
 inisettings = {}
-defaultExt = '.7z'
-writeExts = dict({'.7z':'7z','.zip':'zip'})
-readExts = set(('.rar','.7z.001','.001'))
+defaultExt = u'.7z'
+writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
+readExts = set((u'.rar',u'.7z.001',u'.001'))
 readExts.update(set(writeExts))
-noSolidExts = set(('.zip',))
+noSolidExts = set((u'.zip',))
 settings = None
 installersWindow = None
 
-allTags = sorted(('Body-F', 'Body-M', 'Body-Size-M', 'Body-Size-F', 'C.Climate', 'C.Light', 'C.Music', 'C.Name', 'C.RecordFlags',
-                  'C.Owner', 'C.Water','Deactivate', 'Delev', 'Eyes', 'Factions', 'Relations', 'Filter', 'Graphics', 'Hair',
-                  'IIM', 'Invent', 'Names', 'NoMerge', 'NpcFaces', 'R.Relations', 'Relev', 'Scripts', 'ScriptContents', 'Sound',
-                  'SpellStats', 'Stats', 'Voice-F', 'Voice-M', 'R.Teeth', 'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
-                  'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells', 'R.ChangeSpells', 'Roads', 'Actors.Anims',
-                  'Actors.AIData', 'Actors.DeathItem', 'Actors.AIPackages', 'Actors.AIPackagesForceAdd', 'Actors.Stats',
-                  'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'Actors.Spells','Actors.SpellsForceAdd',
-                  'NPC.Race','Actors.Skeleton', 'NpcFacesForceFullImport', 'MustBeActiveIfImported', 'Npc.HairOnly','Npc.EyesOnly')) ##, 'ForceMerge'
+allTags = sorted((u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags',
+                  u'C.Owner', u'C.Water',u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter', u'Graphics', u'Hair',
+                  u'IIM', u'Invent', u'Names', u'NoMerge', u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents', u'Sound',
+                  u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F',
+                  u'R.Attributes-M', u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads', u'Actors.Anims',
+                  u'Actors.AIData', u'Actors.DeathItem', u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
+                  u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',u'Actors.SpellsForceAdd',
+                  u'NPC.Race',u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly',u'Npc.EyesOnly')) ##, 'ForceMerge'
 allTagsSet = set(allTags)
-oldTags = sorted(('Merge',))
+oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
 reOblivion = re.compile('^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$')
 
-undefinedPath = GPath(r'C:\not\a\valid\path.exe')
-undefinedPaths = set([GPath(r'C:\Path\exe.exe'),undefinedPath])
+undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
+undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
 
 #--Default settings
 settingDefaults = {
@@ -173,7 +172,7 @@ class FileError(BoltError):
 class FileEditError(BoltError):
     """Unable to edit a file"""
     def __init__(self,filePath,message=None):
-        message = message or _("Unable to edit file %s.") % filePath.s
+        message = message or u"Unable to edit file %s." % filePath.s
         BoltError.__init__(self,message)
         self.filePath = filePath
 
@@ -193,7 +192,7 @@ class Path(str):
     compatibility with old pickle files."""
     def __init__(self, path):
         """Initialize."""
-        raise RuntimeError(_("Path necromancy!"))
+        raise RuntimeError(_(u"Path necromancy!"))
 
     def __getstate__(self):
         """Used by pickler. State is determined by underlying string, so return psempty tuple."""
@@ -207,7 +206,7 @@ class Path(str):
         self._pathNormLC = os.path.normpath(path).lower()
 
     def __repr__(self):
-        return "bosh.Path("+repr(self._path)+")"
+        return u"bosh.Path("+repr(self._path)+u")"
 
 #------------------------------------------------------------------------------
 class PickleDict(bolt.PickleDict):
@@ -240,19 +239,17 @@ class PickleDict(bolt.PickleDict):
         if not result and self.oldPath.exists():
             ins = None
             try:
-                ins = self.oldPath.open('r')
-                self.data.update(cPickle.load(ins))
-                ins.close()
+                with self.oldPath.open('r') as ins:
+                    self.data.update(cPickle.load(ins))
                 result = 1
             except EOFError:
-                if ins: ins.close()
+                pass
         #--Update paths
         def textDump(path):
-            deprint('Text dump:',path)
-            out = path.open('w')
-            for key,value in self.data.iteritems():
-                out.write('= '+`key`+':\n  '+`value`+'\n')
-            out.close()
+            deprint(u'Text dump:',path)
+            with path.open('w') as out:
+                for key,value in self.data.iteritems():
+                    out.write(u'= '+`key`+u':\n  '+`value`+u'\n')
         #textDump(self.path+'.old.txt')
         if not self.vdata.get('boltPaths',False):
             self.updatePaths()
@@ -404,7 +401,7 @@ def joinModGroup(group,offset):
     if offset < 0:
         return group+`offset`
     elif offset > 0:
-        return group+'+'+`offset`
+        return group+u'+'+`offset`
     else:
         return group
 
@@ -2079,26 +2076,28 @@ class MreHasEffects:
         """Return a text description of magic effects."""
         mgef_school = mgef_school or bush.mgef_school
         mgef_name = mgef_name or bush.mgef_name
-        buff = stringBuffer()
+        buff = StringIO.StringIO()
         avEffects = bush.genericAVEffects
         aValues = bush.actorValues
         buffWrite = buff.write
         if self.effects:
             school = self.getSpellSchool(mgef_school)
-            buffWrite(bush.actorValues[20+school] + '\n')
+            buffWrite(bush.actorValues[20+school] + u'\n')
         for index,effect in enumerate(self.effects):
             if effect.scriptEffect:
-                effectName = effect.scriptEffect.full or 'Script Effect'
+                effectName = effect.scriptEffect.full or u'Script Effect'
             else:
                 effectName = mgef_name[effect.name]
                 if effect.name in avEffects:
-                    effectName = re.sub(_('(Attribute|Skill)'),aValues[effect.actorValue],effectName)
-            buffWrite('o+*'[effect.recipient]+' '+Unicode(effectName,'mbcs'))
-            if effect.magnitude: buffWrite(' '+`effect.magnitude`+'m')
-            if effect.area: buffWrite(' '+`effect.area`+'a')
-            if effect.duration > 1: buffWrite(' '+`effect.duration`+'d')
-            buffWrite('\n')
-        return buff.getvalue()
+                    effectName = re.sub(_('u(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+            buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
+            if effect.magnitude: buffWrite(u' '+`effect.magnitude`+u'm')
+            if effect.area: buffWrite(u' '+`effect.area`+u'a')
+            if effect.duration > 1: buffWrite(u' '+`effect.duration`+u'd')
+            buffWrite(u'\n')
+        ret = buff.getvalue()
+        buff.close()
+        return ret
 
 # Mod Records 1 ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -6336,9 +6335,9 @@ class SaveFile:
                             #--OBSE String
                             modIndex,stringID,stringLength, = unpack('=BIH',7)
                             stringData = ins.read(stringLength)
-                            log(_('    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
-                            log(_('    ID  :  %u') % stringID)
-                            log(_('    Data:  %s') % Unicode(stringData,'mbcs'))
+                            log(u'    '+_(u'Mod :')+u'  %02X (%s)' % (modIndex, self.masters[modIndex].s))
+                            log(u'    '+_(u'ID  :')+u'  %u' % stringID)
+                            log(u'    '+_(u'Data:')+u'  %s' % stringData)
                         elif chunkType == 'RVRA':
                             #--OBSE Array
                             modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
@@ -6388,7 +6387,7 @@ class SaveFile:
                                 elif dataType == 3:
                                     dataLen, = unpack('=H',2)
                                     data = ins.read(dataLen)
-                                    dataStr = Unicode(data,'mbcs')
+                                    dataStr = data
                                 elif dataType == 4:
                                     data, = unpack('=I',4)
                                     dataStr = '%u' % data
@@ -6413,10 +6412,10 @@ class SaveFile:
                             log(_('    Pluggy String'))
                             strId,modId,strFlags, = unpack('=IBB',6)
                             strData = ins.read(len(chunkBuff) - ins.tell())
-                            log(_('      StrID : %u') % (strId,))
-                            log(_('      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(_('      Flags : %u') % (strFlags,))
-                            log(_('      Data  : %s') % (Unicode(strData,'mbcs'),))
+                            log(u'      '+_(u'StrID :')+u' %u' % strId)
+                            log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                            log(u'      '+_(u'Flags :')+u' %u' % strFlags)
+                            log(u'      '+_(u'Data  :')+u' %s' % strData)
                         elif (chunkTypeNum == 3):
                             #--Pluggy TypeArray
                             log(_('    Pluggy Array'))
@@ -6458,23 +6457,23 @@ class SaveFile:
                             log(_('      Height : %u') % (scrH,))
                         elif (chunkTypeNum == 6):
                             #--Pluggy TypeHudS
-                            log(_('    Pluggy HudS'))
+                            log(u'    '+_(u'Pluggy HudS'))
                             #UNTESTED - uncomment following line to skip this record type
                             #continue
                             hudSid,modId,hudFlags,hudRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
                             hudFileName = ins.read(len(chunkBuff) - ins.tell())
-                            log(_('      HudSID : %u') % (hudSid,))
-                            log(_('      ModID  : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(_('      Flags  : %02X') % (hudFlags,))
-                            log(_('      RootID : %u') % (hudRootID,))
-                            log(_('      Show   : %02X') % (hudShow,))
-                            log(_('      Pos    : %f,%f') % (hudPosX,hudPosY,))
-                            log(_('      Depth  : %u') % (hudDepth,))
-                            log(_('      Scale  : %f,%f') % (hudScaleX,hudScaleY,))
-                            log(_('      Alpha  : %02X') % (hudAlpha,))
-                            log(_('      Align  : %02X') % (hudAlignment,))
-                            log(_('      AutoSc : %02X') % (hudAutoScale,))
-                            log(_('      File   : %s') % (Unicode(hudFileName,'mbcs'),))
+                            log(u'      '+_(u'HudSID :')+u' %u' % hudSid)
+                            log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                            log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
+                            log(u'      '+_(u'RootID :')+u' %u' % hudRootID)
+                            log(u'      '+_(u'Show   :')+u' %02X' % hudShow)
+                            log(u'      '+_(u'Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
+                            log(u'      '+_(u'Depth  :')+u' %u' % hudDepth)
+                            log(u'      '+_(u'Scale  :')+u' %f,%f' % (hudScaleX,hudScaleY,))
+                            log(u'      '+_(u'Alpha  :')+u' %02X' % hudAlpha)
+                            log(u'      '+_(u'Align  :')+u' %02X' % hudAlignment)
+                            log(u'      '+_(u'AutoSc :')+u' %02X' % hudAutoScale)
+                            log(u'      '+_(u'File   :')+u' %s' % hudFileName)
                         elif (chunkTypeNum == 7):
                             #--Pluggy TypeHudT
                             log(_('    Pluggy HudT'))
@@ -6486,26 +6485,26 @@ class SaveFile:
                             hudFontName = ins.read(hudFontNameLen)
                             hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = unpack('=IIhBBBB',14)
                             hudText = ins.read(len(chunkBuff) - ins.tell())
-                            log(_('      HudTID : %u') % (hudTid,))
-                            log(_('      ModID  : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(_('      Flags  : %02X') % (hudFlags,))
-                            log(_('      Show   : %02X') % (hudShow,))
-                            log(_('      Pos    : %f,%f') % (hudPosX,hudPosY,))
-                            log(_('      Depth  : %u') % (hudDepth,))
-                            log(_('      Scale  : %f,%f') % (hudScaleX,hudScaleY,))
-                            log(_('      Alpha  : %02X') % (hudAlpha,))
-                            log(_('      Align  : %02X') % (hudAlignment,))
-                            log(_('      AutoSc : %02X') % (hudAutoScale,))
-                            log(_('      Width  : %u') % (hudWidth,))
-                            log(_('      Height : %u') % (hudHeight,))
-                            log(_('      Format : %u') % (hudFormat,))
-                            log(_('      FName  : %s') % (Unicode(hudFontName,'mbcs'),))
-                            log(_('      FHght  : %u') % (hudFontHeight,))
-                            log(_('      FWdth  : %u') % (hudFontWidth,))
-                            log(_('      FWeigh : %u') % (hudWeight,))
-                            log(_('      FItal  : %u') % (hudItalic,))
-                            log(_('      FRGB   : %u,%u,%u') % (hudFontR,hudFontG,hudFontB,))
-                            log(_('      FText  : %s') % (Unicode(hudText,'mbcs'),))
+                            log(u'      '+_('HudTID :')+u' %u' % hudTid)
+                            log(u'      '+_('ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                            log(u'      '+_('Flags  :')+u' %02X' % hudFlags)
+                            log(u'      '+_('Show   :')+u' %02X' % hudShow)
+                            log(u'      '+_('Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
+                            log(u'      '+_('Depth  :')+u' %u' % hudDepth)
+                            log(u'      '+_('Scale  :')+u' %f,%f' % (hudScaleX,hudScaleY,))
+                            log(u'      '+_('Alpha  :')+u' %02X' % hudAlpha)
+                            log(u'      '+_('Align  :')+u' %02X' % hudAlignment)
+                            log(u'      '+_('AutoSc :')+u' %02X' % hudAutoScale)
+                            log(u'      '+_('Width  :')+u' %u' % hudWidth)
+                            log(u'      '+_('Height :')+u' %u' % hudHeight)
+                            log(u'      '+_('Format :')+u' %u' % hudFormat)
+                            log(u'      '+_('FName  :')+u' %s' % hudFontName)
+                            log(u'      '+_('FHght  :')+u' %u' % hudFontHeight)
+                            log(u'      '+_('FWdth  :')+u' %u' % hudFontWidth)
+                            log(u'      '+_('FWeigh :')+u' %u' % hudWeight)
+                            log(u'      '+_('FItal  :')+u' %u' % hudItalic)
+                            log(u'      '+_('FRGB   :')+u' %u,%u,%u' % (hudFontR,hudFontG,hudFontB,))
+                            log(u'      '+_('FText  :')+u' %s' % hudText)
                     ins.close()
 
     def findBloating(self,progress=None):
@@ -7380,7 +7379,7 @@ class OmodFile:
     def getOmodContents(self):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
-        cmd7z = [exe7z, 'l', '-r', self.path.s]
+        cmd7z = [exe7z, u'l', u'-r', self.path.s]
         filesizes = dict()
         totalSize = 0
         reFileSize = re.compile(unicodeConvert(r'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$'))
@@ -7597,9 +7596,16 @@ class Plugins:
             del self.selected[:]
             del self.selectedBad[:]
             for line in ins:
-                # Need to use this unicode function, since we can't
-                # be sure the plugins.txt will be UTF-8 encoded
-                modName = _unicode(reComment.sub(u'',line).strip())
+                # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
+                # It wont accept filenames in any other encoding
+                try:
+                    modName = reComment.sub(u'',line).strip()
+                    if not isinstance(modName,unicode):
+                        modName = unicode(modName,'cp1252')
+                    else:
+                        modName.encode('cp1252')
+                except UnicodeError:
+                    return
                 if not modName: continue
                 modName = GPath(modName)
                 if modName in modNames: #--In case it's listed twice.
@@ -7616,7 +7622,7 @@ class Plugins:
     def save(self):
         """Write data to Plugins.txt file."""
         self.selected.sort()
-        with self.path.open('w',encoding='utf8') as out:
+        with self.path.open('w',encoding='cp1252') as out:
             out.write(u'# This file is used to tell %s which data files to load.\n\n' % bush.game.name)
             for modName in self.selected:
                 out.write(modName.s+u'\n')
@@ -7972,6 +7978,10 @@ class ModInfo(FileInfo):
     def hasActiveTimeConflict(self):
         """True if has an active mtime conflict with another mod."""
         return modInfos.hasActiveTimeConflict(self.name)
+
+    def hasBadMasterNames(self):
+        """True if has a master with un unencodable name in cp1252."""
+        return modInfos.hasBadMasterNames(self.name)
 
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
@@ -8604,6 +8614,8 @@ class ModInfos(FileInfos):
         self.mtime_selected = {}
         self.exGroup_mods = {}
         self.mergeable = set() #--Set of all mods which can be merged.
+        self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
+        self.activeBad = set() #--Set of all mods with bad names that are active
         self.merged = set() #--For bash merged files
         self.imported = set() #--For bash imported files
         self.autoSorted = set() #--Files that are auto-sorted
@@ -8652,8 +8664,25 @@ class ModInfos(FileInfos):
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
+        hasNewBad = self.refreshBadNames()
         self.getOblivionVersions()
-        return bool(hasChanged) or hasSorted or hasGhosted
+        return bool(hasChanged) or hasSorted or hasGhosted or hasNewBad
+
+    def refreshBadNames(self):
+        """Refreshes which filenames cannot be saved to plugins.txt
+        It seems that Skyrim and Oblivion read plugins.txt as a cp1252
+        encoded file, and any filename that doesn't decode to cp1252 will
+        be skipped."""
+        bad = self.bad_names = set()
+        activeBad = self.activeBad = set()
+        for fileName in self.data:
+            if self.isBadFileName(fileName.s):
+                if fileName in self.ordered:
+                    self.unselect(fileName)
+                    activeBad.add(fileName)
+                else:
+                    bad.add(fileName)
+        return bool(activeBad)
 
     def refreshHeaders(self):
         """Updates group_header."""
@@ -9202,6 +9231,9 @@ class ModInfos(FileInfos):
                 raise BoltError(_('Circular Masters: ')+' >> '.join(x.s for x in children))
             #--Select masters
             if modSet == None: modSet = set(self.keys())
+            #--Check for bad masternames:
+            if self.hasBadMasterNames(fileName):
+                return
             for master in self[fileName].header.masters:
                 if master in modSet:
                     self.select(master,False,modSet,children)
@@ -9236,6 +9268,23 @@ class ModInfos(FileInfos):
             self.refreshInfoLists()
             plugins.save()
             self.autoGhost()
+
+    def isBadFileName(self,modName):
+        """True if the name cannot be encoded to the proper format for plugins.txt"""
+        try:
+            modName.encode('cp1252')
+            return False
+        except UnicodeEncodeError:
+            return True
+
+    def hasBadMasterNames(self,modName):
+        """True if there mod has master's with unencodable names."""
+        masters = self[modName].header.masters
+        try:
+            for x in masters: x.s.encode('cp1252')
+            return False
+        except UnicodeEncodeError:
+            return True
 
     def hasTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
@@ -10956,11 +11005,9 @@ class Installer(object):
                     # The 'INI Tweaks' directory is already tracked by INIInfos,
                     # But INIInfos wont update the Installers Tab UI on changes.
                     try:
-                        track = dirs['mods'].join(dest)
+                        trackedInfos.track(dirs['mods'].join(dest))
                     except:
-                        deprint('An error occured while creating the path:', traceback=True)
-                        raise
-                    trackedInfos.track(track)
+                        deprint('An error occured while creating the path:', repr(dest), traceback=True)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
@@ -11144,29 +11191,31 @@ class InstallerConverter(object):
     def load(self,fullLoad=False):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
-        command = '"%s" x "%s" BCF.dat -y -so' % (exe7z, self.fullPath.s)
-        command = Encode(command,'mbcs')
-        try:
-            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-        except:
-            raise StateError(u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
-        ins = cStringIO.StringIO(Encode(ins))
-        setter = object.__setattr__
-        # translate data types to new hierarchy
-        class _Translator:
-            def __init__(self, streamToWrap):
-                self._stream = streamToWrap
-            def read(self, numBytes):
-                return self._translate(self._stream.read(numBytes))
-            def readline(self):
-                return self._translate(self._stream.readline())
-            def _translate(self, s):
-                return re.sub('^(bolt|bosh)$', r'bash.\1', s)
-        translator = _Translator(ins)
-        map(self.__setattr__, self.persistBCF, cPickle.load(translator))
-        if fullLoad:
-            map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
-        ins.close()
+        path = self.fullPath.temp
+        with self.fullPath.tempMoveTo(path):
+            # Temp rename if it's name wont encode correctly
+            command = r'"%s" x "%s" BCF.dat -y -so' % (exe7z, path.s)
+            try:
+                ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            except:
+                raise StateError(u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
+            ins = StringIO.StringIO(ins)
+            setter = object.__setattr__
+            # translate data types to new hierarchy
+            class _Translator:
+                def __init__(self, streamToWrap):
+                    self._stream = streamToWrap
+                def read(self, numBytes):
+                    return self._translate(self._stream.read(numBytes))
+                def readline(self):
+                    return self._translate(self._stream.readline())
+                def _translate(self, s):
+                    return re.sub(u'^(bolt|bosh)$', r'bash.\1', s)
+            translator = _Translator(ins)
+            map(self.__setattr__, self.persistBCF, cPickle.load(translator))
+            if fullLoad:
+                map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
+            ins.close()
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -11195,18 +11244,19 @@ class InstallerConverter(object):
         self.clearTemp()
         progress = progress or bolt.Progress()
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
-        command = '"%s" x "%s" -y -o"%s"' % (exe7z, self.fullPath.s, self.tempDir.s)
-        command = Encode(command,'mbcs')
-        ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
-        ins = stringBuffer(ins)
-        #--Error checking
-        reError = re.compile(u'Error:',re.U)
-        regMatch = reError.match
-        errorLine = []
-        for line in ins:
-            if len(errorLine) or regMatch(line):
-                errorLine.append(line)
-        result = ins.close()
+        tempPath = self.fullPath.s
+        with self.fullPath.tempMoveTo(tempPath):
+            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath.s,self.tempDir.s)
+            ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+            ins = StringIO.StringIO(ins)
+            #--Error checking
+            reError = re.compile(u'Error:',re.U)
+            regMatch = reError.match
+            errorLine = []
+            for line in ins:
+                if len(errorLine) or regMatch(line):
+                    errorLine.append(line)
+            result = ins.close()
         if result:
             raise StateError(self.fullPath.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Extract source archives
@@ -11243,13 +11293,13 @@ class InstallerConverter(object):
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
             srcDir = srcDir_File[0]
-            srcFile = Unicode(srcDir_File[1],'mbcs')
+            srcFile = srcDir_File[1]
             if isinstance(srcDir,basestring):
                 #--either 'BCF-Missing', or crc read from 7z l -slt
                 srcFile = tempJoin(srcDir,srcFile)
             else:
                 srcFile = tempJoin("%08X" % srcDir,srcFile)
-            destFile = destJoin(Unicode(destFile,'mbcs'))
+            destFile = destJoin(destFile)
             if not srcFile.exists():
                 raise StateError(u"%s: Missing source file:\n%s" % (self.fullPath.stail, srcFile.s))
             if destFile == None:
@@ -11392,27 +11442,26 @@ class InstallerConverter(object):
 
         if self.isSolid:
             if self.blockSize:
-                solid = '-ms=on -ms=%dm' % self.blockSize
+                solid = u'-ms=on -ms=%dm' % self.blockSize
             else:
-                solid = '-ms=on'
+                solid = u'-ms=on'
         else:
-            solid = '-ms=off'
+            solid = u'-ms=off'
         if inisettings['7zExtraCompressionArguments']:
-            if '-ms=on' in inisettings['7zExtraCompressionArguments']:
-                solid = ' %s' % inisettings['7zExtraCompressionArguments']
-            else: solid += ' %s' % inisettings['7zExtraCompressionArguments']
+            if u'-ms=on' in inisettings['7zExtraCompressionArguments']:
+                solid = u' %s' % inisettings['7zExtraCompressionArguments']
+            else: solid += u' %s' % inisettings['7zExtraCompressionArguments']
 
-        command = '"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, "%s\\*" % dirs['mopy'].join(srcFolder).s)
-        command = Encode(command,'mbcs')
+        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % dirs['mopy'].join(srcFolder).s)
 
         progress(0,destArchive.s+u'\n'+_('Compressing files...'))
         progress.setFull(1+length)
         #--Pack the files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error checking and progress feedback
-        reCompressing = re.compile('Compressing\s+(.+)')
+        reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
         regMatch = reCompressing.match
-        reError = re.compile('Error: (.*)')
+        reError = re.compile(u'Error: (.*)',re.U)
         regErrMatch = reError.match
         errorLine = []
         index = 0
@@ -11672,7 +11721,6 @@ class InstallerArchive(Installer):
         tempDir = self.tempDir
         # Clear ReadOnly flag if set
         cmd = ur'attrib -R "%s\*" /S /D' % (self.tempDir.s)
-        #cmd = Encode(cmd)
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         for file in files:
             srcFull = tempDir.join(file)
@@ -11886,44 +11934,42 @@ class InstallerProject(Installer):
             self.vMajor = 0
             self.vMinor = 1
             self.vBuild = 0
-            self.author = ''
-            self.email = ''
-            self.website = ''
-            self.abstract = ''
+            self.author = u''
+            self.email = u''
+            self.website = u''
+            self.abstract = u''
 
     def getOmodConfig(self,name):
         """Get obmm config file for project."""
         config = InstallerProject.OmodConfig(name)
-        configPath = dirs['installers'].join(name,'omod conversion data','config')
+        configPath = dirs['installers'].join(name,u'omod conversion data',u'config')
         if configPath.exists():
-            ins = bolt.StructFile(configPath.s,'rb')
-            ins.read(1) #--Skip first four bytes
-            config.name = ins.readNetString()
-            config.vMajor, = ins.unpack('i',4)
-            config.vMinor, = ins.unpack('i',4)
-            for attr in ('author','email','website','abstract'):
-                setattr(config,attr,ins.readNetString())
-            ins.read(8) #--Skip date-time
-            ins.read(1) #--Skip zip-compression
-            #config['vBuild'], = ins.unpack('I',4)
-            ins.close()
+            with bolt.StructFile(configPath.s,'rb') as ins:
+                ins.read(1) #--Skip first four bytes
+                config.name = ins.readNetString()
+                config.vMajor, = ins.unpack('i',4)
+                config.vMinor, = ins.unpack('i',4)
+                for attr in ('author','email','website','abstract'):
+                    setattr(config,attr,ins.readNetString())
+                ins.read(8) #--Skip date-time
+                ins.read(1) #--Skip zip-compression
+                #config['vBuild'], = ins.unpack('I',4)
         return config
 
     def writeOmodConfig(self,name,config):
         """Write obmm config file for project."""
-        configPath = dirs['installers'].join(name,'omod conversion data','config')
+        configPath = dirs['installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
-        out = bolt.StructFile(configPath.temp.s,'wb')
-        out.pack('B',4)
-        out.writeNetString(Encode(config.name))
-        out.pack('i',config.vMajor)
-        out.pack('i',config.vMinor)
-        for attr in ('author','email','website','abstract'):
-            out.writeNetString(Encode(getattr(config,attr)))
-        out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-        out.pack('b',0) #--zip compression (will be ignored)
-        out.write('\xFF\xFF\xFF\xFF')
-        out.close()
+        with bolt.StructFile(configPath.temp.s,'wb') as out:
+            out.pack('B',4)
+            out.writeNetString(Encode(config.name))
+            out.pack('i',config.vMajor)
+            out.pack('i',config.vMinor)
+            for attr in ('author','email','website','abstract'):
+                out.writeNetString(Encode(getattr(config,attr)))
+            out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
+            out.pack('b',0) #--zip compression (will be ignored)
+            out.write('\xFF\xFF\xFF\xFF')
         configPath.untemp()
 
     def listSource(self,archive):
@@ -14830,92 +14876,94 @@ class CBash_ItemStats:
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
-        out = textPath.open('w')
         def getSortedIds(fid_attr_value):
             longids = fid_attr_value.keys()
             longids.sort(key=lambda a: fid_attr_value[a]['eid'])
             longids.sort(key=itemgetter(0))
             return longids
-        def write(out, attrs, values):
-            attr_type = self.attr_type
-            csvFormat = ''
-            sstr = self.sstr
-            sint = self.sint
-            snoneint = self.snoneint
-            sfloat = self.sfloat
-            for index, attr in enumerate(attrs):
-                stype = attr_type[attr]
-                values[index] = stype(values[index]) #sanitize output
-                if values[index] is None: csvFormat += ',"{0[%d]}"' % index
-                elif stype is sstr: csvFormat += ',"{0[%d]}"' % index
-                elif stype is sint or stype is snoneint: csvFormat += ',"{0[%d]:d}"' % index
-                elif stype is sfloat: csvFormat += ',"{0[%d]:f}"' % index
-            csvFormat = csvFormat[1:] #--Chop leading comma
-            out.write(csvFormat.format(values) + '\n')
-        for group,header in (
-            #--Alch
-            ('ALCH',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
-            #Ammo
-            ('AMMO',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'))) + '"\n')),
-            #--Apparatus
-            ('APPA',
-                ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('Quality'))) + '"\n')),
-            #--Armor
-            ('ARMO',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('Health'),_('AR'))) + '"\n')),
-            #Books
-            ('BOOK',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('EPoints'))) + '"\n')),
-            #Clothing
-            ('CLOT',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('EPoints'))) + '"\n')),
-            #Ingredients
-            ('INGR',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
-            #--Keys
-            ('KEYM',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
-            #Lights
-            ('LIGH',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('Duration'))) + '"\n')),
-            #--Misc
-            ('MISC',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
-            #Sigilstones
-            ('SGST',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('Uses'))) + '"\n')),
-            #Soulgems
-            ('SLGM',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
-            #--Weapons
-            ('WEAP',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Weight'),_('Value'),_('Health'),_('Damage'),
-                _('Speed'),_('Reach'),_('EPoints'))) + '"\n')),
-            ):
-            fid_attr_value = class_fid_attr_value[group]
-            if not fid_attr_value: continue
-            attrs = self.class_attrs[group]
-            out.write(Encode(header,'mbcs'))
-            for longid in getSortedIds(fid_attr_value):
-                out.write('"%s","%s","0x%06X",' % (group,Encode(str(longid[0]),'mbcs'),longid[1]))
-                attr_value = fid_attr_value[longid]
-                write(out, attrs, map(attr_value.get, attrs))
-        out.close()
+        with textPath.open('w',encoding='utf8') as out:
+            def write(out, attrs, values):
+                attr_type = self.attr_type
+                csvFormat = u''
+                sstr = self.sstr
+                sint = self.sint
+                snoneint = self.snoneint
+                sfloat = self.sfloat
+                for index, attr in enumerate(attrs):
+                    stype = attr_type[attr]
+                    values[index] = stype(values[index]) #sanitize output
+                    if values[index] is None: csvFormat += u',"{0[%d]}"' % index
+                    elif stype is sstr: csvFormat += u',"{0[%d]}"' % index
+                    elif stype is sint or stype is snoneint: csvFormat += u',"{0[%d]:d}"' % index
+                    elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
+                csvFormat = csvFormat[1:] #--Chop leading comma
+                out.write(csvFormat.format(values) + u'\n')
+            for group,header in (
+                #--Alch
+                ('ALCH',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),
+                    _(u'ObjectIndex'),_(u'Editor Id'),_(u'Weight'),
+                    _(u'Value'))) + u'"\n')),
+                #Ammo
+                ('AMMO',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),
+                    _(u'ObjectIndex'),_(u'Editor Id'),_(u'Weight'),_(u'Value'),
+                    _(u'Damage'),_(u'Speed'),_(u'EPoints'))) + u'"\n')),
+                #--Apparatus
+                ('APPA',
+                    (u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Quality'))) + u'"\n')),
+                #--Armor
+                ('ARMO',
+                    (u'"' + '","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'))) + u'"\n')),
+                #Books
+                ('BOOK',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
+                #Clothing
+                ('CLOT',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
+                #Ingredients
+                ('INGR',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #--Keys
+                ('KEYM',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #Lights
+                ('LIGH',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
+                #--Misc
+                ('MISC',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #Sigilstones
+                ('SGST',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Uses'))) + u'"\n')),
+                #Soulgems
+                ('SLGM',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #--Weapons
+                ('WEAP',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
+                    _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
+                ):
+                fid_attr_value = class_fid_attr_value[group]
+                if not fid_attr_value: continue
+                attrs = self.class_attrs[group]
+                out.write(header)
+                for longid in getSortedIds(fid_attr_value):
+                    out.write(u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
+                    attr_value = fid_attr_value[longid]
+                    write(out, attrs, map(attr_value.get, attrs))
+
 #------------------------------------------------------------------------------
 class ItemPrices:
     """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
@@ -14980,20 +15028,20 @@ class ItemPrices:
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        out = textPath.open('w')
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        format,header = bolt.csvFormat('iss'),('"' + '","'.join((_('Mod Name'),_('ObjectIndex'), _('Value'),_('Editor Id'),_('Name'),_('Type'))) + '"\n')
-        for group, fid_stats in sorted(class_fid_stats.iteritems()):
-            if not fid_stats: continue
-            out.write(Encode(header,'mbcs'))
-            for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1].lower(),fid_stats[x][0])):
-                out.write(Encode('"%s","0x%06X",' % (fid[0].s,fid[1]),'mbcs'))
-                out.write(format % tuple(fid_stats[fid]) + ',%s\n' % group)
-        out.close()
+        with textPath.open('w',encoding='utf8') as out:
+            format,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
+            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+                if not fid_stats: continue
+                out.write(header)
+                for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1].lower(),fid_stats[x][0])):
+                    out.write(u'"%s","0x%06X",' % (fid[0].s,fid[1]))
+                    out.write(format % tuple(fid_stats[fid]) + u',%s\n' % group)
+
 class CBash_ItemPrices:
     """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
 
@@ -15055,20 +15103,20 @@ class CBash_ItemPrices:
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        out = textPath.open('w')
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        format,header = bolt.csvFormat('iss'),('"' + '","'.join((_('Mod Name'),_('ObjectIndex'), _('Value'),_('Editor Id'),_('Name'),_('Type'))) + '"\n')
-        for group, fid_stats in sorted(class_fid_stats.iteritems()):
-            if not fid_stats: continue
-            out.write(Encode(header,'mbcs'))
-            for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
-                out.write(Encode('"%s","0x%06X",' % (str(fid[0]),fid[1]),'mbcs'))
-                out.write(format % tuple(fid_stats[fid]) + ',%s\n' % group)
-        out.close()
+        with textPath.open('w',encoding='utf8') as out:
+            format,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
+            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+                if not fid_stats: continue
+                out.write(header)
+                for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
+                    out.write(u'"%s","0x%06X",' % (fid[0],fid[1]))
+                    out.write(format % tuple(fid_stats[fid]) + u',%s\n' % group)
+
 #------------------------------------------------------------------------------
 class CompleteItemData(UsesEffectsMixin): #Needs work
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""

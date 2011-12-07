@@ -120,10 +120,12 @@ def oneInstanceChecker():
         # if a stale pidfile exists, remove it (this will fail if the file is currently locked)
         if pidpath.exists(): os.remove(pidpath.s)
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-        os.write(lockfd, "%d" % os.getpid())
+        os.write(lockfd, u"%d" % os.getpid())
     except OSError, e:
         # lock file exists and is currently locked by another process
-        print _(u'Already started')
+        msg = _(u'Already started')
+        try: print msg
+        except UnicodeError: print msg.encode('mbcs')
         return False
 
     return True
@@ -146,28 +148,28 @@ def exit():
         from basher import appRestart
         if appRestart:
             exePath = GPath(sys.executable)
-            sys.argv = [exePath.stail] + sys.argv + ['--restarting']
+            sys.argv = [exePath.stail] + sys.argv + [u'--restarting']
             try:
                 import subprocess
                 subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
             except Exception, error:
                 print error
-                print 'Error Attempting to Restart Wrye Bash!'
-                print u'cmd line: ', exePath.s, sys.argv
+                print u'Error Attempting to Restart Wrye Bash!'
+                print u'cmd line: %s %s' %(exePath.s, sys.argv)
                 print
                 raise
 
 def dump_environment():
     import locale
-    print "Wrye Bash starting"
-    print "Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
+    print u"Wrye Bash starting"
+    print u"Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
     try:
         import wx
-        print "wxPython version: %s" % wx.version()
+        print u"wxPython version: %s" % wx.version()
     except ImportError:
-        print "wxPython not found"
+        print u"wxPython not found"
     # Standalone: stdout will actually be pointing to stderr, which has no 'encoding' attribute
-    print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, getattr(sys.stdout,'encoding',None), locale.getdefaultlocale())
+    print u"input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, getattr(sys.stdout,'encoding',None), locale.getdefaultlocale())
 
 # Main ------------------------------------------------------------------------
 def main():
@@ -190,8 +192,6 @@ def main():
             psyco.full()
         except:
             pass
-    if opts.unicode != '':
-        bolt.bUseUnicode = int(opts.unicode)
 
     # ensure we are in the correct directory so relative paths will work properly
     if hasattr(sys,"frozen"):
@@ -205,7 +205,7 @@ def main():
     # Detect the game we're running for
     import bush
     if opts.debug:
-        print 'Searching for game to manage:'
+        print u'Searching for game to manage:'
     ret = bush.setGame(opts.gameName,opts.oblivionPath)
     if ret != False: # False == success
         if len(ret) != 1:
@@ -311,7 +311,7 @@ def main():
 
     #--Initialize Directories and some settings
     #  required before the rest has imported
-    SetUserPath('bash.ini',opts.userPath)
+    SetUserPath(u'bash.ini',opts.userPath)
 
     try:
         # Force Python mode if CBash can't work with this game
@@ -322,10 +322,14 @@ def main():
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
-            print _(u"generating HTML file from: '%s'") % opts.genHtml
+            msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
+            msg2 = _(u'done')
+            try: print msg1
+            except UnicodeError: print msg1.encode('mbcs')
             import belt
             bolt.WryeText.genHtml(opts.genHtml)
-            print _(u"done")
+            try: print msg2
+            except UnicodeError: print msg2.encode('mbcs')
             return
 
         import basher
@@ -349,7 +353,7 @@ def main():
             bolt.deprintOn = True
         else:
             app = basher.BashApp()
-        balt.showError(None,str(e))
+        balt.showError(None,u'%s'%e)
         app.MainLoop()
         raise e
     except (ImportError, StandardError), e:
@@ -398,9 +402,9 @@ def main():
     else:
         app = basher.BashApp()
 
-    if sys.version[0:3] < '2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
+    if sys.version[0:3] < u'2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
-        if sys.version[0:3] == 2.5:
+        if sys.version[0:3] == u'2.5':
             run = balt.askYes(None,
                               _(u"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur.  Updating to Python 2.7x is recommended but not imperative.  Do you still want to run Wrye Bash right now?"),
                               _(u"Warning OLD Python version detected")

@@ -35,7 +35,7 @@ import basher
 import bolt
 import bush
 from bosh import startupinfo, dirs
-from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint, bUseUnicode
+from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
 
 #------------------------------------------------------------------------------
@@ -166,9 +166,9 @@ class BackupSettings(BaseBackupSettings):
 
         #backup save profile settings
         savedir = GPath(u'My Games\\'+game)
-        profiles = [u''] + [x for x in dirs['saveBase'].join(u'Saves').list() if dirs['saveBase'].join(u'Saves',x).isdir() and str(x).lower() != u'bash']
+        profiles = [u''] + [x for x in dirs['saveBase'].join(u'Saves').list() if dirs['saveBase'].join(u'Saves',x).isdir() and x != u'bash']
         for profile in profiles:
-            tpath = savedir.join('Saves',profile,u'plugins.txt')
+            tpath = savedir.join(u'Saves',profile,u'plugins.txt')
             fpath = dirs['saveBase'].join(u'Saves',profile,u'plugins.txt')
             if fpath.exists(): self.files[tpath] = fpath
             for ext in (u'.dat',u'.pkl'):
@@ -211,7 +211,7 @@ class BackupSettings(BaseBackupSettings):
         #returns False if user cancels
         if self.archive == None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
-            file = u'Backup Bash Settings v%s (%s).7z' % (self.verApp,dt.strftime('%d-%m-%Y %H%M.%S'))
+            file = u'Backup Bash Settings v%s (%s).7z' % (self.verApp,dt.strftime(u'%d-%m-%Y %H%M.%S'))
             if not self.quit:
                 path = askSave(self.parent,_(u'Backup Bash Settings'),self.dir,file,u'*.7z')
                 if not path: return False
@@ -229,7 +229,7 @@ class BackupSettings(BaseBackupSettings):
 
     def PromptMismatch(self):
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
-        if basher.settings['bash.readme'][1] == '0': return False
+        if basher.settings['bash.readme'][1] == u'0': return False
         return not self.SameAppVersion() and self.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
             _(u'Previous Version: ')+basher.settings['bash.readme'][1]+u'\n' +

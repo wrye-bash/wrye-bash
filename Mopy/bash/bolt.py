@@ -47,7 +47,7 @@ import ConfigParser
 import bass
 #-- To make commands executed with Popen hidden
 startupinfo = None
-if os.name == 'nt':
+if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     except:
@@ -58,63 +58,11 @@ if os.name == 'nt':
 class Path(object): pass
 
 
-# Unicode Strings -------------------------------------------------------------
-# See Python's "aliases.py" for a list of possible encodings
-UnicodeEncodings = (
-    # Encodings we'll try for conversion to unicode
-    'UTF8',     # Standard encoding
-    'U16',      # Some files use UTF-16 though
-    'cp1252',   # Western Europe
-    'cp500',    # Western Europe
-    'cp932',    # Japanese SJIS-win
-    'mbcs',     # Multi-byte character set (depends on the Windows locale)
-    )
-NumEncodings = len(UnicodeEncodings)
-
-def Unicode(name,tryFirstEncoding=False):
-    if not bUseUnicode: return name #don't change if not unicode mode.
-    if isinstance(name,unicode): return name
-    if isinstance(name,str):
-        if tryFirstEncoding:
-            try:
-                return unicode(name,tryFirstEncoding)
-            except UnicodeDecodeError:
-                deprint(u'Unable to decode "%s" in %s.' % (name, tryFirstEncoding))
-                pass
-        for i in range(NumEncodings):
-            try:
-                return unicode(name,UnicodeEncodings[i])
-            except UnicodeDecodeError:
-                if i == NumEncodings - 1:
-                    raise
-    return name
-
-def Encode(name,tryFirstEncoding=False):
-    if isinstance(name,Path): name = str(name)
-    if not bUseUnicode: return name #don't change if not unicode mode.
-    if isinstance(name,str): return name
-    if isinstance(name,unicode):
-        if tryFirstEncoding:
-            try:
-                return name.encode(tryFirstEncoding)
-            except UnicodeEncodeError:
-                deprint(u'Unable to encode "%s" in %s.' % (name, tryFirstEncoding))
-                pass
-        for i in range(NumEncodings):
-            try:
-                return name.encode(UnicodeEncodings[i])
-            except UnicodeEncodeError:
-                if i == NumEncodings - 1:
-                    raise
-    return name
-
 # Localization ----------------------------------------------------------------
-#used instead of bosh.inisettings['EnableUnicode'] to avoid circular imports
-#has to be set by bolt before any Path's are instantiated
-#ini gets read twice, but that's a minor hit at startup
-bUseUnicode = False
-
 def dumpTranslator(outTxt,*files):
+    """Dumps all tranlatable strings in python source files to a new text file.
+       as this requires the source files, it will not work in WBSA mode, unless
+       the source files are also installed"""
     if not files:
         file = os.path.split(__file__)[1]
         files = [x for x in os.listdir(os.getcwdu()) if (x.lower().endswith(u'.py') or x.lower().endswith(u'.pyw'))]
@@ -170,30 +118,27 @@ def initTranslator(language=None,path=None):
                 lines = []
                 for line in ins:
                     stripped = line.strip()
-                    if stripped.startswith('#:'):
+                    if stripped.startswith(u'#:'):
                         lines.append(line)
-                    elif stripped.startswith('msgid'):
+                    elif stripped.startswith(u'msgid'):
                         if not lines: continue
                         lines.append(line)
-                    elif stripped.startswith('msgstr'):
+                    elif stripped.startswith(u'msgstr'):
                         if not lines: continue
                         orig = lines[-1].strip()[7:-1]
                         if not orig:
-                            print 'orig:', lines[-1].strip()
-                            print '    :', lines[-1].strip()[7:]
-                            print '    :', lines[-1].strip()[:-1]
                             lines = []
                             continue
                         trans = stripped[8:-1]
                         if not trans:
                             num += 1
                             lines.append(line)
-                            out.write(''.join(lines))
-                            out.write('\r\n')
+                            out.write(u''.join(lines))
+                            out.write(u'\r\n')
                             lines = []
         print `num` + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
     except:
-        print 'Error dumping untranslated strings:'
+        print u'Error dumping untranslated strings:'
         traceback.print_exc()
 
 #--Do translator test and set
@@ -748,44 +693,45 @@ class BoltError(Exception):
 #------------------------------------------------------------------------------
 class AbstractError(BoltError):
     """Coding Error: Abstract code section called."""
-    def __init__(self,message='Abstract section called.'):
+    def __init__(self,message=u'Abstract section called.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class ArgumentError(BoltError):
     """Coding Error: Argument out of allowed range of values."""
-    def __init__(self,message='Argument is out of allowed ranged of values.'):
+    def __init__(self,message=u'Argument is out of allowed ranged of values.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class StateError(BoltError):
     """Error: Object is corrupted."""
-    def __init__(self,message='Object is in a bad state.'):
+    def __init__(self,message=u'Object is in a bad state.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class UncodedError(BoltError):
     """Coding Error: Call to section of code that hasn't been written."""
-    def __init__(self,message='Section is not coded yet.'):
+    def __init__(self,message=u'Section is not coded yet.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class CancelError(BoltError):
     """User pressed 'Cancel' on the progress meter."""
-    def __init__(self,message='Action aborted by user.'):
+    def __init__(self,message=u'Action aborted by user.'):
         BoltError.__init__(self, message)
 
 class SkipError(BoltError):
     """User pressed 'Skip' on the progress meter."""
-    def __init__(self,message='Action skipped by user.'):
+    def __init__(self,message=u'Action skipped by user.'):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class PermissionError(BoltError):
     """Wrye Bash doesn't have permission to access the specified file/directory."""
-    def __init__(self,message=None):
-        message = message or 'Access is denied.'
+    def __init__(self,message=u'Access is denied.'):
         BoltError.__init__(self,message)
+
+
 
 # LowStrings ------------------------------------------------------------------
 class LString(object):
@@ -852,6 +798,7 @@ class Path(object):
     def get(name):
         """Returns path object for specified name/path."""
         if isinstance(name,Path): norm = name._s
+        elif isinstance(name,str): norm = os.path.normpath(unicode(name))
         else: norm = os.path.normpath(name)
         return Path.norm_path.setdefault(norm,Path(norm))
 
@@ -860,14 +807,16 @@ class Path(object):
         """Return the normpath for specified name/path object."""
         if not name: return name
         elif isinstance(name,Path): return name._s
-        else: return os.path.normpath(name)
+        elif isinstance(name,str): name = unicode(name)
+        return os.path.normpath(name)
 
     @staticmethod
     def getCase(name):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
         if isinstance(name,Path): return name._cs
-        else: return os.path.normcase(os.path.normpath(name))
+        elif isinstance(name,str): name = unicode(name)
+        return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
     def getcwd():
@@ -1173,23 +1122,7 @@ class Path(object):
         dirs.reverse()
         return dirs
     def relpath(self,path):
-        try:
-            return GPath(os.path.relpath(self._s,Path.getNorm(path)))
-        except:
-            # Python 2.5 doesn't have os.path.relpath, so we'll have to implement our own
-            path = GPath(path)
-            if path.isfile(): path = path.head
-            splitSelf = self.split()
-            splitOther = path.split()
-            relPath = []
-            while len(splitSelf) > 0 and len(splitOther) > 0 and splitSelf[0] == splitOther[0]:
-                splitSelf.pop(0)
-                splitOther.pop(0)
-            while len(splitOther) > 0:
-                splitOther.pop(0)
-                relPath.append(u'..')
-            relPath.extend(splitSelf)
-            return GPath(os.path.join(*relPath))
+        return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
     #--File system info
     #--THESE REALLY OUGHT TO BE PROPERTIES.
@@ -1212,6 +1145,26 @@ class Path(object):
         else:
             raise
 
+    def clearRO(self):
+        """Clears RO flag on self"""
+        if not self.isdir():
+            os.chmod(path,stat.S_IWUSR|stat.S_IWOTH)
+        else:
+            try:
+                cmd = ur'attrib -R "%s\*" /S /D' % self._s
+                subprocess.call(cmd,stdout=subprocess.PIPE,startupinfo=startupinfo)
+            except UnicodeError:
+                flags = stat.S_IWUSR|stat.S_IWOTH
+                chmod = os.chmod
+                for root,dirs,files in os.walk(self._s):
+                    rootJoin = root.join
+                    for dir in dirs:
+                        try: chmod(rootJoin(dir),flags)
+                        except: pass
+                    for file in files:
+                        try: chmod(rootJoin(file),flags)
+                        except: pass
+
     def open(self,*args,**kwdargs):
         if self._shead and not os.path.exists(self._shead):
             os.makedirs(self._shead)
@@ -1232,13 +1185,8 @@ class Path(object):
         try:
             if self.exists(): os.removedirs(self._s)
         except WindowsError:
-            deprint(u'Error removing %s...  attempting to clear ReadOnly flag' % self._s)
-            cmd = ur'attrib -R "%s\*" /S /D' % self._s
-            # This will fail if the filename doesn't encode properly.
-            # No way around it really, can't rename it if it's read-only.
-            subprocess.call(cmd.encode('mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo)
+            self.clearRO()
             os.remove(self._s)
-            deprint(u'Successfully removed %s' % self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
@@ -1247,7 +1195,7 @@ class Path(object):
     #--start, move, copy, touch, untemp
     def start(self, exeArgs=None):
         """Starts file as if it had been doubleclicked in file explorer."""
-        if self._cext == '.exe':
+        if self._cext == u'.exe':
             if not exeArgs:
                 subprocess.Popen([self.s], close_fds=close_fds)
             else:
@@ -1275,10 +1223,8 @@ class Path(object):
         try:
             shutil.move(self._s,destPath._s)
         except WindowsError:
-            deprint(u'Error moving %s... attempting to clear ReadOnly flag' % self._s)
-            ins,err = subprocess.Popen(Encode(r'attrib -R "%s" /S /D' % (self._s),'mbcs'), stdout=subprocess.PIPE, startupinfo=startupinfo).communicate()
+            self.clearRO()
             shutil.move(self._s,destPath._s)
-            deprint(u'Successfully moved %s' % self._s)
 
     def tempMoveTo(self,destName):
         """Temporarily rename/move an object.  Use with the 'with' statement"""
@@ -1323,25 +1269,9 @@ class Path(object):
         return hash(self._cs)
     def __cmp__(self, other):
         if isinstance(other,Path):
-            try:
-                return cmp(self._cs, other._cs)
-            except UnicodeDecodeError:
-                try:
-                    return cmp(Encode(self._cs), Encode(other._cs))
-                except UnicodeError:
-                    deprint(u"Wrye Bash Unicode mode is currently "+[u'off.',u'on.'][bUseUnicode])
-                    deprint(u"unrecovered Unicode error when dealing with %s - presuming non equal." % (self._cs))
-                    return False
+            return cmp(self._cs, other._cs)
         else:
-            try:
-                return cmp(self._cs, Path.getCase(other))
-            except UnicodeDecodeError:
-                try:
-                    return cmp(Encode(self._cs), Encode(Path.getCase(other)))
-                except UnicodeError:
-                    deprint(u"Wrye Bash Unicode mode is currently "+[u'off.',u'on.'][bUseUnicode])
-                    deprint(u"unrecovered Unicode error when dealing with %s - presuming non equal.'" % (self._cs))
-                    return False
+            return cmp(self._cs, Path.getCase(other))
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
@@ -1354,9 +1284,9 @@ class CsvReader:
     def __init__(self,path):
         import csv
         self.ins = path.open('rb')
-        format = ('excel','excel-tab')['\t' in self.ins.readline()]
+        format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if format == 'excel':
-            delimiter = (',',';')[';' in self.ins.readline()]
+            delimiter = (u',',u';')[u';' in self.ins.readline()]
             self.ins.seek(0)
             self.reader = csv.reader(self.ins,format,delimiter=delimiter)
         else:
@@ -1415,7 +1345,7 @@ class Flags(object):
     #--As hex string
     def hex(self):
         """Returns hex string of value."""
-        return '%08X' % (self._field,)
+        return u'%08X' % (self._field,)
     def dump(self):
         """Returns value for packing"""
         return self._field
@@ -1540,108 +1470,7 @@ class DataDict:
         return self.data.itervalues()
 
 #------------------------------------------------------------------------------
-try:
-    from collections import MutableSet
-except:
-    # Python 2.5 compatability
-    class MutableSet:
-        def __le__(self,other):
-            if not isinstance(other, MutableSet):
-                return NotImplemented
-            if len(self) > len(other):
-                return False
-            for elem in self:
-                if elem not in other:
-                    return False
-            return True
-        def __lt__(self,other):
-            if not isinstance(other, MutableSet):
-                return NotImplemented
-            return len(self) < len(other) and self <= other
-        def __gt__(self,other): return other < self
-        def __ge__(self,other): return other <= self
-
-        def __eq__(self,other):
-            if not isintance(other, MutableSet):
-                return NotImplemented
-            return len(self) == len(other) and self <= other
-        def __ne__(self,other): return not (self == other)
-
-        @classmethod
-        def _from_iterable(cls, it):
-            return cls(it)
-
-        def __and__(self,other):
-            return self._from_iterable(elem for elem in other if elem in self)
-
-        def isdisjoint(self,other):
-            for elem in other:
-                if elem in self:
-                    return False
-            return True
-
-        def __or__(self,other):
-            chain = (e for s in (self,other) for e in s)
-            return self._from_iterable(chain)
-        def __sub__(self,other):
-            return self._from_iterable(elem for elem in self if elem not in other)
-        def __xor__(self,other):
-            return (self - other) | (other - self)
-
-        def add(self, value): raise NotImplementedError
-        def discard(self, value): raise NotImplementedError
-
-        def remove(self, elem):
-            if elem not in self:
-                raise KeyError(elem)
-            self.discard(elem)
-
-        def pop(self):
-            it = iter(self)
-            try:
-                value = next(it)
-            except StopIteration:
-                raise KeyError
-            self.discard(value)
-            return value
-
-        def clear(self):
-            try:
-                while True:
-                    self.pop()
-            except KeyError:
-                pass
-
-        def __ior__(self, it):
-            for value in it:
-                self.add(value)
-            return self
-
-        def __iand__(self, it):
-            for value in (self - it):
-                self.discard(value)
-            return self
-
-        def __ixor(self, it):
-            if it is self:
-                self.clear()
-            else:
-                for value in it:
-                    if value in self:
-                        self.discard(value)
-                    else:
-                        self.add(value)
-            return self
-
-        def __isub__(self, it):
-            if it is self:
-                self.clear()
-            else:
-                for value in it:
-                    self.discard(value)
-            return self
-
-#------------------------------------------------------------------------------
+from collections import MutableSet
 class OrderedSet(list, MutableSet):
     """A set like object, that remembers the order items were added to it.
        Since it has order, a few list functions were added as well:
@@ -1665,8 +1494,8 @@ class OrderedSet(list, MutableSet):
         left = OrderedSet(self)
         left.update(other)
         return left
-    def __repr__(self): return 'OrderedSet%s' % str(list(self))[1:-1]
-    def __str__(self): return '{%s}' % str(list(self))[1:-1]
+    def __repr__(self): return u'OrderedSet%s' % str(list(self))[1:-1]
+    def __str__(self): return u'{%s}' % str(list(self))[1:-1]
 
 #------------------------------------------------------------------------------
 class MemorySet(object):
@@ -1703,8 +1532,8 @@ class MemorySet(object):
     def __iter__(self):
         for i,elem in enumerate(self.items):
             if self.mask[i]: yield self.items[i]
-    def __str__(self): return '{%s}' % (','.join(map(repr,self._items())))
-    def __repr__(self): return 'MemorySet([%s])' % (','.join(map(repr,self._items())))
+    def __str__(self): return u'{%s}' % (','.join(map(repr,self._items())))
+    def __repr__(self): return u'MemorySet([%s])' % (','.join(map(repr,self._items())))
     def forget(self, elem):
         # Permanently remove an item from the list.  Don't remember its order
         if elem in self.items:
@@ -1789,19 +1618,21 @@ class MainFunctions:
         """Main function. Call this in __main__ handler."""
         #--Get func
         args = sys.argv[1:]
-        attrs = args.pop(0).split('.')
+        attrs = args.pop(0).split(u'.')
         key = attrs.pop(0)
         func = self.funcs.get(key)
         if not func:
-            print _("Unknown function/object:"), key
+            msg = _(u"Unknown function/object: %s") % key
+            try: print msg
+            except UnicodeError: print msg.encode('mbcs')
             return
         for attr in attrs:
             func = getattr(func,attr)
         #--Separate out keywords args
         keywords = {}
         argDex = 0
-        reKeyArg  = re.compile(r'^\-(\D\w+)')
-        reKeyBool = re.compile(r'^\+(\D\w+)')
+        reKeyArg  = re.compile(ur'^\-(\D\w+)',re.U)
+        reKeyBool = re.compile(ur'^\+(\D\w+)',re.U)
         while argDex < len(args):
             arg = args[argDex]
             if reKeyArg.match(arg):
@@ -1862,39 +1693,38 @@ class PickleDict:
             if path.exists():
                 ins = None
                 try:
-                    ins = path.open('rb')
-                    try:
-                        header = cPickle.load(ins)
-                    except ValueError:
-                        os.remove(path)
-                        continue # file corrupt - try next file
-                    if header == 'VDATA2':
-                        self.vdata.update(cPickle.load(ins))
-                        self.data.update(cPickle.load(ins))
-                    elif header == 'VDATA':
-                        # translate data types to new hierarchy
-                        class _Translator:
-                            def __init__(self, fileToWrap):
-                                self._file = fileToWrap
-                            def read(self, numBytes):
-                                return self._translate(self._file.read(numBytes))
-                            def readline(self):
-                                return self._translate(self._file.readline())
-                            def _translate(self, s):
-                                return re.sub('^(bolt|bosh)$', r'bash.\1', s)
-                        translator = _Translator(ins)
+                    with path.open('rb') as ins:
                         try:
-                            self.vdata.update(cPickle.load(translator))
-                            self.data.update(cPickle.load(translator))
-                        except:
-                            deprint(u'unable to unpickle data', traceback=True)
-                            raise
-                    else:
-                        self.data.update(header)
-                    ins.close()
+                            header = cPickle.load(ins)
+                        except ValueError:
+                            os.remove(path)
+                            continue # file corrupt - try next file
+                        if header == 'VDATA2':
+                            self.vdata.update(cPickle.load(ins))
+                            self.data.update(cPickle.load(ins))
+                        elif header == 'VDATA':
+                            # translate data types to new hierarchy
+                            class _Translator:
+                                def __init__(self, fileToWrap):
+                                    self._file = fileToWrap
+                                def read(self, numBytes):
+                                    return self._translate(self._file.read(numBytes))
+                                def readline(self):
+                                    return self._translate(self._file.readline())
+                                def _translate(self, s):
+                                    return re.sub(u'^(bolt|bosh)$', r'bash.\1', s,flags=re.U)
+                            translator = _Translator(ins)
+                            try:
+                                self.vdata.update(cPickle.load(translator))
+                                self.data.update(cPickle.load(translator))
+                            except:
+                                deprint(u'unable to unpickle data', traceback=True)
+                                raise
+                        else:
+                            self.data.update(header)
                     return 1 + (path == self.backup)
                 except (EOFError, ValueError):
-                    if ins: ins.close()
+                    pass
         #--No files and/or files are corrupt
         return 0
 
@@ -1902,10 +1732,9 @@ class PickleDict:
         """Save to pickle file."""
         if self.readOnly: return False
         #--Pickle it
-        out = self.path.temp.open('wb')
-        for data in ('VDATA2',self.vdata,self.data):
-            cPickle.dump(data,out,-1)
-        out.close()
+        with self.path.temp.open('wb') as out:
+            for data in ('VDATA2',self.vdata,self.data):
+                cPickle.dump(data,out,-1)
         self.path.untemp(True)
         return True
 
@@ -2325,11 +2154,11 @@ def cstrip(inString):
 
 def csvFormat(format):
     """Returns csv format for specified structure format."""
-    csvFormat = ''
+    csvFormat = u''
     for char in format:
-        if char in 'bBhHiIlLqQ': csvFormat += ',%d'
-        elif char in 'fd': csvFormat += ',%f'
-        elif char in 's': csvFormat += ',"%s"'
+        if char in u'bBhHiIlLqQ': csvFormat += u',%d'
+        elif char in 'ufd': csvFormat += u',%f'
+        elif char in u's': csvFormat += u',"%s"'
     return csvFormat[1:] #--Chop leading comma
 
 deprintOn = False
@@ -2340,26 +2169,21 @@ def deprint(*args,**keyargs):
     import inspect
     stack = inspect.stack()
     file,line,function = stack[1][1:4]
-    def safestr(arg):
-        try:
-            return str(arg)
-        except UnicodeEncodeError:
-            return arg.encode('mbcs')
-        except:
-            try:
-                return str(repr(arg))
-            except:
-                return '<<unable to convert to str>>'
-    msg = '%s %4d %s: %s' % (GPath(file).tail.s,line,function,' '.join(map(safestr,args)))
 
+    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,
+                            u' '.join([u'%s'%x for x in args]))
     if keyargs.get('traceback',False):
-        import traceback, cStringIO
-        o = cStringIO.StringIO()
-        o.write(msg+'\n')
-        traceback.print_exc(file=o)
+        o = StringIO.StringIO(msg)
+        o.write(u'\n')
+        tracback.print_exc(file=o)
         msg = o.getvalue()
         o.close()
-    print msg
+    try:
+        # Should work if stdout/stderr is going to wxPython output
+        print msg
+    except UnicodeError:
+        # Nope, it's going somewhere else
+        print msg.encode('mbcs')
 
 def delist(header,items,on=False):
     """Prints list as header plus items."""
@@ -2367,16 +2191,25 @@ def delist(header,items,on=False):
     import inspect
     stack = inspect.stack()
     file,line,function = stack[1][1:4]
-    print '%s %4d %s: %s' % (GPath(file).tail.s,line,function,str(header))
+    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,header)
+    try:
+        print msg
+    except UnicodeError:
+        print msg.encode('mbcs')
     if items == None:
-        print '> None'
+        print u'> None'
     else:
-        for indexItem in enumerate(items): print '>%2d: %s' % indexItem
+        for indexItem in enumerate(items):
+            msg = u'>%2d: %s' % indexItem
+            try:
+                print msg
+            except UnicodeError:
+                print msg.encode('mbcs')
 
 def dictFromLines(lines,sep=None):
     """Generate a dictionary from a string with lines, stripping comments and skipping empty strings."""
-    temp = [reComment.sub('',x).strip() for x in lines.split('\n')]
-    if sep == None or type(sep) == type(''):
+    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
+    if sep == None or type(sep) == type(u''):
         temp = dict([x.split(sep,1) for x in temp if x])
     else: #--Assume re object.
         temp = dict([sep.split(x,1) for x in temp if x])
@@ -2385,7 +2218,7 @@ def dictFromLines(lines,sep=None):
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
     if reMatch: return reMatch.group(group)
-    else: return ''
+    else: return u''
 
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
@@ -2399,7 +2232,7 @@ def invertDict(indict):
 
 def listFromLines(lines):
     """Generate a list from a string with lines, stripping comments and skipping empty strings."""
-    temp = [reComment.sub('',x).strip() for x in lines.split('\n')]
+    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
     temp = [x for x in temp if x]
     return temp
 
@@ -2421,7 +2254,7 @@ def listJoin(*inLists):
 def listGroup(items):
     """Joins items into a list for use in a regular expression.
     E.g., a list of ('alpha','beta') becomes '(alpha|beta)'"""
-    return '('+('|'.join(items))+')'
+    return u'('+(u'|'.join(items))+u')'
 
 def rgbString(red,green,blue):
     """Converts red, green blue ints to rgb string."""
@@ -2433,7 +2266,7 @@ def rgbTuple(rgb):
 
 def unQuote(inString):
     """Removes surrounding quotes from string."""
-    if len(inString) >= 2 and inString[0] == '"' and inString[-1] == '"':
+    if len(inString) >= 2 and inString[0] == u'"' and inString[-1] == u'"':
         return inString[1:-1]
     else:
         return inString
@@ -2462,7 +2295,7 @@ class Log:
         """Sets the header."""
         self.header = header
         if self.prevHeader:
-            self.prevHeader += 'x'
+            self.prevHeader += u'x'
         self.doFooter = doFooter
         if writeNow: self()
 
@@ -2495,21 +2328,21 @@ class LogFile(Log):
         Log.__init__(self)
 
     def writeHeader(self,header):
-        self.out.write(header+'\n')
+        self.out.write(header+u'\n')
 
     def writeFooter(self):
-        self.out.write('\n')
+        self.out.write(u'\n')
 
     def writeMessage(self,message,appendNewline):
         self.out.write(message)
-        if appendNewline: self.out.write('\n')
+        if appendNewline: self.out.write(u'\n')
 
 #------------------------------------------------------------------------------
 class Progress:
     """Progress Callable: Shows progress when called."""
     def __init__(self,full=1.0):
         if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
-        self.message = ''
+        self.message = u''
         self.full = full
         self.state = 0
         self.debug = False
@@ -2528,7 +2361,7 @@ class Progress:
         """Update progress with current state. Progress is state/full."""
         if (1.0*self.full) == 0: raise ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
-        if self.debug: deprint('%0.3f %s' % (1.0*state/self.full, self.message))
+        if self.debug: deprint(u'%0.3f %s' % (1.0*state/self.full, self.message))
         self.doProgress(1.0*state/self.full, self.message)
         self.state = state
 
@@ -2555,9 +2388,9 @@ class SubProgress(Progress):
         self.scale = 1.0*(baseTo-baseFrom)
         self.silent = silent
 
-    def __call__(self,state,message=''):
+    def __call__(self,state,message=u''):
         """Update progress with current state. Progress is state/full."""
-        if self.silent: message = ''
+        if self.silent: message = u''
         self.parent(self.baseFrom+self.scale*state/self.full,message)
         self.state = state
 
@@ -2569,16 +2402,18 @@ class ProgressFile(Progress):
         self.out = out or sys.stdout
 
     def doProgress(self,progress,message):
-        self.out.write('%0.2f %s\n' % (progress,message))
+        msg = u'%0.2f %s\n' % (progress,message)
+        try: self.out.write(msg)
+        except UnicodeError: self.out.write(msg.encode('mbcs'))
 
 #------------------------------------------------------------------------------
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
-    def load(self,modFilePath,language='English',progress=Progress()):
+    def load(self,modFilePath,language=u'English',progress=Progress()):
         baseName = modFilePath.tail.body
-        baseDir = modFilePath.head.join('Strings')
-        files = (baseName+'_'+language+x for x in ('.STRINGS','.DLSTRINGS',
-                                                   '.ILSTRINGS'))
+        baseDir = modFilePath.head.join(u'Strings')
+        files = (baseName+u'_'+language+x for x in (u'.STRINGS',u'.DLSTRINGS',
+                                                   u'.ILSTRINGS'))
         files = (baseDir.join(file) for file in files)
         self.clear()
         progress.setFull(3)
@@ -2587,7 +2422,7 @@ class StringTable(dict):
             self.loadFile(file,SubProgress(progress,i,i+1))
 
     def loadFile(self,path,progress):
-        if path.cext == '.strings': format = 0
+        if path.cext == u'.strings': format = 0
         else: format = 1
         with BinaryFile(path.s) as ins:
             ins.seek(0,os.SEEK_END)
@@ -2659,7 +2494,7 @@ class WryeText:
     """
 
     # Data ------------------------------------------------------------------------
-    htmlHead = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    htmlHead = u"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
@@ -2669,7 +2504,7 @@ class WryeText:
     </head>
     <body>
     """
-    defaultCss = """
+    defaultCss = u"""
     h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
     h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
     h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
@@ -2699,47 +2534,47 @@ class WryeText:
         # Path or Stream? -----------------------------------------------
         if isinstance(ins,(Path,str,unicode)):
             srcPath = GPath(ins)
-            outPath = GPath(out) or srcPath.root+'.html'
+            outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
             ins = srcPath.open()
-            out = outPath.open('w')
+            out = outPath.open('w',encoding='utf8')
         else:
             srcPath = outPath = None
         cssDirs = map(GPath,cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
-        reHead = re.compile(r'(=+) *(.+)')
-        headFormat = "<h%d><a id='%s'>%s</a></h%d>\n"
-        headFormatNA = "<h%d>%s</h%d>\n"
+        reHead = re.compile(ur'(=+) *(.+)',re.U)
+        headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
+        headFormatNA = u"<h%d>%s</h%d>\n"
         #--List
-        reList = re.compile(r'( *)([-x!?\.\+\*o])(.*)')
+        reList = re.compile(ur'( *)([-x!?\.\+\*o])(.*)',re.U)
         #--Code
-        reCode = re.compile(r'\[code\](.*?)\[/code\]',re.I)
-        reCodeStart = re.compile(r'(.*?)\[code\](.*?)$',re.I)
-        reCodeEnd = re.compile(r'(.*?)\[/code\](.*?)$',re.I)
-        reCodeBoxStart = re.compile(r'\s*\[codebox\](.*?)',re.I)
-        reCodeBoxEnd = re.compile(r'(.*?)\[/codebox\]\s*',re.I)
-        reCodeBox = re.compile(r'\s*\[codebox\](.*?)\[/codebox\]\s*',re.I)
+        reCode = re.compile(ur'\[code\](.*?)\[/code\]',re.I|re.U)
+        reCodeStart = re.compile(ur'(.*?)\[code\](.*?)$',re.I|re.U)
+        reCodeEnd = re.compile(ur'(.*?)\[/code\](.*?)$',re.I|re.U)
+        reCodeBoxStart = re.compile(ur'\s*\[codebox\](.*?)',re.I|re.U)
+        reCodeBoxEnd = re.compile(ur'(.*?)\[/codebox\]\s*',re.I|re.U)
+        reCodeBox = re.compile(ur'\s*\[codebox\](.*?)\[/codebox\]\s*',re.I|re.U)
         codeLines = None
         codeboxLines = None
         def subCode(match):
             try:
-                return ' '.join(codebox([match.group(1)],False,False))
+                return u' '.join(codebox([match.group(1)],False,False))
             except:
                 return match(1)
         #--Misc. text
-        reHr = re.compile('^------+$')
-        reEmpty = re.compile(r'\s+$')
-        reMDash = re.compile(r' -- ')
-        rePreBegin = re.compile('<pre',re.I)
-        rePreEnd = re.compile('</pre>',re.I)
+        reHr = re.compile(u'^------+$',re.U)
+        reEmpty = re.compile(ur'\s+$',re.U)
+        reMDash = re.compile(ur' -- ',re.U)
+        rePreBegin = re.compile(u'<pre',re.I|re.U)
+        rePreEnd = re.compile(u'</pre>',re.I|re.U)
         anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
-            anchor = urllib.quote(Encode(reWd.sub('',text)))
+            anchor = urllib.quote(reWd.sub(u'',text))
             count = 0
-            if re.match(r'\d', anchor):
-                anchor = '_' + anchor
+            if re.match(ur'\d', anchor):
+                anchor = u'_' + anchor
             while anchor in anchorlist and count < 10:
                 count += 1
                 if count == 1:
@@ -2747,58 +2582,57 @@ class WryeText:
                 else:
                     anchor = anchor[:-1] + str(count)
             anchorlist.append(anchor)
-            return "<a id='%s'>%s</a>" % (anchor,text)
+            return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
-        reBold = re.compile(r'__')
-        reItalic = re.compile(r'~~')
-        reBoldItalic = re.compile(r'\*\*')
+        reBold = re.compile(ur'__',re.U)
+        reItalic = re.compile(ur'~~',re.U)
+        reBoldItalic = re.compile(ur'\*\*',re.U)
         states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
         def subBold(match):
             state = states['bold'] = not states['bold']
-            return ('</b>','<b>')[state]
+            return u'<b>' if state else u'</b>'
         def subItalic(match):
             state = states['italic'] = not states['italic']
-            return ('</i>','<i>')[state]
+            return u'<i>' if state else u'</i>'
         def subBoldItalic(match):
             state = states['boldItalic'] = not states['boldItalic']
-            return ('</b></i>','<i><b>')[state]
+            return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
         #--Links
-        reLink = re.compile(r'\[\[(.*?)\]\]')
-        reHttp = re.compile(r' (http://[_~a-zA-Z0-9\./%-]+)')
-        reWww = re.compile(r' (www\.[_~a-zA-Z0-9\./%-]+)')
-        #reWd = re.compile(r'(<[^>]+>|\[[^\]]+\]|\W+)')     # \[[^\]]+\] doesn't match.
-        reWd = re.compile(r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace('_','')))
-        rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)')
-        reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)')
-        reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I)
-        reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]',re.I)
+        reLink = re.compile(ur'\[\[(.*?)\]\]',re.U)
+        reHttp = re.compile(ur' (http://[_~a-zA-Z0-9\./%-]+)',re.U)
+        reWww = re.compile(ur' (www\.[_~a-zA-Z0-9\./%-]+)',re.U)
+        reWd = re.compile(ur'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')),re.U)
+        rePar = re.compile(ur'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)',re.U)
+        reFullLink = re.compile(ur'(:|#|\.[a-zA-Z0-9]{2,4}$)',re.U)
+        reColor = re.compile(ur'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I|re.U)
+        reBGColor = re.compile(ur'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]',re.I|re.U)
         def subColor(match):
-            return '<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
+            return u'<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
         def subBGColor(match):
-            return '<span style="background-color:%s;">%s</span>' % (match.group(1),match.group(2))
+            return u'<span style="background-color:%s;">%s</span>' % (match.group(1),match.group(2))
         def subLink(match):
             address = text = match.group(1).strip()
-            if '|' in text:
-                (address,text) = [chunk.strip() for chunk in text.split('|',1)]
-                if address == '#': address += urllib.quote(Encode(reWd.sub('',text)))
-            if address.startswith('!'):
-                newWindow = ' target="_blank"'
+            if u'|' in text:
+                (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
+                if address == u'#': address += urllib.quote(reWd.sub(u'',text))
+            if address.startswith(u'!'):
+                newWindow = u' target="_blank"'
                 address = address[1:]
             else:
-                newWindow = ''
+                newWindow = u''
             if not reFullLink.search(address):
-                address = address+'.html'
-            return '<a href="%s"%s>%s</a>' % (address,newWindow,text)
+                address = address+u'.html'
+            return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
         #--Tags
-        reAnchorTag = re.compile('{{A:(.+?)}}')
-        reContentsTag = re.compile(r'\s*{{CONTENTS=?(\d+)}}\s*$')
-        reAnchorHeadersTag = re.compile(r'\s*{{ANCHORHEADERS=(\d+)}}\s*$')
-        reCssTag = re.compile('\s*{{CSS:(.+?)}}\s*$')
+        reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
+        reContentsTag = re.compile(ur'\s*{{CONTENTS=?(\d+)}}\s*$',re.U)
+        reAnchorHeadersTag = re.compile(ur'\s*{{ANCHORHEADERS=(\d+)}}\s*$',re.U)
+        reCssTag = re.compile(u'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
-        title = ''
+        title = u''
         level = 1
-        spaces = ''
+        spaces = u''
         cssName = None
         #--Init
         outLines = []
@@ -2814,13 +2648,13 @@ class WryeText:
                     maCodeBoxEnd = reCodeBoxEnd.match(line)
                     if maCodeBoxEnd:
                         codeboxLines.append(maCodeBoxEnd.group(1))
-                        outLines.append('<pre style="width:850px;">')
+                        outLines.append(u'<pre style="width:850px;">')
                         try:
                             codeboxLines = codebox(codeboxLines)
                         except:
                             pass
                         outLines.extend(codeboxLines)
-                        outLines.append('</pre>')
+                        outLines.append(u'</pre>')
                         codeboxLines = None
                         continue
                     else:
@@ -2828,12 +2662,12 @@ class WryeText:
                         continue
                 maCodeBox = reCodeBox.match(line)
                 if maCodeBox:
-                    outLines.append('<pre style="width:850px;">')
+                    outLines.append(u'<pre style="width:850px;">')
                     try:
                         outLines.extend(codebox([maCodeBox.group(1)]))
                     except:
                         outLines.append(maCodeBox.group(1))
-                    outLines.append('</pre>\n')
+                    outLines.append(u'</pre>\n')
                     continue
                 maCodeBoxStart = reCodeBoxStart.match(line)
                 if maCodeBoxStart:
@@ -2885,7 +2719,7 @@ class WryeText:
                     addContents = 100
                 inPar = False
             elif maAnchorHeaders:
-                anchorHeaders = maAnchorHeaders.group(1) != '0'
+                anchorHeaders = maAnchorHeaders.group(1) != u'0'
                 continue
             #--CSS
             elif maCss:
@@ -2895,12 +2729,12 @@ class WryeText:
             #--Headers
             elif maHead:
                 lead,text = maHead.group(1,2)
-                text = re.sub(' *=*#?$','',text.strip())
-                anchor = urllib.quote(Encode(reWd.sub('',text)))
+                text = re.sub(u' *=*#?$','',text.strip())
+                anchor = urllib.quote(reWd.sub(u'',text))
                 level = len(lead)
                 if anchorHeaders:
-                    if re.match(r'\d', anchor):
-                        anchor = '_' + anchor
+                    if re.match(ur'\d', anchor):
+                        anchor = u'_' + anchor
                     count = 0
                     while anchor in anchorlist and count < 10:
                         count += 1
@@ -2917,23 +2751,23 @@ class WryeText:
                 if not title and level <= 2: title = text
             #--Paragraph
             elif maPar and not states['code']:
-                line = '<p>'+line+'</p>\n'
+                line = u'<p>'+line+u'</p>\n'
             #--List item
             elif maList:
                 spaces = maList.group(1)
                 bullet = maList.group(2)
                 text = maList.group(3)
-                if bullet == '.': bullet = '&nbsp;'
-                elif bullet == '*': bullet = '&bull;'
+                if bullet == u'.': bullet = u'&nbsp;'
+                elif bullet == u'*': bullet = u'&bull;'
                 level = len(spaces)/2 + 1
-                line = spaces+'<p class="list-'+`level`+'">'+bullet+'&nbsp; '
-                line = line + text + '</p>\n'
+                line = spaces+u'<p class="list-'+`level`+u'">'+bullet+u'&nbsp; '
+                line = line + text + u'</p>\n'
             #--Empty line
             elif maEmpty:
-                line = spaces+'<p class="empty">&nbsp;</p>\n'
+                line = spaces+u'<p class="empty">&nbsp;</p>\n'
             #--Misc. Text changes --------------------
-            line = reHr.sub('<hr>',line)
-            line = reMDash.sub(' &#150; ',line)
+            line = reHr.sub(u'<hr>',line)
+            line = reMDash.sub(u' &#150; ',line)
             #--Bold/Italic subs
             line = reBold.sub(subBold,line)
             line = reItalic.sub(subItalic,line)
@@ -2942,8 +2776,8 @@ class WryeText:
             line = reAnchorTag.sub(subAnchor,line)
             #--Hyperlinks
             line = reLink.sub(subLink,line)
-            line = reHttp.sub(r' <a href="\1">\1</a>',line)
-            line = reWww.sub(r' <a href="http://\1">\1</a>',line)
+            line = reHttp.sub(ur' <a href="\1">\1</a>',line)
+            line = reWww.sub(ur' <a href="http://\1">\1</a>',line)
             #--Save line ------------------
             #print line,
             outLines.append(line)
@@ -2951,7 +2785,7 @@ class WryeText:
         if not cssName:
             css = WryeText.defaultCss
         else:
-            if cssName.ext != '.css':
+            if cssName.ext != u'.css':
                 raise BoltError(u'Invalid Css file: '+cssName.s)
             for dir in cssDirs:
                 cssPath = GPath(dir).join(cssName)
@@ -2962,12 +2796,7 @@ class WryeText:
             if '<' in css:
                 raise BoltError(u'Non css tag in '+cssPath.s)
         #--Write Output ------------------------------------------------------
-        def toutf8(line):
-            if not (bUseUnicode or isinstance(line, unicode)):
-                return line.decode('mbcs').encode('UTF8')
-            else:
-                return Encode(line,'UTF8')
-        out.write(WryeText.htmlHead % (toutf8(title),css))
+        out.write(WryeText.htmlHead % (title,css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
@@ -2976,11 +2805,11 @@ class WryeText:
                     for (level,name,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            out.write('<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,toutf8(text)))
+                            out.write(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
                     didContents = True
             else:
-                out.write(toutf8(line))
-        out.write('</body>\n</html>\n')
+                out.write(line)
+        out.write(u'</body>\n</html>\n')
         #--Close files?
         if srcPath:
             ins.close()
@@ -2993,7 +2822,7 @@ if __name__ == '__main__' and len(sys.argv) > 1:
     def genHtml(*args,**keywords):
         """Wtxt to html. Just pass through to WryeText.genHtml."""
         if not len(args):
-            args = ["..\Wrye Bash.txt"]
+            args = [u"..\Wrye Bash.txt"]
         WryeText.genHtml(*args,**keywords)
 
     #--Command Handler --------------------------------------------------------
