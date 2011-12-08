@@ -1516,7 +1516,7 @@ class INIList(List):
     def OnKeyUp(self,event):
         """Char event: select all items"""
         ##Ctrl+A
-        if event.ControlDown() and event.GetKeyCode() in (65,97):
+        if event.CmdDown() and event.GetKeyCode() in (65,97):
             self.SelectAll()
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
@@ -1916,7 +1916,7 @@ class ModList(List):
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
             self.DeleteSelected()
         ##Ctrl+Up and Ctrl+Down
-        elif ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
+        elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
                 for thisFile in self.GetSelected():
@@ -1958,7 +1958,7 @@ class ModList(List):
                 #--Check all that aren't
                 self.checkUncheckMod(*toActivate)
         ##Ctrl+A
-        elif event.ControlDown() and event.GetKeyCode() == ord('A'):
+        elif event.CmdDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
 
@@ -2774,7 +2774,7 @@ class SaveList(List):
     def OnKeyUp(self,event):
         """Char event: select all items"""
         ##Ctrl+A
-        if event.ControlDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
     #--Event: Left Down
@@ -3352,7 +3352,7 @@ class InstallersList(balt.Tank):
     def OnChar(self,event):
         """Char event: Reorder."""
         ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
-        if ((event.ControlDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN))):
+        if ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN))):
             if len(self.GetSelected()) < 1: return
             orderKey = lambda x: self.data.data[x].order
             maxPos = max(self.data.data[x].order for x in self.data.data)
@@ -3376,7 +3376,7 @@ class InstallersList(balt.Tank):
             if len(self.GetSelected()):
                 path = self.data.dir.join(self.GetSelected()[0])
                 if path.exists(): path.start()
-        elif event.ControlDown() and event.GetKeyCode() == ord('V'):
+        elif event.CmdDown() and event.GetKeyCode() == ord('V'):
             ##Ctrl+V
             if wx.TheClipboard.Open():
                 if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
@@ -3417,7 +3417,7 @@ class InstallersList(balt.Tank):
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         ##Ctrl+A - select all
-        if event.ControlDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         ##Delete - delete
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
@@ -3430,7 +3430,7 @@ class InstallersList(balt.Tank):
                 if index != -1:
                     self.gList.EditLabel(index)
         ##Ctrl+Shift+N - Add a marker
-        elif (event.ControlDown() and event.ShiftDown()) and event.GetKeyCode() == ord('N'):
+        elif (event.CmdDown() and event.ShiftDown()) and event.GetKeyCode() == ord('N'):
             index = self.GetIndex(GPath('===='))
             if index == -1:
                 self.data.addMarker('====')
@@ -4062,7 +4062,7 @@ class ScreensList(List):
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         ##Ctrl-A
-        if event.ControlDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
 
@@ -4557,7 +4557,7 @@ class MessageList(List):
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         ##Ctrl-A
-        if event.ControlDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
             self.SelectAll()
         event.Skip()
 
@@ -5487,6 +5487,7 @@ class ListBoxes(wx.Dialog):
                     for subitem in group[2][item]:
                         sub = checks.AppendItem(child,subitem.s)
             self.ids[title] = checks.GetId()
+            checks.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
             checks.SetToolTip(balt.tooltip(tip))
             subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,1,wx.EXPAND|wx.ALL,5)
@@ -5510,6 +5511,22 @@ class ListBoxes(wx.Dialog):
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
             self.SetSize(wx.Size(minWidth,-1))
+
+
+    def OnKeyUp(self,event):
+        """Char events"""
+        ##Ctrl-A - check all
+        obj = event.GetEventObject()
+        if not isinstance(obj,wx.CheckListBox): event.Skip()
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+            for i in range(0,len(obj.GetStrings())):
+                    obj.Check(i)
+        ##Ctrl-D - decheck all
+        elif event.CmdDown() and event.GetKeyCode() == ord('D'):
+            obj.SetSelection(wx.NOT_FOUND)
+            for i in range(0,len(obj.GetStrings())):
+                obj.Check(i,False)
+        event.Skip()
 
 #------------------------------------------------------------------------------
 class ColorDialog(wx.Dialog):
@@ -6901,7 +6918,7 @@ class PatchDialog(wx.Dialog):
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
-        if event.GetKeyCode() == 1 and event.ControlDown(): # Ctrl+'A'
+        if event.GetKeyCode() == 1 and event.CmdDown(): # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
                 if event.ShiftDown():
@@ -12987,7 +13004,7 @@ class Mod_Patch_Update(Link):
             checklists.append(group)
         if merge:
             group = [mergeKey,
-                     _("These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Ovlivion maximum esp/esm limit."),
+                     _("These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Oblivion maximum esp/esm limit."),
                      ]
             group.extend(merge)
             checklists.append(group)
