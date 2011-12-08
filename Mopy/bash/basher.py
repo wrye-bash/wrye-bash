@@ -2503,7 +2503,11 @@ class INIPanel(SashPanel):
         for i in self.choices.keys():
             if i == _(u'Browse...'): continue
             path = self.choices[i]
-            if not path.isfile():
+            # If user started with non-translated, 'Browse...'
+            # will still be in here, but in English.  It wont get picked
+            # up by the previous check, so we'll just delete any non-Path
+            # objects.  That will take care of it.
+            if not isinstance(path,bolt.Path) or not path.isfile():
                 del self.choices[i]
                 changed = True
         csChoices = [x.lower() for x in self.choices]
