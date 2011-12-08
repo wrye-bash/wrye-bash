@@ -113,8 +113,8 @@ def initTranslator(language=None,path=None):
     # Dump the non-translated strings to a new file, so they know to translate
     num = 0
     try:
-        with open(txt,'rb') as ins:
-            with open(txt[:-4]+u'_untranslated.txt','wb') as out:
+        with codecs.open(txt,'r',encoding='utf8') as ins:
+            with codecs.open(txt[:-4]+u'_untranslated.txt','w',encoding='utf8') as out:
                 lines = []
                 for line in ins:
                     stripped = line.strip()
@@ -865,6 +865,10 @@ class Path(object):
 
     def __str__(self):
         return self._s
+
+    def __unicode__(self):
+        return self._s
+
     #--Properties--------------------------------------------------------
     #--String/unicode versions.
     @property

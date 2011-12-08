@@ -15329,7 +15329,7 @@ class Save_Stats(Link):
         saveFile = bosh.SaveFile(fileInfo)
         with balt.Progress(_(u"Statistics")) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(stringBuffer())
+            log = bolt.LogFile(StringIO.StringIO())
             progress(0.9,_("Calculating statistics."))
             saveFile.logStats(log)
             progress.Destroy()
@@ -15358,7 +15358,7 @@ class Save_StatObse(Link):
         saveFile = bosh.SaveFile(fileInfo)
         with balt.Progress(u'.'+bush.game.se.shortName) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(stringBuffer())
+            log = bolt.LogFile(StringIO.StringIO())
             progress(0.9,_(u"Calculating statistics."))
             saveFile.logStatObse(log)
         text = log.out.getvalue()
