@@ -2180,7 +2180,7 @@ def deprint(*args,**keyargs):
     if keyargs.get('traceback',False):
         o = StringIO.StringIO(msg)
         o.write(u'\n')
-        tracback.print_exc(file=o)
+        traceback.print_exc(file=o)
         msg = o.getvalue()
         o.close()
     try:
