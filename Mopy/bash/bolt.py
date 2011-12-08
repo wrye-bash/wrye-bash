@@ -112,35 +112,43 @@ def initTranslator(language=None,path=None):
         return
     trans.install(unicode=True)
     # Dump the non-translated strings to a new file, so they know to translate
-    num = 0
-    try:
-        with codecs.open(txt,'r',encoding='utf8') as ins:
-            with codecs.open(txt[:-4]+u'_untranslated.txt','w',encoding='utf8') as out:
-                lines = []
-                for line in ins:
-                    stripped = line.strip()
-                    if stripped.startswith(u'#:'):
-                        lines.append(line)
-                    elif stripped.startswith(u'msgid'):
-                        if not lines: continue
-                        lines.append(line)
-                    elif stripped.startswith(u'msgstr'):
-                        if not lines: continue
-                        orig = lines[-1].strip()[7:-1]
-                        if not orig:
-                            lines = []
-                            continue
-                        trans = stripped[8:-1]
-                        if not trans:
-                            num += 1
-                            lines.append(line)
-                            out.write(u''.join(lines))
-                            out.write(u'\r\n')
-                            lines = []
-        print `num` + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
-    except:
-        print u'Error dumping untranslated strings:'
-        traceback.print_exc()
+    # TODO: figure out a unicode way that this will work.
+    ##num = 0
+    ##try:
+    ##    with open(txt,'rb') as ins:
+    ##        with open(txt[:-4]+u'_untranslated.txt','wb') as out:
+    ##            lines = []
+    ##            for line in ins:
+    ##                if line[0:1] == '#:':
+    ##                    lines.append(line)
+    ##                elif line[0:4] == 'msgid':
+    ##                    if not lines: continue
+    ##                    lines.append(line)
+    ##                elif line[0:5] == 'msgstr':
+    ##                    if 
+    ##                stripped = line.strip()
+    ##                if stripped.startswith(u'#:'):
+    ##                    lines.append(line)
+    ##                elif stripped.startswith(u'msgid'):
+    ##                    if not lines: continue
+    ##                    lines.append(line)
+    ##                elif stripped.startswith(u'msgstr'):
+    ##                    if not lines: continue
+    ##                    orig = lines[-1].strip()[7:-1]
+    ##                    if not orig:
+    ##                        lines = []
+    ##                        continue
+    ##                    trans = stripped[8:-1]
+    ##                    if not trans:
+    ##                        num += 1
+    ##                        lines.append(line)
+    ##                        out.write(u''.join(lines))
+    ##                        out.write(u'\r\n')
+    ##                        lines = []
+    ##    print `num` + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
+    ##except:
+    ##    print u'Error dumping untranslated strings:'
+    ##    traceback.print_exc()
 
 #--Do translator test and set
 if locale.getlocale() == (None,None):

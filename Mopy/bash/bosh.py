@@ -321,10 +321,17 @@ null4 = null1*4
 #  known.  For normal filesystem interaction, these functions are not needed
 def _unicode(text):
     if isinstance(text,unicode): return text
-    for encoding in ('utf8','cp1252','utf16','cp500','cp932'):
+    for encoding in ('cp932','cp500','cp1252','utf8','utf16'):
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
     return unicode(text,'mbcs')
+
+def _encode(text):
+    if isinstance(text,str): return text
+    for encoding in ('cp932','cp500','cp1252','utf8','utf16'):
+        try: return text.encode(encoding)
+        except UnicodeEncodeError: pass
+    return text.encode('mbcs')
 
 #--Header tags
 reGroup = re.compile(r'^Group: *(.*)',re.M)
@@ -7599,13 +7606,10 @@ class Plugins:
                 # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
                 # It wont accept filenames in any other encoding
                 try:
-                    modName = reComment.sub(u'',line).strip()
-                    if not isinstance(modName,unicode):
-                        modName = unicode(modName,'cp1252')
-                    else:
-                        modName.encode('cp1252')
+                    modName = reComment.sub('',line).strip()
+                    modName = _unicode(modName)
                 except UnicodeError:
-                    return
+                    continue
                 if not modName: continue
                 modName = GPath(modName)
                 if modName in modNames: #--In case it's listed twice.
@@ -7622,10 +7626,18 @@ class Plugins:
     def save(self):
         """Write data to Plugins.txt file."""
         self.selected.sort()
-        with self.path.open('w',encoding='cp1252') as out:
-            out.write(u'# This file is used to tell %s which data files to load.\n\n' % bush.game.name)
+        with self.path.open('wb') as out:
+            out.write('# This file is used to tell %s which data files to load.\r\n\r\n' % bush.game.name)
             for modName in self.selected:
-                out.write(modName.s+u'\n')
+                # Ok, this seems to work for Oblivon, but not Skyrim
+                # Skyrim seems to refuse to have any non-cp1252 named file in
+                # plugins.txt.  Even activating through the SkyrimLauncher
+                # doesn't work.
+                try:
+                    out.write(_encode(modName.s))
+                    out.write('\r\n')
+                except:
+                    pass
         self.mtime = self.path.mtime
         self.size = self.path.size
 
