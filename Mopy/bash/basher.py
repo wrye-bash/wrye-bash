@@ -4859,6 +4859,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         # Ensure the 'Mods' tab is always shown
         if 'Mods' not in settings['bash.tabs.order']:
             settings['bash.tabs.order'] = ['Mods']+settings['bash.tabs.order']
+        iInstallers = iMods = -1
         for page in settings['bash.tabs.order']:
             enabled = settings['bash.tabs'].get(page,False)
             if not enabled: continue
