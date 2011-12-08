@@ -26,6 +26,7 @@
 from __future__ import with_statement
 #--Standard
 import cPickle
+import StringIO
 import copy
 import locale
 import os
