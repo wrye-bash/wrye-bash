@@ -5211,9 +5211,9 @@ class BashFrame(wx.Frame):
         if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
             balt.showWarning(bashFrame,_(u'Warning you appear to be using a non-unicode version of wxPython (%s).  This will cause problems, it is reccomended you use a unicode version of wxPython instead.') % wxver)
         if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
-            message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in Oblivion; see the readme under auto-ghost for more details and please enable auto-ghost.")
+            message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.name
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
-                message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in Oblivion; see the readme under auto-ghostt for more details. ")
+                message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.name
             balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
 
     def SetTitle(self,title=None):
@@ -5379,7 +5379,7 @@ class BashFrame(wx.Frame):
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
             if self.oblivionIniCorrupted:
-                message = _(u'Your Oblivion.ini should begin with a section header (e.g. "[General]"), but does not. You should edit the file to correct this.')
+                message = _(u'Your %s should begin with a section header (e.g. "[General]"), but does not. You should edit the file to correct this.') % bush.game.iniFiles[0]
                 balt.showWarning(self,fill(message))
         #--Any Y2038 Resets?
         if bolt.Path.mtimeResets:
@@ -6845,13 +6845,13 @@ class PatchDialog(wx.Dialog):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
             elif isinstance(patcher, TweakPatcher):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gList.Check(index,item.isEnabled)
                         patcher.gList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuratation (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def DefaultConfig(self,event=None):

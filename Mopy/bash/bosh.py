@@ -30,7 +30,7 @@ from __future__ import with_statement
 
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
-import locale; locale.setlocale(locale.LC_ALL,'')
+import locale; locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
 import time
@@ -142,7 +142,7 @@ allTagsSet = set(allTags)
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
-reOblivion = re.compile('^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$')
+reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$',re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
@@ -247,7 +247,7 @@ class PickleDict(bolt.PickleDict):
         #--Update paths
         def textDump(path):
             deprint(u'Text dump:',path)
-            with path.open('w') as out:
+            with path.open('w',encoding='utf8') as out:
                 for key,value in self.data.iteritems():
                     out.write(u'= '+`key`+u':\n  '+`value`+u'\n')
         #textDump(self.path+'.old.txt')
@@ -334,28 +334,28 @@ def _encode(text):
     return text.encode('mbcs')
 
 #--Header tags
-reGroup = re.compile(r'^Group: *(.*)',re.M)
-reRequires = re.compile(r'^Requires: *(.*)',re.M)
-reReqItem = re.compile(r'^([a-zA-Z]+) *([0-9]*\.?[0-9]*)$')
-reVersion = re.compile(r'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I)
+reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
+reRequires = re.compile(ur'^Requires: *(.*)',re.M|re.U)
+reReqItem = re.compile(ur'^([a-zA-Z]+) *([\d]*\.?[\d]*)$',re.U)
+reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
 
 #--Mod Extensions
-reComment = re.compile('#.*')
-reExGroup = re.compile('(.*?),')
-reImageExt = re.compile(r'\.(gif|jpg|bmp|png)$',re.I)
-reModExt  = re.compile(r'\.es[mp](.ghost)?$',re.I)
-reEsmExt  = re.compile(r'\.esm(.ghost)?$',re.I)
-reEspExt  = re.compile(r'\.esp(.ghost)?$',re.I)
-reBSAExt  = re.compile(r'\.bsa(.ghost)?$',re.I)
-reEssExt  = re.compile(r'\.ess$',re.I)
-reSaveExt = re.compile(r'(quicksave(\.bak)+|autosave(\.bak)+|\.es[rs])$',re.I)
-reCsvExt  = re.compile(r'\.csv$',re.I)
-reINIExt  = re.compile(r'\.ini$',re.I)
-reQuoted  = re.compile(r'^"(.*)"$')
-reGroupHeader = re.compile(r'^(\+\+|==)')
-reTesNexus = re.compile(r'(.*?)(?:-(\d{4,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I)
-reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I)
-reSplitOnNonAlphaNumeric = re.compile(r'\W+')
+reComment = re.compile(u'#.*',re.U)
+reExGroup = re.compile(u'(.*?),',re.U)
+reImageExt = re.compile(ur'\.(gif|jpg|bmp|png)$',re.I|re.U)
+reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
+reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
+reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
+reBSAExt  = re.compile(ur'\.bsa(.ghost)?$',re.I|re.U)
+reEssExt  = re.compile(ur'\.ess$',re.I|re.U)
+reSaveExt = re.compile(ur'(quicksave(\.bak)+|autosave(\.bak)+|\.es[rs])$',re.I|re.U)
+reCsvExt  = re.compile(ur'\.csv$',re.I|re.U)
+reINIExt  = re.compile(ur'\.ini$',re.I|re.U)
+reQuoted  = re.compile(ur'^"(.*)"$',re.U)
+reGroupHeader = re.compile(ur'^(\+\+|==)',re.U)
+reTesNexus = re.compile(ur'(.*?)(?:-(\d{4,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
+reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
+reSplitOnNonAlphaNumeric = re.compile(ur'\W+',re.U)
 
 
 # Util Functions --------------------------------------------------------------
@@ -392,12 +392,12 @@ def netString(x):
         return struct.pack('H',lenx)+x
 
 # Groups
-reSplitModGroup = re.compile(r'^(.+?)([-+]\d+)?$')
+reSplitModGroup = re.compile(ur'^(.+?)([-+]\d+)?$',re.U)
 
 def splitModGroup(offGroup):
     """Splits a full group name into a group name and an integer offset.
     E.g. splits 'Overhaul+1' into ('Overhaul',1)."""
-    if not offGroup: return ('',0)
+    if not offGroup: return (u'',0)
     maSplitModGroup = reSplitModGroup.match(offGroup)
     group = maSplitModGroup.group(1)
     offset = int(maSplitModGroup.group(2) or 0)
@@ -1045,7 +1045,7 @@ class MelXpci(MelNull):
         else:
             full = None
             ins.seek(pos)
-        if self._debug: print ' ',strFid(record.fid),strFid(xpci),full
+        if self._debug: print u' ',strFid(record.fid),strFid(xpci),full
 
 #------------------------------------------------------------------------------
 class MelString(MelBase):
@@ -1315,7 +1315,7 @@ class MelConditions(MelStructs):
         (target.operFlag,target.unused1,target.compValue,ifunc) = unpacked1
         #--Get parameters
         if ifunc not in bush.allConditions:
-            raise BoltError(_('Unknown condition function: %d') % ifunc)
+            raise BoltError(u'Unknown condition function: %d' % ifunc)
         form1 = 'iI'[ifunc in bush.fid1Conditions]
         form2 = 'iI'[ifunc in bush.fid2Conditions]
         form12 = form1+form2
@@ -1328,9 +1328,9 @@ class MelConditions(MelStructs):
         (target.ifunc,target.form12) = (ifunc,form12)
         if self._debug:
             unpacked = unpacked1+unpacked2
-            print ' ',zip(self.attrs,unpacked)
+            print u' ',zip(self.attrs,unpacked)
             if len(unpacked) != len(self.attrs):
-                print ' ',unpacked
+                print u' ',unpacked
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1386,7 +1386,7 @@ class MelEffects(MelGroups):
             for attr,value,action in zip(attrs,unpacked,actions):
                 if callable(action): value = action(value)
                 setter(attr,value)
-            if self._debug: print ' ',unpacked
+            if self._debug: print u' ',unpacked
 
     #--Instance methods
     def __init__(self,attr='effects'):
