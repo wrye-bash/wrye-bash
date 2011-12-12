@@ -52,7 +52,7 @@ def unformatDate(str,format):
         return time.strptime(str,u'%c')
     except ValueError:
         if format == u'%c' and u'Japanese' in locale.getlocale()[0]:
-            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str)
+            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str,flags=re.U)
             return time.strptime(str,u'%c')
         else:
             raise
@@ -60,8 +60,6 @@ def unformatDate(str,format):
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
-import cStringIO
-import StringIO #cStringIO doesn't support unicode very well
 import ConfigParser
 import copy
 import datetime
@@ -85,7 +83,7 @@ import balt
 import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError
-from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist
+from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist, sio
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -163,10 +161,10 @@ class FileError(BoltError):
     def __str__(self):
         if self.inName:
             if isinstance(self.inName, str):
-                return self.inName+': '+self.message
-            return self.inName.s+': '+self.message
+                return self.inName+u': '+self.message
+            return self.inName.s+u': '+self.message
         else:
-            return _('Unknown File: ')+self.message
+            return u'Unknown File: '+self.message
 
 #------------------------------------------------------------------------------
 class FileEditError(BoltError):
@@ -319,19 +317,27 @@ null4 = null1*4
 #--decode unicode strings
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
-def _unicode(text):
+encodingOrder = (
+    'cp932',
+    'cp1252',
+    'utf8',
+    'cp500',
+    'utf16',
+    'mbcs',
+    )
+def _unicode(text,encodings=encodingOrder):
     if isinstance(text,unicode): return text
-    for encoding in ('cp932','cp500','cp1252','utf8','utf16'):
+    for encoding in encodings:
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
-    return unicode(text,'mbcs')
+    raise UnicodeDecodeError('Text could not be decoded using any of the following encodings: %s' % encodings)
 
-def _encode(text):
+def _encode(text,encodings=encodingOrder):
     if isinstance(text,str): return text
-    for encoding in ('cp932','cp500','cp1252','utf8','utf16'):
+    for encoding in encodings:
         try: return text.encode(encoding)
         except UnicodeEncodeError: pass
-    return text.encode('mbcs')
+    raise UnicodeEncodeError('Text could not be encoded using any of the following encodings: %s' % encodings)
 
 #--Header tags
 reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
@@ -368,12 +374,12 @@ def _coerce(value, newtype, base=None,AllowNone=False):
         if newtype is bool:
             if isinstance(value,basestring):
                 retValue = value.strip().lower()
-                if AllowNone and retValue == 'none': return None
-                return not retValue in ('','none','false','no','0','0.0')
+                if AllowNone and retValue == u'none': return None
+                return not retValue in (u'',u'none',u'false',u'no',u'0',u'0.0')
             return bool(newtype)
         if base: retValue = newtype(value, base)
         else: retValue = newtype(value)
-        if AllowNone and isinstance(retValue,basestring) and retValue.lower() == 'none':
+        if AllowNone and isinstance(retValue,basestring) and retValue.lower() == u'none':
             return None
         return retValue
     except (ValueError,TypeError):
@@ -416,9 +422,9 @@ def joinModGroup(group,offset):
 def strFid(fid):
     """Returns a string representation of the fid."""
     if isinstance(fid,tuple):
-        return '(%s,0x%06X)' % (fid[0].s,fid[1])
+        return u'(%s,0x%06X)' % (fid[0].s,fid[1])
     else:
-        return '%08X' % fid
+        return u'%08X' % fid
 
 def genFid(modIndex,objectIndex):
     """Generates fid from modIndex and ObjectIndex."""
@@ -450,10 +456,10 @@ class ModReadError(ModError):
         self.tryPos = tryPos
         self.maxPos = maxPos
         if tryPos < 0:
-            message = (_('%s: Attempted to read before (%d) beginning of file/buffer.')
+            message = (u'%s: Attempted to read before (%d) beginning of file/buffer.'
                 % (recType,tryPos))
         else:
-            message = (_('%s: Attempted to read past (%d) end (%d) of file/buffer.') %
+            message = (u'%s: Attempted to read past (%d) end (%d) of file/buffer.' %
                 (recType,tryPos,maxPos))
         ModError.__init__(self,inName.s,message)
 
@@ -466,9 +472,9 @@ class ModSizeError(ModError):
         self.maxSize = maxSize
         self.exactSize = exactSize
         if exactSize:
-            messageForm = _('%s: Expected size == %d, but got: %d ')
+            messageForm = u'%s: Expected size == %d, but got: %d '
         else:
-            messageForm = _('%s: Expected size <= %d, but got: %d ')
+            messageForm = u'%s: Expected size <= %d, but got: %d '
         ModError.__init__(self,inName.s,messageForm % (recType,readSize,maxSize))
 
 
@@ -476,7 +482,7 @@ class ModSizeError(ModError):
 class ModUnknownSubrecord(ModError):
     """TES4 Error: Uknown subrecord."""
     def __init__(self,inName,subType,recType):
-        ModError.__init__(self,_('Extraneous subrecord (%s) in %s record.')
+        ModError.__init__(self,u'Extraneous subrecord (%s) in %s record.'
             % (subType,recType))
 
 #------------------------------------------------------------------------------
@@ -494,6 +500,10 @@ class ModReader:
         ins.seek(curPos)
         self.strings = {}
         self.hasStrings = False
+
+    # with statement
+    def __enter__(self): return self
+    def __exit__(self,*args,**kwdargs): self.ins.close()
 
     def setStringTable(self,table={}):
         if table is None:
@@ -530,7 +540,7 @@ class ModReader:
         if endPos == -1:
             return (filePos == self.size)
         elif filePos > endPos:
-            raise ModError(self.inName, _('Exceeded limit of: ')+recType)
+            raise ModError(self.inName, u'Exceeded limit of: '+recType)
         else:
             return (filePos == endPos)
 
@@ -543,21 +553,20 @@ class ModReader:
         return self.ins.read(size)
 
     def readLString(self,size,recType='----'):
-        deprint('hasStrings', self.hasStrings)
         if self.hasStrings:
             if size != 4:
                 raise ModReadError(self.inName,recType,endPos,self.size)
             id, = self.unpack('I',4,recType)
-            deprint('stringId:', id)
             if id == 0:
-                return ''
+                return u''
             else:
-                return self.strings[id]
+                return self.strings.get(id,u'LOOKUP FAILED!')
         else:
             return self.readString(size,recType)
 
     def readString(self,size,recType='----'):
-        """Read string from file, stripping zero terminator."""
+        """Read string from file, stripping zero terminator.
+        strings are read in as raw bytes, no converting to unicode is performed."""
         return _unicode(cstrip(self.read(size,recType)))
 
     def readStrings(self,size,recType='----'):
@@ -583,7 +592,7 @@ class ModReader:
         (type,size,uint0,uint1,uint2) = header[0:5]
         #--Bad?
         if type not in bush.game.esp.recordTypes:
-            raise ModError(self.inName,_('Bad header type: ')+type)
+            raise ModError(self.inName,u'Bad header type: '+type)
         #--Record
         if type != 'GRUP':
             return header
@@ -599,7 +608,7 @@ class ModReader:
                 header[2] = bush.game.esp.topIgTypes[str0]
                 return tuple(header)
             else:
-                raise ModError(self.inName,_('Bad Top GRUP type: ')+str0)
+                raise ModError(self.inName,u'Bad Top GRUP type: '+str0)
         #--Other groups
         else:
             return header
@@ -614,7 +623,7 @@ class ModReader:
             type = selfUnpack('4sH',6,recType+'.XXXX.TYPE')[0] #--Throw away size (always == 0)
         #--Match expected name?
         if expType and expType != type:
-            raise ModError(self.inName,_('%s: Expected %s subrecord, but found %s instead.')
+            raise ModError(self.inName,u'%s: Expected %s subrecord, but found %s instead.'
                 % (recType,expType,type))
         #--Match expected size?
         if expSize and expSize != size:
@@ -640,11 +649,14 @@ class ModReader:
 #------------------------------------------------------------------------------
 class ModWriter:
     """Wrapper around an TES4 output stream. Adds utility functions."""
-    reValidType = re.compile('^[A-Z]{4}$')
 
     def __init__(self,out):
         """Initialize."""
         self.out = out
+
+    # with statement
+    def __enter__(self): return self
+    def __exit__(self,*args,**kwdargs): self.out.close()
 
     #--Stream Wrapping
     def write(self,data):
@@ -690,7 +702,6 @@ class ModWriter:
 
     def packSub0(self,type,data):
         """Write subrecord header plus zero terminated string to output stream."""
-        #if not ModWriter.reValidType.match(type): raise _('Invalid type: ') + `type`
         if data == None: return
         lenData = len(data) + 1
         outWrite = self.out.write
@@ -700,12 +711,11 @@ class ModWriter:
         else:
             outWrite(structPack('=4sHI','XXXX',4,lenData))
             outWrite(structPack('=4sH',type,0))
-        outWrite(Encode(data))
+        outWrite(_encode(data))
         outWrite('\x00')
 
     def packRef(self,type,fid):
         """Write subrecord header and fid reference."""
-        #if not ModWriter.reValidType.match(type): raise _('Invalid type: ') + `type`
         if fid != None: self.out.write(struct.pack('=4sHI',type,4,fid))
 
     def writeGroup(self,size,label,groupType,stamp):
@@ -773,7 +783,8 @@ class MelBase:
                 formAttrsAppend(element[1])
             elif callable(element[0]):
                 actions[index] = element[0]
-            attrIndex = (0,1)[callable(element[0]) or element[0] in (FID,0)]
+            attrIndex = (1 if callable(element[0]) or element[0] in (FID,0)
+                         else 0)
             attrs[index] = element[attrIndex]
             defaults[index] = (0,element[-1])[len(element)-attrIndex == 2]
         return map(tuple,(attrs,defaults,actions,formAttrs))
@@ -808,6 +819,7 @@ class MelBase:
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
         raise AbstractError
+
 #------------------------------------------------------------------------------
 class MelFid(MelBase):
     """Represents a mod record fid element."""
@@ -819,7 +831,7 @@ class MelFid(MelBase):
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
         record.__setattr__(self.attr,ins.unpackRef(readId))
-        if self._debug: print '  %08X' % (record.__getattribute__(self.attr),)
+        if self._debug: print u'  %08X' % (record.__getattribute__(self.attr),)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -856,7 +868,7 @@ class MelFids(MelBase):
         """Reads data from ins into record attribute."""
         fid = ins.unpackRef(readId)
         record.__getattribute__(self.attr).append(fid)
-        if self._debug: print ' ',hex(fid)
+        if self._debug: print u' ',hex(fid)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -886,7 +898,7 @@ class MelFidList(MelFids):
         record.__setattr__(self.attr,list(fids))
         if self._debug:
             for fid in fids:
-                print '  %08X' % fid
+                print u'  %08X' % fid
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1005,6 +1017,7 @@ class MelGroups(MelGroup):
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
+
 #------------------------------------------------------------------------------
 class MelNull(MelBase):
     """Represents an obsolete record. Reads bytes from instream, but then
@@ -1025,7 +1038,7 @@ class MelNull(MelBase):
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
         junk = ins.read(size,readId)
-        if self._debug: print ' ',record.fid,`junk`
+        if self._debug: print u' ',record.fid,`junk`
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1060,7 +1073,7 @@ class MelString(MelBase):
         """Reads data from ins into record attribute."""
         value = ins.readString(size,readId)
         record.__setattr__(self.attr,value)
-        if self._debug: print ' ',record.__getattribute__(self.attr)
+        if self._debug: print u' ',record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1069,7 +1082,8 @@ class MelString(MelBase):
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
                 value = value[:min(self.maxSize,len(value))]
-                value = value.encode('utf8')
+            value = _encode(value)
+            if self.maxSize:
                 value = value[:min(self.maxSize,len(value))]
             out.packSub0(self.subType,value)
 
@@ -1079,7 +1093,7 @@ class MelLString(MelString):
     def loadData(self,record,ins,type,size,readId):
         value = ins.readLString(size,readId)
         record.__setattr__(self.attr,value)
-        if self._debug: print ' ',record.__getattribute__(self.attr)
+        if self._debug: print u' ',record.__getattribute__(self.attr)
 
 #------------------------------------------------------------------------------
 class MelStrings(MelString):
@@ -1097,7 +1111,7 @@ class MelStrings(MelString):
         """Reads data from ins into record attribute."""
         value = ins.readStrings(size,readId)
         record.__setattr__(self.attr,value)
-        if self._debug: print ' ',value
+        if self._debug: print u' ',value
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1137,9 +1151,9 @@ class MelStruct(MelBase):
             if action: value = action(value)
             setter(attr,value)
         if self._debug:
-            print ' ',zip(self.attrs,unpacked)
+            print u' ',zip(self.attrs,unpacked)
             if len(unpacked) != len(self.attrs):
-                print ' ',unpacked
+                print u' ',unpacked
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1164,6 +1178,7 @@ class MelStruct(MelBase):
         for attr in self.formAttrs:
             result = function(getter(attr))
             if save: setter(attr,result)
+
 #------------------------------------------------------------------------------
 class MelStructs(MelStruct):
     """Represents array of structured records."""
@@ -1236,7 +1251,7 @@ class MelStructA(MelStructs):
 
     def dumpData(self,record,out):
         if record.__getattribute__(self.attr) is not None:
-            data = ''
+            data = u''
             attrs = self.attrs
             format = self.format
             for x in record.__getattribute__(self.attr):
@@ -1250,6 +1265,7 @@ class MelStructA(MelStructs):
             melMap = MelStruct.mapFids
             for target in record.__getattribute__(self.attr):
                 melMap(self,target,function,save)
+
 #------------------------------------------------------------------------------
 class MelTuple(MelBase):
     """Represents a fixed length array that maps to a single subrecord.
@@ -1541,7 +1557,7 @@ class MelSet:
         loaders = self.loaders
         _debug = self._debug
         #--Read Records
-        if _debug: print '\n>>>> %08X' % record.fid
+        if _debug: print u'\n>>>> %08X' % record.fid
         insAtEnd = ins.atEnd
         insSubHeader = ins.unpackSubHeader
 ##        fullLoad = self.full0.loadData
@@ -1551,7 +1567,7 @@ class MelSet:
             readId = recType + '.' + type
             try:
                 if type not in loaders:
-                    raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
+                    raise ModError(ins.inName,u'Unexpected subrecord: '+readId)
                 #--Hack to handle the fact that there can be two types of FULL in spell/ench/ingr records.
                 elif doFullTest and type == 'FULL':
                     self.full0.loadData(record,ins,type,size,readId)
@@ -1560,11 +1576,11 @@ class MelSet:
                 doFullTest = doFullTest and (type != 'EFID')
             except Exception, error:
                 print error
-                eid = getattr(record,'eid',_('<<NO EID>>'))
-                if not eid: eid = _('<<NO EID>>)')
-                print _(Unicode('Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d') % (record.recType,record.fid,eid,type,size))
+                eid = getattr(record,'eid',u'<<NO EID>>')
+                if not eid: eid = u'<<NO EID>>)'
+                print u'Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d' % (record.recType,record.fid,eid,type,size)
                 raise
-        if _debug: print '<<<<',getattr(record,'eid','[NO EID]')
+        if _debug: print u'<<<<',getattr(record,'eid',u'[NO EID]')
 
     def dumpData(self,record, out):
         """Dumps state into out. Called by getSize()."""
@@ -1572,10 +1588,10 @@ class MelSet:
             try:
                 element.dumpData(record,out)
             except:
-                print 'Dumping:',getattr(record,'eid','<<NO EID>>'),record.fid,element
+                print u'Dumping:',getattr(record,'eid',u'<<NO EID>>'),record.fid,element
                 for attr in record.__slots__:
                     if hasattr(record,attr):
-                        print "> %s: %s" % (attr,getattr(record,attr))
+                        print u"> %s: %s" % (attr,getattr(record,attr))
                 raise
 
     def mapFids(self,record,mapper,save=False):
@@ -1595,7 +1611,7 @@ class MelSet:
 
     def updateMasters(self,record,masters):
         """Updates set of master names according to masters actually used."""
-        if not record.longFids: raise StateError(_("Fids not in long format"))
+        if not record.longFids: raise StateError(u"Fids not in long format")
         def updater(fid):
             masters.add(fid)
         updater(record.fid)
@@ -1604,10 +1620,10 @@ class MelSet:
 
     def getReport(self):
         """Returns a report of structure."""
-        buff = stringBuffer()
-        for element in self.elements:
-            element.report(None,buff,'')
-        return buff.getvalue()
+        with sio() as buff:
+            for element in self.elements:
+                element.report(None,buff,u'')
+            return buff.getvalue()
 # Flags
 #------------------------------------------------------------------------------
 class MelBipedFlags(Flags):
@@ -1646,11 +1662,10 @@ class MreSubrecord:
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
         #--StringIO Object
-        out = ModWriter(cStringIO.StringIO())
-        self.dumpData(out)
-        #--Done
-        self.data = out.getvalue()
-        data.close()
+        with ModWriter(sio()) as out:
+            self.dumpData(out)
+            #--Done
+            self.data = out.getvalue()
         self.size = len(self.data)
         self.setChanged(False)
         return self.size
@@ -1660,8 +1675,8 @@ class MreSubrecord:
         raise AbstractError
 
     def dump(self,out):
-        if self.changed: raise StateError(_('Data changed: ')+ self.subType)
-        if not self.data: raise StateError(_('Data undefined: ')+self.subType)
+        if self.changed: raise StateError(u'Data changed: '+self.subType)
+        if not self.data: raise StateError(u'Data undefined: '+self.subType)
         out.packSub(self.subType,self.data)
 
 #------------------------------------------------------------------------------
@@ -1702,10 +1717,10 @@ class MreRecord(object):
 
     def __repr__(self):
         if hasattr(self,'eid') and self.eid is not None:
-            eid=' '+self.eid
+            eid=u' '+self.eid
         else:
-            eid=''
-        return '<%s object: %s (%s)%s>' % (`type(self)`.split("'")[1], self.recType, strFid(self.fid), eid)
+            eid=u''
+        return u'<%s object: %s (%s)%s>' % (`type(self)`.split(u"'")[1], self.recType, strFid(self.fid), eid)
 
     def getHeader(self):
         """Returns header tuple."""
@@ -1747,7 +1762,7 @@ class MreRecord(object):
         decomp = zlib.decompress(self.data[4:])
         if len(decomp) != size:
             raise ModError(self.inName,
-                _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
+                u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
         return decomp
 
     def load(self,ins=None,unpack=False):
@@ -1767,9 +1782,8 @@ class MreRecord(object):
             if ins:
                 self.data = ins.read(self.size,type)
             if not self.__class__ == MreRecord:
-                reader = self.getReader()
-                self.loadData(reader,reader.size)
-                reader.close()
+                with self.getReader() as reader:
+                    self.loadData(reader,reader.size)
         #--Discard raw data?
         if unpack == 2:
             self.data = None
@@ -1788,15 +1802,14 @@ class MreRecord(object):
         so that it can be handled in a simplistic way."""
         self.subrecords = []
         if not self.data: return
-        reader = self.getReader()
-        recType = self.recType
-        readAtEnd = reader.atEnd
-        readSubHeader = reader.unpackSubHeader
-        subAppend = self.subrecords.append
-        while not readAtEnd(reader.size,recType):
-            (type,size) = readSubHeader(recType)
-            subAppend(MreSubrecord(type,size,reader))
-        reader.close()
+        with self.getReader() as reader:
+            recType = self.recType
+            readAtEnd = reader.atEnd
+            readSubHeader = reader.unpackSubHeader
+            subAppend = self.subrecords.append
+            while not readAtEnd(reader.size,recType):
+                (type,size) = readSubHeader(recType)
+                subAppend(MreSubrecord(type,size,reader))
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -1821,12 +1834,11 @@ class MreRecord(object):
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
         if self.longFids: raise StateError(
-            _('Packing Error: %s %s: Fids in long format.') % (self.recType,self.fid))
+            u'Packing Error: %s %s: Fids in long format.' % (self.recType,self.fid))
         #--Pack data and return size.
-        out = ModWriter(cStringIO.StringIO())
-        self.dumpData(out)
-        self.data = out.getvalue()
-        out.close()
+        with ModWriter(sio()) as out:
+            self.dumpData(out)
+            self.data = out.getvalue()
         if self.flags1.compressed:
             import zlib
             dataLen = len(self.data)
@@ -1840,23 +1852,23 @@ class MreRecord(object):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
         if self.subrecords == None:
-            raise StateError(_('Subrecords not unpacked. [%s: %s %08X]' %
-                (self.inName, self.recType, self.fid)))
+            raise StateError(u'Subrecords not unpacked. [%s: %s %08X]' %
+                (self.inName, self.recType, self.fid))
         for subrecord in self.subrecords:
             subrecord.dump(out)
 
     def dump(self,out):
         """Dumps all data to output stream."""
-        if self.changed: raise StateError(_('Data changed: ')+ self.recType)
+        if self.changed: raise StateError(u'Data changed: '+self.recType)
         if not self.data and not self.flags1.deleted and self.size > 0:
-            raise StateError(_('Data undefined: ')+self.recType+' '+hex(self.fid))
+            raise StateError(u'Data undefined: '+self.recType+u' '+hex(self.fid))
         args = [getattr(self,attr) for attr in bush.game.esp.header.attrs]
         out.write(struct.pack(bush.game.esp.header.format,*args))
-        if self.size > 0: out.write(Encode(self.data))
+        if self.size > 0: out.write(self.data)
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,stringBuffer(self.getDecompressed()))
+        return ModReader(self.inName,sio(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self,subType):
@@ -1876,22 +1888,21 @@ class MreRecord(object):
                     break
         #--No subrecords, but have data.
         elif self.data:
-            reader = self.getReader()
-            recType = self.recType
-            readAtEnd = reader.atEnd
-            readSubHeader = reader.unpackSubHeader
-            readSeek = reader.seek
-            readRead = reader.read
-            while not readAtEnd(reader.size,recType):
-                (type,size) = readSubHeader(recType)
-                if type != subType:
-                    readSeek(size,1)
-                else:
-                    value = cstrip(readRead(size))
-                    break
-            reader.close()
+            with self.getReader() as reader:
+                recType = self.recType
+                readAtEnd = reader.atEnd
+                readSubHeader = reader.unpackSubHeader
+                readSeek = reader.seek
+                readRead = reader.read
+                while not readAtEnd(reader.size,recType):
+                    (type,size) = readSubHeader(recType)
+                    if type != subType:
+                        readSeek(size,1)
+                    else:
+                        value = cstrip(readRead(size))
+                        break
         #--Return it
-        return value
+        return _unicode(value)
 
 #------------------------------------------------------------------------------
 class MelRecord(MreRecord):
@@ -1928,6 +1939,7 @@ class MelRecord(MreRecord):
     def updateMasters(self,masters):
         """Updates set of master names according to masters actually used."""
         self.__class__.melSet.updateMasters(self,masters)
+
 #------------------------------------------------------------------------------
 class MreActor(MelRecord):
     """Creatures and NPCs."""
@@ -1935,7 +1947,7 @@ class MreActor(MelRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet.
         Filters spells, factions and items."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
+        if not self.longFids: raise StateError(u"Fids not in long format")
         self.spells = [x for x in self.spells if x[0] in modSet]
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
         self.items = [x for x in self.items if x.item[0] in modSet]
@@ -1987,14 +1999,14 @@ class MreLeveledList(MelRecord):
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
+        if not self.longFids: raise StateError(u"Fids not in long format")
         self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
         Requires that: self.items, other.delevs and other.relevs be defined."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        if not other.longFids: raise StateError(_("Fids not in long format"))
+        if not self.longFids: raise StateError(u"Fids not in long format")
+        if not other.longFids: raise StateError(u"Fids not in long format")
         #--Relevel or not?
         if other.relevs:
             self.chanceNone = other.chanceNone
@@ -2048,6 +2060,7 @@ class MreLeveledList(MelRecord):
             self.mergeSources = [otherMod]
         #--Done
         self.setChanged(self.mergeOverLast)
+
 #------------------------------------------------------------------------------
 class MreHasEffects:
     """Mixin class for magic items."""
@@ -2083,28 +2096,26 @@ class MreHasEffects:
         """Return a text description of magic effects."""
         mgef_school = mgef_school or bush.mgef_school
         mgef_name = mgef_name or bush.mgef_name
-        buff = StringIO.StringIO()
-        avEffects = bush.genericAVEffects
-        aValues = bush.actorValues
-        buffWrite = buff.write
-        if self.effects:
-            school = self.getSpellSchool(mgef_school)
-            buffWrite(bush.actorValues[20+school] + u'\n')
-        for index,effect in enumerate(self.effects):
-            if effect.scriptEffect:
-                effectName = effect.scriptEffect.full or u'Script Effect'
-            else:
-                effectName = mgef_name[effect.name]
-                if effect.name in avEffects:
-                    effectName = re.sub(_('u(Attribute|Skill)'),aValues[effect.actorValue],effectName)
-            buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
-            if effect.magnitude: buffWrite(u' '+`effect.magnitude`+u'm')
-            if effect.area: buffWrite(u' '+`effect.area`+u'a')
-            if effect.duration > 1: buffWrite(u' '+`effect.duration`+u'd')
-            buffWrite(u'\n')
-        ret = buff.getvalue()
-        buff.close()
-        return ret
+        with sio() as buff:
+            avEffects = bush.genericAVEffects
+            aValues = bush.actorValues
+            buffWrite = buff.write
+            if self.effects:
+                school = self.getSpellSchool(mgef_school)
+                buffWrite(bush.actorValues[20+school] + u'\n')
+            for index,effect in enumerate(self.effects):
+                if effect.scriptEffect:
+                    effectName = effect.scriptEffect.full or u'Script Effect'
+                else:
+                    effectName = mgef_name[effect.name]
+                    if effect.name in avEffects:
+                        effectName = re.sub(_('u(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
+                if effect.magnitude: buffWrite(u' '+`effect.magnitude`+u'm')
+                if effect.area: buffWrite(u' '+`effect.area`+u'a')
+                if effect.duration > 1: buffWrite(u' '+`effect.duration`+u'd')
+                buffWrite(u'\n')
+                return buff.getvalue()
 
 # Mod Records 1 ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2541,7 +2552,7 @@ class MreCsty(MelRecord):
                 #-- This one is present once: VidCaptureNoAttacks and it isn't actually used.
                 unpacked = ins.unpack('2B2s8f2B2s3fB3s2f5B3s2f2B2s',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for CSTD subrecord: ')+str(size))
+                raise ModError(ins.inName,u'Unexpected size encountered for CSTD subrecord: '+`size`)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2599,7 +2610,7 @@ class MreDial(MelRecord):
                 info = infoClass(header,ins,True)
                 infosAppend(info)
             else:
-                raise ModError(ins.inName, _('Unexpected %s record in %s group.')
+                raise ModError(ins.inName,u'Unexpected %s record in %s group.'
                     % (recType,"INFO"))
 
     def dump(self,out):
@@ -2663,7 +2674,7 @@ class MreEfsh(MelRecord):
                 # Only used twice in test shaders (0004b6d5, 0004b6d6)
                 unpacked = ins.unpack('B3s3I3Bs9f3Bs8fI',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for EFSH subrecord: ')+str(size))
+                raise ModError(ins.inName,u'Unexpected size encountered for EFSH subrecord: '+`size`)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2809,19 +2820,19 @@ class MreGmst(MelRecord):
         myClass = self.__class__
         if not myClass.oblivionIds:
             try:
-                fileName = bush.game.name + '_ids.pkl'
+                fileName = bush.game.name + u'_ids.pkl'
                 myClass.oblivionIds = cPickle.load(dirs['db'].join(fileName).open())['GMST']
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True
                 print
-                print _('Error loading %s:') % fileName
-                deprint(' ',traceback=True)
+                print u'Error loading %s:' % fileName
+                deprint(u' ',traceback=True)
                 bolt.deprintOn = old
                 print
-                print _('Manually testing if file exists:'), dirs['db'].join(fileName).exists()
-                print _('Current working directory:'), os.getcwd()
-                print "dirs['db']:", dirs['db']
+                print u'Manually testing if file exists:', dirs['db'].join(fileName).exists()
+                print u'Current working directory:', os.getcwd()
+                print u"dirs['db']:", dirs['db']
                 print
                 raise
         return (modInfos.masterName, myClass.oblivionIds[self.eid])
@@ -3104,7 +3115,7 @@ class MreMgef(MelRecord):
                 #--Else is data for DARK record, read it all.
                 unpacked = ins.unpack('IfIiiH2sIfI',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for MGEF:DATA subrecord: ')+str(size))
+                raise ModError(ins.inName,u'Unexpected size encountered for MGEF:DATA subrecord: '+`size`)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3229,9 +3240,9 @@ class MreNpc(MreActor):
         if not self.model:
             self.model = self.getDefault('model')
         if race in (0x23fe9,0x223c7):
-            self.model.modPath = r"Characters\_Male\SkeletonBeast.NIF"
+            self.model.modPath = u"Characters\\_Male\\SkeletonBeast.NIF"
         else:
-            self.model.modPath = r"Characters\_Male\skeleton.nif"
+            self.model.modPath = u"Characters\\_Male\\skeleton.nif"
         #--FNAM
         fnams = {
             0x23fe9 : 0x3cdc ,#--Argonian
@@ -3554,7 +3565,7 @@ class MreRefr(MelRecord):
                 #--Else is skipping unused2
                 unpacked = ins.unpack('B3sIB3s',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for REFR:XLOC subrecord: ')+str(size))
+                raise ModError(ins.inName,u'Unexpected size encountered for REFR:XLOC subrecord: '+`size`)
             unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3889,7 +3900,7 @@ class MreTes4Base(MelRecord):
             pack1 = out.packSub0
             pack2 = out.packSub
             for name in record.masters:
-                pack1('MAST',name.s.encode('utf8'))
+                pack1('MAST',_encode(name.s))
                 pack2('DATA','Q',0)
 
     def getNextObject(self):
@@ -3906,8 +3917,8 @@ class MreTes4(MreTes4Base):
         MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
         MelBase('OFST','ofst_p',), #--Obsolete?
         MelBase('DELE','dele_p'), #--Obsolete?
-        MelString('CNAM','author','',512),
-        MelString('SNAM','description','',512),
+        MelString('CNAM','author',u'',512),
+        MelString('SNAM','description',u'',512),
         MreTes4Base.MelTes4Name('MAST','masters'),
         MelNull('DATA'),
         )
@@ -3921,8 +3932,8 @@ class MreTes5(MreTes4Base):
         MelStruct('HEDR', 'f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
         MelBase('OFST','ofst_p',), #--Unconfirmed for Skyrim
         MelBase('DELE','dele_p',), #--Unconfirmed for Skyrim
-        MelString('CNAM','author','',512),
-        MelString('SNAM','description','',512),
+        MelString('CNAM','author',u'',512),
+        MelString('SNAM','description',u'',512),
         MreTes4Base.MelTes4Name('MAST','masters'),
         MelNull('DATA'),
         MelBase('INTV','intv'),
@@ -4106,7 +4117,7 @@ MreRecord.type_class = dict((x.classType,x) for x in (
     MreDial, MreInfo, MreCobj,
     ))
 # Hacky for now, will fix this up when I refactory this section
-if bush.game.name == 'Skyrim':
+if bush.game.name == u'Skyrim':
     MreRecord.type_class['AMMO'] = MreAmmoSkyrim
 
 MreRecord.simpleTypes = (set(MreRecord.type_class) -
@@ -4117,7 +4128,7 @@ MreRecord.simpleTypes = (set(MreRecord.type_class) -
 class MasterMapError(BoltError):
     """Attempt to map a fid when mapping does not exist."""
     def __init__(self,modIndex):
-        BoltError.__init__(self,_('No valid mapping for mod index 0x%02X') % modIndex)
+        BoltError.__init__(self,u'No valid mapping for mod index 0x%02X' % modIndex)
 
 #------------------------------------------------------------------------------
 class MasterMap:
@@ -4255,7 +4266,7 @@ class MobBase(object):
 
     def load(self,ins=None,unpack=False):
         """Load data from ins stream or internal data buffer."""
-        if self.debug: print 'GRUP load:',self.label
+        if self.debug: print u'GRUP load:',self.label
         #--Read, but don't analyze.
         if not unpack:
             self.data = ins.read(self.size-bush.game.esp.header.size,type)
@@ -4264,9 +4275,8 @@ class MobBase(object):
             self.loadData(ins, ins.tell()+self.size-bush.game.esp.header.size)
         #--Analyze internal buffer.
         else:
-            reader = self.getReader()
-            self.loadData(reader,reader.size)
-            reader.close()
+            with self.getReader() as reader:
+                self.loadData(reader,reader.size)
         #--Discard raw data?
         if unpack:
             self.data = None
@@ -4327,7 +4337,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,stringBuffer(self.data))
+        return ModReader(self.inName,sio(self.data))
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -4355,7 +4365,7 @@ class MobObjects(MobBase):
         debug = self.debug
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType+' Top Block'
+        errLabel = expType+u' Top Block'
         records = self.records
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -4365,7 +4375,7 @@ class MobObjects(MobBase):
             header = insRecHeader()
             recType = header[0]
             if recType != expType:
-                raise ModError(ins.inName,_('Unexpected %s record in %s group.')
+                raise ModError(ins.inName,u'Unexpected %s record in %s group.'
                     % (recType,expType))
             record = recClass(header,ins,True)
             recordsAppend(record)
@@ -4481,7 +4491,7 @@ class MobDials(MobObjects):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType+' Top Block'
+        errLabel = expType+u' Top Block'
         records = self.records
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -4502,9 +4512,9 @@ class MobDials(MobObjects):
                     infoClass = loadGetRecClass('INFO')
                     recordLoadInfos(ins,ins.tell()+size-20,infoClass)
                 else:
-                    raise ModError(self.inName,'Unexpected subgroup %d in DIAL group.' % groupType)
+                    raise ModError(self.inName,u'Unexpected subgroup %d in DIAL group.' % groupType)
             else:
-                raise ModError(self.inName,_('Unexpected %s record in %s group.')
+                raise ModError(self.inName,u'Unexpected %s record in %s group.'
                     % (recType,expType))
         self.setChanged()
 
@@ -4562,13 +4572,13 @@ class MobCell(MobBase):
             if recType == 'GRUP':
                 groupType=header[3]
                 if groupType not in (8, 9, 10):
-                    raise ModError(self.inName,'Unexpected subgroup %d in cell children group.' % groupType)
+                    raise ModError(self.inName,u'Unexpected subgroup %d in cell children group.' % groupType)
                 if subgroupLoaded[groupType - 8]:
-                    raise ModError(self.inName,'Extra subgroup %d in cell children group.' % groupType)
+                    raise ModError(self.inName,u'Extra subgroup %d in cell children group.' % groupType)
                 else:
                     subgroupLoaded[groupType - 8] = True
             elif recType not in cellType_class:
-                raise ModError(self.inName,'Unexpected %s record in cell children group.' % recType)
+                raise ModError(self.inName,u'Unexpected %s record in cell children group.' % recType)
             elif not recClass:
                 insSeek(header[1],1)
             elif recType in ('REFR','ACHR','ACRE'):
@@ -4701,7 +4711,7 @@ class MobCell(MobBase):
             record = srcGetter(attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
-                    raise ArgumentError(_("Fids don't match! %08x, %08x") % (myRecord.fid, record.fid))
+                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (myRecord.fid, record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     selfSetter(attr,record)
@@ -4853,7 +4863,7 @@ class MobICells(MobCells):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recCellClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType+' Top Block'
+        errLabel = expType+u' Top Block'
         cellBlocks = self.cellBlocks
         cell = None
         endBlockPos = endSubblockPos = 0
@@ -4873,7 +4883,7 @@ class MobICells(MobCells):
                     cellBlocksAppend(cellBlock)
                 cell = recCellClass(header,ins,True)
                 if insTell() > endBlockPos or insTell() > endSubblockPos:
-                    raise ModError(self.inName,'Interior cell <%X> %s outside of block or subblock.' % (cell.fid, cell.eid))
+                    raise ModError(self.inName,u'Interior cell <%X> %s outside of block or subblock.' % (cell.fid, cell.eid))
             elif recType == 'GRUP':
                 size,groupFid,groupType = header[1:4]
                 if groupType == 2: # Block number
@@ -4883,7 +4893,7 @@ class MobICells(MobCells):
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
-                            raise ModError(self.inName,'Cell subgroup (%X) does not match CELL <%X> %s.' %
+                            raise ModError(self.inName,u'Cell subgroup (%X) does not match CELL <%X> %s.' %
                                 (groupFid, cell.fid, cell.eid))
                         if unpackCellBlocks:
                             cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
@@ -4893,11 +4903,11 @@ class MobICells(MobCells):
                         cellBlocksAppend(cellBlock)
                         cell = None
                     else:
-                        raise ModError(self.inName,'Extra subgroup %d in CELL group.' % groupType)
+                        raise ModError(self.inName,u'Extra subgroup %d in CELL group.' % groupType)
                 else:
-                    raise ModError(self.inName,'Unexpected subgroup %d in CELL group.' % groupType)
+                    raise ModError(self.inName,u'Unexpected subgroup %d in CELL group.' % groupType)
             else:
-                raise ModError(self.inName,'Unexpected %s record in %s group.' % (recType,expType))
+                raise ModError(self.inName,u'Unexpected %s record in %s group.' % (recType,expType))
         self.setChanged()
 
     def dump(self,out):
@@ -4923,7 +4933,7 @@ class MobWorld(MobCells):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         recCellClass = self.loadFactory.getRecClass('CELL')
-        errLabel = 'World Block'
+        errLabel = u'World Block'
         cell = None
         block = None
         subblock = None
@@ -4959,13 +4969,13 @@ class MobWorld(MobCells):
                         cellBlocksAppend(cellBlock)
                     else:
                         if self.worldCellBlock:
-                            raise ModError(self.inName,'Extra exterior cell <%s> %s before block group.' % (hex(cell.fid), cell.eid))
+                            raise ModError(self.inName,u'Extra exterior cell <%s> %s before block group.' % (hex(cell.fid), cell.eid))
                         self.worldCellBlock = cellBlock
                 cell = recClass(header,ins,True)
                 if block:
                     if insTell() > endBlockPos or insTell() > endSubblockPos:
-                        raise ModError(self.inName,'Exterior cell <%s> %s after block or'
-                                ' subblock.' % (hex(cell.fid), cell.eid))
+                        raise ModError(self.inName,u'Exterior cell <%s> %s after block or'
+                                u' subblock.' % (hex(cell.fid), cell.eid))
             elif recType == 'GRUP':
                 size,groupFid,groupType = header[1:4]
                 if groupType == 4: # Exterior Cell Block
@@ -4979,7 +4989,7 @@ class MobWorld(MobCells):
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
-                            raise ModError(self.inName,'Cell subgroup (%s) does not match CELL <%s> %s.' %
+                            raise ModError(self.inName,u'Cell subgroup (%s) does not match CELL <%s> %s.' %
                                 (hex(groupFid), hex(cell.fid), cell.eid))
                         if unpackCellBlocks:
                             cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
@@ -4990,15 +5000,15 @@ class MobWorld(MobCells):
                             cellBlocksAppend(cellBlock)
                         else:
                             if self.worldCellBlock:
-                                raise ModError(self.inName,'Extra exterior cell <%s> %s before block group.' % (hex(cell.fid), cell.eid))
+                                raise ModError(self.inName,u'Extra exterior cell <%s> %s before block group.' % (hex(cell.fid), cell.eid))
                             self.worldCellBlock = cellBlock
                         cell = None
                     else:
-                        raise ModError(self.inName,'Extra cell children subgroup in world children group.')
+                        raise ModError(self.inName,u'Extra cell children subgroup in world children group.')
                 else:
-                    raise ModError(self.inName,'Unexpected subgroup %d in world children group.' % groupType)
+                    raise ModError(self.inName,u'Unexpected subgroup %d in world children group.' % groupType)
             else:
-                raise ModError(self.inName,'Unexpected %s record in world children group.' % recType)
+                raise ModError(self.inName,u'Unexpected %s record in world children group.' % recType)
         self.setChanged()
 
     def getNumRecords(self,includeGroups=True):
@@ -5067,7 +5077,7 @@ class MobWorld(MobCells):
             record = srcGetter(attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
-                    raise ArgumentError(_("Fids don't match! %08x, %08x") % (myRecord.fid, record.fid))
+                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (myRecord.fid, record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     selfSetter(attr,record)
@@ -5104,7 +5114,7 @@ class MobWorlds(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recWrldClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType + ' Top Block'
+        errLabel = expType + u' Top Block'
         worldBlocks = self.worldBlocks
         world = None
         insAtEnd = ins.atEnd
@@ -5121,7 +5131,7 @@ class MobWorlds(MobBase):
             elif recType == 'GRUP':
                 groupFid,groupType = header[2:4]
                 if groupType != 1:
-                    raise ModError(ins.inName,'Unexpected subgroup %d in CELL group.' % groupType)
+                    raise ModError(ins.inName,u'Unexpected subgroup %d in CELL group.' % groupType)
                 if not world:
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD group.' % groupType)
                     #--Orphaned world records. Skip over.
@@ -5129,13 +5139,13 @@ class MobWorlds(MobBase):
                     self.orphansSkipped += 1
                     continue
                 if groupFid != world.fid:
-                    raise ModError(ins.inName,'WRLD subgroup (%s) does not match WRLD <%s> %s.' %
+                    raise ModError(ins.inName,u'WRLD subgroup (%s) does not match WRLD <%s> %s.' %
                         (hex(groupFid), hex(world.fid), world.eid))
                 worldBlock = MobWorld(header,selfLoadFactory,world,ins,True)
                 worldBlocksAppend(worldBlock)
                 world = None
             else:
-                raise ModError(ins.inName,'Unexpected %s record in %s group.' % (recType,expType))
+                raise ModError(ins.inName,u'Unexpected %s record in %s group.' % (recType,expType))
 
     def getSize(self):
         """Returns size (incuding size of any group headers)."""
@@ -5237,54 +5247,48 @@ class ModFile:
         elif topType == '__repr__':
             raise AttributeError
         else:
-            raise ArgumentError(_('Invalid top group type: ')+topType)
+            raise ArgumentError(u'Invalid top group type: '+topType)
 
     def load(self,unpack=False,progress=None,loadStrings=True):
         """Load file."""
         progress = progress or bolt.Progress()
         #--Header
-        ins = ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb'))
-        header = ins.unpackRecHeader()
-        self.tes4 = globals()[bush.game.esp.tes4ClassName](header,ins,True)
-        #--Strings
-        if unpack and self.tes4.flags1[7] and loadStrings:
-            self.strings.load(self.fileInfo.getPath(),
-                              oblivionIni.getSetting('General','sLanguage','English'),
-                              progress)
-            ins.setStringTable(self.strings)
-        else:
-            self.strings.clear()
-            ins.setStringTable(None)
-        #--Raw data read
-        insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
-        selfGetTopClass = self.loadFactory.getTopClass
-        selfTopsSkipAdd = self.topsSkipped.add
-        insSeek = ins.seek
-        selfLoadFactory = self.loadFactory
-        while not insAtEnd():
-            #--Get record info and handle it
-            header = insRecHeader()
-            (type,size,label,groupType,stamp) = header[0:5]
-            if type != 'GRUP' or groupType != 0:
-                raise ModError(self.fileInfo.name,_('Improperly grouped file.'))
-            topClass = selfGetTopClass(label)
-            try:
-                if topClass:
-                    self.tops[label] = topClass(header,selfLoadFactory)
-                    self.tops[label].load(ins,unpack and (topClass != MobBase))
-                else:
-                    selfTopsSkipAdd(label)
-                    insSeek(size-bush.game.esp.header.size,1,type + '.' + label)
-            except:
-                if isinstance(self.fileInfo.name,str):
-                    print _("Error in %s") % self.fileInfo.name
-                    raise
-                else:
-                    print _("Error in %s") % self.fileInfo.name.s
-                    raise
+        with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
+            header = ins.unpackRecHeader()
+            self.tes4 = globals()[bush.game.esp.tes4ClassName](header,ins,True)
+            #--Strings
+            if unpack and self.tes4.flags1[7] and loadStrings:
+                self.strings.load(self.fileInfo.getPath(),
+                                  oblivionIni.getSetting('General','sLanguage','English'),
+                                  progress)
+                ins.setStringTable(self.strings)
+            else:
+                self.strings.clear()
+                ins.setStringTable(None)
+            #--Raw data read
+            insAtEnd = ins.atEnd
+            insRecHeader = ins.unpackRecHeader
+            selfGetTopClass = self.loadFactory.getTopClass
+            selfTopsSkipAdd = self.topsSkipped.add
+            insSeek = ins.seek
+            selfLoadFactory = self.loadFactory
+            while not insAtEnd():
+                #--Get record info and handle it
+                header = insRecHeader()
+                (type,size,label,groupType,stamp) = header[0:5]
+                if type != 'GRUP' or groupType != 0:
+                    raise ModError(self.fileInfo.name,u'Improperly grouped file.')
+                topClass = selfGetTopClass(label)
+                try:
+                    if topClass:
+                        self.tops[label] = topClass(header,selfLoadFactory)
+                        self.tops[label].load(ins,unpack and (topClass != MobBase))
+                    else:
+                        selfTopsSkipAdd(label)
+                        insSeek(size-bush.game.esp.header.size,1,type + '.' + label)
+                except:
+                    print u"Error in %s" % self.fileInfo.name
         #--Done Reading
-        ins.close()
 
     def load_unpack(self):
         """Unpacks blocks."""
@@ -5305,11 +5309,11 @@ class ModFile:
         and then save if the answer is yes. If hasSaved == False, then does nothing."""
         if not hasChanged: return
         fileName = self.fileInfo.name
-        if re.match(r'\s*[yY]',raw_input('\nSave changes to '+fileName.s+' [y\n]?: ')):
+        if re.match(ur'\s*[yY]',raw_input(u'\nSave changes to '+fileName.s+u' [y\n]?: '),flags=re.U):
             self.safeSave()
-            print fileName.s,'saved.'
+            print fileName.s,u'saved.'
         else:
-            print fileName.s,'not saved.'
+            print fileName.s,u'not saved.'
 
     def safeSave(self):
         """Save data to file safely."""
@@ -5323,20 +5327,19 @@ class ModFile:
     def save(self,outPath=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if (not self.loadFactory.keepAll): raise StateError(_("Insufficient data to write file."))
+        if (not self.loadFactory.keepAll): raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
-        out = ModWriter(outPath.open('wb'))
-        #--Mod Record
-        self.tes4.setChanged()
-        self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())
-        self.tes4.getSize()
-        self.tes4.dump(out)
-        #--Blocks
-        selfTops = self.tops
-        for type in bush.game.esp.topTypes:
-            if type in selfTops:
-                selfTops[type].dump(out)
-        out.close()
+        with ModWriter(outPath.open('wb')) as out:
+            #--Mod Record
+            self.tes4.setChanged()
+            self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())
+            self.tes4.getSize()
+            self.tes4.dump(out)
+            #--Blocks
+            selfTops = self.tops
+            for type in bush.game.esp.topTypes:
+                if type in selfTops:
+                    selfTops[type].dump(out)
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
@@ -5382,7 +5385,7 @@ class ModFile:
 
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
-        if not self.longFids: raise StateError(_("ModFile fids not in long form."))
+        if not self.longFids: raise StateError(u"ModFile fids not in long form.")
         for fname in bush.game.masterFiles:
             if dirs['mods'].join(fname).exists():
                 masters = MasterSet([GPath(fname)])
@@ -5485,43 +5488,42 @@ class SreNPC(object):
 
     def load(self,flags,data):
         """Loads variables from data."""
-        ins = cStringIO.StringIO(data)
-        def unpack(format,size):
-            return struct.unpack(format,ins.read(size))
-        flags = SreNPC.flags(flags)
-        if flags.form:
-            self.form, = unpack('I',4)
-        if flags.attributes:
-            self.attributes = list(unpack('8B',8))
-        if flags.acbs:
-            acbs = self.acbs = SreNPC.ACBS()
-            (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
-                acbs.calcMin, acbs.calcMax) = unpack('=I3Hh2H',16)
-            acbs.flags = MreNpc._flags(acbs.flags)
-        if flags.factions:
-            self.factions = []
-            num, = unpack('H',2)
-            for count in range(num):
-                self.factions.append(unpack('=Ib',5))
-        if flags.spells:
-            num, = unpack('H',2)
-            self.spells = list(unpack('%dI' % num,4*num))
-        if flags.ai:
-            self.ai = ins.read(4)
-        if flags.health:
-            self.health, self.unused2 = unpack('H2s',4)
-        if flags.modifiers:
-            num, = unpack('H',2)
-            self.modifiers = []
-            for count in range(num):
-                self.modifiers.append(unpack('=Bf',5))
-        if flags.full:
-            size, = unpack('B',1)
-            self.full = ins.read(size)
-        if flags.skills:
-            self.skills = list(unpack('21B',21))
+        with sio(data) as ins:
+            def unpack(format,size):
+                return struct.unpack(format,ins.read(size))
+            flags = SreNPC.flags(flags)
+            if flags.form:
+                self.form, = unpack('I',4)
+            if flags.attributes:
+                self.attributes = list(unpack('8B',8))
+            if flags.acbs:
+                acbs = self.acbs = SreNPC.ACBS()
+                (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
+                    acbs.calcMin, acbs.calcMax) = unpack('=I3Hh2H',16)
+                acbs.flags = MreNpc._flags(acbs.flags)
+            if flags.factions:
+                self.factions = []
+                num, = unpack('H',2)
+                for count in range(num):
+                    self.factions.append(unpack('=Ib',5))
+            if flags.spells:
+                num, = unpack('H',2)
+                self.spells = list(unpack('%dI' % num,4*num))
+            if flags.ai:
+                self.ai = ins.read(4)
+            if flags.health:
+                self.health, self.unused2 = unpack('H2s',4)
+            if flags.modifiers:
+                num, = unpack('H',2)
+                self.modifiers = []
+                for count in range(num):
+                    self.modifiers.append(unpack('=Bf',5))
+            if flags.full:
+                size, = unpack('B',1)
+                self.full = ins.read(size)
+            if flags.skills:
+                self.skills = list(unpack('21B',21))
         #--Done
-        ins.close()
 
     def getFlags(self):
         """Returns current flags set."""
@@ -5532,50 +5534,50 @@ class SreNPC(object):
 
     def getData(self):
         """Returns self.data."""
-        out = cStringIO.StringIO()
-        def pack(format,*args):
-            out.write(struct.pack(format,*args))
-        #--Form
-        if self.form != None:
-            pack('I',self.form)
-        #--Attributes
-        if self.attributes != None:
-            pack('8B',*self.attributes)
-        #--Acbs
-        if self.acbs != None:
-            acbs = self.acbs
-            pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
-                acbs.calcMin, acbs.calcMax)
-        #--Factions
-        if self.factions != None:
-            pack('H',len(self.factions))
-            for faction in self.factions:
-                pack('=Ib',*faction)
-        #--Spells
-        if self.spells != None:
-            num = len(self.spells)
-            pack('H',num)
-            pack('%dI' % num,*self.spells)
-        #--AI Data
-        if self.ai != None:
-            out.write(self.ai)
-        #--Health
-        if self.health != None:
-            pack('H2s',self.health,self.unused2)
-        #--Modifiers
-        if self.modifiers != None:
-            pack('H',len(self.modifiers))
-            for modifier in self.modifiers:
-                pack('=Bf',*modifier)
-        #--Full
-        if self.full != None:
-            pack('B',len(self.full))
-            out.write(self.full)
-        #--Skills
-        if self.skills != None:
-            pack('21B',*self.skills)
-        #--Done
-        return out.getvalue()
+        with sio() as out:
+            def pack(format,*args):
+                out.write(struct.pack(format,*args))
+            #--Form
+            if self.form != None:
+                pack('I',self.form)
+            #--Attributes
+            if self.attributes != None:
+                pack('8B',*self.attributes)
+            #--Acbs
+            if self.acbs != None:
+                acbs = self.acbs
+                pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
+                    acbs.calcMin, acbs.calcMax)
+            #--Factions
+            if self.factions != None:
+                pack('H',len(self.factions))
+                for faction in self.factions:
+                    pack('=Ib',*faction)
+            #--Spells
+            if self.spells != None:
+                num = len(self.spells)
+                pack('H',num)
+                pack('%dI' % num,*self.spells)
+            #--AI Data
+            if self.ai != None:
+                out.write(self.ai)
+            #--Health
+            if self.health != None:
+                pack('H2s',self.health,self.unused2)
+            #--Modifiers
+            if self.modifiers != None:
+                pack('H',len(self.modifiers))
+                for modifier in self.modifiers:
+                    pack('=Bf',*modifier)
+            #--Full
+            if self.full != None:
+                pack('B',len(self.full))
+                out.write(self.full)
+            #--Skills
+            if self.skills != None:
+                pack('21B',*self.skills)
+            #--Done
+            return out.getvalue()
 
     def getTuple(self,fid,version):
         """Returns record as a change record tuple."""
@@ -5583,40 +5585,38 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        buff = StringIO.StringIO()
-        fids = saveFile.fids
-        if self.form != None:
-            buff.write(u'Form:\n  %d' % self.form)
-        if self.attributes != None:
-            buff.write(u'Attributes\n  strength %3d\n  intelligence %3d\n  willpower %3d\n  agility %3d\n  speed %3d\n  endurance %3d\n  personality %3d\n  luck %3d\n' % tuple(self.attributes))
-        if self.acbs != None:
-            buff.write(u'ACBS:\n')
-            for attr in SreNPC.ACBS.__slots__:
-                buff.write(u'  '+attr+u' '+`getattr(self.acbs,attr)`+u'\n')
-        if self.factions != None:
-            buff.write(u'Factions:\n')
-            for faction in self.factions:
-                buff.write(u'  %8X %2X\n' % (fids[faction[0]],faction[1]))
-        if self.spells != None:
-            buff.write(u'Spells:\n')
-            for spell in self.spells:
-                buff.write(u'  %8X\n' % fids[spell])
-        if self.ai != None:
-            buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
-        if self.health != None:
-            buff.write(u'Health\n  '+`self.health`+u'\n')
-            buff.write(u'Unused2\n  '+`self.unused2`+u'\n')
-        if self.modifiers != None:
-            buff.write(u'Modifiers:\n')
-            for modifier in self.modifiers:
-                buff.write(u'  %s\n' % `modifier`)
-        if self.full != None:
-            buff.write(u'Full:\n  '+`self.full`+u'\n')
-        if self.skills != None:
-            buff.write(u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n  block %3d\n  blunt %3d\n  handToHand %3d\n  heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  conjuration %3d\n  destruction %3d\n  illusion %3d\n  mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(self.skills))
-        ret = buff.getvalue()
-        buff.close()
-        return ret
+        with sio() as buff:
+            fids = saveFile.fids
+            if self.form != None:
+                buff.write(u'Form:\n  %d' % self.form)
+            if self.attributes != None:
+                buff.write(u'Attributes\n  strength %3d\n  intelligence %3d\n  willpower %3d\n  agility %3d\n  speed %3d\n  endurance %3d\n  personality %3d\n  luck %3d\n' % tuple(self.attributes))
+            if self.acbs != None:
+                buff.write(u'ACBS:\n')
+                for attr in SreNPC.ACBS.__slots__:
+                    buff.write(u'  '+attr+u' '+`getattr(self.acbs,attr)`+u'\n')
+            if self.factions != None:
+                buff.write(u'Factions:\n')
+                for faction in self.factions:
+                    buff.write(u'  %8X %2X\n' % (fids[faction[0]],faction[1]))
+            if self.spells != None:
+                buff.write(u'Spells:\n')
+                for spell in self.spells:
+                    buff.write(u'  %8X\n' % fids[spell])
+            if self.ai != None:
+                buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
+            if self.health != None:
+                buff.write(u'Health\n  '+`self.health`+u'\n')
+                buff.write(u'Unused2\n  '+`self.unused2`+u'\n')
+            if self.modifiers != None:
+                buff.write(u'Modifiers:\n')
+                for modifier in self.modifiers:
+                    buff.write(u'  %s\n' % `modifier`)
+            if self.full != None:
+                buff.write(u'Full:\n  '+`self.full`+u'\n')
+            if self.skills != None:
+                buff.write(u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n  block %3d\n  blunt %3d\n  handToHand %3d\n  heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  conjuration %3d\n  destruction %3d\n  illusion %3d\n  mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(self.skills))
+            return buff.getvalue()
 
 # Save File -------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -5640,70 +5640,68 @@ class PluggyFile:
         """Read file."""
         import binascii
         size = self.path.size
-        ins = self.path.open('rb')
-        buff = ins.read(size-4)
-        crc32, = struct.unpack('=i',ins.read(4))
-        ins.close()
+        with self.path.open('rb') as ins:
+            buff = ins.read(size-4)
+            crc32, = struct.unpack('=i',ins.read(4))
         crcNew = binascii.crc32(buff)
         if crc32 != crcNew:
-            raise FileError(self.name,'CRC32 file check failed. File: %X, Calc: %X' % (crc32,crcNew))
+            raise FileError(self.name,u'CRC32 file check failed. File: %X, Calc: %X' % (crc32,crcNew))
         #--Header
-        ins = cStringIO.StringIO(buff)
-        def unpack(format,size):
-            return struct.unpack(format,ins.read(size))
-        if ins.read(10) != 'PluggySave':
-            raise FileError(self.name,'File tag != "PluggySave"')
-        self.version, = unpack('I',4)
-        #--Reject versions earlier than 1.02
-        if self.version < 0x01020000:
-            raise FileError(self.name,'Unsupported file verson: %I' % self.version)
-        #--Plugins
-        self.plugins = []
-        type, = unpack('=B',1)
-        if type != 0:
-            raise FileError(self.name,'Expected plugins record, but got %d.' % type)
-        count, = unpack('=I',4)
-        for x in range(count):
-            espid,index,modLen = unpack('=2BI',6)
-            modName = GPath(ins.read(modLen))
-            self.plugins.append((espid,index,modName))
-        #--Other
-        self.other = ins.getvalue()[ins.tell():]
+        with sio(buff) as ins:
+            def unpack(format,size):
+                return struct.unpack(format,ins.read(size))
+            if ins.read(10) != 'PluggySave':
+                raise FileError(self.name,u'File tag != "PluggySave"')
+            self.version, = unpack('I',4)
+            #--Reject versions earlier than 1.02
+            if self.version < 0x01020000:
+                raise FileError(self.name,u'Unsupported file verson: %I' % self.version)
+            #--Plugins
+            self.plugins = []
+            type, = unpack('=B',1)
+            if type != 0:
+                raise FileError(self.name,u'Expected plugins record, but got %d.' % type)
+            count, = unpack('=I',4)
+            for x in range(count):
+                espid,index,modLen = unpack('=2BI',6)
+                modName = GPath(_unicode(ins.read(modLen)))
+                self.plugins.append((espid,index,modName))
+            #--Other
+            self.other = ins.getvalue()[ins.tell():]
         deprint(struct.unpack('I',self.other[-4:]),self.path.size-8)
         #--Done
-        ins.close()
         self.valid = True
 
     def save(self,path=None,mtime=0):
         """Saves."""
         import binascii
-        if not self.valid: raise FileError(self.name,"File not initialized.")
+        if not self.valid: raise FileError(self.name,u"File not initialized.")
         #--Buffer
-        buff = cStringIO.StringIO()
-        #--Save
-        def pack(format,*args):
-            buff.write(struct.pack(format,*args))
-        buff.write('PluggySave')
-        pack('=I',self.version)
-        #--Plugins
-        pack('=B',0)
-        pack('=I',len(self.plugins))
-        for (espid,index,modName) in self.plugins:
-            pack('=2BI',espid,index,len(modName))
-            buff.write(modName.s.lower())
-        #--Other
-        buff.write(self.other)
-        #--End control
-        buff.seek(-4,1)
-        pack('=I',buff.tell())
-        #--Save
-        path = path or self.path
-        mtime = mtime or path.exists() and path.mtime
-        text = buff.getvalue()
-        out = path.open('wb')
-        out.write(text)
-        out.write(struct.pack('i',binascii.crc32(text)))
-        out.close()
+        with sio() as buff:
+            #--Save
+            def pack(format,*args):
+                buff.write(struct.pack(format,*args))
+            buff.write('PluggySave')
+            pack('=I',self.version)
+            #--Plugins
+            pack('=B',0)
+            pack('=I',len(self.plugins))
+            for (espid,index,modName) in self.plugins:
+                modName = _encode(modName.cs)
+                pack('=2BI',espid,index,len(modName))
+                buff.write(modName)
+            #--Other
+            buff.write(self.other)
+            #--End control
+            buff.seek(-4,1)
+            pack('=I',buff.tell())
+            #--Save
+            path = path or self.path
+            mtime = mtime or path.exists() and path.mtime
+            text = buff.getvalue()
+            with path.open('wb') as out:
+                out.write(text)
+                out.write(struct.pack('i',binascii.crc32(text)))
         path.mtime = mtime
 
     def safeSave(self):
@@ -5729,81 +5727,77 @@ class ObseFile:
         """Read file."""
         import binascii
         size = self.path.size
-        ins = self.path.open('rb')
-        buff = ins.read(size)
-        ins.close()
+        with self.path.open('rb') as ins:
+            buff = ins.read(size)
         #--Header
-        ins = cStringIO.StringIO(buff)
-        def unpack(format,size):
-            return struct.unpack(format,ins.read(size))
-        self.signature = ins.read(4)
-        if self.signature != 'OBSE':
-            raise FileError(self.name,'File signature != "OBSE"')
-        self.formatVersion,self.obseVersion,self.obseMinorVersion,self.oblivionVersion, = unpack('IHHI',12)
-        # if self.formatVersion < X:
-        #   raise FileError(self.name,'Unsupported file version: %I' % self.formatVersion)
-        #--Plugins
-        numPlugins, = unpack('I',4)
-        self.plugins = []
-        for x in range(numPlugins):
-            opcodeBase,numChunks,pluginLength, = unpack('III',12)
-            pluginBuff = ins.read(pluginLength)
-            pluginIns = cStringIO.StringIO(pluginBuff)
-            chunks = []
-            for y in range(numChunks):
-                chunkType = pluginIns.read(4)
-                chunkVersion,chunkLength, = struct.unpack('II',pluginIns.read(8))
-                chunkBuff = pluginIns.read(chunkLength)
-                chunk = (chunkType, chunkVersion, chunkBuff)
-                chunks.append(chunk)
-            pluginIns.close()
-            plugin = (opcodeBase,chunks)
-            self.plugins.append(plugin)
+        with sio(buff) as ins:
+            def unpack(format,size):
+                return struct.unpack(format,ins.read(size))
+            self.signature = ins.read(4)
+            if self.signature != 'OBSE':
+                raise FileError(self.name,u'File signature != "OBSE"')
+            self.formatVersion,self.obseVersion,self.obseMinorVersion,self.oblivionVersion, = unpack('IHHI',12)
+            # if self.formatVersion < X:
+            #   raise FileError(self.name,'Unsupported file version: %I' % self.formatVersion)
+            #--Plugins
+            numPlugins, = unpack('I',4)
+            self.plugins = []
+            for x in range(numPlugins):
+                opcodeBase,numChunks,pluginLength, = unpack('III',12)
+                pluginBuff = ins.read(pluginLength)
+                with sio(pluginBuff) as pluginIns:
+                    chunks = []
+                    for y in range(numChunks):
+                        chunkType = pluginIns.read(4)
+                        chunkVersion,chunkLength, = struct.unpack('II',pluginIns.read(8))
+                        chunkBuff = pluginIns.read(chunkLength)
+                        chunk = (chunkType, chunkVersion, chunkBuff)
+                        chunks.append(chunk)
+                plugin = (opcodeBase,chunks)
+                self.plugins.append(plugin)
         #--Done
-        ins.close()
         self.valid = True
 
     def save(self,path=None,mtime=0):
         """Saves."""
-        if not self.valid: raise FileError(self.name,"File not initialized.")
+        if not self.valid: raise FileError(self.name,u"File not initialized.")
         #--Buffer
-        buff = cStringIO.StringIO()
-        #--Save
-        def pack(format,*args):
-            buff.write(struct.pack(format,*args))
-        buff.write('OBSE')
-        pack('=I',self.formatVersion)
-        pack('=H',self.obseVersion)
-        pack('=H',self.obseMinorVersion)
-        pack('=I',self.oblivionVersion)
-        #--Plugins
-        pack('=I',len(self.plugins))
-        for (opcodeBase,chunks) in self.plugins:
-            pack('=I',opcodeBase)
-            pack('=I',len(chunks))
-            pluginLength = 0
-            pluginLengthPos = buff.tell()
-            pack('=I',0)
-            for (chunkType,chunkVersion,chunkBuff) in chunks:
-                buff.write(chunkType)
-                pack('=2I',chunkVersion,len(chunkBuff))
-                buff.write(chunkBuff)
-                pluginLength += 12 + len(chunkBuff)
-            buff.seek(pluginLengthPos,0)
-            pack('=I',pluginLength)
-            buff.seek(0,2)
-        #--Save
-        path = path or self.path
-        mtime = mtime or path.exists() and path.mtime
-        text = buff.getvalue()
-        out = path.open('wb')
-        out.write(text)
-        out.close()
+        with sio() as buff:
+            #--Save
+            def pack(format,*args):
+                buff.write(struct.pack(format,*args))
+            buff.write('OBSE')
+            pack('=I',self.formatVersion)
+            pack('=H',self.obseVersion)
+            pack('=H',self.obseMinorVersion)
+            pack('=I',self.oblivionVersion)
+            #--Plugins
+            pack('=I',len(self.plugins))
+            for (opcodeBase,chunks) in self.plugins:
+                pack('=I',opcodeBase)
+                pack('=I',len(chunks))
+                pluginLength = 0
+                pluginLengthPos = buff.tell()
+                pack('=I',0)
+                for (chunkType,chunkVersion,chunkBuff) in chunks:
+                    buff.write(chunkType)
+                    pack('=2I',chunkVersion,len(chunkBuff))
+                    buff.write(chunkBuff)
+                    pluginLength += 12 + len(chunkBuff)
+                buff.seek(pluginLengthPos,0)
+                pack('=I',pluginLength)
+                buff.seek(0,2)
+            #--Save
+            path = path or self.path
+            mtime = mtime or path.exists() and path.mtime
+            text = buff.getvalue()
+        with path.open('wb') as out:
+            out.write(text)
         path.mtime = mtime
 
     def mapMasters(self,masterMap):
         """Update plugin names according to masterMap."""
-        if not self.valid: raise FileError(self.name,"File not initialized.")
+        if not self.valid: raise FileError(self.name,u"File not initialized.")
         newPlugins = []
         for (opcodeBase,chunks) in self.plugins:
             newChunks = []
@@ -5811,21 +5805,19 @@ class ObseFile:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
                     if (chunkTypeNum == 1):
-                        ins = cStringIO.StringIO(chunkBuff)
-                        def unpack(format,size):
-                            return struct.unpack(format,ins.read(size))
-                        buff = cStringIO.StringIO()
-                        def pack(format,*args):
-                            buff.write(struct.pack(format,*args))
-                        while (ins.tell() < len(chunkBuff)):
-                            espId,modId,modNameLen, = unpack('=BBI',6)
-                            modName = GPath(ins.read(modNameLen))
-                            modName = masterMap.get(modName,modName)
-                            pack('=BBI',espId,modId,len(modName.s))
-                            buff.write(modName.s.lower())
-                        ins.close()
-                        chunkBuff = buff.getvalue()
-                        buff.close()
+                        with sio(chunkBuff) as ins:
+                            with sio() as buff:
+                                def unpack(format,size):
+                                    return struct.unpack(format,ins.read(size))
+                                def pack(format,*args):
+                                    buff.write(struct.pack(format,*args))
+                                while (ins.tell() < len(chunkBuff)):
+                                    espId,modId,modNameLen, = unpack('=BBI',6)
+                                    modName = GPath(ins.read(modNameLen))
+                                    modName = masterMap.get(modName,modName)
+                                    pack('=BBI',espId,modId,len(modName.s))
+                                    buff.write(modName.s.lower())
+                                    chunkBuff = buff.getvalue()
                     newChunks.append((chunkType,chunkVersion,chunkBuff))
             else:
                 newChunks = chunks
@@ -5856,12 +5848,12 @@ class SaveHeader:
         try:
             with path.open('rb') as ins:
                 bush.game.ess.load(ins,self)
-                self.pcName = cstrip(self.pcName)
-                self.pcLocation = cstrip(self.pcLocation)
-                self.masters = [GPath(x) for x in self.masters]
+            self.pcName = _unicode(cstrip(self.pcName))
+            self.pcLocation = _unicode(cstrip(self.pcLocation))
+            self.masters = [GPath(_unicode(x)) for x in self.masters]
         #--Errors
         except:
-            deprint('save file error:',traceback=True)
+            deprint(u'save file error:',traceback=True)
             raise SaveFileError(path.tail,u'File header is corrupted.')
         #--Done
         ins.close()
@@ -5873,7 +5865,7 @@ class SaveHeader:
         with path.open('rb') as ins:
             with path.temp.open('wb') as out:
                 oldMasters = bush.game.ess.writeMasters(ins,out,self)
-        oldMasters = [GPath(x) for x in oldMasters]
+        oldMasters = [GPath(_unicode(x)) for x in oldMasters]
         path.untemp()
         #--Cosaves
         masterMap = dict((x,y) for x,y in zip(oldMasters,self.masters) if x != y)
@@ -5906,16 +5898,15 @@ class BSAHeader:
 
     def load(self,path):
         """Extract info from save file."""
-        ins = path.open('rb')
-        try:
-            #--Header
-            ins.seek(4*4)
-            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
-        #--Errors
-        except:
-            raise BSAFileError(path.tail,u'File header is corrupted.')
+        with path.open('rb') as ins:
+            try:
+                #--Header
+                ins.seek(4*4)
+                (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
+            #--Errors
+            except:
+                raise BSAFileError(path.tail,u'File header is corrupted.')
         #--Done
-        ins.close()
 
 #------------------------------------------------------------------------------
 class SaveFile:
@@ -5991,12 +5982,12 @@ class SaveFile:
             globalsNum, = ins.unpack('H',2)
             self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
-            buff = cStringIO.StringIO()
-            for count in range(4):
-                size, = ins.unpack('H',2)
-                insCopy(buff,size,2)
-            insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
-            self.preCreated = buff.getvalue()
+            with sio() as buff:
+                for count in range(4):
+                    size, = ins.unpack('H',2)
+                    insCopy(buff,size,2)
+                insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
+                self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
             modReader = ModReader(self.fileInfo.name,ins)
             createdNum, = ins.unpack('I',4)
@@ -6005,11 +5996,11 @@ class SaveFile:
                 header = ins.unpack('4s4I',20)
                 self.created.append(MreRecord(header,modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
-            buff = cStringIO.StringIO()
-            for count in range(4):
-                size, = ins.unpack('H',2)
-                insCopy(buff,size,2)
-            self.preRecords = buff.getvalue()
+            with sio() as buff:
+                for count in range(4):
+                    size, = ins.unpack('H',2)
+                    insCopy(buff,size,2)
+                self.preRecords = buff.getvalue()
 
             #--Records
             for count in xrange(recordsNum):
@@ -6041,69 +6032,68 @@ class SaveFile:
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if (not self.canSave): raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
-        out = outPath.open('wb')
-        def pack(format,*data):
-            out.write(struct.pack(format,*data))
-        #--Progress
-        fileName = self.fileInfo.name
-        progress = progress or bolt.Progress()
-        progress.setFull(self.fileInfo.size)
-        #--Header
-        progress(0,_(u'Writing Header.'))
-        out.write(self.header)
-        #--Save Header
-        pcName = self.pcName
-        pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
-            self.saveNum, len(pcName)+1)
-        out.write(pcName+u'\x00')
-        out.write(self.postNameHeader)
-        #--Masters
-        pack('B',len(self.masters))
-        for master in self.masters:
-            pack('B',len(master))
-            out.write(master.s)
-        #--Fids Pointer, num records
-        fidsPointerPos = out.tell()
-        pack('I',0) #--Temp. Will write real value later.
-        pack('I',len(self.records))
-        #--Pre-Globals
-        out.write(self.preGlobals)
-        #--Globals
-        pack('H',len(self.globals))
-        for iref,value in self.globals:
-            pack('If',iref,value)
-        #--Pre-Created
-        out.write(self.preCreated)
-        #--Created
-        progress(0.1,_('Writing created.'))
-        modWriter = ModWriter(out)
-        pack('I',len(self.created))
-        for record in self.created:
-            record.dump(modWriter)
-        #--Pre-records
-        out.write(self.preRecords)
-        #--Records, temp effects, fids, worldspaces
-        progress(0.2,_('Writing records.'))
-        for fid,recType,flags,version,data in self.records:
-            pack('=IBIBH',fid,recType,flags,version,len(data))
-            out.write(data)
-        #--Temp Effects, fids, worldids
-        pack('I',len(self.tempEffects))
-        out.write(self.tempEffects)
-        #--Fids
-        progress(0.9,_('Writing fids, worldids.'))
-        fidsPos = out.tell()
-        out.seek(fidsPointerPos)
-        pack('I',fidsPos)
-        out.seek(fidsPos)
-        pack('I',len(self.fids))
-        self.fids.tofile(out)
-        #--Worldspaces
-        pack('I',len(self.worldSpaces))
-        self.worldSpaces.tofile(out)
-        #--Done
-        progress(1.0,_('Writing complete.'))
-        out.close()
+        with outPath.open('wb') as out:
+            def pack(format,*data):
+                out.write(struct.pack(format,*data))
+            #--Progress
+            fileName = self.fileInfo.name
+            progress = progress or bolt.Progress()
+            progress.setFull(self.fileInfo.size)
+            #--Header
+            progress(0,_(u'Writing Header.'))
+            out.write(self.header)
+            #--Save Header
+            pcName = self.pcName
+            pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
+                self.saveNum, len(pcName)+1)
+            out.write(pcName+u'\x00')
+            out.write(self.postNameHeader)
+            #--Masters
+            pack('B',len(self.masters))
+            for master in self.masters:
+                pack('B',len(master))
+                out.write(master.s)
+            #--Fids Pointer, num records
+            fidsPointerPos = out.tell()
+            pack('I',0) #--Temp. Will write real value later.
+            pack('I',len(self.records))
+            #--Pre-Globals
+            out.write(self.preGlobals)
+            #--Globals
+            pack('H',len(self.globals))
+            for iref,value in self.globals:
+                pack('If',iref,value)
+            #--Pre-Created
+            out.write(self.preCreated)
+            #--Created
+            progress(0.1,_(u'Writing created.'))
+            modWriter = ModWriter(out)
+            pack('I',len(self.created))
+            for record in self.created:
+                record.dump(modWriter)
+            #--Pre-records
+            out.write(self.preRecords)
+            #--Records, temp effects, fids, worldspaces
+            progress(0.2,_(u'Writing records.'))
+            for fid,recType,flags,version,data in self.records:
+                pack('=IBIBH',fid,recType,flags,version,len(data))
+                out.write(data)
+            #--Temp Effects, fids, worldids
+            pack('I',len(self.tempEffects))
+            out.write(self.tempEffects)
+            #--Fids
+            progress(0.9,_(u'Writing fids, worldids.'))
+            fidsPos = out.tell()
+            out.seek(fidsPointerPos)
+            pack('I',fidsPos)
+            out.seek(fidsPos)
+            pack('I',len(self.fids))
+            self.fids.tofile(out)
+            #--Worldspaces
+            pack('I',len(self.worldSpaces))
+            self.worldSpaces.tofile(out)
+            #--Done
+            progress(1.0,_(u'Writing complete.'))
 
     def safeSave(self,progress=None):
         """Save data to file safely."""
@@ -6182,7 +6172,7 @@ class SaveFile:
         """Returns fid corresponding to iref."""
         if not iref: return default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise ModError(_('IRef from Mars.'))
+        if iref >= len(self.fids): raise ModError(u'IRef from Mars.')
         return self.fids[iref]
 
     def getIref(self,fid):
@@ -6205,22 +6195,22 @@ class SaveFile:
             elif modIndex == 0xFF:
                 return self.fileInfo.name.s
             else:
-                return _('Missing Master ')+hex(modIndex)
+                return _(u'Missing Master ')+hex(modIndex)
         #--ABomb
         (tesClassSize,abombCounter,abombFloat) = self.getAbomb()
-        log.setHeader(_('Abomb Counter'))
-        log(_('  Integer:\t0x%08X') % abombCounter)
-        log(_('  Float:\t%.2f') % abombFloat)
+        log.setHeader(_u('Abomb Counter'))
+        log(_(u'  Integer:\t0x%08X') % abombCounter)
+        log(_(u'  Float:\t%.2f') % abombFloat)
         #--FBomb
-        log.setHeader(_('Fbomb Counter'))
-        log(_('  Next in-game object: %08X') % struct.unpack('I',self.preGlobals[:4]))
+        log.setHeader(_(u'Fbomb Counter'))
+        log(_(u'  Next in-game object: %08X') % struct.unpack('I',self.preGlobals[:4]))
         #--Array Sizes
-        log.setHeader('Array Sizes')
-        log('  %d\t%s' % (len(self.created),_('Created Items')))
-        log('  %d\t%s' % (len(self.records),_('Records')))
-        log('  %d\t%s' % (len(self.fids),_('Fids')))
+        log.setHeader(u'Array Sizes')
+        log(u'  %d\t%s' % (len(self.created),_(u'Created Items')))
+        log(u'  %d\t%s' % (len(self.records),_(u'Records')))
+        log(u'  %d\t%s' % (len(self.fids),_(u'Fids')))
         #--Created Types
-        log.setHeader(_('Created Items'))
+        log.setHeader(_(u'Created Items'))
         createdHisto = {}
         id_created = {}
         for citem in self.created:
@@ -6229,7 +6219,7 @@ class SaveFile:
             id_created[citem.fid] = citem
         for type in sorted(createdHisto.keys()):
             count,size = createdHisto[type]
-            log('  %d\t%d kb\t%s' % (count,size/1024,type))
+            log(u'  %d\t%d kb\t%s' % (count,size/1024,type))
         #--Fids
         lostRefs = 0
         idHist = [0]*256
@@ -6277,242 +6267,242 @@ class SaveFile:
                     objRefNullBases += 1
         saveRecTypes = bush.saveRecTypes
         #--Fids log
-        log.setHeader(_('Fids'))
-        log('  Refed\tChanged\tMI    Mod Name')
-        log('  %d\t\t     Lost Refs (Fid == 0)' % (lostRefs))
+        log.setHeader(_(u'Fids'))
+        log(u'  Refed\tChanged\tMI    Mod Name')
+        log(u'  %d\t\t     Lost Refs (Fid == 0)' % (lostRefs))
         for modIndex,(irefed,changed) in enumerate(zip(idHist,changeHisto)):
             if irefed or changed:
-                log('  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
+                log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
         #--Lost Changes
         if lostChanges:
-            log.setHeader(_('LostChanges'))
+            log.setHeader(_(u'LostChanges'))
             for id in sorted(lostChanges.keys()):
                 type = lostChanges[id][1]
                 log(hex(id)+saveRecTypes.get(type,`type`))
         for type in sorted(typeModHisto.keys()):
             modHisto = typeModHisto[type]
-            log.setHeader('%d %s' % (type,saveRecTypes.get(type,_('Unknown')),))
+            log.setHeader(u'%d %s' % (type,saveRecTypes.get(type,_(u'Unknown')),))
             for modIndex,count in enumerate(modHisto):
-                if count: log('  %d\t%s' % (count,getMaster(modIndex)))
-            log('  %d\tTotal' % (sum(modHisto),))
+                if count: log(u'  %d\t%s' % (count,getMaster(modIndex)))
+            log(u'  %d\tTotal' % (sum(modHisto),))
         objRefBases = dict((key,value) for key,value in objRefBases.iteritems() if value[0] > 100)
-        log.setHeader(_('New ObjectRef Bases'))
+        log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
-            log(' Null Bases: '+`objRefNullBases`)
+            log(u' Null Bases: '+`objRefNullBases`)
         if objRefBases:
-            log(_(' Count IRef     BaseId'))
+            log(_(u' Count IRef     BaseId'))
             for iref in sorted(objRefBases.keys()):
                 count,cumSize = objRefBases[iref]
                 if iref >> 24 == 255:
                     parentid = iref
                 else:
                     parentid = self.fids[iref]
-                log('%6d %08X %08X %6d kb' % (count,iref,parentid,cumSize/1024))
+                log(u'%6d %08X %08X %6d kb' % (count,iref,parentid,cumSize/1024))
+
     def logStatObse(self,log=None):
         """Print stats to log."""
         log = log or bolt.Log()
-        obseFileName = self.fileInfo.getPath().root+'.obse'
+        obseFileName = self.fileInfo.getPath().root+u'.'+bush.game.se.shortName.lower()
         obseFile = ObseFile(obseFileName)
         obseFile.load()
         #--Header
-        log.setHeader(_('Header'))
-        log('=' * 80)
-        log(_('  Format version:   %08X') % (obseFile.formatVersion,))
-        log(_('  OBSE version:     %u.%u') % (obseFile.obseVersion,obseFile.obseMinorVersion,))
-        log(_('  Oblivion version: %08X') % (obseFile.oblivionVersion,))
+        log.setHeader(_(u'Header'))
+        log(u'=' * 80)
+        log(_(u'  Format version:   %08X') % (obseFile.formatVersion,))
+        log(_(u'  OBSE version:     %u.%u') % (obseFile.obseVersion,obseFile.obseMinorVersion,))
+        log(_(u'  Oblivion version: %08X') % (obseFile.oblivionVersion,))
         #--Plugins
         if obseFile.plugins != None:
             for (opcodeBase,chunks) in obseFile.plugins:
-                log.setHeader(_('Plugin opcode=%08X chunkNum=%u') % (opcodeBase,len(chunks),))
-                log('=' * 80)
-                log(_('  Type  Ver   Size'))
-                log('-' * 80)
+                log.setHeader(_(u'Plugin opcode=%08X chunkNum=%u') % (opcodeBase,len(chunks),))
+                log(u'=' * 80)
+                log(_(u'  Type  Ver   Size'))
+                log(u'-' * 80)
                 espMap = {}
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
                     if (chunkType[0] >= ' ' and chunkType[3] >= ' '):
-                        log('  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
+                        log(u'  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
-                        log('  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
-                    ins = cStringIO.StringIO(chunkBuff)
-                    def unpack(format,size):
-                        return struct.unpack(format,ins.read(size))
-                    if (opcodeBase == 0x1400):  # OBSE
-                        if chunkType == 'RVTS':
-                            #--OBSE String
-                            modIndex,stringID,stringLength, = unpack('=BIH',7)
-                            stringData = ins.read(stringLength)
-                            log(u'    '+_(u'Mod :')+u'  %02X (%s)' % (modIndex, self.masters[modIndex].s))
-                            log(u'    '+_(u'ID  :')+u'  %u' % stringID)
-                            log(u'    '+_(u'Data:')+u'  %s' % stringData)
-                        elif chunkType == 'RVRA':
-                            #--OBSE Array
-                            modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
-                            if modIndex == 255:
-                                log(_('    Mod :  %02X (Save File)') % (modIndex))
-                            else:
-                                log(_('    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
-                            log(_('    ID  :  %u') % arrayID)
-                            if keyType == 1: #Numeric
-                                if isPacked:
-                                    log(_('    Type:  Array'))
+                        log(u'  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
+                    with sio(chunkBuff) as ins:
+                        def unpack(format,size):
+                            return struct.unpack(format,ins.read(size))
+                        if (opcodeBase == 0x1400):  # OBSE
+                            if chunkType == 'RVTS':
+                                #--OBSE String
+                                modIndex,stringID,stringLength, = unpack('=BIH',7)
+                                stringData = ins.read(stringLength)
+                                log(u'    '+_(u'Mod :')+u'  %02X (%s)' % (modIndex, self.masters[modIndex].s))
+                                log(u'    '+_(u'ID  :')+u'  %u' % stringID)
+                                log(u'    '+_(u'Data:')+u'  %s' % stringData)
+                            elif chunkType == 'RVRA':
+                                #--OBSE Array
+                                modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
+                                if modIndex == 255:
+                                    log(_(u'    Mod :  %02X (Save File)') % (modIndex))
                                 else:
-                                    log(_('    Type:  Map'))
-                            elif keyType == 3:
-                                log(_('    Type:  StringMap'))
-                            else:
-                                log(_('    Type:  Unknown'))
-                            if chunkVersion >= 1:
-                                numRefs, = unpack('=I',4)
-                                if numRefs > 0:
-                                    log('    Refs:')
-                                    for x in range(numRefs):
-                                        refModID, = unpack('=B',1)
-                                        if refModID == 255:
-                                            log(_('      %02X (Save File)') % (refModID))
-                                        else:
-                                            log('      %02X (%s)' % (refModID, self.masters[refModID].s))
-                            numElements, = unpack('=I',4)
-                            log(_('    Size:  %u') % numElements)
-                            for i in range(numElements):
-                                if keyType == 1:
-                                    key, = unpack('=d',8)
-                                    keyStr = '%f' % key
+                                    log(_(u'    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
+                                log(_(u'    ID  :  %u') % arrayID)
+                                if keyType == 1: #Numeric
+                                    if isPacked:
+                                        log(_(u'    Type:  Array'))
+                                    else:
+                                        log(_(u'    Type:  Map'))
                                 elif keyType == 3:
-                                    keyLen, = unpack('=H',2)
-                                    key = ins.read(keyLen)
-                                    keyStr = key
+                                    log(_(u'    Type:  StringMap'))
                                 else:
-                                    keyStr = 'BAD'
-                                dataType, = unpack('=B',1)
-                                if dataType == 1:
-                                    data, = unpack('=d',8)
-                                    dataStr = '%f' % data
-                                elif dataType == 2:
-                                    data, = unpack('=I',4)
-                                    dataStr = '%08X' % data
-                                elif dataType == 3:
-                                    dataLen, = unpack('=H',2)
-                                    data = ins.read(dataLen)
-                                    dataStr = data
-                                elif dataType == 4:
-                                    data, = unpack('=I',4)
-                                    dataStr = '%u' % data
-                                log('    [%s]:%s = %s' % (keyStr,('BAD','NUM','REF','STR','ARR')[dataType],dataStr))
-                    elif (opcodeBase == 0x2330):    # Pluggy
-                        if (chunkTypeNum == 1):
-                            #--Pluggy TypeESP
-                            log(_('    Pluggy ESPs'))
-                            log(_('    EID   ID    Name'))
-                            while (ins.tell() < len(chunkBuff)):
-                                if chunkVersion == 2:
-                                    espId,modId, = unpack('=BB', 2)
-                                    log('    %02X    %02X' % (espId,modId))
-                                    espMap[modId] = espId
-                                else: #elif chunkVersion == 1"
-                                    espId,modId,modNameLen, = unpack('=BBI',6)
-                                    modName = ins.read(modNameLen)
-                                    log('    %02X    %02X    %s' % (espId,modId,modName))
-                                    espMap[modId] = modName # was [espId]
-                        elif (chunkTypeNum == 2):
-                            #--Pluggy TypeSTR
-                            log(_('    Pluggy String'))
-                            strId,modId,strFlags, = unpack('=IBB',6)
-                            strData = ins.read(len(chunkBuff) - ins.tell())
-                            log(u'      '+_(u'StrID :')+u' %u' % strId)
-                            log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(u'      '+_(u'Flags :')+u' %u' % strFlags)
-                            log(u'      '+_(u'Data  :')+u' %s' % strData)
-                        elif (chunkTypeNum == 3):
-                            #--Pluggy TypeArray
-                            log(_('    Pluggy Array'))
-                            arrId,modId,arrFlags,arrSize, = unpack('=IBBI',10)
-                            log(_('      ArrID : %u') % (arrId,))
-                            log(_('      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(_('      Flags : %u') % (arrFlags,))
-                            log(_('      Size  : %u') % (arrSize,))
-                            while (ins.tell() < len(chunkBuff)):
-                                elemIdx,elemType, = unpack('=IB',5)
-                                elemStr = ins.read(4)
-                                if (elemType == 0): #--Integer
-                                    elem, = struct.unpack('=i',elemStr)
-                                    log('        [%u]  INT  %d' % (elemIdx,elem,))
-                                elif (elemType == 1): #--Ref
-                                    elem, = struct.unpack('=I',elemStr)
-                                    log('        [%u]  REF  %08X' % (elemIdx,elem,))
-                                elif (elemType == 2): #--Float
-                                    elem, = struct.unpack('=f',elemStr)
-                                    log('        [%u]  FLT  %08X' % (elemIdx,elem,))
-                        elif (chunkTypeNum == 4):
-                            #--Pluggy TypeName
-                            log(_('    Pluggy Name'))
-                            refId, = unpack('=I',4)
-                            refName = ins.read(len(chunkBuff) - ins.tell())
-                            newName = ''
-                            for i in range(len(refName)):
-                                ch = refName[i] if ((refName[i] >= chr(0x20)) and (refName[i] < chr(0x80))) else '.'
-                                newName = newName + ch
-                            log(_('      RefID : %08X') % (refId,))
-                            log(_('      Name  : %s') % (newName,))
-                        elif (chunkTypeNum == 5):
-                            #--Pluggy TypeScr
-                            log(_('    Pluggy ScreenSize'))
-                            #UNTESTED - uncomment following line to skip this record type
-                            #continue
-                            scrW,scrH, = unpack('=II',8)
-                            log(_('      Width  : %u') % (scrW,))
-                            log(_('      Height : %u') % (scrH,))
-                        elif (chunkTypeNum == 6):
-                            #--Pluggy TypeHudS
-                            log(u'    '+_(u'Pluggy HudS'))
-                            #UNTESTED - uncomment following line to skip this record type
-                            #continue
-                            hudSid,modId,hudFlags,hudRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
-                            hudFileName = ins.read(len(chunkBuff) - ins.tell())
-                            log(u'      '+_(u'HudSID :')+u' %u' % hudSid)
-                            log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
-                            log(u'      '+_(u'RootID :')+u' %u' % hudRootID)
-                            log(u'      '+_(u'Show   :')+u' %02X' % hudShow)
-                            log(u'      '+_(u'Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
-                            log(u'      '+_(u'Depth  :')+u' %u' % hudDepth)
-                            log(u'      '+_(u'Scale  :')+u' %f,%f' % (hudScaleX,hudScaleY,))
-                            log(u'      '+_(u'Alpha  :')+u' %02X' % hudAlpha)
-                            log(u'      '+_(u'Align  :')+u' %02X' % hudAlignment)
-                            log(u'      '+_(u'AutoSc :')+u' %02X' % hudAutoScale)
-                            log(u'      '+_(u'File   :')+u' %s' % hudFileName)
-                        elif (chunkTypeNum == 7):
-                            #--Pluggy TypeHudT
-                            log(_('    Pluggy HudT'))
-                            #UNTESTED - uncomment following line to skip this record type
-                            #continue
-                            hudTid,modId,hudFlags,hudShow,hudPosX,hudPosY,hudDepth, = unpack('=IBBBffh',17)
-                            hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale,hudWidth,hudHeight,hudFormat, = unpack('=ffBBBIIB',20)
-                            hudFontNameLen, = unpack('=I',4)
-                            hudFontName = ins.read(hudFontNameLen)
-                            hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = unpack('=IIhBBBB',14)
-                            hudText = ins.read(len(chunkBuff) - ins.tell())
-                            log(u'      '+_('HudTID :')+u' %u' % hudTid)
-                            log(u'      '+_('ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
-                            log(u'      '+_('Flags  :')+u' %02X' % hudFlags)
-                            log(u'      '+_('Show   :')+u' %02X' % hudShow)
-                            log(u'      '+_('Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
-                            log(u'      '+_('Depth  :')+u' %u' % hudDepth)
-                            log(u'      '+_('Scale  :')+u' %f,%f' % (hudScaleX,hudScaleY,))
-                            log(u'      '+_('Alpha  :')+u' %02X' % hudAlpha)
-                            log(u'      '+_('Align  :')+u' %02X' % hudAlignment)
-                            log(u'      '+_('AutoSc :')+u' %02X' % hudAutoScale)
-                            log(u'      '+_('Width  :')+u' %u' % hudWidth)
-                            log(u'      '+_('Height :')+u' %u' % hudHeight)
-                            log(u'      '+_('Format :')+u' %u' % hudFormat)
-                            log(u'      '+_('FName  :')+u' %s' % hudFontName)
-                            log(u'      '+_('FHght  :')+u' %u' % hudFontHeight)
-                            log(u'      '+_('FWdth  :')+u' %u' % hudFontWidth)
-                            log(u'      '+_('FWeigh :')+u' %u' % hudWeight)
-                            log(u'      '+_('FItal  :')+u' %u' % hudItalic)
-                            log(u'      '+_('FRGB   :')+u' %u,%u,%u' % (hudFontR,hudFontG,hudFontB,))
-                            log(u'      '+_('FText  :')+u' %s' % hudText)
-                    ins.close()
+                                    log(_(u'    Type:  Unknown'))
+                                if chunkVersion >= 1:
+                                    numRefs, = unpack('=I',4)
+                                    if numRefs > 0:
+                                        log(u'    Refs:')
+                                        for x in range(numRefs):
+                                            refModID, = unpack('=B',1)
+                                            if refModID == 255:
+                                                log(_(u'      %02X (Save File)') % (refModID))
+                                            else:
+                                                log(u'      %02X (%s)' % (refModID, self.masters[refModID].s))
+                                numElements, = unpack('=I',4)
+                                log(_(u'    Size:  %u') % numElements)
+                                for i in range(numElements):
+                                    if keyType == 1:
+                                        key, = unpack('=d',8)
+                                        keyStr = u'%f' % key
+                                    elif keyType == 3:
+                                        keyLen, = unpack('=H',2)
+                                        key = ins.read(keyLen)
+                                        keyStr = key
+                                    else:
+                                        keyStr = 'BAD'
+                                    dataType, = unpack('=B',1)
+                                    if dataType == 1:
+                                        data, = unpack('=d',8)
+                                        dataStr = u'%f' % data
+                                    elif dataType == 2:
+                                        data, = unpack('=I',4)
+                                        dataStr = u'%08X' % data
+                                    elif dataType == 3:
+                                        dataLen, = unpack('=H',2)
+                                        data = ins.read(dataLen)
+                                        dataStr = data
+                                    elif dataType == 4:
+                                        data, = unpack('=I',4)
+                                        dataStr = u'%u' % data
+                                    log(u'    [%s]:%s = %s' % (keyStr,('BAD','NUM','REF','STR','ARR')[dataType],dataStr))
+                        elif (opcodeBase == 0x2330):    # Pluggy
+                            if (chunkTypeNum == 1):
+                                #--Pluggy TypeESP
+                                log(_(u'    Pluggy ESPs'))
+                                log(_(u'    EID   ID    Name'))
+                                while (ins.tell() < len(chunkBuff)):
+                                    if chunkVersion == 2:
+                                        espId,modId, = unpack('=BB', 2)
+                                        log(u'    %02X    %02X' % (espId,modId))
+                                        espMap[modId] = espId
+                                    else: #elif chunkVersion == 1"
+                                        espId,modId,modNameLen, = unpack('=BBI',6)
+                                        modName = ins.read(modNameLen)
+                                        log(u'    %02X    %02X    %s' % (espId,modId,modName))
+                                        espMap[modId] = modName # was [espId]
+                            elif (chunkTypeNum == 2):
+                                #--Pluggy TypeSTR
+                                log(_(u'    Pluggy String'))
+                                strId,modId,strFlags, = unpack('=IBB',6)
+                                strData = ins.read(len(chunkBuff) - ins.tell())
+                                log(u'      '+_(u'StrID :')+u' %u' % strId)
+                                log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(u'      '+_(u'Flags :')+u' %u' % strFlags)
+                                log(u'      '+_(u'Data  :')+u' %s' % strData)
+                            elif (chunkTypeNum == 3):
+                                #--Pluggy TypeArray
+                                log(_(u'    Pluggy Array'))
+                                arrId,modId,arrFlags,arrSize, = unpack('=IBBI',10)
+                                log(_(u'      ArrID : %u') % (arrId,))
+                                log(_(u'      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(_(u'      Flags : %u') % (arrFlags,))
+                                log(_(u'      Size  : %u') % (arrSize,))
+                                while (ins.tell() < len(chunkBuff)):
+                                    elemIdx,elemType, = unpack('=IB',5)
+                                    elemStr = ins.read(4)
+                                    if (elemType == 0): #--Integer
+                                        elem, = struct.unpack('=i',elemStr)
+                                        log(u'        [%u]  INT  %d' % (elemIdx,elem,))
+                                    elif (elemType == 1): #--Ref
+                                        elem, = struct.unpack('=I',elemStr)
+                                        log(u'        [%u]  REF  %08X' % (elemIdx,elem,))
+                                    elif (elemType == 2): #--Float
+                                        elem, = struct.unpack('=f',elemStr)
+                                        log(u'        [%u]  FLT  %08X' % (elemIdx,elem,))
+                            elif (chunkTypeNum == 4):
+                                #--Pluggy TypeName
+                                log(_(u'    Pluggy Name'))
+                                refId, = unpack('=I',4)
+                                refName = ins.read(len(chunkBuff) - ins.tell())
+                                newName = u''
+                                for i in range(len(refName)):
+                                    ch = refName[i] if ((refName[i] >= chr(0x20)) and (refName[i] < chr(0x80))) else '.'
+                                    newName = newName + ch
+                                log(_(u'      RefID : %08X') % (refId,))
+                                log(_(u'      Name  : %s') % (newName,))
+                            elif (chunkTypeNum == 5):
+                                #--Pluggy TypeScr
+                                log(_(u'    Pluggy ScreenSize'))
+                                #UNTESTED - uncomment following line to skip this record type
+                                #continue
+                                scrW,scrH, = unpack('=II',8)
+                                log(_(u'      Width  : %u') % (scrW,))
+                                log(_(u'      Height : %u') % (scrH,))
+                            elif (chunkTypeNum == 6):
+                                #--Pluggy TypeHudS
+                                log(u'    '+_(u'Pluggy HudS'))
+                                #UNTESTED - uncomment following line to skip this record type
+                                #continue
+                                hudSid,modId,hudFlags,hudRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
+                                hudFileName = ins.read(len(chunkBuff) - ins.tell())
+                                log(u'      '+_(u'HudSID :')+u' %u' % hudSid)
+                                log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
+                                log(u'      '+_(u'RootID :')+u' %u' % hudRootID)
+                                log(u'      '+_(u'Show   :')+u' %02X' % hudShow)
+                                log(u'      '+_(u'Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
+                                log(u'      '+_(u'Depth  :')+u' %u' % hudDepth)
+                                log(u'      '+_(u'Scale  :')+u' %f,%f' % (hudScaleX,hudScaleY,))
+                                log(u'      '+_(u'Alpha  :')+u' %02X' % hudAlpha)
+                                log(u'      '+_(u'Align  :')+u' %02X' % hudAlignment)
+                                log(u'      '+_(u'AutoSc :')+u' %02X' % hudAutoScale)
+                                log(u'      '+_(u'File   :')+u' %s' % hudFileName)
+                            elif (chunkTypeNum == 7):
+                                #--Pluggy TypeHudT
+                                log(_(u'    Pluggy HudT'))
+                                #UNTESTED - uncomment following line to skip this record type
+                                #continue
+                                hudTid,modId,hudFlags,hudShow,hudPosX,hudPosY,hudDepth, = unpack('=IBBBffh',17)
+                                hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale,hudWidth,hudHeight,hudFormat, = unpack('=ffBBBIIB',20)
+                                hudFontNameLen, = unpack('=I',4)
+                                hudFontName = ins.read(hudFontNameLen)
+                                hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = unpack('=IIhBBBB',14)
+                                hudText = ins.read(len(chunkBuff) - ins.tell())
+                                log(u'      '+_(u'HudTID :')+u' %u' % hudTid)
+                                log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
+                                log(u'      '+_(u'Show   :')+u' %02X' % hudShow)
+                                log(u'      '+_(u'Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
+                                log(u'      '+_(u'Depth  :')+u' %u' % hudDepth)
+                                log(u'      '+_(u'Scale  :')+u' %f,%f' % (hudScaleX,hudScaleY,))
+                                log(u'      '+_(u'Alpha  :')+u' %02X' % hudAlpha)
+                                log(u'      '+_(u'Align  :')+u' %02X' % hudAlignment)
+                                log(u'      '+_(u'AutoSc :')+u' %02X' % hudAutoScale)
+                                log(u'      '+_(u'Width  :')+u' %u' % hudWidth)
+                                log(u'      '+_(u'Height :')+u' %u' % hudHeight)
+                                log(u'      '+_(u'Format :')+u' %u' % hudFormat)
+                                log(u'      '+_(u'FName  :')+u' %s' % hudFontName)
+                                log(u'      '+_(u'FHght  :')+u' %u' % hudFontHeight)
+                                log(u'      '+_(u'FWdth  :')+u' %u' % hudFontWidth)
+                                log(u'      '+_(u'FWeigh :')+u' %u' % hudWeight)
+                                log(u'      '+_(u'FItal  :')+u' %u' % hudItalic)
+                                log(u'      '+_(u'FRGB   :')+u' %u,%u,%u' % (hudFontR,hudFontG,hudFontB,))
+                                log(u'      '+_(u'FText  :')+u' %s' % hudText)
 
     def findBloating(self,progress=None):
         """Analyzes file for bloating. Returns (createdCounts,nullRefCount)."""
@@ -6521,7 +6511,7 @@ class SaveFile:
         progress = progress or bolt.Progress()
         progress.setFull(len(self.created)+len(self.records))
         #--Created objects
-        progress(0,_('Scanning created objects'))
+        progress(0,_(u'Scanning created objects'))
         fullAttr = 'full'
         for citem in self.created:
             if fullAttr in citem.__class__.__slots__:
@@ -6538,7 +6528,7 @@ class SaveFile:
             if createdCounts[key] < minCount:
                 del createdCounts[key]
         #--Change records
-        progress(len(self.created),_('Scanning change records.'))
+        progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
         for record in self.records:
             fid,recType,flags,version,data = record
@@ -6557,7 +6547,7 @@ class SaveFile:
         uncreated = set()
         #--Uncreate
         if uncreateKeys:
-            progress(0,_('Scanning created objects'))
+            progress(0,_(u'Scanning created objects'))
             kept = []
             for citem in self.created:
                 if 'full' in citem.__class__.__slots__:
@@ -6572,7 +6562,7 @@ class SaveFile:
                 progress.plus()
             self.created = kept
         #--Change records
-        progress(progress.state,_('Scanning change records.'))
+        progress(progress.state,_(u'Scanning change records.'))
         fids = self.fids
         kept = []
         for record in self.records:
@@ -6613,12 +6603,11 @@ class SaveFile:
         data = self.preCreated
         tesClassSize, = struct.unpack('H',data[:2])
         if tesClassSize < 4: return
-        buff = cStringIO.StringIO()
-        buff.write(data)
-        buff.seek(2+tesClassSize-4)
-        buff.write(struct.pack('I',value))
-        self.preCreated = buff.getvalue()
-        buff.close()
+        with sio() as buff:
+            buff.write(data)
+            buff.seek(2+tesClassSize-4)
+            buff.write(struct.pack('I',value))
+            self.preCreated = buff.getvalue()
 
 #--------------------------------------------------------------------------------
 class CoSaves:
@@ -6630,9 +6619,9 @@ class CoSaves:
         """Returns cofile paths."""
         maSave = CoSaves.reSave.search(savePath.s)
         if maSave: savePath = savePath.root
-        first = maSave and maSave.group(1) or ''
+        first = maSave and maSave.group(1) or u''
         return tuple(savePath+ext+first
-                     for ext in ('.pluggy','.'+bush.game.se.shortName.lower()))
+                     for ext in (u'.pluggy',u'.'+bush.game.se.shortName.lower()))
 
     def __init__(self,savePath,saveName=None):
         """Initialize with savePath."""
@@ -6662,13 +6651,13 @@ class CoSaves:
 
     def getTags(self):
         """Returns tags expressing whether cosaves exist and are correct."""
-        cPluggy,cObse = ('','')
+        cPluggy,cObse = (u'',u'')
         save = self.savePath
         pluggy,obse = self.paths
         if pluggy.exists():
-            cPluggy = 'XP'[abs(pluggy.mtime - save.mtime) < 10]
+            cPluggy = u'XP'[abs(pluggy.mtime - save.mtime) < 10]
         if obse.exists():
-            cObse = 'XO'[abs(obse.mtime - save.mtime) < 10]
+            cObse = u'XO'[abs(obse.mtime - save.mtime) < 10]
         return (cObse,cPluggy)
 
 # File System -----------------------------------------------------------------
@@ -6685,10 +6674,10 @@ class BsaFile:
         #--Hash1
         chars = map(ord,root)
         hash1 = chars[-1] | ((len(chars)>2 and chars[-2]) or 0)<<8 | len(chars)<<16 | chars[0]<<24
-        if   ext == '.kf':  hash1 |= 0x80
-        elif ext == '.nif': hash1 |= 0x8000
-        elif ext == '.dds': hash1 |= 0x8080
-        elif ext == '.wav': hash1 |= 0x80000000
+        if   ext == u'.kf':  hash1 |= 0x80
+        elif ext == u'.nif': hash1 |= 0x8000
+        elif ext == u'.dds': hash1 |= 0x8080
+        elif ext == u'.wav': hash1 |= 0x80000000
         #--Hash2
         uintMask, hash2, hash3 = 0xFFFFFFFF, 0, 0
         for char in chars[1:-2]:
@@ -6707,34 +6696,32 @@ class BsaFile:
 
     def scan(self):
         """Reports on contents."""
-        ins = bolt.StructFile(self.path.s,'rb')
-        #--Header
-        ins.seek(4*4)
-        (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
-        #--FolderInfos (Initial)
-        folderInfos = self.folderInfos = []
-        for index in range(self.folderCount):
-            hash,subFileCount,offset = ins.unpack('Q2I',16)
-            folderInfos.append([hash,subFileCount,offset])
-        #--Update folderInfos
-        for index,folderInfo in enumerate(folderInfos):
-            fileInfos = []
-            folderName = cstrip(ins.read(ins.unpack('B',1)[0]))
-            folderInfos[index].extend((folderName,fileInfos))
-            for index in range(folderInfo[1]):
-                filePos = ins.tell()
-                hash,size,offset = ins.unpack('Q2I',16)
-                fileInfos.append([hash,size,offset,'',filePos])
-        #--File Names
-        fileNames = ins.read(lenFileNames)
-        fileNames = fileNames.split('\x00')[:-1]
-        namesIter = iter(fileNames)
-        for folderInfo in folderInfos:
-            fileInfos = folderInfo[-1]
-            for index,fileInfo in enumerate(fileInfos):
-                fileInfo[3] = namesIter.next()
+        with bolt.StructFile(self.path.s,'rb') as ins:
+            #--Header
+            ins.seek(4*4)
+            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
+            #--FolderInfos (Initial)
+            folderInfos = self.folderInfos = []
+            for index in range(self.folderCount):
+                hash,subFileCount,offset = ins.unpack('Q2I',16)
+                folderInfos.append([hash,subFileCount,offset])
+            #--Update folderInfos
+            for index,folderInfo in enumerate(folderInfos):
+                fileInfos = []
+                folderName = cstrip(ins.read(ins.unpack('B',1)[0]))
+                folderInfos[index].extend((folderName,fileInfos))
+                for index in range(folderInfo[1]):
+                    filePos = ins.tell()
+                    hash,size,offset = ins.unpack('Q2I',16)
+                    fileInfos.append([hash,size,offset,u'',filePos])
+            #--File Names
+            fileNames = [_unicode(x) for x in ins.read(lenFileNames).split('\x00')[:-1]]
+            namesIter = iter(fileNames)
+            for folderInfo in folderInfos:
+                fileInfos = folderInfo[-1]
+                for index,fileInfo in enumerate(fileInfos):
+                    fileInfo[3] = namesIter.next()
         #--Done
-        ins.close()
 
     def report(self,printAll=False):
         """Report on contents."""
@@ -6749,107 +6736,106 @@ class BsaFile:
 
     def firstBackup(self,progress):
         """Make first backup, just in case!"""
-        backupDir = modInfos.bashDir.join('Backups')
+        backupDir = modInfos.bashDir.join(u'Backups')
         backupDir.makedirs()
-        backup = backupDir.join(self.path.tail)+'f'
+        backup = backupDir.join(self.path.tail)+u'f'
         if not backup.exists():
-            progress(0,_("Backing up BSA file. This will take a while..."))
+            progress(0,_(u"Backing up BSA file. This will take a while..."))
             self.path.copyTo(backup)
 
     def updateAIText(self,files=None):
         """Update aiText with specified files. (Or remove, if files == None.)"""
-        aiPath = dirs['app'].join('ArchiveInvalidation.txt')
+        aiPath = dirs['app'].join(u'ArchiveInvalidation.txt')
         if not files:
             aiPath.remove()
             return
         #--Archive invalidation
-        aiText = re.sub(r'\\','/','\n'.join(files))
-        aiPath.open('w').write(aiText)
+        aiText = re.sub(ur'\\',u'/',u'\n'.join(files))
+        with aiPath.open('w'):
+            write(aiText)
 
     def resetMTimes(self):
         """Reset dates of bsa files to 'correct' values."""
         #--Fix the data of a few archive files
         bsaTimes = (
-            ('Oblivion - Meshes.bsa',1138575220),
-            ('Oblivion - Misc.bsa',1139433736),
-            ('Oblivion - Sounds.bsa',1138660560),
+            (u'Oblivion - Meshes.bsa',1138575220),
+            (u'Oblivion - Misc.bsa',1139433736),
+            (u'Oblivion - Sounds.bsa',1138660560),
             (inisettings['OblivionTexturesBSAName'].stail,1138162634),
-            ('Oblivion - Voices1.bsa',1138162934),
-            ('Oblivion - Voices2.bsa',1138166742),
+            (u'Oblivion - Voices1.bsa',1138162934),
+            (u'Oblivion - Voices2.bsa',1138166742),
             )
         for bsaFile,mtime in bsaTimes:
             dirs['mods'].join(bsaFile).mtime = mtime
 
     def reset(self,progress=None):
         """Resets BSA archive hashes to correct values."""
-        ios = bolt.StructFile(self.path.s,'r+b')
-        #--Rehash
-        resetCount = 0
-        folderInfos = self.folderInfos
-        getHash = BsaFile.getHash
-        for folderInfo in folderInfos:
-            for fileInfo in folderInfo[-1]:
-                hash,size,offset,fileName,filePos = fileInfo
-                trueHash = getHash(fileName)
-                if hash != trueHash:
-                    #print ' ',fileName,'\t',hex(hash-trueHash),hex(hash),hex(trueHash)
-                    ios.seek(filePos)
-                    ios.pack('Q',trueHash)
-                    resetCount += 1
+        with bolt.StructFile(self.path.s,'r+b') as ios:
+            #--Rehash
+            resetCount = 0
+            folderInfos = self.folderInfos
+            getHash = BsaFile.getHash
+            for folderInfo in folderInfos:
+                for fileInfo in folderInfo[-1]:
+                    hash,size,offset,fileName,filePos = fileInfo
+                    trueHash = getHash(fileName)
+                    if hash != trueHash:
+                        #print ' ',fileName,'\t',hex(hash-trueHash),hex(hash),hex(trueHash)
+                        ios.seek(filePos)
+                        ios.pack('Q',trueHash)
+                        resetCount += 1
         #--Done
-        ios.close()
         self.resetMTimes()
         self.updateAIText()
         return resetCount
 
     def invalidate(self,progress=None):
         """Invalidates entries in BSA archive and regenerates Archive Invalidation.txt."""
-        reRepTexture = re.compile(r'(?<!_[gn])\.dds',re.I)
-        ios = bolt.StructFile(self.path.s,'r+b')
-        #--Rehash
-        reset,inval,intxt = [],[],[]
-        folderInfos = self.folderInfos
-        getHash = BsaFile.getHash
-        trueHashes = set()
-        def setHash(filePos,newHash):
-            ios.seek(filePos)
-            ios.pack('Q',newHash)
-            return newHash
-        for folderInfo in folderInfos:
-            folderName = folderInfo[-2]
-            #--Actual directory files
-            diskPath = modInfos.dir.join(folderName)
-            diskFiles = set(x.s.lower() for x in diskPath.list())
-            trueHashes.clear()
-            nextHash = 0 #--But going in reverse order, physical 'next' == loop 'prev'
-            for fileInfo in reversed(folderInfo[-1]):
-                hash,size,offset,fileName,filePos = fileInfo
-                #--NOT a Path object.
-                fullPath = os.path.join(folderName,fileName)
-                trueHash = getHash(fileName)
-                plusCE = trueHash + 0xCE
-                plusE = trueHash + 0xE
-                #--No invalidate?
-                if not (fileName in diskFiles and reRepTexture.search(fileName)):
-                    if hash != trueHash:
-                        setHash(filePos,trueHash)
-                        reset.append(fullPath)
-                    nextHash = trueHash
-                #--Invalidate one way or another...
-                elif not nextHash or (plusCE < nextHash and plusCE not in trueHashes):
-                    nextHash = setHash(filePos,plusCE)
-                    inval.append(fullPath)
-                elif plusE < nextHash and plusE not in trueHashes:
-                    nextHash = setHash(filePos,plusE)
-                    inval.append(fullPath)
-                else:
-                    if hash != trueHash:
-                        setHash(filePos,trueHash)
-                    nextHash = trueHash
-                    intxt.append(fullPath)
-                trueHashes.add(trueHash)
+        reRepTexture = re.compile(ur'(?<!_[gn])\.dds',re.I|re.U)
+        with bolt.StructFile(self.path.s,'r+b') as ios:
+            #--Rehash
+            reset,inval,intxt = [],[],[]
+            folderInfos = self.folderInfos
+            getHash = BsaFile.getHash
+            trueHashes = set()
+            def setHash(filePos,newHash):
+                ios.seek(filePos)
+                ios.pack('Q',newHash)
+                return newHash
+            for folderInfo in folderInfos:
+                folderName = folderInfo[-2]
+                #--Actual directory files
+                diskPath = modInfos.dir.join(folderName)
+                diskFiles = set(x.s.lower() for x in diskPath.list())
+                trueHashes.clear()
+                nextHash = 0 #--But going in reverse order, physical 'next' == loop 'prev'
+                for fileInfo in reversed(folderInfo[-1]):
+                    hash,size,offset,fileName,filePos = fileInfo
+                    #--NOT a Path object.
+                    fullPath = os.path.join(folderName,fileName)
+                    trueHash = getHash(fileName)
+                    plusCE = trueHash + 0xCE
+                    plusE = trueHash + 0xE
+                    #--No invalidate?
+                    if not (fileName in diskFiles and reRepTexture.search(fileName)):
+                        if hash != trueHash:
+                            setHash(filePos,trueHash)
+                            reset.append(fullPath)
+                        nextHash = trueHash
+                    #--Invalidate one way or another...
+                    elif not nextHash or (plusCE < nextHash and plusCE not in trueHashes):
+                        nextHash = setHash(filePos,plusCE)
+                        inval.append(fullPath)
+                    elif plusE < nextHash and plusE not in trueHashes:
+                        nextHash = setHash(filePos,plusE)
+                        inval.append(fullPath)
+                    else:
+                        if hash != trueHash:
+                            setHash(filePos,trueHash)
+                        nextHash = trueHash
+                        intxt.append(fullPath)
+                    trueHashes.add(trueHash)
         #--Save/Cleanup
-        ios.close()
         self.resetMTimes()
         self.updateAIText(intxt)
         #--Done
@@ -6858,11 +6844,11 @@ class BsaFile:
 #--------------------------------------------------------------------------------
 class IniFile(object):
     """Any old ini file."""
-    reComment = re.compile(';.*')
-    reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-    reSetting = re.compile(r'(.+?)\s*=(.*)')
+    reComment = re.compile(u';.*',re.U)
+    reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
+    reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
 
-    def __init__(self,path,defaultSection='General'):
+    def __init__(self,path,defaultSection=u'General'):
         """Initialize."""
         self.path = path
         self.defaultSection = defaultSection
@@ -6906,23 +6892,22 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read ini file
-        iniFile = tweakPath.open('r')
-        sectionSettings = None
-        for i,line in enumerate(iniFile.readlines()):
-            stripped = reComment.sub('',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
-            if maSection:
-                sectionSettings = ini_settings[LString(maSection.group(1))] = {}
-            elif maSetting:
-                if sectionSettings == None:
-                    sectionSettings = ini_settings.setdefault(bolt.LString(self.defaultSection),{})
-                    if setCorrupted: self.isCorrupted = True
-                if lineNumbers:
-                    sectionSettings[LString(maSetting.group(1))] = (maSetting.group(2).strip(),i)
-                else:
-                    sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
-        iniFile.close()
+        with tweakPath.open('r') as iniFile:
+            sectionSettings = None
+            for i,line in enumerate(iniFile.readlines()):
+                stripped = reComment.sub('',line).strip()
+                maSection = reSection.match(stripped)
+                maSetting = reSetting.match(stripped)
+                if maSection:
+                    sectionSettings = ini_settings[LString(maSection.group(1))] = {}
+                elif maSetting:
+                    if sectionSettings == None:
+                        sectionSettings = ini_settings.setdefault(bolt.LString(self.defaultSection),{})
+                        if setCorrupted: self.isCorrupted = True
+                    if lineNumbers:
+                        sectionSettings[LString(maSetting.group(1))] = (maSetting.group(2).strip(),i)
+                    else:
+                        sectionSettings[LString(maSetting.group(1))] = maSetting.group(2).strip()
         return ini_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -6947,40 +6932,39 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read ini file
-        iniFile = tweakPath.open('r')
-        section = LString(self.defaultSection)
-        for i,line in enumerate(iniFile.readlines()):
-            stripped = reComment.sub('',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
-            setting = None
-            value = LString('')
-            status = 0
-            lineNo = -1
-            if maSection:
-                section = LString(maSection.group(1))
-                if section not in iniSettings:
-                    status = -10
-            elif maSetting:
-                if section in iniSettings:
-                    setting = LString(maSetting.group(1))
-                    if setting in iniSettings[section]:
-                        value = LString(maSetting.group(2).strip())
-                        lineNo = iniSettings[section][setting][1]
-                        if iniSettings[section][setting][0] == value:
-                            status = 20
+        with tweakPath.open('r') as iniFile:
+            section = LString(self.defaultSection)
+            for i,line in enumerate(iniFile.readlines()):
+                stripped = reComment.sub(u'',line).strip()
+                maSection = reSection.match(stripped)
+                maSetting = reSetting.match(stripped)
+                setting = None
+                value = LString(u'')
+                status = 0
+                lineNo = -1
+                if maSection:
+                    section = LString(maSection.group(1))
+                    if section not in iniSettings:
+                        status = -10
+                elif maSetting:
+                    if section in iniSettings:
+                        setting = LString(maSetting.group(1))
+                        if setting in iniSettings[section]:
+                            value = LString(maSetting.group(2).strip())
+                            lineNo = iniSettings[section][setting][1]
+                            if iniSettings[section][setting][0] == value:
+                                status = 20
+                            else:
+                                status = 10
                         else:
-                            status = 10
+                            status = -10
+                        setting = setting._s
                     else:
                         status = -10
-                    setting = setting._s
                 else:
-                    status = -10
-            else:
-                if len(stripped) != 0:
-                    status = -10
-            lines.append((line.rstrip(),section._s,setting,value._s,status,lineNo))
-        iniFile.close()
+                    if len(stripped) != 0:
+                        status = -10
+                lines.append((line.rstrip(),section._s,setting,value._s,status,lineNo))
         return lines
 
     def saveSetting(self,section,key,value):
@@ -7006,19 +6990,19 @@ class IniFile(object):
                 with self.path.open('r') as iniFile:
                     with self.path.temp.open('w') as tmpFile:
                         for line in iniFile:
-                            stripped = reComment.sub('',line).strip()
+                            stripped = reComment.sub(u'',line).strip()
                             maSection = reSection.match(stripped)
                             if maSection:
                                 section = LString(maSection.group(1))
                                 if section == s:
                                     #--Found the section
-                                    line += '%s=%s\n' % (key,value)
+                                    line += u'%s=%s\n' % (key,value)
                             tmpFile.write(line)
                 self.path.untemp()
             else:
                 #--It's not, and the section isn't, so we'll add it to the end
                 tmpFile.write(iniFile.read())
-                tmpFile.write('\n[%s]\n%s=%s' % (section, key, value))
+                tmpFile.write(u'\n[%s]\n%s=%s' % (section, key, value))
 
     def saveSettings(self,ini_settings):
         """Applies dictionary of settings to ini file.
@@ -7036,7 +7020,7 @@ class IniFile(object):
         with self.path.open('r') as iniFile:
             with self.path.temp.open('w') as tmpFile:
                 for line in iniFile:
-                    stripped = reComment.sub('',line).strip()
+                    stripped = reComment.sub(u'',line).strip()
                     maSection = reSection.match(stripped)
                     maSetting = reSetting.match(stripped)
                     if maSection:
@@ -7045,10 +7029,10 @@ class IniFile(object):
                     elif maSetting and sectionSettings and LString(maSetting.group(1)) in sectionSettings:
                         key = LString(maSetting.group(1))
                         value = sectionSettings[key]
-                        if isinstance(value,str) and value[-1] == '\n':
+                        if isinstance(value,str) and value[-1] == u'\n':
                             line = value
                         else:
-                            line = '%s=%s\n' % (key,value)
+                            line = u'%s=%s\n' % (key,value)
                     tmpFile.write(line)
         #--Done
         self.path.untemp()
@@ -7064,24 +7048,23 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
-        tweakFile = tweakPath.open('r')
-        ini_settings = {}
-        sectionSettings = None
-        for line in tweakFile:
-            stripped = reComment.sub('',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
-            if maSection:
-                sectionSettings = ini_settings[LString(maSection.group(1))] = {}
-            elif maSetting:
-                if line[-1:] != '\n': line += '\r\n' #--Make sure has trailing new line
-                sectionSettings[LString(maSetting.group(1))] = line
-        tweakFile.close()
+        with tweakPath.open('r') as tweakFile:
+            ini_settings = {}
+            sectionSettings = None
+            for line in tweakFile:
+                stripped = reComment.sub(u'',line).strip()
+                maSection = reSection.match(stripped)
+                maSetting = reSetting.match(stripped)
+                if maSection:
+                    sectionSettings = ini_settings[LString(maSection.group(1))] = {}
+                elif maSetting:
+                    if line[-1:] != u'\n': line += u'\r\n' #--Make sure has trailing new line
+                    sectionSettings[LString(maSetting.group(1))] = line
         self.saveSettings(ini_settings)
 
 #-----------------------------------------------------------------------------------------------
 def BestIniFile(path):
-    if path.csbody == 'oblivion':
+    if path.csbody == u'oblivion':
         return oblivionIni
     INICount = IniFile.formatMatch(path)
     OBSECount = OBSEIniFile.formatMatch(path)
@@ -7093,20 +7076,20 @@ def BestIniFile(path):
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set' and 'setGS' statements."""
-    reSet     = re.compile(r'\s*set\s+(.+?)\s+to\s+(.*)', re.I)
-    reSetGS   = re.compile(r'\s*setGS\s+(.+?)\s+(.*)', re.I)
+    reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
+    reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
 
-    def __init__(self,path,defaultSection=''):
+    def __init__(self,path,defaultSection=u''):
         """Change the default section to something that can't
         occur in a normal ini"""
-        IniFile.__init__(self,path,'')
+        IniFile.__init__(self,path,u'')
 
     @staticmethod
     def formatMatch(path):
         count = 0
         with path.open('r') as file:
             for line in file:
-                stripped = OBSEIniFile.reComment.sub('',line).strip()
+                stripped = OBSEIniFile.reComment.sub(u'',line).strip()
                 maSet = OBSEIniFile.reSet.match(stripped)
                 if maSet:
                     count += 1
@@ -7119,8 +7102,8 @@ class OBSEIniFile(IniFile):
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
-        if lstr == 'set': section = ']set['
-        elif lstr == 'setGS': section = ']setGS['
+        if lstr == u'set': section = u']set['
+        elif lstr == u'setGS': section = u']setGS['
         return IniFile.getSetting(self,section,key,default)
 
     def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
@@ -7131,24 +7114,23 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
-        iniFile = tweakPath.open('r')
-        for i,line in enumerate(iniFile.readlines()):
-            stripped = reComment.sub('',line).strip()
-            maSet   = reSet.match(stripped)
-            maSetGS = reSetGS.match(stripped)
-            if maSet:
-                section = ini_settings.setdefault(bolt.LString(']set['),{})
-                if lineNumbers:
-                    section[LString(maSet.group(1))] = (maSet.group(2).strip(),i)
-                else:
-                    section[LString(maSet.group(1))] = maSet.group(2).strip()
-            elif maSetGS:
-                section = ini_settings.setdefault(bolt.LString(']setGS['),{})
-                if lineNumbers:
-                    section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
-                else:
-                    section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
-        iniFile.close()
+        with tweakPath.open('r') as iniFile:
+            for i,line in enumerate(iniFile.readlines()):
+                stripped = reComment.sub(u'',line).strip()
+                maSet   = reSet.match(stripped)
+                maSetGS = reSetGS.match(stripped)
+                if maSet:
+                    section = ini_settings.setdefault(bolt.LString(u']set['),{})
+                    if lineNumbers:
+                        section[LString(maSet.group(1))] = (maSet.group(2).strip(),i)
+                    else:
+                        section[LString(maSet.group(1))] = maSet.group(2).strip()
+                elif maSetGS:
+                    section = ini_settings.setdefault(bolt.LString(u']setGS['),{})
+                    if lineNumbers:
+                        section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
+                    else:
+                        section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
         return ini_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -7171,50 +7153,49 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
-        iniFile = tweakPath.open('r')
-        section = ''
-        for line in iniFile:
-            stripped = reComment.sub('',line).strip()
-            maSet    = reSet.match(stripped)
-            maSetGS  = reSetGS.match(stripped)
-            if maSet:
-                section = LString(']set[')
-                groups = maSet.groups()
-            elif maSetGS:
-                section = LString(']setgs[')
-                groups = maSetGS.groups()
-            else:
-                if len(stripped) == 0:
-                    lines.append((line.strip('\r\n'),'','','',0,-1))
+        section = u''
+        with tweakPath.open('r') as iniFile:
+            for line in iniFile:
+                stripped = reComment.sub(u'',line).strip()
+                maSet    = reSet.match(stripped)
+                maSetGS  = reSetGS.match(stripped)
+                if maSet:
+                    section = LString(u']set[')
+                    groups = maSet.groups()
+                elif maSetGS:
+                    section = LString(u']setgs[')
+                    groups = maSetGS.groups()
                 else:
-                    lines.append((line.strip('\r\n'),'','','',-10,-1))
-                continue
-            status = 0
-            setting = ''
-            value = ''
-            lineNo = -1
-            if section in iniSettings:
-                setting = LString(groups[0].strip())
-                if setting in iniSettings[section]:
-                    value = LString(groups[1].strip())
-                    lineNo = iniSettings[section][setting][1]
-                    if iniSettings[section][setting][0] == value:
-                        status = 20
-                        lineNo = iniSettings[section][setting][1]
+                    if len(stripped) == 0:
+                        lines.append((line.strip(u'\r\n'),u'',u'',u'',0,-1))
                     else:
-                        status = 10
+                        lines.append((line.strip(u'\r\n'),u'',u'',u'',-10,-1))
+                    continue
+                status = 0
+                setting = u''
+                value = u''
+                lineNo = -1
+                if section in iniSettings:
+                    setting = LString(groups[0].strip())
+                    if setting in iniSettings[section]:
+                        value = LString(groups[1].strip())
+                        lineNo = iniSettings[section][setting][1]
+                        if iniSettings[section][setting][0] == value:
+                            status = 20
+                            lineNo = iniSettings[section][setting][1]
+                        else:
+                            status = 10
+                    else:
+                        status = -10
                 else:
                     status = -10
-            else:
-                status = -10
-            lines.append((line.strip(),section,setting,value,status,lineNo))
-        iniFile.close()
+                lines.append((line.strip(),section,setting,value,status,lineNo))
         return lines
 
     def saveSetting(self,section,key,value):
         lstr = LString(section)
-        if lstr == 'set': section = ']set['
-        elif lstr == 'setGS': section = ']setGS['
+        if lstr == u'set': section = u']set['
+        elif lstr == u'setGS': section = u']setGS['
         IniFile.saveSetting(self,section,key,value)
 
     def saveSettings(self,ini_settings):
@@ -7225,34 +7206,32 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
-        iniFile = self.path.open('r')
-        tmpFile = self.path.temp.open('w')
         section = {}
-        for line in iniFile:
-            stripped = reComment.sub('',line).strip()
-            maSet = reSet.match(stripped)
-            maSetGS = reSetGS.match(stripped)
-            if maSet:
-                section = ini_settings.setdefault(bolt.LString(']set['),{})
-                if LString(maSet.group(1)) in section:
-                    key = LString(maSet.group(1))
-                    value = section[key]
-                    if isinstance(value,str) and value[-1] == '\n':
-                        line = value
-                    else:
-                        line = 'Set %s to %s\n' % (key,value)
-            elif maSetGS:
-                section = ini_settings.setdefault(bolt.LString(']setGS['),{})
-                if LString(maSetGS.group(1)) in section:
-                    key = LString(maSetGS.group(1))
-                    value = section[key]
-                    if isinstance(value,str) and value[-1] == '\n':
-                        line = value
-                    else:
-                        line = 'SetGS %s %s' % (key,value)
-            tmpFile.write(line)
-        tmpFile.close()
-        iniFile.close()
+        with self.path.open('r') as iniFile:
+            with self.path.temp.open('w') as tmpFile:
+                for line in iniFile:
+                    stripped = reComment.sub(u'',line).strip()
+                    maSet = reSet.match(stripped)
+                    maSetGS = reSetGS.match(stripped)
+                    if maSet:
+                        section = ini_settings.setdefault(bolt.LString(u']set['),{})
+                        if LString(maSet.group(1)) in section:
+                            key = LString(maSet.group(1))
+                            value = section[key]
+                            if isinstance(value,str) and value[-1] == u'\n':
+                                line = value
+                            else:
+                                line = u'Set %s to %s\n' % (key,value)
+                    elif maSetGS:
+                        section = ini_settings.setdefault(bolt.LString(u']setGS['),{})
+                        if LString(maSetGS.group(1)) in section:
+                            key = LString(maSetGS.group(1))
+                            value = section[key]
+                            if isinstance(value,str) and value[-1] == u'\n':
+                                line = value
+                            else:
+                                line = u'SetGS %s %s' % (key,value)
+                    tmpFile.write(line)
         self.path.untemp()
 
     def applyTweakFile(self,tweakPath):
@@ -7263,45 +7242,45 @@ class OBSEIniFile(IniFile):
         reComent = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
-        tweakFile = tweakPath.open('r')
         ini_settings = {}
-        for line in tweakFile:
-            stripped = reComment.sub('',line).strip()
-            maSet = reSet.match(stripped)
-            maSetGS = reSetGS.match(stripped)
-            if maSet:
-                section = ini_settings.setdefault(LString(']set['),{})
-                if line[-1] != '\n': line += '\r\n'
-                section[LString(maSet.group(1))] = line
-            elif maSetGS:
-                section = ini_settings.setdefault(LString(']setGS['),{})
-                if line[-1] != '\n': line += '\r\n'
-                section[LString(maSetGS.group(1))] = line
-        tweakFile.close()
+        with tweakPath.open('r') as tweakFile:
+            for line in tweakFile:
+                stripped = reComment.sub(u'',line).strip()
+                maSet = reSet.match(stripped)
+                maSetGS = reSetGS.match(stripped)
+                if maSet:
+                    section = ini_settings.setdefault(LString(u']set['),{})
+                    if line[-1] != u'\n': line += u'\r\n'
+                    section[LString(maSet.group(1))] = line
+                elif maSetGS:
+                    section = ini_settings.setdefault(LString(u']setGS['),{})
+                    if line[-1] != u'\n': line += u'\r\n'
+                    section[LString(maSetGS.group(1))] = line
         self.saveSettings(ini_settings)
 
 #--------------------------------------------------------------------------------
 class OblivionIni(IniFile):
     """Oblivion.ini file."""
-    bsaRedirectors = set(('archiveinvalidationinvalidated!.bsa',r'..\obmm\bsaredirection.bsa'))
+    bsaRedirectors = set((u'archiveinvalidationinvalidated!.bsa',
+                          u'..\\obmm\\bsaredirection.bsa'))
 
     def __init__(self,name):
         """Initialize."""
         # Use local copy of the oblivion.ini if present
         if dirs['app'].join(name).exists():
-            IniFile.__init__(self,dirs['app'].join(name),'General')
+            IniFile.__init__(self,dirs['app'].join(name),u'General')
             # is bUseMyGamesDirectory set to 0?
-            if self.getSetting('General','bUseMyGamesDirectory','1') == '0':
+            if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self,dirs['saveBase'].join(name),'General')
+        IniFile.__init__(self,dirs['saveBase'].join(name),u'General')
 
 
     def ensureExists(self):
         """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
         if self.path.exists(): return
-        srcPath = dirs['app'].join('Oblivion_default.ini')
+        srcPath = dirs['app'].join(u'%s_default.ini' % bush.game.name)
         srcPath.copyTo(self.path)
 
     def saveSettings(self,settings):
@@ -7321,24 +7300,24 @@ class OblivionIni(IniFile):
     def getBsaRedirection(self):
         """Returns True if BSA redirection is active."""
         self.ensureExists()
-        sArchives = self.getSetting('Archive','sArchiveList','')
-        return bool([x for x in sArchives.split(',') if x.strip().lower() in self.bsaRedirectors])
+        sArchives = self.getSetting(u'Archive',u'sArchiveList',u'')
+        return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
 
     def setBsaRedirection(self,doRedirect=True):
         """Activates or deactivates BSA redirection."""
-        aiBsa = dirs['mods'].join('ArchiveInvalidationInvalidated!.bsa')
+        aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime >  aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
         if doRedirect == self.getBsaRedirection(): return
-        sArchives = self.getSetting('Archive','sArchiveList','')
+        sArchives = self.getSetting(u'Archive',u'sArchiveList','')
         #--Strip existint redirectors out
-        archives = [x.strip() for x in sArchives.split(',') if x.strip().lower() not in self.bsaRedirectors]
+        archives = [x.strip() for x in sArchives.split(u',') if x.strip().lower() not in self.bsaRedirectors]
         #--Add redirector back in?
         if doRedirect:
-            archives.insert(0,'ArchiveInvalidationInvalidated!.bsa')
-        sArchives = ', '.join(archives)
-        self.saveSetting('Archive','sArchiveList',sArchives)
+            archives.insert(0,u'ArchiveInvalidationInvalidated!.bsa')
+        sArchives = u', '.join(archives)
+        self.saveSetting(u'Archive',u'sArchiveList',sArchives)
 
 #------------------------------------------------------------------------------
 class OmodFile:
@@ -7350,17 +7329,17 @@ class OmodFile:
         """Read info about the omod from the 'config' file"""
         with bolt.BinaryFile(path.s) as file:
             self.version = file.readByte() # OMOD version
-            self.modName = file.readNetString() # Mod name
+            self.modName = _unicode(file.readNetString()) # Mod name
             self.major = file.readInt32() # Mod major version - getting weird numbers here though
             self.minor = file.readInt32() # Mod minor version
-            self.author = file.readNetString() # author
-            self.email = file.readNetString() # email
-            self.website = file.readNetString() # website
-            self.desc = file.readNetString() # description
+            self.author = _unicode(file.readNetString()) # author
+            self.email = _unicode(file.readNetString()) # email
+            self.website = _unicode(file.readNetString()) # website
+            self.desc = _unicode(file.readNetString()) # description
             if self.version >= 2:
                 self.ftime = file.readInt64() # creation time
             else:
-                self.ftime = file.readNetString()
+                self.ftime = _unicode(file.readNetString())
             self.compType = file.readByte() # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
                 self.build = file.readInt32()
@@ -7369,18 +7348,24 @@ class OmodFile:
 
     def writeInfo(self, path, filename, readme, script):
         with path.open('w') as file:
-            file.write('%s\n\n' % filename)
-            file.write('[basic info]\n')
-            file.write('Name: %s\n' % self.modName)
-            file.write('Author: %s\n' % self.author)
-            file.write('version:\n') # TODO, fix this?
-            file.write('Contact: %s\n' % self.email)
-            file.write('Website: %s\n\n' % self.website)
-            file.write('%s\n\n' % self.desc)
+            file.write(_encode(filename))
+            file.write('\n\n[basic info]\n')
+            file.write('Name: ')
+            file.write(_encode(modName.s))
+            file.write('\nAuthor: ')
+            file.write(_encode(self.author))
+            file.write('\nVersion:') # TODO, fix this?
+            file.write('\nContact: ')
+            file.write(_encode(self.email))
+            file.write('\nWebsite: ')
+            file.write(_encode(self.website))
+            file.write('\n\n')
+            file.write(_encode(self.desc))
+            file.write('\n\n')
             #fTime = time.gmtime(self.ftime) #-error
             #file.write('Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
-            file.write('Contains readme: %s\n' % (['no','yes'][readme]))
-            file.write('Contains script: %s\n' % (['no','yes'][script]))
+            file.write('Contains readme: %s\n' % ('yes' if readme else 'no'))
+            file.write('Contains script: %s\n' % ('yes' if readme else 'no'))
             # Skip the reset that OBMM puts in
 
     def getOmodContents(self):
@@ -7389,8 +7374,8 @@ class OmodFile:
         cmd7z = [exe7z, u'l', u'-r', self.path.s]
         filesizes = dict()
         totalSize = 0
-        reFileSize = re.compile(unicodeConvert(r'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$'))
-        reFinalLine = re.compile(unicodeConvert(r'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*'))
+        reFileSize = re.compile(ur'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
+        reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
         with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
             for line in ins:
@@ -7402,7 +7387,7 @@ class OmodFile:
                 maFileSize = reFileSize.match(line)
                 if maFileSize:
                     size = int(maFileSize.group(1))
-                    name = maFileSize.group(2).strip().strip('\r')
+                    name = maFileSize.group(2).strip().strip(u'\r')
                     filesizes[name] = size
         return filesizes,totalSize
 
@@ -7410,22 +7395,22 @@ class OmodFile:
         """Extract the contents of the omod to a project, with omod conversion data"""
         if progress is None: progress = bolt.Progress()
         # First, extract the files to a temp directory
-        tempDir = dirs['mopy'].join('temp',self.path.body)
+        tempDir = dirs['mopy'].join(u'temp',self.path.body)
 
         # Get contents of archive
         sizes,total = self.getOmodContents()
 
         # Extract the files
-        cmd7z = [exe7z,'e','-r',self.path.s,'-o%s' % tempDir.s]
-        reExtracting = re.compile(unicodeConvert(r'Extracting\s+(.+)'))
-        reError = re.compile(unicodeConvert(r'Error:'))
-        progress(0, '%s\nExtracting...' % self.path.stail)
+        cmd7z = [exe7z,u'e',u'-r',self.path.s,u'-o%s' % tempDir.s]
+        reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
+        reError = re.compile(ur'Error:',re.U)
+        progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
 
         subprogress = bolt.SubProgress(progress, 0, 0.4)
         current = 0
         with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
             for line in ins:
-                line = unicodeConvert(line)
+                line = unicode(line,'utf8')
                 maExtracting = reExtracting.match(line)
                 if maExtracting:
                     name = maExtracting.group(1).strip().strip(u'\r')
@@ -7434,28 +7419,28 @@ class OmodFile:
                     current += size
 
         # Get compression type
-        progress(0.4,'%s\Reading config' % self.path.stail)
-        self.readConfig(tempDir.join('config'))
+        progress(0.4,self.path.stail+u'\n'+_(u'Reading config'))
+        self.readConfig(tempDir.join(u'config'))
 
         # Collect OMOD conversion data
-        ocdDir = outDir.join('omod conversion data')
-        progress(0.46, '%s\nCreating omod conversion data\ninfo.txt' % self.path.stail)
-        self.writeInfo(ocdDir.join('info.txt'), self.path.stail, tempDir.join('readme').exists(), tempDir.join('script').exists())
-        progress(0.47, '%s\nCreating omod conversion data\nscript' % self.path.stail)
-        if tempDir.join('script').exists():
-            with bolt.BinaryFile(tempDir.join('script').s) as input:
-                with ocdDir.join('script.txt').open('w') as output:
+        ocdDir = outDir.join(u'omod conversion data')
+        progress(0.46, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\ninfo.txt')
+        self.writeInfo(ocdDir.join(u'info.txt'), self.path.stail, tempDir.join(u'readme').exists(), tempDir.join(u'script').exists())
+        progress(0.47, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscript')
+        if tempDir.join(u'script').exists():
+            with bolt.BinaryFile(tempDir.join(u'script').s) as input:
+                with ocdDir.join(u'script.txt').open('w') as output:
                     output.write(input.readNetString())
-        progress(0.48, '%s\nCreating omod conversion data\nreadme.rtf' % self.path.stail)
-        if tempDir.join('readme').exists():
-            with bolt.BinaryFile(tempDir.join('readme').s) as input:
-                with ocdDir.join('readme.rtf').open('w') as output:
+        progress(0.48, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nreadme.rtf')
+        if tempDir.join(u'readme').exists():
+            with bolt.BinaryFile(tempDir.join(u'readme').s) as input:
+                with ocdDir.join(u'readme.rtf').open('w') as output:
                     output.write(input.readNetString())
-        progress(0.49, '%s\nCreating omod conversion data\nscreenshot' % self.path.stail)
-        if tempDir.join('image').exists():
-            tempDir.join('image').moveTo(ocdDir.join('screenshot'))
-        progress(0.5,'%s\nCreating omod conversion data\nconfig' % self.path.stail)
-        tempDir.join('config').moveTo(ocdDir.join('config'))
+        progress(0.49, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscreenshot')
+        if tempDir.join(u'image').exists():
+            tempDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
+        progress(0.5,self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nconfig')
+        tempDir.join(u'config').moveTo(ocdDir.join(u'config'))
 
         # Extract the files
         if self.compType == 0:
@@ -7466,42 +7451,42 @@ class OmodFile:
         pluginSize = sizes.get('plugins',0)
         dataSize = sizes.get('data',0)
         subprogress = bolt.SubProgress(progress, 0.5, 1)
-        if tempDir.join('plugins.crc').exists() and tempDir.join('plugins').exists():
+        if tempDir.join(u'plugins.crc').exists() and tempDir.join(u'plugins').exists():
             pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
-            extract(tempDir.join('plugins.crc'),tempDir.join('plugins'),outDir,pluginProgress)
-        if tempDir.join('data.crc').exists() and tempDir.join('data').exists():
+            extract(tempDir.join(u'plugins.crc'),tempDir.join(u'plugins'),outDir,pluginProgress)
+        if tempDir.join(u'data.crc').exists() and tempDir.join(u'data').exists():
             dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
-            extract(tempDir.join('data.crc'),tempDir.join('data'),outDir,dataProgress)
-        progress(1,'%s\nExtracted' % self.path.stail)
+            extract(tempDir.join(u'data.crc'),tempDir.join(u'data'),outDir,dataProgress)
+        progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
         # Clean up temp dir
-        dirs['mopy'].join('temp').rmtree('temp')
+        dirs['mopy'].join(u'temp').rmtree(u'temp')
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
 
         # Extracted data stream is saved as a file named 'a'
-        progress(0,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
-        cmd = [exe7z,'e','-r',dataPath.s,'-o%s' % outPath.s]
+        progress(0,self.path.tail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
+        cmd = [exe7z,u'e',u'-r',dataPath.s,u'-o%s' % outPath.s]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
-        progress(0.7,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
-        self.splitStream(outPath.join('a'), outPath, fileNames, sizes,
+        progress(0.7,self.path.stail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
+        self.splitStream(outPath.join(u'a'), outPath, fileNames, sizes,
                          bolt.SubProgress(progress,0.7,1.0,len(fileNames))
                          )
         progress(1)
 
         # Clean up
-        outPath.join('a').remove()
+        outPath.join(u'a').remove()
 
     def splitStream(self, streamPath, outDir, fileNames, sizes, progress):
         # Split the uncompressed stream into files
-        progress(0, '%s\nUnpacking %s' % (self.path.stail,streamPath.stail))
+        progress(0, self.path.stail+u'\n'+_(u'Unpacking %s') % streamPath.stail)
         with streamPath.open('rb') as file:
             for i,name in enumerate(fileNames):
-                progress(i,'%s\nUnpacking %s\n%s' % (self.path.stail, streamPath.stail, name))
+                progress(i,self.path.stail+u'\n'+_(u'Unpacking %s')%streamPath.stail+u'\n'+name)
                 outFile = outDir.join(name)
                 with outFile.open('wb') as output:
                     output.write(file.read(sizes[i]))
@@ -7514,10 +7499,10 @@ class OmodFile:
 
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
-        subprogress(0,'%s\nUnpacking %s' % (self.path.stail, dataPath.stail))
+        subprogress(0,self.path.stail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
         with dataPath.open('rb') as file:
             done = 0
-            with bolt.BinaryFile(outPath.join(dataPath.sbody+'.tmp').s,'wb') as output:
+            with bolt.BinaryFile(outPath.join(dataPath.sbody+u'.tmp').s,'wb') as output:
                 # Decoder properties
                 output.write(file.read(5))
                 done += 5
@@ -7538,19 +7523,19 @@ class OmodFile:
 
         # Now decompress
         progress(0.3)
-        cmd = [dirs['compiled'].join('lzma').s,'d',outPath.join(dataPath.sbody+'.tmp').s, outPath.join(dataPath.sbody+'.uncomp').s]
+        cmd = [dirs['compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
         subprocess.call(cmd,startupinfo=startupinfo)
         progress(0.8)
 
         # Split the uncompressed stream into files
-        self.splitStream(outPath.join(dataPath.sbody+'.uncomp'), outPath, fileNames, sizes,
+        self.splitStream(outPath.join(dataPath.sbody+u'.uncomp'), outPath, fileNames, sizes,
                          bolt.SubProgress(progress,0.8,1.0,full=len(fileNames))
                          )
         progress(1)
 
         # Clean up temp files
-        outPath.join(dataPath.sbody+'.uncomp').remove()
-        outPath.join(dataPath.sbody+'.tmp').remove()
+        outPath.join(dataPath.sbody+u'.uncomp').remove()
+        outPath.join(dataPath.sbody+u'.tmp').remove()
 
     def getFile_CrcSizes(self, path):
         fileNames = list()
@@ -7669,7 +7654,7 @@ class MasterInfo:
             self.masterNames = self.modInfo.masterNames
         else:
             self.mtime = 0
-            self.author = ''
+            self.author = u''
             self.masterNames = tuple()
 
     def setName(self,name):
@@ -7681,7 +7666,7 @@ class MasterInfo:
             self.masterNames = self.modInfo.masterNames
         else:
             self.mtime = 0
-            self.author = ''
+            self.author = u''
             self.masterNames = tuple()
 
     def hasChanged(self):
@@ -7724,7 +7709,7 @@ class MasterInfo:
 class FileInfo:
     """Abstract TES4/TES4GAME File."""
     def __init__(self,dir,name):
-        self.isGhost = (name.cs[-6:] == '.ghost')
+        self.isGhost = (name.cs[-6:] == u'.ghost')
         if self.isGhost:
             name = GPath(name.s[:-6])
         self.dir = GPath(dir)
@@ -7749,7 +7734,7 @@ class FileInfo:
     def getPath(self):
         """Returns joined dir and name."""
         path = self.dir.join(self.name)
-        if self.isGhost: path += '.ghost'
+        if self.isGhost: path += u'.ghost'
         return path
 
     def getFileInfos(self):
@@ -7774,10 +7759,11 @@ class FileInfo:
             return reEsmExt.search(self.name.s) and False
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
-        return self.isMod() and self.header and self.name.cext != ('.esp','.esm')[int(self.header.flags1) & 1]
+        return (self.isMod() and self.header and
+                self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
     def isEss(self):
-        return self.name.cext == '.ess'
+        return self.name.cext == u'.ess'
 
     def sameAs(self,fileInfo):
         """Returns true if other fileInfo refers to same file as this fileInfo."""
@@ -7853,7 +7839,7 @@ class FileInfo:
         if not self in self.getFileInfos().data.values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup Directory
-        backupDir = self.bashDir.join('Backups')
+        backupDir = self.bashDir.join(u'Backups')
         backupDir.makedirs()
         #--File Path
         original = self.getPath()
@@ -7862,7 +7848,7 @@ class FileInfo:
         original.copyTo(backup)
         self.coCopy(original,backup)
         #--First backup
-        firstBackup = backup+'f'
+        firstBackup = backup+u'f'
         if not firstBackup.exists():
             original.copyTo(firstBackup)
             self.coCopy(original,firstBackup)
@@ -7882,19 +7868,19 @@ class FileInfo:
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
         if not self in self.getFileInfos().data.values():
-            raise StateError(_("Can't get snapshot parameters for file outside main directory."))
-        destDir = self.bashDir.join('Snapshots')
+            raise StateError(u"Can't get snapshot parameters for file outside main directory.")
+        destDir = self.bashDir.join(u'Snapshots')
         destDir.makedirs()
         (root,ext) = self.name.rootExt
-        destName = root+'-00'+ext
-        separator = '-'
-        snapLast = ['00']
+        destName = root+u'-00'+ext
+        separator = u'-'
+        snapLast = [u'00']
         #--Look for old snapshots.
-        reSnap = re.compile('^'+root.s+'[ -]([0-9\.]*[0-9]+)'+ext+'$')
+        reSnap = re.compile(u'^'+root.s+u'[ -]([0-9\.]*[0-9]+)'+ext+u'$',re.U)
         for fileName in destDir.list():
             maSnap = reSnap.match(fileName.s)
             if not maSnap: continue
-            snapNew = maSnap.group(1).split('.')
+            snapNew = maSnap.group(1).split(u'.')
             #--Compare shared version numbers
             sharedNums = min(len(snapNew),len(snapLast))
             for index in range(sharedNums):
@@ -7907,16 +7893,16 @@ class FileInfo:
                 snapLast = snapNew
                 continue
         #--New
-        snapLast[-1] = ('%0'+`len(snapLast[-1])`+'d') % (int(snapLast[-1])+1,)
-        destName = root+separator+('.'.join(snapLast))+ext
-        return (destDir,destName,(root+'*'+ext).s)
+        snapLast[-1] = (u'%0'+`len(snapLast[-1])`+u'd') % (int(snapLast[-1])+1,)
+        destName = root+separator+(u'.'.join(snapLast))+ext
+        return (destDir,destName,(root+u'*'+ext).s)
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
         if isGhost == self.isGhost:
             return isGhost
         normal = self.dir.join(self.name)
-        ghost = normal+'.ghost'
+        ghost = normal+u'.ghost'
         try:
             if not normal.editable() or not ghost.editable(): return self.isGhost
             if isGhost: normal.moveTo(ghost)
@@ -7935,15 +7921,14 @@ class ModInfo(FileInfo):
 
     def setType(self,type):
         """Sets the file's internal type."""
-        if type not in ('esm','esp'):
+        if type not in (u'esm',u'esp'):
             raise ArgumentError
-        modFile = self.getPath().open('r+b')
-        modFile.seek(8)
-        flags1 = MreRecord._flags1(struct.unpack('I',modFile.read(4))[0])
-        flags1.esm = (type == 'esm')
-        modFile.seek(8)
-        modFile.write(struct.pack('=I',int(flags1)))
-        modFile.close()
+        with self.getPath().open('r+b') as modFile:
+            modFile.seek(8)
+            flags1 = MreRecord._flags1(struct.unpack('I',modFile.read(4))[0])
+            flags1.esm = (type == u'esm')
+            modFile.seek(8)
+            modFile.write(struct.pack('=I',int(flags1)))
         self.header.flags1 = flags1
         self.setmtime()
 
@@ -7978,10 +7963,10 @@ class ModInfo(FileInfo):
         return crc
 
     def txt_status(self):
-        if self.name in modInfos.ordered: return 'Active'
-        elif self.name in modInfos.merged: return 'Merged'
-        elif self.name in modInfos.imported: return 'Imported'
-        else: return 'Non-Active'
+        if self.name in modInfos.ordered: return _(u'Active')
+        elif self.name in modInfos.merged: return _(u'Merged')
+        elif self.name in modInfos.imported: return _(u'Imported')
+        else: return _(u'Non-Active')
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -8002,12 +7987,12 @@ class ModInfo(FileInfo):
             return False
         else:
             exGroup = maExGroup.group(1)
-            return len(modInfos.exGroup_mods.get(exGroup,'')) > 1
+            return len(modInfos.exGroup_mods.get(exGroup,u'')) > 1
 
     def hasResources(self):
         """Returns (hasBsa,hasVoices) booleans according to presence of corresponding resources."""
-        bsaPath = self.getPath().root+'.bsa'
-        voicesPath = self.dir.join('Sound','Voice',self.name)
+        bsaPath = self.getPath().root+u'.bsa'
+        voicesPath = self.dir.join(u'Sound',u'Voice',self.name)
         return [bsaPath.exists(),voicesPath.exists()]
 
     def setmtime(self,mtime=0):
@@ -8025,21 +8010,20 @@ class ModInfo(FileInfo):
             header.masters.append(master)
         header.setChanged()
         #--Write it
-        out = self.getPath().open('wb')
-        header.getSize()
-        header.dump(out)
-        out.close()
+        with self.getPath().open('wb') as out:
+            header.getSize()
+            header.dump(out)
         self.setmtime(mtime)
 
     #--Bash Tags --------------------------------------------------------------
     def shiftBashTags(self):
         """Shifts bash keys from bottom to top."""
         description = self.header.description
-        reReturns = re.compile('\r{2,}')
-        reBashTags = re.compile('^(.+)({{BASH:[^}]*}})$',re.S)
+        reReturns = re.compile(u'\r{2,}',re.U)
+        reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U)
         if reBashTags.match(description) or reReturns.search(description):
-            description = reReturns.sub('\r',description)
-            description = reBashTags.sub(r'\2\n\1',description)
+            description = reReturns.sub(u'\r',description)
+            description = reBashTags.sub(ur'\2\n\1',description)
             self.writeDescription(description)
 
     def setBashTags(self,keys):
@@ -8051,15 +8035,15 @@ class ModInfo(FileInfo):
         keys = set(keys) #--Make sure it's a set.
         if keys == self.getBashTagsDesc(): return
         if keys:
-            strKeys = '{{BASH:'+(','.join(sorted(keys)))+'}}\n'
+            strKeys = u'{{BASH:'+(u','.join(sorted(keys)))+u'}}\n'
         else:
-            strKeys = ''
+            strKeys = u''
         description = self.header.description or ''
-        reBashTags = re.compile(r'{{ *BASH *:[^}]*}}\s*\n?')
+        reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
         if reBashTags.search(description):
             description = reBashTags.sub(strKeys,description)
         else:
-            description = description + '\n' + strKeys
+            description = description + u'\n' + strKeys
         self.writeDescription(description)
 
     def getBashTags(self):
@@ -8077,34 +8061,32 @@ class ModInfo(FileInfo):
 
     def getBashTagsDesc(self):
         """Returns any Bash flag keys."""
-        description = self.header.description or ''
-        maBashKeys = re.search('{{ *BASH *:([^}]+)}}',description)
+        description = self.header.description or u''
+        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',description,flags=re.U)
         if not maBashKeys:
             return None
         else:
-            bashTags = maBashKeys.group(1).split(',')
+            bashTags = maBashKeys.group(1).split(u',')
             return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
 
     def getDirtyMessage(self):
         """Returns a dirty message from BOSS."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
-            return (False,'')
+            return (False,u'')
         crc = self.cachedCrc()
         return configHelpers.getDirtyMessage(crc)
 
     #--Header Editing ---------------------------------------------------------
     def getHeader(self):
         """Read header for file."""
-        ins = ModReader(self.name,self.getPath().open('rb'))
-        try:
-            recHeader = ins.unpackRecHeader()
-            if recHeader[0] != 'TES4':
-                raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
-            self.header = globals()[bush.game.esp.tes4ClassName](recHeader,ins,True)
-        except struct.error, rex:
-            raise ModError(self.name,_('Struct.error: ')+`rex`)
-        finally:
-            ins.close()
+        with ModReader(self.name,self.getPath().open('rb')) as ins:
+            try:
+                recHeader = ins.unpackRecHeader()
+                if recHeader[0] != 'TES4':
+                    raise ModError(self.name,u'Expected TES4, but got '+recHeader[0])
+                self.header = globals()[bush.game.esp.tes4ClassName](recHeader,ins,True)
+            except struct.error, rex:
+                raise ModError(self.name,u'Struct.error: '+`rex`)
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
@@ -8119,7 +8101,7 @@ class ModInfo(FileInfo):
                     reader = ModReader(self.name,ins)
                     recHeader = reader.unpackRecHeader()
                     if recHeader[0] != 'TES4':
-                        raise ModError(self.name,_('Expected TES4, but got ')+recHeader[0])
+                        raise ModError(self.name,u'Expected TES4, but got '+recHeader[0])
                     reader.seek(recHeader[1],1)
                     #--Write new header
                     self.header.getSize()
@@ -8132,7 +8114,7 @@ class ModInfo(FileInfo):
                         if not buffer: break
                         outWrite(buffer)
                 except struct.error, rex:
-                    raise ModError(self.name,_('Struct.error: ')+`rex`)
+                    raise ModError(self.name,u'Struct.error: '+`rex`)
         #--Remove original and replace with temp
         filePath.untemp()
         self.setmtime()
@@ -8158,8 +8140,8 @@ class ModInfo(FileInfo):
     def writeAuthorWB(self):
         """Marks author field with " [wb]" to indicate Wrye Bash modification."""
         author = self.header.author
-        if '[wm]' not in author and len(author) <= 27:
-            self.writeAuthor(author+' [wb]')
+        if u'[wm]' not in author and len(author) <= 27:
+            self.writeAuthor(author+u' [wb]')
 
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
@@ -8245,40 +8227,39 @@ class INIInfo(FileInfo):
         tweak = self.getPath()
         ini_settings = ini.getSettings()
         tweak_settings = ini.getTweakFileSettings(tweak)
-        reComment = re.compile(';.*')
-        reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
-        reSetting = re.compile(r'(.+?)\s*=(.*)')
+        reComment = re.compile(u';.*',re.U)
+        reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
+        reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
         section = LString(ini.defaultSection)
 
         lines = []
 
-        tweakFile = tweak.open('r')
-        for line in tweakFile:
-            stripped = reComment.sub('',line).strip()
-            maSection = reSection.match(stripped)
-            maSetting = reSetting.match(stripped)
-            if maSection:
-                section = LString(maSection.group(1))
-                if section in ini_settings:
-                    lines.append((line.strip('\n\r'),'',0))
-                else:
-                    lines.append((line.strip('\n\r'),'',-10))
-            elif maSetting:
-                if section in ini_settings:
-                    setting = LString(maSetting.group(1))
-                    if setting in ini_settings[section]:
-                        value = LString(maSetting.group(2).strip())
-                        if value == ini_settings[section][setting]:
-                            lines.append((maSetting.group(1),maSetting.group(2),20))
+        with tweak.open('r') as tweakFile:
+            for line in tweakFile:
+                stripped = reComment.sub(u'',line).strip()
+                maSection = reSection.match(stripped)
+                maSetting = reSetting.match(stripped)
+                if maSection:
+                    section = LString(maSection.group(1))
+                    if section in ini_settings:
+                        lines.append((line.strip(u'\n\r'),u'',0))
+                    else:
+                        lines.append((line.strip(u'\n\r'),u'',-10))
+                elif maSetting:
+                    if section in ini_settings:
+                        setting = LString(maSetting.group(1))
+                        if setting in ini_settings[section]:
+                            value = LString(maSetting.group(2).strip())
+                            if value == ini_settings[section][setting]:
+                                lines.append((maSetting.group(1),maSetting.group(2),20))
+                            else:
+                                lines.append((maSetting.group(1),maSetting.group(2),10))
                         else:
-                            lines.append((maSetting.group(1),maSetting.group(2),10))
+                            lines.append((maSetting.group(1),maSetting.group(2),-10))
                     else:
                         lines.append((maSetting.group(1),maSetting.group(2),-10))
                 else:
-                    lines.append((maSetting.group(1),maSetting.group(2),-10))
-            else:
-                lines.append((line.strip('\r\n'),'',0))
-        tweakFile.close()
+                    lines.append((line.strip(u'\r\n'),u'',0))
         return lines
 
     def listErrors(self):
@@ -8288,15 +8269,15 @@ class INIInfo(FileInfo):
         ini = iniInfos.ini
         tweak = ini.getTweakFileSettings(path)
         settings = ini.getSettings()
-        text = ['%s:' % path.stail]
+        text = [u'%s:' % path.stail]
 
         if len(tweak) == 0:
             tweak = BestIniFile(path)
-            if type(ini) in (OblivionIni,IniFile):
+            if isinstance(ini,(OblivionIni,IniFile)):
                 # Target is a "true" INI format file
-                if type(tweak) in (OblivionIni,IniFile):
+                if isinstance(tweak,(OblivionIni,IniFile)):
                     # Tweak is also a "true" INI format
-                    text.append(_(' No valid INI format lines.'))
+                    text.append(_(u' No valid INI format lines.'))
                 else:
                     text.append((u' '+_(u'Format mismatch:')
                                  + u'\n  ' +
@@ -8304,8 +8285,8 @@ class INIInfo(FileInfo):
                                  + u'\n  ' +
                                  _(u'Tweak format: Batch Script')))
             else:
-                if type(tweak) == OBSEIniFile:
-                    text.append(_(' No valid Batch Script format lines.'))
+                if isinstance(tweak,OBSEIniFile):
+                    text.append(_(u' No valid Batch Script format lines.'))
                 else:
                     text.append((u' '+_(u'Format mismatch:')
                                  + u'\n  ' +
@@ -8323,12 +8304,11 @@ class INIInfo(FileInfo):
         if len(text) == 1:
             text.append(u' None')
 
-        log = bolt.LogFile(StringIO.StringIO())
-        for line in text:
-            log(line)
-        ret = bolt.winNewLines(log.out.getvalue())
-        log.out.close()
-        return ret
+        with sio() as out:
+            log = bolt.LogFile(out)
+            for line in text:
+                log(line)
+            return bolt.winNewLines(log.out.getvalue())
 
 class SaveInfo(FileInfo):
     def getFileInfos(self):
@@ -8357,7 +8337,7 @@ class SaveInfo(FileInfo):
             self.masterNames = tuple(self.header.masters)
             self.masterOrder = tuple() #--Reset to empty for now
         except struct.error, rex:
-            raise SaveFileError(self.name,_('Struct.error: ')+`rex`)
+            raise SaveFileError(self.name,u'Struct.error: '+`rex`)
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
@@ -8376,8 +8356,8 @@ class BSAInfo(FileInfo):
     def getHeader(self):
         pass
 
-    def resetMTime(self,mtime='01-01-2006 00:00:00'):
-        mtime = time.mktime(time.strptime(mtime,'%m-%d-%Y %H:%M:%S'))
+    def resetMTime(self,mtime=u'01-01-2006 00:00:00'):
+        mtime = time.mktime(time.strptime(mtime,u'%m-%d-%Y %H:%M:%S'))
         self.setmtime(mtime)
 
 #------------------------------------------------------------------------------
@@ -8392,7 +8372,7 @@ class TrackedFileInfos(DataDict):
     def refreshFile(self,fileName):
         try:
             fileInfo = self.factory('',fileName)
-            fileInfo.isGhost = not fileName.exists() and (fileName+'.ghost').exists()
+            fileInfo.isGhost = not fileName.exists() and (fileName+u'.ghost').exists()
             fileInfo.getHeader()
             self.data[fileName] = fileInfo
         except FileError, error:
@@ -8404,7 +8384,7 @@ class TrackedFileInfos(DataDict):
         data = self.data
         changed = set()
         for name in data.keys():
-            fileInfo = self.factory('',name)
+            fileInfo = self.factory(u'',name)
             if not fileInfo.sameAs(data[name]):
                 errorMsg = fileInfo.getHeaderError()
                 if errorMsg:
@@ -8436,8 +8416,8 @@ class FileInfos(DataDict):
         self.data = {}
         self.bashDir = self.getBashDir()
         self.table = bolt.Table(PickleDict(
-            self.bashDir.join('Table.dat'),
-            self.bashDir.join('Table.pkl')))
+            self.bashDir.join(u'Table.dat'),
+            self.bashDir.join(u'Table.pkl')))
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         #--Update table keys...
         tableData = self.table.data
@@ -8447,14 +8427,14 @@ class FileInfos(DataDict):
 
     def getBashDir(self):
         """Returns Bash data storage directory."""
-        return self.dir.join('Bash')
+        return self.dir.join(u'Bash')
 
     #--Refresh File
     def refreshFile(self,fileName):
         try:
             fileInfo = self.factory(self.dir,fileName)
             path = fileInfo.getPath()
-            fileInfo.isGhost = not path.exists() and (path+'.ghost').exists()
+            fileInfo.isGhost = not path.exists() and (path+u'.ghost').exists()
             fileInfo.getHeader()
             self.data[fileName] = fileInfo
         except FileError, error:
@@ -8474,7 +8454,7 @@ class FileInfos(DataDict):
         self.dir.makedirs()
         #--Loop over files in directory
         names = [x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)]
-        names.sort(key=lambda x: x.cext == '.ghost')
+        names.sort(key=lambda x: x.cext == u'.ghost')
         for name in names:
             fileInfo = self.factory(self.dir,name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
@@ -8510,7 +8490,7 @@ class FileInfos(DataDict):
         fileInfo = self[oldName]
         #--File system
         newPath = self.dir.join(newName)
-        if fileInfo.isGhost: newPath += '.ghost'
+        if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
         oldPath.moveTo(newPath)
         #--FileInfo
@@ -8533,12 +8513,12 @@ class FileInfos(DataDict):
         self.table.delRow(fileName)
         #--Misc. Editor backups (mods only)
         if fileInfo.isMod():
-            for ext in ('.bak','.tmp','.old','.ghost'):
+            for ext in (u'.bak',u'.tmp',u'.old',u'.ghost'):
                 backPath = filePath + ext
                 backPath.remove()
         #--Backups
-        backRoot = self.getBashDir().join('Backups',fileInfo.name)
-        for backPath in (backRoot,backRoot+'f'):
+        backRoot = self.getBashDir().join(u'Backups',fileInfo.name)
+        for backPath in (backRoot,backRoot+u'f'):
             backPath.remove()
         if doRefresh: self.refresh()
 
@@ -8578,7 +8558,7 @@ class FileInfos(DataDict):
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
-        FileInfos.__init__(self, dirs['mods'].join('INI Tweaks'),INIInfo)
+        FileInfos.__init__(self, dirs['mods'].join(u'INI Tweaks'),INIInfo)
         self.ini = oblivionIni
 
     def rightFileType(self,fileName):
@@ -8590,7 +8570,8 @@ class INIInfos(FileInfos):
 
     def getBashDir(self):
         """Return directory to save info."""
-        return dirs['modsBash'].join('INI Data')
+        return dirs['modsBash'].join(u'INI Data')
+
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
@@ -8614,13 +8595,13 @@ class ModInfos(FileInfos):
                 break
         else:
             if len(bush.game.masterFiles) == 1:
-                deprint(_('Missing master file; %s does not exist in an unghosted state in %s') % (fname, dirs['mods'].s))
+                deprint(_(u'Missing master file; %s does not exist in an unghosted state in %s') % (fname, dirs['mods'].s))
             else:
                 msg = bush.game.masterFiles[0]
                 if len(bush.game.masterFiles) > 2:
-                    msg += ', '.join(bush.game.masterFiles[1:-1])
-                msg += ' or ' + bush.game.masterFiles[-1]
-                deprint(_('Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
+                    msg += u', '.join(bush.game.masterFiles[1:-1])
+                msg += u' or ' + bush.game.masterFiles[-1]
+                deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
             self.masterName = GPath(bush.game.masterFiles[0])
         self.mtime_mods = {}
         self.mtime_selected = {}
@@ -8636,11 +8617,11 @@ class ModInfos(FileInfos):
         self.group_header = {}
         #--Oblivion version
         self.version_voSize = {
-            '1.1':        247388848, #--Standard
-            '1.1b':       247388894, # Arthmoor has this size.
-            'GOTY non-SI':247388812, # GOTY version
-            '1.0.7.5':    108369128, # Nehrim
-            'SI':         277504985} # Shivering Isles 1.2
+            u'1.1':        247388848, #--Standard
+            u'1.1b':       247388894, # Arthmoor has this size.
+            u'GOTY non-SI':247388812, # GOTY version
+            u'1.0.7.5':    108369128, # Nehrim
+            u'SI':         277504985} # Shivering Isles 1.2
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
@@ -8655,7 +8636,7 @@ class ModInfos(FileInfos):
         self.lockTimes = settings['bosh.modInfos.resetMTimes']
         self.fullBalo = settings.get('bash.balo.full',False)
         obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn',0)
-        if self.lockTimes and obmmWarn == 0 and dirs['app'].join('obmm').exists():
+        if self.lockTimes and obmmWarn == 0 and dirs['app'].join(u'obmm').exists():
             settings['bosh.modInfos.obmmWarn'] = 1
         if not self.lockTimes: return False
         if settings['bosh.modInfos.obmmWarn'] == 1: return False
@@ -8705,7 +8686,7 @@ class ModInfos(FileInfos):
         mod_group = self.table.getColumn('group')
         for mod in self.data:
             group = mod_group.get(mod,None)
-            if group and mod.s[:2] == '++':
+            if group and mod.s[:2] == u'++':
                 group_header[group] = mod
 
     def resetMTimes(self):
@@ -8721,14 +8702,14 @@ class ModInfos(FileInfos):
                     fileInfo.setmtime(oldMTime)
                     self.mtimesReset.append(fileName)
         except:
-            self.mtimesReset = ['FAILED',fileName]
+            self.mtimesReset = [u'FAILED',fileName]
 
     def updateAutoGroups(self):
         """Update autogroup definitions."""
         self.autoGroups.clear()
         modGroups = ModGroups()
-        for base in ('Bash_Groups.csv','My_Groups.csv'):
-            path = self.dir.join('Bash Patches',base)
+        for base in (u'Bash_Groups.csv',u'My_Groups.csv'):
+            path = self.dir.join(u'Bash Patches',base)
             if path.exists(): modGroups.readFromText(path)
         self.autoGroups.update(modGroups.mod_group)
 
@@ -8756,16 +8737,16 @@ class ModInfos(FileInfos):
         bashGroups = set(settings['bash.mods.groups'])
         for fileName in self.data:
             if not mod_group.get(fileName):
-                group = 'NONE' #--Default
+                group = u'NONE' #--Default
                 if autoGroup:
                     if fileName in self.data and self.data[fileName].header:
                         maGroup = reGroup.search(self.data[fileName].header.description)
                         if maGroup: group = maGroup.group(1)
-                    if group == 'NONE' and fileName in self.autoGroups:
+                    if group == u'NONE' and fileName in self.autoGroups:
                         group = self.autoGroups[fileName]
                     if group not in bashGroups:
-                        group = 'NONE'
-                    if group != 'NONE':
+                        group = u'NONE'
+                    if group != u'NONE':
                         self.autoGrouped[fileName] = group
                 mod_group[fileName] = group
 
@@ -8785,14 +8766,14 @@ class ModInfos(FileInfos):
                 if group not in group_mods:
                     group_mods[group] = []
                 group_mods[group].append(mod)
-                if group != 'NONE': autoSorted.add(mod)
+                if group != u'NONE': autoSorted.add(mod)
         #--Sort them
         changed = 0
         group_header = self.group_header
         if not group_header: return changed
         for group,header in self.group_header.iteritems():
             mods = group_mods.get(group,[])
-            if group != 'NONE':
+            if group != u'NONE':
                 mods.sort(key=attrgetter('csroot'))
                 mods.sort(key=attrgetter('cext'))
             else:
@@ -8878,7 +8859,7 @@ class ModInfos(FileInfos):
                         canMerge = PatchFile.modIsMergeable(fileInfo)
                 except Exception, e:
                     raise
-                    deprint (_("Error scanning mod %s (%s)") %(fileName, str(e)))
+                    deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     canMerge = False #presume non-mergeable.
 
                 #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
@@ -8914,7 +8895,7 @@ class ModInfos(FileInfos):
         for group,lower,upper in settings['bash.balo.groups']:
             for offset in range(lower,upper+1):
                 offGroup = joinModGroup(group,offset)
-                if group == 'Last':
+                if group == u'Last':
                     offGroup_mtime[offGroup] = dateToTime(lastTime + diffTime*offset)
                 else:
                     offGroup_mtime[offGroup] = dateToTime(nextTime)
@@ -8932,14 +8913,14 @@ class ModInfos(FileInfos):
         mod_group = self.table.getColumn('group')
         for offGroup in offGroup_mtime:
             if offGroup not in group_header:
-                newName = GPath('++%s%s.esp' % (offGroup.upper(),'='*(25-len(offGroup))))
+                newName = GPath(u'++%s%s.esp' % (offGroup.upper(),u'='*(25-len(offGroup))))
                 if newName not in self.data:
                     newInfo = ModInfo(self.dir,newName)
                     newInfo.mtime = time.time()
                     newFile = ModFile(newInfo,LoadFactory(True))
                     newFile.tes4.masters = [modInfos.masterName]
-                    newFile.tes4.author = '======'
-                    newFile.tes4.description = _('Balo group header.')
+                    newFile.tes4.author = u'======'
+                    newFile.tes4.description = _(u'Balo group header.')
                     newFile.safeSave()
                     self[newName] = newInfo
                 mod_group[newName] = offGroup
@@ -8958,14 +8939,14 @@ class ModInfos(FileInfos):
     def getBaloGroups(self,editable=False):
         """Returns current balo groups. If not defined yet, returns default groups.
         Groups is list of entries, where entries are (groupName,lower,upper)."""
-        none = ('NONE',0,0)
-        last = ('Last',-1,1)
+        none = (u'NONE',0,0)
+        last = (u'Last',-1,1)
         #--Already defined?
         if 'bash.balo.groups' in settings:
             groupInfos = list(settings['bash.balo.groups'])
         #--Anchor groups defined?
         elif self.group_header:
-            deprint('by self.group_header')
+            deprint(u'by self.group_header')
             group_bounds = {}
             group_mtime = {}
             for offGroup,header in self.group_header.iteritems():
@@ -8974,26 +8955,26 @@ class ModInfos(FileInfos):
                 if offset < bounds[0]: bounds[0] = offset
                 if offset > bounds[1]: bounds[1] = offset
                 group_mtime[group] = self[header].mtime
-            group_bounds.pop('NONE',None)
-            lastBounds = group_bounds.pop('Last',None)
+            group_bounds.pop(u'NONE',None)
+            lastBounds = group_bounds.pop(u'Last',None)
             if lastBounds:
-                last = ('Last',lastBounds[0],lastBounds[1])
+                last = (u'Last',lastBounds[0],lastBounds[1])
             groupInfos = [(g,x,y) for g,(x,y) in group_bounds.iteritems()]
             groupInfos.sort(key=lambda a: group_mtime[a[0]])
         #--Default
         else:
             groupInfos = []
             for entry in bush.baloGroups:
-                if entry[0] == 'Last': continue
+                if entry[0] == u'Last': continue
                 elif len(entry) == 1: entry += (0,0)
                 elif len(entry) == 2: entry += (0,)
                 groupInfos.append((entry[0],entry[2],entry[1]))
-            groupInfos.append(('NONE',0,0))
-            groupInfos.append(('Last',-1,1))
+            groupInfos.append((u'NONE',0,0))
+            groupInfos.append((u'Last',-1,1))
         #--None, Last Groups
-        if groupInfos[-1][0] == 'Last':
+        if groupInfos[-1][0] == u'Last':
             last = groupInfos.pop()
-        if groupInfos[-1][0] == 'NONE':
+        if groupInfos[-1][0] == u'NONE':
             groupInfos.pop()
         groupInfos.append(none)
         groupInfos.append(last)
@@ -9034,7 +9015,7 @@ class ModInfos(FileInfos):
             newGroup = renames.get(group,group)
             if group in removed or newGroup not in group_range:
                 if mod in headers: continue #--Will be deleted by autoSort().
-                mod_group[mod] = '' #--Will be set by self.autoGroup()
+                mod_group[mod] = u'' #--Will be set by self.autoGroup()
             elif group != newGroup:
                 mod_group[mod] = joinModGroup(newGroup,offset)
         #--Constrain to range
@@ -9045,7 +9026,7 @@ class ModInfos(FileInfos):
             if not group: continue
             lower,upper = group_range[group]
             if offset < lower or offset > upper:
-                mod_group[mod] = '' #--Will be set by self.autoGroup()
+                mod_group[mod] = u'' #--Will be set by self.autoGroup()
         #--Save and autosort
         settings['bosh.modInfos.resetMTimes'] = self.lockTimes = True
         settings['bash.balo.full'] = self.fullBalo = True
@@ -9077,7 +9058,7 @@ class ModInfos(FileInfos):
         """Returns (merged,imported) mods made semi-active by Bashed Patch."""
         merged,imported = set(),set()
         for modName,modInfo in [(modName,self[modName]) for modName in masters]:
-            if modInfo.header.author != 'BASHED PATCH': continue
+            if modInfo.header.author != u'BASHED PATCH': continue
             patchConfigs = self.table.getItem(modName,'bash.patch.configs',None)
             if not patchConfigs: continue
             patcherstr = 'CBash_PatchMerger' if CBash_PatchFile.configIsCBash(patchConfigs) else 'PatchMerger'
@@ -9124,64 +9105,72 @@ class ModInfos(FileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
-        head = ('','=== ')[wtxt]
-        bul = ('','* ')[wtxt]
-        sMissing = (_('----> MISSING MASTER: '),_('  * __Missing Master:__ '))[wtxt]
-        sDelinquent = (_('----> Delinquent MASTER: '),_('  * __Delinquent Master:__ '))[wtxt]
-        sImported = ('**','&bull; &bull;')[wtxt]
-        if fileInfo:
-            masters = set(fileInfo.header.masters)
-            missing = sorted([x for x in masters if x not in self])
-            log.setHeader(head+_('Missing Masters for: ')+fileInfo.name.s)
-            for mod in missing:
-                log(bul+'xx '+mod.s)
-            log.setHeader(head+_('Masters for: ')+fileInfo.name.s)
-            present = set(x for x in masters if x in self)
-            if fileInfo.name in self: #--In case is bashed patch
-                present.add(fileInfo.name)
-            merged,imported = self.getSemiActive(present)
-        else:
-            log.setHeader(head+_('Active Mod Files:'))
-            masters = set(self.ordered)
-            merged,imported = self.merged,self.imported
-        headers = set(mod for mod in self.data if mod.s[0] in '.=+')
-        allMods = masters | merged | imported | headers
-        allMods = self.getOrdered([x for x in allMods if x in self])
-        #--List
-        modIndex,header = 0, None
-        if not wtxt: log('[spoiler][xml]', False)
-        for name in allMods:
-            if name in masters:
-                prefix = bul+'%02X' % (modIndex)
-                modIndex += 1
-            elif name in headers:
-                match = re.match('^[\.+= ]*(.*?)\.es[pm]',name.s)
-                if match: name = GPath(match.group(1))
-                header = bul+'==  ' +name.s
-                continue
-            elif name in merged:
-                prefix = bul+'++'
+        with sio() as out:
+            log = bolt.LogFile(out)
+            head,bul,sMissing,sDelinquent,sImported = (
+                u'=== ',
+                u'* ',
+                _(u'  * __Missing Master:__ '),
+                _('  * __Delinquent Master:__ '),
+                u'&bull; &bull;'
+                ) if wtxt else (
+                u'',
+                u'',
+                _(u'----> MISSING MASTER: '),
+                _('----> Delinquent MASTER: '),
+                u'**')
+            if fileInfo:
+                masters = set(fileInfo.header.masters)
+                missing = sorted([x for x in masters if x not in self])
+                log.setHeader(head+_(u'Missing Masters for: ')+fileInfo.name.s)
+                for mod in missing:
+                    log(bul+u'xx '+mod.s)
+                log.setHeader(head+_(u'Masters for: ')+fileInfo.name.s)
+                present = set(x for x in masters if x in self)
+                if fileInfo.name in self: #--In case is bashed patch
+                    present.add(fileInfo.name)
+                merged,imported = self.getSemiActive(present)
             else:
-                prefix = bul+sImported
-            if header:
-                log(header)
-                header = None
-            text = '%s  %s' % (prefix,name.s,)
-            if showVersion:
-                version = self.getVersion(name)
-                if version: text += _('  [Version %s]') % (version)
-            if showCRC:
-                text +=_('  [CRC: %08X]') % (self[name].cachedCrc())
-            log(text)
-            if name in masters:
-                for master2 in self[name].header.masters:
-                    if master2 not in self:
-                        log(sMissing+master2.s)
-                    elif self.getOrdered((name,master2))[1] == master2:
-                        log(sDelinquent+master2.s)
-        if not wtxt: log('[/xml][/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+                log.setHeader(head+_(u'Active Mod Files:'))
+                masters = set(self.ordered)
+                merged,imported = self.merged,self.imported
+            headers = set(mod for mod in self.data if mod.s[0] in u'.=+')
+            allMods = masters | merged | imported | headers
+            allMods = self.getOrdered([x for x in allMods if x in self])
+            #--List
+            modIndex,header = 0, None
+            if not wtxt: log(u'[spoiler][xml]', False)
+            for name in allMods:
+                if name in masters:
+                    prefix = bul+u'%02X' % (modIndex)
+                    modIndex += 1
+                elif name in headers:
+                    match = re.match(u'^[\.+= ]*(.*?)\.es[pm]',name.s,flags=re.U)
+                    if match: name = GPath(match.group(1))
+                    header = bul+u'==  ' +name.s
+                    continue
+                elif name in merged:
+                    prefix = bul+u'++'
+                else:
+                    prefix = bul+sImported
+                if header:
+                    log(header)
+                    header = None
+                text = u'%s  %s' % (prefix,name.s,)
+                if showVersion:
+                    version = self.getVersion(name)
+                    if version: text += _(u'  [Version %s]') % (version)
+                if showCRC:
+                    text +=_(u'  [CRC: %08X]') % (self[name].cachedCrc())
+                log(text)
+                if name in masters:
+                    for master2 in self[name].header.masters:
+                        if master2 not in self:
+                            log(sMissing+master2.s)
+                        elif self.getOrdered((name,master2))[1] == master2:
+                            log(sDelinquent+master2.s)
+            if not wtxt: log(u'[/xml][/spoiler]')
+            return bolt.winNewLines(log.out.getvalue())
 
     def getTagList(self,modList=None):
         """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
@@ -9242,7 +9231,7 @@ class ModInfos(FileInfos):
             plugins = self.plugins
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
-                raise BoltError(_('Circular Masters: ')+' >> '.join(x.s for x in children))
+                raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
             #--Select masters
             if modSet == None: modSet = set(self.keys())
             #--Check for bad masternames:
@@ -9352,12 +9341,12 @@ class ModInfos(FileInfos):
         if not fileName in self.data or not self.data[fileName].header:
             return ''
         maVersion = reVersion.search(self.data[fileName].header.description)
-        return (maVersion and maVersion.group(2)) or ''
+        return (maVersion and maVersion.group(2)) or u''
 
     def getVersionFloat(self,fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
         version = self.getVersion(fileName)
-        maVersion = re.search(r'(\d+\.?\d*)',version)
+        maVersion = re.search(ur'(\d+\.?\d*)',version,flags=re.U)
         if maVersion:
             return float(maVersion.group(1))
         else:
@@ -9369,7 +9358,7 @@ class ModInfos(FileInfos):
         if not fileName in self.data or not self.data[fileName].header:
             maRequires = reRequires.search(self.data[fileName].header.description)
             if maRequires:
-                for item in map(string.strip,maRequires.group(1).split(',')):
+                for item in map(string.strip,maRequires.group(1).split(u',')):
                     maReqItem = reReqItem.match(item)
                     key,value = ma
                     if maReqItem:
@@ -9396,13 +9385,13 @@ class ModInfos(FileInfos):
         oldSize = self.data[baseName].size
         if newSize == oldSize: return
         if oldSize not in self.size_voVersion:
-            raise StateError(_("Can't match current main ESM to known version."))
-        oldName = GPath(baseName.sbody+'_'+self.size_voVersion[oldSize]+'.esm')
+            raise StateError(u"Can't match current main ESM to known version.")
+        oldName = GPath(baseName.sbody+u'_'+self.size_voVersion[oldSize]+u'.esm')
         if self.dir.join(oldName).exists():
-            raise StateError(_("Can't swap: %s already exists.") % oldName)
-        newName = GPath(baseName.sbody+'_'+newVersion+'.esm')
+            raise StateError(u"Can't swap: %s already exists." % oldName)
+        newName = GPath(baseName.sbody+u'_'+newVersion+u'.esm')
         if newName not in self.data:
-            raise StateError(_("Can't swap: %s doesn't exist.") % newName)
+            raise StateError(u"Can't swap: %s doesn't exist." % newName)
         #--Rename
         baseInfo = self.data[baseName]
         newInfo = self.data[newName]
@@ -9466,9 +9455,9 @@ class SaveInfos(FileInfos):
         self.refreshLocalSave()
         FileInfos.__init__(self,self.dir,SaveInfo)
         self.profiles = bolt.Table(PickleDict(
-            dirs['saveBase'].join('BashProfiles.dat'),
-            dirs['userApp'].join('Profiles.pkl')))
-        self.table = bolt.Table(PickleDict(self.bashDir.join('Table.dat')))
+            dirs['saveBase'].join(u'BashProfiles.dat'),
+            dirs['userApp'].join(u'Profiles.pkl')))
+        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat')))
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
@@ -9480,8 +9469,8 @@ class SaveInfos(FileInfos):
             self.data.clear()
             self.table.save()
             self.table = bolt.Table(PickleDict(
-                self.bashDir.join('Table.dat'),
-                self.bashDir.join('Table.pkl')))
+                self.bashDir.join(u'Table.dat'),
+                self.bashDir.join(u'Table.pkl')))
         return FileInfos.refresh(self)
 
     def delete(self,fileName):
@@ -9507,9 +9496,9 @@ class SaveInfos(FileInfos):
     #--Local Saves ------------------------------------------------------------
     def getLocalSaveDirs(self):
         """Returns a list of possible local save directories, NOT including the base directory."""
-        baseSaves = dirs['saveBase'].join('Saves')
+        baseSaves = dirs['saveBase'].join(u'Saves')
         if baseSaves.exists():
-            localSaveDirs = [x for x in baseSaves.list() if (x != 'Bash' and baseSaves.join(x).isdir())]
+            localSaveDirs = [x for x in baseSaves.list() if (x != u'Bash' and baseSaves.join(x).isdir())]
         else:
             localSaveDirs = []
         localSaveDirs.sort()
@@ -9518,13 +9507,13 @@ class SaveInfos(FileInfos):
     def refreshLocalSave(self):
         """Refreshes self.localSave and self.dir."""
         #--self.localSave is NOT a Path object.
-        self.localSave = getattr(self,'localSave','Saves\\')
+        self.localSave = getattr(self,u'localSave',u'Saves\\')
         self.dir = dirs['saveBase'].join(self.localSave)
         self.bashDir = self.getBashDir()
         if oblivionIni.path.exists() and (oblivionIni.path.mtime != self.iniMTime):
             self.localSave = oblivionIni.getSetting(bush.game.saveProfilesKey[0],
                                                     bush.game.saveProfilesKey[1],
-                                                    'Saves\\')
+                                                    u'Saves\\')
             self.iniMTime = oblivionIni.path.mtime
             return True
         else:
@@ -9541,22 +9530,22 @@ class SaveInfos(FileInfos):
                                    bush.game.saveProfilesKey[1],
                                    localSave)
         self.iniMTime = oblivionIni.path.mtime
-        bashDir = dirs['saveBase'].join(localSave,'Bash')
-        self.table = bolt.Table(PickleDict(bashDir.join('Table.dat')))
+        bashDir = dirs['saveBase'].join(localSave,u'Bash')
+        self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
         self.refresh()
 
     #--Enabled ----------------------------------------------------------------
     def isEnabled(self,fileName):
         """True if fileName is enabled)."""
-        return (fileName.cext == '.ess')
+        return (fileName.cext == u'.ess')
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
         isEnabled = self.isEnabled(fileName)
-        if isEnabled or value == isEnabled or re.match('(autosave|quicksave)',fileName.s,re.I):
+        if isEnabled or value == isEnabled or re.match(u'(autosave|quicksave)',fileName.s,re.I|re.U):
             return fileName
         (root,ext) = fileName.rootExt
-        newName = root + ((value and '.ess') or '.esr')
+        newName = root + ((value and u'.ess') or u'.esr')
         self.rename(fileName,newName)
         return newName
 
@@ -9575,7 +9564,7 @@ class BSAInfos(FileInfos):
 
     def getBashDir(self):
         """Return directory to save info."""
-        return dirs['modsBash'].join('BSA Data')
+        return dirs['modsBash'].join(u'BSA Data')
 
     def resetMTimes(self):
         for file in self.data:
@@ -9623,13 +9612,13 @@ class ModRuleSet:
 
     class RuleParser:
         """A class for parsing ruleset files."""
-        ruleBlockIds = ('NOTES','CONFIG','SUGGEST','WARN')
-        reComment = re.compile(r'##.*')
-        reBlock   = re.compile(r'^>>\s+([A-Z]+)\s*(.*)')
-        reMod     = re.compile(r'\s*([\-\|]?)(.+?\.es[pm])(\s*\[[^\]]\])?',re.I)
-        reRule    = re.compile(r'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)')
-        reExists  = re.compile(r'^(e)\s+([^/]+)//(.*)')
-        reModVersion = re.compile(r'(.+\.es[pm])\s*(\[[^\]]+\])?',re.I)
+        ruleBlockIds = (u'NOTES',u'CONFIG',u'SUGGEST',u'WARN')
+        reComment = re.compile(ur'##.*',re.U)
+        reBlock   = re.compile(ur'^>>\s+([A-Z]+)\s*(.*)',re.U)
+        reMod     = re.compile(ur'\s*([\-\|]?)(.+?\.es[pm])(\s*\[[^\]]\])?',re.I|re.U)
+        reRule    = re.compile(ur'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)',re.U)
+        reExists  = re.compile(ur'^(e)\s+([^/]+)//(.*)',re.U)
+        reModVersion = re.compile(ur'(.+\.es[pm])\s*(\[[^\]]+\])?',re.I|re.U)
 
         def __init__(self,ruleSet):
             self.ruleSet = ruleSet
@@ -9652,11 +9641,11 @@ class ModRuleSet:
             curBlockId = self.curBlockId
             group = self.group
             if curBlockId != None:
-                if curBlockId == 'HEADER':
+                if curBlockId == u'HEADER':
                     self.ruleSet.header = self.ruleSet.header.rstrip()
-                elif curBlockId == 'ONLYONE':
+                elif curBlockId == u'ONLYONE':
                     self.ruleSet.onlyones.append(set(self.mods))
-                elif curBlockId == 'ASSUME':
+                elif curBlockId == u'ASSUME':
                     self.assumed = self.mods[:]
                     self.assumedNot = self.modNots[:]
                 elif curBlockId in self.ruleBlockIds and self.mods and group.hasRules():
@@ -9689,68 +9678,67 @@ class ModRuleSet:
 
             #--Clear info
             ruleSet.mtime = rulePath.mtime
-            ruleSet.header = ''
+            ruleSet.header = u''
             del ruleSet.onlyones[:]
             del ruleSet.modGroups[:]
 
             def stripped(list):
-                return [(x or '').strip() for x in list]
+                return [(x or u'').strip() for x in list]
 
-            ins = rulePath.open('r')
-            for line in ins:
-                line = reComment.sub('',line)
-                maBlock = reBlock.match(line)
-                #--Block changers
-                if maBlock:
-                    newBlock,extra = stripped(maBlock.groups())
-                    self.newBlock(newBlock)
-                    if newBlock == 'HEADER':
-                        self.ruleSet.header = (extra or '')+'\n'
-                    elif newBlock in ('ASSUME','IF'):
-                        maModVersion = reModVersion.match(extra or '')
-                        if extra and reModVersion.match(extra):
-                            self.mods = [[GPath(reModVersion.match(extra).group(1))]]
-                            self.modNots = [False]
-                        else:
-                            self.mods = []
-                            self.modNots = []
-                #--Block lists
-                elif self.curBlockId == 'HEADER':
-                    self.ruleSet.header += line.rstrip()+'\n'
-                elif self.curBlockId in ('IF','ASSUME'):
-                    maMod = reMod.match(line)
-                    if maMod:
-                        op,mod,version = stripped(maMod.groups())
-                        mod = GPath(mod)
-                        if op == '|':
-                            self.mods[-1].append(mod)
-                        else:
-                            self.mods.append([mod])
-                            self.modNots.append(op == '-')
-                elif self.curBlockId  == 'ONLYONE':
-                    maMod = reMod.match(line)
-                    if maMod:
-                        if maMod.group(1): raise BoltError(
-                            _("ONLYONE does not support %s operators.") % maMod.group(1))
-                        self.mods.append(GPath(maMod.group(2)))
-                elif self.curBlockId == 'NOTES':
-                    self.group.notes += line.rstrip()+'\n'
-                elif self.curBlockId in self.ruleBlockIds:
-                    maRule = reRule.match(line)
-                    maExists = reExists.match(line)
-                    if maRule:
-                        op,mod,version,text = maRule.groups()
-                        self.addGroupRule(op,mod,text)
-                    elif maExists and '..' not in maExists.groups(2):
-                        self.addGroupRule(*stripped(maExists.groups()))
-            self.newBlock(None)
-            ins.close()
+            with rulePath.open('r',encoding='utf8') as ins:
+                for line in ins:
+                    line = reComment.sub(u'',line)
+                    maBlock = reBlock.match(line)
+                    #--Block changers
+                    if maBlock:
+                        newBlock,extra = stripped(maBlock.groups())
+                        self.newBlock(newBlock)
+                        if newBlock == u'HEADER':
+                            self.ruleSet.header = (extra or u'')+u'\n'
+                        elif newBlock in (u'ASSUME',u'IF'):
+                            maModVersion = reModVersion.match(extra or u'')
+                            if extra and reModVersion.match(extra):
+                                self.mods = [[GPath(reModVersion.match(extra).group(1))]]
+                                self.modNots = [False]
+                            else:
+                                self.mods = []
+                                self.modNots = []
+                    #--Block lists
+                    elif self.curBlockId == u'HEADER':
+                        self.ruleSet.header += line.rstrip()+u'\n'
+                    elif self.curBlockId in (u'IF',u'ASSUME'):
+                        maMod = reMod.match(line)
+                        if maMod:
+                            op,mod,version = stripped(maMod.groups())
+                            mod = GPath(mod)
+                            if op == u'|':
+                                self.mods[-1].append(mod)
+                            else:
+                                self.mods.append([mod])
+                                self.modNots.append(op == u'-')
+                    elif self.curBlockId  == u'ONLYONE':
+                        maMod = reMod.match(line)
+                        if maMod:
+                            if maMod.group(1): raise BoltError(
+                                u"ONLYONE does not support %s operators." % maMod.group(1))
+                            self.mods.append(GPath(maMod.group(2)))
+                    elif self.curBlockId == u'NOTES':
+                        self.group.notes += line.rstrip()+u'\n'
+                    elif self.curBlockId in self.ruleBlockIds:
+                        maRule = reRule.match(line)
+                        maExists = reExists.match(line)
+                        if maRule:
+                            op,mod,version,text = maRule.groups()
+                            self.addGroupRule(op,mod,text)
+                        elif maExists and u'..' not in maExists.groups(2):
+                            self.addGroupRule(*stripped(maExists.groups()))
+                self.newBlock(None)
 
     #--------------------------------------------------------------------------
     def __init__(self):
         """Initialize ModRuleSet."""
         self.mtime = 0
-        self.header = ''
+        self.header = u''
         self.defineKeys = []
         self.onlyones = []
         self.modGroups = []
@@ -9779,7 +9767,7 @@ class ConfigHelpers:
         else:
             try:
                 import win32api
-                self.bossVersion = win32api.GetFileVersionInfo(dirs['mods'].join(u'BOSS.exe').s, '\\')[u'FileVersionLS']
+                self.bossVersion = win32api.GetFileVersionInfo(dirs['mods'].join(u'BOSS.exe').s, u'\\')[u'FileVersionLS']
             except: #any version prior to 1.6.1 will fail and hence set to None and then try to set based on masterlist path.
                 self.bossVersion = None
             self.bossMasterPath = dirs['mods'].join(u'BOSS',u'masterlist.txt')
@@ -9936,164 +9924,163 @@ class ConfigHelpers:
         activeMerged = active | merged
         warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
         #--Header
-        log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(u'= '+_(u'Check Mods'),True)
-        log(_(u'This is a report on your currently active/merged mods.'))
-        #--Mergeable/NoMerge/Deactivate tagged mods
-        shouldMerge = active & modInfos.mergeable
-        shouldDeactivateA = [x for x in active if u'Deactivate' in modInfos[x].getBashTags()]
-        shouldDeactivateB = [x for x in active if u'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
-        shouldActivateA = [x for x in imported if u'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
-        #--Mods with invalid TES4 version
-        invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
-        if True:
-            #--Look for dirty edits
-            shouldClean = {}
-            scan = []
-            for x in active:
-                dirtyMessage = modInfos[x].getDirtyMessage()
-                if dirtyMessage[0]:
-                    shouldClean[x] = dirtyMessage[1]
-                elif scanDirty:
-                    scan.append(modInfos[x])
-            if scanDirty:
-                try:
-                    with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60,parent=scanDirty,abort=True) as progress:
-                        ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
-                        for i,mod in enumerate(scan):
-                            udrs,itms,fog = ret[i]
-                            if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-                            if mod.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
-                            if udrs or itms:
-                                cleanMsg = []
-                                if udrs:
-                                    cleanMsg.append(u'UDR(%i)' % len(udrs))
-                                if itms:
-                                    cleanMsg.append(u'ITM(%i)' % len(itms))
-                                cleanMsg = u', '.join(cleanMsg)
-                                shouldClean[mod.name] = cleanMsg
-                except bolt.CancelError:
-                    pass
-        shouldCleanMaybe = [(x,modInfos[x].getDirtyMessage()[1]) for x in active if not modInfos[x].getDirtyMessage()[0] and modInfos[x].getDirtyMessage()[1] != u'']
-        for mod in tuple(shouldMerge):
-            if u'NoMerge' in modInfos[mod].getBashTags():
-                shouldMerge.discard(mod)
-        if shouldMerge:
-            log.setHeader(u'=== '+_(u'Mergeable'))
-            log(_(u'Following mods are active, but could be merged into the bashed patch.'))
-            for mod in sorted(shouldMerge):
-                log(u'* __'+mod.s+u'__')
-        if shouldDeactivateB:
-            log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
-            log(_(u'Following mods are tagged NoMerge and should be deactivated and imported into the bashed patch but are currently active.'))
-            for mod in sorted(shouldDeactivateB):
-                log(u'* __'+mod.s+u'__')
-        if shouldDeactivateA:
-            log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
-            log(_(u'Following mods are tagged Deactivate and should be deactivated and imported into the bashed patch but are currently active.'))
-            for mod in sorted(shouldDeactivateA):
-                log(u'* __'+mod.s+u'__')
-        if shouldActivateA:
-            log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
-            log(_(u'Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported.'))
-            for mod in sorted(shouldActivateA):
-                log(u'* __'+mod.s+u'__')
-        if shouldClean:
-            log.setHeader(u'=== '+_(u'Mods that need cleaning with TES4Edit'))
-            log(_(u'Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[!http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information.'))
-            for mod in sorted(shouldClean.keys()):
-                log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
-        if shouldCleanMaybe:
-            log.setHeader(u'=== '+_(u'Mods with special cleaning instructions'))
-            log(_(u'Following mods have special instructions for cleaning with TES4Edit'))
-            for mod in sorted(shouldCleanMaybe):
-                log(u'* __'+mod[0].s+u':__  '+mod[1])
-        elif scanDirty and not shouldClean:
-            log.setHeader(u'=== '+_(u'Mods that need cleaning with TES4Edit'))
-            log(_(u'Congratulations all mods appear clean.'))
-        if invalidVersion:
-            log.setHeader(u'=== '+_(u'Mods with non standard TES4 versions'))
-            log(_(u"Following mods have a TES4 version that isn't recognized as one of the standard versions (0.8 and 1.0).  It is untested what effect this can have on the game, but presumably Oblivion will refuse to load anything above 1.0"))
-            for mod in sorted(invalidVersion):
-                log(u'* __'+mod[0].s+u':__  '+mod[1])
-        #--Missing/Delinquent Masters
-        if showModList:
-            log(u'\n'+modInfos.getModList(showCRC,showVersion,wtxt=True).strip())
-        else:
-            log.setHeader(warning+_(u'Missing/Delinquent Masters'))
-            previousMods = set()
-            for mod in modInfos.ordered:
-                loggedMod = False
-                for master in modInfos[mod].header.masters:
-                    if master not in active:
-                        label = _(u'MISSING')
-                    elif master not in previousMods:
-                        label = _(u'DELINQUENT')
-                    else:
-                        label = u''
-                    if label:
-                        if not loggedMod:
-                            log(u'* '+mod.s)
-                            loggedMod = True
-                        log(u'  * __%s__ %s' %(label,master.s))
-                previousMods.add(mod)
-        #--Rule Sets
-        if showRuleSets:
-            self.refreshRuleSets()
-            for fileName in sorted(self.name_ruleSet):
-                ruleSet = self.name_ruleSet[fileName]
-                modRules = ruleSet.modGroups
-                log.setHeader(u'= ' + fileName.s[:-4],True)
-                if ruleSet.header: log(ruleSet.header)
-                #--One ofs
-                for modSet in ruleSet.onlyones:
-                    modSet &= activeMerged
-                    if len(modSet) > 1:
-                        log.setHeader(warning+_(u'Only one of these should be active/merged'))
-                        for mod in sorted(modSet):
-                            log(u'* '+mod.s)
-                #--Mod Rules
-                for modGroup in ruleSet.modGroups:
-                    if not modGroup.isActive(activeMerged): continue
-                    modList = u' + '.join([x.s for x in modGroup.getActives(activeMerged)])
-                    if showNotes and modGroup.notes:
-                        log.setHeader(u'=== '+_(u'NOTES: ') + modList )
-                        log(modGroup.notes)
-                    if showConfig:
-                        log.setHeader(u'=== '+_(u'CONFIGURATION: ') + modList )
-                        #    + _('\nLegend: x: Active, +: Merged, -: Inactive'))
-                        for ruleType,ruleMod,comment in modGroup.config:
-                            if ruleType != u'o': continue
-                            if ruleMod in active: bullet = u'x'
-                            elif ruleMod in merged: bullet = u'+'
-                            elif ruleMod in imported: bullet = u'*'
-                            else: bullet = u'o'
-                            log(u'%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
-                    if showSuggest:
-                        log.setHeader(u'=== '+_(u'SUGGESTIONS: ') + modList)
-                        for ruleType,ruleMod,comment in modGroup.suggest:
-                            if ((ruleType == u'x' and ruleMod not in activeMerged) or
-                                (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
-                                (ruleType == u'-' and ruleMod in activeMerged) or
-                                (ruleType == u'-+' and ruleMod in active)
-                                ):
-                                log(u'* __%s__ -- %s' % (ruleMod.s,comment))
-                            elif ruleType == u'e' and not dirs['mods'].join(ruleMod).exists():
-                                log(u'* '+comment)
-                    if showWarn:
-                        log.setHeader(warning + modList)
-                        for ruleType,ruleMod,comment in modGroup.warn:
-                            if ((ruleType == u'x' and ruleMod not in activeMerged) or
-                                (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
-                                (ruleType == u'-' and ruleMod in activeMerged) or
-                                (ruleType == u'-+' and ruleMod in active)
-                                ):
-                                log(u'* __%s__ -- %s' % (ruleMod.s,comment))
-                            elif ruleType == u'e' and not dirs['mods'].join(ruleMod).exists():
-                                log(u'* '+comment)
-        ret = log.out.getvalue()
-        log.out.close()
-        return ret
+        with sio() as out:
+            log = bolt.LogFile(out)
+            log.setHeader(u'= '+_(u'Check Mods'),True)
+            log(_(u'This is a report on your currently active/merged mods.'))
+            #--Mergeable/NoMerge/Deactivate tagged mods
+            shouldMerge = active & modInfos.mergeable
+            shouldDeactivateA = [x for x in active if u'Deactivate' in modInfos[x].getBashTags()]
+            shouldDeactivateB = [x for x in active if u'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
+            shouldActivateA = [x for x in imported if u'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
+            #--Mods with invalid TES4 version
+            invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
+            if True:
+                #--Look for dirty edits
+                shouldClean = {}
+                scan = []
+                for x in active:
+                    dirtyMessage = modInfos[x].getDirtyMessage()
+                    if dirtyMessage[0]:
+                        shouldClean[x] = dirtyMessage[1]
+                    elif scanDirty:
+                        scan.append(modInfos[x])
+                if scanDirty:
+                    try:
+                        with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60,parent=scanDirty,abort=True) as progress:
+                            ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
+                            for i,mod in enumerate(scan):
+                                udrs,itms,fog = ret[i]
+                                if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
+                                if mod.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
+                                if udrs or itms:
+                                    cleanMsg = []
+                                    if udrs:
+                                        cleanMsg.append(u'UDR(%i)' % len(udrs))
+                                    if itms:
+                                        cleanMsg.append(u'ITM(%i)' % len(itms))
+                                    cleanMsg = u', '.join(cleanMsg)
+                                    shouldClean[mod.name] = cleanMsg
+                    except bolt.CancelError:
+                        pass
+            shouldCleanMaybe = [(x,modInfos[x].getDirtyMessage()[1]) for x in active if not modInfos[x].getDirtyMessage()[0] and modInfos[x].getDirtyMessage()[1] != u'']
+            for mod in tuple(shouldMerge):
+                if u'NoMerge' in modInfos[mod].getBashTags():
+                    shouldMerge.discard(mod)
+            if shouldMerge:
+                log.setHeader(u'=== '+_(u'Mergeable'))
+                log(_(u'Following mods are active, but could be merged into the bashed patch.'))
+                for mod in sorted(shouldMerge):
+                    log(u'* __'+mod.s+u'__')
+            if shouldDeactivateB:
+                log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
+                log(_(u'Following mods are tagged NoMerge and should be deactivated and imported into the bashed patch but are currently active.'))
+                for mod in sorted(shouldDeactivateB):
+                    log(u'* __'+mod.s+u'__')
+            if shouldDeactivateA:
+                log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
+                log(_(u'Following mods are tagged Deactivate and should be deactivated and imported into the bashed patch but are currently active.'))
+                for mod in sorted(shouldDeactivateA):
+                    log(u'* __'+mod.s+u'__')
+            if shouldActivateA:
+                log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
+                log(_(u'Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported.'))
+                for mod in sorted(shouldActivateA):
+                    log(u'* __'+mod.s+u'__')
+            if shouldClean:
+                log.setHeader(u'=== '+_(u'Mods that need cleaning with TES4Edit'))
+                log(_(u'Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[!http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information.'))
+                for mod in sorted(shouldClean.keys()):
+                    log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
+            if shouldCleanMaybe:
+                log.setHeader(u'=== '+_(u'Mods with special cleaning instructions'))
+                log(_(u'Following mods have special instructions for cleaning with TES4Edit'))
+                for mod in sorted(shouldCleanMaybe):
+                    log(u'* __'+mod[0].s+u':__  '+mod[1])
+            elif scanDirty and not shouldClean:
+                log.setHeader(u'=== '+_(u'Mods that need cleaning with TES4Edit'))
+                log(_(u'Congratulations all mods appear clean.'))
+            if invalidVersion:
+                log.setHeader(u'=== '+_(u'Mods with non standard TES4 versions'))
+                log(_(u"Following mods have a TES4 version that isn't recognized as one of the standard versions (0.8 and 1.0).  It is untested what effect this can have on the game, but presumably Oblivion will refuse to load anything above 1.0"))
+                for mod in sorted(invalidVersion):
+                    log(u'* __'+mod[0].s+u':__  '+mod[1])
+            #--Missing/Delinquent Masters
+            if showModList:
+                log(u'\n'+modInfos.getModList(showCRC,showVersion,wtxt=True).strip())
+            else:
+                log.setHeader(warning+_(u'Missing/Delinquent Masters'))
+                previousMods = set()
+                for mod in modInfos.ordered:
+                    loggedMod = False
+                    for master in modInfos[mod].header.masters:
+                        if master not in active:
+                            label = _(u'MISSING')
+                        elif master not in previousMods:
+                            label = _(u'DELINQUENT')
+                        else:
+                            label = u''
+                        if label:
+                            if not loggedMod:
+                                log(u'* '+mod.s)
+                                loggedMod = True
+                            log(u'  * __%s__ %s' %(label,master.s))
+                    previousMods.add(mod)
+            #--Rule Sets
+            if showRuleSets:
+                self.refreshRuleSets()
+                for fileName in sorted(self.name_ruleSet):
+                    ruleSet = self.name_ruleSet[fileName]
+                    modRules = ruleSet.modGroups
+                    log.setHeader(u'= ' + fileName.s[:-4],True)
+                    if ruleSet.header: log(ruleSet.header)
+                    #--One ofs
+                    for modSet in ruleSet.onlyones:
+                        modSet &= activeMerged
+                        if len(modSet) > 1:
+                            log.setHeader(warning+_(u'Only one of these should be active/merged'))
+                            for mod in sorted(modSet):
+                                log(u'* '+mod.s)
+                    #--Mod Rules
+                    for modGroup in ruleSet.modGroups:
+                        if not modGroup.isActive(activeMerged): continue
+                        modList = u' + '.join([x.s for x in modGroup.getActives(activeMerged)])
+                        if showNotes and modGroup.notes:
+                            log.setHeader(u'=== '+_(u'NOTES: ') + modList )
+                            log(modGroup.notes)
+                        if showConfig:
+                            log.setHeader(u'=== '+_(u'CONFIGURATION: ') + modList )
+                            #    + _('\nLegend: x: Active, +: Merged, -: Inactive'))
+                            for ruleType,ruleMod,comment in modGroup.config:
+                                if ruleType != u'o': continue
+                                if ruleMod in active: bullet = u'x'
+                                elif ruleMod in merged: bullet = u'+'
+                                elif ruleMod in imported: bullet = u'*'
+                                else: bullet = u'o'
+                                log(u'%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
+                        if showSuggest:
+                            log.setHeader(u'=== '+_(u'SUGGESTIONS: ') + modList)
+                            for ruleType,ruleMod,comment in modGroup.suggest:
+                                if ((ruleType == u'x' and ruleMod not in activeMerged) or
+                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
+                                    (ruleType == u'-' and ruleMod in activeMerged) or
+                                    (ruleType == u'-+' and ruleMod in active)
+                                    ):
+                                    log(u'* __%s__ -- %s' % (ruleMod.s,comment))
+                                elif ruleType == u'e' and not dirs['mods'].join(ruleMod).exists():
+                                    log(u'* '+comment)
+                        if showWarn:
+                            log.setHeader(warning + modList)
+                            for ruleType,ruleMod,comment in modGroup.warn:
+                                if ((ruleType == u'x' and ruleMod not in activeMerged) or
+                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
+                                    (ruleType == u'-' and ruleMod in activeMerged) or
+                                    (ruleType == u'-+' and ruleMod in active)
+                                    ):
+                                    log(u'* __%s__ -- %s' % (ruleMod.s,comment))
+                                elif ruleType == u'e' and not dirs['mods'].join(ruleMod).exists():
+                                    log(u'* '+comment)
+            return log.out.getvalue()
 
 # TankDatas -------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -10130,7 +10117,7 @@ class Messages(DataDict):
     """PM message archive."""
     def __init__(self):
         """Initialize."""
-        self.dictFile = PickleDict(dirs['saveBase'].join('Messages.dat'))
+        self.dictFile = PickleDict(dirs['saveBase'].join(u'Messages.dat'))
         self.data = self.dictFile.data #--data[hash] = (subject,author,date,text)
         self.hasChanged = False
         self.loaded = False
@@ -10170,13 +10157,12 @@ class Messages(DataDict):
 
     def writeText(self,path,*keys):
         """Return html text for each key."""
-        out = path.open('w')
-        out.write(bush.messagesHeader)
-        for key in keys:
-            out.write(self.data[key][3])
-            out.write('\n<br />')
-        out.write("\n</div></body></html>")
-        out.close()
+        with path.open('w') as out:
+            out.write(bush.messagesHeader)
+            for key in keys:
+                out.write(self.data[key][3])
+                out.write('\n<br />')
+            out.write("\n</div></body></html>")
 
     def importArchive(self,path):
         """Import archive file into data."""
@@ -10346,11 +10332,11 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
     def __init__(self):
         """Initialize."""
         bolt.TankData.__init__(self,settings)
-        PickleTankData.__init__(self,dirs['saveBase'].join('ModBase.dat'))
+        PickleTankData.__init__(self,dirs['saveBase'].join(u'ModBase.dat'))
         #--Default settings. Subclasses should define these.
         self.tankKey = 'bash.modBase'
         self.tankColumns = ['Package','Author','Version','Tags']
-        self.title = _('ModBase')
+        self.title = _(u'ModBase')
         self.defaultParam('columns',self.tankColumns[:])
         self.defaultParam('colWidths',{'Package':60,'Author':30,'Version':20})
         self.defaultParam('colAligns',{})
@@ -10385,7 +10371,7 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
     def getGuiKeys(self,item):
         """Returns keys for icon and text and background colors."""
         textKey = backKey = None
-        iconKey = 'karma%+d' % self.data[item][1]
+        iconKey = u'karma%+d' % self.data[item][1]
         return (iconKey,textKey,backKey)
 
 #------------------------------------------------------------------------------
@@ -10394,11 +10380,11 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
     def __init__(self):
         """Initialize."""
         bolt.TankData.__init__(self,settings)
-        PickleTankData.__init__(self,dirs['saveBase'].join('People.dat'))
+        PickleTankData.__init__(self,dirs['saveBase'].join(u'People.dat'))
         #--Default settings. Subclasses should define these.
         self.tankKey = 'bash.people'
         self.tankColumns = ['Name','Karma','Header']
-        self.title = _('People')
+        self.title = _(u'People')
         self.defaultParam('columns',self.tankColumns[:])
         self.defaultParam('colWidths',{'Name':60,'Karma':20})
         self.defaultParam('colAligns',{'Karma':'CENTER'})
@@ -10428,9 +10414,9 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
             if column == 'Name': labels.append(item)
             elif column == 'Karma':
                 karma = itemData[1]
-                labels.append(('-','+')[karma>=0]*abs(karma))
+                labels.append((u'-',u'+')[karma>=0]*abs(karma))
             elif column == 'Header':
-                header = itemData[2].split('\n',1)[0][:75]
+                header = itemData[2].split(u'\n',1)[0][:75]
                 labels.append(header)
         return labels
 
@@ -10441,39 +10427,37 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
     def getGuiKeys(self,item):
         """Returns keys for icon and text and background colors."""
         textKey = backKey = None
-        iconKey = 'karma%+d' % self.data[item][1]
+        iconKey = u'karma%+d' % self.data[item][1]
         return (iconKey,textKey,backKey)
 
     #--Operations
     def loadText(self,path):
         """Enter info from text file."""
         newNames,name,buffer = set(),None,None
-        ins = path.open('r')
-        reName = re.compile(r'==([^=]+)=*$')
-        for line in ins:
-            maName = reName.match(line)
-            if not maName:
-                if buffer: buffer.write(line)
-                continue
-            if name:
-                self.data[name] = (time.time(),0,buffer.getvalue().strip())
-                newNames.add(name)
-                buffer.close()
-                buffer = None
-            name = maName.group(1).strip()
-            if name: buffer = StringIO.StringIO()
-        ins.close()
+        with path.open('r') as ins:
+            reName = re.compile(ur'==([^=]+)=*$',re.U)
+            for line in ins:
+                maName = reName.match(line)
+                if not maName:
+                    if buffer: buffer.write(line)
+                    continue
+                if name:
+                    self.data[name] = (time.time(),0,buffer.getvalue().strip())
+                    newNames.add(name)
+                    buffer.close()
+                    buffer = None
+                name = maName.group(1).strip()
+                if name: buffer = StringIO.StringIO()
         if newNames: self.setChanged()
         return newNames
 
     def dumpText(self,path,names):
         """Dump to text file."""
-        out = path.open('w')
-        for name in sorted(names,key=string.lower):
-            out.write('== %s %s\n' % (name,'='*(75-len(name))))
-            out.write(self.data[name][2].strip())
-            out.write('\n\n')
-        out.close()
+        with path.open('w',encoding='utf8') as out:
+            for name in sorted(names,key=string.lower):
+                out.write(u'== %s %s\n' % (name,u'='*(75-len(name))))
+                out.write(self.data[name][2].strip())
+                out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
 class ScreensData(DataDict):
@@ -10485,11 +10469,11 @@ class ScreensData(DataDict):
     def refresh(self):
         """Refresh list of screenshots."""
         self.dir = dirs['app']
-        ssBase = GPath(oblivionIni.getSetting('Display','SScreenShotBaseName','ScreenShot'))
+        ssBase = GPath(oblivionIni.getSetting(u'Display',u'SScreenShotBaseName',u'ScreenShot'))
         if ssBase.head:
             self.dir = self.dir.join(ssBase.head)
         newData = {}
-        reImageExt = re.compile(r'\.(bmp|jpg|jpeg|png|tif|gif)$',re.I)
+        reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$',re.I|re.U)
         #--Loop over files in directory
         for fileName in self.dir.list():
             filePath = self.dir.join(fileName)
@@ -10564,7 +10548,7 @@ class Installer(object):
         """Utility function. Sorts files by directory, then file name."""
         def sortKey(file):
             dirFile = os.path.split(file)
-            if len(dirFile) == 1: dirFile.insert(0,'')
+            if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
         sortKeys = dict((x,sortKey(x)) for x in files)
         return sorted(files,key=lambda x: sortKeys[x])
@@ -10607,7 +10591,7 @@ class Installer(object):
         setSkipImages = settings['bash.installers.skipImages']
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
         if inisettings['KeepLog'] > 1:
-            try: log = inisettings['LogFile'].open('a')
+            try: log = inisettings['LogFile'].open('a',encoding='utf8')
             except: log = None
         else: log = None
         for asDir,sDirs,sFiles in os.walk(asRoot):
@@ -10615,19 +10599,19 @@ class Installer(object):
             if rootIsMods and asDir == asRoot:
                 newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
                 if setSkipLod:
-                    newSDirs = (x for x in newSDirs if x.lower() != 'distandlod')
+                    newSDirs = (x for x in newSDirs if x.lower() != u'distandlod')
                 if setSkipScreen:
-                    newSDirs = (x for x in newSDirs if x.lower() != 'screenshots')
+                    newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
                 if setSkipOBSE:
                     newSDirs = (x for x in newSDirs if x.lower() != obse)
                 if setSkipDocs and setSkipImages:
-                    newSDirs = (x for x in newSDirs if x.lower() != 'docs')
+                    newSDirs = (x for x in newSDirs if x.lower() != u'docs')
                 sDirs[:] = [x for x in newSDirs]
-                if log: log.write('(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
+                if log: log.write(u'(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         if log: log.close()
-        progress(0,_("%s: Scanning...") % rootName)
+        progress(0,_(u"%s: Scanning...") % rootName)
         progress.setFull(1+len(dirDirsFiles))
         for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
             progress(index)
@@ -10638,7 +10622,7 @@ class Installer(object):
             rpDirJoin = rpDir.join
             apDirJoin = apDir.join
             for sFile in sFiles:
-                ext = sFile[sFile.rfind('.'):].lower()
+                ext = sFile[sFile.rfind(u'.'):].lower()
                 rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
@@ -10691,7 +10675,7 @@ class Installer(object):
     def initDefault(self):
         """Inits everything to default values."""
         #--Package Only
-        self.archive = ''
+        self.archive = u''
         self.modified = 0 #--Modified date
         self.size = 0 #--size of archive file
         self.crc = 0 #--crc of archive
@@ -10710,8 +10694,8 @@ class Installer(object):
         self.hasExtraData = False
         self.overrideSkips = False
         self.skipRefresh = False    # Projects only
-        self.comments = ''
-        self.group = '' #--Default from abstract. Else set by user.
+        self.comments = u''
+        self.group = u'' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
         self.isActive = False
         self.espmNots = set() #--Lowercase esp/m file names that user has decided not to install.
@@ -10890,7 +10874,7 @@ class Installer(object):
             subList = espmMapSetdefault(sub,[])
             rootLower,fileExt = os.path.splitext(fileLower)
             rootLower = rootLower.split(u'\\',1)
-            if len(rootLower) == 1: rootLower = ''
+            if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
@@ -10900,7 +10884,7 @@ class Installer(object):
                     continue #--Silent skip
                 elif skipDistantLOD and fileStartsWith(u'distantlod'):
                     continue
-                elif skipLandscapeLODMeshes and fileStartsWith(ur'meshes\landscape\lod'):
+                elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\landscape\lod'):
                     continue
                 elif fileStartsWith(ur'textures\landscapelod\generated'):
                     if skipLandscapeLODNormals and fileEndsWith(ur'_fn.dds'):
@@ -10944,10 +10928,10 @@ class Installer(object):
                                    _(u'Are you sure you want to install this?')
                                    ) % (archiveRoot, bush.game.se.shortName, full)
                         if fileLower in goodDlls:
-                            message += _(' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
+                            message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
                         elif fileLower in badDlls:
-                            message += _(' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
-                        if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(' DLL Warning')):
+                            message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
+                        if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(u' DLL Warning')):
                             badDlls.setdefault(fileLower,[])
                             badDlls[fileLower].append([archiveRoot,size,crc])
                             continue
@@ -10968,9 +10952,9 @@ class Installer(object):
                     continue
             except:
                 if isinstance(fileLower,unicode):
-                    deprint('error printing filename:', fileLower.encode('mbcs'),traceback=True)
+                    deprint(u'error printing filename:', fileLower.encode('mbcs'),traceback=True)
                 else:
-                    deprint('unknown error printing filename:', str(fileLower), traceback=True)
+                    deprint(u'unknown error printing filename:', str(fileLower), traceback=True)
                 raise
 
 
@@ -11021,7 +11005,7 @@ class Installer(object):
                     try:
                         trackedInfos.track(dirs['mods'].join(dest))
                     except:
-                        deprint('An error occured while creating the path:', repr(dest), traceback=True)
+                        deprint(u'An error occured while creating the path:', repr(dest), traceback=True)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
@@ -11058,7 +11042,7 @@ class Installer(object):
         dataDirs = self.dataDirsPlus
         type = 0
         subNameSet = set()
-        subNameSet.add('')
+        subNameSet.add(u'')
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
             if type != 1:
@@ -11153,8 +11137,8 @@ class Installer(object):
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
     #--Temp Files/Dirs
-    tempDir = GPath('InstallerTemp')
-    tempList = GPath('InstallerTempList.txt')
+    tempDir = GPath(u'InstallerTemp')
+    tempList = GPath(u'InstallerTempList.txt')
     def __init__(self,srcArchives=None, data=None, destArchive=None, BCFArchive=None, blockSize=None, progress=None):
         #--Persistent variables are saved in the data tank for normal operations.
         #--persistBCF is read one time from BCF.dat, and then saved in Converters.dat to keep archive extractions to a minimum
@@ -11170,7 +11154,7 @@ class InstallerConverter(object):
         self.srcCRCs = set()
         self.crc = None
         #--fullPath is saved in Converters.dat, but it is also updated on every refresh in case of renaming
-        self.fullPath = 'BCF: Missing!'
+        self.fullPath = u'BCF: Missing!'
         #--Semi-Persistent variables are loaded only when and as needed. They're always read from BCF.dat
         #--Do NOT reorder settings,volatile,addedSettings or you will break existing BCFs!
         self.settings = ['comments','espmNots','hasExtraData','isSolid','skipVoices','subActives']
@@ -11208,33 +11192,32 @@ class InstallerConverter(object):
         path = self.fullPath.temp
         with self.fullPath.tempMoveTo(path):
             # Temp rename if it's name wont encode correctly
-            command = r'"%s" x "%s" BCF.dat -y -so' % (exe7z, path.s)
+            command = ur'"%s" x "%s" BCF.dat -y -so' % (exe7z, path.s)
             try:
                 ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             except:
                 raise StateError(u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
-            ins = StringIO.StringIO(ins)
-            setter = object.__setattr__
-            # translate data types to new hierarchy
-            class _Translator:
-                def __init__(self, streamToWrap):
-                    self._stream = streamToWrap
-                def read(self, numBytes):
-                    return self._translate(self._stream.read(numBytes))
-                def readline(self):
-                    return self._translate(self._stream.readline())
-                def _translate(self, s):
-                    return re.sub(u'^(bolt|bosh)$', r'bash.\1', s)
-            translator = _Translator(ins)
-            map(self.__setattr__, self.persistBCF, cPickle.load(translator))
-            if fullLoad:
-                map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
-            ins.close()
+            with sio(ins) as ins:
+                setter = object.__setattr__
+                # translate data types to new hierarchy
+                class _Translator:
+                    def __init__(self, streamToWrap):
+                        self._stream = streamToWrap
+                    def read(self, numBytes):
+                        return self._translate(self._stream.read(numBytes))
+                    def readline(self):
+                        return self._translate(self._stream.readline())
+                    def _translate(self, s):
+                        return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,flags=re.U)
+                translator = _Translator(ins)
+                map(self.__setattr__, self.persistBCF, cPickle.load(translator))
+                if fullLoad:
+                    map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
         try:
-            f = open(destInstaller.tempDir.join("BCF.dat").s, 'wb')
+            f = open(destInstaller.tempDir.join(u"BCF.dat").s, 'wb')
             cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
             cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
             result = f.close()
@@ -11247,9 +11230,9 @@ class InstallerConverter(object):
     def clearTemp():
         """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
         try:
-            InstallerConverter.tempDir.rmtree(safety='Temp')
+            InstallerConverter.tempDir.rmtree(safety=u'Temp')
         except:
-            InstallerConverter.tempDir.rmtree(safety='Temp')
+            InstallerConverter.tempDir.rmtree(safety=u'Temp')
 
     def apply(self,destArchive,crc_installer,progress=None):
         """Applies the BCF and packages the converted archive"""
@@ -11296,8 +11279,8 @@ class InstallerConverter(object):
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
-        destDir = self.tempDir.join("BCF-Temp")
-        progress(0,_("Moving files..."))
+        destDir = self.tempDir.join(u"BCF-Temp")
+        progress(0,_(u"Moving files..."))
         progress.setFull(1+len(self.convertedFiles))
         #--Make a copy of dupeCount
         dupes = dict(self.dupeCount.iteritems())
@@ -11312,7 +11295,7 @@ class InstallerConverter(object):
                 #--either 'BCF-Missing', or crc read from 7z l -slt
                 srcFile = tempJoin(srcDir,srcFile)
             else:
-                srcFile = tempJoin("%08X" % srcDir,srcFile)
+                srcFile = tempJoin(u"%08X" % srcDir,srcFile)
             destFile = destJoin(destFile)
             if not srcFile.exists():
                 raise StateError(u"%s: Missing source file:\n%s" % (self.fullPath.stail, srcFile.s))
@@ -11394,7 +11377,7 @@ class InstallerConverter(object):
             #--Note files that aren't in any of the source files
             if fileCRC not in srcFiles:
                 missingFileAppend(fileName)
-                srcFiles[fileCRC] = ('BCF-Missing',fileName)
+                srcFiles[fileCRC] = (u'BCF-Missing',fileName)
             self.dupeCount[fileCRC] = dupeGet(fileCRC,0) + 1
         #--Monkey around with the progress step values
         #--Smooth the progress bar progression since some of the subroutines won't always run
@@ -11468,7 +11451,7 @@ class InstallerConverter(object):
 
         command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % dirs['mopy'].join(srcFolder).s)
 
-        progress(0,destArchive.s+u'\n'+_('Compressing files...'))
+        progress(0,destArchive.s+u'\n'+_(u'Compressing files...'))
         progress.setFull(1+length)
         #--Pack the files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
@@ -11499,7 +11482,7 @@ class InstallerConverter(object):
         It does NOT clear the temp folder.  This should be done prior to calling the function.
         Each archive and sub-archive is extracted to its own sub-directory to prevent file thrashing"""
         #--Sanity check
-        if not fileNames: raise ArgumentError(_("No files to extract for %s.") % srcInstaller.s)
+        if not fileNames: raise ArgumentError(u"No files to extract for %s." % srcInstaller.s)
         #--Dump file list
         try:
             out = self.tempList.open('w',encoding='utf8')
@@ -11519,16 +11502,15 @@ class InstallerConverter(object):
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
-        command = '"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
-        command = Encode(command,'mbcs')
+        command = u'"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
         #--Extract files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
         #--Note subArchives for recursive unpacking
         subArchives = []
-        reExtracting = re.compile('Extracting\s+(.+)')
+        reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
         regMatch = reExtracting.match
-        reError = re.compile('Error: (.*)')
+        reError = re.compile(u'Error: (.*)',re.U)
         regErrMatch = reError.match
         errorLine = []
         index = 0
@@ -11546,8 +11528,7 @@ class InstallerConverter(object):
         result = ins.close()
         self.tempList.remove()
         # Clear ReadOnly flag if set
-        cmd = r'attrib -R "%s\*" /S /D' % (subTempDir.s)
-        cmd = Encode(cmd,'mbcs')
+        cmd = ur'attrib -R "%s\*" /S /D' % (subTempDir.s)
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
         if result:
             raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
@@ -11555,7 +11536,7 @@ class InstallerConverter(object):
         #--Recursively unpack subArchives
         if len(subArchives):
             for archive in subArchives:
-                self.unpack(archive,['*'])
+                self.unpack(archive,[u'*'])
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
@@ -11618,14 +11599,14 @@ class InstallerArchive(Installer):
                             file = size = crc = isdir = 0
                 self.crc = cumCRC & 0xFFFFFFFFL
             except:
-                deprint('error:',traceback=True)
-                raise InstallerArchiveError(_("Unable to read archive '%s'.") % archive.s)
+                deprint(u'error:',traceback=True)
+                raise InstallerArchiveError(u"Unable to read archive '%s'." % archive.s)
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
         from archive to self.tempDir.
         fileNames: File names (not paths)."""
-        if not fileNames: raise ArgumentError(_(u'No files to extract for %s.') % archive.s)
+        if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
         with self.tempList.open(encoding='utf8', mode='w') as out:
@@ -11725,7 +11706,7 @@ class InstallerArchive(Installer):
         if not files: return 0
         #--Clear Project
         destDir = dirs['installers'].join(project)
-        if destDir.exists(): destDir.rmtree(safety='Installers')
+        if destDir.exists(): destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
         self.unpackToTemp(archive,files,SubProgress(progress,0,0.9))
@@ -11748,41 +11729,42 @@ class InstallerArchive(Installer):
     def listSource(self, archive):
         """Returns package structure as text."""
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(_(u'Package Structure:'))
-        log(u'[spoiler][xml]', False)
-        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
-        file = u''
-        isdir = False
-        apath = dirs['installers'].join(archive)
-        tempArch = apath.temp
-        with apath.tempMoveTo(tempArch):
-            ins = listArchiveContents(tempArch.s)
-            #--Parse
-            text = []
-            for line in ins.splitlines(True):
-                maList = reList.match(line)
-                if maList:
-                    key,value = maList.groups()
-                    if key == u'Path':
-                        file = value.decode('utf8')
-                    elif key == u'Attributes':
-                        isdir = (value[0] == u'D')
-                        text.append((u'%s' % (file), isdir))
-                    elif key == u'Method':
-                        file = u''
-                        isdir = False
-        text.sort()
-        #--Output
-        for line in text:
-            dir = line[0]
-            isdir = line[1]
-            if isdir:
-                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
-            else:
-                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
-        log(u'[/xml][/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+        with sio() as out:
+            log = bolt.LogFile(out)
+            log.setHeader(_(u'Package Structure:'))
+            log(u'[spoiler][xml]', False)
+            reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+            file = u''
+            isdir = False
+            apath = dirs['installers'].join(archive)
+            tempArch = apath.temp
+            with apath.tempMoveTo(tempArch):
+                ins = listArchiveContents(tempArch.s)
+                #--Parse
+                text = []
+                for line in ins.splitlines(True):
+                    maList = reList.match(line)
+                    if maList:
+                        key,value = maList.groups()
+                        if key == u'Path':
+                            file = value.decode('utf8')
+                        elif key == u'Attributes':
+                            isdir = (value[0] == u'D')
+                            text.append((u'%s' % (file), isdir))
+                        elif key == u'Method':
+                            file = u''
+                            isdir = False
+            text.sort()
+            #--Output
+            for line in text:
+                dir = line[0]
+                isdir = line[1]
+                if isdir:
+                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
+                else:
+                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
+            log(u'[/xml][/spoiler]')
+            return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -11885,7 +11867,7 @@ class InstallerProject(Installer):
             archiveType = writeExts.get(archive.cext)
         outDir = dirs['installers']
         realOutFile = outDir.join(archive)
-        outFile = outDir.join('bash_temp_nonunicode_name.tmp')
+        outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
         num = 0
         while outFile.exists():
             outFile += `num`
@@ -11964,7 +11946,7 @@ class InstallerProject(Installer):
                 config.vMajor, = ins.unpack('i',4)
                 config.vMinor, = ins.unpack('i',4)
                 for attr in ('author','email','website','abstract'):
-                    setattr(config,attr,ins.readNetString())
+                    setattr(config,attr,_unicode(ins.readNetString()))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
@@ -11976,11 +11958,11 @@ class InstallerProject(Installer):
         configPath.head.makedirs()
         with bolt.StructFile(configPath.temp.s,'wb') as out:
             out.pack('B',4)
-            out.writeNetString(Encode(config.name))
+            out.writeNetString(_encode(config.name))
             out.pack('i',config.vMajor)
             out.pack('i',config.vMinor)
             for attr in ('author','email','website','abstract'):
-                out.writeNetString(Encode(getattr(config,attr)))
+                out.writeNetString(_encode(getattr(config,attr)))
             out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
             out.pack('b',0) #--zip compression (will be ignored)
             out.write('\xFF\xFF\xFF\xFF')
@@ -11999,14 +11981,15 @@ class InstallerProject(Installer):
              else:
                  log(u' ' * depth + file)
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(_(u'Package Structure:'))
-        log(u'[spoiler][xml]', False)
-        apath = dirs['installers'].join(archive)
+        with sio() as out:
+            log = bolt.LogFile(out)
+            log.setHeader(_(u'Package Structure:'))
+            log(u'[spoiler][xml]', False)
+            apath = dirs['installers'].join(archive)
 
-        walkPath(apath.s, 0)
-        log(u'[/xml][/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+            walkPath(apath.s, 0)
+            log(u'[/xml][/spoiler]')
+            return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
 class InstallersData(bolt.TankData, DataDict):
@@ -12022,8 +12005,8 @@ class InstallersData(bolt.TankData, DataDict):
         bolt.TankData.__init__(self,settings)
         self.tankKey = 'bash.installers'
         self.tankColumns = ['Package','Order','Modified','Size','Files']
-        self.transColumns = [_('Package'),_('Order'),_('Modified'),_('Size'),_('Files')]
-        self.title = _('Installers')
+        self.transColumns = [_(u'Package'),_(u'Order'),_(u'Modified'),_(u'Size'),_(u'Files')]
+        self.title = _(u'Installers')
         #--Default Params
         self.defaultParam('columns',self.tankColumns)
         self.defaultParam('colWidths',{
@@ -12031,11 +12014,11 @@ class InstallersData(bolt.TankData, DataDict):
         self.defaultParam('colAligns',{'Order':'RIGHT','Size':'RIGHT','Files':'RIGHT','Modified':'RIGHT'})
         self.defaultParam('sashPos',550)
         #--Persistent data
-        self.dictFile = PickleDict(self.bashDir.join('Installers.dat'))
+        self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}
         self.data_sizeCrcDate = {}
         self.crc_installer = {}
-        self.converterFile = PickleDict(self.bashDir.join('Converters.dat'))
+        self.converterFile = PickleDict(self.bashDir.join(u'Converters.dat'))
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile
@@ -12043,7 +12026,7 @@ class InstallersData(bolt.TankData, DataDict):
         self.bcfPath_sizeCrcDate = {}
         self.hasChanged = False
         self.loaded = False
-        self.lastKey = GPath('==Last==')
+        self.lastKey = GPath(u'==Last==')
 
     def addMarker(self,name):
         path = GPath(name)
@@ -12064,7 +12047,7 @@ class InstallersData(bolt.TankData, DataDict):
         #--Refresh Data
         changed = False
         if not self.loaded:
-            progress(0,_("Loading Data..."))
+            progress(0,_(u"Loading Data..."))
             self.dictFile.load()
             self.converterFile.load()
             data = self.dictFile.data
@@ -12160,16 +12143,16 @@ class InstallersData(bolt.TankData, DataDict):
                 if column == 'Order':
                     value = `value`
                 elif marker:
-                    value = ''
+                    value = u''
                 elif column in ('Package','Group'):
                     pass
                 elif column == 'Modified':
                     value = formatDate(value)
                 elif column == 'Size':
                     if value == 0:
-                        value = '0 KB'
+                        value = u'0 KB'
                     else:
-                        value = max(formatInteger(value/1024),formatInteger(1))+' KB'
+                        value = max(formatInteger(value/1024),formatInteger(1))+u' KB'
                 else:
                     raise ArgumentError(column)
             labels.append(value)
@@ -12203,9 +12186,9 @@ class InstallersData(bolt.TankData, DataDict):
         """Returns mouse text to use, given the iconKey,textKey, and backKey."""
         text = ''
         if backKey == 'installers.bkgd.outOfOrder':
-            text += _('Needs Annealing due to a change in Install Order.')
+            text += _(u'Needs Annealing due to a change in Install Order.')
         elif backKey == 'installers.bkgd.dirty':
-            text += _('Needs Annealing due to a change in configuration.')
+            text += _(u'Needs Annealing due to a change in configuration.')
         #--TODO: add mouse  mouse tips 
         return text
 
@@ -12228,7 +12211,7 @@ class InstallersData(bolt.TankData, DataDict):
         installer = self.data[item]
         apath = self.dir.join(item)
         if isinstance(installer,InstallerProject):
-            apath.rmtree(safety='Installers')
+            apath.rmtree(safety=u'Installers')
         else:
             apath.remove()
         del self.data[item]
@@ -12261,7 +12244,7 @@ class InstallersData(bolt.TankData, DataDict):
         dataGet = self.data.get
         pendingAdd = pending.add
         for archive in dirs['installers'].list():
-            if archive.s.lower().startswith(('--','bash')): continue
+            if archive.s.lower().startswith((u'--',u'bash')): continue
             apath = installersJoin(archive)
             isdir = apath.isdir()
             if isdir: projects.add(archive)
@@ -12286,7 +12269,7 @@ class InstallersData(bolt.TankData, DataDict):
             (InstallerArchive, InstallerProject)
             ):
             if not subPending: continue
-            progress(0,_("Scanning Packages..."))
+            progress(0,_(u"Scanning Packages..."))
             progressSetFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
@@ -12311,9 +12294,9 @@ class InstallersData(bolt.TankData, DataDict):
         installersAdd = installers.add
         for item in dirs['installers'].list():
             apath = installersJoin(item)
-            if item.s.lower().startswith(('bash','--')): continue
+            if item.s.lower().startswith((u'bash',u'--')): continue
             if settings['bash.installers.autoRefreshProjects']:
-                if (apath.isdir() and item != 'Bash' and item != dirs['converters'].stail) or (apath.isfile() and item.cext in readExts):
+                if (apath.isdir() and item != u'Bash' and item != dirs['converters'].stail) or (apath.isfile() and item.cext in readExts):
                     installer = dataGet(item)
                     if installer and installer.skipRefresh:
                         continue
@@ -12414,7 +12397,7 @@ class InstallersData(bolt.TankData, DataDict):
         return changed
 
     def validConverterName(self,path):
-        return path.cext in (defaultExt) and (path.csbody[-4:] == '-bcf' or '-bcf-' in path.csbody)
+        return path.cext in (defaultExt) and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
 
     def refreshConverters(self,progress=None,fullRefresh=False):
         """Refreshes converter status, and moves duplicate BCFs out of the way"""
@@ -12451,7 +12434,7 @@ class InstallersData(bolt.TankData, DataDict):
         self.bcfCRC_converter = newData
         pendingChanged = False
         if bool(pending):
-            progress(0,_("Scanning Converters..."))
+            progress(0,_(u"Scanning Converters..."))
             progress.setFull(len(pending))
             for index,archive in enumerate(sorted(pending)):
                 progress(index,_(u'Scanning Converter...')+u'\n'+archive.s)
@@ -12540,7 +12523,7 @@ class InstallersData(bolt.TankData, DataDict):
         for i in destFiles:
             if reModExt.match(i.cext):
                 modInfos.table.setItem(i, 'installer', value)
-            elif i.head.cs == 'ini tweaks':
+            elif i.head.cs == u'ini tweaks':
                 iniInfos.table.setItem(i.tail, 'installer', value)
 
     def install(self,archives,progress=None,last=False,override=True):
@@ -12571,21 +12554,21 @@ class InstallersData(bolt.TankData, DataDict):
                 destFiles &= installer.missingFiles
             if destFiles:
                 for file in destFiles:
-                    if file.cext == '.ini' and not file.head.cs == 'ini tweaks':
+                    if file.cext == u'.ini' and not file.head.cs == u'ini tweaks':
                         oldCrc = self.data_sizeCrcDate.get(file,(None,None,None))[1]
                         newCrc = installer.data_sizeCrc.get(file,(None,None))[1]
                         if oldCrc is not None and newCrc is not None:
                             if newCrc != oldCrc:
                                 target = dirs['mods'].join(file)
                                 # Creat a copy of the old one
-                                baseName = dirs['mods'].join('INI Tweaks', '%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
+                                baseName = dirs['mods'].join(u'INI Tweaks', u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
                                 oldIni = baseName
                                 num = 1
                                 while oldIni.exists():
                                     if num == 1:
-                                        suffix = ' - Copy'
+                                        suffix = u' - Copy'
                                     else:
-                                        suffix = ' - Copy (%i)' % num
+                                        suffix = u' - Copy (%i)' % num
                                     num += 1
                                     oldIni = baseName.head.join(baseName.sbody+suffix+baseName.ext)
                                 target.copyTo(oldIni)
@@ -12604,19 +12587,19 @@ class InstallersData(bolt.TankData, DataDict):
                     if status in (10,-10):
                         # A setting that exists in both INI's, but is different,
                         # or a setting that doesn't exist in the new INI.
-                        if section == ']set[' or section == ']setGS[':
-                            lines.append(text+'\n')
+                        if section == u']set[' or section == u']setGS[':
+                            lines.append(text+u'\n')
                         elif section != currSection:
                             section = currSection
                             if not section: continue
-                            lines.append('\n[%s]\n' % section)
+                            lines.append(u'\n[%s]\n' % section)
                         elif not section:
                             continue
                         else:
-                            lines.append(text+'\n')
+                            lines.append(text+u'\n')
                 # Re-write the tweak
                 with oldIni.open('w') as file:
-                    file.write('; INI Tweak created by Wrye Bash, using settings from old file.\n\n')
+                    file.write(u'; INI Tweak created by Wrye Bash, using settings from old file.\n\n')
                     file.writelines(lines)
         self.refreshStatus()
         return tweaksCreated
@@ -12660,11 +12643,11 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
-        InstallersData.updateTable(removes, '')
+        InstallersData.updateTable(removes, u'')
         for file in removes:
             path = modsDir.join(file)
             path.remove()
-            (path+'.ghost').remove()
+            (path+u'.ghost').remove()
             del data_sizeCrcDate[file]
             emptyDirs.add(path.head)
         #--Remove empties
@@ -12723,11 +12706,11 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
-        InstallersData.updateTable(removes, '')
+        InstallersData.updateTable(removes, u'')
         for file in removes:
             path = modsDir.join(file)
             path.remove()
-            (path+'.ghost').remove()
+            (path+u'.ghost').remove()
             data_sizeCrcDate.pop(file,None)
             emptyDirs.add(path.head)
         #--Remove empties
@@ -12761,7 +12744,7 @@ class InstallersData(bolt.TankData, DataDict):
         keepFiles.update((GPath(f) for f in bush.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
         removes = set(data_sizeCrcDate) - keepFiles
-        destDir = dirs['bainData'].join('Data Folder Contents (%s)' %(datetime.datetime.now().strftime('%d-%m-%Y %H%M.%S')))
+        destDir = dirs['bainData'].join(u'Data Folder Contents (%s)' %(datetime.datetime.now().strftime(u'%d-%m-%Y %H%M.%S')))
         emptyDirs = set()
         skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.wryeBashDataDirs]
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.ignoreDataDirs])
@@ -12778,7 +12761,7 @@ class InstallersData(bolt.TankData, DataDict):
             try:
                 path.moveTo(destDir.join(file))
             except:
-                GPath(path.s+'.ghost').moveTo(destDir.join(file))
+                GPath(path.s+u'.ghost').moveTo(destDir.join(file))
             data_sizeCrcDate.pop(file,None)
             emptyDirs.add(path.head)
         for emptyDir in emptyDirs:
@@ -12798,7 +12781,7 @@ class InstallersData(bolt.TankData, DataDict):
             mismatched = srcInstaller.underrides
         showInactive = conflictsMode and settings['bash.installers.conflictsReport.showInactive']
         showLower = conflictsMode and settings['bash.installers.conflictsReport.showLower']
-        if not mismatched: return ''
+        if not mismatched: return u''
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         getArchiveOrder =  lambda x: data[x].order
@@ -12812,46 +12795,48 @@ class InstallersData(bolt.TankData, DataDict):
             if curConflicts: packConflicts.append((installer,package.s,curConflicts))
         #--Unknowns
         isHigher = -1
-        buff = StringIO.StringIO()
-        for installer,package,files in packConflicts:
-            order = installer.order
-            if showLower and (order > srcOrder) != isHigher:
-                isHigher = (order > srcOrder)
-                buff.write('= %s %s\n' % ((_('Lower'),_('Higher'))[isHigher],'='*40))
-            buff.write('==%d== %s\n'% (order,package))
-            for file in files:
-                oldName = installer.getEspmName(file)
-                buff.write(oldName)
-                if oldName != file:
-                    buff.write(' -> ')
-                    buff.write(file)
-                buff.write('\n')
-            buff.write('\n')
-        report = buff.getvalue()
+        with sio() as buff:
+            for installer,package,files in packConflicts:
+                order = installer.order
+                if showLower and (order > srcOrder) != isHigher:
+                    isHigher = (order > srcOrder)
+                    buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
+                buff.write(u'==%d== %s\n'% (order,package))
+                for file in files:
+                    oldName = installer.getEspmName(file)
+                    buff.write(oldName)
+                    if oldName != file:
+                        buff.write(u' -> ')
+                        buff.write(file)
+                    buff.write(u'\n')
+                buff.write(u'\n')
+            report = buff.getvalue()
         if not conflictsMode and not report and not srcInstaller.isActive:
-            report = _("No Underrides. Mod is not completely un-installed.")
+            report = _(u"No Underrides. Mod is not completely un-installed.")
         return report
 
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(_('Bain Packages:'))
-        orderKey = lambda x: self.data[x].order
-        allPackages = sorted(self.data,key=orderKey)
-        #--List
-        modIndex,header = 0, None
-        log('[spoiler][xml]',False)
-        for package in allPackages:
-            prefix = '%03d' % (self.data[package].order)
-            if isinstance(self.data[package],InstallerMarker):
-                log('%s - %s' % (prefix,package.s))
-            elif self.data[package].isActive:
-                log('++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
-            elif showInactive:
-                log('-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
-        log('[/xml][/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+        with sio() as out:
+            log = bolt.LogFile(out)
+            log.setHeader(_(u'Bain Packages:'))
+            orderKey = lambda x: self.data[x].order
+            allPackages = sorted(self.data,key=orderKey)
+            #--List
+            modIndex,header = 0, None
+            log(u'[spoiler][xml]',False)
+            for package in allPackages:
+                prefix = u'%03d' % (self.data[package].order)
+                if isinstance(self.data[package],InstallerMarker):
+                    log(u'%s - %s' % (prefix,package.s))
+                elif self.data[package].isActive:
+                    log(u'++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
+                elif showInactive:
+                    log(u'-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
+            log(u'[/xml][/spoiler]')
+            return bolt.winNewLines(log.out.getvalue())
+
 # Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class ActorFactions:
@@ -13116,7 +13101,7 @@ class ActorLevels:
         mapper = modFile.getLongMapper()
 
         changed = 0
-        id_levels = mod_id_levels.get(modInfo.name,mod_id_levels.get(GPath('Unknown'),None))
+        id_levels = mod_id_levels.get(modInfo.name,mod_id_levels.get(GPath(u'Unknown'),None))
         if id_levels:
             for record in modFile.NPC_.records:
                 fid = mapper(record.fid)
@@ -13140,9 +13125,9 @@ class ActorLevels:
         for fields in ins:
             if fields[0][:2] == '0x': #old format
                 fid,eid,offset,calcMin,calcMax = fields[:5]
-                source = GPath('Unknown')
+                source = GPath(u'Unknown')
                 fidObject = coerce(fid[4:], int, 16)
-                fid = (GPath('Oblivion.esm'), fidObject)
+                fid = (GPath(u'Oblivion.esm'), fidObject)
                 eid = coerce(eid, str)
                 offset = coerce(offset, int)
                 calcMin = coerce(calcMin, int)
@@ -13151,11 +13136,11 @@ class ActorLevels:
                 if len(fields) < 7 or fields[3][:2] != '0x': continue
                 source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
                 source = coerce(source, str)
-                if source.lower() in ('none', 'oblivion.esm'): continue
+                if source.lower() in (u'none', u'oblivion.esm'): continue
                 source = GPath(source)
                 eid = coerce(eid, str)
                 fidMod = GPath(coerce(fidMod, str))
-                if fidMod.s.lower() == 'none': continue
+                if fidMod.s.lower() == u'none': continue
                 fidObject = coerce(fidObject[2:], int, 16)
                 if fidObject is None: continue
                 fid = (aliases.get(fidMod,fidMod),fidObject)
@@ -13205,7 +13190,7 @@ class CBash_ActorLevels:
         """Imports actor level data from the specified mod and its masters."""
         mod_fid_levels, gotLevels = self.mod_fid_levels, self.gotLevels
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            Current.addMod('Oblivion.esm', Saveable=False)
+            Current.addMod(u'Oblivion.esm', Saveable=False)
             Current.addMod(modInfo.getPath().stail, Saveable=False)
             Current.load()
 
@@ -13226,7 +13211,7 @@ class CBash_ActorLevels:
             Current.load()
 
             changed = 0
-            fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath('Unknown'),None))
+            fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath(u'Unknown'),None))
             if fid_levels:
                 for record in modFile.NPC_:
                     fid = record.fid
@@ -13247,9 +13232,9 @@ class CBash_ActorLevels:
         for fields in ins:
             if fields[0][:2] == '0x': #old format
                 fid,eid,offset,calcMin,calcMax = fields[:5]
-                source = GPath('Unknown')
+                source = GPath(u'Unknown')
                 fidObject = _coerce(fid[4:], int, 16)
-                fid = FormID(GPath('Oblivion.esm'), fidObject)
+                fid = FormID(GPath(u'Oblivion.esm'), fidObject)
                 eid = _coerce(eid, str, AllowNone=True)
                 offset = _coerce(offset, int)
                 calcMin = _coerce(calcMin, int)
@@ -13258,11 +13243,11 @@ class CBash_ActorLevels:
                 if len(fields) < 7 or fields[3][:2] != '0x': continue
                 source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
                 source = _coerce(source, str)
-                if source.lower() in ('none', 'oblivion.esm'): continue
+                if source.lower() in (u'none', u'oblivion.esm'): continue
                 source = GPath(source)
                 eid = _coerce(eid, str, AllowNone=True)
                 fidMod = GPath(_coerce(fidMod, str))
-                if fidMod.s.lower() == 'none': continue
+                if fidMod.s.lower() == u'none': continue
                 fidObject = _coerce(fidObject[2:], int, 16)
                 if fidObject is None: continue
                 fid = FormID(aliases.get(fidMod,fidMod),fidObject)
@@ -13379,10 +13364,10 @@ class EditorIds:
             if not script.scriptText: continue
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
-                header = '\r\n\r\n; %s %s\r\n' % (script.eid,'-'*(77-len(script.eid)))
+                header = u'\r\n\r\n; %s %s\r\n' % (script.eid,u'-'*(77-len(script.eid)))
                 script.scriptText = newText
                 script.setChanged()
-                changed.append((_("Script"),script.eid))
+                changed.append((_(u"Script"),script.eid))
         #--Quest Scripts
         for quest in sorted(modFile.QUST.records,key=attrgetter('eid')):
             questChanged = False
@@ -13395,7 +13380,7 @@ class EditorIds:
                         entry.scriptText = newScript
                         questChanged = True
             if questChanged:
-                changed.append((_("Quest"),quest.eid))
+                changed.append((_(u"Quest"),quest.eid))
                 quest.setChanged()
         #--Done
         return changed
@@ -16363,32 +16348,31 @@ class ModDetails:
                 if len(decomp) != sizeCheck:
                     raise ModError(self.inName,
                         _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
-                reader = ModReader(modInfo.name,cStringIO.StringIO(decomp))
+                reader = ModReader(modInfo.name,StringIO.StringIO(decomp))
                 return (reader,sizeCheck)
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
         records = group_records['TES4'] = []
-        ins = ModReader(modInfo.name,modInfo.getPath().open('rb'))
-        while not ins.atEnd():
-            (type,size,str0,fid,uint2) = ins.unpackRecHeader()
-            if type == 'GRUP':
-                progress(1.0*ins.tell()/modInfo.size,_("Scanning: ")+str0)
-                records = group_records.setdefault(str0,[])
-                if str0 in ('CELL','WRLD','DIAL'):
-                    ins.seek(size-20,1)
-            elif type != 'GRUP':
-                eid = ''
-                nextRecord = ins.tell() + size
-                recs,endRecs = getRecordReader(ins,str0,size)
-                while recs.tell() < endRecs:
-                    (type,size) = recs.unpackSubHeader()
-                    if type == 'EDID':
-                        eid = recs.readString(size)
-                        break
-                    recs.seek(size,1)
-                records.append((fid,eid))
-                ins.seek(nextRecord)
-        ins.close()
+        with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
+            while not ins.atEnd():
+                (type,size,str0,fid,uint2) = ins.unpackRecHeader()
+                if type == 'GRUP':
+                    progress(1.0*ins.tell()/modInfo.size,_("Scanning: ")+str0)
+                    records = group_records.setdefault(str0,[])
+                    if str0 in ('CELL','WRLD','DIAL'):
+                        ins.seek(size-20,1)
+                elif type != 'GRUP':
+                    eid = ''
+                    nextRecord = ins.tell() + size
+                    recs,endRecs = getRecordReader(ins,str0,size)
+                    while recs.tell() < endRecs:
+                        (type,size) = recs.unpackSubHeader()
+                        if type == 'EDID':
+                            eid = recs.readString(size)
+                            break
+                        recs.seek(size,1)
+                    records.append((fid,eid))
+                    ins.seek(nextRecord)
         del group_records['TES4']
 
 #------------------------------------------------------------------------------
@@ -16700,7 +16684,7 @@ class PCFaces:
 
         #--Player ACHR
         #--Buffer for modified record data
-        buff = cStringIO.StringIO()
+        buff = StringIO.StringIO()
         def buffPack(format,*args):
             buff.write(struct.pack(format,*args))
         def buffPackRef(oldFid,doPack=True):
@@ -16917,44 +16901,42 @@ class CleanMod:
         #--File stream
         path = self.modInfo.getPath()
         #--Scan/Edit
-        ins = ModReader(self.modInfo.name,path.open('rb'))
-        out = path.temp.open('wb')
-        def copy(size,back=False):
-            buff = ins.read(size)
-            out.write(buff)
-        def copyPrev(size):
-            ins.seek(-size,1)
-            buff = ins.read(size)
-            out.write(buff)
-        while not ins.atEnd():
-            progress(ins.tell())
-            (type,size,str0,fid,uint2) = ins.unpackRecHeader()
-            copyPrev(20)
-            if type == 'GRUP':
-                if fid != 0: #--Ignore sub-groups
-                    pass
-                elif str0 not in ('CELL','WRLD'):
-                    copy(size-20)
-            #--Handle cells
-            elif type == 'CELL':
-                nextRecord = ins.tell() + size
-                while ins.tell() < nextRecord:
-                    (type,size) = ins.unpackSubHeader()
-                    copyPrev(6)
-                    if type != 'XCLL':
-                        copy(size)
+        with ModReader(self.modInfo.name,path.open('rb')) as ins:
+            with path.temp.open('wb') as  out:
+                def copy(size,back=False):
+                    buff = ins.read(size)
+                    out.write(buff)
+                def copyPrev(size):
+                    ins.seek(-size,1)
+                    buff = ins.read(size)
+                    out.write(buff)
+                while not ins.atEnd():
+                    progress(ins.tell())
+                    (type,size,str0,fid,uint2) = ins.unpackRecHeader()
+                    copyPrev(20)
+                    if type == 'GRUP':
+                        if fid != 0: #--Ignore sub-groups
+                            pass
+                        elif str0 not in ('CELL','WRLD'):
+                            copy(size-20)
+                    #--Handle cells
+                    elif type == 'CELL':
+                        nextRecord = ins.tell() + size
+                        while ins.tell() < nextRecord:
+                            (type,size) = ins.unpackSubHeader()
+                            copyPrev(6)
+                            if type != 'XCLL':
+                                copy(size)
+                            else:
+                                color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                if not (near or far or clip):
+                                    near = 0.0001
+                                    fixedCells.add(fid)
+                                out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
+                    #--Non-Cells
                     else:
-                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
-                        if not (near or far or clip):
-                            near = 0.0001
-                            fixedCells.add(fid)
-                        out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
-            #--Non-Cells
-            else:
-                copy(size)
+                        copy(size)
         #--Done
-        ins.close()
-        out.close()
         if fixedCells:
             self.modInfo.makeBackup()
             path.untemp()
@@ -17120,32 +17102,31 @@ class ModCleaner:
                     #--File stream
                     path = modInfo.getPath()
                     #--Scan
-                    ins = ModReader(modInfo.name,path.open('rb'))
-                    while not ins.atEnd():
-                        subprogress(ins.tell())
-                        (type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                        if type == 'GRUP':
-                            if fid != 0: #--Ignore sub-groups
-                                pass
-                            elif flags not in ('CELL','WRLD'):
-                                ins.read(size-20)
-                        else:
-                            if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                                udr.add(fid)
-                            if doFog and type == 'CELL':
-                                nextRecord = ins.tell() + size
-                                while ins.tell() < nextRecord:
-                                    (nextType,nextSize) = ins.unpackSubHeader()
-                                    if type != 'XCLL':
-                                        ins.read(nextSize)
-                                    else:
-                                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
-                                        if not (near or far or clip):
-                                            fog.add(fid)
+                    with ModReader(modInfo.name,path.open('rb')) as ins:
+                        while not ins.atEnd():
+                            subprogress(ins.tell())
+                            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                            if type == 'GRUP':
+                                if fid != 0: #--Ignore sub-groups
+                                    pass
+                                elif flags not in ('CELL','WRLD'):
+                                    ins.read(size-20)
                             else:
-                                ins.read(size)
+                                if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                    udr.add(fid)
+                                if doFog and type == 'CELL':
+                                    nextRecord = ins.tell() + size
+                                    while ins.tell() < nextRecord:
+                                        (nextType,nextSize) = ins.unpackSubHeader()
+                                        if type != 'XCLL':
+                                            ins.read(nextSize)
+                                        else:
+                                            color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
+                                            if not (near or far or clip):
+                                                fog.add(fid)
+                                else:
+                                    ins.read(size)
                     #--Done
-                    ins.close()
                 ret.append((udr,itm,fog))
             return ret
         else:
@@ -17228,53 +17209,50 @@ class ModCleaner:
             progress.setFull(max(len(cleaners),1))
             #--Clean
             for i,cleaner in enumerate(cleaners):
-                progress(i,_('Cleaning...')+'\n'+cleaner.modInfo.name.s)
+                progress(i,_(u'Cleaning...')+u'\n'+cleaner.modInfo.name.s)
                 subprogress = SubProgress(progress,i,i+1)
                 subprogress.setFull(max(cleaner.modInfo.size,1))
                 #--File stream
                 path = cleaner.modInfo.getPath()
                 #--Scan & clean
-                ins = ModReader(cleaner.modInfo.name,path.open('rb'))
-                out = path.temp.open('wb')
-                def copy(size):
-                    out.write(ins.read(size))
-                def copyPrev(size):
-                    ins.seek(-size,1)
-                    out.write(ins.read(size))
-                changed = False
-                while not ins.atEnd():
-                    subprogress(ins.tell())
-                    (type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                    if type == 'GRUP':
-                        if fid != 0:
-                            pass
-                        elif flags not in ('CELL','WRLD'):
-                            copy(size-20)
-                    else:
-                        if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                            flags = (flags & ~0x20) | 0x1000
-                            out.seek(-20,1)
-                            out.write(struct.pack('=4s4I',type,size,flags,fid,uint2))
-                            change = True
-                        if doFog and type == 'CELL':
-                            nextRecord = ins.tell() + size
-                            while ins.tell() < nextRecord:
-                                subprogress(ins.tell())
-                                (nextType,nextSize) = ins.unpackSubHeader()
-                                copyPrev(6)
-                                if nextType != 'XCLL':
-                                    copy(nextSize)
+                with ModReader(cleaner.modInfo.name,path.open('rb')) as ins:
+                    with path.temp.open('wb') as out:
+                        def copy(size):
+                            out.write(ins.read(size))
+                        def copyPrev(size):
+                            ins.seek(-size,1)
+                            out.write(ins.read(size))
+                        changed = False
+                        while not ins.atEnd():
+                            subprogress(ins.tell())
+                            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                            if type == 'GRUP':
+                                if fid != 0:
+                                    pass
+                                elif flags not in ('CELL','WRLD'):
+                                    copy(size-20)
+                            else:
+                                if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                    flags = (flags & ~0x20) | 0x1000
+                                    out.seek(-20,1)
+                                    out.write(struct.pack('=4s4I',type,size,flags,fid,uint2))
+                                    change = True
+                                if doFog and type == 'CELL':
+                                    nextRecord = ins.tell() + size
+                                    while ins.tell() < nextRecord:
+                                        subprogress(ins.tell())
+                                        (nextType,nextSize) = ins.unpackSubHeader()
+                                        copyPrev(6)
+                                        if nextType != 'XCLL':
+                                            copy(nextSize)
+                                        else:
+                                            color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                            if not (near or far or clip):
+                                                near = 0.0001
+                                                changed = True
+                                            out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
                                 else:
-                                    color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
-                                    if not (near or far or clip):
-                                        near = 0.0001
-                                        changed = True
-                                    out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
-                        else:
-                            copy(size)
-                #--Done
-                ins.close()
-                out.close()
+                                    copy(size)
                 #--Save
                 if changed:
                     modInfo.makeBackup()

@@ -262,7 +262,7 @@ class BackupSettings(BaseBackupSettings):
         if self.quit: return
         showInfo(self.parent,
             _(u'Your Bash settings have been backed up successfully.')+u'\n' +
-            _(u'Backup Path: ')+self.dir.join(self.archive.s)+u'\n',
+            _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n',
             _(u'Backup File Created'))
 
 #------------------------------------------------------------------------------

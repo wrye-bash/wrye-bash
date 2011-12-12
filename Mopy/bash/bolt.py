@@ -780,6 +780,15 @@ class LString(object):
         if isinstance(other,LString): return cmp(self._cs, other._cs)
         else: return cmp(self._cs, other.lower())
 
+# sio - StringIO wrapper so it uses the 'with' statement, so they can be used
+#  in the same functions that accept files as input/output as well.  Really,
+#  StringIO objects don't need to 'close' ever, since the data is unallocated
+#  once the object is destroyed.
+#------------------------------------------------------------------------------
+class sio(StringIO.StringIO):
+    def __enter__(self): return self
+    def __exit__(self,*args,**kwdargs): self.close()
+
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}

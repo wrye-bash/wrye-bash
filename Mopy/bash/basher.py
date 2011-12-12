@@ -5412,7 +5412,8 @@ class BashFrame(wx.Frame):
             self.incompleteInstallError = True
             message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
                        + u'\n\n' +
-                       _(u'Correct installation will create Oblivion\\Mopy, Oblivion\\Data\\Docs and Oblivion\\Data\\INI Tweaks directories.')
+                       _(u'Correct installation will create %s\\Mopy, %s\\Data\\Docs and %s\\Data\\INI Tweaks directories.')
+                       % (bush.game.name,bush.game.name,bush.game.name)
                        )
             balt.showWarning(self,message,_(u'Incomplete Installation'))
         #--Merge info
@@ -10445,7 +10446,7 @@ class INI_CreateNew(Link):
         Link.AppendToMenu(self,menu,window,data)
         ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
         tweak = data[0]
-        menuItem = wx.MenuItem(menu,self.id,_('uCreate Tweak with current settings...'),_(u"Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Create Tweak with current settings...'),_(u"Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(data) == 1)
 
