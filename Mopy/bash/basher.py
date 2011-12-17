@@ -2562,7 +2562,11 @@ class INIPanel(SashPanel):
         path = self.choices[selection]
         if not path:
             # 'Browse...'
-            path = balt.askOpen(self,defaultDir=self.lastDir,wildcard=_(u'INI files')+u' (*.ini)|*.ini',mustExist=True)
+            wildcard =  u'|'.join([_(u'Supported files')+u' (*.ini,*.cfg)|*.ini;*.cfg',
+                                   _(u'INI files')+u' (*.ini)|*.ini',
+                                   _(u'Config files')+u' (*.cfg)|*.cfg',
+                                   ])
+            path = balt.askOpen(self,defaultDir=self.lastDir,wildcard=wildcard,mustExist=True)
             if not path:
                 self.comboBox.SetSelection(self.choice)
                 return

@@ -10482,7 +10482,7 @@ class Installer(object):
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set((u'screenshots',))
-    dataDirsMinus = set((u'bash',u'replacers',u'--')) #--Will be skipped even if hasExtraData == True.
+    dataDirsMinus = set((u'bash',u'replacers',u'fomod',u'--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
     reReadMe = re.compile(ur'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
     skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
@@ -10493,7 +10493,7 @@ class Installer(object):
                    u'.mht',u'.pdf',u'.css',u'.xls',u'.xlsx',u'.ods',u'.odp',
                    u'.ppt',u'.pptx'))
     imageExts = set((u'.gif',u'.jpg',u'.png',u'.jpeg',u'.bmp'))
-    scriptExts = set((u'.txt',u'.ini'))
+    scriptExts = set((u'.txt',u'.ini',u'.cfg'))
     commonlyEditedExts = scriptExts | set((u'.xml',))
     #--Needs to be called after bush.game has been set
     @staticmethod
@@ -10833,7 +10833,7 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             file = full
             fileLower = file.lower()
-            if fileLower.startswith((u'--',u'omod conversion data',u'wizard images')):
+            if fileLower.startswith((u'--',u'omod conversion data',u'fomod',u'wizard images')):
                 continue
             sub = ''
             bSkip = False
@@ -12522,7 +12522,7 @@ class InstallersData(bolt.TankData, DataDict):
                 destFiles &= installer.missingFiles
             if destFiles:
                 for file in destFiles:
-                    if file.cext == u'.ini' and not file.head.cs == u'ini tweaks':
+                    if file.cext in (u'.ini',u'.cfg') and not file.head.cs == u'ini tweaks':
                         oldCrc = self.data_sizeCrcDate.get(file,(None,None,None))[1]
                         newCrc = installer.data_sizeCrc.get(file,(None,None))[1]
                         if oldCrc is not None and newCrc is not None:
