@@ -1522,8 +1522,8 @@ class OrderedSet(list, MutableSet):
         left = OrderedSet(self)
         left.update(other)
         return left
-    def __repr__(self): return u'OrderedSet%s' % str(list(self))[1:-1]
-    def __str__(self): return u'{%s}' % str(list(self))[1:-1]
+    def __repr__(self): return u'OrderedSet%s' % unicode(list(self))[1:-1]
+    def __unicode__(self): return u'{%s}' % unicode(list(self))[1:-1]
 
 #------------------------------------------------------------------------------
 class MemorySet(object):
@@ -2612,9 +2612,9 @@ class WryeText:
             while anchor in anchorlist and count < 10:
                 count += 1
                 if count == 1:
-                    anchor = anchor + str(count)
+                    anchor = anchor + `count`
                 else:
-                    anchor = anchor[:-1] + str(count)
+                    anchor = anchor[:-1] + `count`
             anchorlist.append(anchor)
             return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
@@ -2773,9 +2773,9 @@ class WryeText:
                     while anchor in anchorlist and count < 10:
                         count += 1
                         if count == 1:
-                            anchor = anchor + str(count)
+                            anchor = anchor + `count`
                         else:
-                            anchor = anchor[:-1] + str(count)
+                            anchor = anchor[:-1] + `count`
                     anchorlist.append(anchor)
                     line = (headFormatNA,headFormat)[anchorHeaders] % (level,anchor,text,level)
                     if addContents: contents.append((level,anchor,text))

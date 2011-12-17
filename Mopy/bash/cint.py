@@ -21,14 +21,14 @@ except:
         return obj
 
 def _Encode(name,tryFirstEncoding=False):
-    if isinstance(name,Path): name = str(name)
-    if isinstance(name,str): return name
+    if isinstance(name,Path): name = unicode(name)
+    elif isinstance(name,str): return name
     if isinstance(name,unicode):
         if tryFirstEncoding:
             try:
                 return name.encode(tryFirstEncoding)
             except UnicodeEncodeError:
-                print _("Unable to encode '%s' in %s.") % (name, tryFirstEncoding)
+                print u"Unable to encode '%s' in %s." % (name, tryFirstEncoding)
                 raise
     return name
 

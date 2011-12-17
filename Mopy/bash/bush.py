@@ -82,7 +82,7 @@ def setGame(gameName,workingDir=''):
     # unload some modules
     del pkgutil
     del _game
-    deprint('Detected the following supported games via Windows Registry:')
+    deprint(u'Detected the following supported games via Windows Registry:')
     for name in foundGames:
         deprint(u' %s:' % name, foundGames[name])
     #--Second: Detect what game is installed on directory up from Mopy

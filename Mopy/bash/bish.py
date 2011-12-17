@@ -181,10 +181,10 @@ def readRecord(record, melSet=0, skipLabel=0):
         elif isinstance(item,float):
             print report, round(item,6)
         elif attr in ['unk1','unk2','unk3','unk4','unk5','unk6']:
-            if sum(struct.unpack(str(len(item)) + 'b',item)) == 0:
+            if sum(struct.unpack(`len(item)`+'b',item)) == 0:
                 print report, 'Null'
             else:
-                print report, struct.unpack(str(len(item)) + 'b',item)
+                print report, struct.unpack(`len(item)`+'b',item)
         elif isinstance(item, basestring):
             if len(item.splitlines()) > 1:
                 item = item.splitlines()
@@ -192,7 +192,7 @@ def readRecord(record, melSet=0, skipLabel=0):
                 for line in item:
                     readRecord(line,[attr],1)
             else:
-                if sum(struct.unpack(str(len(item)) + 'b',item)) == 0:
+                if sum(struct.unpack(`len(item)`+'b',item)) == 0:
                     print report, ''
                 else:
                     print report, item
