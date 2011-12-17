@@ -6470,7 +6470,7 @@ class PatchDialog(wx.Dialog):
         for patcher in self.patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
             if u'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
-                raise UncodedError(_(u'Name or group not defined for: ')+patcher.__class__.__name__)
+                raise UncodedError(u'Name or group not defined for: %s' % patcher.__class__.__name__)
             patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
             patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None

@@ -18302,7 +18302,7 @@ class ListPatcher(Patcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = self.__class__.autoKey
-        if isinstance(autoKey,str):
+        if isinstance(autoKey,(unicode,str)):
             autoKey = set((autoKey,))
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
@@ -33298,7 +33298,8 @@ def getOblivionPath(bashIni, path):
     if not path.isabs(): path = dirs['mopy'].join(path)
     #--Error check
     if not path.join(bush.game.exe).exists():
-        raise BoltError(u"Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s.") % (bush.game.exe, path, bush.game.exe)
+        raise BoltError(
+            u"Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s." % (bush.game.exe, path, bush.game.exe))
     return path
 
 def getPersonalPath(bashIni, path):
