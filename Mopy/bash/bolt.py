@@ -146,7 +146,7 @@ def initTranslator(language=None,path=None):
     ##                        out.write(u''.join(lines))
     ##                        out.write(u'\r\n')
     ##                        lines = []
-    ##    print `num` + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
+    ##    print unicode(num) + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
     ##except:
     ##    print u'Error dumping untranslated strings:'
     ##    traceback.print_exc()
@@ -968,14 +968,14 @@ class Path(object):
                 self._s.encode(locale.getpreferredencoding())
                 return self+u'.tmp'
             except UnicodeEncodeError:
-                baseName = u'bash_unicode_safe'
+                baseName = u'bash_unicode_safe%i.tmp'
                 head = self.head
                 join = self.head.join
                 num = 0
-                tempName = join(baseName+`num`+u'.tmp')
+                tempName = join(baseName % num)
                 while tempName.exists():
                     num += 1
-                    tempName = join(baseName+`num`+u'.tmp')
+                    tempName = join(baseName % num)
                 return tempName
         else:
             return self+u'.tmp'
@@ -1312,7 +1312,7 @@ class CsvReader:
             yield line.encode('utf8')
 
     def __init__(self,path):
-        self.ins = path.open('rb',encoding='utf8')
+        self.ins = path.open('rb',encoding='utf-8-sig')
         format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if format == 'excel':
             delimiter = (u',',u';')[u';' in self.ins.readline()]
@@ -2572,7 +2572,7 @@ class WryeText:
             outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
             ins = srcPath.open()
-            out = outPath.open('w',encoding='utf8')
+            out = outPath.open('w',encoding='utf-8-sig')
         else:
             srcPath = outPath = None
         cssDirs = map(GPath,cssDirs)
@@ -2606,16 +2606,16 @@ class WryeText:
         anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
-            anchor = urllib.quote(reWd.sub(u'',text))
+            anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'utf8')
             count = 0
             if re.match(ur'\d', anchor):
                 anchor = u'_' + anchor
             while anchor in anchorlist and count < 10:
                 count += 1
                 if count == 1:
-                    anchor = anchor + `count`
+                    anchor += unicode(count)
                 else:
-                    anchor = anchor[:-1] + `count`
+                    anchor = anchor[:-1] + unicode(count)
             anchorlist.append(anchor)
             return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
@@ -2650,7 +2650,7 @@ class WryeText:
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += urllib.quote(reWd.sub(u'',text))
+                if address == u'#': address += unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'utf8')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
                 address = address[1:]
@@ -2765,7 +2765,7 @@ class WryeText:
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(u' *=*#?$','',text.strip())
-                anchor = urllib.quote(reWd.sub(u'',text))
+                anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'utf8')
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(ur'\d', anchor):
@@ -2774,9 +2774,9 @@ class WryeText:
                     while anchor in anchorlist and count < 10:
                         count += 1
                         if count == 1:
-                            anchor = anchor + `count`
+                            anchor += unicode(count)
                         else:
-                            anchor = anchor[:-1] + `count`
+                            anchor = anchor[:-1] + unicode(count)
                     anchorlist.append(anchor)
                     line = (headFormatNA,headFormat)[anchorHeaders] % (level,anchor,text,level)
                     if addContents: contents.append((level,anchor,text))
@@ -2795,7 +2795,7 @@ class WryeText:
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
                 level = len(spaces)/2 + 1
-                line = spaces+u'<p class="list-'+`level`+u'">'+bullet+u'&nbsp; '
+                line = spaces+u'<p class="list-%i">'%level+bullet+u'&nbsp; '
                 line = line + text + u'</p>\n'
             #--Empty line
             elif maEmpty:

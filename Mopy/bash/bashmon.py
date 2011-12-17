@@ -184,7 +184,7 @@ def deleteForm(saveKey,formid):
     print (u"  No such record.",u"  Removed")[removedRecord or removedCreated]
 
 @monitorCommand
-def ripAppearance(srcName,destName,srcForm='player',destForm='player',flags=`0x2|0x4|0x8|0x10`):
+def ripAppearance(srcName,destName,srcForm='player',destForm='player',flags=unicode(0x2|0x4|0x8|0x10)):
     """Rips a face from one save game and pastes it into another."""
     flags = intArg(flags)
     srcName = GPath(srcName)

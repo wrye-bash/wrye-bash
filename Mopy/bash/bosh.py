@@ -223,9 +223,9 @@ class PickleDict(bolt.PickleDict):
         #--Update paths
         def textDump(path):
             deprint(u'Text dump:',path)
-            with path.open('w',encoding='utf8') as out:
+            with path.open('w',encoding='utf-8-sig') as out:
                 for key,value in self.data.iteritems():
-                    out.write(u'= '+`key`+u':\n  '+`value`+u'\n')
+                    out.write(u'= %s:\n  %s\n' % (key,value))
         #textDump(self.path+'.old.txt')
         if not self.vdata.get('boltPaths',False):
             self.updatePaths()
@@ -308,14 +308,14 @@ def _unicode(text,encodings=encodingOrder):
     for encoding in encodings:
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
-    raise UnicodeDecodeError('Text could not be decoded using any of the following encodings: %s' % encodings)
+    raise UnicodeDecodeError(u'Text could not be decoded using any of the following encodings: %s' % encodings)
 
 def _encode(text,encodings=encodingOrder):
     if isinstance(text,str): return text
     for encoding in encodings:
         try: return text.encode(encoding)
         except UnicodeEncodeError: pass
-    raise UnicodeEncodeError('Text could not be encoded using any of the following encodings: %s' % encodings)
+    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
 #--Header tags
 reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
@@ -390,9 +390,9 @@ def splitModGroup(offGroup):
 def joinModGroup(group,offset):
     """Combines a group and offset into a full group name."""
     if offset < 0:
-        return group+`offset`
+        return group+unicode(offset)
     elif offset > 0:
-        return group+u'+'+`offset`
+        return group+u'+'+unicode(offset)
     else:
         return group
 
@@ -661,7 +661,7 @@ class ModWriter:
         Call using either packSub(type,data), or packSub(type,format,values).
         Will automatically add a prefacing XXXX size subrecord to handle data
         with size > 0xFFFF."""
-        #if not ModWriter.reValidType.match(type): raise _('Invalid type: ') + `type`
+        #if not ModWriter.reValidType.match(type): raise _('Invalid type: ') + unicode(type)
         try:
             if data == None: return
             structPack = struct.pack
@@ -786,7 +786,7 @@ class MelBase:
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
         record.__setattr__(self.attr,ins.read(size,readId))
-        if self._debug: print `record.__getattribute__(self.attr)`
+        if self._debug: print u'%s' % record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1016,7 +1016,7 @@ class MelNull(MelBase):
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
         junk = ins.read(size,readId)
-        if self._debug: print u' ',record.fid,`junk`
+        if self._debug: print u' ',record.fid,unicode(junk)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1698,7 +1698,7 @@ class MreRecord(object):
             eid=u' '+self.eid
         else:
             eid=u''
-        return u'<%s object: %s (%s)%s>' % (`type(self)`.split(u"'")[1], self.recType, strFid(self.fid), eid)
+        return u'<%s object: %s (%s)%s>' % (type(self).split(u"'")[1], self.recType, strFid(self.fid), eid)
 
     def getHeader(self):
         """Returns header tuple."""
@@ -2089,9 +2089,9 @@ class MreHasEffects:
                     if effect.name in avEffects:
                         effectName = re.sub(_('u(Attribute|Skill)'),aValues[effect.actorValue],effectName)
                 buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
-                if effect.magnitude: buffWrite(u' '+`effect.magnitude`+u'm')
-                if effect.area: buffWrite(u' '+`effect.area`+u'a')
-                if effect.duration > 1: buffWrite(u' '+`effect.duration`+u'd')
+                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
+                if effect.area: buffWrite(u' %sa'%effect.area)
+                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
                 buffWrite(u'\n')
                 return buff.getvalue()
 
@@ -2530,7 +2530,7 @@ class MreCsty(MelRecord):
                 #-- This one is present once: VidCaptureNoAttacks and it isn't actually used.
                 unpacked = ins.unpack('2B2s8f2B2s3fB3s2f5B3s2f2B2s',size,readId)
             else:
-                raise ModError(ins.inName,u'Unexpected size encountered for CSTD subrecord: '+`size`)
+                raise ModError(ins.inName,u'Unexpected size encountered for CSTD subrecord: %i' % size)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2652,7 +2652,7 @@ class MreEfsh(MelRecord):
                 # Only used twice in test shaders (0004b6d5, 0004b6d6)
                 unpacked = ins.unpack('B3s3I3Bs9f3Bs8fI',size,readId)
             else:
-                raise ModError(ins.inName,u'Unexpected size encountered for EFSH subrecord: '+`size`)
+                raise ModError(ins.inName,u'Unexpected size encountered for EFSH subrecord: %i' % size)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3093,7 +3093,7 @@ class MreMgef(MelRecord):
                 #--Else is data for DARK record, read it all.
                 unpacked = ins.unpack('IfIiiH2sIfI',size,readId)
             else:
-                raise ModError(ins.inName,u'Unexpected size encountered for MGEF:DATA subrecord: '+`size`)
+                raise ModError(ins.inName,u'Unexpected size encountered for MGEF:DATA subrecord: %i' % size)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3543,7 +3543,7 @@ class MreRefr(MelRecord):
                 #--Else is skipping unused2
                 unpacked = ins.unpack('B3sIB3s',size,readId)
             else:
-                raise ModError(ins.inName,u'Unexpected size encountered for REFR:XLOC subrecord: '+`size`)
+                raise ModError(ins.inName,u'Unexpected size encountered for REFR:XLOC subrecord: %i' % size)
             unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -5572,7 +5572,7 @@ class SreNPC(object):
             if self.acbs != None:
                 buff.write(u'ACBS:\n')
                 for attr in SreNPC.ACBS.__slots__:
-                    buff.write(u'  '+attr+u' '+`getattr(self.acbs,attr)`+u'\n')
+                    buff.write(u'  %s %s\n' % (attr,getattr(self.acbs,attr)))
             if self.factions != None:
                 buff.write(u'Factions:\n')
                 for faction in self.factions:
@@ -5584,14 +5584,14 @@ class SreNPC(object):
             if self.ai != None:
                 buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
             if self.health != None:
-                buff.write(u'Health\n  '+`self.health`+u'\n')
-                buff.write(u'Unused2\n  '+`self.unused2`+u'\n')
+                buff.write(u'Health\n  %s\n' % self.health)
+                buff.write(u'Unused2\n  %s\n' % self.unused2)
             if self.modifiers != None:
                 buff.write(u'Modifiers:\n')
                 for modifier in self.modifiers:
-                    buff.write(u'  %s\n' % `modifier`)
+                    buff.write(u'  %s\n' % modifier)
             if self.full != None:
-                buff.write(u'Full:\n  '+`self.full`+u'\n')
+                buff.write(u'Full:\n  %s\n' % self.full)
             if self.skills != None:
                 buff.write(u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n  block %3d\n  blunt %3d\n  handToHand %3d\n  heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  conjuration %3d\n  destruction %3d\n  illusion %3d\n  mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(self.skills))
             return buff.getvalue()
@@ -6256,7 +6256,7 @@ class SaveFile:
             log.setHeader(_(u'LostChanges'))
             for id in sorted(lostChanges.keys()):
                 type = lostChanges[id][1]
-                log(hex(id)+saveRecTypes.get(type,`type`))
+                log(hex(id)+saveRecTypes.get(type,unicode(type)))
         for type in sorted(typeModHisto.keys()):
             modHisto = typeModHisto[type]
             log.setHeader(u'%d %s' % (type,saveRecTypes.get(type,_(u'Unknown')),))
@@ -6266,7 +6266,7 @@ class SaveFile:
         objRefBases = dict((key,value) for key,value in objRefBases.iteritems() if value[0] > 100)
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
-            log(u' Null Bases: '+`objRefNullBases`)
+            log(u' Null Bases: %s' % objRefNullBases)
         if objRefBases:
             log(_(u' Count IRef     BaseId'))
             for iref in sorted(objRefBases.keys()):
@@ -7871,7 +7871,7 @@ class FileInfo:
                 snapLast = snapNew
                 continue
         #--New
-        snapLast[-1] = (u'%0'+`len(snapLast[-1])`+u'd') % (int(snapLast[-1])+1,)
+        snapLast[-1] = (u'%0'+unicode(len(snapLast[-1]))+u'd') % (int(snapLast[-1])+1,)
         destName = root+separator+(u'.'.join(snapLast))+ext
         return (destDir,destName,(root+u'*'+ext).s)
 
@@ -8064,7 +8064,7 @@ class ModInfo(FileInfo):
                     raise ModError(self.name,u'Expected TES4, but got '+recHeader[0])
                 self.header = globals()[bush.game.esp.tes4ClassName](recHeader,ins,True)
             except struct.error, rex:
-                raise ModError(self.name,u'Struct.error: '+`rex`)
+                raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
@@ -8092,7 +8092,7 @@ class ModInfo(FileInfo):
                         if not buffer: break
                         outWrite(buffer)
                 except struct.error, rex:
-                    raise ModError(self.name,u'Struct.error: '+`rex`)
+                    raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Remove original and replace with temp
         filePath.untemp()
         self.setmtime()
@@ -8315,7 +8315,7 @@ class SaveInfo(FileInfo):
             self.masterNames = tuple(self.header.masters)
             self.masterOrder = tuple() #--Reset to empty for now
         except struct.error, rex:
-            raise SaveFileError(self.name,u'Struct.error: '+`rex`)
+            raise SaveFileError(self.name,u'Struct.error: %s' % rex)
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
@@ -9663,7 +9663,7 @@ class ModRuleSet:
             def stripped(list):
                 return [(x or u'').strip() for x in list]
 
-            with rulePath.open('r',encoding='utf8') as ins:
+            with rulePath.open('r',encoding='utf-8-sig') as ins:
                 for line in ins:
                     line = reComment.sub(u'',line)
                     maBlock = reBlock.match(line)
@@ -9783,7 +9783,7 @@ class ConfigHelpers:
                 tags.clear()
                 try:
                     # BOSS requires the masterlist to be in UTF-8 format, so will we
-                    with path.open('r',encoding='utf8') as ins:
+                    with path.open('r',encoding='utf-8-sig') as ins:
                         mod = None
                         for line in ins:
                             line = line.strip()
@@ -9831,7 +9831,7 @@ class ConfigHelpers:
             if userpath.mtime != utime:
                 try:
                     # BOSS requires the userlist to be in UTF-8 format, so will we
-                    with userpath.open('r',encoding='utf8') as ins:
+                    with userpath.open('r',encoding='utf-8-sig') as ins:
                         mod = None
                         reRule = re.compile(ur'(ADD:\s|FOR:\s|OVERIDE:\s)([_[(\w!].*?\.es[pm]$)',re.U)
                         for line in ins:
@@ -10135,7 +10135,7 @@ class Messages(DataDict):
 
     def writeText(self,path,*keys):
         """Return html text for each key."""
-        with path.open('w',encoding='utf8') as out:
+        with path.open('w',encoding='utf-8-sig') as out:
             out.write(bush.messagesHeader)
             for key in keys:
                 out.write(self.data[key][3])
@@ -10255,7 +10255,7 @@ class Messages(DataDict):
                                 direction = maSent.group(1)
                                 author = maSent.group(2)
                                 date = getTime(maSent.group(3))
-                                messageKey = u'::'.join((subject,author,`int(date)`))
+                                messageKey = u'::'.join((subject,author,unicode(int(date))))
                                 newSent = (_(u'Sent %s <b>%s</b> on %s</div>') % (direction,
                                     author,time.strftime(u'%b %d %Y, %I:%M %p',time.localtime(date))))
                                 line = reSent.sub(newSent,line,1)
@@ -10291,7 +10291,7 @@ class Messages(DataDict):
                     elif mode == MESSAGEBODY:
                         if reEndMessageNew.search(line):
                             buff.write(u'    <div class="formsubtitle">Sent by <b>%s</b> on %s</div>\n' % (author,time.strftime('%b %d %Y, %I:%M %p',time.localtime(date))))
-                            messageKey = u'::'.join((subject,author,`int(date)`))
+                            messageKey = u'::'.join((subject,author,unicode(int(date))))
                             self.data[messageKey] = (subject,author,date,buff.getvalue())
                             buff.close()
                             buff = None
@@ -10430,7 +10430,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
 
     def dumpText(self,path,names):
         """Dump to text file."""
-        with path.open('w',encoding='utf8') as out:
+        with path.open('w',encoding='utf-8-sig') as out:
             for name in sorted(names,key=string.lower):
                 out.write(u'== %s %s\n' % (name,u'='*(75-len(name))))
                 out.write(self.data[name][2].strip())
@@ -10568,7 +10568,7 @@ class Installer(object):
         setSkipImages = settings['bash.installers.skipImages']
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
         if inisettings['KeepLog'] > 1:
-            try: log = inisettings['LogFile'].open('a',encoding='utf8')
+            try: log = inisettings['LogFile'].open('a',encoding='utf-8-sig')
             except: log = None
         else: log = None
         for asDir,sDirs,sFiles in os.walk(asRoot):
@@ -11454,7 +11454,7 @@ class InstallerConverter(object):
         if not fileNames: raise ArgumentError(u"No files to extract for %s." % srcInstaller.s)
         #--Dump file list
         try:
-            out = self.tempList.open('w',encoding='utf8')
+            out = self.tempList.open('w',encoding='utf-8-sig')
             out.write(u'\n'.join(fileNames))
         finally:
             result = out.close()
@@ -11578,7 +11578,7 @@ class InstallerArchive(Installer):
         if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
-        with self.tempList.open(encoding='utf8', mode='w') as out:
+        with self.tempList.open(encoding='utf-8-sig', mode='w') as out:
             out.write(u'\n'.join(fileNames))
         apath = dirs['installers'].join(archive)
         arch = apath.temp
@@ -11839,7 +11839,7 @@ class InstallerProject(Installer):
         outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
         num = 0
         while outFile.exists():
-            outFile += `num`
+            outFile += unicode(num)
             num += 1
         project = outDir.join(project)
         projectDir = project.temp
@@ -11859,7 +11859,7 @@ class InstallerProject(Installer):
                     solid = u' '+inisettings['7zExtraCompressionArguments']
                 else: solid += u' '+inisettings['7zExtraCompressionArguments']
             #--Dump file list
-            with self.tempList.open('w',encoding='utf8') as out:
+            with self.tempList.open('w',encoding='utf-8-sig') as out:
                 if release:
                     out.write(u'*thumbs.db\n')
                     out.write(u'*desktop.ini\n')
@@ -11911,7 +11911,7 @@ class InstallerProject(Installer):
         if configPath.exists():
             with bolt.StructFile(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
-                config.name = ins.readNetString()
+                config.name = _unicode(ins.readNetString())
                 config.vMajor, = ins.unpack('i',4)
                 config.vMinor, = ins.unpack('i',4)
                 for attr in ('author','email','website','abstract'):
@@ -12110,7 +12110,7 @@ class InstallersData(bolt.TankData, DataDict):
             else:
                 value = object.__getattribute__(installer,column.lower())
                 if column == 'Order':
-                    value = `value`
+                    value = unicode(value)
                 elif marker:
                     value = u''
                 elif column in ('Package','Group'):
@@ -12910,7 +12910,7 @@ class ActorFactions:
         type_id_factions,id_eid = self.type_id_factions, self.id_eid
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),_(u'Rank')))
             for type in sorted(type_id_factions):
                 id_factions = type_id_factions[type]
@@ -13014,7 +13014,7 @@ class CBash_ActorFactions:
         group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),_(u'Rank')))
             for group in sorted(group_fid_factions):
                 fid_factions = group_fid_factions[group]
@@ -13230,7 +13230,7 @@ class CBash_ActorLevels:
         rowFormat = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
         extendedRowFormat = u',"%d","%d","%d","%d"\n'
         blankExtendedRow = u',,,,\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Source Mod'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Offset'),_(u'CalcMin'),_(u'CalcMax'),_(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),_(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
             obfid_levels = mod_fid_levels[GPath(u'Oblivion.esm')]
@@ -13381,7 +13381,7 @@ class EditorIds:
         type_id_eid = self.type_id_eid
         headFormat = u'"%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
             for type in sorted(type_id_eid):
                 id_eid = type_id_eid[type]
@@ -13510,7 +13510,7 @@ class CBash_EditorIds:
         group_fid_eid = self.group_fid_eid
         headFormat = u'"%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
             for group in sorted(group_fid_eid):
                 fid_eid = group_fid_eid[group]
@@ -13621,7 +13621,7 @@ class FactionRelations:
         id_relations,id_eid = self.id_relations, self.id_eid
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),_(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
             for main in sorted(id_relations,key = lambda x: id_eid.get(x).lower()):
                 mainEid = id_eid.get(main,u'Unknown')
@@ -13715,7 +13715,7 @@ class CBash_FactionRelations:
         fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),_(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
             for main in sorted(fid_faction_mod,key = lambda x: fid_eid.get(x)):
                 mainEid = fid_eid.get(main,u'Unknown')
@@ -13933,7 +13933,7 @@ class FullNames:
         type_id_name = self.type_id_name
         headFormat = u'"%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name')))
             for type in sorted(type_id_name):
                 id_name = type_id_name[type]
@@ -14020,7 +14020,7 @@ class CBash_FullNames:
         group_fid_name = self.group_fid_name
         headFormat = u'"%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name')))
             for group in sorted(group_fid_name):
                 fid_name = group_fid_name[group]
@@ -14145,7 +14145,7 @@ class CBash_MapMarkers:
         textPath = GPath(textPath)
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),_(u'Type'),_(u'IsVisible'),_(u'IsCanTravelTo'),_(u'posX'),_(u'posY'),_(u'posZ'),_(u'rotX'),_(u'rotY'),_(u'rotZ')))
             longids = fid_markerdata.keys()
             longids.sort(key=lambda a: fid_markerdata[a][0])
@@ -14182,7 +14182,7 @@ class CBash_CellBlockInfo:
         textPath = GPath(textPath)
         headFormat = u'"%s","%s","%s",\n'
         rowFormat  = u'"%s","%s","%s",\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % (_(u'Editor Id'),_(u'Block'),_(u'Sub-Block')))
             eids = celldata.keys()
             eids.sort()
@@ -14415,7 +14415,7 @@ class SigilStoneDetails(UsesEffectsMixin):
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%d","%f"'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0].lower()):
                 eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
@@ -14503,7 +14503,7 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%d","%f"'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
                 eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
@@ -14632,7 +14632,7 @@ class ItemStats:
             longids.sort(key=lambda a: fid_attr_value[a]['eid'].lower())
             longids.sort(key=itemgetter(0))
             return longids
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             def write(out, attrs, values):
                 attr_type = self.attr_type
                 csvFormat = u''
@@ -14832,7 +14832,7 @@ class CBash_ItemStats:
             longids.sort(key=lambda a: fid_attr_value[a]['eid'])
             longids.sort(key=itemgetter(0))
             return longids
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             def write(out, attrs, values):
                 attr_type = self.attr_type
                 csvFormat = u''
@@ -14983,7 +14983,7 @@ class ItemPrices:
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             format,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
             for group, fid_stats in sorted(class_fid_stats.iteritems()):
                 if not fid_stats: continue
@@ -15057,7 +15057,7 @@ class CBash_ItemPrices:
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             format,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
             for group, fid_stats in sorted(class_fid_stats.iteritems()):
                 if not fid_stats: continue
@@ -15211,7 +15211,7 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             for type,format,header in (
                 #--Alch
                 ('ALCH', bolt.csvFormat(u'ssfiss')+u'\n',
@@ -15429,7 +15429,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         return
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             def getSortedIds(fid_attr_value):
                 longids = fid_attr_value.keys()
                 longids.sort(key=lambda a: fid_attr_value[a]['eid'])
@@ -15588,7 +15588,7 @@ class ScriptText:
                         progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1/y)*z),_(u"Reading file %s.") % name.s)
-                    with root.join(name).open('r',encoding='utf8') as text:
+                    with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
                     try:
                         modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
@@ -15632,7 +15632,7 @@ class ScriptText:
                         fileName = fileName[r:]
                     num += 1
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
-                    with outpath.open('wb',encoding='utf8') as out:
+                    with outpath.open('wb',encoding='utf-8-sig') as out:
                         formid = u'0x%06X' % longid[1]
                         out.write(u';'+longid[0].s+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
                     exportedScripts.append(eid)
@@ -15710,7 +15710,7 @@ class CBash_ScriptText:
                         progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1/y)*z),_(u"Reading file %s.") % name.s)
-                    with root.join(name).open('r',encoding='utf8') as text:
+                    with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
                     modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs writes it in \r\n format.
@@ -15750,7 +15750,7 @@ class CBash_ScriptText:
                         fileName = fileName[r:]
                     num += 1
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
-                    with outpath.open('wb', encoding='utf8') as out:
+                    with outpath.open('wb', encoding='utf-8-sig') as out:
                         formid = u'0x%06X' % longid[1]
                         out.write(u';'+longid[0].s+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
                     exportedScripts.append(eid)
@@ -15902,7 +15902,7 @@ class SpellRecords(UsesEffectsMixin):
 
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
 
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0].lower(),x[0])):
                 if detailed:
@@ -16031,7 +16031,7 @@ class CBash_SpellRecords(UsesEffectsMixin):
 
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
 
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
                 if detailed:
@@ -16146,7 +16146,7 @@ class IngredientDetails(UsesEffectsMixin):
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
 
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0].lower()):
                 eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
@@ -16232,7 +16232,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
 
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
                 eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
@@ -16338,7 +16338,7 @@ class ModGroups:
         textPath = GPath(textPath)
         mod_group = self.mod_group
         rowFormat = u'"%s","%s"\n'
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(rowFormat % (_(u"Mod"),_(u"Group")))
             for mod in sorted(mod_group):
                 out.write(rowFormat % (mod.s,mod_group[mod]))
@@ -16374,7 +16374,7 @@ class PCFaces:
         def convertRace(self,fromRace,toRace):
             """Converts face from one race to another while preserving structure, etc."""
             for attr,num in (('fggs_p',50),('fgga_p',30),('fgts_p',50)):
-                format = `num`+'f'
+                format = unicode(num)+u'f'
                 sValues = list(struct.unpack(format,getattr(self,attr)))
                 fValues = list(struct.unpack(format,getattr(fromRace,attr)))
                 tValues = list(struct.unpack(format,getattr(toRace,attr)))
@@ -30552,7 +30552,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         id_ingred = self.id_ingred
         iconPath,modPath,modb_p = (u'Clutter\\IconBook9.dds',u'Clutter\\Books\\Octavo02.NIF',u'\x03>@A')
         for (num,objectId,full,value) in bush.ingred_alchem:
-            book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
+            book = getBook(objectId,'cobCatAlchemIngreds%s'%num,full,value,iconPath,modPath,modb_p)
             with sio(book.text) as buff:
                 for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
                     buff.write(full+u'\r\n')
@@ -30573,7 +30573,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         #--Effect catalogs
         iconPath,modPath,modb_p = (u'Clutter\\IconBook7.dds',u'Clutter\\Books\\Octavo01.NIF',u'\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
-            book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
+            book = getBook(objectId,'cobCatAlchemEffects%s'%num,full,value,iconPath,modPath,modb_p)
             with sio(book.text) as buff:
                 for effectName in sorted(effect_ingred.keys()):
                     effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
@@ -30581,7 +30581,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
                         buff.write(effectName+u'\r\n')
                         for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
                             exSpace = u' ' if index == 0 else u''
-                            buff.write(u' '+`index + 1`+exSpace+u' '+full+u'\r\n')
+                            buff.write(u' %s%s %s\r\n'%(index + 1,exSpace,full))
                         buff.write(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Log
@@ -30738,7 +30738,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                         buff.write(effectName+u'\r\n')
                         for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
                             exSpace = u' ' if index == 0 else u''
-                            buff.write(u' '+`index + 1`+exSpace+u' '+full+u'\r\n')
+                            buff.write(u' %s%s %s\r\n' % (index + 1,exSpace,full))
                         buff.write(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
             pstate += 1
@@ -33315,7 +33315,7 @@ def getPersonalPath(bashIni, path):
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
         path = getShellPath('Personal')
-        sErrorInfo = u'\n'.join(u'  '+key+u': '+`envDefs[key]` for key in sorted(envDefs))
+        sErrorInfo = u'\n'.join(u'  %s: %s' % (key,envDefs[key]) for key in sorted(envDefs))
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -33339,7 +33339,7 @@ def getLocalAppDataPath(bashIni, path):
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
         path = getShellPath('Local AppData')
-        sErrorInfo = u'\n'.join(u'  '+key+u': '+`envDefs[key]` for key in sorted(envDefs))
+        sErrorInfo = u'\n'.join(u'  %s: %s' % (key,envDefs[key]) for key in sorted(envDefs))
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -33629,7 +33629,7 @@ def initLogFile():
         if inisettings['LogFile'].exists():
             os.remove(inisettings['LogFile'].s)
     else:
-        with inisettings['LogFile'].open('a', encoding='utf8') as log:
+        with inisettings['LogFile'].open('a', encoding='utf-8-sig') as log:
             log.write(
                 _(u'%s Wrye Bash ini file read, Keep Log level: %d, initialized.') % (datetime.datetime.now(),inisettings['KeepLog'])
                 + u'\r\n')

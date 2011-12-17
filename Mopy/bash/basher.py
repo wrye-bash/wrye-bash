@@ -3246,7 +3246,7 @@ class InstallersList(balt.Tank):
                         del self.data[archive]
                     refreshNeeded = True
                 num += 1
-                numStr = `num`
+                numStr = unicode(num)
                 numStr = u'0'*(numLen-len(numStr))+numStr
             #--Refresh UI
             if refreshNeeded:
@@ -4002,7 +4002,7 @@ class ScreensList(List):
                 if not newPath.exists():
                     oldPath.moveTo(newPath)
                 num += 1
-                numStr = `num`
+                numStr = unicode(num)
                 numStr = u'0'*(numLen-len(numStr))+numStr
             bosh.screensData.refresh()
             self.RefreshUI()
@@ -6393,7 +6393,7 @@ class ImportFaceDialog(wx.Dialog):
         self.nameText.SetLabel(face.pcName)
         self.raceText.SetLabel(face.getRaceName())
         self.genderText.SetLabel(face.getGenderName())
-        self.statsText.SetLabel(_(u'Health ')+`face.health`)
+        self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
         itemImagePath = bosh.dirs['mods'].join(u'Docs',u'Images','%s.jpg' % item)
         bitmap = (itemImagePath.exists() and
             wx.Bitmap(itemImagePath.s,wx.BITMAP_TYPE_JPEG)) or None
@@ -6618,7 +6618,7 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-                with readme.open('w',encoding='utf8') as file:
+                with readme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
@@ -6634,7 +6634,7 @@ class PatchDialog(wx.Dialog):
                         bosh.modInfos.select(patchName)
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
                         if len(changedFiles) > 1:
-                            statusBar.SetText(_(u'Masters Activated: ') + `len(changedFiles)-1`)
+                            statusBar.SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
                     except bosh.PluginsFullError:
                         balt.showError(self,
                             _(u'Unable to add mod %s because load list is full.')
@@ -6712,7 +6712,7 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-                with readme.open('w',encoding='utf8') as file:
+                with readme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
@@ -6728,7 +6728,7 @@ class PatchDialog(wx.Dialog):
                         bosh.modInfos.select(patchName)
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
                         if len(changedFiles) > 1:
-                            statusBar.SetText(_(u'Masters Activated: ') + `len(changedFiles)-1`)
+                            statusBar.SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
                     except bosh.PluginsFullError:
                         balt.showError(self,
                             _(u'Unable to add mod %s because load list is full.')
@@ -8513,7 +8513,7 @@ class Installers_Skip(BoolLink):
         with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
             progress.setFull(len(self.data))
             for index,dataItem in enumerate(self.data.iteritems()):
-                progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0])
+                progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
                 dataItem[1].refreshDataSizeCrc()
         self.data.refresh(what='NS')
         self.gTank.RefreshUI()
@@ -9201,7 +9201,7 @@ class Installer_Move(InstallerLink):
                    + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
-        newPos = balt.askText(self.gTank,message,self.title,`curPos`)
+        newPos = balt.askText(self.gTank,message,self.title,unicode(curPos))
         if not newPos: return
         newPos = newPos.strip()
         try:
@@ -10831,7 +10831,7 @@ class Settings_ExportDllInfo(Link):
             textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
             u'*.txt')
         if not textPath: return
-        with textPath.open('w',encoding='utf8') as out:
+        with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\n')
             if settings['bash.installers.goodDlls']:
                 for dll in settings['bash.installers.goodDlls']:
@@ -10873,7 +10873,7 @@ class Settings_ImportDllInfo(Link):
         if not balt.askYes(self.window,message,_(u'Merge permissions?')): replace = True
         else: replace = False
         try:
-            with textPath.open('r',encoding='utf8') as ins:
+            with textPath.open('r',encoding='utf-8-sig') as ins:
                 Dlls = {'goodDlls':{},'badDlls':{}}
                 for line in ins:
                     if line.startswith(u'goodDlls'):
@@ -11020,7 +11020,7 @@ class Settings_CheckForUpdates(Link):
                        ) % (currentStr, mainStr)
         if msg:
             if balt.askYes(self.window,msg,title):
-                os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+`WBFileId`)
+                os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+unicode(WBFileId))
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
     """Handle hiding/unhiding tabs."""
@@ -11091,7 +11091,7 @@ class Settings_IconSize(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,`self.size`,kind=wx.ITEM_RADIO)
+        menuItem = wx.MenuItem(menu,self.id,unicode(self.size),kind=wx.ITEM_RADIO)
         menu.AppendItem(menuItem)
         menuItem.Check(self.size == settings['bash.statusbar.iconSize'])
 

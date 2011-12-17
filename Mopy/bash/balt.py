@@ -664,7 +664,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
             logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
             ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
-            with logPath.open('w',encoding='utf8') as out:
+            with logPath.open('w',encoding='utf-8-sig') as out:
                 bolt.WryeText.genHtml(ins,out,cssDir)
             ins.close()
             logText = logPath
@@ -690,7 +690,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
         logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
         cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
         ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w',encoding='utf8') as out:
+        with logPath.open('w',encoding='utf-8-sig') as out:
             bolt.WryeText.genHtml(ins,out,cssDir)
         ins.close()
         logText = logPath
