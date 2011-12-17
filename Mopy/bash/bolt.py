@@ -799,6 +799,7 @@ def GPath(name):
     if name is None: return None
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
+    elif isinstance(name,unicode): norm = os.path.normpath(name)
     else: norm = os.path.normpath(unicode(name))
     path = _gpaths.get(norm)
     if path is not None: return path

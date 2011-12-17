@@ -790,110 +790,110 @@ class WryeParser(ScriptParser.Parser):
                 self.sublist[i] = False
 
         #--Constants
-        self.SetConstant('SubPackages','SubPackages')
+        self.SetConstant(u'SubPackages',u'SubPackages')
         #--Operators
         #Assignment
-        self.SetOperator('=' , self.Ass, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        self.SetOperator('+=', self.AssAdd, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        self.SetOperator('-=', self.AssMin, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        self.SetOperator('*=', self.AssMul, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        self.SetOperator('/=', self.AssDiv, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        #self.SetOperator('%=', self.AssMod, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        self.SetOperator('^=', self.AssExp, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'=' , self.Ass, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'+=', self.AssAdd, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'-=', self.AssMin, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'*=', self.AssMul, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'/=', self.AssDiv, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        #self.SetOperator(u'%=', self.AssMod, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'^=', self.AssExp, ScriptParser.OP.ASS, ScriptParser.RIGHT)
         #Comparison
-        self.SetOperator('==', self.opE, ScriptParser.OP.CO2)
-        self.SetOperator('!=', self.opNE, ScriptParser.OP.CO2)
-        self.SetOperator('>=', self.opGE, ScriptParser.OP.CO1)
-        self.SetOperator('>' , self.opG, ScriptParser.OP.CO1)
-        self.SetOperator('<=', self.opLE, ScriptParser.OP.CO1)
-        self.SetOperator('<' , self.opL, ScriptParser.OP.CO1)
-        self.SetOperator('==:', self.opEc, ScriptParser.OP.CO2, passTokens=False)  # Case insensitive ==
-        self.SetOperator('!=:', self.opNEc, ScriptParser.OP.CO2, passTokens=False) # Case insensitive !=
-        self.SetOperator('>=:', self.opGEc, ScriptParser.OP.CO1, passTokens=False) # Case insensitive >=
-        self.SetOperator('>:', self.opGc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive >
-        self.SetOperator('<=:', self.opLEc, ScriptParser.OP.CO1, passTokens=False) # Case insensitive <=
-        self.SetOperator('<:', self.opLc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive <
+        self.SetOperator(u'==', self.opE, ScriptParser.OP.CO2)
+        self.SetOperator(u'!=', self.opNE, ScriptParser.OP.CO2)
+        self.SetOperator(u'>=', self.opGE, ScriptParser.OP.CO1)
+        self.SetOperator(u'>' , self.opG, ScriptParser.OP.CO1)
+        self.SetOperator(u'<=', self.opLE, ScriptParser.OP.CO1)
+        self.SetOperator(u'<' , self.opL, ScriptParser.OP.CO1)
+        self.SetOperator(u'==:', self.opEc, ScriptParser.OP.CO2, passTokens=False)  # Case insensitive ==
+        self.SetOperator(u'!=:', self.opNEc, ScriptParser.OP.CO2, passTokens=False) # Case insensitive !=
+        self.SetOperator(u'>=:', self.opGEc, ScriptParser.OP.CO1, passTokens=False) # Case insensitive >=
+        self.SetOperator(u'>:', self.opGc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive >
+        self.SetOperator(u'<=:', self.opLEc, ScriptParser.OP.CO1, passTokens=False) # Case insensitive <=
+        self.SetOperator(u'<:', self.opLc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive <
         #Membership operators
-        self.SetOperator('in', self.opIn, ScriptParser.OP.MEM, passTokens=False)
-        self.SetOperator('in:', self.opInc, ScriptParser.OP.MEM, passTokens=False) # Case insensitive in
+        self.SetOperator(u'in', self.opIn, ScriptParser.OP.MEM, passTokens=False)
+        self.SetOperator(u'in:', self.opInc, ScriptParser.OP.MEM, passTokens=False) # Case insensitive in
         #Boolean
-        self.SetOperator('&' , self.opAnd, ScriptParser.OP.AND)
-        self.SetOperator('and', self.opAnd, ScriptParser.OP.AND)
-        self.SetOperator('|', self.opOr, ScriptParser.OP.OR)
-        self.SetOperator('or', self.opOr, ScriptParser.OP.OR)
-        self.SetOperator('!', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
-        self.SetOperator('not', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
+        self.SetOperator(u'&' , self.opAnd, ScriptParser.OP.AND)
+        self.SetOperator(u'and', self.opAnd, ScriptParser.OP.AND)
+        self.SetOperator(u'|', self.opOr, ScriptParser.OP.OR)
+        self.SetOperator(u'or', self.opOr, ScriptParser.OP.OR)
+        self.SetOperator(u'!', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
+        self.SetOperator(u'not', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
         #Post-fix increment/decrement
-        self.SetOperator('++', self.opInc, ScriptParser.OP.UNA)
-        self.SetOperator('--', self.opDec, ScriptParser.OP.UNA)
+        self.SetOperator(u'++', self.opInc, ScriptParser.OP.UNA)
+        self.SetOperator(u'--', self.opDec, ScriptParser.OP.UNA)
         #Math
-        self.SetOperator('+', self.opAdd, ScriptParser.OP.ADD)
-        self.SetOperator('-', self.opMin, ScriptParser.OP.ADD)
-        self.SetOperator('*', self.opMul, ScriptParser.OP.MUL)
-        self.SetOperator('/', self.opDiv, ScriptParser.OP.MUL)
-        #self.SetOperator('%', self.opMod, ScriptParser.OP.MUL)
-        self.SetOperator('^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
+        self.SetOperator(u'+', self.opAdd, ScriptParser.OP.ADD)
+        self.SetOperator(u'-', self.opMin, ScriptParser.OP.ADD)
+        self.SetOperator(u'*', self.opMul, ScriptParser.OP.MUL)
+        self.SetOperator(u'/', self.opDiv, ScriptParser.OP.MUL)
+        #self.SetOperator(u'%', self.opMod, ScriptParser.OP.MUL)
+        self.SetOperator(u'^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
 
         #--Functions
-        self.SetFunction('CompareObVersion', self.fnCompareGameVersion, 1)      # Retained for compatibility
-        self.SetFunction('CompareGameVersion', self.fnCompareGameVersion, 1)
-        self.SetFunction('CompareOBSEVersion', self.fnCompareSEVersion, 1)      # Retained for compatibility
-        self.SetFunction('CompareSEVersion', self.fnCompareSEVersion, 1)
-        self.SetFunction('CompareOBGEVersion', self.fnCompareGEVersion, 1)      # Retained for compatibility
-        self.SetFunction('CompareGEVersion', self.fnCompareGEVersion, 1)
-        self.SetFunction('CompareWBVersion', self.fnCompareWBVersion, 1)
-        self.SetFunction('DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
-        self.SetFunction('GetEspmStatus', self.fnGetEspmStatus, 1)
-        self.SetFunction('EditINI', self.fnEditINI, 4, 5)
-        self.SetFunction('Exec', self.fnExec, 1)
-        self.SetFunction('EndExec', self.fnEndExec, 1)
-        self.SetFunction('str', self.fnStr, 1)
-        self.SetFunction('int', self.fnInt, 1)
-        self.SetFunction('float', self.fnFloat, 1)
+        self.SetFunction(u'CompareObVersion', self.fnCompareGameVersion, 1)      # Retained for compatibility
+        self.SetFunction(u'CompareGameVersion', self.fnCompareGameVersion, 1)
+        self.SetFunction(u'CompareOBSEVersion', self.fnCompareSEVersion, 1)      # Retained for compatibility
+        self.SetFunction(u'CompareSEVersion', self.fnCompareSEVersion, 1)
+        self.SetFunction(u'CompareOBGEVersion', self.fnCompareGEVersion, 1)      # Retained for compatibility
+        self.SetFunction(u'CompareGEVersion', self.fnCompareGEVersion, 1)
+        self.SetFunction(u'CompareWBVersion', self.fnCompareWBVersion, 1)
+        self.SetFunction(u'DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
+        self.SetFunction(u'GetEspmStatus', self.fnGetEspmStatus, 1)
+        self.SetFunction(u'EditINI', self.fnEditINI, 4, 5)
+        self.SetFunction(u'Exec', self.fnExec, 1)
+        self.SetFunction(u'EndExec', self.fnEndExec, 1)
+        self.SetFunction(u'str', self.fnStr, 1)
+        self.SetFunction(u'int', self.fnInt, 1)
+        self.SetFunction(u'float', self.fnFloat, 1)
         #--String functions
-        self.SetFunction('len', self.fnLen, 1, dotFunction=True)
-        self.SetFunction('endswith', self.fnEndsWith, 2, ScriptParser.KEY.NO_MAX, dotFunction=True)
-        self.SetFunction('startswith', self.fnStartsWith, 2, ScriptParser.KEY.NO_MAX, dotFunction=True)
-        self.SetFunction('lower', self.fnLower, 1, dotFunction=True)
-        self.SetFunction('find', self.fnFind, 2, 4, dotFunction=True)
-        self.SetFunction('rfind', self.fnRFind, 2, 4, dotFunction=True)
+        self.SetFunction(u'len', self.fnLen, 1, dotFunction=True)
+        self.SetFunction(u'endswith', self.fnEndsWith, 2, ScriptParser.KEY.NO_MAX, dotFunction=True)
+        self.SetFunction(u'startswith', self.fnStartsWith, 2, ScriptParser.KEY.NO_MAX, dotFunction=True)
+        self.SetFunction(u'lower', self.fnLower, 1, dotFunction=True)
+        self.SetFunction(u'find', self.fnFind, 2, 4, dotFunction=True)
+        self.SetFunction(u'rfind', self.fnRFind, 2, 4, dotFunction=True)
         #--String pathname functions
-        self.SetFunction('GetFilename', self.fnGetFilename, 1)
-        self.SetFunction('GetFolder', self.fnGetFolder, 1)
+        self.SetFunction(u'GetFilename', self.fnGetFilename, 1)
+        self.SetFunction(u'GetFolder', self.fnGetFolder, 1)
         #--Keywords
-        self.SetKeyword('SelectSubPackage', self.kwdSelectSubPackage, 1)
-        self.SetKeyword('DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
-        self.SetKeyword('SelectEspm', self.kwdSelectEspm, 1)
-        self.SetKeyword('DeSelectEspm', self.kwdDeSelectEspm, 1)
-        self.SetKeyword('SelectAll', self.kwdSelectAll)
-        self.SetKeyword('DeSelectAll', self.kwdDeSelectAll)
-        self.SetKeyword('SelectAllEspms', self.kwdSelectAllEspms)
-        self.SetKeyword('DeSelectAllEspms', self.kwdDeSelectAllEspms)
-        self.SetKeyword('RenameEspm', self.kwdRenameEspm, 2)
-        self.SetKeyword('ResetEspmName', self.kwdResetEspmName, 1)
-        self.SetKeyword('ResetAllEspmNames', self.kwdResetAllEspmNames)
-        self.SetKeyword('Note', self.kwdNote, 1)
-        self.SetKeyword('If', self.kwdIf, 1 )
-        self.SetKeyword('Elif', self.kwdElif, 1)
-        self.SetKeyword('Else', self.kwdElse)
-        self.SetKeyword('EndIf', self.kwdEndIf)
-        self.SetKeyword('While', self.kwdWhile, 1)
-        self.SetKeyword('Continue', self.kwdContinue)
-        self.SetKeyword('EndWhile', self.kwdEndWhile)
-        self.SetKeyword('For', self.kwdFor, 3, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
-        self.SetKeyword('from', self.kwdDummy)
-        self.SetKeyword('to', self.kwdDummy)
-        self.SetKeyword('by', self.kwdDummy)
-        self.SetKeyword('EndFor', self.kwdEndFor)
-        self.SetKeyword('SelectOne', self.kwdSelectOne, 7, ScriptParser.KEY.NO_MAX)
-        self.SetKeyword('SelectMany', self.kwdSelectMany, 4, ScriptParser.KEY.NO_MAX)
-        self.SetKeyword('Case', self.kwdCase, 1)
-        self.SetKeyword('Default', self.kwdDefault)
-        self.SetKeyword('Break', self.kwdBreak)
-        self.SetKeyword('EndSelect', self.kwdEndSelect)
-        self.SetKeyword('Return', self.kwdReturn)
-        self.SetKeyword('Cancel', self.kwdCancel, 0, 1)
-        self.SetKeyword('RequireVersions', self.kwdRequireVersions, 1, 4)
+        self.SetKeyword(u'SelectSubPackage', self.kwdSelectSubPackage, 1)
+        self.SetKeyword(u'DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
+        self.SetKeyword(u'SelectEspm', self.kwdSelectEspm, 1)
+        self.SetKeyword(u'DeSelectEspm', self.kwdDeSelectEspm, 1)
+        self.SetKeyword(u'SelectAll', self.kwdSelectAll)
+        self.SetKeyword(u'DeSelectAll', self.kwdDeSelectAll)
+        self.SetKeyword(u'SelectAllEspms', self.kwdSelectAllEspms)
+        self.SetKeyword(u'DeSelectAllEspms', self.kwdDeSelectAllEspms)
+        self.SetKeyword(u'RenameEspm', self.kwdRenameEspm, 2)
+        self.SetKeyword(u'ResetEspmName', self.kwdResetEspmName, 1)
+        self.SetKeyword(u'ResetAllEspmNames', self.kwdResetAllEspmNames)
+        self.SetKeyword(u'Note', self.kwdNote, 1)
+        self.SetKeyword(u'If', self.kwdIf, 1 )
+        self.SetKeyword(u'Elif', self.kwdElif, 1)
+        self.SetKeyword(u'Else', self.kwdElse)
+        self.SetKeyword(u'EndIf', self.kwdEndIf)
+        self.SetKeyword(u'While', self.kwdWhile, 1)
+        self.SetKeyword(u'Continue', self.kwdContinue)
+        self.SetKeyword(u'EndWhile', self.kwdEndWhile)
+        self.SetKeyword(u'For', self.kwdFor, 3, ScriptParser.KEY.NO_MAX, passTokens=True, splitCommas=False)
+        self.SetKeyword(u'from', self.kwdDummy)
+        self.SetKeyword(u'to', self.kwdDummy)
+        self.SetKeyword(u'by', self.kwdDummy)
+        self.SetKeyword(u'EndFor', self.kwdEndFor)
+        self.SetKeyword(u'SelectOne', self.kwdSelectOne, 7, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword(u'SelectMany', self.kwdSelectMany, 4, ScriptParser.KEY.NO_MAX)
+        self.SetKeyword(u'Case', self.kwdCase, 1)
+        self.SetKeyword(u'Default', self.kwdDefault)
+        self.SetKeyword(u'Break', self.kwdBreak)
+        self.SetKeyword(u'EndSelect', self.kwdEndSelect)
+        self.SetKeyword(u'Return', self.kwdReturn)
+        self.SetKeyword(u'Cancel', self.kwdCancel, 0, 1)
+        self.SetKeyword(u'RequireVersions', self.kwdRequireVersions, 1, 4)
 
 
     def Begin(self, file):
@@ -962,7 +962,7 @@ class WryeParser(ScriptParser.Parser):
         while self.ExecCount > 0 and i < len(self.lines):
             line = self.lines[i]
             i += 1
-            if line.startswith('EndExec('):
+            if line.startswith(u'EndExec('):
                 numLines = int(line[8:-1])
                 del self.lines[i-numLines:i]
                 i -= numLines
@@ -1134,10 +1134,10 @@ class WryeParser(ScriptParser.Parser):
     def fnEditINI(self, iniName, section, setting, value, comment=None):
         iniPath = bolt.GPath(iniName)
         #--Section
-        if section.strip().lower() == 'set':
-            realSection = bolt.LString(']set[')
-        elif section.strip().lower() == 'setgs':
-            realSection = bolt.LString(']setgs[')
+        if section.strip().lower() == u'set':
+            realSection = bolt.LString(u']set[')
+        elif section.strip().lower() == u'setgs':
+            realSection = bolt.LString(u']setgs[')
         else:
             realSection = bolt.LString(section.strip())
         #--Setting
@@ -1155,18 +1155,18 @@ class WryeParser(ScriptParser.Parser):
         self.iniedits[iniPath][realSection][1][realSetting] = (setting,value,comment)
 
     def fnExec(self, strLines):
-        lines = strLines.split('\n')
-        lines.append('EndExec(%i)' % (len(lines)+1))
+        lines = strLines.split(u'\n')
+        lines.append(u'EndExec(%i)' % (len(lines)+1))
         self.lines[self.cLine:self.cLine] = lines
         self.ExecCount += 1
     def fnEndExec(self, numLines):
         if self.ExecCount == 0:
-            error(UNEXPECTED % 'EndExec')
+            error(UNEXPECTED % u'EndExec')
         del self.lines[self.cLine-numLines:self.cLine]
         self.cLine -= numLines
         self.ExecCount -= 1
 
-    def fnStr(self, data): return str(data)
+    def fnStr(self, data): return unicode(data)
     def fnInt(self, data):
         try:
             return int(data)
@@ -1229,23 +1229,23 @@ class WryeParser(ScriptParser.Parser):
 
     # Keywords, mostly for flow control (If, Select, etc)
     def kwdIf(self, bActive):
-        if self.LenFlow() > 0 and self.PeekFlow().type == 'If' and not self.PeekFlow().active:
+        if self.LenFlow() > 0 and self.PeekFlow().type == u'If' and not self.PeekFlow().active:
             #Inactive portion of an If-Elif-Else-EndIf statement, but we hit an If, so we need
             #To not count the next 'EndIf' towards THIS one
-            self.PushFlow('If', False, ['If', 'EndIf'])
+            self.PushFlow(u'If', False, [u'If', u'EndIf'])
             return
-        self.PushFlow('If', bActive, ['If', 'Else', 'Elif', 'EndIf'], ifTrue=bActive, hitElse=False)
+        self.PushFlow(u'If', bActive, [u'If', u'Else', u'Elif', u'EndIf'], ifTrue=bActive, hitElse=False)
     def kwdElif(self, bActive):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            error(UNEXPECTED % 'Elif')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'If' or self.PeekFlow().hitElse:
+            error(UNEXPECTED % u'Elif')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
         else:
             self.PeekFlow().active = bActive
             self.PeekFlow().ifTrue = self.PeekFlow().active or self.PeekFlow().ifTrue
     def kwdElse(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'If' or self.PeekFlow().hitElse:
-            error(UNEXPECTED % 'Else')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'If' or self.PeekFlow().hitElse:
+            error(UNEXPECTED % u'Else')
         if self.PeekFlow().ifTrue:
             self.PeekFlow().active = False
             self.PeekFlow().hitElse = True
@@ -1253,36 +1253,36 @@ class WryeParser(ScriptParser.Parser):
             self.PeekFlow().active = True
             self.PeekFlow().hitElse = True
     def kwdEndIf(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'If':
-            error(UNEXPECTED % 'EndIf')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'If':
+            error(UNEXPECTED % u'EndIf')
         self.PopFlow()
 
     def kwdWhile(self, bActive):
-        if self.LenFlow() > 0 and self.PeekFlow().type == 'While' and not self.PeekFlow().active:
+        if self.LenFlow() > 0 and self.PeekFlow().type == u'While' and not self.PeekFlow().active:
             #Within an un-true while statement, but we hit a new While, so we need to ignore the
             #next 'EndWhile' towards THIS one
-            self.PushFlow('While', False, ['While', 'EndWhile'])
+            self.PushFlow('While', False, [u'While', u'EndWhile'])
             return
-        self.PushFlow('While', bActive, ['While', 'EndWhile'], cLine=self.cLine-1)
+        self.PushFlow(u'While', bActive, [u'While', u'EndWhile'], cLine=self.cLine-1)
     def kwdContinue(self):
         #Find the next up While or For statement to continue from
         index = self.LenFlow()-1
         iType = None
         while index >= 0:
             iType = self.PeekFlow(index).type
-            if iType in ['While','For']:
+            if iType in [u'While',u'For']:
                 break
             index -= 1
         if index < 0:
             # No while statement was found
-            error(UNEXPECTED % 'Continue')
+            error(UNEXPECTED % u'Continue')
         #Discard any flow control statments that happened after
         #the While/For, since we're resetting either back to the
         #the While/For', or the EndWhile/EndFor
         while self.LenFlow() > index+1:
             self.PopFlow()
         flow = self.PeekFlow()
-        if iType == 'While':
+        if iType == u'While':
             # Continue a While loop
             self.cLine = flow.cLine
             self.PopFlow()
@@ -1308,18 +1308,18 @@ class WryeParser(ScriptParser.Parser):
                     self.cLine = flow.cLine
                     self.variables[flow.varname] = flow.List[flow.index]
     def kwdEndWhile(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'While':
-            error(UNEXPECTED % 'EndWhile')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'While':
+            error(UNEXPECTED % u'EndWhile')
         #Re-evaluate the while loop's expression, if needed
         flow = self.PopFlow()
         if flow.active:
             self.cLine = flow.cLine
 
     def kwdFor(self, *args):
-        if self.LenFlow() > 0 and self.PeekFlow().type == 'For' and not self.PeekFlow().active:
+        if self.LenFlow() > 0 and self.PeekFlow().type == u'For' and not self.PeekFlow().active:
             #Within an ending For statement, but we hit a new For, so we need to ignore the
             #next 'EndFor' towards THIS one
-            self.PushFlow('For', False, ['For', 'EndFor'])
+            self.PushFlow(u'For', False, [u'For', u'EndFor'])
             return
         varname = args[0]
         if varname.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
@@ -1328,7 +1328,7 @@ class WryeParser(ScriptParser.Parser):
                   )
         if args[1].text == 'from':
             #For varname from value_start to value_end [by value_increment]
-            if (len(args) not in [5,7]) or (args[3].text != 'to') or (len(args)==7 and args[5].text != 'by'):
+            if (len(args) not in [5,7]) or (args[3].text != u'to') or (len(args)==7 and args[5].text != u'by'):
                 error(_(u"Invalid syntax for 'For' statement.  Expected format:")
                       +u'\n For var_name from value_start to value_end\n For var_name from value_start to value_end by value_increment'
                       )
@@ -1341,10 +1341,10 @@ class WryeParser(ScriptParser.Parser):
             else:
                 by = 1
             self.variables[varname.text] = start
-            self.PushFlow('For', True, ['For', 'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
-        elif args[1].text == 'in':
+            self.PushFlow(u'For', True, [u'For', u'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
+        elif args[1].text == u'in':
             # For name in SubPackages / For name in SubPackage
-            if args[2].text == 'SubPackages':
+            if args[2].text == u'SubPackages':
                 if len(args) > 4:
                     error(_(u"Invalid syntax for 'For' statement.  Expected format:")
                           +u'\n For var_name in Subpackages\n For var_name in subpackage_name'
@@ -1369,22 +1369,22 @@ class WryeParser(ScriptParser.Parser):
                     # Archive
                     for file in self.installer.fileSizeCrcs:
                         rel = bolt.Path(file[0]).relpath(subpackage)
-                        if not rel.s.startswith('..'):
+                        if not rel.s.startswith(u'..'):
                             List.append(rel.s)
                 List.sort()
             if len(List) == 0:
                 self.variables[varname.text] = u''
-                self.PushFlow('For', False, ['For','EndFor'])
+                self.PushFlow(u'For', False, [u'For',u'EndFor'])
             else:
                 self.variables[varname.text] = List[0]
-                self.PushFlow('For', True, ['For','EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
+                self.PushFlow(u'For', True, [u'For',u'EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
         else:
             error(_(u"Invalid syntax for 'For' statement.  Expected format:")
                   +u'\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name'
                   )
     def kwdEndFor(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'For':
-            error(UNEXPECTED % 'EndFor')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'For':
+            error(UNEXPECTED % u'EndFor')
         #Increment the variable, then test to see if we should end or keep going
         flow = self.PeekFlow()
         if flow.active:
@@ -1408,14 +1408,14 @@ class WryeParser(ScriptParser.Parser):
         else:
             self.PopFlow()
 
-    def kwdSelectOne(self, *args): self._KeywordSelect(False, 'SelectOne', *args)
-    def kwdSelectMany(self, *args): self._KeywordSelect(True, 'SelectMany', *args)
+    def kwdSelectOne(self, *args): self._KeywordSelect(False, u'SelectOne', *args)
+    def kwdSelectMany(self, *args): self._KeywordSelect(True, u'SelectMany', *args)
     def _KeywordSelect(self, bMany, name, *args):
         args = list(args)
-        if self.LenFlow() > 0 and self.PeekFlow().type == 'Select' and not self.PeekFlow().active:
+        if self.LenFlow() > 0 and self.PeekFlow().type == u'Select' and not self.PeekFlow().active:
             #We're inside an invalid Case for a Select already, so just add a blank FlowControl for
             #this select
-            self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'EndSelect'])
+            self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'EndSelect'])
             return
         main_desc = args.pop(0)
         if len(args) % 3:
@@ -1427,7 +1427,7 @@ class WryeParser(ScriptParser.Parser):
         image_paths = []
         while len(args):
             title = args.pop(0)
-            if title[0] == '|':
+            if title[0] == u'|':
                 defaultMap.append(True)
                 titles.append(title[1:])
             else:
@@ -1446,13 +1446,13 @@ class WryeParser(ScriptParser.Parser):
                             temp.append(titles[index])
                             if not bMany:
                                 break
-                    self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
+                    self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values=temp, hitCase=False)
                     return
         self.choiceIdex += 1
         if self.reversing:
             # We're using the 'Back' button
             self.reversing -= 1
-            self.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values = self.choices[self.choiceIdex], hitCase=False)
+            self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values = self.choices[self.choiceIdex], hitCase=False)
             return
         # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
@@ -1466,20 +1466,20 @@ class WryeParser(ScriptParser.Parser):
             image_paths.append(path)
         self.page = PageSelect(self.parent, bMany, _(u'Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
     def kwdCase(self, value):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            error(UNEXPECTED % 'Case')
-        if value in self.PeekFlow().values or str(value) in self.PeekFlow().values:
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'Select':
+            error(UNEXPECTED % u'Case')
+        if value in self.PeekFlow().values or unicode(value) in self.PeekFlow().values:
             self.PeekFlow().hitCase = True
             self.PeekFlow().active = True
     def kwdDefault(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            error(UNEXPECTED % 'Default')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'Select':
+            error(UNEXPECTED % u'Default')
         if self.PeekFlow().hitCase:
             return
         self.PeekFlow().active = True
         self.PeekFlow().hitCase = True
     def kwdBreak(self):
-        if self.LenFlow() > 0 and self.PeekFlow().type == 'Select':
+        if self.LenFlow() > 0 and self.PeekFlow().type == u'Select':
             # Break for SelectOne/SelectMany
             self.PeekFlow().active = False
         else:
@@ -1488,12 +1488,12 @@ class WryeParser(ScriptParser.Parser):
             iType = None
             while index >=0:
                 iType = self.PeekFlow(index).type
-                if iType in ['While','For']:
+                if iType in [u'While',u'For']:
                     break
                 index -= 1
             if index < 0:
                 # No while or for statements found
-                error(UNEXPECTED % 'Break')
+                error(UNEXPECTED % u'Break')
             self.PeekFlow(index).active = False
 
             #We're going to jump to the EndWhile/EndFor, so discard
@@ -1502,8 +1502,8 @@ class WryeParser(ScriptParser.Parser):
                 flow = self.PopFlow()
             flow.active = False
     def kwdEndSelect(self):
-        if self.LenFlow() == 0 or self.PeekFlow().type != 'Select':
-            error(UNEXPECTED % 'EndSelect')
+        if self.LenFlow() == 0 or self.PeekFlow().type != u'Select':
+            error(UNEXPECTED % u'EndSelect')
         self.PopFlow()
 
     # Package selection functions
@@ -1559,15 +1559,15 @@ class WryeParser(ScriptParser.Parser):
     def kwdNote(self, note):
         self.notes.append(u'- %s\n' % note)
 
-    def kwdRequireVersions(self, game, se='None', ge='None', wbWant='0'):
+    def kwdRequireVersions(self, game, se=u'None', ge=u'None', wbWant=u'0'):
         if self.bAuto: return
 
         gameWant = self._TestVersion_Want(game)
-        if gameWant == 'None': game = 'None'
+        if gameWant == u'None': game = u'None'
         seWant = self._TestVersion_Want(se)
-        if seWant == 'None': se = 'None'
+        if seWant == u'None': se = u'None'
         geWant = self._TestVersion_Want(ge)
-        if geWant == 'None': ge = 'None'
+        if geWant == u'None': ge = u'None'
         wbHave = bosh.settings['bash.readme'][1]
 
         ret = self._TestVersion(gameWant, bosh.dirs['app'].join(bush.game.exe))
@@ -1617,7 +1617,7 @@ class WryeParser(ScriptParser.Parser):
             ms = info['FileVersionMS']
             ls = info['FileVersionLS']
             have = win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), win32api.LOWORD(ls)
-            ver = '.'.join([str(i) for i in have])
+            ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
             if len(need) != 4:

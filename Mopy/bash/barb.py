@@ -441,7 +441,7 @@ def pack7z(dstFile, srcDir, progress=None):
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
         if maCompressing:
-            progress(index,dstFile.s+u'\n'+_('Compressing files...')+u'\n'+maCompressing.group(1).strip())
+            progress(index,dstFile.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
             index += 1
         #end if
     #end for

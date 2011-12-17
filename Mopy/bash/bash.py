@@ -285,7 +285,7 @@ def main():
                     button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                     button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 w = Tkinter.Text(frame)
-                w.insert(Tkinter.END, _('Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.')
+                w.insert(Tkinter.END, _(u'Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.')
                                       + u'\n\n' +
                                       _(u'To preven this message in the future, use the -g command line argument to specify the game'))
                 w.config(state=Tkinter.DISABLED)
