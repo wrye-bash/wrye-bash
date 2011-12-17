@@ -12921,21 +12921,20 @@ class ActorFactions:
         """Imports faction data from specified text file."""
         type_id_factions,id_eid = self.type_id_factions, self.id_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 8 or fields[3][:2] != '0x': continue
-            type,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-            amod = GPath(amod)
-            fmod = GPath(fmod)
-            aid = (aliases.get(amod,amod),int(aobj[2:],16))
-            fid = (aliases.get(fmod,fmod),int(fobj[2:],16))
-            rank = int(rank)
-            id_factions = type_id_factions[type]
-            factions = id_factions.get(aid)
-            factiondict = dict(factions or [])
-            factiondict.update({fid:rank})
-            id_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 8 or fields[3][:2] != '0x': continue
+                type,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
+                amod = GPath(amod)
+                fmod = GPath(fmod)
+                aid = (aliases.get(amod,amod),int(aobj[2:],16))
+                fid = (aliases.get(fmod,fmod),int(fobj[2:],16))
+                rank = int(rank)
+                id_factions = type_id_factions[type]
+                factions = id_factions.get(aid)
+                factiondict = dict(factions or [])
+                factiondict.update({fid:rank})
+                id_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
@@ -13025,22 +13024,21 @@ class CBash_ActorFactions:
         """Imports faction data from specified text file."""
         group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 8 or fields[3][:2] != '0x': continue
-            group,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-            group = _coerce(group,str)
-            amod = GPath(_coerce(amod,str))
-            fmod = GPath(_coerce(fmod,str))
-            aid = FormID(aliases.get(amod,amod),_coerce(aobj[2:],int,16))
-            fid = FormID(aliases.get(fmod,fmod),_coerce(fobj[2:],int,16))
-            rank = _coerce(rank, int)
-            fid_factions = group_fid_factions[group]
-            factions = fid_factions.get(aid)
-            factiondict = dict(factions or [])
-            factiondict.update({fid:rank})
-            fid_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 8 or fields[3][:2] != '0x': continue
+                group,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
+                group = _coerce(group,str)
+                amod = GPath(_coerce(amod,str))
+                fmod = GPath(_coerce(fmod,str))
+                aid = FormID(aliases.get(amod,amod),_coerce(aobj[2:],int,16))
+                fid = FormID(aliases.get(fmod,fmod),_coerce(fobj[2:],int,16))
+                rank = _coerce(rank, int)
+                fid_factions = group_fid_factions[group]
+                factions = fid_factions.get(aid)
+                factiondict = dict(factions or [])
+                factiondict.update({fid:rank})
+                fid_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
@@ -13121,35 +13119,34 @@ class ActorLevels:
         """Imports NPC level data from specified text file."""
         mod_id_levels, coerce = self.mod_id_levels, self.coerce
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if fields[0][:2] == '0x': #old format
-                fid,eid,offset,calcMin,calcMax = fields[:5]
-                source = GPath(u'Unknown')
-                fidObject = coerce(fid[4:], int, 16)
-                fid = (GPath(u'Oblivion.esm'), fidObject)
-                eid = coerce(eid, str)
-                offset = coerce(offset, int)
-                calcMin = coerce(calcMin, int)
-                calcMax = coerce(calcMax, int)
-            else:
-                if len(fields) < 7 or fields[3][:2] != '0x': continue
-                source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
-                source = coerce(source, str)
-                if source.lower() in (u'none', u'oblivion.esm'): continue
-                source = GPath(source)
-                eid = coerce(eid, str)
-                fidMod = GPath(coerce(fidMod, str))
-                if fidMod.s.lower() == u'none': continue
-                fidObject = coerce(fidObject[2:], int, 16)
-                if fidObject is None: continue
-                fid = (aliases.get(fidMod,fidMod),fidObject)
-                offset = coerce(offset, int)
-                calcMin = coerce(calcMin, int)
-                calcMax = coerce(calcMax, int)
-            id_levels = mod_id_levels.setdefault(source, {})
-            id_levels[fid] = (eid, 1, offset, calcMin, calcMax)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if fields[0][:2] == '0x': #old format
+                    fid,eid,offset,calcMin,calcMax = fields[:5]
+                    source = GPath(u'Unknown')
+                    fidObject = coerce(fid[4:], int, 16)
+                    fid = (GPath(u'Oblivion.esm'), fidObject)
+                    eid = coerce(eid, str)
+                    offset = coerce(offset, int)
+                    calcMin = coerce(calcMin, int)
+                    calcMax = coerce(calcMax, int)
+                else:
+                    if len(fields) < 7 or fields[3][:2] != '0x': continue
+                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
+                    source = coerce(source, str)
+                    if source.lower() in (u'none', u'oblivion.esm'): continue
+                    source = GPath(source)
+                    eid = coerce(eid, str)
+                    fidMod = GPath(coerce(fidMod, str))
+                    if fidMod.s.lower() == u'none': continue
+                    fidObject = coerce(fidObject[2:], int, 16)
+                    if fidObject is None: continue
+                    fid = (aliases.get(fidMod,fidMod),fidObject)
+                    offset = coerce(offset, int)
+                    calcMin = coerce(calcMin, int)
+                    calcMax = coerce(calcMax, int)
+                id_levels = mod_id_levels.setdefault(source, {})
+                id_levels[fid] = (eid, 1, offset, calcMin, calcMax)
 
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
@@ -13228,35 +13225,34 @@ class CBash_ActorLevels:
         """Imports NPC level data from specified text file."""
         mod_fid_levels = self.mod_fid_levels
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if fields[0][:2] == '0x': #old format
-                fid,eid,offset,calcMin,calcMax = fields[:5]
-                source = GPath(u'Unknown')
-                fidObject = _coerce(fid[4:], int, 16)
-                fid = FormID(GPath(u'Oblivion.esm'), fidObject)
-                eid = _coerce(eid, str, AllowNone=True)
-                offset = _coerce(offset, int)
-                calcMin = _coerce(calcMin, int)
-                calcMax = _coerce(calcMax, int)
-            else:
-                if len(fields) < 7 or fields[3][:2] != '0x': continue
-                source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
-                source = _coerce(source, str)
-                if source.lower() in (u'none', u'oblivion.esm'): continue
-                source = GPath(source)
-                eid = _coerce(eid, str, AllowNone=True)
-                fidMod = GPath(_coerce(fidMod, str))
-                if fidMod.s.lower() == u'none': continue
-                fidObject = _coerce(fidObject[2:], int, 16)
-                if fidObject is None: continue
-                fid = FormID(aliases.get(fidMod,fidMod),fidObject)
-                offset = _coerce(offset, int)
-                calcMin = _coerce(calcMin, int)
-                calcMax = _coerce(calcMax, int)
-            fid_levels = mod_fid_levels.setdefault(source, {})
-            fid_levels[fid] = (eid, 1, offset, calcMin, calcMax)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if fields[0][:2] == '0x': #old format
+                    fid,eid,offset,calcMin,calcMax = fields[:5]
+                    source = GPath(u'Unknown')
+                    fidObject = _coerce(fid[4:], int, 16)
+                    fid = FormID(GPath(u'Oblivion.esm'), fidObject)
+                    eid = _coerce(eid, str, AllowNone=True)
+                    offset = _coerce(offset, int)
+                    calcMin = _coerce(calcMin, int)
+                    calcMax = _coerce(calcMax, int)
+                else:
+                    if len(fields) < 7 or fields[3][:2] != '0x': continue
+                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
+                    source = _coerce(source, str)
+                    if source.lower() in (u'none', u'oblivion.esm'): continue
+                    source = GPath(source)
+                    eid = _coerce(eid, str, AllowNone=True)
+                    fidMod = GPath(_coerce(fidMod, str))
+                    if fidMod.s.lower() == u'none': continue
+                    fidObject = _coerce(fidObject[2:], int, 16)
+                    if fidObject is None: continue
+                    fid = FormID(aliases.get(fidMod,fidMod),fidObject)
+                    offset = _coerce(offset, int)
+                    calcMin = _coerce(calcMin, int)
+                    calcMax = _coerce(calcMax, int)
+                fid_levels = mod_fid_levels.setdefault(source, {})
+                fid_levels[fid] = (eid, 1, offset, calcMin, calcMax)
 
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
@@ -13389,28 +13385,27 @@ class EditorIds:
         """Imports eids from specified text file."""
         type_id_eid = self.type_id_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        reValidEid = re.compile('^[a-zA-Z0-9]+$')
-        reGoodEid = re.compile('^[a-zA-Z]')
-        for fields in ins:
-            if len(fields) < 4 or fields[2][:2] != '0x': continue
-            group,mod,objectIndex,eid = fields[:4]
-            group = _coerce(group,str)
-            mod = GPath(_coerce(mod,str))
-            longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid,str, AllowNone=True)
-            if not reValidEid.match(eid):
-                if badEidsList is not None:
-                    badEidsList.append(eid)
-                continue
-            if questionableEidsSet is not None and not reGoodEid.match(eid):
-                questionableEidsSet.add(eid)
-            id_eid = type_id_eid.setdefault(group, {})
-            id_eid[longid] = eid
-            #--Explicit old to new def? (Used for script updating.)
-            if len(fields) > 4:
-                self.old_new[_coerce(fields[4], str).lower()] = eid
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            reValidEid = re.compile('^[a-zA-Z0-9]+$')
+            reGoodEid = re.compile('^[a-zA-Z]')
+            for fields in ins:
+                if len(fields) < 4 or fields[2][:2] != '0x': continue
+                group,mod,objectIndex,eid = fields[:4]
+                group = _coerce(group,str)
+                mod = GPath(_coerce(mod,str))
+                longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                eid = _coerce(eid,str, AllowNone=True)
+                if not reValidEid.match(eid):
+                    if badEidsList is not None:
+                        badEidsList.append(eid)
+                    continue
+                if questionableEidsSet is not None and not reGoodEid.match(eid):
+                    questionableEidsSet.add(eid)
+                id_eid = type_id_eid.setdefault(group, {})
+                id_eid[longid] = eid
+                #--Explicit old to new def? (Used for script updating.)
+                if len(fields) > 4:
+                    self.old_new[_coerce(fields[4], str).lower()] = eid
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -13518,29 +13513,28 @@ class CBash_EditorIds:
         """Imports eids from specified text file."""
         group_fid_eid = self.group_fid_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        reValidEid = re.compile('^[a-zA-Z0-9]+$')
-        reGoodEid = re.compile('^[a-zA-Z]')
-        for fields in ins:
-            if len(fields) < 4 or fields[2][:2] != '0x': continue
-            group,mod,objectIndex,eid = fields[:4]
-            group = _coerce(group,str)[:4]
-            if group not in validTypes: continue
-            mod = GPath(_coerce(mod,str))
-            longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid,str, AllowNone=True)
-            if not reValidEid.match(eid):
-                if badEidsList is not None:
-                    badEidsList.append(eid)
-                continue
-            if questionableEidsSet is not None and not reGoodEid.match(eid):
-                questionableEidsSet.add(eid)
-            fid_eid = group_fid_eid.setdefault(group, {})
-            fid_eid[longid] = eid
-            #--Explicit old to new def? (Used for script updating.)
-            if len(fields) > 4:
-                self.old_new[_coerce(fields[4], str).lower()] = eid
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            reValidEid = re.compile('^[a-zA-Z0-9]+$')
+            reGoodEid = re.compile('^[a-zA-Z]')
+            for fields in ins:
+                if len(fields) < 4 or fields[2][:2] != '0x': continue
+                group,mod,objectIndex,eid = fields[:4]
+                group = _coerce(group,str)[:4]
+                if group not in validTypes: continue
+                mod = GPath(_coerce(mod,str))
+                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                eid = _coerce(eid,str, AllowNone=True)
+                if not reValidEid.match(eid):
+                    if badEidsList is not None:
+                        badEidsList.append(eid)
+                    continue
+                if questionableEidsSet is not None and not reGoodEid.match(eid):
+                    questionableEidsSet.add(eid)
+                fid_eid = group_fid_eid.setdefault(group, {})
+                fid_eid[longid] = eid
+                #--Explicit old to new def? (Used for script updating.)
+                if len(fields) > 4:
+                    self.old_new[_coerce(fields[4], str).lower()] = eid
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -13601,25 +13595,24 @@ class FactionRelations:
         """Imports faction relations from specified text file."""
         id_relations,id_eid = self.id_relations, self.id_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 7 or fields[2][:2] != '0x': continue
-            med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-            mmod = _coerce(mmod, str)
-            omod = _coerce(omod, str)
-            mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
-            oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
-            disp = _coerce(disp, int)
-            relations = id_relations.get(mid)
-            if relations is None:
-                relations = id_relations[mid] = []
-            for index,entry in enumerate(relations):
-                if entry[0] == oid:
-                    relations[index] = (oid,disp)
-                    break
-            else:
-                relations.append((oid,disp))
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 7 or fields[2][:2] != '0x': continue
+                med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
+                mmod = _coerce(mmod, str)
+                omod = _coerce(omod, str)
+                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
+                oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
+                disp = _coerce(disp, int)
+                relations = id_relations.get(mid)
+                if relations is None:
+                    relations = id_relations[mid] = []
+                for index,entry in enumerate(relations):
+                    if entry[0] == oid:
+                        relations[index] = (oid,disp)
+                        break
+                else:
+                    relations.append((oid,disp))
 
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
@@ -13705,18 +13698,17 @@ class CBash_FactionRelations:
         """Imports faction relations from specified text file."""
         fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 7 or fields[2][:2] != '0x': continue
-            med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-            mmod = _coerce(mmod, str)
-            omod = _coerce(omod, str)
-            mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
-            oid = FormID(GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
-            disp = _coerce(disp, int)
-            faction_mod = fid_faction_mod.setdefault(mid,{})
-            faction_mod[oid] = disp
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 7 or fields[2][:2] != '0x': continue
+                med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
+                mmod = _coerce(mmod, str)
+                omod = _coerce(omod, str)
+                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
+                oid = FormID(GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
+                disp = _coerce(disp, int)
+                faction_mod = fid_faction_mod.setdefault(mid,{})
+                faction_mod[oid] = disp
 
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
@@ -13779,22 +13771,21 @@ class FidReplacer:
         """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        for fields in ins:
-            if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
-            oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-            oldMod = _coerce(oldMod, str)
-            oldEid = _coerce(oldEid, str, AllowNone=True)
-            newEid = _coerce(newEid, str, AllowNone=True)
-            newMod = _coerce(newMod, str)
-            oldMod,newMod = map(GPath,(oldMod,newMod))
-            oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-            newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
-            old_new[oldId] = newId
-            old_eid[oldId] = oldEid
-            new_eid[newId] = newEid
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            pack,unpack = struct.pack,struct.unpack
+            for fields in ins:
+                if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
+                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+                oldMod = _coerce(oldMod, str)
+                oldEid = _coerce(oldEid, str, AllowNone=True)
+                newEid = _coerce(newEid, str, AllowNone=True)
+                newMod = _coerce(newMod, str)
+                oldMod,newMod = map(GPath,(oldMod,newMod))
+                oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
+                newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
+                old_new[oldId] = newId
+                old_eid[oldId] = oldEid
+                new_eid[newId] = newEid
 
     def updateMod(self, modInfo,changeBase=False):
         """Updates specified mod file."""
@@ -13851,22 +13842,21 @@ class CBash_FidReplacer:
         """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        for fields in ins:
-            if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
-            oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-            oldMod = _coerce(oldMod, str)
-            oldEid = _coerce(oldEid, str)
-            newEid = _coerce(newEid, str, AllowNone=True)
-            newMod = _coerce(newMod, str, AllowNone=True)
-            oldMod,newMod = map(GPath,(oldMod,newMod))
-            oldId = FormID(GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-            newId = FormID(GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
-            old_new[oldId] = newId
-            old_eid[oldId] = oldEid
-            new_eid[newId] = newEid
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            pack,unpack = struct.pack,struct.unpack
+            for fields in ins:
+                if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
+                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+                oldMod = _coerce(oldMod, str)
+                oldEid = _coerce(oldEid, str)
+                newEid = _coerce(newEid, str, AllowNone=True)
+                newMod = _coerce(newMod, str, AllowNone=True)
+                oldMod,newMod = map(GPath,(oldMod,newMod))
+                oldId = FormID(GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
+                newId = FormID(GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
+                old_new[oldId] = newId
+                old_eid[oldId] = oldEid
+                new_eid[newId] = newEid
 
     def updateMod(self, modInfo,changeBase=False):
         """Updates specified mod file."""
@@ -13954,20 +13944,19 @@ class FullNames:
         textPath = GPath(textPath)
         type_id_name = self.type_id_name
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 5 or fields[2][:2] != '0x': continue
-            group,mod,objectIndex,eid,full = fields[:5]
-            group = _coerce(group, str)
-            mod = GPath(_coerce(mod, str))
-            longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid, str, AllowNone=True)
-            full = _coerce(full, str, AllowNone=True)
-            if group in type_id_name:
-                type_id_name[group][longid] = (eid,full)
-            else:
-                type_id_name[group] = {longid:(eid,full)}
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 5 or fields[2][:2] != '0x': continue
+                group,mod,objectIndex,eid,full = fields[:5]
+                group = _coerce(group, str)
+                mod = GPath(_coerce(mod, str))
+                longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                if group in type_id_name:
+                    type_id_name[group][longid] = (eid,full)
+                else:
+                    type_id_name[group] = {longid:(eid,full)}
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
@@ -14045,17 +14034,16 @@ class CBash_FullNames:
         textPath = GPath(textPath)
         group_fid_name = self.group_fid_name
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 5 or fields[2][:2] != '0x': continue
-            group,mod,objectIndex,eid,full = fields[:5]
-            group = _coerce(group, str)
-            mod = GPath(_coerce(mod, str))
-            longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-            eid = _coerce(eid, str, AllowNone=True)
-            full = _coerce(full, str, AllowNone=True)
-            group_fid_name.setdefault(group, {})[longid] = (eid,full)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 5 or fields[2][:2] != '0x': continue
+                group,mod,objectIndex,eid,full = fields[:5]
+                group = _coerce(group, str)
+                mod = GPath(_coerce(mod, str))
+                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                group_fid_name.setdefault(group, {})[longid] = (eid,full)
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
@@ -14161,27 +14149,26 @@ class CBash_MapMarkers:
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
         fid_markerdata,aliases,markerTypeName_Number = self.fid_markerdata,self.aliases,self.markerTypeName_Number
-        ins = bolt.CsvReader(GPath(textPath))
-        for fields in ins:
-            if len(fields) < 13 or fields[1][:2] != '0x': continue
-            mod,objectIndex,eid,markerName,_markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fields[:13]
-            mod = GPath(_coerce(mod, str))
-            longid = FormID(aliases.get(mod,mod),_coerce(objectIndex, int, 16))
-            eid = _coerce(eid, str, AllowNone=True)
-            markerName = _coerce(markerName, str, AllowNone=True)
-            markerType = _coerce(_markerType, int)
-            if markerType is None: #coercion failed
-                markerType = markerTypeName_Number.get(_markerType.lower(), 0)
-            IsVisible = _coerce(IsVisible, bool)
-            IsCanTravelTo = _coerce(IsCanTravelTo, bool)
-            posX = _coerce(posX, float)
-            posY = _coerce(posY, float)
-            posZ = _coerce(posZ, float)
-            rotX = _coerce(rotX, float)
-            rotY = _coerce(rotY, float)
-            rotZ = _coerce(rotZ, float)
-            fid_markerdata[longid] = [eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ]
-        ins.close()
+        with bolt.CsvReader(GPath(textPath)) as ins:
+            for fields in ins:
+                if len(fields) < 13 or fields[1][:2] != '0x': continue
+                mod,objectIndex,eid,markerName,_markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fields[:13]
+                mod = GPath(_coerce(mod, str))
+                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex, int, 16))
+                eid = _coerce(eid, str, AllowNone=True)
+                markerName = _coerce(markerName, str, AllowNone=True)
+                markerType = _coerce(_markerType, int)
+                if markerType is None: #coercion failed
+                    markerType = markerTypeName_Number.get(_markerType.lower(), 0)
+                IsVisible = _coerce(IsVisible, bool)
+                IsCanTravelTo = _coerce(IsCanTravelTo, bool)
+                posX = _coerce(posX, float)
+                posY = _coerce(posY, float)
+                posZ = _coerce(posZ, float)
+                rotX = _coerce(rotX, float)
+                rotY = _coerce(rotY, float)
+                rotZ = _coerce(rotZ, float)
+                fid_markerdata[longid] = [eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ]
 
     def writeToText(self,textPath):
         """Exports markers to specified text file."""
@@ -14429,26 +14416,25 @@ class SigilStoneDetails(UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats, self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 12 or fields[1][:2] != '0x': continue
-            mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
-            mmod = _coerce(mmod, str)
-            mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-            smod = _coerce(smod, str, AllowNone=True)
-            if smod is None: sid = None
-            else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-            eid = _coerce(eid, str, AllowNone=True)
-            full = _coerce(full, str, AllowNone=True)
-            modPath = _coerce(modPath, str, AllowNone=True)
-            modb = _coerce(modb, float)
-            iconPath = _coerce(iconPath, str, AllowNone=True)
-            uses = _coerce(uses, int)
-            value = _coerce(value, int)
-            weight = _coerce(weight, float)
-            effects = self.readEffects(fields[12:], aliases, False)
-            fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 12 or fields[1][:2] != '0x': continue
+                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
+                mmod = _coerce(mmod, str)
+                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                smod = _coerce(smod, str, AllowNone=True)
+                if smod is None: sid = None
+                else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                modPath = _coerce(modPath, str, AllowNone=True)
+                modb = _coerce(modb, float)
+                iconPath = _coerce(iconPath, str, AllowNone=True)
+                uses = _coerce(uses, int)
+                value = _coerce(value, int)
+                weight = _coerce(weight, float)
+                effects = self.readEffects(fields[12:], aliases, False)
+                fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
@@ -14518,26 +14504,25 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats, self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 12 or fields[1][:2] != '0x': continue
-            mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
-            mmod = _coerce(mmod, str)
-            mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-            smod = _coerce(smod, str, AllowNone=True)
-            if smod is None: sid = FormID(None,None)
-            else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-            eid = _coerce(eid, str, AllowNone=True)
-            full = _coerce(full, str, AllowNone=True)
-            modPath = _coerce(modPath, str, AllowNone=True)
-            modb = _coerce(modb, float)
-            iconPath = _coerce(iconPath, str, AllowNone=True)
-            uses = _coerce(uses, int)
-            value = _coerce(value, int)
-            weight = _coerce(weight, float)
-            effects = self.readEffects(fields[12:], aliases, True)
-            fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 12 or fields[1][:2] != '0x': continue
+                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
+                mmod = _coerce(mmod, str)
+                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                smod = _coerce(smod, str, AllowNone=True)
+                if smod is None: sid = FormID(None,None)
+                else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                modPath = _coerce(modPath, str, AllowNone=True)
+                modb = _coerce(modb, float)
+                iconPath = _coerce(iconPath, str, AllowNone=True)
+                uses = _coerce(uses, int)
+                value = _coerce(value, int)
+                weight = _coerce(weight, float)
+                effects = self.readEffects(fields[12:], aliases, True)
+                fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses, value, weight, effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
@@ -14657,19 +14642,18 @@ class ItemStats:
         """Reads stats from specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        attr_type = self.attr_type
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            group,modName,objectStr = fields[0:3]
-            modName = GPath(_coerce(modName,str))
-            longid = (GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
-            attrs = self.class_attrs[group]
-            attr_value = {}
-            for attr, value in zip(attrs, fields[3:3+len(attrs)]):
-                attr_value[attr] = attr_type[attr](value)
-            class_fid_attr_value[group].setdefault(longid, {}).update(attr_value)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            attr_type = self.attr_type
+            for fields in ins:
+                if len(fields) < 3 or fields[2][:2] != u'0x': continue
+                group,modName,objectStr = fields[0:3]
+                modName = GPath(_coerce(modName,str))
+                longid = (GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+                attrs = self.class_attrs[group]
+                attr_value = {}
+                for attr, value in zip(attrs, fields[3:3+len(attrs)]):
+                    attr_value[attr] = attr_type[attr](value)
+                class_fid_attr_value[group].setdefault(longid, {}).update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -14858,19 +14842,18 @@ class CBash_ItemStats:
         """Reads stats from specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        attr_type = self.attr_type
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            group,modName,objectStr = fields[0:3]
-            modName = GPath(_coerce(modName,str))
-            longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
-            attrs = self.class_attrs[group]
-            attr_value = {}
-            for attr, value in zip(attrs, fields[3:3+len(attrs)]):
-                attr_value[attr] = attr_type[attr](value)
-            class_fid_attr_value[group].setdefault(longid, {}).update(attr_value)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            attr_type = self.attr_type
+            for fields in ins:
+                if len(fields) < 3 or fields[2][:2] != '0x': continue
+                group,modName,objectStr = fields[0:3]
+                modName = GPath(_coerce(modName,str))
+                longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+                attrs = self.class_attrs[group]
+                attr_value = {}
+                for attr, value in zip(attrs, fields[3:3+len(attrs)]):
+                    attr_value[attr] = attr_type[attr](value)
+                class_fid_attr_value[group].setdefault(longid, {}).update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -15011,18 +14994,17 @@ class ItemPrices:
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_stats, aliases = self.class_fid_stats, self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 6 or not fields[1].startswith('0x'): continue
-            mmod,mobj,value,eid,name,group = fields[:6]
-            mmod = GPath(_coerce(mmod, str))
-            longid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
-            value = _coerce(value, int)
-            eid = _coerce(eid, str, AllowNone=True)
-            name = _coerce(name, str, AllowNone=True)
-            group = _coerce(group, str)
-            class_fid_stats[group][longid] = [value,eid,name]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or not fields[1].startswith(u'0x'): continue
+                mmod,mobj,value,eid,name,group = fields[:6]
+                mmod = GPath(_coerce(mmod, str))
+                longid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                value = _coerce(value, int)
+                eid = _coerce(eid, str, AllowNone=True)
+                name = _coerce(name, str, AllowNone=True)
+                group = _coerce(group, str)
+                class_fid_stats[group][longid] = [value,eid,name]
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -15086,18 +15068,17 @@ class CBash_ItemPrices:
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_stats, aliases = self.class_fid_stats, self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 6 or not fields[1].startswith('0x'): continue
-            mmod,mobj,value,eid,name,group = fields[:6]
-            mmod = GPath(_coerce(mmod, str))
-            longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
-            value = _coerce(value, int)
-            eid = _coerce(eid, str, AllowNone=True)
-            name = _coerce(name, str, AllowNone=True)
-            group = _coerce(group, str)
-            class_fid_stats[group][longid] = [value,eid,name]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or not fields[1].startswith(u'0x'): continue
+                mmod,mobj,value,eid,name,group = fields[:6]
+                mmod = GPath(_coerce(mmod, str))
+                longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                value = _coerce(value, int)
+                eid = _coerce(eid, str, AllowNone=True)
+                name = _coerce(name, str, AllowNone=True)
+                group = _coerce(group, str)
+                class_fid_stats[group][longid] = [value,eid,name]
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -15193,151 +15174,149 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
         """Reads stats from specified text file."""
         alch, ammo, appa, armor, books, clothing, ingredients, keys, lights, misc, sigilstones, soulgems, weapons = [self.type_stats[type] for type in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
         aliases = self.aliases
-        ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            type,modName,objectStr,eid = fields[0:4]
-            modName = GPath(modName)
-            longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
-            if type == 'ALCH':
-                alch[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value)
-                    zip((str,sfloat,int,str),fields[4:8]))
-            elif type == 'AMMO':
-                ammo[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, damage, speed, enchantPoints)
-                    zip((str,sfloat,int,int,sfloat,int,str),fields[4:11]))
-            elif type == 'APPA':
-                appa[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight,value,quantity)
-                    zip((str,sfloat,int,sfloat,str),fields[4:9]))
-            elif type == 'ARMO':
-                armor[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, health, strength)
-                    zip((str,sfloat,int,int,int,str,str),fields[4:10]))
-            elif type == 'BOOK':
-               books[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, echantPoints)
-                    zip((str,sfloat,int,int,str),fields[4:9]))
-            elif type == 'CLOT':
-                clothing[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, echantPoints)
-                    zip((str,sfloat,int,int,str,str),fields[4:10]))
-            elif type == 'INGR':
-                ingredients[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value)
-                    zip((str,sfloat,int,str),fields[4:8]))
-            elif type == 'KEYM':
-                keys[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value)
-                    zip((str,sfloat,int,str),fields[4:8]))
-            elif type == 'LIGH':
-               lights[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, duration)
-                    zip((str,sfloat,int,int,str),fields[4:9]))
-            elif type == 'MISC':
-                misc[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value)
-                    zip((str,sfloat,int,str),fields[4:8]))
-            elif type == 'SGST':
-               sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, uses)
-                    zip((str,sfloat,int,int,str),fields[4:9]))
-            elif type == 'SLGM':
-                soulgems[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value)
-                    zip((str,sfloat,int,str),fields[4:8]))
-            elif type == 'WEAP':
-                weapons[longid] = (eid,) + tuple(func(field) for func,field in
-                    #--(weight, value, health, damage, speed, reach, epoints)
-                    zip((str,sfloat,int,int,int,sfloat,sfloat,int,str),fields[4:13]))
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            pack,unpack = struct.pack,struct.unpack
+            sfloat = lambda a: unpack('f',pack('f',float(a)))[0] #--Force standard precision
+            for fields in ins:
+                if len(fields) < 3 or fields[2][:2] != '0x': continue
+                type,modName,objectStr,eid = fields[0:4]
+                modName = GPath(modName)
+                longid = (GPath(aliases.get(modName,modName)),int(objectStr[2:],16))
+                if type == 'ALCH':
+                    alch[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value)
+                        zip((str,sfloat,int,str),fields[4:8]))
+                elif type == 'AMMO':
+                    ammo[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, damage, speed, enchantPoints)
+                        zip((str,sfloat,int,int,sfloat,int,str),fields[4:11]))
+                elif type == 'APPA':
+                    appa[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight,value,quantity)
+                        zip((str,sfloat,int,sfloat,str),fields[4:9]))
+                elif type == 'ARMO':
+                    armor[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, health, strength)
+                        zip((str,sfloat,int,int,int,str,str),fields[4:10]))
+                elif type == 'BOOK':
+                   books[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, echantPoints)
+                        zip((str,sfloat,int,int,str),fields[4:9]))
+                elif type == 'CLOT':
+                    clothing[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, echantPoints)
+                        zip((str,sfloat,int,int,str,str),fields[4:10]))
+                elif type == 'INGR':
+                    ingredients[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value)
+                        zip((str,sfloat,int,str),fields[4:8]))
+                elif type == 'KEYM':
+                    keys[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value)
+                        zip((str,sfloat,int,str),fields[4:8]))
+                elif type == 'LIGH':
+                   lights[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, duration)
+                        zip((str,sfloat,int,int,str),fields[4:9]))
+                elif type == 'MISC':
+                    misc[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value)
+                        zip((str,sfloat,int,str),fields[4:8]))
+                elif type == 'SGST':
+                   sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, uses)
+                        zip((str,sfloat,int,int,str),fields[4:9]))
+                elif type == 'SLGM':
+                    soulgems[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value)
+                        zip((str,sfloat,int,str),fields[4:8]))
+                elif type == 'WEAP':
+                    weapons[longid] = (eid,) + tuple(func(field) for func,field in
+                        #--(weight, value, health, damage, speed, reach, epoints)
+                        zip((str,sfloat,int,int,int,sfloat,sfloat,int,str),fields[4:13]))
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        out = textPath.open('w')
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a: stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-        for type,format,header in (
-            #--Alch
-            ('ALCH', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Ammo
-            ('AMMO', bolt.csvFormat('ssfiifiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Apparatus
-            ('APPA', bolt.csvFormat('ssfifss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Quantity'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Armor
-            ('ARMO', bolt.csvFormat('ssfiiissssss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),
-                _('AR'),_('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
-                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
-            #Books
-            ('BOOK', bolt.csvFormat('ssfiiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Clothing
-            ('CLOT', bolt.csvFormat('ssfiissssss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('EPoints'),
-                _('Male Icon Path'),_('Female Icon Path'),_('Male Model Path'),
-                _('Female Model Path'),_('Male World Model Path'),_('Female World Model Path'))) + '"\n')),
-            #Ingredients
-            ('INGR', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Keys
-            ('KEYM', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Lights
-            ('LIGH', bolt.csvFormat('ssfiiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Duration'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Misc
-            ('MISC', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Sigilstones
-            ('SGST', bolt.csvFormat('ssfiiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Uses'),_('Icon Path'),_('Model'))) + '"\n')),
-            #Soulgems
-            ('SLGM', bolt.csvFormat('ssfiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Icon Path'),_('Model'))) + '"\n')),
-            #--Weapons
-            ('WEAP', bolt.csvFormat('ssfiiiffiss')+'\n',
-                ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                _('Editor Id'),_('Name'),_('Weight'),_('Value'),_('Health'),_('Damage'),
-                _('Speed'),_('Reach'),_('EPoints'),_('Icon Path'),_('Model'))) + '"\n')),
-            ):
-            stats = self.type_stats[type]
-            if not stats: continue
-            out.write('\n'+header)
-            for longid in getSortedIds(stats):
-                out.write('"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
-                tempstats = list(stats[longid])
-                if type == 'ARMO' or type == 'CLOT':
-                    tempstats.append(self.Mmodel.get(longid, 'NONE'))
-                    tempstats.append(self.Fmodel.get(longid, 'NONE'))
-                    tempstats.append(self.MGndmodel.get(longid, 'NONE'))
-                    tempstats.append(self.FGndmodel.get(longid, 'NONE'))
-                else:
-                    tempstats.append(self.model.get(longid, 'NONE'))
-                finalstats = tuple(tempstats)
-                out.write(format % finalstats)
-        out.close()
+        with textPath.open('w',encoding='utf8') as out:
+            for type,format,header in (
+                #--Alch
+                ('ALCH', bolt.csvFormat(u'ssfiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #Ammo
+                ('AMMO', bolt.csvFormat(u'ssfiifiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Damage'),_(u'Speed'),_(u'EPoints'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #--Apparatus
+                ('APPA', bolt.csvFormat(u'ssfifss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Quantity'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #--Armor
+                ('ARMO', bolt.csvFormat(u'ssfiiissssss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Health'),
+                    _(u'AR'),_(u'Male Icon Path'),_(u'Female Icon Path'),_(u'Male Model Path'),
+                    _(u'Female Model Path'),_(u'Male World Model Path'),_(u'Female World Model Path'))) + u'"\n')),
+                #Books
+                ('BOOK', bolt.csvFormat(u'ssfiiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'EPoints'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #Clothing
+                ('CLOT', bolt.csvFormat(u'ssfiissssss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'EPoints'),
+                    _(u'Male Icon Path'),_(u'Female Icon Path'),_(u'Male Model Path'),
+                    _(u'Female Model Path'),_(u'Male World Model Path'),_(u'Female World Model Path'))) + u'"\n')),
+                #Ingredients
+                ('INGR', bolt.csvFormat(u'ssfiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #--Keys
+                ('KEYM', bolt.csvFormat(u'ssfiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #Lights
+                ('LIGH', bolt.csvFormat(u'ssfiiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Duration'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #--Misc
+                ('MISC', bolt.csvFormat(u'ssfiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #Sigilstones
+                ('SGST', bolt.csvFormat(u'ssfiiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Uses'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #Soulgems
+                ('SLGM', bolt.csvFormat(u'ssfiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                #--Weapons
+                ('WEAP', bolt.csvFormat(u'ssfiiiffiss')+u'\n',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Name'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
+                    _(u'Speed'),_(u'Reach'),_(u'EPoints'),_(u'Icon Path'),_(u'Model'))) + u'"\n')),
+                ):
+                stats = self.type_stats[type]
+                if not stats: continue
+                out.write(u'\n'+header)
+                for longid in getSortedIds(stats):
+                    out.write(u'"%s","%s","0x%06X",' % (type,longid[0].s,longid[1]))
+                    tempstats = list(stats[longid])
+                    if type == 'ARMO' or type == 'CLOT':
+                        tempstats.append(self.Mmodel.get(longid, u'NONE'))
+                        tempstats.append(self.Fmodel.get(longid, u'NONE'))
+                        tempstats.append(self.MGndmodel.get(longid, u'NONE'))
+                        tempstats.append(self.FGndmodel.get(longid, u'NONE'))
+                    else:
+                        tempstats.append(self.model.get(longid, u'NONE'))
+                    finalstats = tuple(tempstats)
+                    out.write(format % finalstats)
 
 class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
@@ -15461,28 +15440,27 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_attr_value, aliases = self.class_fid_attr_value, self.aliases
-        ins = bolt.CsvReader(textPath)
-        attr_type = self.attr_type
-        for fields in ins:
-            if len(fields) < 3 or fields[2][:2] != '0x': continue
-            group,modName,objectStr = fields[:3]
-            fields = fields[3:]
-            modName = GPath(_coerce(modName,str))
-            longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
-            attrs = self.class_attrs[group]
-            if group == 'ALCH':
-                pass
-            elif group == 'AMMO':
-                pass
-            elif group == 'SGST':
-                class_fid_attr_value[group][longid] = readSGSTFields(fields)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            attr_type = self.attr_type
+            for fields in ins:
+                if len(fields) < 3 or fields[2][:2] != u'0x': continue
+                group,modName,objectStr = fields[:3]
+                fields = fields[3:]
+                modName = GPath(_coerce(modName,str))
+                longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+                attrs = self.class_attrs[group]
+                if group == 'ALCH':
+                    pass
+                elif group == 'AMMO':
+                    pass
+                elif group == 'SGST':
+                    class_fid_attr_value[group][longid] = readSGSTFields(fields)
 
     def writeToText(self,textPath):
         return
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
-        with textPath.open('w') as out:
+        with textPath.open('w',encoding='utf8') as out:
             def getSortedIds(fid_attr_value):
                 longids = fid_attr_value.keys()
                 longids.sort(key=lambda a: fid_attr_value[a]['eid'])
@@ -15490,7 +15468,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
                 return longids
             def write(out, attrs, values):
                 attr_type = self.attr_type
-                csvFormat = ''
+                csvFormat = u''
                 sstr = self.sstr
                 sint = self.sint
                 snoneint = self.snoneint
@@ -15498,73 +15476,73 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
                 for index, attr in enumerate(attrs):
                     stype = attr_type[attr]
                     values[index] = stype(values[index]) #sanitize output
-                    if values[index] is None: csvFormat += ',"{0[%d]}"' % index
-                    elif stype is sstr: csvFormat += ',"{0[%d]}"' % index
-                    elif stype is sint or stype is snoneint: csvFormat += ',"{0[%d]:d}"' % index
-                    elif stype is sfloat: csvFormat += ',"{0[%d]:f}"' % index
+                    if values[index] is None: csvFormat += u',"{0[%d]}"' % index
+                    elif stype is sstr: csvFormat += u',"{0[%d]}"' % index
+                    elif stype is sint or stype is snoneint: csvFormat += u',"{0[%d]:d}"' % index
+                    elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
-                out.write(csvFormat.format(values) + '\n')
+                out.write(csvFormat.format(values) + u'\n')
             for group,header in (
                 #--Alch
                 ('ALCH',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #Ammo
                 ('AMMO',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('Damage'),_('Speed'),_('EPoints'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Damage'),_(u'Speed'),_(u'EPoints'))) + u'"\n')),
                 #--Apparatus
                 ('APPA',
-                    ('"' + '","'.join((_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('Quality'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Quality'))) + u'"\n')),
                 #--Armor
                 ('ARMO',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('Health'),_('AR'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'))) + u'"\n')),
                 #Books
                 ('BOOK',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('EPoints'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
                 #Clothing
                 ('CLOT',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('EPoints'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
                 #Ingredients
                 ('INGR',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #--Keys
                 ('KEYM',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #Lights
                 ('LIGH',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('Duration'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
                 #--Misc
                 ('MISC',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #Sigilstones
                 ('SGST',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('Uses'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Uses'))) + u'"\n')),
                 #Soulgems
                 ('SLGM',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #--Weapons
                 ('WEAP',
-                    ('"' + '","'.join((_('Type'),_('Mod Name'),_('ObjectIndex'),
-                    _('Editor Id'),_('Weight'),_('Value'),_('Health'),_('Damage'),
-                    _('Speed'),_('Reach'),_('EPoints'))) + '"\n')),
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
+                    _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
                 ):
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
                 out.write(header)
                 for longid in getSortedIds(fid_attr_value):
-                    out.write('"%s","%s","0x%06X",' % (group,str(longid[0]),longid[1]))
+                    out.write(u'"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
 
@@ -15630,30 +15608,25 @@ class ScriptText:
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         eid_data, aliases = self.eid_data, self.aliases
+        textPath = GPath(textPath)
         with balt.Progress(_("Import Scripts")) as progress:
-            for root, dirs, files in os.walk(textPath):
+            for root, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
                 for name in files:
                     z += 1
-                    nPath = GPath(name)
-                    if(nPath.cext != inisettings['ScriptFileExt']):
-                        progress(((1/y)*z),_("Skipping file %s.") % (name))
+                    if(name.cext != inisettings['ScriptFileExt']):
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
-                    progress(((1/y)*z),_("Reading file %s.") % (name))
-                    ## Python 2.6+ syntax disabled for Python 2.5 compatibility
-                    ## with open(os.path.join(root, name),"r") as text:
-                    try:
-                        text = open(os.path.join(root, name),"r")
+                    progress(((1/y)*z),_(u"Reading file %s.") % name.s)
+                    with root.join(name).open('r',encoding='utf8') as text:
                         lines = text.readlines()
-                    finally:
-                        text.close()
                     try:
                         modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     except:
-                        deprint(_("%s has malformed script header lines - was skipped") % name)
+                        deprint(_(u"%s has malformed script header lines - was skipped") % name)
                         continue
-                    scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs reads\writes EOLs in \r\n format.
+                    scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs reads\writes EOLs in \r\n format.
                     eid_data[eid] = (scriptText, FormID)
         if eid_data: return True
         return False
@@ -15667,34 +15640,34 @@ class ScriptText:
         z = 0
         num = 0
         r = len(deprefix)
-        with balt.Progress(_("Export Scripts")) as progress:
+        with balt.Progress(_(u"Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
                 if skipcomments:
-                    tmp = ''
-                    for line in text.split('\n'):
-                        pos = line.find(';')
+                    tmp = u''
+                    for line in text.split(u'\n'):
+                        pos = line.find(u';')
                         if pos == -1:
-                                tmp += line + '\n'
+                                tmp += line + u'\n'
                         elif pos == 0:
                             continue
                         else:
                             if line[:pos].isspace(): continue
-                            tmp += line[:pos] + '\n'
+                            tmp += line[:pos] + u'\n'
                     text = tmp
                 z += 1
-                progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
+                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % (eid))
                 if x == 0 or skip.lower() != eid[:x].lower():
                     fileName = eid
                     if r >= 1 and deprefix == fileName[:r]:
                         fileName = fileName[r:]
                     num += 1
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
-                    with outpath.open('wb') as out:
-                        formid = u'0x%06X' %(longid[1])
-                        out.write(';'+Encode(longid[0].s,'mbcs')+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
+                    with outpath.open('wb',encoding='utf8') as out:
+                        formid = u'0x%06X' % longid[1]
+                        out.write(u';'+longid[0].s+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
                     exportedScripts.append(eid)
-        return (_('Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
+        return (_(u'Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
 
 class CBash_ScriptText:
     """import & export functions for script text."""
@@ -15757,26 +15730,21 @@ class CBash_ScriptText:
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         eid_data, aliases = self.eid_data, self.aliases
-        with balt.Progress(_("Import Scripts")) as progress:
-            for root, dirs, files in os.walk(textPath):
+        textPath = GPath(textPath)
+        with balt.Progress(_(u"Import Scripts")) as progress:
+            for root, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
                 for name in files:
                     z += 1
-                    nPath = GPath(name)
-                    if(nPath.cext != inisettings['ScriptFileExt']):
-                        progress(((1/y)*z),_("Skipping file %s.") % (name))
+                    if(name.cext != inisettings['ScriptFileExt']):
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
-                    progress(((1/y)*z),_("Reading file %s.") % (name))
-                    ## Python 2.6+ syntax disabled for Python 2.5 compatibility
-                    ## with open(os.path.join(root, name),"r") as text:
-                    try:
-                        text = open(os.path.join(root, name),"r")
+                    progress(((1/y)*z),_(u"Reading file %s.") % name.s)
+                    with root.join(name).open('r',encoding='utf8') as text:
                         lines = text.readlines()
-                    finally:
-                        text.close()
                     modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
-                    scriptText = ''.join(lines[3:]).replace('\n','\r\n') #because the cs writes it in \r\n format.
+                    scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs writes it in \r\n format.
                     eid_data[ISTRING(eid)] = (ISTRING(scriptText), formID) #script text is case insensitive
         if eid_data: return True
         return False
@@ -15790,44 +15758,32 @@ class CBash_ScriptText:
         z = 0
         num = 0
         r = len(deprefix)
-        with balt.Progress(_("Export Scripts")) as progress:
+        with balt.Progress(_(u"Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
                 if skipcomments:
-                    tmp = ''
-                    for line in text.split('\n'):
-                        pos = line.find(';')
+                    tmp = u''
+                    for line in text.split(u'\n'):
+                        pos = line.find(u';')
                         if pos == -1:
-                                tmp += line + '\n'
+                                tmp += line + u'\n'
                         elif pos == 0:
                             continue
                         else:
                             if line[:pos].isspace(): continue
-                            tmp += line[:pos] + '\n'
+                            tmp += line[:pos] + u'\n'
                     text = tmp
                 z += 1
-                progress((0.5+0.5/y*z),_("Exporting script %s.") % (eid))
+                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % eid)
                 if x == 0 or skip.lower() != eid[:x].lower():
                     fileName = eid
                     if r >= 1 and deprefix == fileName[:r]:
                         fileName = fileName[r:]
                     num += 1
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
-                    with outpath.open('wb') as out:
-                        formid = '0x%06X' %(longid[1])
-                        try:
-                            out.write(';'+Encode(str(longid[0]),'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
-                        except UnicodeDecodeError:
-                            try:
-                                out.write((';'.decode('cp1252')+str(longid[0]).decode('cp1252')+'\r\n;'.decode('cp1252')+formid.decode('cp1252')+'\r\n;'.decode('cp1252')+eid.decode('cp1252')+'\r\n'+text.decode('cp1252')).encode('cp1252'))
-                            except UnicodeDecodeError, err:
-                                print err
-                                print outpath
-                                print ';',str(longid[0]),'\r\n;',formid,'\r\n;',eid,'\r\n',text
-                            except UnicodeEncodeError, err:
-                                print err
-                                print outpath
-                                print ';',str(longid[0]),'\r\n;',formid,'\r\n;',eid,'\r\n',text
+                    with outpath.open('wb', encoding='utf8') as out:
+                        formid = u'0x%06X' % longid[1]
+                        out.write(';'+Encode(str(longid[0]),'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
                     exportedScripts.append(eid)
         return (_(u'Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
 
@@ -15933,10 +15889,9 @@ class SpellRecords(UsesEffectsMixin):
         """Imports stats from specified text file."""
         detailed,aliases,spellTypeName_Number,levelTypeName_Number = self.detailed,self.aliases,self.spellTypeName_Number,self.levelTypeName_Number
         fid_stats = self.fid_stats
-        ins = bolt.CsvReader(textPath)
-        try:
+        with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 8 or fields[2][:2] != '0x': continue
+                if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
                 fields = fields[8:]
                 group = _coerce(group, str)
@@ -15965,8 +15920,6 @@ class SpellRecords(UsesEffectsMixin):
 
                 effects = self.readEffects(fields, aliases, False)
                 fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
-        finally:
-            ins.close()
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
@@ -16011,21 +15964,21 @@ class CBash_SpellRecords(UsesEffectsMixin):
                                        'IsAreaEffectIgnoresLOS', 'IsScriptAlwaysApplies',
                                        'IsDisallowAbsorbReflect',
                                        'IsTouchExplodesWOTarget', 'effects_list')
-        self.spellTypeNumber_Name = {None : 'NONE',
-                                     0 : 'Spell',
-                                     1 : 'Disease',
-                                     2 : 'Power',
-                                     3 : 'LesserPower',
-                                     4 : 'Ability',
-                                     5 : 'Poison',}
+        self.spellTypeNumber_Name = {None : u'NONE',
+                                     0 : u'Spell',
+                                     1 : u'Disease',
+                                     2 : u'Power',
+                                     3 : u'LesserPower',
+                                     4 : u'Ability',
+                                     5 : u'Poison',}
         self.spellTypeName_Number = dict([(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if x is not None])
 
-        self.levelTypeNumber_Name = {None : 'NONE',
-                                     0 : 'Novice',
-                                     1 : 'Apprentice',
-                                     2 : 'Journeyman',
-                                     3 : 'Expert',
-                                     4 : 'Master',}
+        self.levelTypeNumber_Name = {None : u'NONE',
+                                     0 : u'Novice',
+                                     1 : u'Apprentice',
+                                     2 : u'Journeyman',
+                                     3 : u'Expert',
+                                     4 : u'Master',}
         self.levelTypeName_Number = dict([(y.lower(),x) for x,y in self.levelTypeNumber_Name.iteritems() if x is not None])
 
     def readFromMod(self,modInfo):
@@ -16065,10 +16018,9 @@ class CBash_SpellRecords(UsesEffectsMixin):
         """Imports stats from specified text file."""
         detailed,aliases,spellTypeName_Number,levelTypeName_Number = self.detailed,self.aliases,self.spellTypeName_Number,self.levelTypeName_Number
         fid_stats = self.fid_stats
-        ins = bolt.CsvReader(textPath)
-        try:
+        with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 8 or fields[2][:2] != '0x': continue
+                if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
                 fields = fields[8:]
                 group = _coerce(group, str)
@@ -16097,8 +16049,6 @@ class CBash_SpellRecords(UsesEffectsMixin):
 
                 effects = self.readEffects(fields, aliases, True)
                 fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
-        finally:
-            ins.close()
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
@@ -16126,7 +16076,7 @@ class CBash_SpellRecords(UsesEffectsMixin):
                     levelType = levelTypeNumber_Name.get(levelType,levelType)
                     spellType = spellTypeNumber_Name.get(spellType,spellType)
                     output = rowFormat % (u'SPEL',fid[0],fid[1],eid,name,cost,levelType,spellType)
-                output += '\n'
+                output += u'\n'
                 out.write(output)
 
 #------------------------------------------------------------------------------
@@ -16197,25 +16147,24 @@ class IngredientDetails(UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats, self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 11 or fields[1][:2] != '0x': continue
-            mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
-            mmod = _coerce(mmod, str)
-            mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-            smod = _coerce(smod, str, AllowNone=True)
-            if smod is None: sid = None
-            else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-            eid = _coerce(eid, str, AllowNone=True)
-            full = _coerce(full, str, AllowNone=True)
-            modPath = _coerce(modPath, str, AllowNone=True)
-            modb = _coerce(modb, float)
-            iconPath = _coerce(iconPath, str, AllowNone=True)
-            value = _coerce(value, int)
-            weight = _coerce(weight, float)
-            effects = self.readEffects(fields[11:], aliases, False)
-            fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 11 or fields[1][:2] != u'0x': continue
+                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
+                mmod = _coerce(mmod, str)
+                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                smod = _coerce(smod, str, AllowNone=True)
+                if smod is None: sid = None
+                else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                modPath = _coerce(modPath, str, AllowNone=True)
+                modb = _coerce(modb, float)
+                iconPath = _coerce(iconPath, str, AllowNone=True)
+                value = _coerce(value, int)
+                weight = _coerce(weight, float)
+                effects = self.readEffects(fields[11:], aliases, False)
+                fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
@@ -16284,25 +16233,24 @@ class CBash_IngredientDetails(UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats, self.aliases
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 11 or fields[1][:2] != '0x': continue
-            mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
-            mmod = _coerce(mmod, str)
-            mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-            smod = _coerce(smod, str, AllowNone=True)
-            if smod is None: sid = FormID(None,None)
-            else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-            eid = _coerce(eid, str, AllowNone=True)
-            full = _coerce(full, str, AllowNone=True)
-            modPath = _coerce(modPath, str, AllowNone=True)
-            modb = _coerce(modb, float)
-            iconPath = _coerce(iconPath, str, AllowNone=True)
-            value = _coerce(value, int)
-            weight = _coerce(weight, float)
-            effects = self.readEffects(fields[11:], aliases, True)
-            fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 11 or fields[1][:2] != u'0x': continue
+                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
+                mmod = _coerce(mmod, str)
+                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                smod = _coerce(smod, str, AllowNone=True)
+                if smod is None: sid = FormID(None,None)
+                else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                eid = _coerce(eid, str, AllowNone=True)
+                full = _coerce(full, str, AllowNone=True)
+                modPath = _coerce(modPath, str, AllowNone=True)
+                modb = _coerce(modb, float)
+                iconPath = _coerce(iconPath, str, AllowNone=True)
+                value = _coerce(value, int)
+                weight = _coerce(weight, float)
+                effects = self.readEffects(fields[11:], aliases, True)
+                fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
@@ -16347,7 +16295,7 @@ class ModDetails:
                 decomp = zlib.decompress(ins.read(size-4))
                 if len(decomp) != sizeCheck:
                     raise ModError(self.inName,
-                        _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
+                        u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
                 reader = ModReader(modInfo.name,StringIO.StringIO(decomp))
                 return (reader,sizeCheck)
         progress = progress or bolt.Progress()
@@ -16410,12 +16358,11 @@ class ModGroups:
         """Imports mod groups from specified text file."""
         textPath = GPath(textPath)
         mod_group = self.mod_group
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) >= 2 and reModExt.search(fields[0]):
-               mod,group = fields[:2]
-               mod_group[GPath(mod)] = group
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) >= 2 and reModExt.search(fields[0]):
+                   mod,group = fields[:2]
+                   mod_group[GPath(mod)] = group
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -16439,7 +16386,7 @@ class PCFaces:
             'skills','health','unused2','baseSpell','fatigue','iclass','factions','modifiers','spells')
         def __init__(self):
             self.masters = []
-            self.eid = self.pcName = 'generic'
+            self.eid = self.pcName = u'generic'
             self.fggs_p = self.fgts_p = '\x00'*4*50
             self.fgga_p = '\x00'*4*30
             self.unused2 = null2
@@ -16450,10 +16397,10 @@ class PCFaces:
             self.spells = []
 
         def getGenderName(self):
-            return self.gender and 'Female' or 'Male'
+            return self.gender and u'Female' or u'Male'
 
         def getRaceName(self):
-            return bush.raceNames.get(self.race,_('Unknown'))
+            return bush.raceNames.get(self.race,_(u'Unknown'))
 
         def convertRace(self,fromRace,toRace):
             """Converts face from one race to another while preserving structure, etc."""
@@ -16472,13 +16419,13 @@ class PCFaces:
         """Safely finds position of name within save ACHR data."""
         namePos = data.find(pcName)
         if namePos == -1:
-            raise SaveFileError(saveName,_('Failed to find pcName in PC ACHR record.'))
+            raise SaveFileError(saveName,u'Failed to find pcName in PC ACHR record.')
         namePos2 = data.find(pcName,namePos+1)
         if namePos2 != -1:
-            raise SaveFileError(saveName,_(
-                'Uncertain about position of face data, probably because '
-                'player character name is too short. Try renaming player '
-                'character in save game.'))
+            raise SaveFileError(saveName,
+                u'Uncertain about position of face data, probably because '
+                u'player character name is too short. Try renaming player '
+                u'character in save game.')
         return namePos
 
     # Save Get ----------------------------------------------------------------
@@ -16613,9 +16560,9 @@ class PCFaces:
                 saveFile.created[index] = npc
                 break
         else:
-            raise StateError(_("Record %08X not found in %s.") % (targetid,saveFile.fileInfo.name.s))
+            raise StateError(u"Record %08X not found in %s." % (targetid,saveFile.fileInfo.name.s))
         if npc.recType != 'NPC_':
-            raise StateError(_("Record %08X in %s is not an NPC.") % (targetid,saveFile.fileInfo.name.s))
+            raise StateError(u"Record %08X in %s is not an NPC." % (targetid,saveFile.fileInfo.name.s))
         #--Update masters
         for fid in (face.race, face.eye, face.hair):
             if not fid: continue
@@ -16839,16 +16786,16 @@ class PCFaces:
         #--Tes4
         tes4 = modFile.tes4
         if not tes4.author:
-            tes4.author = '[wb]'
+            tes4.author = u'[wb]'
         if not tes4.description:
-            tes4.description = Encode(_('Face dump from save game.'),'mbcs')
+            tes4.description = _(u'Face dump from save game.')
         if modInfos.masterName not in tes4.masters:
             tes4.masters.append(modInfos.masterName)
         masterMap = MasterMap(face.masters,tes4.masters+[modInfo.name])
         #--Eid
         npcEids = set([record.eid for record in modFile.NPC_.records])
-        eidForm = ''.join(("sg", bush.raceShortNames.get(face.race,'Unk'),
-            (face.gender and 'a' or 'u'), re.sub(r'\W','',face.pcName),'%02d'))
+        eidForm = u''.join((u"sg", bush.raceShortNames.get(face.race,u'Unk'),
+            (face.gender and u'a' or u'u'), re.sub(ur'\W',u'',face.pcName),u'%02d'))
         count,eid = 0, eidForm % 0
         while eid in npcEids:
             count += 1
@@ -17036,7 +16983,7 @@ class ModCleaner:
             ret = []
             for i in range(numGroups):
                 #--Load
-                progress(i,_('Loading...'))
+                progress(i,_(u'Loading...'))
                 groupModInfos = modInfos[i*ModsPerGroup:(i+1)*ModsPerGroup]
                 with ObCollection(ModsPath=dirs['mods'].s) as Current:
                     for mod in groupModInfos:
@@ -17048,7 +16995,7 @@ class ModCleaner:
                     subprogress1 = SubProgress(progress,i,i+1)
                     subprogress1.setFull(max(len(groupModInfos),1))
                     for j,modInfo in enumerate(groupModInfos):
-                        subprogress1(j,_('Scanning...') + '\n' + modInfo.name.s)
+                        subprogress1(j,_(u'Scanning...') + u'\n' + modInfo.name.s)
                         udr = set()
                         itm = set()
                         fog = set()
@@ -17092,7 +17039,7 @@ class ModCleaner:
             progress.setFull(max(len(modInfos),1))
             ret = []
             for i,modInfo in enumerate(modInfos):
-                progress(i,_('Scanning...') + '\n' + modInfo.name.s)
+                progress(i,_(u'Scanning...') + u'\n' + modInfo.name.s)
                 udr = set()
                 itm = set()
                 fog = set()
@@ -17154,7 +17101,7 @@ class ModCleaner:
             progress.setFull(numGroups)
             for i in range(numGroups):
                 #--Load
-                progress(i,_('Loading...'))
+                progress(i,_(u'Loading...'))
                 groupCleaners = cleaners[i*ModsPerGroup:(i+1)*ModsPerGroup]
                 with ObCollection(ModsPath=dirs['mods'].s) as Current:
                     for cleaner in groupCleaners:
@@ -17166,7 +17113,7 @@ class ModCleaner:
                     subprogress1 = SubProgress(progress,i,i+1)
                     subprogress1.setFull(max(len(groupCleaners),1))
                     for j,cleaner in enumerate(groupCleaners):
-                        subprogress1(j,_('Cleaning...') + '\n' + cleaner.modInfo.name.s)
+                        subprogress1(j,_(u'Cleaning...') + u'\n' + cleaner.modInfo.name.s)
                         path = cleaner.modInfo.getPath()
                         modFile = Current.LookupModFile(path.stail)
                         changed = False
@@ -17319,7 +17266,7 @@ class SaveSpells:
         modFile = ModFile(modInfo,loadFactory)
         try: modFile.load(True)
         except ModError, err:
-            deprint(_('skipped mod due to read error (%s)') % err)
+            deprint(_(u'skipped mod due to read error (%s)') % err)
             return
         modFile.convertToLongFids(('SPEL',))
         spells = modInfo.extras['bash.spellList'] = dict(
@@ -17424,7 +17371,7 @@ class Save_NPCEdits:
         saveFile.load()
         (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
-        npc.full = Encode(newName,'mbcs')
+        npc.full = newName
         saveFile.pcName = newName
         saveFile.setRecord(npc.getTuple(fid,version))
         saveFile.safeSave()
@@ -17447,18 +17394,18 @@ class PatchFile(ModFile):
            will create the next in the sequence.  if wxParent is not None and we are unable to create a patch,
            displays a dialog error"""
         for num in xrange(10):
-            modName = GPath('Bashed Patch, %d.esp' % num)
+            modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in modInfos:
                 patchInfo = ModInfo(modInfos.dir,GPath(modName))
                 patchInfo.mtime = max([time.time()]+[info.mtime for info in modInfos.values()])
                 patchFile = ModFile(patchInfo)
-                patchFile.tes4.author = 'BASHED PATCH'
+                patchFile.tes4.author = u'BASHED PATCH'
                 patchFile.safeSave()
                 modInfos.refresh()
                 return modName
         else:
             if wxParent is not None:
-                balt.showWarning(wxParent, "Unable to create new bashed patch: 10 bashed patches already exist!")
+                balt.showWarning(wxParent, u"Unable to create new bashed patch: 10 bashed patches already exist!")
         return None
 
     @staticmethod
@@ -17524,7 +17471,7 @@ class PatchFile(ModFile):
     def __init__(self,modInfo,patchers):
         """Initialization."""
         ModFile.__init__(self,modInfo,None)
-        self.tes4.author = 'BASHED PATCH'
+        self.tes4.author = u'BASHED PATCH'
         self.tes4.masters = [modInfos.masterName]
         self.longFids = True
         #--New attrs
@@ -17542,7 +17489,7 @@ class PatchFile(ModFile):
         #--Mods
         loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
         if not loadMods:
-            raise BoltError("No active mods dated before the bashed patch")
+            raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods, [])
         for patcher in self.patchers:
             patcher.initPatchFile(self,loadMods)
@@ -17570,11 +17517,11 @@ class PatchFile(ModFile):
         for index,patcher in enumerate(self.patchers):
             progress(index,_(u'Preparing')+u'\n'+patcher.getName())
             patcher.initData(SubProgress(progress,index))
-        progress(progress.full,_('Patchers prepared.'))
+        progress(progress.full,_(u'Patchers prepared.'))
 
     def initFactories(self,progress):
         """Gets load factories."""
-        progress(0,_("Processing."))
+        progress(0,_(u"Processing."))
         def updateClasses(type_classes,newClasses):
             if not newClasses: return
             for item in newClasses:
@@ -17601,7 +17548,7 @@ class PatchFile(ModFile):
         progress = progress.setFull(len(self.allMods))
         for index,modName in enumerate(self.allMods):
             bashTags = modInfos[modName].getBashTags()
-            if modName in self.loadMods and 'Filter' in bashTags:
+            if modName in self.loadMods and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
@@ -17616,15 +17563,15 @@ class PatchFile(ModFile):
                 #--Error checks
                 if 'WRLD' in modFile.tops and modFile.WRLD.orphansSkipped:
                     self.worldOrphanMods.append(modName)
-                if 'SCPT' in modFile.tops and modName != 'Oblivion.esm':
+                if 'SCPT' in modFile.tops and modName != u'Oblivion.esm':
                     gls = modFile.SCPT.getRecord(0x00025811)
                     if gls and gls.compiledSize == 4 and gls.lastIndex == 0:
                         self.compiledAllMods.append(modName)
                 pstate = index+0.5
                 isMerged = modName in self.mergeSet
-                doFilter = isMerged and 'Filter' in bashTags
+                doFilter = isMerged and u'Filter' in bashTags
                 #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-                iiMode = isMerged and bool(set(('InventOnly','IIM')) & bashTags)
+                iiMode = isMerged and bool(set((u'InventOnly',u'IIM')) & bashTags)
                 if isMerged:
                     progress(pstate,modName.s+u'\n'+_(u'Merging...'))
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
@@ -17640,16 +17587,16 @@ class PatchFile(ModFile):
             except bolt.CancelError:
                 raise
             except:
-                print _("MERGE/SCAN ERROR:"),modName.s
+                print _(u"MERGE/SCAN ERROR:"),modName.s
                 raise
-        progress(progress.full,_('Load mods scanned.'))
+        progress(progress.full,_(u'Load mods scanned.'))
 
     def mergeModFile(self,modFile,progress,doFilter,iiMode):
         """Copies contents of modFile into self."""
         mergeIds = self.mergeIds
         loadSet = self.loadSet
         modFile.convertToLongFids()
-        badForm = (GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
+        badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
         for blockType,block in modFile.tops.iteritems():
             iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
             #--Make sure block type is also in read and write factories
@@ -17659,7 +17606,7 @@ class PatchFile(ModFile):
                 self.loadFactory.addClass(recClass)
             patchBlock = getattr(self,blockType)
             if not isinstance(patchBlock,MobObjects):
-                raise BoltError(_("Merge unsupported for type: ")+blockType)
+                raise BoltError(u"Merge unsupported for type: "+blockType)
             filtered = []
             for record in block.getActiveRecords():
                 if record.fid == badForm: continue
@@ -17696,53 +17643,53 @@ class PatchFile(ModFile):
     def buildPatch(self,log,progress):
         """Completes merge process. Use this when finished using scanLoadMods."""
         if not len(self.patchers): return
-        log.setHeader('= '+self.fileInfo.name.s+' '+'='*30+'#',True)
-        log("{{CONTENTS=1}}")
+        log.setHeader(u'= '+self.fileInfo.name.s+u' '+u'='*30+u'#',True)
+        log(u"{{CONTENTS=1}}")
         #--Load Mods and error mods
-        log.setHeader(_("= Overview"),True)
-        log.setHeader(_("=== Date/Time"))
-        log('* '+formatDate(time.time()))
-        log(_('* Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        log.setHeader(u'= '+_(u'Overview'),True)
+        log.setHeader(u'=== '+_(u'Date/Time'))
+        log(u'* '+formatDate(time.time()))
+        log(u'* '+_(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
         if self.patcher_mod_skipcount:
-            log.setHeader(_("=== Skipped Imports"))
-            log(_("The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
+            log.setHeader(u'=== '+_(u'Skipped Imports'))
+            log(_(u"The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
             for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
-                log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
+                log (u'* '+_(u'%s skipped %d records:') % (patcher,sum(mod_skipcount.values())))
                 for mod, skipcount in mod_skipcount.iteritems():
-                    log ('  * The imported mod, %s, skipped %d records.' % (str(mod),skipcount))
+                    log (u'  * '+_(u'The imported mod, %s, skipped %d records.') % (mod,skipcount))
         if self.unFilteredMods:
-            log.setHeader(_("=== Unfiltered Mods"))
-            log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
-            for mod in self.unFilteredMods: log ('* '+mod.s)
+            log.setHeader(u'=== '+_(u'Unfiltered Mods'))
+            log(_(u"The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
+            for mod in self.unFilteredMods: log (u'* '+mod.s)
         if self.loadErrorMods:
-            log.setHeader(_("=== Load Error Mods"))
-            log(_("The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
-            for mod in self.loadErrorMods: log ('* '+mod.s)
+            log.setHeader(u'=== '+_(u'Load Error Mods'))
+            log(_(u"The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
+            for mod in self.loadErrorMods: log (u'* '+mod.s)
         if self.worldOrphanMods:
-            log.setHeader(_("=== World Orphans"))
-            log(_("The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
-            for mod in self.worldOrphanMods: log ('* '+mod.s)
+            log.setHeader(u'=== '+_(u'World Orphans'))
+            log(_(u"The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
+            for mod in self.worldOrphanMods: log (u'* '+mod.s)
         if self.compiledAllMods:
-            log.setHeader(_("=== Compiled All"))
-            log(_("The following mods have an empty compiled version of genericLoreScript. This is usually a sign that the mod author did a __compile all__ while editing scripts. This may interfere with the behavior of other mods that intentionally modify scripts from Oblivion.esm. (E.g. Cobl and Unofficial Oblivion Patch.) You can use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll|Decompile All]] command to repair the mods."))
-            for mod in self.compiledAllMods: log ('* '+mod.s)
-        log.setHeader(_("=== Active Mods"),True)
+            log.setHeader(u'=== '+_(u'Compiled All'))
+            log(_(u"The following mods have an empty compiled version of genericLoreScript. This is usually a sign that the mod author did a __compile all__ while editing scripts. This may interfere with the behavior of other mods that intentionally modify scripts from Oblivion.esm. (E.g. Cobl and Unofficial Oblivion Patch.) You can use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll|Decompile All]] command to repair the mods."))
+            for mod in self.compiledAllMods: log (u'* '+mod.s)
+        log.setHeader(u'=== '+_(u'Active Mods'),True)
         for name in self.allMods:
             version = modInfos.getVersion(name)
             if name in self.loadMods:
-                message = '* %02X ' % (self.loadMods.index(name),)
+                message = u'* %02X ' % (self.loadMods.index(name),)
             else:
-                message = '* ++ '
+                message = u'* ++ '
             if version:
-                message += _('%s  [Version %s]') % (name.s,version)
+                message += _(u'%s  [Version %s]') % (name.s,version)
             else:
                 message += name.s
             log(message)
         #--Load Mods and error mods
         if self.aliases:
-            log.setHeader(_("= Mod Aliases"))
+            log.setHeader(u'= '+_(u'Mod Aliases'))
             for key,value in sorted(self.aliases.iteritems()):
-                log('* %s >> %s' % (key.s,value.s))
+                log(u'* %s >> %s' % (key.s,value.s))
         #--Patchers
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
@@ -17757,7 +17704,7 @@ class PatchFile(ModFile):
         #--Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
         self.convertToShortFids()
-        progress(1.0,"Compiled.")
+        progress(1.0,_(u"Compiled."))
         #--Description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
         self.tes4.description = (_(u'Updated: ')+formatDate(time.time())
@@ -17807,7 +17754,7 @@ class CBash_PatchFile(ObModFile):
 
     @staticmethod
     def modIsMergeableLoad(modInfo,verbose):
-        allowMissingMasters = set(['Filter','IIM','InventOnly'])
+        allowMissingMasters = set([u'Filter',u'IIM',u'InventOnly'])
         tags = modInfos[modInfo.name].getBashTags()
         reasons = []
 
@@ -17865,7 +17812,7 @@ class CBash_PatchFile(ObModFile):
                 reasons = canmerge
             if loadreasons != True:
                 reasons.extend(loadreasons)
-            if reasons: return ''.join(reasons)
+            if reasons: return u''.join(reasons)
             return True
         else:
             if canmerge == True:
@@ -17896,7 +17843,7 @@ class CBash_PatchFile(ObModFile):
         #--Mods
         loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
         if not loadMods:
-            raise BoltError("No active mods dated before the bashed patch")
+            raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods,[])
         for patcher in self.patchers:
             patcher.initPatchFile(self,loadMods)
@@ -17917,13 +17864,13 @@ class CBash_PatchFile(ObModFile):
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('scanOrder'))):
             progress(index,_(u'Preparing')+u'\n'+patcher.getName())
             patcher.initData(self.group_patchers,SubProgress(progress,index))
-        progress(progress.full,_('Patchers prepared.'))
+        progress(progress.full,_(u'Patchers prepared.'))
 
     def mergeModFile(self,modFile,progress,doFilter,iiMode,group):
         """Copies contents of modFile group into self."""
         if iiMode and group not in ('LVLC','LVLI','LVSP'): return
         mergeIds = self.mergeIds
-        badForm = FormID(GPath("Oblivion.esm"),0xA31D) #--DarkPCB record
+        badForm = FormID(GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
         for record in getattr(modFile,group):
             fid = record.fid
             if not fid.ValidateFormID(self): continue
@@ -17934,12 +17881,12 @@ class CBash_PatchFile(ObModFile):
                     if doFilter:
                         record.mergeFilter(self)                        
                         if record.HasInvalidFormIDs():
-                            print "Debugging mergeModFile - Skipping", fid, "in mod (", record.GetParentMod().ModName, ")due to failed merge filter"
+                            print u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter"
                             dump_record(record)
                             print
                             continue
                     else:
-                        print "Debugging mergeModFile - Skipping", fid, "in mod (", record.GetParentMod().ModName, ")due to invalid formIDs"
+                        print u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to invalid formIDs"
                         dump_record(record)
                         print
                         continue
@@ -17963,7 +17910,7 @@ class CBash_PatchFile(ObModFile):
                       'ROADS','CELL','CELLS','PGRDS','LANDS','ACHRS',
                       'ACRES','REFRS']
 
-        iiModeSet = set(('InventOnly','IIM'))
+        iiModeSet = set((u'InventOnly',u'IIM'))
         levelLists = set(('LVLC','LVLI','LVSP'))
         nullProgress = bolt.Progress()
 
@@ -17990,7 +17937,7 @@ class CBash_PatchFile(ObModFile):
         patchFile = self.patchFile = self.Current.addMod(self.patchName.temp.s, CreateNew=True)
         self.Current.load()
 
-        if self.Current.LookupModFileLoadOrder(Encode(self.patchName.temp.s,'mbcs')) <= 0:
+        if self.Current.LookupModFileLoadOrder(self.patchName.temp.s) <= 0:
             print (_("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.") +
                    u'\n' +
                    _(u'Also with:') +
@@ -18009,7 +17956,7 @@ class CBash_PatchFile(ObModFile):
             raise StateError()
         ObModFile.__init__(self, patchFile._ModID)
 
-        self.TES4.author = 'BASHED PATCH'
+        self.TES4.author = u'BASHED PATCH'
 
         #With this indexing, MGEFs may be looped through twice if another patcher also looks through MGEFs
         #It's inefficient, but it really shouldn't be a problem since there are so few MGEFs.
@@ -18046,10 +17993,10 @@ class CBash_PatchFile(ObModFile):
             modFile = self.Current.LookupModFile(modInfo.getPath().stail)
 
             #--Error checks
-            if modName in self.loadMods and 'Filter' in bashTags:
+            if modName in self.loadMods and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             gls = modFile.LookupRecord(FormID(0x00025811))
-            if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath('Oblivion.esm'):
+            if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath(u'Oblivion.esm'):
                 self.compiledAllMods.append(modName)
             isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if not isScanned:
@@ -18076,7 +18023,7 @@ class CBash_PatchFile(ObModFile):
                 bashTags = modInfo.getBashTags()
                 isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
                 isMerged = modName in self.mergeSet
-                doFilter = isMerged and 'Filter' in bashTags
+                doFilter = isMerged and u'Filter' in bashTags
                 #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
                 iiMode = isMerged and bool(iiModeSet & bashTags)
                 iiFilter = IIMSet and not (iiMode or group in levelLists)
@@ -18108,13 +18055,13 @@ class CBash_PatchFile(ObModFile):
                             if record.HasInvalidFormIDs():
                                 record.mergeFilter(self)
                                 if record.HasInvalidFormIDs():
-                                    print "Debugging buildPatch - Skipping", record.fid, "in mod (", record.GetParentMod().ModName, ")due to failed merge filter"
+                                    print u"Debugging buildPatch - Skipping", record.fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter"
                                     dump_record(record)
                                     print
                                     continue
 
                         if not isScanned and record.HasInvalidFormIDs():
-                            print "Debugging buildPatch - Skipping", record.fid, "in mod (", record.GetParentMod().ModName, ")due to invalid formIDs"
+                            print u"Debugging buildPatch - Skipping", record.fid, u"in mod (", record.GetParentMod().ModName, u")due to invalid formIDs"
                             dump_record(record)
                             print
                             continue
@@ -18166,80 +18113,81 @@ class CBash_PatchFile(ObModFile):
                 record.IsDeleted = False
                 record.IsIgnored = True
         #--Done
-        progress(progress.full,_('Patchers applied.'))
+        progress(progress.full,_(u'Patchers applied.'))
         self.ScanCollection = None
 
     def buildPatchLog(self,patchName,log,progress):
         """Completes merge process. Use this when finished using buildPatch."""
         if not len(self.patchers): return
-        log.setHeader('= '+patchName.s+' '+'='*30+'#',True)
-        log("{{CONTENTS=1}}")
+        log.setHeader(u'= '+patchName.s+u' '+u'='*30+u'#',True)
+        log(u"{{CONTENTS=1}}")
         #--Load Mods and error mods
-        log.setHeader(_("= Overview"),True)
-        log.setHeader(_("=== Date/Time"))
-        log('* '+formatDate(time.time()))
-        log(_('* Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        log.setHeader(u'= '+_(u'Overview'),True)
+        log.setHeader(u'=== '+_(u'Date/Time'))
+        log(u'* '+formatDate(time.time()))
+        log(u'* '+_(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
         if self.patcher_mod_skipcount:
-            log.setHeader(_("=== Skipped Imports"))
-            log(_("The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
+            log.setHeader(u'=== '+_(u'Skipped Imports'))
+            log(_(u"The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
             for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
-                log ('* %s skipped %d records:' % (str(patcher),sum(mod_skipcount.values())))
+                log(u'* '+_(u'%s skipped %d records:') % (patcher,sum(mod_skipcount.values())))
                 for mod, skipcount in mod_skipcount.iteritems():
-                    log ('  * The imported mod, %s, skipped %d records.' % (str(mod),skipcount))
+                    log (u'  * '+_(u'The imported mod, %s, skipped %d records.') % (mod,skipcount))
 
         if self.unFilteredMods:
-            log.setHeader(_("=== Unfiltered Mods"))
-            log(_("The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
-            for mod in self.unFilteredMods: log ('* '+mod.s)
+            log.setHeader(u'=== '+_(u'Unfiltered Mods'))
+            log(_(u"The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
+            for mod in self.unFilteredMods: log (u'* '+mod.s)
         if self.loadErrorMods:
-            log.setHeader(_("=== Load Error Mods"))
-            log(_("The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
-            for mod in self.loadErrorMods: log ('* '+mod.s)
+            log.setHeader(u'=== '+_(u'Load Error Mods'))
+            log(_(u"The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
+            for mod in self.loadErrorMods: log (u'* '+mod.s)
         if self.worldOrphanMods:
-            log.setHeader(_("=== World Orphans"))
-            log(_("The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
-            for mod in self.worldOrphanMods: log ('* '+mod.s)
+            log.setHeader(u'=== '+_(u'World Orphans'))
+            log(_(u"The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
+            for mod in self.worldOrphanMods: log (u'* '+mod.s)
         if self.compiledAllMods:
-            log.setHeader(_("=== Compiled All"))
-            log(_("The following mods have an empty compiled version of genericLoreScript. This is usually a sign that the mod author did a __compile all__ while editing scripts. This may interfere with the behavior of other mods that intentionally modify scripts from Oblivion.esm. (E.g. Cobl and Unofficial Oblivion Patch.) You can use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll|Decompile All]] command to repair the mods."))
-            for mod in self.compiledAllMods: log ('* '+mod.s)
-        log.setHeader(_("=== Active Mods"),True)
+            log.setHeader(u'=== '+_(u'Compiled All'))
+            log(_(u"The following mods have an empty compiled version of genericLoreScript. This is usually a sign that the mod author did a __compile all__ while editing scripts. This may interfere with the behavior of other mods that intentionally modify scripts from Oblivion.esm. (E.g. Cobl and Unofficial Oblivion Patch.) You can use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll|Decompile All]] command to repair the mods."))
+            for mod in self.compiledAllMods: log (u'* '+mod.s)
+        log.setHeader(u'=== '+_(u'Active Mods'),True)
         for name in self.allMods:
             version = modInfos.getVersion(name)
             if name in self.loadMods:
-                message = '* %02X ' % (self.loadMods.index(name),)
+                message = u'* %02X ' % (self.loadMods.index(name),)
             else:
-                message = '* ++ '
+                message = u'* ++ '
             if version:
-                message += _('%s  [Version %s]') % (name.s,version)
+                message += _(u'%s  [Version %s]') % (name.s,version)
             else:
                 message += name.s
             log(message)
         #--Load Mods and error mods
         if self.aliases:
-            log.setHeader(_("= Mod Aliases"))
+            log.setHeader(u'= '+_(u'Mod Aliases'))
             for key,value in sorted(self.aliases.iteritems()):
-                log('* %s >> %s' % (key.s,value.s))
+                log(u'* %s >> %s' % (key.s,value.s))
         #--Patchers
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
             subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatchLog(log)
-        progress(1.0,"Compiled.")
+        progress(1.0,_(u"Compiled."))
         #--Description
         numRecords = sum([len(x) for x in self.aggregates.values()])
-        self.TES4.description = Encode((_("Updated: %s") +
-                                        u'\n\n' +
-                                        _(u'Records Changed: %d')
-                                        ) % (formatDate(time.time()),numRecords),'mbcs')
+        self.TES4.description = (_(u"Updated: %s") % formatDate(time.time()) +
+                                 u'\n\n' +
+                                 _(u'Records Changed: %d') % numRecords
+                                 )
+
 #------------------------------------------------------------------------------
 class Patcher:
     """Abstract base class for patcher elements."""
     scanOrder = 10
     editOrder = 10
-    group = 'UNDEFINED'
-    name = 'UNDEFINED'
-    text = "UNDEFINED."
+    group = u'UNDEFINED'
+    name = u'UNDEFINED'
+    text = u"UNDEFINED."
     tip = None
     defaultConfig = {'isEnabled':False}
     iiMode = False
@@ -18303,10 +18251,10 @@ class CBash_Patcher:
     """Abstract base class for patcher elements."""
     scanOrder = 10
     editOrder = 10
-    group = 'UNDEFINED'
-    name = 'UNDEFINED'
-    text = "UNDEFINED."
-    unloadedText = ""
+    group = u'UNDEFINED'
+    name = u'UNDEFINED'
+    text = u"UNDEFINED."
+    unloadedText = u""
     tip = None
     defaultConfig = {'isEnabled':False}
     iiMode = False
@@ -18366,6 +18314,7 @@ class CBash_Patcher:
     def buildPatchLog(self,log):
         """Write to log."""
         pass
+
 #------------------------------------------------------------------------------
 class ListPatcher(Patcher):
     """Subclass for patchers that have GUI lists of objects."""
@@ -18374,7 +18323,7 @@ class ListPatcher(Patcher):
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     forceItemCheck = False #--Force configChecked to True for all items
-    autoRe = re.compile('^UNDEFINED$') #--Compiled re used by getAutoItems
+    autoRe = re.compile(u'^UNDEFINED$',re.U) #--Compiled re used by getAutoItems
     autoKey = None
     forceAuto = True
 
@@ -18393,7 +18342,7 @@ class ListPatcher(Patcher):
                 if modInfo.mtime > PatchFile.patchTime: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
-        reFile = re.compile('_('+('|'.join(autoKey))+r')\.csv$')
+        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(dirs['patches'].list()):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
@@ -18431,7 +18380,7 @@ class ListPatcher(Patcher):
         """Returns label for item to be used in list"""
         if isinstance(item,bolt.Path): item = item.s
         if self.choiceMenu:
-            return '%s [%s]' % (item,self.getChoice(item))
+            return u'%s [%s]' % (item,self.getChoice(item))
         else:
             return item
 
@@ -18460,7 +18409,7 @@ class CBash_ListPatcher(CBash_Patcher):
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     forceItemCheck = False #--Force configChecked to True for all items
-    autoRe = re.compile('^UNDEFINED$') #--Compiled re used by getAutoItems
+    autoRe = re.compile(u'^UNDEFINED$',re.U) #--Compiled re used by getAutoItems
     autoKey = None
     forceAuto = True
 
@@ -18479,7 +18428,7 @@ class CBash_ListPatcher(CBash_Patcher):
                 if modInfo.mtime > CBash_PatchFile.patchTime: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
-        reFile = re.compile('_('+('|'.join(autoKey))+r')\.csv$')
+        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(dirs['patches'].list()):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
@@ -18517,7 +18466,7 @@ class CBash_ListPatcher(CBash_Patcher):
         """Returns label for item to be used in list"""
         if isinstance(item,bolt.Path): item = item.s
         if self.choiceMenu:
-            return '%s [%s]' % (item,self.getChoice(item))
+            return u'%s [%s]' % (item,self.getChoice(item))
         else:
             return item
 
@@ -18560,7 +18509,7 @@ class MultiTweakItem:
         self.default = 0
         for choice in choices:
             self.choiceLabels.append(choice[0])
-            if choice[0][0] == '[':
+            if choice[0][0] == u'[':
                 self.default = choices.index(choice)
             self.choiceValues.append(choice[1:])
         #--Config
@@ -18579,7 +18528,7 @@ class MultiTweakItem:
                 self.chosen = self.choiceValues.index(value)
             else:
                 for label in self.choiceLabels:
-                    if label.startswith('Custom'):
+                    if label.startswith(_(u'Custom')):
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
         else:
@@ -18595,7 +18544,7 @@ class MultiTweakItem:
         """Returns label to be used in list"""
         label = self.label
         if len(self.choiceLabels) > 1:
-            label += ' [' + self.choiceLabels[self.chosen] + ']'
+            label += u' [' + self.choiceLabels[self.chosen] + u']'
         return label
 
     def saveConfig(self,configs):
@@ -18620,7 +18569,7 @@ class CBash_MultiTweakItem:
         self.default = 0
         for choice in choices:
             self.choiceLabels.append(choice[0])
-            if choice[0][0] == '[':
+            if choice[0][0] == u'[':
                 self.default = choices.index(choice)
             self.choiceValues.append(choice[1:])
         #--Config
@@ -18639,7 +18588,7 @@ class CBash_MultiTweakItem:
                 self.chosen = self.choiceValues.index(value)
             else:
                 for label in self.choiceLabels:
-                    if label.startswith('Custom'):
+                    if label.startswith(_(u'Custom')):
                         self.chosen = self.choiceLabels.index(label)
                         self.choiceValues[self.chosen] = value
         else:
@@ -18655,7 +18604,7 @@ class CBash_MultiTweakItem:
         """Returns label to be used in list"""
         label = self.label
         if len(self.choiceLabels) > 1:
-            label += ' [' + self.choiceLabels[self.chosen] + ']'
+            label += u' [' + self.choiceLabels[self.chosen] + u']'
         return label
 
     def saveConfig(self,configs):
@@ -18668,7 +18617,7 @@ class CBash_MultiTweakItem:
 class MultiTweaker(Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
-    group = _('Tweakers')
+    group = _(u'Tweakers')
     scanOrder = 20
     editOrder = 20
 
@@ -18693,7 +18642,7 @@ class MultiTweaker(Patcher):
 class CBash_MultiTweaker(CBash_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
-    group = _('Tweakers')
+    group = _(u'Tweakers')
     scanOrder = 20
     editOrder = 20
 
@@ -18721,15 +18670,16 @@ class CBash_MultiTweaker(CBash_Patcher):
             tweak.saveConfig(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
+
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class AliasesPatcher(Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
-    group = _('General')
-    name = _("Alias Mod Names")
-    text = _("Specify mod aliases for reading CSV source files.")
+    group = _(u'General')
+    name = _(u"Alias Mod Names")
+    text = _(u"Specify mod aliases for reading CSV source files.")
     tip = None
     defaultConfig = {'isEnabled':False,'aliases':{}}
 
@@ -18746,13 +18696,14 @@ class AliasesPatcher(Patcher):
         Patcher.initPatchFile(self,patchFile,loadMods)
         if self.isEnabled:
             self.patchFile.aliases = self.aliases
+
 class CBash_AliasesPatcher(CBash_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
-    group = _('General')
-    name = _("Alias Mod Names")
-    text = _("Specify mod aliases for reading CSV source files.")
+    group = _(u'General')
+    name = _(u"Alias Mod Names")
+    text = _(u"Specify mod aliases for reading CSV source files.")
     tip = None
     defaultConfig = {'isEnabled':False,'aliases':{}}
 
@@ -18770,23 +18721,24 @@ class CBash_AliasesPatcher(CBash_Patcher):
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         if self.isEnabled:
             self.patchFile.aliases = self.aliases
+
 #------------------------------------------------------------------------------
 class PatchMerger(ListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
     editOrder = 10
-    group = _('General')
-    name = _('Merge Patches')
-    text = _("Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Merge'
+    group = _(u'General')
+    name = _(u'Merge Patches')
+    text = _(u"Merge patch mods into Bashed Patch.")
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Merge'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
         for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and 'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < PatchFile.patchTime:
+            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < PatchFile.patchTime:
                 autoItems.append(modInfo.name)
         return autoItems
 
@@ -18798,22 +18750,23 @@ class PatchMerger(ListPatcher):
         #  their initPatchFile section, it's important that PatchMerger first or near first.
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.getConfigChecked())
+
 class CBash_PatchMerger(CBash_ListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
     editOrder = 10
-    group = _('General')
-    name = _('Merge Patches')
-    text = _("Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Merge',))
+    group = _(u'General')
+    name = _(u'Merge Patches')
+    text = _(u"Merge patch mods into Bashed Patch.")
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Merge',))
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
         for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and 'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < CBash_PatchFile.patchTime:
+            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < CBash_PatchFile.patchTime:
                 autoItems.append(modInfo.name)
         return autoItems
 
@@ -18826,15 +18779,16 @@ class CBash_PatchMerger(CBash_ListPatcher):
         #  their initPatchFile section, it's important that PatchMerger runs first or near first.
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.srcs)
+
 #------------------------------------------------------------------------------
 class UpdateReferences(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
     editOrder = 15
-    group = _('General')
-    name = _('Replace Form IDs')
-    text = _("Imports Form Id replacers from csv files into the Bashed Patch.")
-    autoKey = 'Formids'
+    group = _(u'General')
+    name = _(u'Replace Form IDs')
+    text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
+    autoKey = u'Formids'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
@@ -18854,18 +18808,17 @@ class UpdateReferences(ListPatcher):
         """Reads replacment data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.patchFile.aliases
-        ins = bolt.CsvReader(textPath)
-        pack,unpack = struct.pack,struct.unpack
-        for fields in ins:
-            if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
-            oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-            oldMod,newMod = map(GPath,(oldMod,newMod))
-            oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
-            newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
-            old_new[oldId] = newId
-            old_eid[oldId] = oldEid
-            new_eid[newId] = newEid
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            pack,unpack = struct.pack,struct.unpack
+            for fields in ins:
+                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
+                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
+                oldMod,newMod = map(GPath,(oldMod,newMod))
+                oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
+                newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
+                old_new[oldId] = newId
+                old_eid[oldId] = oldEid
+                new_eid[newId] = newEid
 
     def initData(self,progress):
         """Get names from source files."""
@@ -19044,10 +18997,10 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
     editOrder = 15
-    group = _('General')
-    name = _('Replace Form IDs')
-    text = _("Imports FormId replacers from csv files into the Bashed Patch.")
-    autoKey = set(('Formids',))
+    group = _(u'General')
+    name = _(u'Replace Form IDs')
+    text = _(u"Imports FormId replacers from csv files into the Bashed Patch.")
+    autoKey = set((u'Formids',))
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
@@ -19114,20 +19067,20 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         #--Log
         mod_count_old_new = self.mod_count_old_new
 
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         if not self.srcs:
-            log(_(". ~~None~~"))
+            log(u". ~~%s~~" % _(u'None'))
         else:
             for srcFile in self.srcs:
-                log("* " +srcFile.s)
-        log('\n')
+                log(u"* " +srcFile.s)
+        log(u'\n')
         for mod in modInfos.getOrdered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
-            log('\n=== %s' % (mod.s))
+            log(u'\n=== %s' % (mod.s))
             entries.sort(key=itemgetter(1))
-            log(_('  * Updated References: %d') % (sum([count for count, old, new in entries])))
-            log('\n'.join(['    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
+            log(u'  * '+_(u'Updated References: %d') % sum([count for count, old, new in entries]))
+            log(u'\n'.join([u'    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
 
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
@@ -19138,7 +19091,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
 #------------------------------------------------------------------------------
 class ImportPatcher(ListPatcher):
     """Subclass for patchers in group Importer."""
-    group = _('Importers')
+    group = _(u'Importers')
     scanOrder = 20
     editOrder = 20
     masters = {}
@@ -19162,7 +19115,7 @@ class ImportPatcher(ListPatcher):
 
 class CBash_ImportPatcher(CBash_ListPatcher):
     """Subclass for patchers in group Importer."""
-    group = _('Importers')
+    group = _(u'Importers')
     scanOrder = 20
     editOrder = 20
     masters = {}
@@ -19192,11 +19145,11 @@ class CBash_ImportPatcher(CBash_ListPatcher):
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
-    name = _('Import Cells')
-    text = _("Import cells (climate, lighting, and water) from source mods.")
+    name = _(u'Import Cells')
+    text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music')#,'C.Maps')
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = (u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -19207,26 +19160,26 @@ class CellImporter(ImportPatcher):
         self.sourceMods = self.getConfigChecked()
         self.isActive = bool(self.sourceMods)
         self.recAttrs = {
-            'C.Climate': ('climate',),
-            'C.Music': ('music',),
-            'C.Name': ('full',),
-            'C.Owner': ('ownership',),
-            'C.Water': ('water','waterHeight'),
-            'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-            'directionalRed','directionalGreen','directionalBlue','unused2',
-            'fogRed','fogGreen','fogBlue','unused3',
-            'fogNear','fogFar','directionalXY','directionalZ',
-            'directionalFade','fogClip'),
-            'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+            u'C.Climate': ('climate',),
+            u'C.Music': ('music',),
+            u'C.Name': ('full',),
+            u'C.Owner': ('ownership',),
+            u'C.Water': ('water','waterHeight'),
+            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
+                        'directionalRed','directionalGreen','directionalBlue','unused2',
+                        'fogRed','fogGreen','fogBlue','unused3',
+                        'fogNear','fogFar','directionalXY','directionalZ',
+                        'directionalFade','fogClip'),
+            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
             }
         self.recFlags = {
-            'C.Climate': 'behaveLikeExterior',
-            'C.Music': '',
-            'C.Name': '',
-            'C.Owner': 'publicPlace',
-            'C.Water': 'hasWater',
-            'C.Light': '',
-            'C.RecordFlags': '',
+            u'C.Climate': 'behaveLikeExterior',
+            u'C.Music': '',
+            u'C.Name': '',
+            u'C.Owner': 'publicPlace',
+            u'C.Water': 'hasWater',
+            u'C.Light': '',
+            u'C.RecordFlags': '',
             }
 
     def getReadClasses(self):
@@ -19284,7 +19237,7 @@ class CellImporter(ImportPatcher):
                     bashKey in self.recAttrs)))
             except: attrs = set()
             flags = tuple(self.recFlags[bashKey] for bashKey in bashTags if
-                bashKey in self.recAttrs and self.recFlags[bashKey] != '')
+                bashKey in self.recAttrs and self.recFlags[bashKey] != u'')
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
@@ -19387,13 +19340,14 @@ class CellImporter(ImportPatcher):
         log(u'\n=== '+_(u'Cells/Worlds Patched'))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_CellImporter(CBash_ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
-    name = _('Import Cells')
-    text = _("Import cells (climate, lighting, and water) from source mods.")
+    name = _(u'Import Cells')
+    text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('C.Climate','C.Light','C.Water','C.Owner','C.Name','C.RecordFlags','C.Music'))#,'C.Maps'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music'))#,u'C.Maps'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
@@ -19404,17 +19358,17 @@ class CBash_CellImporter(CBash_ImportPatcher):
         self.fid_attr_value = {}
         self.mod_count = {}
         self.tag_attrs = {
-            'C.Climate': ('climate','IsBehaveLikeExterior'),
-            'C.Music': ('musicType',),
-            'C.Name': ('full',),
-            'C.Owner': ('owner','rank','globalVariable','IsPublicPlace'),
-            'C.Water': ('water','waterHeight','IsHasWater'),
-            'C.Light': ('ambientRed','ambientGreen','ambientBlue',
+            u'C.Climate': ('climate','IsBehaveLikeExterior'),
+            u'C.Music': ('musicType',),
+            u'C.Name': ('full',),
+            u'C.Owner': ('owner','rank','globalVariable','IsPublicPlace'),
+            u'C.Water': ('water','waterHeight','IsHasWater'),
+            u'C.Light': ('ambientRed','ambientGreen','ambientBlue',
                         'directionalRed','directionalGreen','directionalBlue',
                         'fogRed','fogGreen','fogBlue',
                         'fogNear','fogFar','directionalXY','directionalZ',
                         'directionalFade','fogClip'),
-            'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
             }
 
     def getTypes(self):
@@ -19455,20 +19409,20 @@ class CBash_CellImporter(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Cells/Worlds Patched: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Cells/Worlds Patched: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class GraphicsPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
-    name = _('Import Graphics')
-    text = _("Import graphics (models, icons, etc.) from source mods.")
+    name = _(u'Import Graphics')
+    text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Graphics'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Graphics'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19646,11 +19600,11 @@ class GraphicsPatcher(ImportPatcher):
 
 class CBash_GraphicsPatcher(CBash_ImportPatcher):
     """Merges changes to graphics (models and icons)."""
-    name = _('Import Graphics')
-    text = _("Import graphics (models, icons, etc.) from source mods.")
+    name = _(u'Import Graphics')
+    text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Graphics',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Graphics',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19762,11 +19716,11 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class ActorImporter(ImportPatcher):
     """Merges changes to actors."""
-    name = _('Import Actors')
-    text = _("Import Actor components from source mods.")
+    name = _(u'Import Actors')
+    text = _(u"Import Actor components from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race', 'Actors.Skeleton')
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = (u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race', u'Actors.Skeleton')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19782,35 +19736,35 @@ class ActorImporter(ImportPatcher):
         self.actorClasses = (MreNpc,MreCrea)
         for recClass in (MreNpc,):
             self.recAttrs_class[recClass] = {
-                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                'Actors.Stats': ('skills','health','attributes'),
-                'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.autoCalc','flags.pcLevelOffset'),
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('skills','health','attributes'),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.autoCalc','flags.pcLevelOffset'),
                                 'barterGold','flags.female','flags.essential','flags.respawn','flags.noLowLevel',
                                 'flags.noRumors','flags.summonable','flags.noPersuasion','flags.canCorpseCheck',
                                 ),
-                #'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
-                'NPC.Class': ('iclass',),
-                'NPC.Race': ('race',),
-                'Actors.CombatStyle': ('combatStyle',),
-                'Creatures.Blood': (),
-                'Actors.Skeleton': ('model',),
+                #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                u'NPC.Class': ('iclass',),
+                u'NPC.Race': ('race',),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': (),
+                u'Actors.Skeleton': ('model',),
                 }
         for recClass in (MreCrea,):
             self.recAttrs_class[recClass] = {
-                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
-                'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.pcLevelOffset',),
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.pcLevelOffset',),
                                 'barterGold','flags.biped','flags.essential','flags.weaponAndShield',
                                 'flags.respawn','flags.swims','flags.flies','flags.walks','flags.noLowLevel',
                                 'flags.noBloodSpray','flags.noBloodDecal','flags.noHead','flags.noRightArm',
                                 'flags.noLeftArm','flags.noCombatInWater','flags.noShadow','flags.noCorpseCheck',
                                 ),
-                #'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
-                'NPC.Class': (),
-                'NPC.Race': (),
-                'Actors.CombatStyle': ('combatStyle',),
-                'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
-                'Actors.Skeleton': ('model',),
+                #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                u'NPC.Class': (),
+                u'NPC.Race': (),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                u'Actors.Skeleton': ('model',),
                 }
         #--Needs Longs
         self.longTypes = set(('CREA','NPC_'))
@@ -19941,11 +19895,11 @@ class ActorImporter(ImportPatcher):
 
 class CBash_ActorImporter(CBash_ImportPatcher):
     """Merges changes to actors."""
-    name = _('Import Actors')
-    text = _("Import Actor components from source mods.")
+    name = _(u'Import Actors')
+    text = _(u"Import Actor components from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Actors.AIData', 'Actors.Stats', 'Actors.ACBS', 'NPC.Class', 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton'))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',u'Actors.Skeleton'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -19956,37 +19910,37 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         self.class_mod_count = {}
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
-                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                'Actors.Stats': ('armorer','athletics','blade','block','blunt','h2h','heavyArmor','alchemy',
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('armorer','athletics','blade','block','blunt','h2h','heavyArmor','alchemy',
                                  'alteration','conjuration','destruction','illusion','mysticism','restoration',
                                  'acrobatics','lightArmor','marksman','mercantile','security','sneak','speechcraft',
                                  'health',
                                  'strength','intelligence','willpower','agility','speed','endurance','personality','luck',),
-                'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','IsPCLevelOffset','IsAutoCalc',),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','IsPCLevelOffset','IsAutoCalc',),
                                 'barterGold','IsFemale','IsEssential','IsRespawn','IsNoLowLevel','IsNoRumors',
                                 'IsSummonable','IsNoPersuasion','IsCanCorpseCheck',
                                 ),
-                'NPC.Class': ('iclass',),
-                'NPC.Race': ('race',),
-                'Actors.CombatStyle': ('combatStyle',),
-                'Creatures.Blood': (),
-                'Actors.Skeleton': ('modPath','modb','modt_p'),
+                u'NPC.Class': ('iclass',),
+                u'NPC.Race': ('race',),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': (),
+                u'Actors.Skeleton': ('modPath','modb','modt_p'),
                 }
         class_tag_attrs['CREA'] = {
-                'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                'Actors.Stats': ('combat','magic','stealth','soulType','health','attackDamage','strength','intelligence','willpower',
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('combat','magic','stealth','soulType','health','attackDamage','strength','intelligence','willpower',
                                  'agility','speed','endurance','personality','luck'),
-                'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','IsPCLevelOffset',),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','IsPCLevelOffset',),
                                 'barterGold','IsBiped','IsEssential','IsWeaponAndShield','IsRespawn',
                                 'IsSwims','IsFlies','IsWalks','IsNoLowLevel','IsNoBloodSpray','IsNoBloodDecal',
                                 'IsNoHead','IsNoRightArm','IsNoLeftArm','IsNoCombatInWater','IsNoShadow',
                                 'IsNoCorpseCheck',
                                 ),
-                'NPC.Class': (),
-                'NPC.Race': (),
-                'Actors.CombatStyle': ('combatStyle',),
-                'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
-                'Actors.Skeleton': ('modPath','modb','modt_p',),
+                u'NPC.Class': (),
+                u'NPC.Race': (),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                u'Actors.Skeleton': ('modPath','modb','modt_p',),
                 }
 
     def getTypes(self):
@@ -20042,11 +19996,11 @@ class CBash_ActorImporter(CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
     """Merges changes to actor animation lists."""
-    name = _('Import Actors: Animations')
-    text = _("Import Actor animations from source mods.")
+    name = _(u'Import Actors: Animations')
+    text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.Anims'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Actors.Anims'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20173,11 +20127,11 @@ class KFFZPatcher(ImportPatcher):
 
 class CBash_KFFZPatcher(CBash_ImportPatcher):
     """Merges changes to actor animations."""
-    name = _('Import Actors: Animations')
-    text = _("Import Actor animations from source mods.")
+    name = _(u'Import Actors: Animations')
+    text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Actors.Anims',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Actors.Anims',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20214,20 +20168,20 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Imported Animations: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Imported Animations: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class NPCAIPackagePatcher(ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
-    name = _('Import Actors: AIPackages')
-    text = _("Import Actor AIPackage links from source mods.")
+    name = _(u'Import Actors: AIPackages')
+    text = _(u"Import Actor AIPackage links from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.AIPackages','Actors.AIPackagesForceAdd')
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20278,7 +20232,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                     for record in masterFile.tops[block.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if not fid in tempData: continue
-                        if record.aiPackages == tempData[fid] and not 'Actors.AIPackagesForceAdd' in bashTags:
+                        if record.aiPackages == tempData[fid] and not u'Actors.AIPackagesForceAdd' in bashTags:
                             # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
                             continue
@@ -20297,13 +20251,13 @@ class NPCAIPackagePatcher(ImportPatcher):
                                 data[fid]['deleted'].append(pkg)
                             if data[fid]['merged'] == []:
                                 for pkg in recordData['merged']:
-                                    if pkg in data[fid]['deleted'] and not 'Actors.AIPackagesForceAdd' in bashTags: continue
+                                    if pkg in data[fid]['deleted'] and not u'Actors.AIPackagesForceAdd' in bashTags: continue
                                     data[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
                                 if not pkg in data[fid]['merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in data[fid]['deleted'] and not 'Actors.AIPackagesForceAdd' in bashTags: continue #previously deleted
+                                    if pkg in data[fid]['deleted'] and not u'Actors.AIPackagesForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
                                         data[fid]['merged'].insert(0,pkg) #insert as first item
                                     elif index == (len(recordData['merged'])-1):
@@ -20401,11 +20355,11 @@ class NPCAIPackagePatcher(ImportPatcher):
 
 class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
-    name = _('Import Actors: AIPackages')
-    text = _("Import Actor AIPackage links from source mods.")
+    name = _(u'Import Actors: AIPackages')
+    text = _(u"Import Actor AIPackage links from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Actors.AIPackages','Actors.AIPackagesForceAdd'))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Actors.AIPackages',u'Actors.AIPackagesForceAdd'))
     scanRequiresChecked = False
 
     #--Patch Phase ------------------------------------------------------------
@@ -20452,7 +20406,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
                 # Merge those changes into mergedPackages
                 mergedPackages |= newPackages
-                if 'Actors.AIPackagesForceAdd' not in bashTags:
+                if u'Actors.AIPackagesForceAdd' not in bashTags:
                     prevDeleted -= newPackages
                 prevDeleted |= newDeleted
                 mergedPackages -= prevDeleted
@@ -20485,20 +20439,20 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* AI Package Lists Changed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'AI Package Lists Changed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class DeathItemPatcher(ImportPatcher):
     """Merges changes to actor death items."""
-    name = _('Import Actors: Death Items')
-    text = _("Import Actor death items from source mods.")
+    name = _(u'Import Actors: Death Items')
+    text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Actors.DeathItem'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Actors.DeathItem'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20626,11 +20580,11 @@ class DeathItemPatcher(ImportPatcher):
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher):
     """Imports actor death items."""
-    name = _('Import Actors: Death Items')
-    text = _("Import Actor death items from source mods.")
+    name = _(u'Import Actors: Death Items')
+    text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Actors.DeathItem',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Actors.DeathItem',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20673,22 +20627,22 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_('* Imported Death Items: %d') % (sum(mod_count.values()),))
+            log(u'* '+mod.s)
+        log(u'* '+_(u'Imported Death Items: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
-    name = _('Import Factions')
-    text = _("Import factions from source mods/files.")
+    name = _(u'Import Factions')
+    text = _(u"Import factions from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoKey = 'Factions'
+    autoKey = u'Factions'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20798,10 +20752,10 @@ class ImportFactions(ImportPatcher):
 
 class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
-    name = _('Import Factions')
-    text = _("Import factions from source mods/files.")
+    name = _(u'Import Factions')
+    text = _(u"Import factions from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoKey = set(('Factions',))
+    autoKey = set((u'Factions',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -20894,20 +20848,20 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
+        log.setHeader(u'= ' +self.__class__.name)
         for type in class_mod_count.keys():
-            log(_('* Refactioned %s Records: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'Refactioned %s Records: %d') % (type,sum(class_mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
 class ImportRelations(ImportPatcher):
     """Import faction relations to factions."""
-    name = _('Import Relations')
-    text = _("Import relations from source mods/files.")
+    name = _(u'Import Relations')
+    text = _(u"Import relations from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoKey = 'Relations'
+    autoKey = u'Relations'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21010,10 +20964,10 @@ class ImportRelations(ImportPatcher):
 
 class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
-    name = _('Import Relations')
-    text = _("Import relations from source mods/files.")
+    name = _(u'Import Relations')
+    text = _(u"Import relations from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoKey = set(('Relations',))
+    autoKey = set((u'Relations',))
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -21082,20 +21036,20 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Re-Relationed Records: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Re-Relationed Records: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ImportScripts(ImportPatcher):
     """Imports attached scripts on objects."""
-    name = _('Import Scripts')
-    text = _("Import Scripts on containers, plants, misc, weapons etc. from source mods.")
+    name = _(u'Import Scripts')
+    text = _(u"Import Scripts on containers, plants, misc, weapons etc. from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Scripts'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Scripts'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21224,11 +21178,11 @@ class ImportScripts(ImportPatcher):
 
 class CBash_ImportScripts(CBash_ImportPatcher):
     """Imports attached scripts on objects."""
-    name = _('Import Scripts')
-    text = _("Import Scripts on containers, plants, misc, weapons etc from source mods.")
+    name = _(u'Import Scripts')
+    text = _(u"Import Scripts on containers, plants, misc, weapons etc from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Scripts',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Scripts',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21295,11 +21249,11 @@ class CBash_ImportScripts(CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportScriptContents(ImportPatcher):
     """Imports the contents of scripts -- currently only object/mgef scripts."""
-    name = _('Import Script Contents')
-    text = _("Import the actual contents of scripts scripts.")
+    name = _(u'Import Script Contents')
+    text = _(u"Import the actual contents of scripts scripts.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'ScriptContents'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'ScriptContents'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21315,7 +21269,7 @@ class ImportScriptContents(ImportPatcher):
         for recClass in (MreScpt,):
             recAttrs_class[recClass] = ('numRefs','lastIndex','compiledSize','scriptType','compiled_p','scriptText','vars','references',) # invalid attributes for plain script: SCHR, 4s4I,SCDA,'SLSD','I12sB7s','index', 'SCVR', 'name',
 #        for recClass in (MreInfo,):
- #           recAttrs_class[recClass] = ('SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
+#           recAttrs_class[recClass] = ('SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
         for recClass in (MreQust,):
             recAttrs_class[recClass] = ('stages',)# 'SCHD','schd_p','SCHR','4s4I','numRefs','compiledsize','lastIndex','scriptType','SCDA','compiled_p','SCTX','scriptText','SCRV/SCRO','references',)
         self.longTypes = set(('SCPT','QUST','DIAL','INFO'))
@@ -21444,9 +21398,9 @@ class ImportScriptContents(ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
     """Merge changes to actor inventories."""
-    name = _('Import Inventory')
-    text = _("Merges changes to NPC, creature and container inventories.")
-    autoKey = ('Invent','InventOnly')
+    name = _(u'Import Inventory')
+    text = _(u"Merges changes to NPC, creature and container inventories.")
+    autoKey = (u'Invent',u'InventOnly')
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
@@ -21458,7 +21412,7 @@ class ImportInventory(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcMods if
-            (x in patchFile.mergeSet and set(('InventOnly','IIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and set((u'InventOnly',u'IIM')) & modInfos[x].getBashTags()))
         self.isActive = bool(self.srcMods)
         self.masters = set()
         for srcMod in self.srcMods:
@@ -21573,9 +21527,9 @@ class ImportInventory(ImportPatcher):
 
 class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
-    name = _('Import Inventory')
-    text = _("Merges changes to NPC, creature and container inventories.")
-    autoKey = set(('Invent','InventOnly'))
+    name = _(u'Import Inventory')
+    text = _(u"Merges changes to NPC, creature and container inventories.")
+    autoKey = set((u'Invent',u'InventOnly'))
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
@@ -21588,7 +21542,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #should be redundant since this patcher doesn't allow unloaded
         #self.srcs = [x for x in self.srcs if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcs if
-            (x in patchFile.mergeSet and set(('InventOnly','IIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and set((u'InventOnly',u'IIM')) & modInfos[x].getBashTags()))
         self.class_mod_count = {}
 
     def getTypes(self):
@@ -21661,20 +21615,21 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         class_mod_count = self.class_mod_count
-        log.setHeader('= ' +self.__class__.name)
+        log.setHeader(u'= ' +self.__class__.name)
         for type in class_mod_count.keys():
-            log(_('* %s Inventories Changed: %d') % (type,sum(class_mod_count[type].values()),))
+            log(u'* '+_(u'%s Inventories Changed: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
+
 #------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
     """Merges changes to the spells lists of Actors."""
-    name = _('Import Actors: Spells')
-    text = _("Merges changes to NPC and creature spell lists.")
+    name = _(u'Import Actors: Spells')
+    text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Actors.Spells','Actors.SpellsForceAdd')
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = (u'Actors.Spells',u'Actors.SpellsForceAdd')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21725,7 +21680,7 @@ class ImportActorsSpells(ImportPatcher):
                     for record in masterFile.tops[block.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if not fid in tempData: continue
-                        if record.spells == tempData[fid] and not 'Actors.SpellsForceAdd' in bashTags:
+                        if record.spells == tempData[fid] and not u'Actors.SpellsForceAdd' in bashTags:
                             # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
                             continue
@@ -21744,13 +21699,13 @@ class ImportActorsSpells(ImportPatcher):
                                 data[fid]['deleted'].append(spell)
                             if data[fid]['merged'] == []:
                                 for spell in recordData['merged']:
-                                    if spell in data[fid]['deleted'] and not 'Actors.SpellsForceAdd' in bashTags: continue
+                                    if spell in data[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
                                     data[fid]['merged'].append(spell)
                                 continue
                             for index, spell in enumerate(recordData['merged']):
                                 if not spell in data[fid]['merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if spell in data[fid]['deleted'] and not 'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
+                                    if spell in data[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
                                         data[fid]['merged'].insert(0,spell) #insert as first item
                                     elif index == (len(recordData['merged'])-1):
@@ -21849,11 +21804,11 @@ class ImportActorsSpells(ImportPatcher):
 
 class CBash_ImportActorsSpells(CBash_ImportPatcher):
     """Merges changes to the spells lists of Actors."""
-    name = _('Import Actors: Spells')
-    text = _("Merges changes to NPC and creature spell lists.")
+    name = _(u'Import Actors: Spells')
+    text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Actors.Spells','Actors.SpellsForceAdd'))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Actors.Spells',u'Actors.SpellsForceAdd'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21874,7 +21829,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         parentRecords = record.History()
         if parentRecords:
             parentSpells = FormID.FilterValid(parentRecords[-1].spells, self.patchFile)
-            if parentSpells != curspells or 'Actors.SpellsForceAdd' in bashTags:
+            if parentSpells != curspells or u'Actors.SpellsForceAdd' in bashTags:
                 for spell in parentSpells:
                     if spell not in curspells:
                         curData['deleted'].append(spell)
@@ -21889,7 +21844,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
                     id_spells['deleted'].append(spell)
                 for spell in curData['merged']:
                     if spell in id_spells['merged']: continue #don't want to add 20 copies of the spell afterall
-                    if not spell in id_spells['deleted'] or 'Actors.SpellsForceAdd' in bashTags:
+                    if not spell in id_spells['deleted'] or u'Actors.SpellsForceAdd' in bashTags:
                         id_spells['merged'].append(spell)
 
     def apply(self,modFile,record,bashTags):
@@ -21912,24 +21867,24 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_('* Imported Spell Lists: %d') % (sum(mod_count.values()),))
+            log(u'* '+mod.s)
+        log(u'* '+_(u'Imported Spell Lists: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
-    name = _('Import Names')
-    text = _("Import names from source mods/files.")
+    name = _(u'Import Names')
+    text = _(u"Import names from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(r"^Oblivion.esm$",re.I)
-    autoKey = 'Names'
+    autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
+    autoKey = u'Names'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -21966,7 +21921,7 @@ class NamesPatcher(ImportPatcher):
                 continue
             self.activeTypes.append(type)
             for longid,(eid,name) in id_name.iteritems():
-                if name != 'NO NAME':
+                if name != u'NO NAME':
                     id_full[longid] = name
         self.isActive = bool(self.activeTypes)
 
@@ -22024,11 +21979,11 @@ class NamesPatcher(ImportPatcher):
 
 class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
-    name = _('Import Names')
-    text = _("Import names from source mods/files.")
+    name = _(u'Import Names')
+    text = _(u"Import names from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(r"^Oblivion.esm$",re.I)
-    autoKey = set(('Names',))
+    autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
+    autoKey = set((u'Names',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22058,7 +22013,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         for group,fid_name in fullNames.group_fid_name.iteritems():
             if group not in validTypes: continue
             for fid,(eid,name) in fid_name.iteritems():
-                if name != 'NO NAME':
+                if name != u'NO NAME':
                     csvId_full[fid] = name
 
     def getTypes(self):
@@ -22109,10 +22064,10 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class NpcFacePatcher(ImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
-    name = _('Import NPC Faces')
-    text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
-    autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = ('NpcFaces','NpcFacesForceFullImport','Npc.HairOnly','Npc.EyesOnly')
+    name = _(u'Import NPC Faces')
+    text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
+    autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+    autoKey = (u'NpcFaces',u'NpcFacesForceFullImport',u'Npc.HairOnly',u'Npc.EyesOnly')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22141,10 +22096,10 @@ class NpcFacePatcher(ImportPatcher):
             for npc in faceFile.NPC_.getActiveRecords():
                 if npc.fid[0] in self.patchFile.loadSet:
                     attrs, fidattrs = [],[]
-                    if 'Npc.HairOnly' in bashTags:
+                    if u'Npc.HairOnly' in bashTags:
                         fidattrs += ['hair']
                         attrs = ['hairLength','hairRed','hairBlue','hairGreen']
-                    if 'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
+                    if u'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
                     if fidattrs:
                         attr_fidvalue = dict((attr,npc.__getattribute__(attr)) for attr in fidattrs)
                     else:
@@ -22159,7 +22114,7 @@ class NpcFacePatcher(ImportPatcher):
                         if not fidattrs: temp_faceData[npc.fid] = dict((attr,npc.__getattribute__(attr)) for attr in ('fggs_p','fgga_p','fgts_p','hairLength','hairRed','hairBlue','hairGreen','unused3'))
                         else: temp_faceData[npc.fid] = dict((attr,npc.__getattribute__(attr)) for attr in attrs)
                         temp_faceData[npc.fid].update(attr_fidvalue)
-            if 'NpcFacesForceFullImport' in bashTags:
+            if u'NpcFacesForceFullImport' in bashTags:
                 for fid in temp_faceData:
                     faceData[fid] = temp_faceData[fid]
             else:
@@ -22230,10 +22185,10 @@ class NpcFacePatcher(ImportPatcher):
 
 class CBash_NpcFacePatcher(CBash_ImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
-    name = _('Import NPC Faces')
-    text = _("Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
-    autoRe = re.compile(r"^TNR .*.esp$",re.I)
-    autoKey = set(('NpcFaces','NpcFacesForceFullImport','Npc.HairOnly','Npc.EyesOnly'))
+    name = _(u'Import NPC Faces')
+    text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
+    autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+    autoKey = set((u'NpcFaces',u'NpcFacesForceFullImport',u'Npc.HairOnly',u'Npc.EyesOnly'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22251,7 +22206,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
         attrs = []
-        if 'NpcFacesForceFullImport' in bashTags:
+        if u'NpcFacesForceFullImport' in bashTags:
             face = dict((attr,getattr(record,attr)) for attr in self.faceData)
             if ValidateDict(face):
                 self.id_face[record.fid] = face
@@ -22260,12 +22215,12 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                 mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
             return
-        elif 'NpcFaces' in bashTags:
+        elif u'NpcFaces' in bashTags:
             attrs = self.faceData
         else:
-            if 'Npc.HairOnly' in bashTags:
+            if u'Npc.HairOnly' in bashTags:
                 attrs = ['hair', 'hairLength','hairRed','hairBlue','hairGreen']
-            if 'Npc.EyesOnly' in bashTags:
+            if u'Npc.EyesOnly' in bashTags:
                 attrs += ['eye']
         if not attrs:
             return
@@ -22313,23 +22268,23 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_("=== Source Mods"))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
-            log("* " +mod.s)
-        log(_('* Faces Patched: %d') % (sum(mod_count.values()),))
+            log(u'* ' +mod.s)
+        log(u'* '+_(u'Faces Patched: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class RoadImporter(ImportPatcher):
     """Imports roads."""
-    name = _('Import Roads')
-    text = _("Import roads from source mods.")
+    name = _(u'Import Roads')
+    text = _(u"Import roads from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Roads'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Roads'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -22404,11 +22359,11 @@ class RoadImporter(ImportPatcher):
 
 class CBash_RoadImporter(CBash_ImportPatcher):
     """Imports roads."""
-    name = _('Import Roads')
-    text = _("Import roads from source mods.")
+    name = _(u'Import Roads')
+    text = _(u"Import roads from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Roads',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Roads',))
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
@@ -22472,20 +22427,20 @@ class CBash_RoadImporter(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Roads Imported: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Roads Imported: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class SoundPatcher(ImportPatcher):
     """Imports sounds from source mods into patch."""
-    name = _('Import Sounds')
-    text = _("Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods.")
+    name = _(u'Import Sounds')
+    text = _(u"Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Sound'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Sound'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
@@ -22624,11 +22579,11 @@ class SoundPatcher(ImportPatcher):
 
 class CBash_SoundPatcher(CBash_ImportPatcher):
     """Imports sounds from source mods into patch."""
-    name = _('Import Sounds')
-    text = _("Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
+    name = _(u'Import Sounds')
+    text = _(u"Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Sound',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Sound',))
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
@@ -22693,7 +22648,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         for type in class_mod_count.keys():
             log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log('  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -22701,11 +22656,11 @@ class StatsPatcher(ImportPatcher):
     """Import stats from mod file."""
     scanOrder = 28
     editOrder = 28 #--Run ahead of bow patcher
-    name = _('Import Stats')
-    text = _("Import stats from any pickupable items from source mods/files.")
+    name = _(u'Import Stats')
+    text = _(u"Import stats from any pickupable items from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = 'Stats'
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = u'Stats'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22805,7 +22760,20 @@ class StatsPatcher(ImportPatcher):
         log(u'\n=== '+_(u'Modified Stats'))
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'ALCH':_('Potions'),'AMMO':_('Ammo'),'ARMO':_('Armors'),'INGR':_('Ingredients'),'MISC':_('Misc'),'WEAP':_('Weapons'),'SLGM':_('Soulgems'),'SGST':_('Sigil Stones'),'LIGH':_('Lights'),'KEYM':_('Keys'),'CLOT':_('Clothes'),'BOOK':_('Books'),'APPA':_('Apparatuses')}[type]
+            typeName = {'ALCH':_(u'Potions'),
+                        'AMMO':_(u'Ammo'),
+                        'ARMO':_(u'Armors'),
+                        'INGR':_(u'Ingredients'),
+                        'MISC':_(u'Misc'),
+                        'WEAP':_(u'Weapons'),
+                        'SLGM':_(u'Soulgems'),
+                        'SGST':_(u'Sigil Stones'),
+                        'LIGH':_(u'Lights'),
+                        'KEYM':_(u'Keys'),
+                        'CLOT':_(u'Clothes'),
+                        'BOOK':_(u'Books'),
+                        'APPA':_(u'Apparatuses'),
+                        }[type]
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
@@ -22814,11 +22782,11 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     """Import stats from mod file."""
     scanOrder = 28
     editOrder = 28 #--Run ahead of bow patcher
-    name = _('Import Stats')
-    text = _("Import stats from any pickupable items from source mods/files.")
+    name = _(u'Import Stats')
+    text = _(u"Import stats from any pickupable items from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Stats',))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Stats',))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -22902,17 +22870,16 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
                 log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
 
-
 #------------------------------------------------------------------------------
 class SpellsPatcher(ImportPatcher):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
-    name = _('Import Spell Stats')
-    text = _("Import stats from any spells from source mods/files.")
+    name = _(u'Import Spell Stats')
+    text = _(u"Import stats from any spells from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Spells','SpellStats')
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = (u'Spells',u'SpellStats')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -23002,21 +22969,20 @@ class SpellsPatcher(ImportPatcher):
         log(u'\n=== '+_(u'Modified Stats'))
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'SPEL':_('Spells'),}[type]
+            typeName = {'SPEL':_(u'Spells'),}[type]
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
-
 
 class CBash_SpellsPatcher(CBash_ImportPatcher):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
-    name = _('Import Spell Stats')
-    text = _("Import stats from any spells from source mods/files.")
+    name = _(u'Import Spell Stats')
+    text = _(u"Import stats from any spells from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = set(('Spells','SpellStats'))
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = set((u'Spells',u'SpellStats'))
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -23085,10 +23051,10 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Modified SPEL Stats: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Modified SPEL Stats: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 # Patchers: 30 ----------------------------------------------------------------
@@ -23099,7 +23065,7 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
         MultiTweakItem.__init__(self,label,tip,key)
-        self.hidesBit = {'armorShowsRings':16,'armorShowsAmulets':17}[key]
+        self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -23133,21 +23099,21 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader('=== '+self.label)
-        log(_('* Armor Pieces Tweaked: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+self.label)
+        log(u'* '+_(u'Armor Pieces Tweaked: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     """Fix armor to show amulets/rings."""
     scanOrder = 32
     editOrder = 32
-    name = _('Armor Tweaks')
+    name = _(u'Armor Tweaks')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
         CBash_MultiTweakItem.__init__(self,label,tip,key)
-        self.hideFlag = {'armorShowsRings':'IsHideRings','armorShowsAmulets':'IsHideAmulets'}[key]
+        self.hideFlag = {u'armorShowsRings':'IsHideRings',u'armorShowsAmulets':'IsHideAmulets'}[key]
         self.mod_count = {}
 
     def getTypes(self):
@@ -23171,11 +23137,12 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
-        log.setHeader('=== '+self.label)
-        log(_('* Armor Pieces Tweaked: %d') % (sum(self.mod_count.values()),))
+        log.setHeader(u'=== '+self.label)
+        log(u'* '+_(u'Armor Pieces Tweaked: %d') % sum(self.mod_count.values()))
         for srcMod in modInfos.getOrdered(self.mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingShows(MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
@@ -23183,7 +23150,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
         MultiTweakItem.__init__(self,label,tip,key)
-        self.hidesBit = {'ClothingShowsRings':16,'ClothingShowsAmulets':17}[key]
+        self.hidesBit = {u'ClothingShowsRings':16,u'ClothingShowsAmulets':17}[key]
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -23218,20 +23185,20 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader('=== '+self.label)
-        log(_('* Clothing Pieces Tweaked: %d') % (sum(count.values()),))
+        log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
     scanOrder = 32
     editOrder = 32
-    name = _('Clothing Tweaks')
+    name = _(u'Clothing Tweaks')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
         CBash_MultiTweakItem.__init__(self,label,tip,key)
-        self.hideFlag = {'ClothingShowsRings':'IsHideRings','ClothingShowsAmulets':'IsHideAmulets'}[key]
+        self.hideFlag = {u'ClothingShowsRings':'IsHideRings',u'ClothingShowsAmulets':'IsHideAmulets'}[key]
         self.mod_count = {}
 
     def getTypes(self):
@@ -23255,21 +23222,22 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.label)
-        log(_('* Clothing Pieces Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.label)
+        log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_BowReach(MultiTweakItem):
     """Fix bows to have reach = 1.0."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Bow Reach Fix"),
-            _('Fix bows with zero reach. (Zero reach causes CTDs.)'),
-            'BowReach',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Bow Reach Fix"),
+            _(u'Fix bows with zero reach. (Zero reach causes CTDs.)'),
+            u'BowReach',
+            (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
 
@@ -23303,23 +23271,23 @@ class AssortedTweak_BowReach(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Bow Reach Fix'))
-        log(_('* Bows fixed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Bow Reach Fix'))
+        log(u'* '+_(u'Bows fixed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
     """Fix bows to have reach = 1.0."""
     scanOrder = 32
     editOrder = 32
-    name = _('Bow Reach Fix')
+    name = _(u'Bow Reach Fix')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Bow Reach Fix"),
-            _('Fix bows with zero reach. (Zero reach causes CTDs.)'),
-            'BowReach',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Bow Reach Fix"),
+            _(u'Fix bows with zero reach. (Zero reach causes CTDs.)'),
+            u'BowReach',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
         self.defaultEnabled = True
@@ -23343,10 +23311,10 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Bow Reach Fix'))
-        log(_('* Bows fixed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Bow Reach Fix'))
+        log(u'* '+_(u'Bows fixed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
 
 #------------------------------------------------------------------------------
@@ -23355,10 +23323,10 @@ class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Skyrim-style Weapons"),
-            _('Sets all one handed weapons as blades, two handed weapons as blunt.'),
-            'skyrimweaponsstyle',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Skyrim-style Weapons"),
+            _(u'Sets all one handed weapons as blades, two handed weapons as blunt.'),
+            u'skyrimweaponsstyle',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -23396,23 +23364,23 @@ class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Skyrim Style Weapons'))
-        log(_('* Weapons adjusted: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Skyrim Style Weapons'))
+        log(u'* '+_(u'Weapons adjusted: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
     """Sets all one handed weapons as blades, two handed weapons as blunt."""
     scanOrder = 32
     editOrder = 32
-    name = _('Skyrim-style Weapons')
+    name = _(u'Skyrim-style Weapons')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Skyrim-style Weapons"),
-            _('Sets all one handed weapons as blades, two handed weapons as blunt.'),
-            'skyrimweaponsstyle',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Skyrim-style Weapons"),
+            _(u'Sets all one handed weapons as blades, two handed weapons as blunt.'),
+            u'skyrimweaponsstyle',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -23438,10 +23406,10 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Skyrim Style Weapons'))
-        log(_('* Weapons Ajusted: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Skyrim Style Weapons'))
+        log(u'* '+_(u'Weapons Ajusted: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
 
 #------------------------------------------------------------------------------
@@ -23450,10 +23418,10 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Right Hand Rings"),
-            _('Fixes rings to unequip consistently by making them prefer the right hand.'),
-            'ConsistentRings',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Right Hand Rings"),
+            _(u'Fixes rings to unequip consistently by making them prefer the right hand.'),
+            u'ConsistentRings',
+            (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
 
@@ -23488,22 +23456,23 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Right Hand Rings'))
-        log(_('* Rings fixed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Right Hand Rings'))
+        log(u'* '+_(u'Rings fixed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
     """Sets rings to all work on same finger."""
     scanOrder = 32
     editOrder = 32
-    name = _('Right Hand Rings')
+    name = _(u'Right Hand Rings')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Right Hand Rings"),
-            _('Fixes rings to unequip consistently by making them prefer the right hand.'),
-            'ConsistentRings',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Right Hand Rings"),
+            _(u'Fixes rings to unequip consistently by making them prefer the right hand.'),
+            u'ConsistentRings',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
         self.defaultEnabled = True
@@ -23528,22 +23497,23 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Right Hand Rings'))
-        log(_('* Rings fixed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Right Hand Rings'))
+        log(u'* '+_(u'Rings fixed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
+    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("All Clothing Playable"),
-            _('Sets all clothing to be playable.'),
-            'PlayableClothing',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
+            _(u'Sets all clothing to be playable.'),
+            u'PlayableClothing',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -23583,24 +23553,24 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Playable Clothes'))
-        log(_('* Clothes set as playable: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Playable Clothes'))
+        log(u'* '+_(u'Clothes set as playable: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     """Sets all clothes to playable"""
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
-    name = _('Playable Clothes')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
+    name = _(u'Playable Clothes')
+    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("All Clothing Playable"),
-            _('Sets all clothing to be playable.'),
-            'PlayableClothing',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
+            _(u'Sets all clothing to be playable.'),
+            u'PlayableClothing',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -23629,22 +23599,23 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Playable Clothes'))
-        log(_('* Clothes set as playable: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Playable Clothes'))
+        log(u'* '+_(u'Clothes set as playable: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
+    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("All Armor Playable"),
-            _('Sets all armor to be playable.'),
-            'PlayableArmor',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"All Armor Playable"),
+            _(u'Sets all armor to be playable.'),
+            u'PlayableArmor',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -23684,22 +23655,23 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Playable Armor'))
-        log(_('* Armor pieces set as playable: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Playable Armor'))
+        log(u'* '+_(u'Armor pieces set as playable: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     """Sets all armors to be playable"""
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
-    name = _('Playable Armor')
-    reSkip = re.compile(r'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
+    name = _(u'Playable Armor')
+    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("All Armor Playable"),
-            _('Sets all armor to be playable.'),
-            'PlayableArmor',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"All Armor Playable"),
+            _(u'Sets all armor to be playable.'),
+            u'PlayableArmor',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -23728,10 +23700,10 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Playable Armor'))
-        log(_('* Armor pieces set as playable: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Playable Armor'))
+        log(u'* '+_(u'Armor pieces set as playable: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -23742,10 +23714,10 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("DarNified Books"),
-            _('Books will be reformatted for DarN UI.'),
-            'DarnBooks',
-            ('default',  'default'),
+        MultiTweakItem.__init__(self,_(u"DarNified Books"),
+            _(u'Books will be reformatted for DarN UI.'),
+            u'DarnBooks',
+            (u'default',  u'default'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -23773,44 +23745,44 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        reColor = re.compile(r'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-        reTagInWord = re.compile(r'([a-z])<font face=1>',re.M)
-        reFont1 = re.compile(r'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I+re.M)
-        reDiv = re.compile(r'<div',re.I+re.M)
-        reFont = re.compile(r'<font',re.I+re.M)
+        reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
+        reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
+        reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
+        reDiv = re.compile(ur'<div',re.I+re.M)
+        reFont = re.compile(ur'<font',re.I+re.M)
         keep = patchFile.getKeeper()
-        reHead2 = re.compile(r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-        reHead3 = re.compile(r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-        reBold = re.compile(r'(__|\*\*|~~)')
-        reAlign = re.compile(r'^(<<|\^\^|>>)',re.M)
-        align_text = {'^^':'center','<<':'left','>>':'right'}
+        reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
+        reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
+        reBold = re.compile(ur'(__|\*\*|~~)')
+        reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
+        align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
         self.inBold = False
         def replaceBold(mo):
             self.inBold = not self.inBold
-            str = '<font face=3 color=%s>' % ('444444','440000')[self.inBold]
+            str = u'<font face=3 color=%s>' % (u'444444',u'440000')[self.inBold]
             return str
         def replaceAlign(mo):
-            return '<div align=%s>' % align_text[mo.group(1)]
+            return u'<div align=%s>' % align_text[mo.group(1)]
         for record in patchFile.BOOK.records:
             if record.text and not record.enchantment:
                 text = record.text
                 if reHead2.match(text):
                     inBold = False
-                    text = reHead2.sub(r'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
-                    text = reHead3.sub(r'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
+                    text = reHead2.sub(ur'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
+                    text = reHead3.sub(ur'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
                     text = reAlign.sub(replaceAlign,text)
                     text = reBold.sub(replaceBold,text)
-                    text = re.sub(r'\r\n',r'<br>\r\n',text)
+                    text = re.sub(ur'\r\n',ur'<br>\r\n',text)
                 else:
                     maColor = reColor.search(text)
                     if maColor:
                         color = maColor.group(1)
                     elif record.flags.isScroll:
-                        color = '000000'
+                        color = u'000000'
                     else:
-                        color = '444444'
-                    fontFace = '<font face=3 color='+color+'>'
-                    text = reTagInWord.sub(r'\1',text)
+                        color = u'444444'
+                    fontFace = u'<font face=3 color='+color+u'>'
+                    text = reTagInWord.sub(ur'\1',text)
                     text.lower()
                     if reDiv.search(text) and not reFont.search(text):
                         text = fontFace+text
@@ -23822,23 +23794,23 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader('=== '+self.label)
-        log(_('* Books DarNified: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+self.label)
+        log(u'* '+_(u'Books DarNified: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
     """DarNifies books."""
     scanOrder = 32
     editOrder = 32
-    name = _('Books DarNified')
+    name = _(u'Books DarNified')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("DarNified Books"),
-            _('Books will be reformatted for DarN UI.'),
-            'DarnBooks',
-            ('default',  'default'),
+        CBash_MultiTweakItem.__init__(self,_(u"DarNified Books"),
+            _(u'Books will be reformatted for DarN UI.'),
+            u'DarnBooks',
+            (u'default',  u'default'),
             )
         self.mod_count = {}
 
@@ -23850,41 +23822,41 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         """Edits patch file as desired."""
         def replaceBold(mo):
             self.inBold = not self.inBold
-            str = '<font face=3 color=%s>' % ('444444','440000')[self.inBold]
+            str = u'<font face=3 color=%s>' % (u'444444',u'440000')[self.inBold]
             return str
         def replaceAlign(mo):
-            return '<div align=%s>' % align_text[mo.group(1)]
+            return u'<div align=%s>' % align_text[mo.group(1)]
 
         if record.text and not record.enchantment:
             text = record.text
 
-            reColor = re.compile(r'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-            reTagInWord = re.compile(r'([a-z])<font face=1>',re.M)
-            reFont1 = re.compile(r'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I+re.M)
-            reDiv = re.compile(r'<div',re.I+re.M)
-            reFont = re.compile(r'<font',re.I+re.M)
-            reHead2 = re.compile(r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-            reHead3 = re.compile(r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-            reBold = re.compile(r'(__|\*\*|~~)')
-            reAlign = re.compile(r'^(<<|\^\^|>>)',re.M)
-            align_text = {'^^':'center','<<':'left','>>':'right'}
+            reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
+            reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
+            reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
+            reDiv = re.compile(ur'<div',re.I+re.M)
+            reFont = re.compile(ur'<font',re.I+re.M)
+            reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
+            reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
+            reBold = re.compile(ur'(__|\*\*|~~)')
+            reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
+            align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
             self.inBold = False
             if reHead2.match(text):
-                text = reHead2.sub(r'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
-                text = reHead3.sub(r'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
+                text = reHead2.sub(ur'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
+                text = reHead3.sub(ur'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
                 text = reAlign.sub(replaceAlign,text)
                 text = reBold.sub(replaceBold,text)
-                text = re.sub(r'\r\n',r'<br>\r\n',text)
+                text = re.sub(ur'\r\n',r'<br>\r\n',text)
             else:
                 maColor = reColor.search(text)
                 if maColor:
                     color = maColor.group(1)
                 elif record.IsScroll:
-                    color = '000000'
+                    color = u'000000'
                 else:
-                    color = '444444'
-                fontFace = '<font face=3 color='+color+'>'
-                text = reTagInWord.sub(r'\1',text)
+                    color = u'444444'
+                fontFace = u'<font face=3 color='+color+u'>'
+                text = reTagInWord.sub(ur'\1',text)
                 text.lower()
                 if reDiv.search(text) and not reFont.search(text):
                     text = fontFace+text
@@ -23903,10 +23875,10 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.label)
-        log(_('* Books DarNified: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.label)
+        log(u'* '+_(u'Books DarNified: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -23915,10 +23887,10 @@ class AssortedTweak_FogFix(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Nvidia Fog Fix"),
-            _('Fix fog related Nvidia black screen problems.'),
-            'FogFix',
-            ('0.0001',  '0.0001'),
+        MultiTweakItem.__init__(self,_(u"Nvidia Fog Fix"),
+            _(u'Fix fog related Nvidia black screen problems.'),
+            u'FogFix',
+            (u'0.0001',  u'0.0001'),
             )
         self.defaultEnabled = True
 
@@ -23954,22 +23926,22 @@ class AssortedTweak_FogFix(MultiTweakItem):
                     count.setdefault(cell.fid[0],0)
                     count[cell.fid[0]] += 1
         #--Log
-        log.setHeader(_('=== Nvidia Fog Fix'))
+        log.setHeader(u'=== '+_(u'Nvidia Fog Fix'))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
     """Fix fog in cell to be non-zero."""
     scanOrder = 32
     editOrder = 32
-    name = _('Nvidia Fog Fix')
+    name = _(u'Nvidia Fog Fix')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Nvidia Fog Fix"),
-            _('Fix fog related Nvidia black screen problems.'),
-            'FogFix',
-            ('0.0001',  '0.0001'),
+        CBash_MultiTweakItem.__init__(self,_(u"Nvidia Fog Fix"),
+            _(u'Fix fog related Nvidia black screen problems.'),
+            u'FogFix',
+            (u'0.0001',  u'0.0001'),
             )
         self.mod_count = {}
         self.defaultEnabled = True
@@ -23998,9 +23970,9 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Nvidia Fog Fix'))
+        log.setHeader(u'=== '+_(u'Nvidia Fog Fix'))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -24009,10 +23981,10 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("No Light Flicker"),
-            _('Remove flickering from lights. For use on low-end machines.'),
-            'NoLightFlicker',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"No Light Flicker"),
+            _(u'Remove flickering from lights. For use on low-end machines.'),
+            u'NoLightFlicker',
+            (u'1.0',  u'1.0'),
             )
         self.flags = flags = MreLigh._flags()
         flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
@@ -24050,23 +24022,23 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== No Light Flicker'))
-        log(_('* Lights unflickered: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'No Light Flicker'))
+        log(u'* '+_(u'Lights unflickered: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
     """Remove light flickering for low end machines."""
     scanOrder = 32
     editOrder = 32
-    name = _('No Light Flicker')
+    name = _(u'No Light Flicker')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("No Light Flicker"),
-            _('Remove flickering from lights. For use on low-end machines.'),
-            'NoLightFlicker',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"No Light Flicker"),
+            _(u'Remove flickering from lights. For use on low-end machines.'),
+            u'NoLightFlicker',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -24093,10 +24065,10 @@ class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== No Light Flicker'))
-        log(_('* Lights unflickered: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'No Light Flicker'))
+        log(u'* '+_(u'Lights unflickered: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -24105,14 +24077,14 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Reweigh: Potions (Maximum)"),
-            _('Potion weight will be capped.'),
-            'MaximumPotionWeight',
-            (_('0.1'),  0.1),
-            (_('0.2'),  0.2),
-            (_('0.4'),  0.4),
-            (_('0.6'),  0.6),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Maximum)"),
+            _(u'Potion weight will be capped.'),
+            u'MaximumPotionWeight',
+            (_(u'0.1'),  0.1),
+            (_(u'0.2'),  0.2),
+            (_(u'0.4'),  0.4),
+            (_(u'0.6'),  0.6),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24149,28 +24121,28 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh: Potions (Maximum)'))
-        log(_('Potions set to maximum weight of %f') % maxWeight)
-        log(_('* Potions Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Potions (Maximum)'))
+        log(_(u'Potions set to maximum weight of %f') % maxWeight)
+        log(u'* '+_(u'Potions Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
     """Reweighs standard potions down to 0.1."""
     scanOrder = 32
     editOrder = 32
-    name = _("Reweigh: Potions (Maximum)")
+    name = _(u"Reweigh: Potions (Maximum)")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Reweigh: Potions (Maximum)"),
-            _('Potion weight will be capped.'),
-            'MaximumPotionWeight',
-            (_('0.1'),  0.1),
-            (_('0.2'),  0.2),
-            (_('0.4'),  0.4),
-            (_('0.6'),  0.6),
-            (_('Custom'),0.0),
+        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Maximum)"),
+            _(u'Potion weight will be capped.'),
+            u'MaximumPotionWeight',
+            (_(u'0.1'),  0.1),
+            (_(u'0.2'),  0.2),
+            (_(u'0.4'),  0.4),
+            (_(u'0.6'),  0.6),
+            (_(u'Custom'),0.0),
             )
         self.mod_count = {}
         self.SEFF = MGEFCode('SEFF')
@@ -24198,26 +24170,27 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh: Potions (Maximum)'))
-        log(_('Potions set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(_('* Potions Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Potions (Maximum)'))
+        log(_(u'Potions set to maximum weight of %f') % self.choiceValues[self.chosen][0])
+        log(u'* '+_(u'Potions Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_IngredientWeight(MultiTweakItem):
     """Reweighs standard ingredients down to 0.1."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Reweigh: Ingredients"),
-            _('Ingredient weight will be capped.'),
-            'MaximumIngredientWeight',
-            (_('0.1'),  0.1),
-            (_('0.2'),  0.2),
-            (_('0.4'),  0.4),
-            (_('0.6'),  0.6),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Reweigh: Ingredients"),
+            _(u'Ingredient weight will be capped.'),
+            u'MaximumIngredientWeight',
+            (_(u'0.1'),  0.1),
+            (_(u'0.2'),  0.2),
+            (_(u'0.4'),  0.4),
+            (_(u'0.6'),  0.6),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24254,28 +24227,28 @@ class AssortedTweak_IngredientWeight(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh: Ingredients'))
-        log(_('Ingredients set to maximum weight of %f') % maxWeight)
-        log(_('* Ingredients Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Ingredients'))
+        log(_(u'Ingredients set to maximum weight of %f') % maxWeight)
+        log(u'* '+_(u'Ingredients Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
     """Reweighs standard ingredients down to 0.1."""
     scanOrder = 32
     editOrder = 32
-    name = _('Reweigh: Ingredients')
+    name = _(u'Reweigh: Ingredients')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Reweigh: Ingredients"),
-            _('Ingredient weight will be capped.'),
-            'MaximumIngredientWeight',
-            (_('0.1'),  0.1),
-            (_('0.2'),  0.2),
-            (_('0.4'),  0.4),
-            (_('0.6'),  0.6),
-            (_('Custom'),0.0),
+        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Ingredients"),
+            _(u'Ingredient weight will be capped.'),
+            u'MaximumIngredientWeight',
+            (_(u'0.1'),  0.1),
+            (_(u'0.2'),  0.2),
+            (_(u'0.4'),  0.4),
+            (_(u'0.6'),  0.6),
+            (_(u'Custom'),0.0),
             )
         self.mod_count = {}
         self.SEFF = MGEFCode('SEFF')
@@ -24304,26 +24277,27 @@ class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh: Ingredients'))
-        log(_('Ingredients set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(_('* Ingredients Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Ingredients'))
+        log(_(u'Ingredients set to maximum weight of %f') % self.choiceValues[self.chosen][0])
+        log(u'* '+_(u'Ingredients Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
     """Reweighs any potions up to 4."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Reweigh: Potions (Minimum)"),
-            _('Potion weight will be floored.'),
-            'MinimumPotionWeight',
-            (_('1'),  1),
-            (_('2'),  2),
-            (_('3'),  3),
-            (_('4'),  4),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Minimum)"),
+            _(u'Potion weight will be floored.'),
+            u'MinimumPotionWeight',
+            (_(u'1'),  1),
+            (_(u'2'),  2),
+            (_(u'3'),  3),
+            (_(u'4'),  4),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24360,28 +24334,28 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh: Potions (Minimum)'))
-        log(_('Potions set to minimum weight of %f') % minWeight)
-        log(_('* Potions Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Potions (Minimum)'))
+        log(_(u'Potions set to minimum weight of %f') % minWeight)
+        log(u'* '+_(u'Potions Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
     """Reweighs any potions up to 4."""
     scanOrder = 33 #Have it run after the max weight for consistent results
     editOrder = 33
-    name = _('Reweigh: Potions (Minimum)')
+    name = _(u'Reweigh: Potions (Minimum)')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Reweigh: Potions (Minimum)"),
-            _('Potion weight will be floored.'),
-            'MinimumPotionWeight',
-            (_('1'),  1),
-            (_('2'),  2),
-            (_('3'),  3),
-            (_('4'),  4),
-            (_('Custom'),0.0),
+        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Minimum)"),
+            _(u'Potion weight will be floored.'),
+            u'MinimumPotionWeight',
+            (_(u'1'),  1),
+            (_(u'2'),  2),
+            (_(u'3'),  3),
+            (_(u'4'),  4),
+            (_(u'Custom'),0.0),
             )
         self.mod_count = {}
 
@@ -24405,11 +24379,11 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh: Potions (Minimum)'))
-        log(_('Potions set to minimum weight of %f') % self.choiceValues[self.chosen][0])
-        log(_('* Potions Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Potions (Minimum)'))
+        log(_(u'Potions set to minimum weight of %f') % self.choiceValues[self.chosen][0])
+        log(u'* '+_(u'Potions Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -24418,18 +24392,18 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Reweigh: Staffs/Staves"),
-            _('Staff weight will be capped.'),
-            'StaffWeight',
-            (_('1'),  1),
-            (_('2'),  2),
-            (_('3'),  3),
-            (_('4'),  4),
-            (_('5'),  5),
-            (_('6'),  6),
-            (_('7'),  7),
-            (_('8'),  8),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Reweigh: Staffs/Staves"),
+            _(u'Staff weight will be capped.'),
+            u'StaffWeight',
+            (_(u'1'),  1),
+            (_(u'2'),  2),
+            (_(u'3'),  3),
+            (_(u'4'),  4),
+            (_(u'5'),  5),
+            (_(u'6'),  6),
+            (_(u'7'),  7),
+            (_(u'8'),  8),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24466,32 +24440,32 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh: Staffs/Staves'))
-        log(_('Staffs/Staves set to maximum weight of %f') % maxWeight)
-        log(_('* Staffs/Staves Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Staffs/Staves'))
+        log(_(u'Staffs/Staves set to maximum weight of %f') % maxWeight)
+        log(u'* '+_(u'Staffs/Staves Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     """Reweighs staffs."""
     scanOrder = 32
     editOrder = 32
-    name = _('Reweigh: Staffs/Staves')
+    name = _(u'Reweigh: Staffs/Staves')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Reweigh: Staffs/Staves"),
-            _('Staff weight will be capped.'),
-            'StaffWeight',
-            (_('1'),  1.0),
-            (_('2'),  2.0),
-            (_('3'),  3.0),
-            (_('4'),  4.0),
-            (_('5'),  5.0),
-            (_('6'),  6.0),
-            (_('7'),  7.0),
-            (_('8'),  8.0),
-            (_('Custom'),0.0),
+        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Staffs/Staves"),
+            _(u'Staff weight will be capped.'),
+            u'StaffWeight',
+            (_(u'1'),  1.0),
+            (_(u'2'),  2.0),
+            (_(u'3'),  3.0),
+            (_(u'4'),  4.0),
+            (_(u'5'),  5.0),
+            (_(u'6'),  6.0),
+            (_(u'7'),  7.0),
+            (_(u'8'),  8.0),
+            (_(u'Custom'),0.0),
             )
         self.mod_count = {}
 
@@ -24516,11 +24490,11 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh: Staffs/Staves'))
-        log(_('Staffs/Staves set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(_('* Staffs/Staves Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Staffs/Staves'))
+        log(_(u'Staffs/Staves set to maximum weight of %f') % self.choiceValues[self.chosen][0])
+        log(u'* '+_(u'Staffs/Staves Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -24529,15 +24503,15 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Reweigh: Arrows"),
-            _('Arrow weights will be capped.'),
-            'MaximumArrowWeight',
-            (_('0'),    0),
-            (_('0.1'),  0.1),
-            (_('0.2'),  0.2),
-            (_('0.4'),  0.4),
-            (_('0.6'),  0.6),
-            (_('Custom'),0.0),
+        MultiTweakItem.__init__(self,_(u"Reweigh: Arrows"),
+            _(u'Arrow weights will be capped.'),
+            u'MaximumArrowWeight',
+            (_(u'0'),    0),
+            (_(u'0.1'),  0.1),
+            (_(u'0.2'),  0.2),
+            (_(u'0.4'),  0.4),
+            (_(u'0.6'),  0.6),
+            (_(u'Custom'),0.0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24574,29 +24548,29 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Reweigh: Arrows'))
-        log(_('Arrows set to maximum weight of %f') % maxWeight)
-        log(_('* Arrows Reweighed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Reweigh: Arrows'))
+        log(_(u'Arrows set to maximum weight of %f') % maxWeight)
+        log(u'* '+_(u'Arrows Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
     """Reweighs standard arrows down to 0.1."""
     scanOrder = 32
     editOrder = 32
-    name = _('Reweigh: Arrows')
+    name = _(u'Reweigh: Arrows')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Reweigh: Arrows"),
-            _('Arrow weights will be capped.'),
-            'MaximumArrowWeight',
-            (_('0'), 0.0),
-            (_('0.1'),  0.1),
-            (_('0.2'),  0.2),
-            (_('0.4'),  0.4),
-            (_('0.6'),  0.6),
-            (_('Custom'),0.0),
+        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Arrows"),
+            _(u'Arrow weights will be capped.'),
+            u'MaximumArrowWeight',
+            (_(u'0'), 0.0),
+            (_(u'0.1'),  0.1),
+            (_(u'0.2'),  0.2),
+            (_(u'0.4'),  0.4),
+            (_(u'0.6'),  0.6),
+            (_(u'Custom'),0.0),
             )
         self.mod_count = {}
 
@@ -24621,22 +24595,23 @@ class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Reweigh: Arrows'))
-        log(_('Arrows set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(_('* Arrows Reweighed: %d') % (sum(mod_count.values())))
+        log.setHeader(u'=== '+_(u'Reweigh: Arrows'))
+        log(_u('Arrows set to maximum weight of %f') % self.choiceValues[self.chosen][0])
+        log(u'* '+_(u'Arrows Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     """Silences and invisibleates the Script Effect."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Magic: Script Effect Silencer"),
-            _('Script Effect will be silenced and have no graphics.'),
-            'SilentScriptEffect',
-            (_('0'),    0),
+        MultiTweakItem.__init__(self,_(u"Magic: Script Effect Silencer"),
+            _(u'Script Effect will be silenced and have no graphics.'),
+            u'SilentScriptEffect',
+            (_(u'0'),    0),
             )
         self.defaultEnabled = True
 
@@ -24665,7 +24640,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        nullRef = (GPath('Oblivion.esm'),0)
+        nullRef = (GPath(u'Oblivion.esm'),0)
         silentattrs = {
             'model' : None,
             'projectileSpeed' : 9999,
@@ -24685,20 +24660,21 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
                     setattr(record,attr,silentattrs[attr])
                     keep(record.fid)
         #--Log
-        log.setHeader(_('=== Magic: Script Effect Silencer'))
-        log(_('Script Effect silenced.'))
+        log.setHeader(u'=== '+_(u'Magic: Script Effect Silencer'))
+        log(_(u'Script Effect silenced.'))
+
 class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
     """Silences the script magic effect and gives it an extremely high speed."""
     scanOrder = 32
     editOrder = 32
-    name = _('Magic: Script Effect Silencer')
+    name = _(u'Magic: Script Effect Silencer')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Magic: Script Effect Silencer"),
-             _('Script Effect will be silenced and have no graphics.'),
-            'SilentScriptEffect',
-            (_('0'),    0),
+        CBash_MultiTweakItem.__init__(self,_(u"Magic: Script Effect Silencer"),
+             _(u'Script Effect will be silenced and have no graphics.'),
+            u'SilentScriptEffect',
+            (_(u'0'),    0),
             )
         self.attrs = ['modPath','modb','modt_p','projectileSpeed','light','effectShader',
                       'enchantEffect','castingSound','boltSound','hitSound','areaSound',
@@ -24727,28 +24703,29 @@ class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
-        log.setHeader(_('=== Magic: Script Effect Silencer'))
-        log(_('Script Effect silenced.'))
+        log.setHeader(u'=== '+_(u'Magic: Script Effect Silencer'))
+        log(_(u'Script Effect silenced.'))
+
 #------------------------------------------------------------------------------
 class AssortedTweak_HarvestChance(MultiTweakItem):
     """Sets Harvest Chances."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Harvest Chance"),
-            _('Harvest chances on all plants will be set to the chosen percentage.'),
-            'HarvestChance',
-            (_('10%'),  10),
-            (_('20%'),  20),
-            (_('30%'),  30),
-            (_('40%'),  40),
-            (_('50%'),  50),
-            (_('60%'),  60),
-            (_('70%'),  70),
-            (_('80%'),  80),
-            (_('90%'),  90),
-            (_('100%'), 100),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Harvest Chance"),
+            _(u'Harvest chances on all plants will be set to the chosen percentage.'),
+            u'HarvestChance',
+            (_(u'10%'),  10),
+            (_(u'20%'),  20),
+            (_(u'30%'),  30),
+            (_(u'40%'),  40),
+            (_(u'50%'),  50),
+            (_(u'60%'),  60),
+            (_(u'70%'),  70),
+            (_(u'80%'),  80),
+            (_(u'90%'),  90),
+            (_(u'100%'), 100),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24787,33 +24764,33 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Harvest Chance'))
-        log(_('* Harvest Chances Changed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Harvest Chance'))
+        log(u'* '+_(u'Harvest Chances Changed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
     """Adjust Harvest Chances."""
     scanOrder = 32
     editOrder = 32
-    name = _('Harvest Chance')
+    name = _(u'Harvest Chance')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Harvest Chance"),
-            _('Harvest chances on all plants will be set to the chosen percentage.'),
-            'HarvestChance',
-            (_('10%'),  10),
-            (_('20%'),  20),
-            (_('30%'),  30),
-            (_('40%'),  40),
-            (_('50%'),  50),
-            (_('60%'),  60),
-            (_('70%'),  70),
-            (_('80%'),  80),
-            (_('90%'),  90),
-            (_('100%'), 100),
-            (_('Custom'),0),
+        CBash_MultiTweakItem.__init__(self,_(u"Harvest Chance"),
+            _(u'Harvest chances on all plants will be set to the chosen percentage.'),
+            u'HarvestChance',
+            (_(u'10%'),  10),
+            (_(u'20%'),  20),
+            (_(u'30%'),  30),
+            (_(u'40%'),  40),
+            (_(u'50%'),  50),
+            (_(u'60%'),  60),
+            (_(u'70%'),  70),
+            (_(u'80%'),  80),
+            (_(u'90%'),  90),
+            (_(u'100%'), 100),
+            (_(u'Custom'),0),
             )
         self.attrs = ['spring','summer','fall','winter']
         self.mod_count = {}
@@ -24824,7 +24801,7 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.eid.startswith('Nirnroot'): return #skip Nirnroots
+        if record.eid.startswith(u'Nirnroot'): return #skip Nirnroots
         newValues = [self.choiceValues[self.chosen][0]] * 4
         oldValues = map(record.__getattribute__, self.attrs)
         if oldValues != newValues:
@@ -24840,10 +24817,10 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Harvest Chance'))
-        log(_('* Harvest Chances Changed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Harvest Chance'))
+        log(u'* '+_(u'Harvest Chances Changed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -24852,10 +24829,10 @@ class AssortedTweak_WindSpeed(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Disable Wind"),
-            _('Disables the wind on all weathers.'),
-            'windSpeed',
-            (_('Disable'),  0),
+        MultiTweakItem.__init__(self,_(u"Disable Wind"),
+            _(u'Disables the wind on all weathers.'),
+            u'windSpeed',
+            (_(u'Disable'),  0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24890,23 +24867,23 @@ class AssortedTweak_WindSpeed(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Disable Wind'))
-        log(_('* Winds Disabled: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Disable Wind'))
+        log(u'* '+_(u'Winds Disabled: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
     """Disables Weather winds."""
     scanOrder = 32
     editOrder = 32
-    name = _('Disable Wind')
+    name = _(u'Disable Wind')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Disable Wind"),
-            _('Disables the wind on all weathers.'),
-            'windSpeed',
-            (_('Disable'),  0),
+        CBash_MultiTweakItem.__init__(self,_(u"Disable Wind"),
+            _(u'Disables the wind on all weathers.'),
+            u'windSpeed',
+            (_(u'Disable'),  0),
             )
         self.mod_count = {}
 
@@ -24929,10 +24906,10 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Disable Wind'))
-        log(_('* Winds Disabled: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Disable Wind'))
+        log(u'* '+_(u'Winds Disabled: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -24941,10 +24918,10 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Uniform Groundcover"),
-            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
-            'UniformGroundcover',
-            ('1.0', '1.0'),
+        MultiTweakItem.__init__(self,_(u"Uniform Groundcover"),
+            _(u'Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            u'UniformGroundcover',
+            (u'1.0', u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -24979,23 +24956,23 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Uniform Groundcover'))
-        log(_('* Grasses Normalized: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Uniform Groundcover'))
+        log(u'* '+_(u'Grasses Normalized: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
     """Eliminates random variation in groundcover."""
     scanOrder = 32
     editOrder = 32
-    name = _('Uniform Groundcover')
+    name = _(u'Uniform Groundcover')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Uniform Groundcover"),
-            _('Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
-            'UniformGroundcover',
-            ('1.0', '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Uniform Groundcover"),
+            _(u'Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
+            u'UniformGroundcover',
+            (u'1.0', u'1.0'),
             )
         self.mod_count = {}
 
@@ -25018,33 +24995,34 @@ class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Uniform Groundcover'))
-        log(_('* Grasses Normalized: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Uniform Groundcover'))
+        log(u'* '+_(u'Grasses Normalized: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
 #info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and Staffs/Staves"),
-            _('The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
-            'Number of uses:',
-            (_('1'), 1),
-            (_('5'), 5),
-            (_('10'), 10),
-            (_('20'), 20),
-            (_('30'), 30),
-            (_('40'), 40),
-            (_('50'), 50),
-            (_('80'), 80),
-            (_('100'), 100),
-            (_('250'), 250),
-            (_('500'), 500),
-            (_('Unlimited'), 0),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Number of uses for pre-enchanted weapons and Staffs/Staves"),
+            _(u'The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
+            u'Number of uses:',
+            (_(u'1'), 1),
+            (_(u'5'), 5),
+            (_(u'10'), 10),
+            (_(u'20'), 20),
+            (_(u'30'), 30),
+            (_(u'40'), 40),
+            (_(u'50'), 50),
+            (_(u'80'), 80),
+            (_(u'100'), 100),
+            (_(u'250'), 250),
+            (_(u'500'), 500),
+            (_(u'Unlimited'), 0),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -25084,35 +25062,35 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Set Enchantment Number of Uses'))
-        log(_('* Enchantments set: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Set Enchantment Number of Uses'))
+        log(u'* '+_(u'Enchantments set: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     scanOrder = 32
     editOrder = 32
-    name = _('Set Enchantment Number of Uses')
+    name = _(u'Set Enchantment Number of Uses')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Number of uses for pre-enchanted weapons and Staffs/Staves"),
-            _('The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
-            'Number of uses:',
-            (_('1'), 1),
-            (_('5'), 5),
-            (_('10'), 10),
-            (_('20'), 20),
-            (_('30'), 30),
-            (_('40'), 40),
-            (_('50'), 50),
-            (_('80'), 80),
-            (_('100'), 100),
-            (_('250'), 250),
-            (_('500'), 500),
-            (_('Unlimited'), 0),
-            (_('Custom'),0),
+        CBash_MultiTweakItem.__init__(self,_(u"Number of uses for pre-enchanted weapons and Staffs/Staves"),
+            _(u'The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
+            u'Number of uses:',
+            (_(u'1'), 1),
+            (_(u'5'), 5),
+            (_(u'10'), 10),
+            (_(u'20'), 20),
+            (_(u'30'), 30),
+            (_(u'40'), 40),
+            (_(u'50'), 50),
+            (_(u'80'), 80),
+            (_(u'100'), 100),
+            (_(u'250'), 250),
+            (_(u'500'), 500),
+            (_(u'Unlimited'), 0),
+            (_(u'Custom'),0),
             )
         self.mod_count = {}
 
@@ -25143,11 +25121,12 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Set Enchantment Number of Uses'))
-        log(_('* Enchantments set: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Set Enchantment Number of Uses'))
+        log(u'* '+_(u'Enchantments set: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_DefaultIcons(MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
@@ -25156,10 +25135,10 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                             'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
                             'MISC','QUST','SGST','SLGM','WEAP']
-        MultiTweakItem.__init__(self,_("Default Icons"),
-            _("Sets a default icon for any records that don't have any icon assigned"),
-            'icons',
-            (_('1'), 1),
+        MultiTweakItem.__init__(self,_(u"Default Icons"),
+            _(u"Sets a default icon for any records that don't have any icon assigned"),
+            u'icons',
+            (_(u'1'), 1),
             )
         self.defaultEnabled = True
 
@@ -25201,179 +25180,179 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                 if getattr(record, 'femaleIconPath', None): continue
                 changed = False
                 if type == 'ALCH':
-                    record.iconPath = r"Clutter\Potions\IconPotion01.dds"
+                    record.iconPath = u"Clutter\\Potions\\IconPotion01.dds"
                     changed = True
                 elif type == 'AMMO':
-                    record.iconPath = r"Weapons\IronArrow.dds"
+                    record.iconPath = u"Weapons\\IronArrow.dds"
                     changed = True
                 elif type == 'APPA':
-                    record.iconPath = r"Clutter\IconMortarPestle.dds"
+                    record.iconPath = u"Clutter\\IconMortarPestle.dds"
                     changed = True
                 elif type == 'AMMO':
-                    record.iconPath = r"Weapons\IronArrow.dds"
+                    record.iconPath = u"Weapons\\IronArrow.dds"
                     changed = True
                 elif type == 'ARMO':
                     if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIconPath = r"Armor\Iron\M\Cuirass.dds"
-                        record.femaleIconPath = r"Armor\Iron\F\Cuirass.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Cuirass.dds"
+                        record.femaleIconPath = u"Armor\\Iron\\F\\Cuirass.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIconPath = r"Armor\Iron\M\Greaves.dds"
-                        record.femaleIconPath = r"Armor\Iron\F\Greaves.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Greaves.dds"
+                        record.femaleIconPath = u"Armor\\Iron\\F\\Greaves.dds"
                         changed = True
                     elif record.flags.head != 0 or record.flags.hair != 0:
-                        record.maleIconPath = r"Armor\Iron\M\Helmet.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Helmet.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIconPath = r"Armor\Iron\M\Gauntlets.dds"
-                        record.femaleIconPath = r"Armor\Iron\F\Gauntlets.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Gauntlets.dds"
+                        record.femaleIconPath = u"Armor\\Iron\\F\\Gauntlets.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIconPath = r"Armor\Iron\M\Boots.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Boots.dds"
                         changed = True
                     elif record.flags.shield != 0:
-                        record.maleIconPath = r"Armor\Iron\M\Shield.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
                         changed = True
                     else: #Default icon, probably a token or somesuch
-                        record.maleIconPath = r"Armor\Iron\M\Shield.dds"
+                        record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
                         changed = True
                 elif type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
-                    record.iconPath = r"Clutter\iconbook%d.dds" % (random.randint(1,13))
+                    record.iconPath = u"Clutter\\iconbook%d.dds" % (random.randint(1,13))
                     changed = True
                 elif type == 'CLOT':
                     if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Shirt.dds"
-                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Shirt.dds"
+                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Shirt.dds"
+                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Pants.dds"
-                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Pants.dds"
+                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Pants.dds"
+                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Pants.dds"
                         changed = True
                     elif record.flags.head or record.flags.hair:
-                        record.maleIconPath = r"Clothes\MythicDawnrobe\hood.dds"
+                        record.maleIconPath = u"Clothes\\MythicDawnrobe\\hood.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIconPath = r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds"
+                        record.maleIconPath = u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIconPath = r"Clothes\MiddleClass\01\M\Shoes.dds"
-                        record.femaleIconPath = r"Clothes\MiddleClass\01\F\Shoes.dds"
+                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Shoes.dds"
+                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"
                         changed = True
                     elif record.flags.leftRing or record.flags.rightRing:
-                        record.maleIconPath = r"Clothes\Ring\RingNovice.dds"
+                        record.maleIconPath = u"Clothes\\Ring\\RingNovice.dds"
                         changed = True
                     else: #amulet
-                        record.maleIconPath = r"Clothes\Amulet\AmuletSilver.dds"
+                        record.maleIconPath = u"Clothes\\Amulet\\AmuletSilver.dds"
                         changed = True
                 elif type == 'FACT':
                     #todo
                     #changed = True
                     pass
                 elif type == 'INGR':
-                    record.iconPath = r"Clutter\IconSeeds.dds"
+                    record.iconPath = u"Clutter\\IconSeeds.dds"
                     changed = True
                 elif type == 'KEYM':
-                    record.iconPath = [r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"][random.randint(0,1)]
+                    record.iconPath = [u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"][random.randint(0,1)]
                     changed = True
                 elif type == 'LIGH':
                     if not record.flags.canTake: continue
-                    record.iconPath = r"Lights\IconTorch02.dds"
+                    record.iconPath = u"Lights\\IconTorch02.dds"
                     changed = True
                 elif type == 'MISC':
-                    record.iconPath = r"Clutter\Soulgems\AzurasStar.dds"
+                    record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
                     changed = True
                 elif type == 'QUST':
                     if not record.stages: continue
-                    record.iconPath = r"Quest\icon_miscellaneous.dds"
+                    record.iconPath = u"Quest\\icon_miscellaneous.dds"
                     changed = True
                 elif type == 'SGST':
-                    record.iconPath = r"IconSigilStone.dds"
+                    record.iconPath = u"IconSigilStone.dds"
                     changed = True
                 elif type == 'SLGM':
-                    record.iconPath = r"Clutter\Soulgems\AzurasStar.dds"
+                    record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
                     changed = True
                 elif type == 'WEAP':
                     if record.weaponType == 0:
-                        record.iconPath = r"Weapons\IronDagger.dds"
+                        record.iconPath = u"Weapons\\IronDagger.dds"
                     elif record.weaponType == 1:
-                        record.iconPath = r"Weapons\IronClaymore.dds"
+                        record.iconPath = u"Weapons\\IronClaymore.dds"
                     elif record.weaponType == 2:
-                        record.iconPath = r"Weapons\IronMace.dds"
+                        record.iconPath = u"Weapons\\IronMace.dds"
                     elif record.weaponType == 3:
-                        record.iconPath = r"Weapons\IronBattleAxe.dds"
+                        record.iconPath = u"Weapons\\IronBattleAxe.dds"
                     elif record.weaponType == 4:
-                        record.iconPath = r"Weapons\Staff.dds"
+                        record.iconPath = u"Weapons\\Staff.dds"
                     elif record.weaponType == 5:
-                        record.iconPath = r"Weapons\IronBow.dds"
+                        record.iconPath = u"Weapons\\IronBow.dds"
                     else: #Should never reach this point
-                        record.iconPath = r"Weapons\IronDagger.dds"
+                        record.iconPath = u"Weapons\\IronDagger.dds"
                     changed = True
                 if changed:
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Default Icons'))
-        log(_('* Default Icons set: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Default Icons'))
+        log(u'* '+_(u'Default Icons set: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
     scanOrder = 32
     editOrder = 32
-    name = _('Default Icons')
+    name = _(u'Default Icons')
     type_defaultIcon = {
-                'ALCH': r"Clutter\Potions\IconPotion01.dds",
-                'AMMO': r"Weapons\IronArrow.dds",
-                'APPA': r"Clutter\IconMortarPestle.dds",
-                'AMMO': r"Weapons\IronArrow.dds",
-                'ARMO': ((r"Armor\Iron\M\Cuirass.dds",r"Armor\Iron\F\Cuirass.dds"),
-                         (r"Armor\Iron\M\Greaves.dds",r"Armor\Iron\F\Greaves.dds"),
-                         (r"Armor\Iron\M\Helmet.dds",),
-                         (r"Armor\Iron\M\Gauntlets.dds",r"Armor\Iron\F\Gauntlets.dds"),
-                         (r"Armor\Iron\M\Boots.dds",),
-                         (r"Armor\Iron\M\Shield.dds",),
-                         (r"Armor\Iron\M\Shield.dds",), #Default Armor icon
+                'ALCH': u"Clutter\\Potions\\IconPotion01.dds",
+                'AMMO': u"Weapons\\IronArrow.dds",
+                'APPA': u"Clutter\\IconMortarPestle.dds",
+                'AMMO': u"Weapons\\IronArrow.dds",
+                'ARMO': ((u"Armor\\Iron\\M\\Cuirass.dds",u"Armor\\Iron\\F\\Cuirass.dds"),
+                         (u"Armor\\Iron\\M\\Greaves.dds",u"Armor\\Iron\\F\\Greaves.dds"),
+                         (u"Armor\\Iron\\M\\Helmet.dds",),
+                         (u"Armor\\Iron\\M\\Gauntlets.dds",u"Armor\\Iron\\F\\Gauntlets.dds"),
+                         (u"Armor\\Iron\\M\\Boots.dds",),
+                         (u"Armor\\Iron\\M\\Shield.dds",),
+                         (u"Armor\\Iron\\M\\Shield.dds",), #Default Armor icon
                          ),
-                'BOOK': r"Clutter\iconbook%d.dds",
-                'BSGN': r"Clutter\iconbook%d.dds",
-                'CLAS': r"Clutter\iconbook%d.dds",
-                'CLOT': ((r"Clothes\MiddleClass\01\M\Shirt.dds",r"Clothes\MiddleClass\01\F\Shirt.dds"),
-                         (r"Clothes\MiddleClass\01\M\Pants.dds",r"Clothes\MiddleClass\01\F\Pants.dds"),
-                         (r"Clothes\MythicDawnrobe\hood.dds",),
-                         (r"Clothes\LowerClass\Jail\M\JailShirtHandcuff.dds",),
-                         (r"Clothes\MiddleClass\01\M\Shoes.dds",r"Clothes\MiddleClass\01\F\Shoes.dds"),
-                         (r"Clothes\Ring\RingNovice.dds",),
-                         (r"Clothes\Amulet\AmuletSilver.dds",),
+                'BOOK': u"Clutter\\iconbook%d.dds",
+                'BSGN': u"Clutter\\iconbook%d.dds",
+                'CLAS': u"Clutter\\iconbook%d.dds",
+                'CLOT': ((u"Clothes\\MiddleClass\01\M\Shirt.dds",u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
+                         (u"Clothes\\MiddleClass\01\M\Pants.dds",u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
+                         (u"Clothes\\MythicDawnrobe\hood.dds",),
+                         (u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds",),
+                         (u"Clothes\\MiddleClass\\01\\M\\Shoes.dds",u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"),
+                         (u"Clothes\\Ring\\RingNovice.dds",),
+                         (u"Clothes\\Amulet\\AmuletSilver.dds",),
                          ),
-##                'FACT': r"", ToDo
-                'INGR': r"Clutter\IconSeeds.dds",
-                'KEYM': (r"Clutter\Key\Key.dds",r"Clutter\Key\Key02.dds"),
-                'LIGH': r"Lights\IconTorch02.dds",
-                'MISC': r"Clutter\Soulgems\AzurasStar.dds",
-                'QUST': r"Quest\icon_miscellaneous.dds",
-                'SGST': r"IconSigilStone.dds",
-                'SLGM': r"Clutter\Soulgems\AzurasStar.dds",
-                'WEAP': (r"Weapons\IronDagger.dds",
-                         r"Weapons\IronClaymore.dds",
-                         r"Weapons\IronMace.dds",
-                         r"Weapons\IronBattleAxe.dds",
-                         r"Weapons\Staff.dds",
-                         r"Weapons\IronBow.dds",
+##                'FACT': u"", ToDo
+                'INGR': u"Clutter\\IconSeeds.dds",
+                'KEYM': (u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"),
+                'LIGH': u"Lights\\IconTorch02.dds",
+                'MISC': u"Clutter\\Soulgems\\AzurasStar.dds",
+                'QUST': u"Quest\\icon_miscellaneous.dds",
+                'SGST': u"IconSigilStone.dds",
+                'SLGM': u"Clutter\\Soulgems\\AzurasStar.dds",
+                'WEAP': (u"Weapons\\IronDagger.dds",
+                         u"Weapons\\IronClaymore.dds",
+                         u"Weapons\\IronMace.dds",
+                         u"Weapons\\IronBattleAxe.dds",
+                         u"Weapons\\Staff.dds",
+                         u"Weapons\\IronBow.dds",
                          ),
                 }
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Default Icons"),
-            _("Sets a default icon for any records that don't have any icon assigned"),
-            'icons',
-            (_('1'), 1),
+        CBash_MultiTweakItem.__init__(self,_(u"Default Icons"),
+            _(u"Sets a default icon for any records that don't have any icon assigned"),
+            u'icons',
+            (_(u'1'), 1),
             )
         self.mod_count = {}
         self.defaultEnabled = True
@@ -25462,26 +25441,27 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Default Icons'))
-        log(_('* Default Icons set: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Default Icons'))
+        log(u'* '+_(u'Default Icons set: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels"),
-            _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
-            'Attenuation%:',
-            (_('0%'), 0),
-            (_('5%'), 5),
-            (_('10%'), 10),
-            (_('20%'), 20),
-            (_('50%'), 50),
-            (_('80%'), 80),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels"),
+            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
+            u'Attenuation%:',
+            (_(u'0%'), 0),
+            (_(u'5%'), 5),
+            (_(u'10%'), 10),
+            (_(u'20%'), 20),
+            (_(u'50%'), 50),
+            (_(u'80%'), 80),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -25517,28 +25497,28 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(_('=== Set Sound Attenuation Levels'))
-        log(_('* Sounds Modified: %d') % (sum(count.values()),))
+        log(u'* '+_(u'Sounds Modified: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
     scanOrder = 32
     editOrder = 32
-    name = _('Set Sound Attenuation Levels')
+    name = _(u'Set Sound Attenuation Levels')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels"),
-            _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
-            'Attenuation%:',
-            (_('0%'), 0),
-            (_('5%'), 5),
-            (_('10%'), 10),
-            (_('20%'), 20),
-            (_('50%'), 50),
-            (_('80%'), 80),
-            (_('Custom'),0),
+        CBash_MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels"),
+            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
+            u'Attenuation%:',
+            (_(u'0%'), 0),
+            (_(u'5%'), 5),
+            (_(u'10%'), 10),
+            (_(u'20%'), 20),
+            (_(u'50%'), 50),
+            (_(u'80%'), 80),
+            (_(u'Custom'),0),
             )
         self.mod_count = {}
 
@@ -25565,26 +25545,27 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Set Sound Attenuation Levels'))
-        log(_('* Sounds modified: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels'))
+        log(u'* '+_(u'Sounds modified: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels: Nirnroots Only"),
-            _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
-            'Nirnroot Attenuation%:',
-            (_('0%'), 0),
-            (_('5%'), 5),
-            (_('10%'), 10),
-            (_('20%'), 20),
-            (_('50%'), 50),
-            (_('80%'), 80),
-            (_('Custom'),0),
+        MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels: Nirnroots Only"),
+            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
+            u'Nirnroot Attenuation%:',
+            (_(u'0%'), 0),
+            (_(u'5%'), 5),
+            (_(u'10%'), 10),
+            (_(u'20%'), 20),
+            (_(u'50%'), 50),
+            (_(u'80%'), 80),
+            (_(u'Custom'),0),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -25604,7 +25585,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
         id_records = patchBlock.id_records
         for record in modFile.SOUN.getActiveRecords():
             if mapper(record.fid) in id_records: continue
-            if record.staticAtten and 'nirnroot' in record.eid.lower():
+            if record.staticAtten and u'nirnroot' in record.eid.lower():
                 record = record.getTypeCopy(mapper)
                 patchBlock.setRecord(record)
 
@@ -25613,35 +25594,35 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.SOUN.records:
-            if record.staticAtten and 'nirnroot' in record.eid.lower():
+            if record.staticAtten and u'nirnroot' in record.eid.lower():
                 record.staticAtten = record.staticAtten*self.choiceValues[self.chosen][0]/100
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Set Sound Attenuation Levels: Nirnroots Only'))
-        log(_('* Sounds Modified: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels: Nirnroots Only'))
+        log(u'* '+_(u'Sounds Modified: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTweakItem):
     """Sets Sound Attenuation Levels for Nirnroots."""
     scanOrder = 32
     editOrder = 32
-    name = _('Set Sound Attenuation Levels: Nirnroots Only')
+    name = _(u'Set Sound Attenuation Levels: Nirnroots Only')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Set Sound Attenuation Levels: Nirnroots Only"),
-            _('The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
-            'Nirnroot Attenuation%:',
-            (_('0%'), 0),
-            (_('5%'), 5),
-            (_('10%'), 10),
-            (_('20%'), 20),
-            (_('50%'), 50),
-            (_('80%'), 80),
-            (_('Custom'),0),
+        CBash_MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels: Nirnroots Only"),
+            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
+            u'Nirnroot Attenuation%:',
+            (_(u'0%'), 0),
+            (_(u'5%'), 5),
+            (_(u'10%'), 10),
+            (_(u'20%'), 20),
+            (_(u'50%'), 50),
+            (_(u'80%'), 80),
+            (_(u'Custom'),0),
             )
         self.mod_count = {}
 
@@ -25655,7 +25636,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTwea
         if choice == 1: #Prevent any pointless changes if a custom value of 100 is used.
             return
 
-        if record.staticAtten and 'nirnroot' in record.eid.lower() :
+        if record.staticAtten and u'nirnroot' in record.eid.lower() :
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.staticAtten = override.staticAtten * choice
@@ -25668,21 +25649,22 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTwea
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Set Sound Attenuation Levels: Nirnroots Only'))
-        log(_('* Sounds modified: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels: Nirnroots Only'))
+        log(u'* '+_(u'Sounds modified: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
     """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Faction crime Gold Multiplier Fix"),
-            _('Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
-            'FactioncrimeGoldMultiplier',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Faction crime Gold Multiplier Fix"),
+            _(u'Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
+            u'FactioncrimeGoldMultiplier',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -25715,23 +25697,23 @@ class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Faction crime Gold Multiplier Fix'))
-        log(_('* Factions fixed: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'Faction crime Gold Multiplier Fix'))
+        log(u'* '+_(u'Factions fixed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
     """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
     scanOrder = 32
     editOrder = 32
-    name = _('Faction crime Gold Multiplier Fix')
+    name = _(u'Faction crime Gold Multiplier Fix')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Faction crime Gold Multiplier Fix"),
-            _('Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
-            'FactioncrimeGoldMultiplier',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Faction crime Gold Multiplier Fix"),
+            _(u'Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
+            u'FactioncrimeGoldMultiplier',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -25754,10 +25736,10 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== Faction crime Gold Multiplier Fix'))
-        log(_('* Factions fixed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'Faction crime Gold Multiplier Fix'))
+        log(u'* '+_(u'Factions fixed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
 
 #------------------------------------------------------------------------------
@@ -25766,10 +25748,10 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("No Light Fade Value Fix"),
-            _("Sets Light's Fade values to default of 1.0 if not set."),
-            'NoLightFadeValueFix',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"No Light Fade Value Fix"),
+            _(u"Sets Light's Fade values to default of 1.0 if not set."),
+            u'NoLightFadeValueFix',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -25802,23 +25784,23 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== No Light Fade Value Fix'))
-        log(_('* Lights with fade values added: %d') % (sum(count.values()),))
+        log.setHeader(u'=== '+_(u'No Light Fade Value Fix'))
+        log(u'* '+_(u'Lights with fade values added: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
     """Remove light flickering for low end machines."""
     scanOrder = 32
     editOrder = 32
-    name = _('No Light Fade Value Fix')
+    name = _(u'No Light Fade Value Fix')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("No Light Fade Value Fix"),
-            _("Sets Light's Fade values to default of 1.0 if not set."),
-            'NoLightFadeValueFix',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"No Light Fade Value Fix"),
+            _(u"Sets Light's Fade values to default of 1.0 if not set."),
+            u'NoLightFadeValueFix',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -25842,10 +25824,10 @@ class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(_('=== No Light Fade Value Fix'))
-        log(_('* Lights with fade values added: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+_(u'No Light Fade Value Fix'))
+        log(u'* '+_(u'Lights with fade values added: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -25853,25 +25835,25 @@ class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
     editOrder = 32
-    name = _('Tweak Assorted')
-    text = _("Tweak various records in miscellaneous ways.")
+    name = _(u'Tweak Assorted')
+    text = _(u"Tweak various records in miscellaneous ways.")
     defaultConfig = {'isEnabled':True}
     tweaks = sorted([
-        AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
-            _("Prevents armor from hiding amulets."),
-            'armorShowsAmulets',
+        AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
+            _(u"Prevents armor from hiding amulets."),
+            u'armorShowsAmulets',
             ),
-        AssortedTweak_ArmorShows(_("Armor Shows Rings"),
-            _("Prevents armor from hiding rings."),
-            'armorShowsRings',
+        AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
+            _(u"Prevents armor from hiding rings."),
+            u'armorShowsRings',
             ),
-        AssortedTweak_ClothingShows(_("Clothing Shows Amulets"),
-            _("Prevents Clothing from hiding amulets."),
-            'ClothingShowsAmulets',
+        AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
+            _(u"Prevents Clothing from hiding amulets."),
+            u'ClothingShowsAmulets',
             ),
-        AssortedTweak_ClothingShows(_("Clothing Shows Rings"),
-            _("Prevents Clothing from hiding rings."),
-            'ClothingShowsRings',
+        AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
+            _(u"Prevents Clothing from hiding rings."),
+            u'ClothingShowsRings',
             ),
         AssortedTweak_ArmorPlayable(),
         AssortedTweak_ClothingPlayable(),
@@ -25921,7 +25903,7 @@ class AssortedTweaker(MultiTweaker):
     def buildPatch(self,log,progress):
         """Applies individual clothes tweaks."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(log,progress,self.patchFile)
 
@@ -25929,25 +25911,25 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
     editOrder = 32
-    name = _('Tweak Assorted')
-    text = _("Tweak various records in miscellaneous ways.")
+    name = _(u'Tweak Assorted')
+    text = _(u"Tweak various records in miscellaneous ways.")
     defaultConfig = {'isEnabled':True}
     tweaks = sorted([
-        CBash_AssortedTweak_ArmorShows(_("Armor Shows Amulets"),
-            _("Prevents armor from hiding amulets."),
-            'armorShowsAmulets',
+        CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
+            _(u"Prevents armor from hiding amulets."),
+            u'armorShowsAmulets',
             ),
-        CBash_AssortedTweak_ArmorShows(_("Armor Shows Rings"),
-            _("Prevents armor from hiding rings."),
-            'armorShowsRings',
+        CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
+            _(u"Prevents armor from hiding rings."),
+            u'armorShowsRings',
             ),
-        CBash_AssortedTweak_ClothingShows(_("Clothing Shows Amulets"),
-            _("Prevents Clothing from hiding amulets."),
-            'ClothingShowsAmulets',
+        CBash_AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
+            _(u"Prevents Clothing from hiding amulets."),
+            u'ClothingShowsAmulets',
             ),
-        CBash_AssortedTweak_ClothingShows(_("Clothing Shows Rings"),
-            _("Prevents Clothing from hiding rings."),
-            'ClothingShowsRings',
+        CBash_AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
+            _(u"Prevents Clothing from hiding rings."),
+            u'ClothingShowsRings',
             ),
         CBash_AssortedTweak_ArmorPlayable(),
         CBash_AssortedTweak_ClothingPlayable(),
@@ -25985,7 +25967,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
 
@@ -26001,7 +25983,8 @@ class GlobalsTweak(MultiTweakItem):
                 if record.value != value:
                     record.value = value
                     keep(record.fid)
-        log('* %s set to: %4.2f' % (self.label,value))
+        log(u'* '+_('%s set to: %4.2f') % (self.label,value))
+
 class CBash_GlobalsTweak(CBash_MultiTweakItem):
     """Sets a global to specified value"""
     scanOrder = 29
@@ -26027,68 +26010,68 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         if self.count:
-            log('  * %s set to: %4.2f' % (self.label,self.value))
+            log(u'  * '+_(u'%s set to: %4.2f') % (self.label,self.value))
 
 #------------------------------------------------------------------------------
 class GlobalsTweaker(MultiTweaker):
     """Select values to set various globals to."""
     scanOrder = 29
     editOrder = 29
-    name = _('Globals')
-    text = _("Set globals to various values")
+    name = _(u'Globals')
+    text = _(u"Set globals to various values")
     tweaks = sorted([
-        GlobalsTweak(_("Timescale"),
-            _("Timescale will be set to:"),
-            'timescale',
-            (_('1'),1),
-            (_('8'),8),
-            (_('10'),10),
+        GlobalsTweak(_(u"Timescale"),
+            _(u"Timescale will be set to:"),
+            u'timescale',
+            (_(u'1'),1),
+            (_(u'8'),8),
+            (_(u'10'),10),
             (_('12'),12),
-            (_('18'),18),
-            (_('24'),24),
-            (_('[30]'),30),
-            (_('40'),40),
-            (_('Custom'),0),
+            (_(u'18'),18),
+            (_(u'24'),24),
+            (_(u'[30]'),30),
+            (_(u'40'),40),
+            (_(u'Custom'),0),
             ),
-        GlobalsTweak(_("Thieves Guild: Quest Stealing Penalty"),
-            _("The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
-            'tgpricesteal',
-            (_('100'),100),
-            (_('150'),150),
-            (_('[200]'),200),
-            (_('300'),300),
-            (_('400'),400),
-            (_('Custom'),0),
+        GlobalsTweak(_(u"Thieves Guild: Quest Stealing Penalty"),
+            _(u"The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
+            u'tgpricesteal',
+            (_(u'100'),100),
+            (_(u'150'),150),
+            (_(u'[200]'),200),
+            (_(u'300'),300),
+            (_(u'400'),400),
+            (_(u'Custom'),0),
             ),
-        GlobalsTweak(_("Thieves Guild: Quest Killing Penalty"),
-            _("The penalty (in Septims) for killing while doing a Thieves Guild job:"),
-            'tgpriceperkill',
-            (_('250'),250),
-            (_('500'),500),
-            (_('[1000]'),1000),
-            (_('1500'),1500),
-            (_('2000'),2000),
-            (_('Custom'),0),
+        GlobalsTweak(_(u"Thieves Guild: Quest Killing Penalty"),
+            _(u"The penalty (in Septims) for killing while doing a Thieves Guild job:"),
+            u'tgpriceperkill',
+            (_(u'250'),250),
+            (_(u'500'),500),
+            (_(u'[1000]'),1000),
+            (_(u'1500'),1500),
+            (_(u'2000'),2000),
+            (_(u'Custom'),0),
             ),
-        GlobalsTweak(_("Thieves Guild: Quest Attacking Penalty"),
-            _("The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
-            'tgpriceattack',
-            (_('100'),100),
-            (_('250'),250),
-            (_('[500]'),500),
-            (_('750'),750),
-            (_('1000'),1000),
-            (_('Custom'),0),
+        GlobalsTweak(_(u"Thieves Guild: Quest Attacking Penalty"),
+            _(u"The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
+            u'tgpriceattack',
+            (_(u'100'),100),
+            (_(u'250'),250),
+            (_(u'[500]'),500),
+            (_(u'750'),750),
+            (_(u'1000'),1000),
+            (_(u'Custom'),0),
             ),
-        GlobalsTweak(_("Crime: Force Jail"),
-            _("The amount of Bounty at which a jail sentence is mandatory"),
-            'crimeforcejail',
-            (_('1000'),1000),
-            (_('2500'),2500),
-            (_('[5000]'),5000),
-            (_('7500'),7500),
-            (_('10000'),10000),
-            (_('Custom'),0),
+        GlobalsTweak(_(u"Crime: Force Jail"),
+            _(u"The amount of Bounty at which a jail sentence is mandatory"),
+            u'crimeforcejail',
+            (_(u'1000'),1000),
+            (_(u'2500'),2500),
+            (_(u'[5000]'),5000),
+            (_(u'7500'),7500),
+            (_(u'10000'),10000),
+            (_(u'Custom'),0),
             ),
         ],key=lambda a: a.label.lower())
 
@@ -26122,7 +26105,7 @@ class GlobalsTweaker(MultiTweaker):
         """Applies individual clothes tweaks."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader(u'= '+self.__class__.name)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
 
@@ -26130,61 +26113,61 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
     """Select values to set various globals to."""
     scanOrder = 29
     editOrder = 29
-    name = _('Globals')
-    text = _("Set globals to various values")
+    name = _(u'Globals')
+    text = _(u"Set globals to various values")
     tweaks = sorted([
-        CBash_GlobalsTweak(_("Timescale"),
-            _("Timescale will be set to:"),
-            'timescale',
-            (_('1'),1),
-            (_('8'),8),
-            (_('10'),10),
-            (_('12'),12),
-            (_('18'),18),
-            (_('24'),24),
-            (_('[30]'),30),
-            (_('40'),40),
-            (_('Custom'),0),
+        CBash_GlobalsTweak(_(u"Timescale"),
+            _(u"Timescale will be set to:"),
+            u'timescale',
+            (_(u'1'),1),
+            (_(u'8'),8),
+            (_(u'10'),10),
+            (_(u'12'),12),
+            (_(u'18'),18),
+            (_(u'24'),24),
+            (_(u'[30]'),30),
+            (_(u'40'),40),
+            (_(u'Custom'),0),
             ),
-        CBash_GlobalsTweak(_("Thieves Guild: Quest Stealing Penalty"),
-            _("The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
-            'tgpricesteal',
-            (_('100'),100),
-            (_('150'),150),
-            (_('[200]'),200),
-            (_('300'),300),
-            (_('400'),400),
-            (_('Custom'),0),
+        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Stealing Penalty"),
+            _(u"The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
+            u'tgpricesteal',
+            (_(u'100'),100),
+            (_(u'150'),150),
+            (_(u'[200]'),200),
+            (_(u'300'),300),
+            (_(u'400'),400),
+            (_(u'Custom'),0),
             ),
-        CBash_GlobalsTweak(_("Thieves Guild: Quest Killing Penalty"),
-            _("The penalty (in Septims) for killing while doing a Thieves Guild job:"),
-            'tgpriceperkill',
-            (_('250'),250),
-            (_('500'),500),
-            (_('[1000]'),1000),
-            (_('1500'),1500),
-            (_('2000'),2000),
-            (_('Custom'),0),
+        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Killing Penalty"),
+            _(u"The penalty (in Septims) for killing while doing a Thieves Guild job:"),
+            u'tgpriceperkill',
+            (_(u'250'),250),
+            (_(u'500'),500),
+            (_(u'[1000]'),1000),
+            (_(u'1500'),1500),
+            (_(u'2000'),2000),
+            (_(u'Custom'),0),
             ),
-        CBash_GlobalsTweak(_("Thieves Guild: Quest Attacking Penalty"),
-            _("The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
-            'tgpriceattack',
-            (_('100'),100),
-            (_('250'),250),
-            (_('[500]'),500),
-            (_('750'),750),
-            (_('1000'),1000),
-            (_('Custom'),0),
+        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Attacking Penalty"),
+            _(u"The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
+            u'tgpriceattack',
+            (_(u'100'),100),
+            (_(u'250'),250),
+            (_(u'[500]'),500),
+            (_(u'750'),750),
+            (_(u'1000'),1000),
+            (_(u'Custom'),0),
             ),
-        CBash_GlobalsTweak(_("Crime: Force Jail"),
-            _("The amount of Bounty at which a jail sentence is mandatory"),
-            'crimeforcejail',
-            (_('1000'),1000),
-            (_('2500'),2500),
-            (_('[5000]'),5000),
-            (_('7500'),7500),
-            (_('10000'),10000),
-            (_('Custom'),0),
+        CBash_GlobalsTweak(_(u"Crime: Force Jail"),
+            _(u"The amount of Bounty at which a jail sentence is mandatory"),
+            u'crimeforcejail',
+            (_(u'1000'),1000),
+            (_(u'2500'),2500),
+            (_(u'[5000]'),5000),
+            (_(u'7500'),7500),
+            (_(u'10000'),10000),
+            (_(u'Custom'),0),
             ),
         ],key=lambda a: a.label.lower())
 
@@ -26200,30 +26183,30 @@ class CBash_GlobalsTweaker(CBash_MultiTweaker):
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
 
 #------------------------------------------------------------------------------
 class ClothesTweak(MultiTweakItem):
     flags = {
-        'hoods':   1<<1,
-        'shirts':  1<<2,
-        'pants':   1<<3,
-        'gloves':  1<<4,
-        'amulets': 1<<8,
-        'rings2':  1<<16,
-        'amulets2': 1<<17,
+        u'hoods':   1<<1,
+        u'shirts':  1<<2,
+        u'pants':   1<<3,
+        u'gloves':  1<<4,
+        u'amulets': 1<<8,
+        u'rings2':  1<<16,
+        u'amulets2': 1<<17,
         #--Multi
-        'robes':   (1<<2) + (1<<3),
-        'rings':   (1<<6) + (1<<7),
+        u'robes':   (1<<2) + (1<<3),
+        u'rings':   (1<<6) + (1<<7),
         }
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
         MultiTweakItem.__init__(self,label,tip,key,*choices)
-        typeKey = key[:key.find('.')]
-        self.orTypeFlags = typeKey == 'rings'
+        typeKey = key[:key.find(u'.')]
+        self.orTypeFlags = typeKey == u'rings'
         self.typeFlags = self.__class__.flags[typeKey]
 
     def isMyType(self,record):
@@ -26237,23 +26220,23 @@ class ClothesTweak(MultiTweakItem):
             )
 class CBash_ClothesTweak(CBash_MultiTweakItem):
     flags = {
-        'hoods':    0x00000002,
-        'shirts':   0x00000004,
-        'pants':    0x00000008,
-        'gloves':   0x00000010,
-        'amulets':  0x00000100,
-        'rings2':   0x00010000,
-        'amulets2': 0x00020000,
+        u'hoods':    0x00000002,
+        u'shirts':   0x00000004,
+        u'pants':    0x00000008,
+        u'gloves':   0x00000010,
+        u'amulets':  0x00000100,
+        u'rings2':   0x00010000,
+        u'amulets2': 0x00020000,
         #--Multi
-        'robes':    0x0000000C,
-        'rings':    0x000000C0,
+        u'robes':    0x0000000C,
+        u'rings':    0x000000C0,
         }
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
         CBash_MultiTweakItem.__init__(self,label,tip,key,*choices)
-        typeKey = key[:key.find('.')]
-        self.orTypeFlags = typeKey == 'rings'
+        typeKey = key[:key.find(u'.')]
+        self.orTypeFlags = typeKey == u'rings'
         self.typeFlags = self.__class__.flags[typeKey]
 
     def isMyType(self,record):
@@ -26262,6 +26245,7 @@ class CBash_ClothesTweak(CBash_MultiTweakItem):
         myTypeFlags = self.typeFlags
         return ((recTypeFlags == myTypeFlags) or
                 (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags)))
+
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeight(ClothesTweak):
     """Enforce a max weight for specified clothes."""
@@ -26277,14 +26261,14 @@ class ClothesTweak_MaxWeight(ClothesTweak):
                 record.weight = maxWeight
                 keep(record.fid)
                 tweakCount += 1
-        log('* %s: [%4.2f]: %d' % (self.label,maxWeight,tweakCount))
+        log(u'* %s: [%4.2f]: %d' % (self.label,maxWeight,tweakCount))
 
 
 class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     """Enforce a max weight for specified clothes."""
     scanOrder = 32
     editOrder = 32
-    name = _('Reweigh Clothes')
+    name = _(u'Reweigh Clothes')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
@@ -26326,10 +26310,10 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         #--Log
         mod_count = self.mod_count
         maxWeight = self.choiceValues[self.chosen][0]
-        log.setHeader('=== %s' % self.label)
-        log(_('* Clothes Reweighed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'Clothes Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,mod_count[srcMod]))
+            log(u'  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -26349,7 +26333,7 @@ class ClothesTweak_Unblock(ClothesTweak):
                 record.flags &= ~self.unblockFlags
                 keep(record.fid)
                 tweakCount += 1
-        log('* %s: %d' % (self.label,tweakCount))
+        log(u'* %s: %d' % (self.label,tweakCount))
 class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     """Unlimited rings, amulets."""
     scanOrder = 31
@@ -26393,10 +26377,10 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
-        log.setHeader('=== '+self.label)
-        log(_('* Clothing Pieces Tweaked: %d') % (sum(self.mod_count.values()),))
+        log.setHeader(u'=== '+self.label)
+        log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(self.mod_count.values()))
         for srcMod in modInfos.getOrdered(self.mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -26404,49 +26388,49 @@ class ClothesTweaker(MultiTweaker):
     """Patches clothes in miscellaneous ways."""
     scanOrder = 31
     editOrder = 31
-    name = _('Tweak Clothes')
-    text = _("Tweak clothing weight and blocking.")
+    name = _(u'Tweak Clothes')
+    text = _(u"Tweak clothing weight and blocking.")
     tweaks = sorted([
-        ClothesTweak_Unblock(_("Unlimited Amulets"),
-            _("Wear unlimited number of amulets - but they won't display."),
-            'amulets.unblock.amulets'),
-        ClothesTweak_Unblock(_("Unlimited Rings"),
-            _("Wear unlimited number of rings - but they won't display."),
-            'rings.unblock.rings'),
-        ClothesTweak_Unblock(_("Gloves Show Rings"),
-            _("Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
-            'gloves.unblock.rings2'),
-        ClothesTweak_Unblock(_("Robes Show Pants"),
-            _("Robes will allow pants, greaves, skirts - but they'll clip."),
-            'robes.unblock.pants'),
-        ClothesTweak_Unblock(_("Robes Show Amulets"),
-            _("Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
-            'robes.show.amulets2'),
-        ClothesTweak_MaxWeight(_("Max Weight Amulets"),
-            _("Amulet weight will be capped."),
-            'amulets.maxWeight',
-            (_('0.0'),0),
-            (_('0.1'),0.1),
-            (_('0.2'),0.2),
-            (_('0.5'),0.5),
-            (_('Custom'),0),
+        ClothesTweak_Unblock(_(u"Unlimited Amulets"),
+            _(u"Wear unlimited number of amulets - but they won't display."),
+            u'amulets.unblock.amulets'),
+        ClothesTweak_Unblock(_(u"Unlimited Rings"),
+            _(u"Wear unlimited number of rings - but they won't display."),
+            u'rings.unblock.rings'),
+        ClothesTweak_Unblock(_(u"Gloves Show Rings"),
+            _(u"Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
+            u'gloves.unblock.rings2'),
+        ClothesTweak_Unblock(_(u"Robes Show Pants"),
+            _(u"Robes will allow pants, greaves, skirts - but they'll clip."),
+            u'robes.unblock.pants'),
+        ClothesTweak_Unblock(_(u"Robes Show Amulets"),
+            _(u"Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
+            u'robes.show.amulets2'),
+        ClothesTweak_MaxWeight(_(u"Max Weight Amulets"),
+            _(u"Amulet weight will be capped."),
+            u'amulets.maxWeight',
+            (_(u'0.0'),0),
+            (_(u'0.1'),0.1),
+            (_(u'0.2'),0.2),
+            (_(u'0.5'),0.5),
+            (_(u'Custom'),0),
             ),
-        ClothesTweak_MaxWeight(_("Max Weight Rings"),
-            _('Ring weight will be capped.'),
-            'rings.maxWeight',
-            (_('0.0'),0),
-            (_('0.1'),0.1),
-            (_('0.2'),0.2),
-            (_('0.5'),0.5),
-            (_('Custom'),0),
+        ClothesTweak_MaxWeight(_(u"Max Weight Rings"),
+            _(u'Ring weight will be capped.'),
+            u'rings.maxWeight',
+            (_(u'0.0'),0),
+            (_(u'0.1'),0.1),
+            (_(u'0.2'),0.2),
+            (_(u'0.5'),0.5),
+            (_(u'Custom'),0),
             ),
-        ClothesTweak_MaxWeight(_("Max Weight Hoods"),
-            _('Hood weight will be capped.'),
-            'hoods.maxWeight',
-            (_('0.2'),0.2),
-            (_('0.5'),0.5),
-            (_('1.0'),1.0),
-            (_('Custom'),0),
+        ClothesTweak_MaxWeight(_(u"Max Weight Hoods"),
+            _(u'Hood weight will be capped.'),
+            u'hoods.maxWeight',
+            (_(u'0.2'),0.2),
+            (_(u'0.5'),0.5),
+            (_(u'1.0'),1.0),
+            (_(u'Custom'),0),
             ),
         ],key=lambda a: a.label.lower())
 
@@ -26478,56 +26462,57 @@ class ClothesTweaker(MultiTweaker):
         """Applies individual clothes tweaks."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader(u'= '+self.__class__.name)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
+
 class CBash_ClothesTweaker(CBash_MultiTweaker):
     """Patches clothes in miscellaneous ways."""
     scanOrder = 31
     editOrder = 31
-    name = _('Tweak Clothes')
-    text = _("Tweak clothing weight and blocking.")
+    name = _(u'Tweak Clothes')
+    text = _(u"Tweak clothing weight and blocking.")
     tweaks = sorted([
-        CBash_ClothesTweak_Unblock(_("Unlimited Amulets"),
-            _("Wear unlimited number of amulets - but they won't display."),
-            'amulets.unblock.amulets'),
-        CBash_ClothesTweak_Unblock(_("Unlimited Rings"),
-            _("Wear unlimited number of rings - but they won't display."),
-            'rings.unblock.rings'),
-        CBash_ClothesTweak_Unblock(_("Gloves Show Rings"),
-            _("Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
-            'gloves.unblock.rings2'),
-        CBash_ClothesTweak_Unblock(_("Robes Show Pants"),
-            _("Robes will allow pants, greaves, skirts - but they'll clip."),
-            'robes.unblock.pants'),
-        CBash_ClothesTweak_Unblock(_("Robes Show Amulets"),
-            _("Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
-            'robes.show.amulets2'),
-        CBash_ClothesTweak_MaxWeight(_("Max Weight Amulets"),
-            _("Amulet weight will be capped."),
-            'amulets.maxWeight',
-            (_('0.0'),0.0),
-            (_('0.1'),0.1),
-            (_('0.2'),0.2),
-            (_('0.5'),0.5),
-            (_('Custom'),0.0),
+        CBash_ClothesTweak_Unblock(_(u"Unlimited Amulets"),
+            _(u"Wear unlimited number of amulets - but they won't display."),
+            u'amulets.unblock.amulets'),
+        CBash_ClothesTweak_Unblock(_(u"Unlimited Rings"),
+            _(u"Wear unlimited number of rings - but they won't display."),
+            u'rings.unblock.rings'),
+        CBash_ClothesTweak_Unblock(_(u"Gloves Show Rings"),
+            _(u"Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
+            u'gloves.unblock.rings2'),
+        CBash_ClothesTweak_Unblock(_(u"Robes Show Pants"),
+            _(u"Robes will allow pants, greaves, skirts - but they'll clip."),
+            u'robes.unblock.pants'),
+        CBash_ClothesTweak_Unblock(_(u"Robes Show Amulets"),
+            _(u"Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
+            u'robes.show.amulets2'),
+        CBash_ClothesTweak_MaxWeight(_(u"Max Weight Amulets"),
+            _(u"Amulet weight will be capped."),
+            u'amulets.maxWeight',
+            (_(u'0.0'),0.0),
+            (_(u'0.1'),0.1),
+            (_(u'0.2'),0.2),
+            (_(u'0.5'),0.5),
+            (_(u'Custom'),0.0),
             ),
-        CBash_ClothesTweak_MaxWeight(_("Max Weight Rings"),
-            _('Ring weight will be capped.'),
-            'rings.maxWeight',
-            (_('0.0'),0.0),
-            (_('0.1'),0.1),
-            (_('0.2'),0.2),
-            (_('0.5'),0.5),
-            (_('Custom'),0.0),
+        CBash_ClothesTweak_MaxWeight(_(u"Max Weight Rings"),
+            _(u'Ring weight will be capped.'),
+            u'rings.maxWeight',
+            (_(u'0.0'),0.0),
+            (_(u'0.1'),0.1),
+            (_(u'0.2'),0.2),
+            (_(u'0.5'),0.5),
+            (_(u'Custom'),0.0),
             ),
-        CBash_ClothesTweak_MaxWeight(_("Max Weight Hoods"),
-            _('Hood weight will be capped.'),
-            'hoods.maxWeight',
-            (_('0.2'),0.2),
-            (_('0.5'),0.5),
-            (_('1.0'),1.0),
-            (_('Custom'),0.0),
+        CBash_ClothesTweak_MaxWeight(_(u"Max Weight Hoods"),
+            _(u'Hood weight will be capped.'),
+            u'hoods.maxWeight',
+            (_(u'0.2'),0.2),
+            (_(u'0.5'),0.5),
+            (_(u'1.0'),1.0),
+            (_(u'Custom'),0.0),
             ),
         ],key=lambda a: a.label.lower())
 
@@ -26543,7 +26528,7 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
 
@@ -26555,7 +26540,7 @@ class GmstTweak(MultiTweakItem):
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if value < 0:
-                deprint(_("GMST float value can't be a negative number - currently %s - skipping setting GMST.") % value)
+                deprint(_(u"GMST float value can't be a negative number - currently %s - skipping setting GMST.") % value)
                 return
             for record in patchFile.GMST.records:
                 if record.eid.lower() == eid.lower():
@@ -26569,14 +26554,14 @@ class GmstTweak(MultiTweakItem):
                 fid = gmst.fid = keep(gmst.getGMSTFid())
                 patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
-            if self.choiceLabels[self.chosen].startswith('Custom'):
+            if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.choiceValues[self.chosen][0],(str,unicode)):
-                    log('* %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
+                    log(u'* %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
                 else:
-                    log('* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
-            else: log('* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
+                    log(u'* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
+            else: log(u'* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
         else:
-            log('* ' + self.label)
+            log(u'* ' + self.label)
 
 class CBash_GmstTweak(CBash_MultiTweakItem):
     """Sets a gmst to specified value"""
@@ -26597,13 +26582,13 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                 break
         else:
             return
-        if recEid.startswith("f") and type(newValue) != float:
-            deprint(_("converting custom value to float for GMST %s: %s") % (recEid, newValue))
+        if recEid.startswith(u"f") and type(newValue) != float:
+            deprint(_(u"converting custom value to float for GMST %s: %s") % (recEid, newValue))
             newValue = float(newValue)
         if record.value != newValue:
             self.eid_count[eid] = 1
             if newValue < 0:
-                deprint(_("GMST float value can't be a negative number - currently %s - skipping setting GMST") % newValue)
+                deprint(_(u"GMST float value can't be a negative number - currently %s - skipping setting GMST") % newValue)
                 return
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -26618,7 +26603,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         subProgress.setFull(max(len(values),1))
         pstate = 0
         for eid,value in zip(self.key,values):
-            subProgress(pstate, _("Finishing GMST Tweaks..."))
+            subProgress(pstate, _(u"Finishing GMST Tweaks..."))
             if not self.eid_count.get(eid,0):
                 self.eid_count[eid] = 1
                 record = patchFile.create_GMST(eid)
@@ -26627,9 +26612,9 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
                     print patchFile.Current.Debug_DumpModFiles()
                     for conflict in patchFile.Current.LookupRecords(eid, False):
                         print conflict.GetParentMod().ModName
-                    raise StateError(_("Tweak Settings: Unable to create GMST!"))
+                    raise StateError(u"Tweak Settings: Unable to create GMST!")
                 if eid.startswith("f") and type(value) != float:
-                    deprint(_("converting custom value to float for GMST %s: %s") % (eid, value))
+                    deprint(_(u"converting custom value to float for GMST %s: %s") % (eid, value))
                     value = float(value)
                 record.value = value
             pstate += 1
@@ -26638,640 +26623,640 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         if len(self.choiceLabels) > 1:
-            if self.choiceLabels[self.chosen].startswith('Custom'):
+            if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
                 if isinstance(self.values[0],(str,unicode)):
-                    log('  * %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
+                    log(u'  * %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
                 else:
-                    log('  * %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
-            else: log('  * %s: %s' % (self.label,self.choiceLabels[self.chosen]))
+                    log(u'  * %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
+            else: log(u'  * %s: %s' % (self.label,self.choiceLabels[self.chosen]))
         else:
-            log('  * ' + self.label)
+            log(u'  * ' + self.label)
 
 #------------------------------------------------------------------------------
 class GmstTweaker(MultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     scanOrder = 29
     editOrder = 29
-    name = _('Tweak Settings')
-    text = _("Tweak game settings.")
+    name = _(u'Tweak Settings')
+    text = _(u"Tweak game settings.")
     defaultConfig = {'isEnabled':True}
     tweaks = sorted([
-        GmstTweak(_('Arrow: Litter Count'),
-            _("Maximum number of spent arrows allowed in cell."),
-            ('iArrowMaxRefCount',),
-            ('[15]',15),
-            ('25',25),
-            ('35',35),
-            ('50',50),
-            ('100',100),
-            ('500',500),
-            (_('Custom'),15),
+        GmstTweak(_(u'Arrow: Litter Count'),
+            _(u"Maximum number of spent arrows allowed in cell."),
+            (u'iArrowMaxRefCount',),
+            (u'[15]',15),
+            (u'25',25),
+            (u'35',35),
+            (u'50',50),
+            (u'100',100),
+            (u'500',500),
+            (_(u'Custom'),15),
             ),
-        GmstTweak(_('Arrow: Litter Time'),
-            _("Time before spent arrows fade away from cells and actors."),
-            ('fArrowAgeMax',),
-            (_('1 Minute'),60.0),
-            (_('[1.5 Minutes]'),90.0),
-            (_('2 Minutes'),120.0),
-            (_('3 Minutes'),180.0),
-            (_('5 Minutes'),300.0),
-            (_('10 Minutes'),600.0),
-            (_('30 Minutes'),1800.0),
-            (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),90.0),
+        GmstTweak(_(u'Arrow: Litter Time'),
+            _(u"Time before spent arrows fade away from cells and actors."),
+            (u'fArrowAgeMax',),
+            (_(u'1 Minute'),60.0),
+            (_(u'[1.5 Minutes]'),90.0),
+            (_(u'2 Minutes'),120.0),
+            (_(u'3 Minutes'),180.0),
+            (_(u'5 Minutes'),300.0),
+            (_(u'10 Minutes'),600.0),
+            (_(u'30 Minutes'),1800.0),
+            (_(u'1 Hour'),3600.0),
+            (_(u'Custom (in seconds)'),90.0),
             ),
-        GmstTweak(_('Arrow: Recovery from Actor'),
-            _("Chance that an arrow shot into an actor can be recovered."),
-            ('iArrowInventoryChance',),
-            ('[50%]',50),
-            ('60%',60),
-            ('70%',70),
-            ('80%',80),
-            ('90%',90),
-            ('100%',100),
-            (_('Custom'),50),
+        GmstTweak(_(u'Arrow: Recovery from Actor'),
+            _(u"Chance that an arrow shot into an actor can be recovered."),
+            (u'iArrowInventoryChance',),
+            (u'[50%]',50),
+            (u'60%',60),
+            (u'70%',70),
+            (u'80%',80),
+            (u'90%',90),
+            (u'100%',100),
+            (_(u'Custom'),50),
             ),
-        GmstTweak(_('Arrow: Speed'),
-            _("Speed of full power arrow."),
-            ('fArrowSpeedMult',),
-            (_('x 1.2'),1500.0*1.2),
-            (_('x 1.4'),1500.0*1.4),
-            (_('x 1.6'),1500.0*1.6),
-            (_('x 1.8'),1500.0*1.8),
-            (_('x 2.0'),1500.0*2.0),
-            (_('x 2.2'),1500.0*2.2),
-            (_('x 2.4'),1500.0*2.4),
-            (_('x 2.6'),1500.0*2.6),
-            (_('x 2.8'),1500.0*2.8),
-            (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500.0),
+        GmstTweak(_(u'Arrow: Speed'),
+            _(u"Speed of full power arrow."),
+            (u'fArrowSpeedMult',),
+            (_(u'x 1.2'),1500.0*1.2),
+            (_(u'x 1.4'),1500.0*1.4),
+            (_(u'x 1.6'),1500.0*1.6),
+            (_(u'x 1.8'),1500.0*1.8),
+            (_(u'x 2.0'),1500.0*2.0),
+            (_(u'x 2.2'),1500.0*2.2),
+            (_(u'x 2.4'),1500.0*2.4),
+            (_(u'x 2.6'),1500.0*2.6),
+            (_(u'x 2.8'),1500.0*2.8),
+            (_(u'x 3.0'),1500.0*3.0),
+            (_(u'Custom (base is 1500)'),1500.0),
             ),
-        GmstTweak(_('Camera: Chase Tightness'),
-            _("Tightness of chase camera to player turning."),
-            ('fChase3rdPersonVanityXYMult','fChase3rdPersonXYMult'),
-            (_('x 1.5'),6.0,6.0),
-            (_('x 2.0'),8.0,8.0),
-            (_('x 3.0'),12.0,12.0),
-            (_('x 5.0'),20.0,20.0),
-            (_('ChaseCameraMod.esp (x 24.75)'),99.0,99.0),
-            (_('Custom'),4.0,4.0),
+        GmstTweak(_(u'Camera: Chase Tightness'),
+            _(u"Tightness of chase camera to player turning."),
+            (u'fChase3rdPersonVanityXYMult',u'fChase3rdPersonXYMult'),
+            (_(u'x 1.5'),6.0,6.0),
+            (_(u'x 2.0'),8.0,8.0),
+            (_(u'x 3.0'),12.0,12.0),
+            (_(u'x 5.0'),20.0,20.0),
+            (_(u'ChaseCameraMod.esp (x 24.75)'),99.0,99.0),
+            (_(u'Custom'),4.0,4.0),
             ),
-        GmstTweak(_('Camera: Chase Distance'),
-            _("Distance camera can be moved away from PC using mouse wheel."),
-            ('fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond','fVanityModeWheelMult'),
-            (_('x 1.5'),600.0*1.5, 300.0*1.5, 0.15),
-            (_('x 2'),  600.0*2.0, 300.0*2.0, 0.2),
-            (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
-            (_('x 5'),  600.0*5.0, 1000.0,    0.3),
-            (_('x 10'), 600.0*10,  2000.0,    0.3),
-            (_('Custom'),600.0,     300.0,    0.15),
+        GmstTweak(_(u'Camera: Chase Distance'),
+            _(u"Distance camera can be moved away from PC using mouse wheel."),
+            (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond',u'fVanityModeWheelMult'),
+            (_(u'x 1.5'),600.0*1.5, 300.0*1.5, 0.15),
+            (_(u'x 2'),  600.0*2.0, 300.0*2.0, 0.2),
+            (_(u'x 3'),  600.0*3.0, 300.0*3.0, 0.3),
+            (_(u'x 5'),  600.0*5.0, 1000.0,    0.3),
+            (_(u'x 10'), 600.0*10,  2000.0,    0.3),
+            (_(u'Custom'),600.0,     300.0,    0.15),
             ),
-        GmstTweak(_('Magic: Chameleon Refraction'),
-            _("Chameleon with transparency instead of refraction effect."),
-            ('fChameleonMinRefraction','fChameleonMaxRefraction'),
-            (_('Zero'),0.0,0.0),
-            (_('[Normal]'),0.01,1.0),
-            (_('Full'),1.0,1.0),
-            (_('Custom'),0.01,1.0),
+        GmstTweak(_(u'Magic: Chameleon Refraction'),
+            _(u"Chameleon with transparency instead of refraction effect."),
+            (u'fChameleonMinRefraction',u'fChameleonMaxRefraction'),
+            (_(u'Zero'),0.0,0.0),
+            (_(u'[Normal]'),0.01,1.0),
+            (_(u'Full'),1.0,1.0),
+            (_(u'Custom'),0.01,1.0),
             ),
-        GmstTweak(_('Compass: Disable'),
-            _("No quest and/or points of interest markers on compass."),
-            ('iMapMarkerRevealDistance',),
-            (_('Quests'),1803),
-            (_('POIs'),1802),
-            (_('Quests and POIs'),1801),
+        GmstTweak(_(u'Compass: Disable'),
+            _(u"No quest and/or points of interest markers on compass."),
+            (u'iMapMarkerRevealDistance',),
+            (_(u'Quests'),1803),
+            (_(u'POIs'),1802),
+            (_(u'Quests and POIs'),1801),
             ),
-        GmstTweak(_('Compass: POI Recognition'),
-            _("Distance at which POI markers begin to show on compass."),
-            ('iMapMarkerVisibleDistance',),
-            (_('x 0.25'),3000),
-            (_('x 0.50'),6000),
-            (_('x 0.75'),9000),
-            (_('Custom (base 12000)'),12000),
+        GmstTweak(_(u'Compass: POI Recognition'),
+            _(u"Distance at which POI markers begin to show on compass."),
+            (u'iMapMarkerVisibleDistance',),
+            (_(u'x 0.25'),3000),
+            (_(u'x 0.50'),6000),
+            (_(u'x 0.75'),9000),
+            (_(u'Custom (base 12000)'),12000),
             ),
-        GmstTweak(_('Essential NPC Unconsciousness'),
-            _("Time which essential NPCs stay unconscious."),
-            ('fEssentialDeathTime',),
-            (_('[10 Seconds]'),10.0),
-            (_('20 Seconds'),20.0),
-            (_('30 Seconds'),30.0),
-            (_('1 Minute'),60.0),
-            (_('1 1/2 Minutes'),1.5*60.0),
-            (_('2 Minutes'),2*60.0),
-            (_('3 Minutes'),3*60.0),
-            (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),10.0),
+        GmstTweak(_(u'Essential NPC Unconsciousness'),
+            _(u"Time which essential NPCs stay unconscious."),
+            (u'fEssentialDeathTime',),
+            (_(u'[10 Seconds]'),10.0),
+            (_(u'20 Seconds'),20.0),
+            (_(u'30 Seconds'),30.0),
+            (_(u'1 Minute'),60.0),
+            (_(u'1 1/2 Minutes'),1.5*60.0),
+            (_(u'2 Minutes'),2*60.0),
+            (_(u'3 Minutes'),3*60.0),
+            (_(u'5 Minutes'),5*60.0),
+            (_(u'Custom (in seconds)'),10.0),
             ),
-        GmstTweak(_('Fatigue from Running/Encumbrance'),
-            _("Fatigue cost of running and encumbrance."),
-            ('fFatigueRunBase','fFatigueRunMult'),
-            (_('x 1.5'),12.0,6.0),
-            (_('x 2'),16.0,8.0),
-            (_('x 3'),24.0,12.0),
-            (_('x 4'),32.0,16.0),
-            (_('x 5'),40.0,20.0),
-            (_('Custom'),8.0,4.0),
+        GmstTweak(_(u'Fatigue from Running/Encumbrance'),
+            _(u"Fatigue cost of running and encumbrance."),
+            (u'fFatigueRunBase',u'fFatigueRunMult'),
+            (_(u'x 1.5'),12.0,6.0),
+            (_(u'x 2'),16.0,8.0),
+            (_(u'x 3'),24.0,12.0),
+            (_(u'x 4'),32.0,16.0),
+            (_(u'x 5'),40.0,20.0),
+            (_(u'Custom'),8.0,4.0),
             ),
-        GmstTweak(_('Horse Turning Speed'),
-            _("Speed at which horses turn."),
-            ('iHorseTurnDegreesPerSecond',),
-            (_('x 1.5'),68),
-            (_('x 2.0'),90),
-            (_('Custom (base is 45)'),45),
+        GmstTweak(_(u'Horse Turning Speed'),
+            _(u"Speed at which horses turn."),
+            (u'iHorseTurnDegreesPerSecond',),
+            (_(u'x 1.5'),68),
+            (_(u'x 2.0'),90),
+            (_(u'Custom (base is 45)'),45),
             ),
-        GmstTweak(_('Jump Higher'),
-            _("Maximum height player can jump to."),
-            ('fJumpHeightMax',),
-            (_('x 1.1'),164.0*1.1),
-            (_('x 1.2'),164.0*1.2),
-            (_('x 1.4'),164.0*1.4),
-            (_('x 1.6'),164.0*1.6),
-            (_('x 1.8'),164.0*1.8),
-            (_('x 2.0'),164.0*2.0),
-            (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),164.0),
+        GmstTweak(_(u'Jump Higher'),
+            _(u"Maximum height player can jump to."),
+            (u'fJumpHeightMax',),
+            (_(u'x 1.1'),164.0*1.1),
+            (_(u'x 1.2'),164.0*1.2),
+            (_(u'x 1.4'),164.0*1.4),
+            (_(u'x 1.6'),164.0*1.6),
+            (_(u'x 1.8'),164.0*1.8),
+            (_(u'x 2.0'),164.0*2.0),
+            (_(u'x 3.0'),164.0*3.0),
+            (_(u'Custom (base 164)'),164.0),
             ),
-        GmstTweak(_('Camera: PC Death Time'),
-            _("Time after player's death before reload menu appears."),
-            ('fPlayerDeathReloadTime',),
-            (_('15 Seconds'),15.0),
-            (_('30 Seconds'),30.0),
-            (_('1 Minute'),60.0),
-            (_('5 Minute'),300.0),
-            (_('Unlimited'),9999999.0),
-            (_('Custom'),15.0),
+        GmstTweak(_(u'Camera: PC Death Time'),
+            _(u"Time after player's death before reload menu appears."),
+            (u'fPlayerDeathReloadTime',),
+            (_(u'15 Seconds'),15.0),
+            (_(u'30 Seconds'),30.0),
+            (_(u'1 Minute'),60.0),
+            (_(u'5 Minute'),300.0),
+            (_(u'Unlimited'),9999999.0),
+            (_(u'Custom'),15.0),
             ),
-        GmstTweak(_('Cell Respawn Time'),
-            _("Time before unvisited cell respawns. But longer times increase save sizes."),
-            ('iHoursToRespawnCell',),
-            (_('1 Day'),24*1),
-            (_('[3 Days]'),24*3),
-            (_('5 Days'),24*5),
-            (_('10 Days'),24*10),
-            (_('20 Days'),24*20),
-            (_('1 Month'),24*30),
-            (_('6 Months'),24*182),
-            (_('1 Year'),24*365),
-            (_('Custom (in hours)'),72),
+        GmstTweak(_(u'Cell Respawn Time'),
+            _(u"Time before unvisited cell respawns. But longer times increase save sizes."),
+            (u'iHoursToRespawnCell',),
+            (_(u'1 Day'),24*1),
+            (_(u'[3 Days]'),24*3),
+            (_(u'5 Days'),24*5),
+            (_(u'10 Days'),24*10),
+            (_(u'20 Days'),24*20),
+            (_(u'1 Month'),24*30),
+            (_(u'6 Months'),24*182),
+            (_(u'1 Year'),24*365),
+            (_(u'Custom (in hours)'),72),
             ),
-        GmstTweak(_('Combat: Recharge Weapons'),
-            _("Allow recharging weapons during combat."),
-            ('iAllowRechargeDuringCombat',),
-            (_('[Allow]'),1),
-            (_('Disallow'),0),
+        GmstTweak(_(u'Combat: Recharge Weapons'),
+            _(u"Allow recharging weapons during combat."),
+            (u'iAllowRechargeDuringCombat',),
+            (_(u'[Allow]'),1),
+            (_(u'Disallow'),0),
             ),
-        GmstTweak(_('Magic: Bolt Speed'),
-            _("Speed of magic bolt/projectile."),
-            ('fMagicProjectileBaseSpeed',),
-            (_('x 1.2'),1000.0*1.2),
-            (_('x 1.4'),1000.0*1.4),
-            (_('x 1.6'),1000.0*1.6),
-            (_('x 1.8'),1000.0*1.8),
-            (_('x 2.0'),1000.0*2.0),
-            (_('x 2.2'),1000.0*2.2),
-            (_('x 2.4'),1000.0*2.4),
-            (_('x 2.6'),1000.0*2.6),
-            (_('x 2.8'),1000.0*2.8),
-            (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),1000.0),
+        GmstTweak(_(u'Magic: Bolt Speed'),
+            _(u"Speed of magic bolt/projectile."),
+            (u'fMagicProjectileBaseSpeed',),
+            (_(u'x 1.2'),1000.0*1.2),
+            (_(u'x 1.4'),1000.0*1.4),
+            (_(u'x 1.6'),1000.0*1.6),
+            (_(u'x 1.8'),1000.0*1.8),
+            (_(u'x 2.0'),1000.0*2.0),
+            (_(u'x 2.2'),1000.0*2.2),
+            (_(u'x 2.4'),1000.0*2.4),
+            (_(u'x 2.6'),1000.0*2.6),
+            (_(u'x 2.8'),1000.0*2.8),
+            (_(u'x 3.0'),1000.0*3.0),
+            (_(u'Custom (base 1000)'),1000.0),
             ),
-        GmstTweak(_('Msg: Equip Misc. Item'),
-            _("Message upon equipping misc. item."),
-            ('sCantEquipGeneric',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Equip Misc. Item'),
+            _(u"Message upon equipping misc. item."),
+            (u'sCantEquipGeneric',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Auto Saving'),
-            _("Message upon auto saving."),
-            ('sAutoSaving',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Auto Saving'),
+            _(u"Message upon auto saving."),
+            (u'sAutoSaving',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Harvest Failure'),
-            _("Message upon failure at harvesting flora."),
-            ('sFloraFailureMessage',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Harvest Failure'),
+            _(u"Message upon failure at harvesting flora."),
+            (u'sFloraFailureMessage',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Harvest Success'),
-            _("Message upon success at harvesting flora."),
-            ('sFloraSuccessMessage',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Harvest Success'),
+            _(u"Message upon success at harvesting flora."),
+            (u'sFloraSuccessMessage',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Quick Save'),
-            _("Message upon quick saving."),
-            ('sQuickSaving',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Quick Save'),
+            _(u"Message upon quick saving."),
+            (u'sQuickSaving',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Horse Stabled'),
-            _("Message upon fast traveling with a horse to a city."),
-            ('sFastTravelHorseatGate',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Horse Stabled'),
+            _(u"Message upon fast traveling with a horse to a city."),
+            (u'sFastTravelHorseatGate',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: No Fast Travel'),
-            _("Message when attempting to fast travel when fast travel is unavailable due to location."),
-            ('sNoFastTravelScriptBlock',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: No Fast Travel'),
+            _(u"Message when attempting to fast travel when fast travel is unavailable due to location."),
+            (u'sNoFastTravelScriptBlock',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Loading Area'),
-            _("Message when background loading area."),
-            ('sLoadingArea',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Loading Area'),
+            _(u"Message when background loading area."),
+            (u'sLoadingArea',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Quick Load'),
-            _("Message when quick loading."),
-            ('sQuickLoading',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Quick Load'),
+            _(u"Message when quick loading."),
+            (u'sQuickLoading',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Msg: Not Enough Charge'),
-            _("Message when enchanted item is out of charge."),
-            ('sNoCharge',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        GmstTweak(_(u'Msg: Not Enough Charge'),
+            _(u"Message when enchanted item is out of charge."),
+            (u'sNoCharge',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        GmstTweak(_('Cost Multiplier: Repair'),
-            _("Cost factor for repairing items."),
-            ('fRepairCostMult',),
-            ('0.1',0.1),
-            ('0.2',0.2),
-            ('0.3',0.3),
-            ('0.4',0.4),
-            ('0.5',0.5),
-            ('0.6',0.6),
-            ('0.7',0.7),
-            ('0.8',0.8),
-            ('[0.9]',0.9),
-            ('1.0',1.0),
-            (_('Custom'),0.9),
+        GmstTweak(_(u'Cost Multiplier: Repair'),
+            _(u"Cost factor for repairing items."),
+            (u'fRepairCostMult',),
+            (u'0.1',0.1),
+            (u'0.2',0.2),
+            (u'0.3',0.3),
+            (u'0.4',0.4),
+            (u'0.5',0.5),
+            (u'0.6',0.6),
+            (u'0.7',0.7),
+            (u'0.8',0.8),
+            (u'[0.9]',0.9),
+            (u'1.0',1.0),
+            (_(u'Custom'),0.9),
             ),
-        GmstTweak(_('Greeting Distance'),
-            _("Distance at which NPCs will greet the player. Default: 150"),
-            ('fAIMinGreetingDistance',),
-            ('100',100.0),
-            ('125',125.0),
-            ('[150]',150.0),
-            (_('Custom'),150.0),
+        GmstTweak(_(u'Greeting Distance'),
+            _(u"Distance at which NPCs will greet the player. Default: 150"),
+            (u'fAIMinGreetingDistance',),
+            (u'100',100.0),
+            (u'125',125.0),
+            (u'[150]',150.0),
+            (_(u'Custom'),150.0),
             ),
-        GmstTweak(_('Cost Multiplier: Recharge'),
-            _("Cost factor for recharging items."),
-            ('fRechargeGoldMult',),
-            ('0.1',0.1),
-            ('0.2',0.2),
-            ('0.3',0.3),
-            ('0.5',0.5),
-            ('0.7',0.7),
-            ('1.0',1.0),
-            ('1.5',1.5),
-            ('[2.0]',2.0),
-            (_('Custom'),2.0),
+        GmstTweak(_(u'Cost Multiplier: Recharge'),
+            _(u"Cost factor for recharging items."),
+            (u'fRechargeGoldMult',),
+            (u'0.1',0.1),
+            (u'0.2',0.2),
+            (u'0.3',0.3),
+            (u'0.5',0.5),
+            (u'0.7',0.7),
+            (u'1.0',1.0),
+            (u'1.5',1.5),
+            (u'[2.0]',2.0),
+            (_(u'Custom'),2.0),
             ),
-        GmstTweak(_('Master of Mercantile extra gold amount'),
-            _("How much more barter gold all merchants have for a master of mercantile."),
-            ('iPerkExtraBarterGoldMaster',),
-            ('300',300),
-            ('400',400),
-            ('[500]',500),
-            ('600',600),
-            ('800',800),
-            ('1000',1000),
-            (_('Custom'),500),
+        GmstTweak(_(u'Master of Mercantile extra gold amount'),
+            _(u"How much more barter gold all merchants have for a master of mercantile."),
+            (u'iPerkExtraBarterGoldMaster',),
+            (u'300',300),
+            (u'400',400),
+            (u'[500]',500),
+            (u'600',600),
+            (u'800',800),
+            (u'1000',1000),
+            (_(u'Custom'),500),
             ),
-        GmstTweak(_('Combat: Max Actors'),
-            _("Maximum number of actors that can actively be in combat with the player."),
-            ('iNumberActorsInCombatPlayer',),
-            ('[10]',10),
-            ('15',15),
-            ('20',20),
-            ('30',30),
-            ('40',40),
-            ('50',50),
-            ('80',80),
-            (_('Custom'),10),
+        GmstTweak(_(u'Combat: Max Actors'),
+            _(u"Maximum number of actors that can actively be in combat with the player."),
+            (u'iNumberActorsInCombatPlayer',),
+            (u'[10]',10),
+            (u'15',15),
+            (u'20',20),
+            (u'30',30),
+            (u'40',40),
+            (u'50',50),
+            (u'80',80),
+            (_(u'Custom'),10),
             ),
-        GmstTweak(_('Crime Alarm Distance'),
-            _("Distance from player that NPCs(guards) will be alerted of a crime."),
-            ('iCrimeAlarmRecDistance',),
-            ('6000',6000),
-            ('[4000]',4000),
-            ('3000',3000),
-            ('2000',2000),
-            ('1000',1000),
-            ('500',500),
-            (_('Custom'),4000),
+        GmstTweak(_(u'Crime Alarm Distance'),
+            _(u"Distance from player that NPCs(guards) will be alerted of a crime."),
+            (u'iCrimeAlarmRecDistance',),
+            (u'6000',6000),
+            (u'[4000]',4000),
+            (u'3000',3000),
+            (u'2000',2000),
+            (u'1000',1000),
+            (u'500',500),
+            (_(u'Custom'),4000),
             ),
-        GmstTweak(_('Cost Multiplier: Enchantment'),
-            _("Cost factor for enchanting items, OOO default is 120, vanilla 10."),
-            ('fEnchantmentGoldMult',),
-            ('[10]',10.0),
-            ('20',20.0),
-            ('30',30.0),
-            ('50',50.0),
-            ('70',70.0),
-            ('90',90.0),
-            ('120',120.0),
-            ('150',150.0),
-            (_('Custom'),10.0),
+        GmstTweak(_(u'Cost Multiplier: Enchantment'),
+            _(u"Cost factor for enchanting items, OOO default is 120, vanilla 10."),
+            (u'fEnchantmentGoldMult',),
+            (u'[10]',10.0),
+            (u'20',20.0),
+            (u'30',30.0),
+            (u'50',50.0),
+            (u'70',70.0),
+            (u'90',90.0),
+            (u'120',120.0),
+            (u'150',150.0),
+            (_(u'Custom'),10.0),
             ),
-        GmstTweak(_('Cost Multiplier: Spell Making'),
-            _("Cost factor for making spells."),
-            ('fSpellmakingGoldMult',),
-            ('[3]',3.0),
-            ('5',5.0),
-            ('8',8.0),
-            ('10',10.0),
-            ('15',15.0),
-            (_('Custom'),3.0),
+        GmstTweak(_(u'Cost Multiplier: Spell Making'),
+            _(u"Cost factor for making spells."),
+            (u'fSpellmakingGoldMult',),
+            (u'[3]',3.0),
+            (u'5',5.0),
+            (u'8',8.0),
+            (u'10',10.0),
+            (u'15',15.0),
+            (_(u'Custom'),3.0),
             ),
-        GmstTweak(_('AI: Max Active Actors'),
-            _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
-            ('iAINumberActorsComplexScene',),
-            ('20',20),
-            ('[25]',25),
-            ('30',30),
-            ('35',35),
-            (_('MMM Default: 40'),40),
-            ('50',50),
-            ('60',60),
-            ('100',100),
-            (_('Custom'),25),
+        GmstTweak(_(u'AI: Max Active Actors'),
+            _(u"Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
+            (u'iAINumberActorsComplexScene',),
+            (u'20',20),
+            (u'[25]',25),
+            (u'30',30),
+            (u'35',35),
+            (_(u'MMM Default: 40'),40),
+            (u'50',50),
+            (u'60',60),
+            (u'100',100),
+            (_(u'Custom'),25),
             ),
-        GmstTweak(_('Magic: Max Player Summons'),
-            _("Maximum number of creatures the player can summon."),
-            ('iMaxPlayerSummonedCreatures',),
-            ('[1]',1),
-            ('3',3),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            (_('Custom'),1),
+        GmstTweak(_(u'Magic: Max Player Summons'),
+            _(u"Maximum number of creatures the player can summon."),
+            (u'iMaxPlayerSummonedCreatures',),
+            (u'[1]',1),
+            (u'3',3),
+            (u'5',5),
+            (u'8',8),
+            (u'10',10),
+            (_(u'Custom'),1),
             ),
-        GmstTweak(_('Combat: Max Ally Hits'),
-            _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
-            ('iAllyHitAllowed',),
-            ('3',3),
-            ('[5]',5),
-            ('8',8),
-            ('10',10),
-            ('15',15),
-            (_('Custom'),5),
+        GmstTweak(_(u'Combat: Max Ally Hits'),
+            _(u"Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
+            (u'iAllyHitAllowed',),
+            (u'3',3),
+            (u'[5]',5),
+            (u'8',8),
+            (u'10',10),
+            (u'15',15),
+            (_(u'Custom'),5),
             ),
-        GmstTweak(_('Magic: Max NPC Summons'),
-            _("Maximum number of creatures that each NPC can summon"),
-            ('iAICombatMaxAllySummonCount',),
-            ('1',1),
-            ('[3]',3),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            ('15',15),
-            (_('Custom'),3),
+        GmstTweak(_(u'Magic: Max NPC Summons'),
+            _(u"Maximum number of creatures that each NPC can summon"),
+            (u'iAICombatMaxAllySummonCount',),
+            (u'1',1),
+            (u'[3]',3),
+            (u'5',5),
+            (u'8',8),
+            (u'10',10),
+            (u'15',15),
+            (_(u'Custom'),3),
             ),
-        GmstTweak(_('Bounty: Attack'),
-            _("Bounty for attacking a 'good' npc."),
-            ('iCrimeGoldAttackMin',),
-            ('300',300),
-            ('400',400),
-            ('[500]',500),
-            ('650',650),
-            ('800',800),
-            (_('Custom'),500),
+        GmstTweak(_(u'Bounty: Attack'),
+            _(u"Bounty for attacking a 'good' npc."),
+            (u'iCrimeGoldAttackMin',),
+            (u'300',300),
+            (u'400',400),
+            (u'[500]',500),
+            (u'650',650),
+            (u'800',800),
+            (_(u'Custom'),500),
             ),
-        GmstTweak(_('Bounty: Horse Theft'),
-            _("Bounty for horse theft"),
-            ('iCrimeGoldStealHorse',),
-            ('100',100),
-            ('200',200),
-            ('[250]',250),
-            ('300',300),
-            ('450',450),
-            (_('Custom'),250),
+        GmstTweak(_(u'Bounty: Horse Theft'),
+            _(u"Bounty for horse theft"),
+            (u'iCrimeGoldStealHorse',),
+            (u'100',100),
+            (u'200',200),
+            (u'[250]',250),
+            (u'300',300),
+            (u'450',450),
+            (_(u'Custom'),250),
             ),
-        GmstTweak(_('Bounty: Theft'),
-            _("Bounty for stealing, as fraction of item value."),
-            ('fCrimeGoldSteal',),
-            ('1/4',0.25),
-            ('[1/2]',0.5),
-            ('3/4',0.75),
-            ('1',1.0),
-            (_('Custom'),0.5),
+        GmstTweak(_(u'Bounty: Theft'),
+            _(u"Bounty for stealing, as fraction of item value."),
+            (u'fCrimeGoldSteal',),
+            (u'1/4',0.25),
+            (u'[1/2]',0.5),
+            (u'3/4',0.75),
+            (u'1',1.0),
+            (_(u'Custom'),0.5),
             ),
-        GmstTweak(_('Combat: Alchemy'),
-            _("Allow alchemy during combat."),
-            ('iAllowAlchemyDuringCombat',),
-            (_('Allow'),1),
-            (_('[Disallow]'),0),
+        GmstTweak(_(u'Combat: Alchemy'),
+            _(u"Allow alchemy during combat."),
+            (u'iAllowAlchemyDuringCombat',),
+            (_(u'Allow'),1),
+            (_(u'[Disallow]'),0),
             ),
-        GmstTweak(_('Combat: Repair'),
-            _("Allow repairing armor/weapons during combat."),
-            ('iAllowRepairDuringCombat',),
-            (_('Allow'),1),
-            (_('[Disallow]'),0),
+        GmstTweak(_(u'Combat: Repair'),
+            _(u"Allow repairing armor/weapons during combat."),
+            (u'iAllowRepairDuringCombat',),
+            (_(u'Allow'),1),
+            (_(u'[Disallow]'),0),
             ),
-        GmstTweak(_('Companions: Max Number'),
-            _("Maximum number of actors following the player"),
-            ('iNumberActorsAllowedToFollowPlayer',),
-            ('2',2),
-            ('4',4),
-            ('[6]',6),
-            ('8',8),
-            ('10',10),
-            (_('Custom'),6),
+        GmstTweak(_(u'Companions: Max Number'),
+            _(u"Maximum number of actors following the player"),
+            (u'iNumberActorsAllowedToFollowPlayer',),
+            (u'2',2),
+            (u'4',4),
+            (u'[6]',6),
+            (u'8',8),
+            (u'10',10),
+            (_(u'Custom'),6),
             ),
-        GmstTweak(_('Training Max'),
-            _("Maximum number of Training allowed by trainers."),
-            ('iTrainingSkills',),
-            ('1',1),
-            ('[5]',5),
-            ('8',8),
-            ('10',10),
-            ('20',20),
-            (_('Unlimited'),9999),
-            (_('Custom'),0),
+        GmstTweak(_(u'Training Max'),
+            _(u"Maximum number of Training allowed by trainers."),
+            (u'iTrainingSkills',),
+            (u'1',1),
+            (u'[5]',5),
+            (u'8',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Unlimited'),9999),
+            (_(u'Custom'),0),
             ),
-        GmstTweak(_('Combat: Maximum Armor Rating'),
-            _("The Maximun amount of protection you will get from armor."),
-            ('fMaxArmorRating',),
-            ('50',50.0),
-            ('75',75.0),
-            ('[85]',85.0),
-            ('90',90.0),
-            ('95',95.0),
-            (_('Custom'),85.0),
+        GmstTweak(_(u'Combat: Maximum Armor Rating'),
+            _(u"The Maximun amount of protection you will get from armor."),
+            (u'fMaxArmorRating',),
+            (u'50',50.0),
+            (u'75',75.0),
+            (u'[85]',85.0),
+            (u'90',90.0),
+            (u'95',95.0),
+            (_(u'Custom'),85.0),
             ),
-        GmstTweak(_('Warning: Interior Distance to Hostiles'),
-            _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
-            ('fHostileActorInteriorDistance',),
-            ('10',10.0),
-            ('100',100.0),
-            ('500',500.0),
-            ('1000',1000.0),
-            ('[2000]',2000.0),
-            ('3000',3000.0),
-            ('4000',4000.0),
-            (_('Custom'),2000.0),
+        GmstTweak(_(u'Warning: Interior Distance to Hostiles'),
+            _(u"The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
+            (u'fHostileActorInteriorDistance',),
+            (u'10',10.0),
+            (u'100',100.0),
+            (u'500',500.0),
+            (u'1000',1000.0),
+            (u'[2000]',2000.0),
+            (u'3000',3000.0),
+            (u'4000',4000.0),
+            (_(u'Custom'),2000.0),
             ),
-        GmstTweak(_('Warning: Exterior Distance to Hostiles'),
-            _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
-            ('fHostileActorExteriorDistance',),
-            ('10',10.0),
-            ('100',100.0),
-            ('500',500.0),
-            ('1000',1000.0),
-            ('2000',2000.0),
-            ('[3000]',3000.0),
-            ('4000',4000.0),
-            ('5000',5000.0),
-            ('6000',6000.0),
-            (_('Custom'),3000.0),
+        GmstTweak(_(u'Warning: Exterior Distance to Hostiles'),
+            _(u"The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
+            (u'fHostileActorExteriorDistance',),
+            (u'10',10.0),
+            (u'100',100.0),
+            (u'500',500.0),
+            (u'1000',1000.0),
+            (u'2000',2000.0),
+            (u'[3000]',3000.0),
+            (u'4000',4000.0),
+            (u'5000',5000.0),
+            (u'6000',6000.0),
+            (_(u'Custom'),3000.0),
             ),
-        GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
-            _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
-            ('iVampirismAgeOffset',),
-            ('Fix it!',0),
+        GmstTweak(_(u'UOP Vampire Aging and Face Fix.esp'),
+            _(u"Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
+            (u'iVampirismAgeOffset',),
+            (u'Fix it!',0),
             defaultEnabled=True
             ),
-        GmstTweak(_('AI: Max Dead Actors'),
-            _("Maximum number of dead actors allowed before they're removed."),
-            ('iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount',
-             'iRemoveExcessDeadComplexCount', 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime'),
-            (_('[x 1]'),int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
-            (_('x 1.5'),int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
-            (_('x 2'),  int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
-            (_('x 2.5'),int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
-            (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
-            (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
-            (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-            (_('Custom'),15,20,20,3,10.0,2.5),
+        GmstTweak(_(u'AI: Max Dead Actors'),
+            _(u"Maximum number of dead actors allowed before they're removed."),
+            (u'iRemoveExcessDeadCount', u'iRemoveExcessDeadTotalActorCount',u'iRemoveExcessDeadComplexTotalActorCount',
+             u'iRemoveExcessDeadComplexCount', u'fRemoveExcessDeadTime',u'fRemoveExcessComplexDeadTime'),
+            (_(u'[x 1]'),int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
+            (_(u'x 1.5'),int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
+            (_(u'x 2'),  int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
+            (_(u'x 2.5'),int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
+            (_(u'x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
+            (_(u'x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
+            (_(u'x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
+            (_(u'Custom'),15,20,20,3,10.0,2.5),
             ),
-        GmstTweak(_('Inventory Quantity Prompt'),
-            _("Number of items in a stack at which point Oblivion prompts for a quantity."),
-            ('iInventoryAskQuantityAt',),
-            ('1',1),
-            ('2',2),
-            ('[3]',3),
-            ('4',4),
-            ('10',10),
-            (_('No Prompt'),99999),
-            (_('Custom'),3),
+        GmstTweak(_(u'Inventory Quantity Prompt'),
+            _(u"Number of items in a stack at which point Oblivion prompts for a quantity."),
+            (u'iInventoryAskQuantityAt',),
+            (u'1',1),
+            (u'2',2),
+            (u'[3]',3),
+            (u'4',4),
+            (u'10',10),
+            (_(u'No Prompt'),99999),
+            (_(u'Custom'),3),
             ),
-        GmstTweak(_('Crime: Trespass Fine'),
-            _("Fine in septims for trespassing."),
-            ('iCrimeGoldTresspass',),
-            ('1',1),
-            ('[5]',5),
-            ('8',8),
-            ('10',10),
-            ('20',20),
-            (_('Custom'),5),
+        GmstTweak(_(u'Crime: Trespass Fine'),
+            _(u"Fine in septims for trespassing."),
+            (u'iCrimeGoldTresspass',),
+            (u'1',1),
+            (u'[5]',5),
+            (u'8',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Custom'),5),
             ),
-        GmstTweak(_('Crime: Pickpocketing Fine'),
-            _("Fine in septims for trespassing."),
-            ('iCrimeGoldPickpocket',),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            ('[25]',25),
-            ('50',50),
-            ('100',100),
-            (_('Custom'),25),
+        GmstTweak(_(u'Crime: Pickpocketing Fine'),
+            _(u"Fine in septims for trespassing."),
+            (u'iCrimeGoldPickpocket',),
+            (u'5',5),
+            (u'8',8),
+            (u'10',10),
+            (u'[25]',25),
+            (u'50',50),
+            (u'100',100),
+            (_(u'Custom'),25),
             ),
-        GmstTweak(_('Leveled Creature Max level difference'),
-            _("Maximum difference to player level for leveled creatures."),
-            ('iLevCreaLevelDifferenceMax',),
-            ('1',1),
-            ('5',5),
-            ('[8]',8),
-            ('10',10),
-            ('20',20),
-            (_('Unlimited'),9999),
-            (_('Custom'),8),
+        GmstTweak(_(u'Leveled Creature Max level difference'),
+            _(u"Maximum difference to player level for leveled creatures."),
+            (u'iLevCreaLevelDifferenceMax',),
+            (u'1',1),
+            (u'5',5),
+            (u'[8]',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Unlimited'),9999),
+            (_(u'Custom'),8),
             ),
-        GmstTweak(_('Leveled Item Max level difference'),
-            _("Maximum difference to player level for leveled items."),
-            ('iLevItemLevelDifferenceMax',),
-            ('1',1),
-            ('5',5),
-            ('[8]',8),
-            ('10',10),
-            ('20',20),
-            (_('Unlimited'),9999),
-            (_('Custom'),8),
+        GmstTweak(_(u'Leveled Item Max level difference'),
+            _(u"Maximum difference to player level for leveled items."),
+            (u'iLevItemLevelDifferenceMax',),
+            (u'1',1),
+            (u'5',5),
+            (u'[8]',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Unlimited'),9999),
+            (_(u'Custom'),8),
             ),
-        GmstTweak(_('Actor Strength Encumbrance Multiplier'),
-            _("Actor's Strength X this = Actor's Encumbrance capacity."),
-            ('fActorStrengthEncumbranceMult',),
-            ('1',1.0),
-            ('3',3.0),
-            ('[5]',5.0),
-            ('8',8.0),
-            ('10',10.0),
-            ('20',20.0),
-            (_('Unlimited'),999999.0),
-            (_('Custom'),5.0),
+        GmstTweak(_(u'Actor Strength Encumbrance Multiplier'),
+            _(u"Actor's Strength X this = Actor's Encumbrance capacity."),
+            (u'fActorStrengthEncumbranceMult',),
+            (u'1',1.0),
+            (u'3',3.0),
+            (u'[5]',5.0),
+            (u'8',8.0),
+            (u'10',10.0),
+            (u'20',20.0),
+            (_(u'Unlimited'),999999.0),
+            (_(u'Custom'),5.0),
             ),
-        GmstTweak(_('NPC Blood'),
-            _("NPC Blood Splatter Textures."),
-            ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
-            (_('No Blood'),'','','','','',''),
-            (_('Custom'),'','','','','',''),
+        GmstTweak(_(u'NPC Blood'),
+            _(u"NPC Blood Splatter Textures."),
+            (u'sBloodTextureDefault', u'sBloodTextureExtra1',u'sBloodTextureExtra2', u'sBloodParticleDefault', u'sBloodParticleExtra1',u'sBloodParticleExtra2'),
+            (_(u'No Blood'),u'',u'',u'',u'',u'',u''),
+            (_(u'Custom'),u'',u'',u'',u'',u'',u''),
             ),
-        GmstTweak(_('AI: Max Smile Distance'),
-            _("Maximum distance for NPCs to start smiling."),
-            ('fAIMaxSmileDistance',),
-            (_('No Smiles'),0.0),
-            (_('[Default (128)]'),128.0),
-            (_('Custom'),128.0),
+        GmstTweak(_(u'AI: Max Smile Distance'),
+            _(u"Maximum distance for NPCs to start smiling."),
+            (u'fAIMaxSmileDistance',),
+            (_(u'No Smiles'),0.0),
+            (_(u'[Default (128)]'),128.0),
+            (_(u'Custom'),128.0),
             ),
-        GmstTweak(_('Drag: Max Moveable Weight'),
-            _("Maximum weight to be able move things with the drag key."),
-            ('fMoveWeightMax',),
-            (_('MovableBodies.esp (1500)'),1500.0),
-            (_('[Default (150)]'),150.0),
-            (_('Custom'),150.0),
+        GmstTweak(_(u'Drag: Max Moveable Weight'),
+            _(u"Maximum weight to be able move things with the drag key."),
+            (u'fMoveWeightMax',),
+            (_(u'MovableBodies.esp (1500)'),1500.0),
+            (_(u'[Default (150)]'),150.0),
+            (_(u'Custom'),150.0),
             ),
-        GmstTweak(_('AI: Conversation Chance'),
-            _("Chance of NPCs engaging each other in conversation (possibly also with the player)."),
-            ('fAISocialchanceForConversation',),
-            (_('10'),10.0),
-            (_('25'),25.0),
-            (_('50'),50.0),
-            (_('[100]'),100.0),
-            (_('Custom'),100.0),
+        GmstTweak(_(u'AI: Conversation Chance'),
+            _(u"Chance of NPCs engaging each other in conversation (possibly also with the player)."),
+            (u'fAISocialchanceForConversation',),
+            (_(u'10'),10.0),
+            (_(u'25'),25.0),
+            (_(u'50'),50.0),
+            (_(u'[100]'),100.0),
+            (_(u'Custom'),100.0),
             ),
-        GmstTweak(_('AI: Conversation Chance - Interior'),
-            _("Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
-            ('fAISocialchanceForConversationInterior',),
-            (_('10'),10.0),
-            (_('[25]'),25.0),
-            (_('50'),50.0),
-            (_('100'),100.0),
-            (_('Custom'),100.0),
+        GmstTweak(_(u'AI: Conversation Chance - Interior'),
+            _(u"Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
+            (u'fAISocialchanceForConversationInterior',),
+            (_(u'10'),10.0),
+            (_(u'[25]'),25.0),
+            (_(u'50'),50.0),
+            (_(u'100'),100.0),
+            (_(u'Custom'),100.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Patch Phase ------------------------------------------------------------
@@ -27299,632 +27284,632 @@ class GmstTweaker(MultiTweaker):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        log.setHeader('= '+self.__class__.name)
+        log.setHeader(u'= '+self.__class__.name)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
 
 class CBash_GmstTweaker(CBash_MultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    name = _('Tweak Settings')
-    text = _("Tweak game settings.")
+    name = _(u'Tweak Settings')
+    text = _(u"Tweak game settings.")
     defaultConfig = {'isEnabled':True}
     tweaks = sorted([
-        CBash_GmstTweak(_('Arrow: Litter Count'),
-            _("Maximum number of spent arrows allowed in cell."),
-            ('iArrowMaxRefCount',),
-            ('[15]',15),
-            ('25',25),
-            ('35',35),
-            ('50',50),
-            ('100',100),
-            ('500',500),
-            (_('Custom'),15),
+        CBash_GmstTweak(_(u'Arrow: Litter Count'),
+            _(u"Maximum number of spent arrows allowed in cell."),
+            (u'iArrowMaxRefCount',),
+            (u'[15]',15),
+            (u'25',25),
+            (u'35',35),
+            (u'50',50),
+            (u'100',100),
+            (u'500',500),
+            (_(u'Custom'),15),
             ),
-        CBash_GmstTweak(_('Arrow: Litter Time'),
-            _("Time before spent arrows fade away from cells and actors."),
-            ('fArrowAgeMax',),
-            (_('1 Minute'),60.0),
-            (_('[1.5 Minutes]'),90.0),
-            (_('2 Minutes'),120.0),
-            (_('3 Minutes'),180.0),
-            (_('5 Minutes'),300.0),
-            (_('10 Minutes'),600.0),
-            (_('30 Minutes'),1800.0),
-            (_('1 Hour'),3600.0),
-            (_('Custom (in seconds)'),90.0),
+        CBash_GmstTweak(_(u'Arrow: Litter Time'),
+            _(u"Time before spent arrows fade away from cells and actors."),
+            (u'fArrowAgeMax',),
+            (_(u'1 Minute'),60.0),
+            (_(u'[1.5 Minutes]'),90.0),
+            (_(u'2 Minutes'),120.0),
+            (_(u'3 Minutes'),180.0),
+            (_(u'5 Minutes'),300.0),
+            (_(u'10 Minutes'),600.0),
+            (_(u'30 Minutes'),1800.0),
+            (_(u'1 Hour'),3600.0),
+            (_(u'Custom (in seconds)'),90.0),
             ),
-        CBash_GmstTweak(_('Arrow: Recovery from Actor'),
-            _("Chance that an arrow shot into an actor can be recovered."),
-            ('iArrowInventoryChance',),
-            ('[50%]',50),
-            ('60%',60),
-            ('70%',70),
-            ('80%',80),
-            ('90%',90),
-            ('100%',100),
-            (_('Custom'),50),
+        CBash_GmstTweak(_(u'Arrow: Recovery from Actor'),
+            _(u"Chance that an arrow shot into an actor can be recovered."),
+            (u'iArrowInventoryChance',),
+            (u'[50%]',50),
+            (u'60%',60),
+            (u'70%',70),
+            (u'80%',80),
+            (u'90%',90),
+            (u'100%',100),
+            (_(u'Custom'),50),
             ),
-        CBash_GmstTweak(_('Arrow: Speed'),
-            _("Speed of full power arrow."),
-            ('fArrowSpeedMult',),
-            (_('x 1.2'),1500.0*1.2),
-            (_('x 1.4'),1500.0*1.4),
-            (_('x 1.6'),1500.0*1.6),
-            (_('x 1.8'),1500.0*1.8),
-            (_('x 2.0'),1500.0*2.0),
-            (_('x 2.2'),1500.0*2.2),
-            (_('x 2.4'),1500.0*2.4),
-            (_('x 2.6'),1500.0*2.6),
-            (_('x 2.8'),1500.0*2.8),
-            (_('x 3.0'),1500.0*3.0),
-            (_('Custom (base is 1500)'),1500.0),
+        CBash_GmstTweak(_(u'Arrow: Speed'),
+            _(u"Speed of full power arrow."),
+            (u'fArrowSpeedMult',),
+            (_(u'x 1.2'),1500.0*1.2),
+            (_(u'x 1.4'),1500.0*1.4),
+            (_(u'x 1.6'),1500.0*1.6),
+            (_(u'x 1.8'),1500.0*1.8),
+            (_(u'x 2.0'),1500.0*2.0),
+            (_(u'x 2.2'),1500.0*2.2),
+            (_(u'x 2.4'),1500.0*2.4),
+            (_(u'x 2.6'),1500.0*2.6),
+            (_(u'x 2.8'),1500.0*2.8),
+            (_(u'x 3.0'),1500.0*3.0),
+            (_(u'Custom (base is 1500)'),1500.0),
             ),
-        CBash_GmstTweak(_('Camera: Chase Tightness'),
-            _("Tightness of chase camera to player turning."),
-            ('fChase3rdPersonVanityXYMult','fChase3rdPersonXYMult'),
-            (_('x 1.5'),6.0,6.0),
-            (_('x 2.0'),8.0,8.0),
-            (_('x 3.0'),12.0,12.0),
-            (_('x 5.0'),20.0,20.0),
-            (_('ChaseCameraMod.esp (x 24.75)'),99,99),
-            (_('Custom'),4.0,4.0),
+        CBash_GmstTweak(_(u'Camera: Chase Tightness'),
+            _(u"Tightness of chase camera to player turning."),
+            (u'fChase3rdPersonVanityXYMult',u'fChase3rdPersonXYMult'),
+            (_(u'x 1.5'),6.0,6.0),
+            (_(u'x 2.0'),8.0,8.0),
+            (_(u'x 3.0'),12.0,12.0),
+            (_(u'x 5.0'),20.0,20.0),
+            (_(u'ChaseCameraMod.esp (x 24.75)'),99,99),
+            (_(u'Custom'),4.0,4.0),
             ),
-        CBash_GmstTweak(_('Camera: Chase Distance'),
-            _("Distance camera can be moved away from PC using mouse wheel."),
-            ('fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond','fVanityModeWheelMult'),
-            (_('x 1.5'),600.0*1.5, 300.0*1.5, 0.15),
-            (_('x 2'),  600.0*2.0, 300.0*2.0, 0.2),
-            (_('x 3'),  600.0*3.0, 300.0*3.0, 0.3),
-            (_('x 5'),  600.0*5.0, 1000.0,    0.3),
-            (_('x 10'), 600.0*10,  2000.0,    0.3),
-            (_('Custom'),600.0,     300.0,    0.15),
+        CBash_GmstTweak(_(u'Camera: Chase Distance'),
+            _(u"Distance camera can be moved away from PC using mouse wheel."),
+            (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond',u'fVanityModeWheelMult'),
+            (_(u'x 1.5'),600.0*1.5, 300.0*1.5, 0.15),
+            (_(u'x 2'),  600.0*2.0, 300.0*2.0, 0.2),
+            (_(u'x 3'),  600.0*3.0, 300.0*3.0, 0.3),
+            (_(u'x 5'),  600.0*5.0, 1000.0,    0.3),
+            (_(u'x 10'), 600.0*10,  2000.0,    0.3),
+            (_(u'Custom'),600.0,     300.0,    0.15),
             ),
-        CBash_GmstTweak(_('Magic: Chameleon Refraction'),
-            _("Chameleon with transparency instead of refraction effect."),
-            ('fChameleonMinRefraction','fChameleonMaxRefraction'),
-            (_('Zero'),0.0,0.0),
-            (_('[Normal]'),0.01,1.0),
-            (_('Full'),1.0,1.0),
-            (_('Custom'),0.01,1.0),
+        CBash_GmstTweak(_(u'Magic: Chameleon Refraction'),
+            _(u"Chameleon with transparency instead of refraction effect."),
+            (u'fChameleonMinRefraction',u'fChameleonMaxRefraction'),
+            (_(u'Zero'),0.0,0.0),
+            (_(u'[Normal]'),0.01,1.0),
+            (_(u'Full'),1.0,1.0),
+            (_(u'Custom'),0.01,1.0),
             ),
-        CBash_GmstTweak(_('Compass: Disable'),
-            _("No quest and/or points of interest markers on compass."),
-            ('iMapMarkerRevealDistance',),
-            (_('Quests'),1803),
-            (_('POIs'),1802),
-            (_('Quests and POIs'),1801),
+        CBash_GmstTweak(_(u'Compass: Disable'),
+            _(u"No quest and/or points of interest markers on compass."),
+            (u'iMapMarkerRevealDistance',),
+            (_(u'Quests'),1803),
+            (_(u'POIs'),1802),
+            (_(u'Quests and POIs'),1801),
             ),
-        CBash_GmstTweak(_('Compass: POI Recognition'),
-            _("Distance at which POI markers begin to show on compass."),
-            ('iMapMarkerVisibleDistance',),
-            (_('x 0.25'),3000),
-            (_('x 0.50'),6000),
-            (_('x 0.75'),9000),
-            (_('Custom (base 12000)'),12000),
+        CBash_GmstTweak(_(u'Compass: POI Recognition'),
+            _(u"Distance at which POI markers begin to show on compass."),
+            (u'iMapMarkerVisibleDistance',),
+            (_(u'x 0.25'),3000),
+            (_(u'x 0.50'),6000),
+            (_(u'x 0.75'),9000),
+            (_(u'Custom (base 12000)'),12000),
             ),
-        CBash_GmstTweak(_('Essential NPC Unconsciousness'),
-            _("Time which essential NPCs stay unconscious."),
-            ('fEssentialDeathTime',),
-            (_('[10 Seconds]'),10.0),
-            (_('20 Seconds'),20.0),
-            (_('30 Seconds'),30.0),
-            (_('1 Minute'),60.0),
-            (_('1 1/2 Minutes'),1.5*60.0),
-            (_('2 Minutes'),2*60.0),
-            (_('3 Minutes'),3*60.0),
-            (_('5 Minutes'),5*60.0),
-            (_('Custom (in seconds)'),10.0),
+        CBash_GmstTweak(_(u'Essential NPC Unconsciousness'),
+            _(u"Time which essential NPCs stay unconscious."),
+            (u'fEssentialDeathTime',),
+            (_(u'[10 Seconds]'),10.0),
+            (_(u'20 Seconds'),20.0),
+            (_(u'30 Seconds'),30.0),
+            (_(u'1 Minute'),60.0),
+            (_(u'1 1/2 Minutes'),1.5*60.0),
+            (_(u'2 Minutes'),2*60.0),
+            (_(u'3 Minutes'),3*60.0),
+            (_(u'5 Minutes'),5*60.0),
+            (_(u'Custom (in seconds)'),10.0),
             ),
-        CBash_GmstTweak(_('Fatigue from Running/Encumbrance'),
-            _("Fatigue cost of running and encumbrance."),
-            ('fFatigueRunBase','fFatigueRunMult'),
-            (_('x 1.5'),12.0,6.0),
-            (_('x 2'),16.0,8.0),
-            (_('x 3'),24.0,12.0),
-            (_('x 4'),32.0,16.0),
-            (_('x 5'),40.0,20.0),
-            (_('Custom'),8.0,4.0),
+        CBash_GmstTweak(_(u'Fatigue from Running/Encumbrance'),
+            _(u"Fatigue cost of running and encumbrance."),
+            (u'fFatigueRunBase',u'fFatigueRunMult'),
+            (_(u'x 1.5'),12.0,6.0),
+            (_(u'x 2'),16.0,8.0),
+            (_(u'x 3'),24.0,12.0),
+            (_(u'x 4'),32.0,16.0),
+            (_(u'x 5'),40.0,20.0),
+            (_(u'Custom'),8.0,4.0),
             ),
-        CBash_GmstTweak(_('Horse Turning Speed'),
-            _("Speed at which horses turn."),
-            ('iHorseTurnDegreesPerSecond',),
-            (_('x 1.5'),68),
-            (_('x 2.0'),90),
-            (_('Custom (base is 45)'),45),
+        CBash_GmstTweak(_(u'Horse Turning Speed'),
+            _(u"Speed at which horses turn."),
+            (u'iHorseTurnDegreesPerSecond',),
+            (_(u'x 1.5'),68),
+            (_(u'x 2.0'),90),
+            (_(u'Custom (base is 45)'),45),
             ),
-        CBash_GmstTweak(_('Jump Higher'),
-            _("Maximum height player can jump to."),
-            ('fJumpHeightMax',),
-            (_('x 1.1'),164.0*1.1),
-            (_('x 1.2'),164.0*1.2),
-            (_('x 1.4'),164.0*1.4),
-            (_('x 1.6'),164.0*1.6),
-            (_('x 1.8'),164.0*1.8),
-            (_('x 2.0'),164.0*2.0),
-            (_('x 3.0'),164.0*3.0),
-            (_('Custom (base 164)'),164.0),
+        CBash_GmstTweak(_(u'Jump Higher'),
+            _(u"Maximum height player can jump to."),
+            (u'fJumpHeightMax',),
+            (_(u'x 1.1'),164.0*1.1),
+            (_(u'x 1.2'),164.0*1.2),
+            (_(u'x 1.4'),164.0*1.4),
+            (_(u'x 1.6'),164.0*1.6),
+            (_(u'x 1.8'),164.0*1.8),
+            (_(u'x 2.0'),164.0*2.0),
+            (_(u'x 3.0'),164.0*3.0),
+            (_(u'Custom (base 164)'),164.0),
             ),
-        CBash_GmstTweak(_('Camera: PC Death Time'),
-            _("Time after player's death before reload menu appears."),
-            ('fPlayerDeathReloadTime',),
-            (_('15 Seconds'),15.0),
-            (_('30 Seconds'),30.0),
-            (_('1 Minute'),60.0),
-            (_('5 Minute'),300.0),
-            (_('Unlimited'),9999999.0),
-            (_('Custom'),15.0),
+        CBash_GmstTweak(_(u'Camera: PC Death Time'),
+            _(u"Time after player's death before reload menu appears."),
+            (u'fPlayerDeathReloadTime',),
+            (_(u'15 Seconds'),15.0),
+            (_(u'30 Seconds'),30.0),
+            (_(u'1 Minute'),60.0),
+            (_(u'5 Minute'),300.0),
+            (_(u'Unlimited'),9999999.0),
+            (_(u'Custom'),15.0),
             ),
-        CBash_GmstTweak(_('Cell Respawn Time'),
-            _("Time before unvisited cell respawns. But longer times increase save sizes."),
-            ('iHoursToRespawnCell',),
-            (_('1 Day'),24*1),
-            (_('[3 Days]'),24*3),
-            (_('5 Days'),24*5),
-            (_('10 Days'),24*10),
-            (_('20 Days'),24*20),
-            (_('1 Month'),24*30),
-            (_('6 Months'),24*182),
-            (_('1 Year'),24*365),
-            (_('Custom (in hours)'),72),
+        CBash_GmstTweak(_(u'Cell Respawn Time'),
+            _(u"Time before unvisited cell respawns. But longer times increase save sizes."),
+            (u'iHoursToRespawnCell',),
+            (_(u'1 Day'),24*1),
+            (_(u'[3 Days]'),24*3),
+            (_(u'5 Days'),24*5),
+            (_(u'10 Days'),24*10),
+            (_(u'20 Days'),24*20),
+            (_(u'1 Month'),24*30),
+            (_(u'6 Months'),24*182),
+            (_(u'1 Year'),24*365),
+            (_(u'Custom (in hours)'),72),
             ),
-        CBash_GmstTweak(_('Combat: Recharge Weapons'),
-            _("Allow recharging weapons during combat."),
-            ('iAllowRechargeDuringCombat',),
-            (_('[Allow]'),1),
-            (_('Disallow'),0),
+        CBash_GmstTweak(_(u'Combat: Recharge Weapons'),
+            _(u"Allow recharging weapons during combat."),
+            (u'iAllowRechargeDuringCombat',),
+            (_(u'[Allow]'),1),
+            (_(u'Disallow'),0),
             ),
-        CBash_GmstTweak(_('Magic: Bolt Speed'),
-            _("Speed of magic bolt/projectile."),
-            ('fMagicProjectileBaseSpeed',),
-            (_('x 1.2'),1000.0*1.2),
-            (_('x 1.4'),1000.0*1.4),
-            (_('x 1.6'),1000.0*1.6),
-            (_('x 1.8'),1000.0*1.8),
-            (_('x 2.0'),1000.0*2.0),
-            (_('x 2.2'),1000.0*2.2),
-            (_('x 2.4'),1000.0*2.4),
-            (_('x 2.6'),1000.0*2.6),
-            (_('x 2.8'),1000.0*2.8),
-            (_('x 3.0'),1000.0*3.0),
-            (_('Custom (base 1000)'),1000.0),
+        CBash_GmstTweak(_(u'Magic: Bolt Speed'),
+            _(u"Speed of magic bolt/projectile."),
+            (u'fMagicProjectileBaseSpeed',),
+            (_(u'x 1.2'),1000.0*1.2),
+            (_(u'x 1.4'),1000.0*1.4),
+            (_(u'x 1.6'),1000.0*1.6),
+            (_(u'x 1.8'),1000.0*1.8),
+            (_(u'x 2.0'),1000.0*2.0),
+            (_(u'x 2.2'),1000.0*2.2),
+            (_(u'x 2.4'),1000.0*2.4),
+            (_(u'x 2.6'),1000.0*2.6),
+            (_(u'x 2.8'),1000.0*2.8),
+            (_(u'x 3.0'),1000.0*3.0),
+            (_(u'Custom (base 1000)'),1000.0),
             ),
-        CBash_GmstTweak(_('Msg: Equip Misc. Item'),
-            _("Message upon equipping misc. item."),
-            ('sCantEquipGeneric',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Equip Misc. Item'),
+            _(u"Message upon equipping misc. item."),
+            (u'sCantEquipGeneric',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Auto Saving'),
-            _("Message upon auto saving."),
-            ('sAutoSaving',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Auto Saving'),
+            _(u"Message upon auto saving."),
+            (u'sAutoSaving',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Harvest Failure'),
-            _("Message upon failure at harvesting flora."),
-            ('sFloraFailureMessage',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Harvest Failure'),
+            _(u"Message upon failure at harvesting flora."),
+            (u'sFloraFailureMessage',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Harvest Success'),
-            _("Message upon success at harvesting flora."),
-            ('sFloraSuccessMessage',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Harvest Success'),
+            _(u"Message upon success at harvesting flora."),
+            (u'sFloraSuccessMessage',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Quick Save'),
-            _("Message upon quick saving."),
-            ('sQuickSaving',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Quick Save'),
+            _(u"Message upon quick saving."),
+            (u'sQuickSaving',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Horse Stabled'),
-            _("Message upon fast traveling with a horse to a city."),
-            ('sFastTravelHorseatGate',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Horse Stabled'),
+            _(u"Message upon fast traveling with a horse to a city."),
+            (u'sFastTravelHorseatGate',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: No Fast Travel'),
-            _("Message when attempting to fast travel when fast travel is unavailable due to location."),
-            ('sNoFastTravelScriptBlock',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: No Fast Travel'),
+            _(u"Message when attempting to fast travel when fast travel is unavailable due to location."),
+            (u'sNoFastTravelScriptBlock',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Loading Area'),
-            _("Message when background loading area."),
-            ('sLoadingArea',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Loading Area'),
+            _(u"Message when background loading area."),
+            (u'sLoadingArea',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Quick Load'),
-            _("Message when quick loading."),
-            ('sQuickLoading',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Quick Load'),
+            _(u"Message when quick loading."),
+            (u'sQuickLoading',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Msg: Not Enough Charge'),
-            _("Message when enchanted item is out of charge."),
-            ('sNoCharge',),
-            (_('[None]'),' '),
-            ('.','.'),
-            (_('Hmm...'),_('Hmm...')),
-            (_('Custom'),_(' ')),
+        CBash_GmstTweak(_(u'Msg: Not Enough Charge'),
+            _(u"Message when enchanted item is out of charge."),
+            (u'sNoCharge',),
+            (_(u'[None]'),u' '),
+            (u'.',u'.'),
+            (_(u'Hmm...'),_(u'Hmm...')),
+            (_(u'Custom'),_(u' ')),
             ),
-        CBash_GmstTweak(_('Cost Multiplier: Repair'),
-            _("Cost factor for repairing items."),
-            ('fRepairCostMult',),
-            ('0.1',0.1),
-            ('0.2',0.2),
-            ('0.3',0.3),
-            ('0.4',0.4),
-            ('0.5',0.5),
-            ('0.6',0.6),
-            ('0.7',0.7),
-            ('0.8',0.8),
-            ('[0.9]',0.9),
-            ('1.0',1.0),
-            (_('Custom'),0.9),
+        CBash_GmstTweak(_(u'Cost Multiplier: Repair'),
+            _(u"Cost factor for repairing items."),
+            (u'fRepairCostMult',),
+            (u'0.1',0.1),
+            (u'0.2',0.2),
+            (u'0.3',0.3),
+            (u'0.4',0.4),
+            (u'0.5',0.5),
+            (u'0.6',0.6),
+            (u'0.7',0.7),
+            (u'0.8',0.8),
+            (u'[0.9]',0.9),
+            (u'1.0',1.0),
+            (_(u'Custom'),0.9),
             ),
-        CBash_GmstTweak(_('Greeting Distance'),
-            _("Distance at which NPCs will greet the player. Default: 150"),
-            ('fAIMinGreetingDistance',),
-            ('100',100.0),
-            ('125',125.0),
-            ('[150]',150.0),
-            (_('Custom'),150.0),
+        CBash_GmstTweak(_(u'Greeting Distance'),
+            _(u"Distance at which NPCs will greet the player. Default: 150"),
+            (u'fAIMinGreetingDistance',),
+            (u'100',100.0),
+            (u'125',125.0),
+            (u'[150]',150.0),
+            (_(u'Custom'),150.0),
             ),
-        CBash_GmstTweak(_('Cost Multiplier: Recharge'),
-            _("Cost factor for recharging items."),
-            ('fRechargeGoldMult',),
-            ('0.1',0.1),
-            ('0.2',0.2),
-            ('0.3',0.3),
-            ('0.5',0.5),
-            ('0.7',0.7),
-            ('1.0',1.0),
-            ('1.5',1.5),
-            ('[2.0]',2.0),
-            (_('Custom'),2.0),
+        CBash_GmstTweak(_(u'Cost Multiplier: Recharge'),
+            _(u"Cost factor for recharging items."),
+            (u'fRechargeGoldMult',),
+            (u'0.1',0.1),
+            (u'0.2',0.2),
+            (u'0.3',0.3),
+            (u'0.5',0.5),
+            (u'0.7',0.7),
+            (u'1.0',1.0),
+            (u'1.5',1.5),
+            (u'[2.0]',2.0),
+            (_(u'Custom'),2.0),
             ),
-        CBash_GmstTweak(_('Master of Mercantile extra gold amount'),
-            _("How much more barter gold all merchants have for a master of mercantile."),
-            ('iPerkExtraBarterGoldMaster',),
-            ('300',300),
-            ('400',400),
-            ('[500]',500),
-            ('600',600),
-            ('800',800),
-            ('1000',1000),
-            (_('Custom'),500),
+        CBash_GmstTweak(_(u'Master of Mercantile extra gold amount'),
+            _(u"How much more barter gold all merchants have for a master of mercantile."),
+            (u'iPerkExtraBarterGoldMaster',),
+            (u'300',300),
+            (u'400',400),
+            (u'[500]',500),
+            (u'600',600),
+            (u'800',800),
+            (u'1000',1000),
+            (_(u'Custom'),500),
             ),
-        CBash_GmstTweak(_('Combat: Max Actors'),
-            _("Maximum number of actors that can actively be in combat with the player."),
-            ('iNumberActorsInCombatPlayer',),
-            ('[10]',10),
-            ('15',15),
-            ('20',20),
-            ('30',30),
-            ('40',40),
-            ('50',50),
-            ('80',80),
-            (_('Custom'),10),
+        CBash_GmstTweak(_(u'Combat: Max Actors'),
+            _(u"Maximum number of actors that can actively be in combat with the player."),
+            (u'iNumberActorsInCombatPlayer',),
+            (u'[10]',10),
+            (u'15',15),
+            (u'20',20),
+            (u'30',30),
+            (u'40',40),
+            (u'50',50),
+            (u'80',80),
+            (_(u'Custom'),10),
             ),
-        CBash_GmstTweak(_('Crime Alarm Distance'),
-            _("Distance from player that NPCs(guards) will be alerted of a crime."),
-            ('iCrimeAlarmRecDistance',),
-            ('6000',6000),
-            ('[4000]',4000),
-            ('3000',3000),
-            ('2000',2000),
-            ('1000',1000),
-            ('500',500),
-            (_('Custom'),4000),
+        CBash_GmstTweak(_(u'Crime Alarm Distance'),
+            _(u"Distance from player that NPCs(guards) will be alerted of a crime."),
+            (u'iCrimeAlarmRecDistance',),
+            (u'6000',6000),
+            (u'[4000]',4000),
+            (u'3000',3000),
+            (u'2000',2000),
+            (u'1000',1000),
+            (u'500',500),
+            (_(u'Custom'),4000),
             ),
-        CBash_GmstTweak(_('Cost Multiplier: Enchantment'),
-            _("Cost factor for enchanting items, OOO default is 120, vanilla 10."),
-            ('fEnchantmentGoldMult',),
-            ('[10]',10.0),
-            ('20',20.0),
-            ('30',30.0),
-            ('50',50.0),
-            ('70',70.0),
-            ('90',90.0),
-            ('120',120.0),
-            ('150',150.0),
-            (_('Custom'),10.0),
+        CBash_GmstTweak(_(u'Cost Multiplier: Enchantment'),
+            _(u"Cost factor for enchanting items, OOO default is 120, vanilla 10."),
+            (u'fEnchantmentGoldMult',),
+            (u'[10]',10.0),
+            (u'20',20.0),
+            (u'30',30.0),
+            (u'50',50.0),
+            (u'70',70.0),
+            (u'90',90.0),
+            (u'120',120.0),
+            (u'150',150.0),
+            (_(u'Custom'),10.0),
             ),
-        CBash_GmstTweak(_('Cost Multiplier: Spell Making'),
-            _("Cost factor for making spells."),
-            ('fSpellmakingGoldMult',),
-            ('[3]',3.0),
-            ('5',5.0),
-            ('8',8.0),
-            ('10',10.0),
-            ('15',15.0),
-            (_('Custom'),3.0),
+        CBash_GmstTweak(_(u'Cost Multiplier: Spell Making'),
+            _(u"Cost factor for making spells."),
+            (u'fSpellmakingGoldMult',),
+            (u'[3]',3.0),
+            (u'5',5.0),
+            (u'8',8.0),
+            (u'10',10.0),
+            (u'15',15.0),
+            (_(u'Custom'),3.0),
             ),
-        CBash_GmstTweak(_('AI: Max Active Actors'),
-            _("Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
-            ('iAINumberActorsComplexScene',),
-            ('20',20),
-            ('[25]',25),
-            ('30',30),
-            ('35',35),
-            (_('MMM Default: 40'),40),
-            ('50',50),
-            ('60',60),
-            ('100',100),
-            (_('Custom'),25),
+        CBash_GmstTweak(_(u'AI: Max Active Actors'),
+            _(u"Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"),
+            (u'iAINumberActorsComplexScene',),
+            (u'20',20),
+            (u'[25]',25),
+            (u'30',30),
+            (u'35',35),
+            (_(u'MMM Default: 40'),40),
+            (u'50',50),
+            (u'60',60),
+            (u'100',100),
+            (_(u'Custom'),25),
             ),
-        CBash_GmstTweak(_('Magic: Max Player Summons'),
-            _("Maximum number of creatures the player can summon."),
-            ('iMaxPlayerSummonedCreatures',),
-            ('[1]',1),
-            ('3',3),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            (_('Custom'),1),
+        CBash_GmstTweak(_(u'Magic: Max Player Summons'),
+            _(u"Maximum number of creatures the player can summon."),
+            (u'iMaxPlayerSummonedCreatures',),
+            (u'[1]',1),
+            (u'3',3),
+            (u'5',5),
+            (u'8',8),
+            (u'10',10),
+            (_(u'Custom'),1),
             ),
-        CBash_GmstTweak(_('Combat: Max Ally Hits'),
-            _("Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
-            ('iAllyHitAllowed',),
-            ('3',3),
-            ('[5]',5),
-            ('8',8),
-            ('10',10),
-            ('15',15),
-            (_('Custom'),5),
+        CBash_GmstTweak(_(u'Combat: Max Ally Hits'),
+            _(u"Maximum number of hits on an ally allowed in combat before the ally will attack the hitting character."),
+            (u'iAllyHitAllowed',),
+            (u'3',3),
+            (u'[5]',5),
+            (u'8',8),
+            (u'10',10),
+            (u'15',15),
+            (_(u'Custom'),5),
             ),
-        CBash_GmstTweak(_('Magic: Max NPC Summons'),
-            _("Maximum number of creatures that each NPC can summon"),
-            ('iAICombatMaxAllySummonCount',),
-            ('1',1),
-            ('[3]',3),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            ('15',15),
-            (_('Custom'),3),
+        CBash_GmstTweak(_(u'Magic: Max NPC Summons'),
+            _(u"Maximum number of creatures that each NPC can summon"),
+            (u'iAICombatMaxAllySummonCount',),
+            (u'1',1),
+            (u'[3]',3),
+            (u'5',5),
+            (u'8',8),
+            (u'10',10),
+            (u'15',15),
+            (_(u'Custom'),3),
             ),
-        CBash_GmstTweak(_('Bounty: Attack'),
-            _("Bounty for attacking a 'good' npc."),
-            ('iCrimeGoldAttackMin',),
-            ('300',300),
-            ('400',400),
-            ('[500]',500),
-            ('650',650),
-            ('800',800),
-            (_('Custom'),500),
+        CBash_GmstTweak(_(u'Bounty: Attack'),
+            _(u"Bounty for attacking a 'good' npc."),
+            (u'iCrimeGoldAttackMin',),
+            (u'300',300),
+            (u'400',400),
+            (u'[500]',500),
+            (u'650',650),
+            (u'800',800),
+            (_(u'Custom'),500),
             ),
-        CBash_GmstTweak(_('Bounty: Horse Theft'),
-            _("Bounty for horse theft"),
-            ('iCrimeGoldStealHorse',),
-            ('100',100),
-            ('200',200),
-            ('[250]',250),
-            ('300',300),
-            ('450',450),
-            (_('Custom'),250),
+        CBash_GmstTweak(_(u'Bounty: Horse Theft'),
+            _(u"Bounty for horse theft"),
+            (u'iCrimeGoldStealHorse',),
+            (u'100',100),
+            (u'200',200),
+            (u'[250]',250),
+            (u'300',300),
+            (u'450',450),
+            (_(u'Custom'),250),
             ),
-        CBash_GmstTweak(_('Bounty: Theft'),
-            _("Bounty for stealing, as fraction of item value."),
-            ('fCrimeGoldSteal',),
-            ('1/4',0.25),
-            ('[1/2]',0.5),
-            ('3/4',0.75),
-            ('1',1.0),
-            (_('Custom'),0.5),
+        CBash_GmstTweak(_(u'Bounty: Theft'),
+            _(u"Bounty for stealing, as fraction of item value."),
+            (u'fCrimeGoldSteal',),
+            (u'1/4',0.25),
+            (u'[1/2]',0.5),
+            (u'3/4',0.75),
+            (u'1',1.0),
+            (_(u'Custom'),0.5),
             ),
-        CBash_GmstTweak(_('Combat: Alchemy'),
-            _("Allow alchemy during combat."),
-            ('iAllowAlchemyDuringCombat',),
-            (_('Allow'),1),
-            (_('[Disallow]'),0),
+        CBash_GmstTweak(_(u'Combat: Alchemy'),
+            _(u"Allow alchemy during combat."),
+            (u'iAllowAlchemyDuringCombat',),
+            (_(u'Allow'),1),
+            (_(u'[Disallow]'),0),
             ),
         CBash_GmstTweak(_('Combat: Repair'),
-            _("Allow repairing armor/weapons during combat."),
-            ('iAllowRepairDuringCombat',),
-            (_('Allow'),1),
-            (_('[Disallow]'),0),
+            _(u"Allow repairing armor/weapons during combat."),
+            (u'iAllowRepairDuringCombat',),
+            (_(u'Allow'),1),
+            (_(u'[Disallow]'),0),
             ),
-        CBash_GmstTweak(_('Companions: Max Number'),
-            _("Maximum number of actors following the player"),
-            ('iNumberActorsAllowedToFollowPlayer',),
-            ('2',2),
-            ('4',4),
-            ('[6]',6),
-            ('8',8),
-            ('10',10),
-            (_('Custom'),6),
+        CBash_GmstTweak(_(u'Companions: Max Number'),
+            _(u"Maximum number of actors following the player"),
+            (u'iNumberActorsAllowedToFollowPlayer',),
+            (u'2',2),
+            (u'4',4),
+            (u'[6]',6),
+            (u'8',8),
+            (u'10',10),
+            (_(u'Custom'),6),
             ),
-        CBash_GmstTweak(_('Training Max'),
-            _("Maximum number of Training allowed by trainers."),
-            ('iTrainingSkills',),
-            ('1',1),
-            ('[5]',5),
-            ('8',8),
-            ('10',10),
-            ('20',20),
-            (_('Unlimited'),9999),
-            (_('Custom'),0),
+        CBash_GmstTweak(_(u'Training Max'),
+            _(u"Maximum number of Training allowed by trainers."),
+            (u'iTrainingSkills',),
+            (u'1',1),
+            (u'[5]',5),
+            (u'8',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Unlimited'),9999),
+            (_(u'Custom'),0),
             ),
-        CBash_GmstTweak(_('Combat: Maximum Armor Rating'),
-            _("The Maximun amount of protection you will get from armor."),
-            ('fMaxArmorRating',),
-            ('50',50.0),
-            ('75',75.0),
-            ('[85]',85.0),
-            ('90',90.0),
-            ('95',95.0),
-            (_('Custom'),85.0),
+        CBash_GmstTweak(_(u'Combat: Maximum Armor Rating'),
+            _(u"The Maximun amount of protection you will get from armor."),
+            (u'fMaxArmorRating',),
+            (u'50',50.0),
+            (u'75',75.0),
+            (u'[85]',85.0),
+            (u'90',90.0),
+            (u'95',95.0),
+            (_(u'Custom'),85.0),
             ),
-        CBash_GmstTweak(_('Warning: Interior Distance to Hostiles'),
-            _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
-            ('fHostileActorInteriorDistance',),
-            ('10',10.0),
-            ('100',100.0),
-            ('500',500.0),
-            ('1000',1000.0),
-            ('[2000]',2000.0),
-            ('3000',3000.0),
-            ('4000',4000.0),
-            (_('Custom'),2000.0),
+        CBash_GmstTweak(_(u'Warning: Interior Distance to Hostiles'),
+            _(u"The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when inside interiors."),
+            (u'fHostileActorInteriorDistance',),
+            (u'10',10.0),
+            (u'100',100.0),
+            (u'500',500.0),
+            (u'1000',1000.0),
+            (u'[2000]',2000.0),
+            (u'3000',3000.0),
+            (u'4000',4000.0),
+            (_(u'Custom'),2000.0),
             ),
-        CBash_GmstTweak(_('Warning: Exterior Distance to Hostiles'),
-            _("The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
-            ('fHostileActorExteriorDistance',),
-            ('10',10.0),
-            ('100',100.0),
-            ('500',500.0),
-            ('1000',1000.0),
-            ('2000',2000.0),
-            ('[3000]',3000.0),
-            ('4000',4000.0),
-            ('5000',5000.0),
-            ('6000',6000.0),
-            (_('Custom'),3000.0),
+        CBash_GmstTweak(_(u'Warning: Exterior Distance to Hostiles'),
+            _(u"The minimum distance hostile actors have to be to be allowed to sleep, travel etc, when outside."),
+            (u'fHostileActorExteriorDistance',),
+            (u'10',10.0),
+            (u'100',100.0),
+            (u'500',500.0),
+            (u'1000',1000.0),
+            (u'2000',2000.0),
+            (u'[3000]',3000.0),
+            (u'4000',4000.0),
+            (u'5000',5000.0),
+            (u'6000',6000.0),
+            (_(u'Custom'),3000.0),
             ),
-        CBash_GmstTweak(_('UOP Vampire Aging and Face Fix.esp'),
-            _("Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
-            ('iVampirismAgeOffset',),
-            ('Fix it!',0),
+        CBash_GmstTweak(_(u'UOP Vampire Aging and Face Fix.esp'),
+            _(u"Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot."),
+            (u'iVampirismAgeOffset',),
+            (u'Fix it!',0),
             defaultEnabled=True
             ),
-        CBash_GmstTweak(_('AI: Max Dead Actors'),
-            _("Maximum number of dead actors allowed before they're removed."),
-            ('iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount',
-             'iRemoveExcessDeadComplexCount', 'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime'),
-            (_('[x 1]'),int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
-            (_('x 1.5'),int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
-            (_('x 2'),  int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
-            (_('x 2.5'),int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
-            (_('x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
-            (_('x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
-            (_('x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-            (_('Custom'),15,20,20,3,10.0,2.5),
+        CBash_GmstTweak(_(u'AI: Max Dead Actors'),
+            _(u"Maximum number of dead actors allowed before they're removed."),
+            (u'iRemoveExcessDeadCount', u'iRemoveExcessDeadTotalActorCount',u'iRemoveExcessDeadComplexTotalActorCount',
+             u'iRemoveExcessDeadComplexCount', u'fRemoveExcessDeadTime',u'fRemoveExcessComplexDeadTime'),
+            (_(u'[x 1]'),int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
+            (_(u'x 1.5'),int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
+            (_(u'x 2'),  int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
+            (_(u'x 2.5'),int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
+            (_(u'x 3'),  int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
+            (_(u'x 3.5'),int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
+            (_(u'x 4'),  int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
+            (_(u'Custom'),15,20,20,3,10.0,2.5),
             ),
-        CBash_GmstTweak(_('Inventory Quantity Prompt'),
-            _("Number of items in a stack at which point Oblivion prompts for a quantity."),
-            ('iInventoryAskQuantityAt',),
-            ('1',1),
-            ('2',2),
-            ('[3]',3),
-            ('4',4),
-            ('10',10),
-            (_('No Prompt'),99999),
-            (_('Custom'),3),
+        CBash_GmstTweak(_(u'Inventory Quantity Prompt'),
+            _(u"Number of items in a stack at which point Oblivion prompts for a quantity."),
+            (u'iInventoryAskQuantityAt',),
+            (u'1',1),
+            (u'2',2),
+            (u'[3]',3),
+            (u'4',4),
+            (u'10',10),
+            (_(u'No Prompt'),99999),
+            (_(u'Custom'),3),
             ),
-        CBash_GmstTweak(_('Crime: Trespass Fine'),
-            _("Fine in septims for trespassing."),
-            ('iCrimeGoldTresspass',),
-            ('1',1),
-            ('[5]',5),
-            ('8',8),
-            ('10',10),
-            ('20',20),
-            (_('Custom'),5),
+        CBash_GmstTweak(_(u'Crime: Trespass Fine'),
+            _(u"Fine in septims for trespassing."),
+            (u'iCrimeGoldTresspass',),
+            (u'1',1),
+            (u'[5]',5),
+            (u'8',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Custom'),5),
             ),
-        CBash_GmstTweak(_('Crime: Pickpocketing Fine'),
-            _("Fine in septims for trespassing."),
-            ('iCrimeGoldPickpocket',),
-            ('5',5),
-            ('8',8),
-            ('10',10),
-            ('[25]',25),
-            ('50',50),
-            ('100',100),
-            (_('Custom'),25),
+        CBash_GmstTweak(_(u'Crime: Pickpocketing Fine'),
+            _(u"Fine in septims for trespassing."),
+            (u'iCrimeGoldPickpocket',),
+            (u'5',5),
+            (u'8',8),
+            (u'10',10),
+            (u'[25]',25),
+            (u'50',50),
+            (u'100',100),
+            (_(u'Custom'),25),
             ),
-        CBash_GmstTweak(_('Leveled Creature Max level difference'),
-            _("Maximum difference to player level for leveled creatures."),
-            ('iLevCreaLevelDifferenceMax',),
-            ('1',1),
-            ('5',5),
-            ('[8]',8),
-            ('10',10),
-            ('20',20),
-            (_('Unlimited'),9999),
-            (_('Custom'),8),
+        CBash_GmstTweak(_(u'Leveled Creature Max level difference'),
+            _(u"Maximum difference to player level for leveled creatures."),
+            (u'iLevCreaLevelDifferenceMax',),
+            (u'1',1),
+            (u'5',5),
+            (u'[8]',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Unlimited'),9999),
+            (_(u'Custom'),8),
             ),
-        CBash_GmstTweak(_('Leveled Item Max level difference'),
-            _("Maximum difference to player level for leveled items."),
-            ('iLevItemLevelDifferenceMax',),
-            ('1',1),
-            ('5',5),
-            ('[8]',8),
-            ('10',10),
-            ('20',20),
-            (_('Unlimited'),9999),
-            (_('Custom'),8),
+        CBash_GmstTweak(_(u'Leveled Item Max level difference'),
+            _(u"Maximum difference to player level for leveled items."),
+            (u'iLevItemLevelDifferenceMax',),
+            (u'1',1),
+            (u'5',5),
+            (u'[8]',8),
+            (u'10',10),
+            (u'20',20),
+            (_(u'Unlimited'),9999),
+            (_(u'Custom'),8),
             ),
-        CBash_GmstTweak(_('Actor Strength Encumbrance Multiplier'),
-            _("Actor's Strength X this = Actor's Encumbrance capacity."),
-            ('fActorStrengthEncumbranceMult',),
-            ('1',1.0),
-            ('3',3.0),
-            ('[5]',5.0),
-            ('8',8.0),
-            ('10',10.0),
-            ('20',20.0),
-            (_('Unlimited'),999999.0),
-            (_('Custom'),5.0),
+        CBash_GmstTweak(_(u'Actor Strength Encumbrance Multiplier'),
+            _(u"Actor's Strength X this = Actor's Encumbrance capacity."),
+            (u'fActorStrengthEncumbranceMult',),
+            (u'1',1.0),
+            (u'3',3.0),
+            (u'[5]',5.0),
+            (u'8',8.0),
+            (u'10',10.0),
+            (u'20',20.0),
+            (_(u'Unlimited'),999999.0),
+            (_(u'Custom'),5.0),
             ),
-        CBash_GmstTweak(_('NPC Blood'),
-            _("NPC Blood Splatter Textures."),
-            ('sBloodTextureDefault', 'sBloodTextureExtra1','sBloodTextureExtra2', 'sBloodParticleDefault', 'sBloodParticleExtra1','sBloodParticleExtra2'),
-            (_('No Blood'),'','','','','',''),
-            (_('Custom'),'','','','','',''),
+        CBash_GmstTweak(_(u'NPC Blood'),
+            _(u"NPC Blood Splatter Textures."),
+            (u'sBloodTextureDefault', u'sBloodTextureExtra1',u'sBloodTextureExtra2', u'sBloodParticleDefault', u'sBloodParticleExtra1',u'sBloodParticleExtra2'),
+            (_(u'No Blood'),u'',u'',u'',u'',u'',u''),
+            (_(u'Custom'),u'',u'',u'',u'',u'',u''),
             ),
         CBash_GmstTweak(_('AI: Max Smile Distance'),
-            _("Maximum distance for NPCs to start smiling."),
-            ('fAIMaxSmileDistance',),
-            (_('No Smiles'),0.0),
-            (_('[Default (128)]'),128.0),
-            (_('Custom'),128.0),
+            _(u"Maximum distance for NPCs to start smiling."),
+            (u'fAIMaxSmileDistance',),
+            (_(u'No Smiles'),0.0),
+            (_(u'[Default (128)]'),128.0),
+            (_(u'Custom'),128.0),
             ),
-        CBash_GmstTweak(_('Drag: Max Moveable Weight'),
-            _("Maximum weight to be able move things with the drag key."),
-            ('fMoveWeightMax',),
-            (_('MovableBodies.esp'),1500.0),
-            (_('[Default (150)]'),150.0),
-            (_('Custom'),150.0),
+        CBash_GmstTweak(_(u'Drag: Max Moveable Weight'),
+            _(u"Maximum weight to be able move things with the drag key."),
+            (u'fMoveWeightMax',),
+            (_(u'MovableBodies.esp'),1500.0),
+            (_(u'[Default (150)]'),150.0),
+            (_(u'Custom'),150.0),
             ),
-        CBash_GmstTweak(_('AI: Conversation Chance'),
-            _("Chance of NPCs engaging each other in conversation (possibly also with the player)."),
-            ('fAISocialchanceForConversation',),
-            (_('10'),10.0),
-            (_('25'),25.0),
-            (_('50'),50.0),
-            (_('[100]'),100.0),
-            (_('Custom'),100.0),
+        CBash_GmstTweak(_(u'AI: Conversation Chance'),
+            _(u"Chance of NPCs engaging each other in conversation (possibly also with the player)."),
+            (u'fAISocialchanceForConversation',),
+            (_(u'10'),10.0),
+            (_(u'25'),25.0),
+            (_(u'50'),50.0),
+            (_(u'[100]'),100.0),
+            (_(u'Custom'),100.0),
             ),
-        CBash_GmstTweak(_('AI: Conversation Chance - Interior'),
-            _("Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
-            ('fAISocialchanceForConversationInterior',),
-            (_('10'),10.0),
-            (_('[25]'),25.0),
-            (_('50'),50.0),
-            (_('100'),100.0),
-            (_('Custom'),100.0),
+        CBash_GmstTweak(_(u'AI: Conversation Chance - Interior'),
+            _(u"Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
+            (u'fAISocialchanceForConversationInterior',),
+            (_(u'10'),10.0),
+            (_(u'[25]'),25.0),
+            (_(u'50'),50.0),
+            (_(u'100'),100.0),
+            (_(u'Custom'),100.0),
             ),
         ],key=lambda a: a.label.lower())
     #--Config Phase ------------------------------------------------------------
@@ -27939,16 +27924,17 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
+
 #------------------------------------------------------------------------------
 class NamesTweak_BodyTags(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Body Part Codes"),
-            _('Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
-            'bodyTags',
+        MultiTweakItem.__init__(self,_(u"Body Part Codes"),
+            _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
+            u'bodyTags',
             ('ARGHTCCPBS','ARGHTCCPBS'),
             ('ABGHINOPSL','ABGHINOPSL'),
             )
@@ -27969,14 +27955,15 @@ class NamesTweak_BodyTags(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         patchFile.bodyTags = self.choiceValues[self.chosen][0]
+
 class CBash_NamesTweak_BodyTags(CBash_MultiTweakItem):
     scanOrder = 32
     editOrder = 32
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Body Part Codes"),
-            _('Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
-            'bodyTags',
+        CBash_MultiTweakItem.__init__(self,_(u"Body Part Codes"),
+            _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
+            u'bodyTags',
             ('ARGHTCCPBS','ARGHTCCPBS'),
             ('ABGHINOPSL','ABGHINOPSL'),
             )
@@ -27987,6 +27974,7 @@ class CBash_NamesTweak_BodyTags(CBash_MultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         pass
+
 #------------------------------------------------------------------------------
 class NamesTweak_Body(MultiTweakItem):
     """Names tweaker for armor and clothes."""
@@ -28015,14 +28003,14 @@ class NamesTweak_Body(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         format = self.choiceValues[self.chosen][0]
-        showStat = '%02d' in format
+        showStat = u'%02d' in format
         keep = patchFile.getKeeper()
         codes = getattr(patchFile,'bodyTags','ARGHTCCPBS')
         amulet,ring,gloves,head,tail,robe,chest,pants,shoes,shield = [
             x for x in codes]
         for record in getattr(patchFile,self.key).records:
             if not record.full: continue
-            if record.full[0] in '+-=.()[]': continue
+            if record.full[0] in u'+-=.()[]': continue
             flags = record.flags
             if flags.head or flags.hair: type = head
             elif flags.rightRing or flags.leftRing: type = ring
@@ -28045,9 +28033,10 @@ class NamesTweak_Body(MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
     scanOrder = 32
@@ -28096,22 +28085,23 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== %s' % self.label)
-        log(_('* %s Renamed: %d') % (self.key,sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class NamesTweak_Potions(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Potions"),
-            _('Label potions to sort by type and effect.'),
+        MultiTweakItem.__init__(self,_(u"Potions"),
+            _(u'Label potions to sort by type and effect.'),
             'ALCH',
-            (_('XD Illness'),  '%s '),
-            (_('XD. Illness'), '%s. '),
-            (_('XD - Illness'),'%s - '),
-            (_('(XD) Illness'),'(%s) '),
+            (_(u'XD Illness'),  u'%s '),
+            (_(u'XD. Illness'), u'%s. '),
+            (_(u'XD - Illness'),u'%s - '),
+            (_(u'(XD) Illness'),u'(%s) '),
             )
 
     #--Config Phase -----------------------------------------------------------
@@ -28141,8 +28131,8 @@ class NamesTweak_Potions(MultiTweakItem):
         format = self.choiceValues[self.chosen][0]
         hostileEffects = patchFile.getMgefHostiles()
         keep = patchFile.getKeeper()
-        reOldLabel = re.compile('^(-|X) ')
-        reOldEnd = re.compile(' -$')
+        reOldLabel = re.compile(u'^(-|X) ',re.U)
+        reOldEnd = re.compile(u' -$',re.U)
         mgef_school = patchFile.getMgefSchool()
         for record in patchFile.ALCH.records:
             if not record.full: continue
@@ -28164,36 +28154,36 @@ class NamesTweak_Potions(MultiTweakItem):
                     break
             else:
                 isPoison = True
-            full = reOldLabel.sub('',record.full) #--Remove existing label
-            full = reOldEnd.sub('',full)
+            full = reOldLabel.sub(u'',record.full) #--Remove existing label
+            full = reOldEnd.sub(u'',full)
             if record.flags.isFood:
-                record.full = '.'+full
+                record.full = u'.'+full
             else:
-                label = ('','X')[isPoison] + 'ACDIMRU'[school]
+                label = (u'',u'X')[isPoison] + 'ACDIMRU'[school]
                 record.full = format % label + full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
     """Names tweaker for potions."""
     scanOrder = 32
     editOrder = 32
-    reOldLabel = re.compile('^(-|X) ')
-    reOldEnd = re.compile(' -$')
+    reOldLabel = re.compile(u'^(-|X) ',re.U)
+    reOldEnd = re.compile(u' -$',re.U)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Potions"),
-            _('Label potions to sort by type and effect.'),
+        CBash_MultiTweakItem.__init__(self,_(u"Potions"),
+            _(u'Label potions to sort by type and effect.'),
             'ALCH',
-            (_('XD Illness'),  '%s '),
-            (_('XD. Illness'), '%s. '),
-            (_('XD - Illness'),'%s - '),
-            (_('(XD) Illness'),'(%s) '),
+            (_(u'XD Illness'),  u'%s '),
+            (_(u'XD. Illness'), u'%s. '),
+            (_(u'XD - Illness'),u'%s - '),
+            (_(u'(XD) Illness'),u'(%s) '),
             )
         self.mod_count = {}
 
@@ -28226,12 +28216,12 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
                     break
             else:
                 isPoison = True
-            newFull = self.reOldLabel.sub('',newFull) #--Remove existing label
-            newFull = self.reOldEnd.sub('',newFull)
+            newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
+            newFull = self.reOldEnd.sub(u'',newFull)
             if record.IsFood:
-                newFull = '.' + newFull
+                newFull = u'.' + newFull
             else:
-                label = ('','X')[isPoison] + 'ACDIMRU'[schoolType]
+                label = (u'',u'X')[isPoison] + 'ACDIMRU'[schoolType]
                 newFull = self.format % label + newFull
 
             if record.full != newFull:
@@ -28247,29 +28237,30 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== %s' % self.label)
-        log(_('* %s Renamed: %d') % (self.key,sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class NamesTweak_Scrolls(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Notes and Scrolls"),
-            _('Mark notes and scrolls to sort separately from books'),
-            'scrolls',
-            (_('~Fire Ball'),  '~'),
-            (_('~D Fire Ball'),  '~%s '),
-            (_('~D. Fire Ball'), '~%s. '),
-            (_('~D - Fire Ball'),'~%s - '),
-            (_('~(D) Fire Ball'),'~(%s) '),
-            ('----','----'),
-            (_('.Fire Ball'),  '.'),
-            (_('.D Fire Ball'),  '.%s '),
-            (_('.D. Fire Ball'), '.%s. '),
-            (_('.D - Fire Ball'),'.%s - '),
-            (_('.(D) Fire Ball'),'.(%s) '),
+        MultiTweakItem.__init__(self,_(u"Notes and Scrolls"),
+            _(u'Mark notes and scrolls to sort separately from books'),
+            u'scrolls',
+            (_(u'~Fire Ball'),    u'~'),
+            (_(u'~D Fire Ball'),  u'~%s '),
+            (_(u'~D. Fire Ball'), u'~%s. '),
+            (_(u'~D - Fire Ball'),u'~%s - '),
+            (_(u'~(D) Fire Ball'),u'~(%s) '),
+            (u'----',u'----'),
+            (_(u'.Fire Ball'),    u'.'),
+            (_(u'.D Fire Ball'),  u'.%s '),
+            (_(u'.D. Fire Ball'), u'.%s. '),
+            (_(u'.D - Fire Ball'),u'.%s - '),
+            (_(u'.(D) Fire Ball'),u'.(%s) '),
             )
 
     #--Config Phase -----------------------------------------------------------
@@ -28277,7 +28268,7 @@ class NamesTweak_Scrolls(MultiTweakItem):
         """Save config to configs dictionary."""
         MultiTweakItem.saveConfig(self,configs)
         rawFormat = self.choiceValues[self.chosen][0]
-        self.orderFormat = ('~.','.~')[rawFormat[0] == '~']
+        self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
 
     #--Patch Phase ------------------------------------------------------------
@@ -28314,7 +28305,7 @@ class NamesTweak_Scrolls(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        reOldLabel = re.compile('^(\([ACDIMR]\d\)|\w{3,6}:) ')
+        reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
         orderFormat, magicFormat = self.orderFormat, self.magicFormat
         keep = patchFile.getKeeper()
         id_ench = patchFile.ENCH.id_records
@@ -28333,7 +28324,7 @@ class NamesTweak_Scrolls(MultiTweakItem):
                         school = effect.scriptEffect.school
                     else:
                         school = mgef_school.get(effectId,6)
-                record.full = reOldLabel.sub('',record.full) #--Remove existing label
+                record.full = reOldLabel.sub(u'',record.full) #--Remove existing label
                 record.full = magicFormat % 'ACDIMRU'[school] + record.full
             #--Ordering
             record.full = orderFormat[isEnchanted] + record.full
@@ -28341,32 +28332,32 @@ class NamesTweak_Scrolls(MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
     scanOrder = 32
     editOrder = 32
-    reOldLabel = re.compile('^(\([ACDIMR]\d\)|\w{3,6}:) ')
+    reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Notes and Scrolls"),
-            _('Mark notes and scrolls to sort separately from books'),
-            'scrolls',
-            (_('~Fire Ball'),  '~'),
-            (_('~D Fire Ball'),  '~%s '),
-            (_('~D. Fire Ball'), '~%s. '),
-            (_('~D - Fire Ball'),'~%s - '),
-            (_('~(D) Fire Ball'),'~(%s) '),
-            ('----','----'),
-            (_('.Fire Ball'),  '.'),
-            (_('.D Fire Ball'),  '.%s '),
-            (_('.D. Fire Ball'), '.%s. '),
-            (_('.D - Fire Ball'),'.%s - '),
-            (_('.(D) Fire Ball'),'.(%s) '),
+        CBash_MultiTweakItem.__init__(self,_(u"Notes and Scrolls"),
+            _(u'Mark notes and scrolls to sort separately from books'),
+            u'scrolls',
+            (_(u'~Fire Ball'),    u'~'),
+            (_(u'~D Fire Ball'),  u'~%s '),
+            (_(u'~D. Fire Ball'), u'~%s. '),
+            (_(u'~D - Fire Ball'),u'~%s - '),
+            (_(u'~(D) Fire Ball'),u'~(%s) '),
+            (u'----',u'----'),
+            (_(u'.Fire Ball'),    u'.'),
+            (_(u'.D Fire Ball'),  u'.%s '),
+            (_(u'.D. Fire Ball'), u'.%s. '),
+            (_(u'.D - Fire Ball'),u'.%s - '),
+            (_(u'.(D) Fire Ball'),u'.(%s) '),
             )
         self.mod_count = {}
 
@@ -28377,7 +28368,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
         """Save config to configs dictionary."""
         CBash_MultiTweakItem.saveConfig(self,configs)
         rawFormat = self.choiceValues[self.chosen][0]
-        self.orderFormat = ('~.','.~')[rawFormat[0] == '~']
+        self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -28405,7 +28396,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
                             schoolType = effect.schoolType
                         else:
                             schoolType = self.patchFile.mgef_school.get(effect.name,6)
-                newFull = self.reOldLabel.sub('',newFull) #--Remove existing label
+                newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
                 newFull = magicFormat % 'ACDIMRU'[schoolType] + newFull
             #--Ordering
             newFull = self.orderFormat[isEnchanted] + newFull
@@ -28423,29 +28414,30 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== %s' % self.label)
-        log(_('* Items Renamed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'Items Renamed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class NamesTweak_Spells(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Spells"),
-            _('Label spells to sort by school and level.'),
+        MultiTweakItem.__init__(self,_(u"Spells"),
+            _(u'Label spells to sort by school and level.'),
             'SPEL',
-            (_('Fire Ball'),  'NOTAGS'),
-            ('----','----'),
-            (_('D Fire Ball'),  '%s '),
-            (_('D. Fire Ball'), '%s. '),
-            (_('D - Fire Ball'),'%s - '),
-            (_('(D) Fire Ball'),'(%s) '),
-            ('----','----'),
-            (_('D2 Fire Ball'),  '%s%d '),
-            (_('D2. Fire Ball'), '%s%d. '),
-            (_('D2 - Fire Ball'),'%s%d - '),
-            (_('(D2) Fire Ball'),'(%s%d) '),
+            (_(u'Fire Ball'),  u'NOTAGS'),
+            (u'----',u'----'),
+            (_(u'D Fire Ball'),  u'%s '),
+            (_(u'D. Fire Ball'), u'%s. '),
+            (_(u'D - Fire Ball'),u'%s - '),
+            (_(u'(D) Fire Ball'),u'(%s) '),
+            (u'----',u'----'),
+            (_(u'D2 Fire Ball'),  u'%s%d '),
+            (_(u'D2. Fire Ball'), u'%s%d. '),
+            (_(u'D2 - Fire Ball'),u'%s%d - '),
+            (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
 
     #--Config Phase -----------------------------------------------------------
@@ -28474,10 +28466,10 @@ class NamesTweak_Spells(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         format = self.choiceValues[self.chosen][0]
-        removeTags = '%s' not in format
-        showLevel = '%d' in format
+        removeTags = u'%s' not in format
+        showLevel = u'%d' in format
         keep = patchFile.getKeeper()
-        reOldLabel = re.compile('^(\([ACDIMR]\d\)|\w{3,6}:) ')
+        reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
         mgef_school = patchFile.getMgefSchool()
         for record in patchFile.SPEL.records:
             if record.spellType != 0 or not record.full: continue
@@ -28489,7 +28481,7 @@ class NamesTweak_Spells(MultiTweakItem):
                     school = effect.scriptEffect.school
                 else:
                     school = mgef_school.get(effectId,6)
-            newFull = reOldLabel.sub('',record.full) #--Remove existing label
+            newFull = reOldLabel.sub(u'',record.full) #--Remove existing label
             if not removeTags:
                 if showLevel:
                     newFull = format % ('ACDIMRU'[school],record.level) + newFull
@@ -28501,31 +28493,32 @@ class NamesTweak_Spells(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
     """Names tweaker for spells."""
     scanOrder = 32
     editOrder = 32
-    reOldLabel = re.compile('^(\([ACDIMR]\d\)|\w{3,6}:) ')
+    reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_("Spells"),
-            _('Label spells to sort by school and level.'),
+            _(u'Label spells to sort by school and level.'),
             'SPEL',
-            (_('Fire Ball'),  'NOTAGS'),
-            ('----','----'),
-            (_('D Fire Ball'),  '%s '),
-            (_('D. Fire Ball'), '%s. '),
-            (_('D - Fire Ball'),'%s - '),
-            (_('(D) Fire Ball'),'(%s) '),
-            ('----','----'),
-            (_('D2 Fire Ball'),  '%s%d '),
-            (_('D2. Fire Ball'), '%s%d. '),
-            (_('D2 - Fire Ball'),'%s%d - '),
-            (_('(D2) Fire Ball'),'(%s%d) '),
+            (_(u'Fire Ball'),  u'NOTAGS'),
+            (u'----',u'----'),
+            (_(u'D Fire Ball'),  u'%s '),
+            (_(u'D. Fire Ball'), u'%s. '),
+            (_(u'D - Fire Ball'),u'%s - '),
+            (_(u'(D) Fire Ball'),u'(%s) '),
+            (u'----',u'----'),
+            (_(u'D2 Fire Ball'),  u'%s%d '),
+            (_(u'D2. Fire Ball'), u'%s%d. '),
+            (_(u'D2 - Fire Ball'),u'%s%d - '),
+            (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
         self.mod_count = {}
 
@@ -28536,8 +28529,8 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
         """Save config to configs dictionary."""
         CBash_MultiTweakItem.saveConfig(self,configs)
         self.format = self.choiceValues[self.chosen][0]
-        self.removeTags = '%s' not in self.format
-        self.showLevel = '%d' in self.format
+        self.removeTags = u'%s' not in self.format
+        self.showLevel = u'%d' in self.format
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -28553,7 +28546,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
                     schoolType = effect.schoolType
                 else:
                     schoolType = self.patchFile.mgef_school.get(effect.name,6)
-            newFull = self.reOldLabel.sub('',newFull) #--Remove existing label
+            newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
             if not self.removeTags:
                 if self.showLevel:
                     newFull = self.format % ('ACDIMRU'[schoolType],record.levelType) + newFull
@@ -28573,28 +28566,28 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== %s' % self.label)
-        log(_('* Spells Renamed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'Spells Renamed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class NamesTweak_Weapons(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Weapons"),
-            _('Label ammo and weapons to sort by type and damage.'),
-            'WEAP',
-            (_('B Iron Bow'),  '%s '),
-            (_('B. Iron Bow'), '%s. '),
-            (_('B - Iron Bow'),'%s - '),
-            (_('(B) Iron Bow'),'(%s) '),
-            ('----','----'),
-            (_('B08 Iron Bow'),  '%s%02d '),
-            (_('B08. Iron Bow'), '%s%02d. '),
-            (_('B08 - Iron Bow'),'%s%02d - '),
-            (_('(B08) Iron Bow'),'(%s%02d) '),
+        MultiTweakItem.__init__(self,_(u"Weapons"),
+            _(u'Label ammo and weapons to sort by type and damage.'),
+            u'WEAP',
+            (_(u'B Iron Bow'),  u'%s '),
+            (_(u'B. Iron Bow'), u'%s. '),
+            (_(u'B - Iron Bow'),u'%s - '),
+            (_(u'(B) Iron Bow'),u'(%s) '),
+            (u'----',u'----'),
+            (_(u'B08 Iron Bow'),  u'%s%02d '),
+            (_(u'B08. Iron Bow'), u'%s%02d. '),
+            (_(u'B08 - Iron Bow'),u'%s%02d - '),
+            (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
 
     #--Config Phase -----------------------------------------------------------
@@ -28624,15 +28617,15 @@ class NamesTweak_Weapons(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         format = self.choiceValues[self.chosen][0]
-        showStat = '%02d' in format
+        showStat = u'%02d' in format
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
             if not record.full: continue
-            if record.full[0] in '+-=.()[]': continue
+            if record.full[0] in u'+-=.()[]': continue
             if showStat:
-                record.full = format % ('A',record.damage) + record.full
+                record.full = format % (u'A',record.damage) + record.full
             else:
-                record.full = format % 'A' + record.full
+                record.full = format % u'A' + record.full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
@@ -28646,9 +28639,9 @@ class NamesTweak_Weapons(MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
     """Names tweaker for weapons and ammo."""
     scanOrder = 32
@@ -28656,18 +28649,18 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Weapons"),
-            _('Label ammo and weapons to sort by type and damage.'),
-            'WEAP',
-            (_('B Iron Bow'),  '%s '),
-            (_('B. Iron Bow'), '%s. '),
-            (_('B - Iron Bow'),'%s - '),
-            (_('(B) Iron Bow'),'(%s) '),
-            ('----','----'),
-            (_('B08 Iron Bow'),  '%s%02d '),
-            (_('B08. Iron Bow'), '%s%02d. '),
-            (_('B08 - Iron Bow'),'%s%02d - '),
-            (_('(B08) Iron Bow'),'(%s%02d) '),
+        CBash_MultiTweakItem.__init__(self,_(u"Weapons"),
+            _(u'Label ammo and weapons to sort by type and damage.'),
+            u'WEAP',
+            (_(u'B Iron Bow'),  u'%s '),
+            (_(u'B. Iron Bow'), u'%s. '),
+            (_(u'B - Iron Bow'),u'%s - '),
+            (_(u'(B) Iron Bow'),u'(%s) '),
+            (u'----',u'----'),
+            (_(u'B08 Iron Bow'),  u'%s%02d '),
+            (_(u'B08. Iron Bow'), u'%s%02d. '),
+            (_(u'B08 - Iron Bow'),u'%s%02d - '),
+            (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
         self.mod_count = {}
 
@@ -28678,7 +28671,7 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
         """Save config to configs dictionary."""
         CBash_MultiTweakItem.saveConfig(self,configs)
         self.format = self.choiceValues[self.chosen][0]
-        self.showStat = '%02d' in self.format
+        self.showStat = u'%02d' in self.format
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -28686,7 +28679,7 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
         newFull = record.full
         if newFull:
             if record._Type == 'AMMO':
-                if newFull[0] in '+-=.()[]': return
+                if newFull[0] in u'+-=.()[]': return
                 type = 6
             else:
                 type = record.weaponType
@@ -28707,10 +28700,10 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== %s' % self.label)
-        log(_('* Items Renamed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'Items Renamed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -28772,41 +28765,41 @@ class TextReplacer(MultiTweakItem):
             for record in patchFile.tops[type].records:
                 changed = False
                 if hasattr(record, 'full'):
-                    changed = reMatch.search(record.full or '')
+                    changed = reMatch.search(record.full or u'')
                 if not changed:
                     if hasattr(record, 'effects'):
                         Effects = record.effects
                         for effect in Effects:
                             try:
-                                changed = reMatch.search(effect.scriptEffect.full or '')
+                                changed = reMatch.search(effect.scriptEffect.full or u'')
                             except AttributeError:
                                 continue
                             if changed: break
                 if not changed:
                     if hasattr(record, 'text'):
-                        changed = reMatch.search(record.text or '')
+                        changed = reMatch.search(record.text or u'')
                 if not changed:
                     if hasattr(record, 'description'):
-                        changed = reMatch.search(record.description or '')
+                        changed = reMatch.search(record.description or u'')
                 if not changed:
-                    if type == 'GMST' and record.eid[0] == 's':
-                        changed = reMatch.search(record.value or '')
+                    if type == 'GMST' and record.eid[0] == u's':
+                        changed = reMatch.search(record.value or u'')
                 if not changed:
                     if hasattr(record, 'stages'):
                         Stages = record.stages
                         for stage in Stages:
                             for entry in stage.entries:
-                                changed = reMatch.search(entry.text or '')
+                                changed = reMatch.search(entry.text or u'')
                                 if changed: break
                 if not changed:
                     if type == 'SKIL':
-                        changed = reMatch.search(record.apprentice or '')
+                        changed = reMatch.search(record.apprentice or u'')
                         if not changed:
-                            changed = reMatch.search(record.journeyman or '')
+                            changed = reMatch.search(record.journeyman or u'')
                         if not changed:
-                            changed = reMatch.search(record.expert or '')
+                            changed = reMatch.search(record.expert or u'')
                         if not changed:
-                            changed = reMatch.search(record.master or '')
+                            changed = reMatch.search(record.master or u'')
                 if changed:
                     if hasattr(record, 'full'):
                         newString = record.full
@@ -28829,7 +28822,7 @@ class TextReplacer(MultiTweakItem):
                         newString = record.description
                         if newString:
                             record.description = reMatch.sub(reReplace, newString)
-                    if type == 'GMST' and record.eid[0] == 's':
+                    if type == 'GMST' and record.eid[0] == u's':
                         newString = record.value
                         if newString:
                             record.value = reMatch.sub(reReplace, newString)
@@ -28858,9 +28851,9 @@ class TextReplacer(MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log(_('* %s: %d') % (self.label,sum(count.values())))
+        log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_TextReplacer(CBash_MultiTweakItem):
     """Base class for replacing any text via regular expressions."""
@@ -28886,7 +28879,7 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
         """Save config to configs dictionary."""
         CBash_MultiTweakItem.saveConfig(self,configs)
         self.format = self.choiceValues[self.chosen][0]
-        self.showStat = '%02d' in self.format
+        self.showStat = u'%02d' in self.format
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -28894,28 +28887,28 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
         reMatch = re.compile(self.reMatch)
         changed = False
         if hasattr(record, 'full'):
-            changed = reMatch.search(record.full or '')
+            changed = reMatch.search(record.full or u'')
         if not changed:
             if hasattr(record, 'effects'):
                 Effects = record.effects
                 for effect in Effects:
-                    changed = reMatch.search(effect.full or '')
+                    changed = reMatch.search(effect.full or u'')
                     if changed: break
         if not changed:
             if hasattr(record, 'text'):
-                changed = reMatch.search(record.text or '')
+                changed = reMatch.search(record.text or u'')
         if not changed:
             if hasattr(record, 'description'):
-                changed = reMatch.search(record.description or '')
+                changed = reMatch.search(record.description or u'')
         if not changed:
-            if record._Type == 'GMST' and record.eid[0] == 's':
-                changed = reMatch.search(record.value or '')
+            if record._Type == 'GMST' and record.eid[0] == u's':
+                changed = reMatch.search(record.value or u'')
         if not changed:
             if hasattr(record, 'stages'):
                 Stages = record.stages
                 for stage in Stages:
                     for entry in stage.entries:
-                        changed = reMatch.search(entry.text or '')
+                        changed = reMatch.search(entry.text or u'')
                         if changed: break
 ##                        compiled = entry.compiled_p
 ##                        if compiled:
@@ -28931,13 +28924,13 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
 ##                    changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
         if not changed:
             if record._Type == 'SKIL':
-                changed = reMatch.search(record.apprentice or '')
+                changed = reMatch.search(record.apprentice or u'')
                 if not changed:
-                    changed = reMatch.search(record.journeyman or '')
+                    changed = reMatch.search(record.journeyman or u'')
                 if not changed:
-                    changed = reMatch.search(record.expert or '')
+                    changed = reMatch.search(record.expert or u'')
                 if not changed:
-                    changed = reMatch.search(record.master or '')
+                    changed = reMatch.search(record.master or u'')
 
         #Could support DIAL/INFO as well, but skipping since they're often voiced as well
         if changed:
@@ -28965,7 +28958,7 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
                     if newString:
                         override.description = reMatch.sub(self.reReplace, newString)
 
-                if override._Type == 'GMST' and override.eid[0] == 's':
+                if override._Type == 'GMST' and override.eid[0] == u's':
                     newString = override.value
                     if newString:
                         override.value = reMatch.sub(self.reReplace, newString)
@@ -29027,10 +29020,10 @@ class CBash_TextReplacer(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== %s' % self.label)
-        log(_('* Items Renamed: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== %s' % self.label)
+        log(u'* '+_(u'Items Renamed: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -29038,50 +29031,50 @@ class NamesTweaker(MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
-    name = _('Tweak Names')
-    text = _("Tweak object names in various ways such as lore friendlyness or show type/quality.")
+    name = _(u'Tweak Names')
+    text = _(u"Tweak object names in various ways such as lore friendlyness or show type/quality.")
     tweaks = sorted([
-        NamesTweak_Body(_("Armor"),_("Rename armor to sort by type."),'ARMO',
-            (_('BL Leather Boots'),  '%s '),
-            (_('BL. Leather Boots'), '%s. '),
-            (_('BL - Leather Boots'),'%s - '),
-            (_('(BL) Leather Boots'),'(%s) '),
-            ('----','----'),
-            (_('BL02 Leather Boots'),  '%s%02d '),
-            (_('BL02. Leather Boots'), '%s%02d. '),
-            (_('BL02 - Leather Boots'),'%s%02d - '),
-            (_('(BL02) Leather Boots'),'(%s%02d) '),
+        NamesTweak_Body(_(u"Armor"),_(u"Rename armor to sort by type."),'ARMO',
+            (_(u'BL Leather Boots'),  u'%s '),
+            (_(u'BL. Leather Boots'), u'%s. '),
+            (_(u'BL - Leather Boots'),u'%s - '),
+            (_(u'(BL) Leather Boots'),u'(%s) '),
+            (u'----',u'----'),
+            (_(u'BL02 Leather Boots'),  u'%s%02d '),
+            (_(u'BL02. Leather Boots'), u'%s%02d. '),
+            (_(u'BL02 - Leather Boots'),u'%s%02d - '),
+            (_(u'(BL02) Leather Boots'),u'(%s%02d) '),
             ),
-        NamesTweak_Body(_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
-            (_('P Grey Trousers'),  '%s '),
-            (_('P. Grey Trousers'), '%s. '),
-            (_('P - Grey Trousers'),'%s - '),
-            (_('(P) Grey Trousers'),'(%s) '),
+        NamesTweak_Body(_(u"Clothes"),_(u"Rename clothes to sort by type."),'CLOT',
+            (_(u'P Grey Trousers'),  u'%s '),
+            (_(u'P. Grey Trousers'), u'%s. '),
+            (_(u'P - Grey Trousers'),u'%s - '),
+            (_(u'(P) Grey Trousers'),u'(%s) '),
             ),
         NamesTweak_Potions(),
         NamesTweak_Scrolls(),
         NamesTweak_Spells(),
         NamesTweak_Weapons(),
-        TextReplacer(r'\b(d|D)(?:warven|warf)\b',
-            r'\1wemer',
-            _("Lore Friendly Text: Dwarven -> Dwemer"),
-            _('Replace any occurances of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
-            'Dwemer',
-            (('Lore Friendly Text: Dwarven -> Dwemer'),  'Dwemer'),
+        TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
+            ur'\1wemer',
+            _(u"Lore Friendly Text: Dwarven -> Dwemer"),
+            _(u'Replace any occurances of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
+            u'Dwemer',
+            ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
             ),
-        TextReplacer(r'\b(d|D)(?:warfs)\b',
-            r'\1warves',
-            _("Proper English Text: Dwarfs -> Dwarves"),
-            _('Replace any occurances of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
-            'Dwarfs',
-            (('Proper English Text: Dwarfs -> Dwarves'),  'Dwarves'),
+        TextReplacer(ur'\b(d|D)(?:warfs)\b',
+            ur'\1warves',
+            _(u"Proper English Text: Dwarfs -> Dwarves"),
+            _(u'Replace any occurances of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
+            u'Dwarfs',
+            ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
             ),
-        TextReplacer(r'\b(s|S)(?:taffs)\b',
-            r'\1taves',
-            _("Proper English Text: Staffs -> Staves"),
-            _('Replace any occurances of the words "Staffs" with "Staves" to better follow proper English.'),
-            'Staffs',
-            (('Proper English Text: Staffs -> Staves'),  'Staves'),
+        TextReplacer(ur'\b(s|S)(?:taffs)\b',
+            ur'\1taves',
+            _(u"Proper English Text: Staffs -> Staves"),
+            _(u'Replace any occurances of the words "Staffs" with "Staves" to better follow proper English.'),
+            u'Staffs',
+            ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
             ),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,NamesTweak_BodyTags())
@@ -29109,7 +29102,7 @@ class NamesTweaker(MultiTweaker):
     def buildPatch(self,log,progress):
         """Applies individual clothes tweaks."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(log,progress,self.patchFile)
 
@@ -29117,53 +29110,54 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
-    name = _('Tweak Names')
-    text = _("Tweak object names in various ways such as lore friendlyness or show type/quality.")
+    name = _(u'Tweak Names')
+    text = _(u"Tweak object names in various ways such as lore friendlyness or show type/quality.")
     tweaks = sorted([
-        CBash_NamesTweak_Body(_("Armor"),_("Rename armor to sort by type."),'ARMO',
-            (_('BL Leather Boots'),  '%s '),
-            (_('BL. Leather Boots'), '%s. '),
-            (_('BL - Leather Boots'),'%s - '),
-            (_('(BL) Leather Boots'),'(%s) '),
-            ('----','----'),
-            (_('BL02 Leather Boots'),  '%s%02d '),
-            (_('BL02. Leather Boots'), '%s%02d. '),
-            (_('BL02 - Leather Boots'),'%s%02d - '),
-            (_('(BL02) Leather Boots'),'(%s%02d) '),
+        CBash_NamesTweak_Body(_(u"Armor"),_(u"Rename armor to sort by type."),'ARMO',
+            (_(u'BL Leather Boots'),  u'%s '),
+            (_(u'BL. Leather Boots'), u'%s. '),
+            (_(u'BL - Leather Boots'),u'%s - '),
+            (_(u'(BL) Leather Boots'),u'(%s) '),
+            (u'----',u'----'),
+            (_(u'BL02 Leather Boots'),  u'%s%02d '),
+            (_(u'BL02. Leather Boots'), u'%s%02d. '),
+            (_(u'BL02 - Leather Boots'),u'%s%02d - '),
+            (_(u'(BL02) Leather Boots'),u'(%s%02d) '),
             ),
-        CBash_NamesTweak_Body(_("Clothes"),_("Rename clothes to sort by type."),'CLOT',
-            (_('P Grey Trousers'),  '%s '),
-            (_('P. Grey Trousers'), '%s. '),
-            (_('P - Grey Trousers'),'%s - '),
-            (_('(P) Grey Trousers'),'(%s) '),
+        CBash_NamesTweak_Body(_(u"Clothes"),_(u"Rename clothes to sort by type."),'CLOT',
+            (_(u'P Grey Trousers'),  u'%s '),
+            (_(u'P. Grey Trousers'), u'%s. '),
+            (_(u'P - Grey Trousers'),u'%s - '),
+            (_(u'(P) Grey Trousers'),u'(%s) '),
             ),
         CBash_NamesTweak_Potions(),
         CBash_NamesTweak_Scrolls(),
         CBash_NamesTweak_Spells(),
         CBash_NamesTweak_Weapons(),
-        CBash_TextReplacer(r'\b(d|D)(?:warven|warf)\b',
-            r'\1wemer',
-            _("Lore Friendly Text: Dwarven -> Dwemer"),
-            _('Replace any occurances of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
-            'Dwemer',
-            (('Lore Friendly Text: Dwarven -> Dwemer'),  'Dwemer'),
+        CBash_TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
+            ur'\1wemer',
+            _(u"Lore Friendly Text: Dwarven -> Dwemer"),
+            _(u'Replace any occurances of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
+            u'Dwemer',
+            ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
             ),
-        CBash_TextReplacer(r'\b(d|D)(?:warfs)\b',
-            r'\1warves',
-            _("Proper English Text: Dwarfs -> Dwarves"),
-            _('Replace any occurances of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
-            'Dwarfs',
-            (('Proper English Text: Dwarfs -> Dwarves'),  'Dwarves'),
+        CBash_TextReplacer(ur'\b(d|D)(?:warfs)\b',
+            ur'\1warves',
+            _(u"Proper English Text: Dwarfs -> Dwarves"),
+            _(u'Replace any occurances of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
+            u'Dwarfs',
+            ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
             ),
-        CBash_TextReplacer(r'\b(s|S)(?:taffs)\b',
-            r'\1taves',
-            _("Proper English Text: Staffs -> Staves"),
-            _('Replace any occurances of the words "Staffs" with "Staves" to better follow proper English.'),
-            'Staffs',
-            (('Proper English Text: Staffs -> Staves'),  'Staves'),
+        CBash_TextReplacer(ur'\b(s|S)(?:taffs)\b',
+            ur'\1taves',
+            _(u"Proper English Text: Staffs -> Staves"),
+            _(u'Replace any occurances of the words "Staffs" with "Staves" to better follow proper English.'),
+            u'Staffs',
+            ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
             ),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,CBash_NamesTweak_BodyTags())
+
     #--Config Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -29191,9 +29185,10 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
+
 #------------------------------------------------------------------------------
 class BasalNPCTweaker(MultiTweakItem):
     """Base for all NPC tweakers"""
@@ -29201,10 +29196,10 @@ class BasalNPCTweaker(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         # Override this segment with real info.
-        MultiTweakItem.__init__(self,_("Title"),
-            _('Description'),
-            'Ignored',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Title"),
+            _(u'Description'),
+            u'Ignored',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -29233,10 +29228,11 @@ class BasalNPCTweaker(MultiTweakItem):
         for record in patchFile.NPC_.records:
             continue
         #--Log suggestions:
-        #log.setHeader(_('===TITLE'))
-        #log(_('* %d X Tweaked') % (sum(count.values()),))
+        #log.setHeader(u'==='+_(u'TITLE'))
+        #log(u'* '+_(u'%d X Tweaked') % sum(count.values()))
         #for srcMod in modInfos.getOrdered(count.keys()):
-        #    log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        #    log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 #------------------------------------------------------------------------------
 class BasalCreatureTweaker(MultiTweakItem):
     """Base for all Creature tweakers"""
@@ -29244,10 +29240,10 @@ class BasalCreatureTweaker(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         # Override this segment with real info.
-        MultiTweakItem.__init__(self,_("Title"),
-            _('Description'),
-            'Ignored',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Title"),
+            _(u'Description'),
+            u'Ignored',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -29276,22 +29272,23 @@ class BasalCreatureTweaker(MultiTweakItem):
         for record in patchFile.CREA.records:
             continue
         #--Log suggestions:
-        #log.setHeader(_('===TITLE'))
-        #log(_('* %d X Tweaked') % (sum(count.values()),))
+        #log.setHeader(u'==='+_(u'TITLE'))
+        #log(u'* '+_(u'%d X Tweaked') % sum(count.values()))
         #for srcMod in modInfos.getOrdered(count.keys()):
-        #    log('  * %s: %d' % (srcMod.s,count[srcMod]))
+        #    log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 #------------------------------------------------------------------------------
 class MAONPCSkeletonPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Mayu's Animation Overhaul Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
-            'MAO Skeleton',
-            (_('All NPCs'), 0),
-            (_('Only Female NPCs'), 1),
-            (_('Only Male NPCs'), 2),
+        MultiTweakItem.__init__(self,_(u"Mayu's Animation Overhaul Skeleton Tweaker"),
+            _(u'Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
+            u'MAO Skeleton',
+            (_(u'All NPCs'), 0),
+            (_(u'Only Female NPCs'), 1),
+            (_(u'Only Male NPCs'), 2),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -29301,15 +29298,15 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         for record in patchFile.NPC_.records:
             if self.choiceValues[self.chosen][0] == 1 and not record.flags.female: continue
             elif self.choiceValues[self.chosen][0] == 2 and record.flags.female: continue
-            if record.fid == (GPath('Oblivion.esm'),0x000007): continue #skip player record
+            if record.fid == (GPath(u'Oblivion.esm'),0x000007): continue #skip player record
             try:
                 oldModPath = record.model.modPath
             except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
                 continue
-            newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
+            newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonBeast.nif"
             try:
-                if oldModPath.lower() == r'characters\_male\skeletonsesheogorath.nif':
-                    newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
+                if oldModPath.lower() == u'characters\\_male\\skeletonsesheogorath.nif':
+                    newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonSESheogorath.nif"
             except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
                 pass
             if newModPath != oldModPath:
@@ -29318,28 +29315,28 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===MAO Skeleton Setter'))
-        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'MAO Skeleton Setter'))
+        log(u'* '+_(u'%d Skeletons Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
     scanOrder = 32
     editOrder = 32
-    name = _("MAO Skeleton Setter")
+    name = _(u"MAO Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Mayu's Animation Overhaul Skeleton Tweaker"),
-            _('Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
-            'MAO Skeleton',
-            (_('All NPCs'),  0),
-            (_('Only Female NPCs'),  1),
-            (_('Only Male NPCs'),  2),
+        CBash_MultiTweakItem.__init__(self,_(u"Mayu's Animation Overhaul Skeleton Tweaker"),
+            _(u'Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
+            u'MAO Skeleton',
+            (_(u'All NPCs'),  0),
+            (_(u'Only Female NPCs'),  1),
+            (_(u'Only Male NPCs'),  2),
             )
         self.mod_count = {}
-        self.playerFid = FormID(GPath('Oblivion.esm'), 0x000007)
+        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     def getTypes(self):
         return ['NPC_']
@@ -29352,10 +29349,10 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
             if choice == 1 and record.IsMale: return
             elif choice == 2 and record.IsFemale: return
             oldModPath = record.modPath
-            newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonBeast.nif"
+            newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonBeast.nif"
             try:
-                if oldModPath == r'characters\_male\skeletonsesheogorath.nif': #modPaths do case insensitive comparisons by default
-                    newModPath = r"Mayu's Projects[M]\Animation Overhaul\Vanilla\SkeletonSESheogorath.nif"
+                if oldModPath == u'characters\\_male\\skeletonsesheogorath.nif': #modPaths do case insensitive comparisons by default
+                    newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonSESheogorath.nif"
             except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
                 pass
             if newModPath != oldModPath:
@@ -29371,22 +29368,23 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Skeletons Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Skeletons Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
     """Changes all NPCs to use the diverse skeleton for different look."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
-            'VORB',
-            (_('All NPCs'), 0),
-            (_('Only Female NPCs'), 1),
-            (_('Only Male NPCs'), 2),
+        MultiTweakItem.__init__(self,_(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+            _(u"Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
+            u'VORB',
+            (_(u'All NPCs'), 0),
+            (_(u'Only Female NPCs'), 1),
+            (_(u'Only Male NPCs'), 2),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -29395,20 +29393,20 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
 
         #--Some setup
-        skeletonDir = dirs['mods'].join('Meshes','Characters','_male')
-        modSkeletonDir = GPath('Characters').join('_male')
+        skeletonDir = dirs['mods'].join(u'Meshes',u'Characters',u'_male')
+        modSkeletonDir = GPath(u'Characters').join(u'_male')
 
         if skeletonDir.exists():
             # construct skeleton mesh collections
             # skeletonList gets files that match the pattern "skel_*.nif", but not "skel_special_*.nif"
             # skeletonSetSpecial gets files that match "skel_special_*.nif"
-            skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
-            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
+            skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith(u'skel_') and not x.csbody.startswith(u'skel_special_') and x.cext == u'.nif']
+            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith(u'skel_special_') and x.cext == u'.nif'))
 
             if len(skeletonList) > 0:
                 femaleOnly = self.choiceValues[self.chosen][0] == 1
                 maleOnly = self.choiceValues[self.chosen][0] == 2
-                playerFid = (GPath('Oblivion.esm'),0x000007)
+                playerFid = (GPath(u'Oblivion.esm'),0x000007)
 
                 for record in patchFile.NPC_.records:
                     # skip records (male only, female only, player)
@@ -29420,7 +29418,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
                     except AttributeError:  # for freaking weird esps with NPC's with no skeleton assigned to them(!)
                         continue
 
-                    specialSkelMesh = "skel_special_%X.nif" % record.fid[1]
+                    specialSkelMesh = u"skel_special_%X.nif" % record.fid[1]
                     if specialSkelMesh in skeletonSetSpecial:
                         newModPath = modSkeletonDir.join(specialSkelMesh)
                     else:
@@ -29435,29 +29433,29 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
                         count[srcMod] = count.get(srcMod,0) + 1
 
         #--Log
-        log.setHeader(_("===VadersApp's Oblivion Real Bodies"))
-        log(_('* %d Skeletons Tweaked') % sum(count.values()))
+        log.setHeader(u'==='+_(u"VadersApp's Oblivion Real Bodies"))
+        log(u'* '+_(u'%d Skeletons Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s, count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
     """Changes all NPCs to use the diverse skeletons for different look."""
     scanOrder = 32
     editOrder = 32
-    name = _("VORB Skeleton Setter")
+    name = _(u"VORB Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _("Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
-            'VORB',
-            (_('All NPCs'),  0),
-            (_('Only Female NPCs'),  1),
-            (_('Only Male NPCs'),  2),
+        CBash_MultiTweakItem.__init__(self,_(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+            _(u"Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
+            u'VORB',
+            (_(u'All NPCs'),  0),
+            (_(u'Only Female NPCs'),  1),
+            (_(u'Only Male NPCs'),  2),
             )
         self.mod_count = {}
-        self.modSkeletonDir = GPath('Characters').join('_male')
-        self.playerFid = FormID(GPath('Oblivion.esm'), 0x000007)
+        self.modSkeletonDir = GPath(u'Characters').join(u'_male')
+        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
         self.skeletonList = None
         self.skeletonSetSpecial = None
 
@@ -29469,10 +29467,10 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         if not self.skeletonList is None:
             return
         self.skeletonList = []
-        skeletonDir = dirs['mods'].join('Meshes', 'Characters', '_male')
+        skeletonDir = dirs['mods'].join(u'Meshes', u'Characters', u'_male')
         if skeletonDir.exists():
-            self.skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith('skel_') and not x.csbody.startswith('skel_special_') and x.cext == '.nif']
-            self.skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith('skel_special_') and x.cext == '.nif'))
+            self.skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith(u'skel_') and not x.csbody.startswith(u'skel_special_') and x.cext == u'.nif']
+            self.skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith(u'skel_special_') and x.cext == u'.nif'))
 
     def getTypes(self):
         return ['NPC_']
@@ -29493,7 +29491,7 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
             except AttributeError:  # for freaking weird esps with NPC's with no skeleton assigned to them(!)
                 pass
 
-            specialSkelMesh = "skel_special_%X.nif" % recordId[1]
+            specialSkelMesh = u"skel_special_%X.nif" % recordId[1]
             if specialSkelMesh in self.skeletonSetSpecial:
                 newModPath = self.modSkeletonDir.join(specialSkelMesh)
             else:
@@ -29514,21 +29512,22 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Skeletons Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Skeletons Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(MultiTweakItem):
     """Changes all NPCs to use the vanilla beast race skeleton."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
-            'Vanilla Skeleton',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Vanilla Beast Skeleton Tweaker"),
+            _(u'Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
+            u'Vanilla Skeleton',
+            (u'1.0',  u'1.0'),
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -29549,21 +29548,21 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
             record = record.getTypeCopy(mapper)
             if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
             model = record.model.modPath
-            if model.lower() == r'characters\_male\skeleton.nif':
+            if model.lower() == u'characters\\_male\\skeleton.nif':
                 patchRecords.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        newModPath = r"Characters\_Male\SkeletonBeast.nif"
+        newModPath = u"Characters\\_Male\\SkeletonBeast.nif"
         for record in patchFile.NPC_.records:
             try:
                 oldModPath = record.model.modPath
             except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
                 continue
             try:
-                if oldModPath.lower() != r'characters\_male\skeleton.nif':
+                if oldModPath.lower() != u'characters\\_male\\skeleton.nif':
                     continue
             except AttributeError: #in case oldModPath was None. Try/Except has no overhead if exception isn't thrown.
                 pass
@@ -29573,23 +29572,23 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Vanilla Beast Skeleton'))
-        log(_('* %d Skeletons Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'Vanilla Beast Skeleton'))
+        log(u'* '+_(u'%d Skeletons Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
     """Changes all NPCs to use the vanilla beast race skeleton."""
     scanOrder = 31 #Run before MAO
     editOrder = 31
-    name = _("Vanilla Beast Skeleton")
+    name = _(u"Vanilla Beast Skeleton")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Vanilla Beast Skeleton Tweaker"),
-            _('Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
-            'Vanilla Skeleton',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Vanilla Beast Skeleton Tweaker"),
+            _(u'Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
+            u'Vanilla Skeleton',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -29600,9 +29599,9 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         oldModPath = record.modPath
-        newModPath = r"Characters\_Male\SkeletonBeast.nif"
+        newModPath = u"Characters\\_Male\\SkeletonBeast.nif"
         try:
-            if oldModPath != r'characters\_male\skeleton.nif': #modPaths do case insensitive comparisons by default
+            if oldModPath != u'characters\\_male\\skeleton.nif': #modPaths do case insensitive comparisons by default
                 return
         except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
             pass
@@ -29619,21 +29618,22 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Skeletons Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Skeletons Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class RedguardNPCPatcher(BasalNPCTweaker):
     """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
-            _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
-            'RedguardFGTSPatcher',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Redguard FGTS Nuller"),
+            _(u'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
+            u'RedguardFGTSPatcher',
+            (u'1.0',  u'1.0'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -29648,26 +29648,26 @@ class RedguardNPCPatcher(BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Redguard FGTS Patcher'))
-        log(_('* %d Redguard NPCs Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'Redguard FGTS Patcher'))
+        log(u'* '+_(u'%d Redguard NPCs Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
     """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
     scanOrder = 32
     editOrder = 32
-    name = _("Redguard FGTS Patcher")
+    name = _(u"Redguard FGTS Patcher")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Redguard FGTS Nuller"),
-            _('Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
-            'RedguardFGTSPatcher',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Redguard FGTS Nuller"),
+            _(u'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
+            u'RedguardFGTSPatcher',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
-        self.redguardId = FormID(GPath('Oblivion.esm'),0x00000D43)
+        self.redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
 
     def getTypes(self):
         return ['NPC_']
@@ -29691,21 +29691,22 @@ class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Redguard NPCs Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Redguard NPCs Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class NoBloodCreaturesPatcher(BasalCreatureTweaker):
     """Set all creatures to have no blood records."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("No Bloody Creatures"),
-            _("Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
-            'No bloody creatures',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"No Bloody Creatures"),
+            _(u"Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
+            u'No bloody creatures',
+            (u'1.0',  u'1.0'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -29722,22 +29723,23 @@ class NoBloodCreaturesPatcher(BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===No Bloody Creatures'))
-        log(_('* %d Creatures Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'No Bloody Creatures'))
+        log(u'* '+_(u'%d Creatures Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
     """Set all creatures to have no blood records."""
     scanOrder = 32
     editOrder = 32
-    name = _("No Bloody Creatures")
+    name = _(u"No Bloody Creatures")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("No Bloody Creatures"),
-            _("Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
-            'No bloody creatures',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"No Bloody Creatures"),
+            _(u"Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
+            u'No bloody creatures',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
 
@@ -29763,32 +29765,33 @@ class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Creatures Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Creatures Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AsIntendedImpsPatcher(BasalCreatureTweaker):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    reImpModPath  = re.compile(r'(imp(?!erial)|gargoyle)\\.',re.I)
-    reImp  = re.compile(r'(imp(?!erial)|gargoyle)',re.I)
+    reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
+    reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_('As Intended: Imps'),
-            _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
-            'vicious imps!',
-            (_('All imps'), 'all'),
-            (_('Only fullsize imps'), 'big'),
-            (_('Only implings'), 'small'),
+        MultiTweakItem.__init__(self,_(u'As Intended: Imps'),
+            _(u"Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
+            u'vicious imps!',
+            (_(u'All imps'), u'all'),
+            (_(u'Only fullsize imps'), u'big'),
+            (_(u'Only implings'), u'small'),
             )
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        spell = (GPath('Oblivion.esm'), 0x02B53F)
+        spell = (GPath(u'Oblivion.esm'), 0x02B53F)
         reImp  = self.reImp
         reImpModPath = self.reImpModPath
         for record in patchFile.CREA.records:
@@ -29796,7 +29799,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
                 oldModPath = record.model.modPath
             except AttributeError:
                 continue
-            if not reImpModPath.search(oldModPath or ''): continue
+            if not reImpModPath.search(oldModPath or u''): continue
 
             for bodyPart in record.bodyParts:
                 if reImp.search(bodyPart):
@@ -29804,9 +29807,9 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
             else:
                 continue
             if record.baseScale < 0.4:
-                if 'big' in self.choiceValues[self.chosen]:
+                if u'big' in self.choiceValues[self.chosen]:
                     continue
-            elif 'small' in self.choiceValues[self.chosen]:
+            elif u'small' in self.choiceValues[self.chosen]:
                 continue
             if spell not in record.spells:
                 record.spells.append(spell)
@@ -29814,29 +29817,30 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===As Intended: Imps'))
-        log(_('* %d Imps Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'As Intended: Imps'))
+        log(u'* '+_(u'%d Imps Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
     scanOrder = 32
     editOrder = 32
-    name = _("As Intended: Imps")
-    reImpModPath  = re.compile(r'(imp(?!erial)|gargoyle)\\.',re.I)
-    reImp  = re.compile(r'(imp(?!erial)|gargoyle)',re.I)
+    name = _(u"As Intended: Imps")
+    reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
+    reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_('As Intended: Imps'),
-            _("Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
-            'vicious imps!',
-            (_('All imps'), 'all'),
-            (_('Only fullsize imps'), 'big'),
-            (_('Only implings'), 'small'),
+        CBash_MultiTweakItem.__init__(self,_(u'As Intended: Imps'),
+            _(u"Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
+            u'vicious imps!',
+            (_(u'All imps'), u'all'),
+            (_(u'Only fullsize imps'), u'big'),
+            (_(u'Only implings'), u'small'),
             )
         self.mod_count = {}
-        self.spell = FormID(GPath('Oblivion.esm'), 0x02B53F)
+        self.spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
 
     def getTypes(self):
         return ['CREA']
@@ -29844,7 +29848,7 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if not self.reImpModPath.search(record.modPath or ''): return
+        if not self.reImpModPath.search(record.modPath or u''): return
 
         reImp  = self.reImp
         for bodyPart in record.bodyParts:
@@ -29853,9 +29857,9 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
         else:
             return
         if record.baseScale < 0.4:
-            if 'big' in self.choiceValues[self.chosen]:
+            if u'big' in self.choiceValues[self.chosen]:
                 return
-        elif 'small' in self.choiceValues[self.chosen]:
+        elif u'small' in self.choiceValues[self.chosen]:
             return
         spells = record.spells
         newSpell = self.spell
@@ -29873,29 +29877,30 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Imps Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Imps Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AsIntendedBoarsPatcher(BasalCreatureTweaker):
     """Set all imps to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    reBoarModPath  = re.compile(r'(boar)\\.',re.I)
-    reBoar  = re.compile(r'(boar)',re.I)
+    reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
+    reBoar  = re.compile(ur'(boar)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_('As Intended: Boars'),
-            _("Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
-            'vicious boars!',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u'As Intended: Boars'),
+            _(u"Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
+            u'vicious boars!',
+            (u'1.0',  u'1.0'),
             )
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        spell = (GPath('Oblivion.esm'), 0x02B54E)
+        spell = (GPath(u'Oblivion.esm'), 0x02B54E)
         keep = patchFile.getKeeper()
         reBoar  = self.reBoar
         reBoarModPath = self.reBoarModPath
@@ -29904,7 +29909,7 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
                 oldModPath = record.model.modPath
             except AttributeError:
                 continue
-            if not reBoarModPath.search(oldModPath or ''): continue
+            if not reBoarModPath.search(oldModPath or u''): continue
 
             for bodyPart in record.bodyParts:
                 if reBoar.search(bodyPart):
@@ -29917,28 +29922,28 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===As Intended: Boars'))
-        log(_('* %d Boars Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'As Intended: Boars'))
+        log(u'* '+_(u'%d Boars Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
     """Set all boars to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
     scanOrder = 32
     editOrder = 32
-    name = _("As Intended: Boars")
-    reBoarModPath  = re.compile(r'(boar)\\.',re.I)
-    reBoar  = re.compile(r'(boar)',re.I)
+    name = _(u"As Intended: Boars")
+    reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
+    reBoar  = re.compile(ur'(boar)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_('As Intended: Boars'),
-            _("Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
-            'vicious boars!',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u'As Intended: Boars'),
+            _(u"Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
+            u'vicious boars!',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
-        self.spell = FormID(GPath('Oblivion.esm'), 0x02B54E)
+        self.spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
 
     def getTypes(self):
         return ['CREA']
@@ -29971,21 +29976,22 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Boars Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Boars Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class SWALKNPCAnimationPatcher(BasalNPCTweaker):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Sexy Walk for female NPCs"),
-            _("Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
-            'Mur Zuk SWalk',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Sexy Walk for female NPCs"),
+            _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
+            u'Mur Zuk SWalk',
+            (u'1.0',  u'1.0'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -29994,30 +30000,31 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = record.animations + ['0sexywalk01.kf']
+                record.animations = record.animations + [u'0sexywalk01.kf']
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===SWalk for Female NPCs'))
-        log(_('* %d NPCs Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'SWalk for Female NPCs'))
+        log(u'* '+_(u'%d NPCs Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
     scanOrder = 32
     editOrder = 32
-    name = _("Sexy Walk for female NPCs")
+    name = _(u"Sexy Walk for female NPCs")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Sexy Walk for female NPCs"),
-            _("Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
-            'Mur Zuk SWalk',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Sexy Walk for female NPCs"),
+            _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
+            u'Mur Zuk SWalk',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
-        self.playerFid = FormID(GPath('Oblivion.esm'), 0x000007)
+        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     def getTypes(self):
         return ['NPC_']
@@ -30029,7 +30036,7 @@ class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
             if record.IsFemale:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.animations = override.animations + ['0sexywalk01.kf']
+                    override.animations = override.animations + [u'0sexywalk01.kf']
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -30039,10 +30046,10 @@ class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* NPCs Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'NPCs Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
 class RWALKNPCAnimationPatcher(BasalNPCTweaker):
@@ -30050,10 +30057,10 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Real Walk for female NPCs"),
-            _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
-            'Mur Zuk RWalk',
-            ('1.0',  '1.0'),
+        MultiTweakItem.__init__(self,_(u"Real Walk for female NPCs"),
+            _(u"Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
+            u'Mur Zuk RWalk',
+            (u'1.0',  u'1.0'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -30062,30 +30069,31 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = record.animations + ['0realwalk01.kf']
+                record.animations = record.animations + [u'0realwalk01.kf']
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===RWalk for Female NPCs'))
-        log(_('* %d NPCs Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'RWalk for Female NPCs'))
+        log(u'* '+_(u'%d NPCs Tweaked') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
     scanOrder = 32
     editOrder = 32
-    name = _("Real Walk for female NPCs")
+    name = _(u"Real Walk for female NPCs")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Real Walk for female NPCs"),
-            _("Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
-            'Mur Zuk RWalk',
-            ('1.0',  '1.0'),
+        CBash_MultiTweakItem.__init__(self,_(u"Real Walk for female NPCs"),
+            _(u"Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
+            u'Mur Zuk RWalk',
+            (u'1.0',  u'1.0'),
             )
         self.mod_count = {}
-        self.playerFid = FormID(GPath('Oblivion.esm'), 0x000007)
+        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     def getTypes(self):
         return ['NPC_']
@@ -30097,7 +30105,7 @@ class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
             if record.IsFemale:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.animations = override.animations + ['0realwalk01.kf']
+                    override.animations = override.animations + [u'0realwalk01.kf']
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -30107,23 +30115,24 @@ class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* NPCs Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'NPCs Tweaked: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class QuietFeetPatcher(BasalCreatureTweaker):
     """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_('Quiet Feet'),
-            _("Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
-            'silent n sneaky!',
-            (_('All Creature Foot Sounds'), 'all'),
-            (_('Only 4 Legged Creature Foot Sounds'), 'partial'),
-            (_('Only Mount Foot Sounds'), 'mounts'),
+        MultiTweakItem.__init__(self,_(u'Quiet Feet'),
+            _(u"Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
+            u'silent n sneaky!',
+            (_(u'All Creature Foot Sounds'), u'all'),
+            (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
+            (_(u'Only Mount Foot Sounds'), u'mounts'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -30133,9 +30142,9 @@ class QuietFeetPatcher(BasalCreatureTweaker):
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
             sounds = record.sounds
-            if chosen == 'all':
+            if chosen == u'all':
                 sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
-            elif chosen == 'partial':
+            elif chosen == u'partial':
                 for sound in record.sounds:
                     if sound.type in [2,3]:
                         sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
@@ -30149,24 +30158,25 @@ class QuietFeetPatcher(BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Quite Feet'))
-        log(_('* %d Creatures Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'Quite Feet'))
+        log(u'* '+_(u'%d Creatures Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
     """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
     scanOrder = 32
     editOrder = 32
-    name = _("Quiet Feet")
+    name = _(u"Quiet Feet")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_('Quiet Feet'),
-            _("Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
-            'silent n sneaky!',
-            (_('All Creature Foot Sounds'), 'all'),
-            (_('Only 4 Legged Creature Foot Sounds'), 'partial'),
-            (_('Only Mount Foot Sounds'), 'mounts'),
+        CBash_MultiTweakItem.__init__(self,_(u'Quiet Feet'),
+            _(u"Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
+            u'silent n sneaky!',
+            (_(u'All Creature Foot Sounds'), u'all'),
+            (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
+            (_(u'Only Mount Foot Sounds'), u'mounts'),
             )
         self.mod_count = {}
 
@@ -30177,13 +30187,13 @@ class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         chosen = self.choiceValues[self.chosen][0]
-        if chosen == 'partial':
+        if chosen == u'partial':
             for sound in record.sounds:
                 if sound.IsLeftBackFoot or sound.IsRightBackFoot:
                     break
             else:
                 return
-        elif chosen == 'mounts' and not record.IsHorse:
+        elif chosen == u'mounts' and not record.IsHorse:
             return
         #equality operator not implemented for ObCREARecord.Sound class, so use the list version instead
         #0 = IsLeftFoot, 1 = IsRightFoot, 2 = IsLeftBackFoot, 3 = IsRightBackFoot
@@ -30202,22 +30212,23 @@ class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Creatures Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Creatures Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
     """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_('Irresponsible Creatures'),
-            _("Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
-            'whatbadguarddogs',
-            (_('All Creatures'), 'all'),
-            (_('Only Horses'), 'mounts'),
+        MultiTweakItem.__init__(self,_(u'Irresponsible Creatures'),
+            _(u"Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
+            u'whatbadguarddogs',
+            (_(u'All Creatures'), u'all'),
+            (_(u'Only Horses'), u'mounts'),
             )
 
     def buildPatch(self,log,progress,patchFile):
@@ -30227,7 +30238,7 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
         chosen = self.choiceValues[self.chosen][0]
         for record in patchFile.CREA.records:
             if record.responsibility == 0: continue
-            if chosen == 'all':
+            if chosen == u'all':
                 record.responsibility = 0
                 keep(record.fid)
                 srcMod = record.fid[0]
@@ -30239,23 +30250,24 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Irresponsible Creatures'))
-        log(_('* %d Creatures Tweaked') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'Irresponsible Creatures'))
+        log(u'* '+_(u'%d Creatures Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
     """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
     scanOrder = 32
     editOrder = 32
-    name = _("Irresponsible Creatures")
+    name = _(u"Irresponsible Creatures")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_('Irresponsible Creatures'),
-            _("Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
-            'whatbadguarddogs',
-            (_('All Creatures'), 'all'),
-            (_('Only Horses'), 'mounts'),
+        CBash_MultiTweakItem.__init__(self,_(u'Irresponsible Creatures'),
+            _(u"Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
+            u'whatbadguarddogs',
+            (_(u'All Creatures'), u'all'),
+            (_(u'Only Horses'), u'mounts'),
             )
         self.mod_count = {}
 
@@ -30266,7 +30278,7 @@ class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if record.responsibility == 0: return
-        if self.choiceValues[self.chosen][0] == 'mounts' and not record.IsHorse: return
+        if self.choiceValues[self.chosen][0] == u'mounts' and not record.IsHorse: return
         override = record.CopyAsOverride(self.patchFile)
         if override:
             override.responsibility = 0
@@ -30279,24 +30291,25 @@ class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Creatures Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Creatures Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class BiggerOrcsandNords(MultiTweakItem):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
-            _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            'BiggerOrcsandNords',
+        MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
-            ('RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
             )
 
     #--Patch Phase ------------------------------------------------------------
@@ -30315,7 +30328,7 @@ class BiggerOrcsandNords(MultiTweakItem):
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
             if not record.full: continue
-            if not 'orc' in record.full.lower() and not 'nord' in record.full.lower(): continue
+            if not u'orc' in record.full.lower() and not u'nord' in record.full.lower(): continue
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
 
@@ -30325,39 +30338,40 @@ class BiggerOrcsandNords(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
             if not record.full: continue
-            if 'nord' in record.full.lower():
+            if u'nord' in record.full.lower():
                 for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
                     setattr(record,attr,value)
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
                 continue
-            elif 'orc' in record.full.lower():
+            elif u'orc' in record.full.lower():
                 for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
                     setattr(record,attr,value)
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('===Bigger Nords and Orcs'))
-        log(_('* %d Races tweaked.') % (sum(count.values()),))
+        log.setHeader(u'==='+_(u'Bigger Nords and Orcs'))
+        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
     """Changes all Orcs and Nords to be bigger."""
     scanOrder = 32
     editOrder = 32
-    name = _("Bigger Nords and Orcs")
+    name = _(u"Bigger Nords and Orcs")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Bigger Nords and Orcs"),
-            _('Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            'BiggerOrcsandNords',
+        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            ('Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            ('MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
-            ('RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
             )
         self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
         self.mod_count = {}
@@ -30369,9 +30383,9 @@ class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if not record.full: return
-        if 'nord' in record.full.lower():
+        if u'nord' in record.full.lower():
             newValues = self.choiceValues[self.chosen][0][0]
-        elif 'orc' in record.full.lower():
+        elif u'orc' in record.full.lower():
             newValues = self.choiceValues[self.chosen][0][1]
         else:
             return
@@ -30391,16 +30405,16 @@ class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('=== '+self.__class__.name)
-        log(_('* Races tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
-    name = _('Tweak Actors')
-    text = _("Tweak NPC and Creatures records in specified ways.")
+    name = _(u'Tweak Actors')
+    text = _(u"Tweak NPC and Creatures records in specified ways.")
     tweaks = sorted([
         VORB_NPCSkeletonPatcher(),
         MAONPCSkeletonPatcher(),
@@ -30439,15 +30453,14 @@ class TweakActors(MultiTweaker):
     def buildPatch(self,log,progress):
         """Applies individual tweaks."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatch(log,progress,self.patchFile)
 
-
 class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
-    name = _('Tweak Actors')
-    text = _("Tweak NPC and Creatures records in specified ways.")
+    name = _(u'Tweak Actors')
+    text = _(u"Tweak NPC and Creatures records in specified ways.")
     tweaks = sorted([
         CBash_VORB_NPCSkeletonPatcher(),
         CBash_MAONPCSkeletonPatcher(),
@@ -30473,13 +30486,14 @@ class CBash_TweakActors(CBash_MultiTweaker):
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
-        log.setHeader('= '+self.__class__.name,True)
+        log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
+
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher:
     """Provides default group, scan and edit orders."""
-    group = _('Special')
+    group = _(u'Special')
     scanOrder = 40
     editOrder = 40
 
@@ -30511,7 +30525,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('COBL Main.esm') in loadMods)
+        self.isActive = (GPath(u'COBL Main.esm') in loadMods)
         self.id_ingred = {}
 
     def getReadClasses(self):
@@ -30542,7 +30556,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         #--Setup
         mgef_name = self.patchFile.getMgefName()
         for mgef in mgef_name:
-            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
+            mgef_name[mgef] = re.sub(_(u'(Attribute|Skill)'),u'',mgef_name[mgef])
         actorEffects = bush.genericAVEffects
         actorNames = bush.actorValues
         keep = self.patchFile.getKeeper()
@@ -30552,12 +30566,12 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             book.longFids = True
             book.changed = True
             book.eid = eid
-            book.full = Encode(full, 'mbcs')
+            book.full = full
             book.value = value
             book.weight = 0.2
             book.fid = keep((GPath(u'Cobl Main.esm'),objectId))
-            book.text = '<div align="left"><font face=3 color=4444>'
-            book.text += Encode(_(u"Salan's Catalog of ")+u'%s\r\n\r\n' % full, 'mbcs')
+            book.text = u'<div align="left"><font face=3 color=4444>'
+            book.text += _(u"Salan's Catalog of ")+u'%s\r\n\r\n' % full
             book.iconPath = iconPath
             book.model = book.getDefault('model')
             book.model.modPath = modelPath
@@ -30567,50 +30581,48 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
-        iconPath,modPath,modb_p = ('Clutter\IconBook9.dds','Clutter\Books\Octavo02.NIF','\x03>@A')
+        iconPath,modPath,modb_p = (u'Clutter\\IconBook9.dds',u'Clutter\\Books\\Octavo02.NIF',u'\x03>@A')
         for (num,objectId,full,value) in bush.ingred_alchem:
             book = getBook(objectId,'cobCatAlchemIngreds'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = StringIO.StringIO()
-            buff.write(book.text)
-            for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(full+'\r\n')
-                for mgef,actorValue in effects[:num]:
-                    effectName = Encode(mgef_name[mgef],'mbcs')
-                    if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
-                    buff.write('  '+effectName+'\r\n')
-                buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+            with sio(book.text) as buff:
+                for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
+                    buff.write(full+u'\r\n')
+                    for mgef,actorValue in effects[:num]:
+                        effectName = mgef_name[mgef]
+                        if mgef in actorEffects: effectName += actorNames[actorValue]
+                        buff.write(u'  '+effectName+u'\r\n')
+                    buff.write(u'\r\n')
+                book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = {}
         for fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
-                effectName = Encode(mgef_name[mgef],'mbcs')
-                if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
+                effectName = mgef_name[mgef]
+                if mgef in actorEffects: effectName += actorNames[actorValue]
                 if effectName not in effect_ingred: effect_ingred[effectName] = []
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
-        iconPath,modPath,modb_p = ('Clutter\IconBook7.dds','Clutter\Books\Octavo01.NIF','\x03>@A')
+        iconPath,modPath,modb_p = (u'Clutter\\IconBook7.dds',u'Clutter\\Books\\Octavo01.NIF',u'\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
             book = getBook(objectId,'cobCatAlchemEffects'+`num`,full,value,iconPath,modPath,modb_p)
-            buff = StringIO.StringIO()
-            buff.write(book.text)
-            for effectName in sorted(effect_ingred.keys()):
-                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
-                if effects:
-                    buff.write(effectName+'\r\n')
-                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
-                        exSpace = ('',' ')[index == 0]
-                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
-                    buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+            with sio(book.text) as buff:
+                for effectName in sorted(effect_ingred.keys()):
+                    effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
+                    if effects:
+                        buff.write(effectName+u'\r\n')
+                        for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
+                            exSpace = u' ' if index == 0 else u''
+                            buff.write(u' '+`index + 1`+exSpace+u' '+full+u'\r\n')
+                        buff.write(u'\r\n')
+                book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
-        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'* '+_(u'Ingredients Cataloged: %d') % (len(id_ingred),))
+        log(u'* '+_(u'Effects Cataloged: %d') % (len(effect_ingred)))
 
 class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     """Updates COBL alchemical catalogs."""
-    name = _('Cobl Catalogs')
+    name = _(u'Cobl Catalogs')
     text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.") +
             u'\n\n' +
             _(u'Will only run if Cobl Main.esm is loaded.')
@@ -30623,7 +30635,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = GPath('Cobl Main.esm') in loadMods
+        self.isActive = GPath(u'Cobl Main.esm') in loadMods
         if not self.isActive: return
         patchFile.indexMGEFs = True
         self.id_ingred = {}
@@ -30651,37 +30663,37 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         pstate = 0
         #--Setup
         try:
-            coblMod = patchFile.Current.LookupModFile('Cobl Main.esm')
+            coblMod = patchFile.Current.LookupModFile(u'Cobl Main.esm')
         except KeyError, error:
-            print "CBash_AlchemicalCatalogs:finishPatch"
+            print u"CBash_AlchemicalCatalogs:finishPatch"
             print error[0]
             return
 
         mgef_name = patchFile.mgef_name.copy()
         for mgef in mgef_name:
-            mgef_name[mgef] = re.sub(_('(Attribute|Skill)'),'',mgef_name[mgef])
+            mgef_name[mgef] = re.sub(_(u'(Attribute|Skill)'),u'',mgef_name[mgef])
         actorEffects = bush.genericAVEffects
         actorNames = bush.actorValues
         #--Book generator
         def getBook(patchFile, objectId):
-            book = coblMod.LookupRecord(FormID(GPath('Cobl Main.esm'),objectId))
+            book = coblMod.LookupRecord(FormID(GPath(u'Cobl Main.esm'),objectId))
             #There have been reports of this patcher failing, hence the sanity checks
             if book:
                 if book.recType != 'BOOK':
                     print PrintFormID(fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
-                    raise StateError(_("Cobl Catalogs: Unable to lookup book record in Cobl Main.esm!"))
+                    raise StateError(u"Cobl Catalogs: Unable to lookup book record in Cobl Main.esm!")
                 book = book.CopyAsOverride(self.patchFile)
                 if not book:
                     print PrintFormID(fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
-                    book = coblMod.LookupRecord(FormID(GPath('Cobl Main.esm'),objectId))
+                    book = coblMod.LookupRecord(FormID(GPath(u'Cobl Main.esm'),objectId))
                     print book
                     print book.text
                     print
-                    raise StateError(_("Cobl Catalogs: Unable to create book!"))
+                    raise StateError(u"Cobl Catalogs: Unable to create book!")
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
@@ -30690,36 +30702,35 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
             pstate += 1
             book = getBook(patchFile, objectId)
             if not book: continue
-            buff = StringIO.StringIO()
-            buff.write('<div align="left"><font face=3 color=4444>' + Encode(_(u"Salan's Catalog of ")+u"%s\r\n\r\n" % full,'mbcs'))
-            for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                buff.write(Encode(full,'mbcs')+'\r\n')
-                for effect in effects_list[:num]:
-                    mgef = effect[0] #name field
-                    try:
-                        effectName = mgef_name[mgef]
-                    except KeyError:
-                        if not self.DebugPrintOnce:
-                            self.DebugPrintOnce = 1
-                            print patchFile.Current.Debug_DumpModFiles()
-                            print
-                            print 'mgef_name:', mgef_name
-                            print
-                            print 'mgef:', mgef
-                            print
+            with sio() as buff:
+                buff.write(u'<div align="left"><font face=3 color=4444>' + _(u"Salan's Catalog of ")+u"%s\r\n\r\n" % full)
+                for eid,full,effects_list in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
+                    buff.write(full+u'\r\n')
+                    for effect in effects_list[:num]:
+                        mgef = effect[0] #name field
+                        try:
+                            effectName = mgef_name[mgef]
+                        except KeyError:
+                            if not self.DebugPrintOnce:
+                                self.DebugPrintOnce = 1
+                                print patchFile.Current.Debug_DumpModFiles()
+                                print
+                                print u'mgef_name:', mgef_name
+                                print
+                                print u'mgef:', mgef
+                                print
+                                if mgef in bush.mgef_name:
+                                    print u'mgef found in bush.mgef_name'
+                                else:
+                                    print u'mgef not found in bush.mgef_name'
                             if mgef in bush.mgef_name:
-                                print 'mgef found in bush.mgef_name'
+                                effectName = re.sub(_(u'(Attribute|Skill)'),u'',bush.mgef_name[mgef])
                             else:
-                                print 'mgef not found in bush.mgef_name'
-                        if mgef in bush.mgef_name:
-                            effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
-                        else:
-                            effectName = 'Unknown Effect'
-                    effectName = Encode(effectName,'mbcs')
-                    if mgef in actorEffects: effectName += Encode(actorNames[effect[5]],'mbcs') #actorValue field
-                    buff.write('  '+effectName+'\r\n')
-                buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+                                effectName = u'Unknown Effect'
+                        if mgef in actorEffects: effectName += actorNames[effect[5]] #actorValue field
+                        buff.write(u'  '+effectName+u'\r\n')
+                    buff.write(u'\r\n')
+                book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = self.effect_ingred = {}
         for fid,(eid,full,effects_list) in id_ingred.iteritems():
@@ -30732,36 +30743,35 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
                         self.DebugPrintOnce = 1
                         print patchFile.Current.Debug_DumpModFiles()
                         print
-                        print 'mgef_name:', mgef_name
+                        print u'mgef_name:', mgef_name
                         print
-                        print 'mgef:', mgef
+                        print u'mgef:', mgef
                         print
                         if mgef in bush.mgef_name:
-                            print 'mgef found in bush.mgef_name'
+                            print u'mgef found in bush.mgef_name'
                         else:
-                            print 'mgef not found in bush.mgef_name'
+                            print u'mgef not found in bush.mgef_name'
                     if mgef in bush.mgef_name:
-                        effectName = re.sub(_('(Attribute|Skill)'),'',bush.mgef_name[mgef])
+                        effectName = re.sub(_(u'(Attribute|Skill)'),u'',bush.mgef_name[mgef])
                     else:
-                        effectName = 'Unknown Effect'
-                effectName = Encode(effectName,'mbcs')
-                if mgef in actorEffects: effectName += Encode(actorNames[actorValue],'mbcs')
+                        effectName = u'Unknown Effect'
+                if mgef in actorEffects: effectName += actorNames[actorValue]
                 effect_ingred.setdefault(effectName, []).append((index,full))
         #--Effect catalogs
         for (num,objectId,full,value) in bush.effect_alchem:
             subProgress(pstate, _(u'Cataloging Effects...')+u'\n%s' % full)
             book = getBook(patchFile,objectId)
-            buff = StringIO.StringIO()
-            buff.write('<div align="left"><font face=3 color=4444>' + Encode((_("Salan's Catalog of ")+u"%s\r\n\r\n") % full, 'mbcs'))
-            for effectName in sorted(effect_ingred.keys()):
-                effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
-                if effects:
-                    buff.write(effectName+'\r\n')
-                    for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
-                        exSpace = ('',' ')[index == 0]
-                        buff.write(' '+`index + 1`+exSpace+' '+full+'\r\n')
-                    buff.write('\r\n')
-            book.text = re.sub('\r\n','<br>\r\n',buff.getvalue())
+            with sio() as buff:
+                buff.write(u'<div align="left"><font face=3 color=4444>' + _(u"Salan's Catalog of ")+u"%s\r\n\r\n" % full)
+                for effectName in sorted(effect_ingred.keys()):
+                    effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
+                    if effects:
+                        buff.write(effectName+u'\r\n')
+                        for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
+                            exSpace = u' ' if index == 0 else u''
+                            buff.write(u' '+`index + 1`+exSpace+u' '+full+u'\r\n')
+                        buff.write(u'\r\n')
+                book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
             pstate += 1
 
     def buildPatchLog(self,log):
@@ -30770,9 +30780,9 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         #--Log
         id_ingred = self.id_ingred
         effect_ingred = self.effect_ingred
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Ingredients Cataloged: %d') % (len(id_ingred),))
-        log(_('* Effects Cataloged: %d') % (len(effect_ingred)))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'* '+_(u'Ingredients Cataloged: %d') % len(id_ingred))
+        log(u'* '+_(u'Effects Cataloged: %d') % len(effect_ingred))
 #------------------------------------------------------------------------------
 class CoblExhaustion(SpecialPatcher,ListPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion feature."""
@@ -30781,7 +30791,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
             u'\n\n' +
             _(u'Will only run if Cobl Main v1.66 (or higher) is active.')
             )
-    autoKey = 'Exhaust'
+    autoKey = u'Exhaust'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
@@ -30799,15 +30809,14 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
         aliases = self.patchFile.aliases
         id_exhaustion = self.id_exhaustion
         textPath = GPath(textPath)
-        ins = bolt.CsvReader(textPath)
-        reNum = re.compile(r'\d+')
-        for fields in ins:
-            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
-            mod,objectIndex,eid,time = fields[:4]
-            mod = GPath(mod)
-            longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
-            id_exhaustion[longid] = int(time)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            reNum = re.compile(ur'\d+',re.U)
+            for fields in ins:
+                if len(fields) < 4 or fields[1][:2] != u'0x' or not reNum.match(fields[3]): continue
+                mod,objectIndex,eid,time = fields[:4]
+                mod = GPath(mod)
+                longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+                id_exhaustion[longid] = int(time)
 
     def initData(self,progress):
         """Get names from source files."""
@@ -30865,7 +30874,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
             effect.name = 'SEFF'
             effect.duration = duration
             scriptEffect = record.getDefault('effects.scriptEffect')
-            scriptEffect.full = _("Power Exhaustion")
+            scriptEffect.full = u"Power Exhaustion"
             scriptEffect.script = exhaustId
             scriptEffect.school = 2
             scriptEffect.visual = null4
@@ -30876,10 +30885,11 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'* '+_(u'Powers Tweaked: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion feature."""
     name = _(u'Cobl Exhaustion')
@@ -30887,7 +30897,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             u'\n\n' +
             _(u'Will only run if Cobl Main v1.66 (or higher) is active.')
             )
-    autoKey = set(('Exhaust',))
+    autoKey = set((u'Exhaust',))
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
 
@@ -30896,7 +30906,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.cobl = GPath('Cobl Main.esm')
+        self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = (self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.65)
         self.id_exhaustion = {}
         self.mod_count = {}
@@ -30924,15 +30934,14 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         aliases = self.patchFile.aliases
         id_exhaustion = self.id_exhaustion
         textPath = GPath(textPath)
-        ins = bolt.CsvReader(textPath)
-        reNum = re.compile(r'\d+')
-        for fields in ins:
-            if len(fields) < 4 or fields[1][:2] != '0x' or not reNum.match(fields[3]): continue
-            mod,objectIndex,eid,time = fields[:4]
-            mod = GPath(mod)
-            longid = FormID(aliases.get(mod,mod),int(objectIndex[2:],16))
-            id_exhaustion[longid] = int(time)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            reNum = re.compile(ur'\d+',re.U)
+            for fields in ins:
+                if len(fields) < 4 or fields[1][:2] != u'0x' or not reNum.match(fields[3]): continue
+                mod,objectIndex,eid,time = fields[:4]
+                mod = GPath(mod)
+                longid = FormID(aliases.get(mod,mod),int(objectIndex[2:],16))
+                id_exhaustion[longid] = int(time)
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -30952,7 +30961,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
                 effect = override.create_effect()
                 effect.name = self.SEFF
                 effect.duration = duration
-                effect.full = _("Power Exhaustion")
+                effect.full = u'Power Exhaustion'
                 effect.script = self.exhaustionId
                 effect.IsDestruction = True
                 effect.visual = MGEFCode(None,None)
@@ -30968,10 +30977,10 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= '+self.__class__.name)
-        log(_('* Powers Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'* '+_(u'Powers Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -30985,8 +30994,8 @@ class ListsMerger(SpecialPatcher,ListPatcher):
             _(u'Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.')
             )
     tip = _(u"Merges changes to leveled lists from all active mods.")
-    choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
-    autoKey = ('Delev','Relev')
+    choiceMenu = (u'Auto',u'----',u'Delev',u'Relev') #--List of possible choices for each config item. Item 0 is default.
+    autoKey = (u'Delev',u'Relev')
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
@@ -30997,26 +31006,25 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     @staticmethod
     def getDefaultTags():
         tags = {}
-        for fileName in ('Leveled Lists.csv','My Leveled Lists.csv'):
+        for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
             textPath = dirs['patches'].join(fileName)
             if textPath.exists():
-                reader = bolt.CsvReader(textPath)
-                for fields in reader:
-                    if len(fields) < 2 or not fields[0] or fields[1] not in ('DR','R','D','RD',''): continue
-                    tags[GPath(fields[0])] = fields[1]
-                reader.close()
+                with bolt.CsvReader(textPath) as reader:
+                    for fields in reader:
+                        if len(fields) < 2 or not fields[0] or fields[1] not in (u'DR',u'R',u'D',u'RD',u''): continue
+                        tags[GPath(fields[0])] = fields[1]
         return tags
 
     #--Config Phase -----------------------------------------------------------
     def getChoice(self,item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set(('Auto',))
-        if 'Auto' in choice:
+        if not isinstance(choice,set): choice = set((u'Auto',))
+        if u'Auto' in choice:
             if item in modInfos:
-                choice = set(('Auto',))
+                choice = set((u'Auto',))
                 bashTags = modInfos[item].getBashTags()
-                for key in ('Delev','Relev'):
+                for key in (u'Delev',u'Relev'):
                     if key in bashTags: choice.add(key)
         self.configChoices[item] = choice
         return choice
@@ -31026,7 +31034,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
         if isinstance(item,bolt.Path): item = item.s
         if choice:
-            return '%s [%s]' % (item,''.join(sorted(choice)))
+            return u'%s [%s]' % (item,u''.join(sorted(choice)))
         else:
             return item
 
@@ -31042,11 +31050,11 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         self.levelers = None #--Will initialize later
         self.empties = set()
         OverhaulCompat = False
-        OOOMods = set([GPath("Oscuro's_Oblivion_Overhaul.esm"),GPath("Oscuro's_Oblivion_Overhaul.esp")])
-        FransMods = set([GPath("Francesco's Leveled Creatures-Items Mod.esm"),GPath("Francesco.esp")])
-        WCMods = set([GPath("Oblivion Warcry.esp"),GPath("Oblivion Warcry EV.esp")])
-        TIEMods = set([GPath("TIE.esp")])
-        if GPath("Unofficial Oblivion Patch.esp") in self.srcMods:
+        OOOMods = set([GPath(u"Oscuro's_Oblivion_Overhaul.esm"),GPath(u"Oscuro's_Oblivion_Overhaul.esp")])
+        FransMods = set([GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),GPath(u"Francesco.esp")])
+        WCMods = set([GPath(u"Oblivion Warcry.esp"),GPath(u"Oblivion Warcry EV.esp")])
+        TIEMods = set([GPath(u"TIE.esp")])
+        if GPath(u"Unofficial Oblivion Patch.esp") in self.srcMods:
             if (OOOMods|WCMods) & self.srcMods:
                 OverhaulCompat = True
             elif FransMods & self.srcMods:
@@ -31056,7 +31064,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                     OverhaulCompat = True
         if OverhaulCompat:
             self.OverhaulUOPSkips = set([
-                (GPath('Oblivion.esm'),x) for x in [
+                (GPath(u'Oblivion.esm'),x) for x in [
                     0x03AB5D,   # VendorWeaponBlunt
                     0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
                     0x03C7F2,   # LL0LootWeapon0Magic7Ebony100
@@ -31116,15 +31124,15 @@ class ListsMerger(SpecialPatcher,ListPatcher):
             self.mastersScanned.add(modName)
         #--Relev/Delev setup
         configChoice = self.configChoices.get(modName,tuple())
-        isRelev = ('Relev' in configChoice)
-        isDelev = ('Delev' in configChoice)
+        isRelev = (u'Relev' in configChoice)
+        isDelev = (u'Delev' in configChoice)
         #--Scan
         for type in self.listTypes:
             levLists = self.type_list[type]
             newLevLists = getattr(modFile,type)
             for newLevList in newLevLists.getActiveRecords():
                 listId = newLevList.fid
-                if listId in self.OverhaulUOPSkips and modName == 'Unofficial Oblivion Patch.esp':
+                if listId in self.OverhaulUOPSkips and modName == u'Unofficial Oblivion Patch.esp':
                     levLists[listId].mergeOverLast = True
                     continue
                 isListOwner = (listId[0] == modName)
@@ -31223,8 +31231,8 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             _(u'Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below.')
             )
     tip = _(u"Merges changes to leveled lists from all active mods.")
-    choiceMenu = ('Auto','----','Delev','Relev') #--List of possible choices for each config item. Item 0 is default.
-    autoKey = set(('Delev','Relev'))
+    choiceMenu = (u'Auto',u'----',u'Delev',u'Relev') #--List of possible choices for each config item. Item 0 is default.
+    autoKey = set((u'Delev',u'Relev'))
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
@@ -31238,26 +31246,25 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     @staticmethod
     def getDefaultTags():
         tags = {}
-        for fileName in ('Leveled Lists.csv','My Leveled Lists.csv'):
+        for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
             textPath = dirs['patches'].join(fileName)
             if textPath.exists():
-                reader = bolt.CsvReader(textPath)
-                for fields in reader:
-                    if len(fields) < 2 or not fields[0] or fields[1] not in ('DR','R','D','RD',''): continue
-                    tags[GPath(fields[0])] = fields[1]
-                reader.close()
+                with bolt.CsvReader(textPath) as reader:
+                    for fields in reader:
+                        if len(fields) < 2 or not fields[0] or fields[1] not in (u'DR',u'R',u'D',u'RD',u''): continue
+                        tags[GPath(fields[0])] = fields[1]
         return tags
 
     #--Config Phase -----------------------------------------------------------
     def getChoice(self,item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set(('Auto',))
-        if 'Auto' in choice:
+        if not isinstance(choice,set): choice = set((u'Auto',))
+        if u'Auto' in choice:
             if item in modInfos:
-                choice = set(('Auto',))
+                choice = set((u'Auto',))
                 bashTags = modInfos[item].getBashTags()
-                for key in ('Delev','Relev'):
+                for key in (u'Delev',u'Relev'):
                     if key in bashTags: choice.add(key)
         self.configChoices[item] = choice
         return choice
@@ -31267,7 +31274,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
         if isinstance(item,bolt.Path): item = item.s
         if choice:
-            return '%s [%s]' % (item,''.join(sorted(choice)))
+            return u'%s [%s]' % (item,u''.join(sorted(choice)))
         else:
             return item
 
@@ -31282,11 +31289,11 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.empties = set()
         importMods = set(self.srcs) & set(loadMods)
         OverhaulCompat = False
-        OOOMods = set([GPath("Oscuro's_Oblivion_Overhaul.esm"),GPath("Oscuro's_Oblivion_Overhaul.esp")])
-        FransMods = set([GPath("Francesco's Leveled Creatures-Items Mod.esm"),GPath("Francesco.esp")])
-        WCMods = set([GPath("Oblivion Warcry.esp"),GPath("Oblivion Warcry EV.esp")])
-        TIEMods = set([GPath("TIE.esp")])
-        if GPath("Unofficial Oblivion Patch.esp") in importMods:
+        OOOMods = set([GPath(u"Oscuro's_Oblivion_Overhaul.esm"),GPath(u"Oscuro's_Oblivion_Overhaul.esp")])
+        FransMods = set([GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),GPath(u"Francesco.esp")])
+        WCMods = set([GPath(u"Oblivion Warcry.esp"),GPath(u"Oblivion Warcry EV.esp")])
+        TIEMods = set([GPath(u"TIE.esp")])
+        if GPath(u"Unofficial Oblivion Patch.esp") in importMods:
             if (OOOMods|WCMods) & importMods:
                 OverhaulCompat = True
             elif FransMods & importMods:
@@ -31296,7 +31303,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
                     OverhaulCompat = True
         if OverhaulCompat:
             self.OverhaulUOPSkips = set([
-                FormID(GPath('Oblivion.esm'),x) for x in [
+                FormID(GPath(u'Oblivion.esm'),x) for x in [
                     0x03AB5D,   # VendorWeaponBlunt
                     0x03C7F1,   # LL0LootWeapon0Magic4Dwarven100
                     0x03C7F2,   # LL0LootWeapon0Magic7Ebony100
@@ -31329,6 +31336,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
 
     def getTypes(self):
         return ['LVLC','LVLI','LVSP']
+
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
@@ -31349,8 +31357,8 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         else:
             mergedList = self.id_list[recordId]
             configChoice = self.configChoices.get(modFile.GName,tuple())
-            isRelev = 'Relev' in configChoice
-            isDelev = 'Delev' in configChoice
+            isRelev = u'Relev' in configChoice
+            isDelev = u'Delev' in configChoice
             delevs = self.id_delevs.setdefault(recordId, set())
             curItems = set([listId for level, listId, count in curList])
             if isRelev:
@@ -31472,10 +31480,10 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Modified LVL: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Modified LVL: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -31486,7 +31494,7 @@ class MFactMarker(SpecialPatcher,ListPatcher):
             u'\n\n' +
             _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
             )
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = 'MFact'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
@@ -31496,8 +31504,8 @@ class MFactMarker(SpecialPatcher,ListPatcher):
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_info = {} #--Morphable factions keyed by fid
         self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles) and GPath("Cobl Main.esm") in modInfos.ordered
-        self.mFactLong = (GPath("Cobl Main.esm"),0x33FB)
+        self.isActive = bool(self.srcFiles) and GPath(u"Cobl Main.esm") in modInfos.ordered
+        self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
 
     def initData(self,progress):
         """Get names from source files."""
@@ -31507,19 +31515,18 @@ class MFactMarker(SpecialPatcher,ListPatcher):
         for srcFile in self.srcFiles:
             textPath = dirs['patches'].join(srcFile)
             if not textPath.exists(): continue
-            ins = bolt.CsvReader(textPath)
-            for fields in ins:
-                if len(fields) < 6 or fields[1][:2] != '0x':
-                    continue
-                mod,objectIndex = fields[:2]
-                mod = GPath(mod)
-                longid = (aliases.get(mod,mod),int(objectIndex,0))
-                morphName = fields[4].strip()
-                rankName = fields[5].strip()
-                if not morphName: continue
-                if not rankName: rankName = _('Member')
-                id_info[longid] = (morphName,rankName)
-            ins.close()
+            with bolt.CsvReader(textPath) as ins:
+                for fields in ins:
+                    if len(fields) < 6 or fields[1][:2] != u'0x':
+                        continue
+                    mod,objectIndex = fields[:2]
+                    mod = GPath(mod)
+                    longid = (aliases.get(mod,mod),int(objectIndex,0))
+                    morphName = fields[4].strip()
+                    rankName = fields[5].strip()
+                    if not morphName: continue
+                    if not rankName: rankName = _(u'Member')
+                    id_info[longid] = (morphName,rankName)
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -31536,7 +31543,7 @@ class MFactMarker(SpecialPatcher,ListPatcher):
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         patchBlock = self.patchFile.FACT
-        if modFile.fileInfo.name == GPath("Cobl Main.esm"):
+        if modFile.fileInfo.name == GPath(u"Cobl Main.esm"):
             modFile.convertToLongFids(('FACT',))
             record = modFile.FACT.getRecord(self.mFactLong)
             if record:
@@ -31575,7 +31582,7 @@ class MFactMarker(SpecialPatcher,ListPatcher):
                     if not rank.male: rank.male = rankName
                     if not rank.female: rank.female = rank.male
                     if not rank.insigniaPath:
-                        rank.insigniaPath = r'Menus\Stats\Cobl\generic%02d.dds' % rank.rank
+                        rank.insigniaPath = u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
                 keep(record.fid)
                 mod = record.fid[0]
                 changed[mod] = changed.setdefault(mod,0) + 1
@@ -31605,9 +31612,9 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
             u'\n\n' +
             _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
             )
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set(('MFact',))
-    unloadedText = ""
+    unloadedText = u""
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
@@ -31615,7 +31622,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.cobl = GPath('Cobl Main.esm')
+        self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = self.cobl in loadMods and modInfos.getVersionFloat(self.cobl) > 1.27
         self.id_info = {} #--Morphable factions keyed by fid
         self.mFactLong = FormID(self.cobl,0x33FB)
@@ -31644,19 +31651,18 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         id_info = self.id_info
         textPath = GPath(textPath)
         if not textPath.exists(): return
-        ins = bolt.CsvReader(textPath)
-        for fields in ins:
-            if len(fields) < 6 or fields[1][:2] != '0x':
-                continue
-            mod,objectIndex = fields[:2]
-            mod = GPath(mod)
-            longid = FormID(aliases.get(mod,mod),int(objectIndex,0))
-            morphName = fields[4].strip()
-            rankName = fields[5].strip()
-            if not morphName: continue
-            if not rankName: rankName = _('Member')
-            id_info[longid] = (morphName,rankName)
-        ins.close()
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or fields[1][:2] != u'0x':
+                    continue
+                mod,objectIndex = fields[:2]
+                mod = GPath(mod)
+                longid = FormID(aliases.get(mod,mod),int(objectIndex,0))
+                morphName = fields[4].strip()
+                rankName = fields[5].strip()
+                if not morphName: continue
+                if not rankName: rankName = _(u'Member')
+                id_info[longid] = (morphName,rankName)
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -31680,7 +31686,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
                         if not rank.male: rank.male = rankName
                         if not rank.female: rank.female = rank.male
                         if not rank.insigniaPath:
-                            rank.insigniaPath = r'Menus\Stats\Cobl\generic%02d.dds' % rank.rank
+                            rank.insigniaPath = u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
@@ -31700,7 +31706,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
             print PrintFormID(mFactLong)
             print patchFile.Current.Debug_DumpModFiles()
             print record
-            raise StateError(_("Cobl Morph Factions: Unable to lookup morphable faction record in Cobl Main.esm!"))
+            raise StateError(u"Cobl Morph Factions: Unable to lookup morphable faction record in Cobl Main.esm!")
 
         override = record.CopyAsOverride(patchFile)
         if override:
@@ -31742,7 +31748,7 @@ class PowerExhaustion(SpecialPatcher,Patcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('Power Exhaustion.esp') in loadMods)
+        self.isActive = (GPath(u'Power Exhaustion.esp') in loadMods)
         self.id_exhaustion = bush.id_exhaustion
 
     def getReadClasses(self):
@@ -31772,7 +31778,7 @@ class PowerExhaustion(SpecialPatcher,Patcher):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         count = {}
-        exhaustId = (GPath('Power Exhaustion.esp'),0xCE7)
+        exhaustId = (GPath(u'Power Exhaustion.esp'),0xCE7)
         keep = self.patchFile.getKeeper()
         for record in self.patchFile.SPEL.records:
             #--Skip this one?
@@ -31795,7 +31801,7 @@ class PowerExhaustion(SpecialPatcher,Patcher):
             effect.name = 'SEFF'
             effect.duration = duration
             scriptEffect = record.getDefault('effects.scriptEffect')
-            scriptEffect.full = _("Power Exhaustion")
+            scriptEffect.full = u'Power Exhaustion'
             scriptEffect.script = exhaustId
             scriptEffect.school = 2
             scriptEffect.visual = null4
@@ -31806,10 +31812,10 @@ class PowerExhaustion(SpecialPatcher,Patcher):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('= Power Exhaustion'))
-        log(_('* Powers Tweaked: %d') % (sum(count.values()),))
+        log.setHeader(u'= '+_(u'Power Exhaustion'))
+        log(u'* '+_(u'Powers Tweaked: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
-            log('  * %s: %d' % (srcMod.s,count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
     """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
@@ -31823,11 +31829,11 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath('Power Exhaustion.esp') in loadMods)
+        self.isActive = (GPath(u'Power Exhaustion.esp') in loadMods)
         if not self.isActive: return
         self.id_exhaustion = bush.id_exhaustion
         self.mod_count = {}
-        self.exhaustId = FormID(GPath('Power Exhaustion.esp'),0xCE7)
+        self.exhaustId = FormID(GPath(u'Power Exhaustion.esp'),0xCE7)
         self.FOAT = MGEFCode('FOAT')
         self.SEFF = MGEFCode('SEFF')
 
@@ -31858,7 +31864,7 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
                     effect = override.create_effect()
                     effect.name = self.SEFF
                     effect.duration = duration
-                    effect.full = _("Power Exhaustion")
+                    effect.full = u'Power Exhaustion'
                     effect.script = self.exhaustId
                     effect.IsDestruction = True
                     effect.visual = MGEFCode(None,None)
@@ -31874,10 +31880,10 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
         if not self.isActive: return
         #--Log
         mod_count = self.mod_count
-        log.setHeader('= ' +self.__class__.name)
-        log(_('* Powers Tweaked: %d') % (sum(mod_count.values()),))
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+_(u'Powers Tweaked: %d') % (sum(mod_count.values())))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log('  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -31924,7 +31930,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
         self.eyeKeys = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
         #--Mesh tuple for each defined eye. Derived from race records.
-        defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
+        defaultMesh = (u'characters\\imperial\\eyerighthuman.nif', u'characters\\imperial\\eyelefthuman.nif')
         self.eye_mesh = {}
         self.scanTypes = set(('RACE','EYES','HAIR','NPC_'))
 
@@ -31945,7 +31951,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             srcFile.convertToLongFids(('RACE',))
             self.tempRaceData = {} #so as not to carry anything over!
             if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags:
-                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (srcMod.s))
+                raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % srcMod.s)
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
@@ -32069,7 +32075,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_('No right and/or no left eye recorded in race %s, from mod %s') % (record.full, modName))
+                deprint(_(u'No right and/or no left eye recorded in race %s, from mod %s') % (record.full, modName))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
@@ -32086,7 +32092,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         racesSorted = []
         racesFiltered = []
         mod_npcsFixed = {}
-        reProcess = re.compile(r'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I)
+        reProcess = re.compile(ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I|re.U)
         #--Import race info
         for race in patchFile.RACE.records:
             #~~print 'Building',race.eid
@@ -32103,13 +32109,13 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     raceChanged = True
             #-- Eye paths:
             if 'rightEye' in raceData:
-                if not race.rightEye: deprint(_('Very odd race %s found - no right eye assigned') % (race.full))
+                if not race.rightEye: deprint(_(u'Very odd race %s found - no right eye assigned') % (race.full))
                 else:
                     if race.rightEye.modPath != raceData['rightEye'].modPath:
                         race.rightEye.modPath = raceData['rightEye'].modPath
                         raceChanged = True
             if 'leftEye' in raceData:
-                if not race.leftEye: deprint(_('Very odd race %s found - no left eye assigned') % (race.full))
+                if not race.leftEye: deprint(_(u'Very odd race %s found - no left eye assigned') % (race.full))
                 else:
                     if race.leftEye.modPath != raceData['leftEye'].modPath:
                         race.leftEye.modPath = raceData['leftEye'].modPath
@@ -32162,32 +32168,32 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 keep(race.fid)
         #--Eye Mesh filtering
         eye_mesh = self.eye_mesh
-        blueEyeMesh = eye_mesh[(GPath('Oblivion.esm'),0x27308)]
-        argonianEyeMesh = eye_mesh[(GPath('Oblivion.esm'),0x3e91e)]
+        blueEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x27308)]
+        argonianEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x3e91e)]
         if debug:
-            print '== Eye Mesh Filtering'
-            print 'blueEyeMesh',blueEyeMesh
-            print 'argonianEyeMesh',argonianEyeMesh
+            print u'== Eye Mesh Filtering'
+            print u'blueEyeMesh',blueEyeMesh
+            print u'argonianEyeMesh',argonianEyeMesh
         for eye in (
-            (GPath('Oblivion.esm'),0x1a), #--Reanimate
-            (GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
-            (GPath('Oblivion.esm'),0x54bba), #--Golden Saint
-            (GPath('Oblivion.esm'),0x5fa43), #--Ordered
+            (GPath(u'Oblivion.esm'),0x1a), #--Reanimate
+            (GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
+            (GPath(u'Oblivion.esm'),0x54bba), #--Golden Saint
+            (GPath(u'Oblivion.esm'),0x5fa43), #--Ordered
             ):
             eye_mesh.setdefault(eye,blueEyeMesh)
         def setRaceEyeMesh(race,rightPath,leftPath):
             race.rightEye.modPath = rightPath
             race.leftEye.modPath = leftPath
         for race in patchFile.RACE.records:
-            if debug: print '===', race.eid
+            if debug: print u'===', race.eid
             if not race.eyes: continue #--Sheogorath. Assume is handled correctly.
             if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match('^117[a-zA-Z]',race.eid): continue #-- x117 race?
+            if re.match(u'^117[a-zA-Z]',race.eid,flags=re.U): continue #-- x117 race?
             raceChanged = False
             mesh_eye = {}
             for eye in race.eyes:
                 if eye not in eye_mesh:
-                    deprint(_('Mesh undefined for eye %s in race %s, eye removed from race list.') % (strFid(eye),race.eid,))
+                    deprint(_(u'Mesh undefined for eye %s in race %s, eye removed from race list.') % (strFid(eye),race.eid,))
                     continue
                 mesh = eye_mesh[eye]
                 if mesh not in mesh_eye:
@@ -32239,7 +32245,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         maleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
         femaleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
         for race in patchFile.RACE.records:
-            if (race.flags.playable or race.fid == (GPath('Oblivion.esm'), 0x038010)) and race.eyes:
+            if (race.flags.playable or race.fid == (GPath(u'Oblivion.esm'), 0x038010)) and race.eyes:
                 defaultEyes[race.fid] = [x for x in bush.defaultEyes.get(race.fid,[]) if x in race.eyes]
                 if not defaultEyes[race.fid]:
                     defaultEyes[race.fid] = [race.eyes[0]]
@@ -32251,8 +32257,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 keep(race.fid)
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.NPC_.records:
-            if npc.fid == (GPath('Oblivion.esm'), 0x000007): continue #skip player
-            if npc.full is not None and npc.race == (GPath('Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
+            if npc.fid == (GPath(u'Oblivion.esm'), 0x000007): continue #skip player
+            if npc.full is not None and npc.race == (GPath(u'Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
             raceEyes = defaultEyes.get(npc.race)
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
@@ -32475,7 +32481,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         tags = bashTags & self.autoKey
         if tags:
             if 'R.ChangeSpells' in tags and 'R.AddSpells' in tags:
-                raise BoltError(_('WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time') % (modFile.ModName))
+                raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % modFile.ModName)
             curSpells = set([spell for spell in record.spells if spell.ValidateFormID(self.patchFile)])
             if curSpells:
                 spells = self.id_spells.setdefault(record.fid,set())
@@ -32503,11 +32509,11 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 class CBash_RacePatcher_Eyes(SpecialPatcher):
     """Merges and filters changes to race eyes."""
     autoKey = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
-    blueEye = FormID(GPath('Oblivion.esm'),0x27308)
-    argonianEye = FormID(GPath('Oblivion.esm'),0x3e91e)
-    dremoraRace = FormID(GPath('Oblivion.esm'),0x038010)
+    blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
+    argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
+    dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
 ##    defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
-    reX117 = re.compile('^117[a-z]',re.I)
+    reX117 = re.compile(u'^117[a-z]',re.I|re.U)
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = False
@@ -32626,20 +32632,20 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
         except KeyError:
-            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
+            print _(u"Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
         except KeyError:
-            print _("Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
+            print _(u"Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
             return
         fixedRaces = set()
-        fixedNPCs = set([FormID(GPath('Oblivion.esm'), 0x000007)]) #causes player to be skipped
+        fixedNPCs = set([FormID(GPath(u'Oblivion.esm'), 0x000007)]) #causes player to be skipped
         for eye in (
-            FormID(GPath('Oblivion.esm'),0x1a), #--Reanimate
-            FormID(GPath('Oblivion.esm'),0x54bb9), #--Dark Seducer
-            FormID(GPath('Oblivion.esm'),0x54bba), #--Golden Saint
-            FormID(GPath('Oblivion.esm'),0x5fa43), #--Ordered
+            FormID(GPath(u'Oblivion.esm'),0x1a), #--Reanimate
+            FormID(GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
+            FormID(GPath(u'Oblivion.esm'),0x54bba), #--Golden Saint
+            FormID(GPath(u'Oblivion.esm'),0x5fa43), #--Ordered
             self.dremoraRace,
             ):
             eye_meshes.setdefault(eye,blueEyeMeshes)
@@ -32670,7 +32676,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                     meshes_eyes = {}
                     for eye in currentEyes:
                         if eye not in eye_meshes:
-                            deprint(_('Mesh undefined for eye %s in race %s') % (eye,race.eid))
+                            deprint(_(u'Mesh undefined for eye %s in race %s') % (eye,race.eid))
                             continue
                         rightEye, leftEye = eye_meshes[eye]
                         meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
@@ -32738,7 +32744,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             #--Npcs with unassigned eyes/hair
             #--Must run after all race records have been processed
             subProgress(pstate, _(u'Assigning random eyes and hairs to npcs missing them...')+u'\n')
-            reProcess = re.compile(r'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I)
+            reProcess = re.compile(ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I|re.U)
             for npc in modFile.NPC_:
                 recordId = npc.fid
                 if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
@@ -32778,7 +32784,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
             _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set(('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
         'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
         'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
@@ -32863,8 +32869,8 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
 #------------------------------------------------------------------------------
 class SEWorldEnforcer(SpecialPatcher,Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
-    name = _('SEWorld Tests')
-    text = _("Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+    name = _(u'SEWorld Tests')
+    text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
     defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
@@ -32873,9 +32879,9 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.cyrodiilQuests = set()
-        if GPath('Oblivion.esm') in loadMods:
+        if GPath(u'Oblivion.esm') in loadMods:
             loadFactory = LoadFactory(False,MreQust)
-            modInfo = modInfos[GPath('Oblivion.esm')]
+            modInfo = modInfos[GPath(u'Oblivion.esm')]
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()
@@ -32900,7 +32906,7 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
         if not self.isActive: return
-        if modFile.fileInfo.name == GPath('Oblivion.esm'): return
+        if modFile.fileInfo.name == GPath(u'Oblivion.esm'): return
         cyrodiilQuests = self.cyrodiilQuests
         mapper = modFile.getLongMapper()
         patchBlock = self.patchFile.QUST
@@ -32931,12 +32937,12 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
                 keep(record.fid)
                 patched.append(record.eid)
         log.setHeader('= '+self.__class__.name)
-        log(_('===Quests Patched: %d') % (len(patched),))
+        log(u'==='+_(u'Quests Patched: %d') % (len(patched),))
 
 class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
-    name = _('SEWorld Tests')
-    text = _("Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
+    name = _(u'SEWorld Tests')
+    text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. re-instates GetPlayerInSEWorld tests as necessary.")
     scanRequiresChecked = True
     applyRequiresChecked = False
     defaultConfig = {'isEnabled':True}
@@ -32946,7 +32952,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.cyrodiilQuests = set()
-        self.srcs = [GPath('Oblivion.esm')]
+        self.srcs = [GPath(u'Oblivion.esm')]
         self.isActive = self.srcs[0] in loadMods
         self.mod_eids = {}
 
@@ -32999,8 +33005,8 @@ class ContentsChecker(SpecialPatcher,Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
     scanOrder = 50
     editOrder = 50
-    name = _('Contents Checker')
-    text = _("Checks contents of leveled lists, inventories and containers for correct types.")
+    name = _(u'Contents Checker')
+    text = _(u"Checks contents of leveled lists, inventories and containers for correct types.")
     defaultConfig = {'isEnabled':True}
 
     #--Patch Phase ------------------------------------------------------------
@@ -33091,19 +33097,19 @@ class ContentsChecker(SpecialPatcher,Patcher):
                         keep(record.fid)
                 #--Log it
                 if id_removed:
-                    log("\n=== "+type)
+                    log(u"\n=== "+type)
                     for contId in sorted(id_removed):
-                        log('* ' + id_eid[contId])
+                        log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
                             mod,index = removedId
-                            log('  . %s: %06X' % (mod.s,index))
+                            log(u'  . %s: %06X' % (mod.s,index))
 
 class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     """Checks contents of leveled lists, inventories and containers for correct content types."""
     scanOrder = 50
     editOrder = 50
-    name = _('Contents Checker')
-    text = _("Checks contents of leveled lists, inventories and containers for correct types.")
+    name = _(u'Contents Checker')
+    text = _(u"Checks contents of leveled lists, inventories and containers for correct types.")
     srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
     defaultConfig = {'isEnabled':True}
 
@@ -33126,6 +33132,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['CONT','CREA','NPC_','LVLI','LVLC','LVSP']
+
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -33154,7 +33161,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                 else:
                     entryRecords = None
                 if not entryRecords:
-                    badAdd((_('NONE'),entryId,None,_('NONE')))
+                    badAdd((_(u'NONE'),entryId,None,_(u'NONE')))
                 else:
                     entryRecord = entryRecords[0]
                     if entryRecord.recType in validEntries:
@@ -33179,13 +33186,13 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
         if not self.isActive: return
         #--Log
         mod_type_id_badEntries = self.mod_type_id_badEntries
-        log.setHeader('= ' +self.__class__.name)
+        log.setHeader(u'= ' +self.__class__.name)
         for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
-            log('\n=== %s' % (mod.s))
+            log(u'\n=== %s' % (mod.s))
             for type,id_badEntries in type_id_badEntries.iteritems():
-                log(_('  * Cleaned %s: %d') % (type,len(id_badEntries)))
+                log(u'  * '+_(u'Cleaned %s: %d') % (type,len(id_badEntries)))
                 for id, badEntries in id_badEntries.iteritems():
-                    log('    * %s : %d' % (id,len(badEntries)))
+                    log(u'    * %s : %d' % (id,len(badEntries)))
                     for entry in sorted(badEntries, key=itemgetter(0)):
                         longId = entry[1]
                         if entry[2]:
@@ -33194,9 +33201,9 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                             try:
                                 modName = str(longId[0])
                             except:
-                                log(_('        . Unloaded Object or Undefined Reference'))
+                                log(u'        . '+_(u'Unloaded Object or Undefined Reference'))
                                 continue
-                        log(_('        . Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],modName,entry[3]))
+                        log(u'        . '+_(u'Editor ID: "%s", Object ID %06X: Defined in mod "%s" as %s') % (entry[0],longId[1],modName,entry[3]))
         self.mod_type_id_badEntries = {}
 
 # Initialization --------------------------------------------------------------
@@ -33210,7 +33217,7 @@ try:
             return GPath(path)
 except ImportError:
         shell = shellcon = None
-        reEnv = re.compile('%(\w+)%')
+        reEnv = re.compile(u'%(\w+)%',re.U)
         envDefs = os.environ
         def subEnv(match):
             key = match.group(1).upper()
@@ -33220,7 +33227,7 @@ except ImportError:
         def getShellPath(folderKey):
             import _winreg
             regKey = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
-                r'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders')
+                u'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders')
             try:
                 path = _winreg.QueryValueEx(regKey,folderKey)[0]
             except WindowsError:
@@ -33241,7 +33248,7 @@ def testPermissions(path,permissions='rwcd'):
     permissions = permissions.lower()
     def getTemp(path):  # Get a temp file name
         if path.isdir():
-            temp = path.join('temp.tmp')
+            temp = path.join(u'temp.tmp')
         else:
             temp = path.temp
         while temp.exists():
@@ -33308,15 +33315,15 @@ def getOblivionPath(bashIni, path):
         # The sOblivionPath ini entry if a path was specified on the
         # command line
         pass
-    elif bashIni and bashIni.has_option('General', 'sOblivionPath') and not bashIni.get('General', 'sOblivionPath') == '.':
-        path = GPath(bashIni.get('General', 'sOblivionPath').strip())
+    elif bashIni and bashIni.has_option(u'General', u'sOblivionPath') and not bashIni.get(u'General', u'sOblivionPath') == u'.':
+        path = GPath(bashIni.get(u'General', u'sOblivionPath').strip())
         # Validate it:
         oldMode = bush.game.name
         ret = bush.setGame('',path.s)
         if ret != False:
-            deprint('Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.name)
+            deprint(u'Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.name)
         elif oldMode != bush.game.name:
-            deprint('Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
+            deprint(u'Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
     path = bush.gamePath
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
@@ -33330,16 +33337,16 @@ def getPersonalPath(bashIni, path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if path:
         path = GPath(path)
-        sErrorInfo = _("Folder path specified on command line (-p)")
-    elif bashIni and bashIni.has_option('General', 'sPersonalPath') and not bashIni.get('General', 'sPersonalPath') == '.':
+        sErrorInfo = _(u"Folder path specified on command line (-p)")
+    elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and not bashIni.get(u'General', u'sPersonalPath') == u'.':
         path = GPath(bashIni.get('General', 'sPersonalPath').strip())
-        sErrorInfo = _("Folder path specified in bash.ini (%s)") % ('sPersonalPath')
+        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % (u'sPersonalPath')
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_PERSONAL)
-        sErrorInfo = _("Folder path extracted from win32com.shell.")
+        sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
         path = getShellPath('Personal')
-        sErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
+        sErrorInfo = u'\n'.join(u'  '+key+u': '+`envDefs[key]` for key in sorted(envDefs))
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -33354,16 +33361,16 @@ def getLocalAppDataPath(bashIni, path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if path:
         path = GPath(path)
-        sErrorInfo = _("Folder path specified on command line (-l)")
-    elif bashIni and bashIni.has_option('General', 'sLocalAppDataPath') and not bashIni.get('General', 'sLocalAppDataPath') == '.':
-        path = GPath(bashIni.get('General', 'sLocalAppDataPath').strip())
-        sErrorInfo = _("Folder path specified  in bash.ini (%s)") % ('sLocalAppDataPath')
+        sErrorInfo = _(u"Folder path specified on command line (-l)")
+    elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
+        path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
+        sErrorInfo = _(u"Folder path specified  in bash.ini (%s)") % (u'sLocalAppDataPath')
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
-        sErrorInfo = _("Folder path extracted from win32com.shell.")
+        sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
         path = getShellPath('Local AppData')
-        sErrorInfo = '\n'.join('  '+key+': '+`envDefs[key]` for key in sorted(envDefs))
+        sErrorInfo = u'\n'.join(u'  '+key+u': '+`envDefs[key]` for key in sorted(envDefs))
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -33374,27 +33381,27 @@ def getLocalAppDataPath(bashIni, path):
     return path
 
 def getOblivionModsPath(bashIni):
-    if bashIni and bashIni.has_option('General','sOblivionMods'):
-        path = GPath(bashIni.get('General','sOblivionMods').strip())
+    if bashIni and bashIni.has_option(u'General',u'sOblivionMods'):
+        path = GPath(bashIni.get(u'General',u'sOblivionMods').strip())
     else:
-        path = GPath(r'..\%s Mods' % bush.game.name)
+        path = GPath(u'..\\%s Mods' % bush.game.name)
     if not path.isabs(): path = dirs['app'].join(path)
     return path
 
 def getBainDataPath(bashIni):
-    if bashIni and bashIni.has_option('General','sInstallersData'):
-        path = GPath(bashIni.get('General','sInstallersData').strip())
+    if bashIni and bashIni.has_option(u'General',u'sInstallersData'):
+        path = GPath(bashIni.get(u'General',u'sInstallersData').strip())
         if not path.isabs(): path = dirs['app'].join(path)
     else:
-        path = dirs['installers'].join('Bash')
+        path = dirs['installers'].join(u'Bash')
     return path
 
 def getBashModDataPath(bashIni):
-    if bashIni and bashIni.has_option('General','sBashModData'):
-        path = GPath(bashIni.get('General','sBashModData').strip())
+    if bashIni and bashIni.has_option(u'General',u'sBashModData'):
+        path = GPath(bashIni.get(u'General',u'sBashModData').strip())
         if not path.isabs(): path = dirs['app'].join(path)
     else:
-        path = getOblivionModsPath(bashIni).join('Bash Mod Data')
+        path = getOblivionModsPath(bashIni).join(u'Bash Mod Data')
     return path
 
 def getLegacyPath(newPath, oldPath):
@@ -33403,22 +33410,22 @@ def getLegacyPath(newPath, oldPath):
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
-    dirs['bash'] = dirs['mopy'].join('bash')
-    dirs['compiled'] = dirs['bash'].join('compiled')
-    dirs['l10n'] = dirs['bash'].join('l10n')
-    dirs['db'] = dirs['bash'].join('db')
-    dirs['templates'] = dirs['mopy'].join('templates')
-    dirs['images'] = dirs['bash'].join('images')
+    dirs['bash'] = dirs['mopy'].join(u'bash')
+    dirs['compiled'] = dirs['bash'].join(u'compiled')
+    dirs['l10n'] = dirs['bash'].join(u'l10n')
+    dirs['db'] = dirs['bash'].join(u'db')
+    dirs['templates'] = dirs['mopy'].join(u'templates')
+    dirs['images'] = dirs['bash'].join(u'images')
 
     #--Oblivion (Application) Directories
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)
-    dirs['mods'] = dirs['app'].join('Data')
-    dirs['builds'] = dirs['app'].join('Builds')
-    dirs['patches'] = dirs['mods'].join('Bash Patches')
+    dirs['mods'] = dirs['app'].join(u'Data')
+    dirs['builds'] = dirs['app'].join(u'Builds')
+    dirs['patches'] = dirs['mods'].join(u'Bash Patches')
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join('My Games',bush.game.name)
+    dirs['saveBase'] = personal.join(u'My Games',bush.game.name)
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
@@ -33428,13 +33435,13 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     gameInis = [OblivionIni(x) for x in bush.game.iniFiles]
     oblivionIni = gameInis[0]
     try:
-        if oblivionIni.getSetting('General','bUseMyGamesDirectory','1') == '0':
+        if oblivionIni.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
             # Set the save game folder to the Oblivion directory
             dirs['saveBase'] = dirs['app']
             # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting('General', 'SLocalMasterPath','Data\\'))
+            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath',u'Data\\'))
             # this one is relative to the mods path so it must be updated too
-            dirs['patches'] = dirs['mods'].join('Bash Patches')
+            dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     except:
         # Error accessing folders for Oblivion.ini
         # We'll show an error later
@@ -33443,16 +33450,16 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mod Data, Installers
     oblivionMods = getOblivionModsPath(bashIni)
     dirs['modsBash'] = getBashModDataPath(bashIni)
-    dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join('Data','Bash'))
+    dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join(u'Data',u'Bash'))
 
-    dirs['installers'] = oblivionMods.join('Bash Installers')
-    dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join('Installers'))
+    dirs['installers'] = oblivionMods.join(u'Bash Installers')
+    dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join(u'Installers'))
 
     dirs['bainData'] = getBainDataPath(bashIni)
 
-    dirs['converters'] = dirs['installers'].join('Bain Converters')
-    dirs['dupeBCFs'] = dirs['converters'].join('--Duplicates')
-    dirs['corruptBCFs'] = dirs['converters'].join('--Corrupt')
+    dirs['converters'] = dirs['installers'].join(u'Bain Converters')
+    dirs['dupeBCFs'] = dirs['converters'].join(u'--Duplicates')
+    dirs['corruptBCFs'] = dirs['converters'].join(u'--Corrupt')
 
     #--Test correct permissions for the directories
     badPermissions = []
@@ -33466,9 +33473,9 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         # TODO: make this gracefully degrade.  IE, if only the BAIN paths are
         # bad, just disable BAIN.  If only the saves path is bad, just disable
         # saves related stuff.
-        msg = balt.fill(_('Wrye Bash cannot access the following paths:'))
-        msg += '\n\n'+ '\n'.join([' * '+dir.s for dir in badPermissions]) + '\n\n'
-        msg += balt.fill(_('See: "Wrye Bash.html, Installation - Windows Vista/7" for information on how to solve this problem.'))
+        msg = balt.fill(_(u'Wrye Bash cannot access the following paths:'))
+        msg += u'\n\n'+ u'\n'.join([u' * '+dir.s for dir in badPermissions]) + u'\n\n'
+        msg += balt.fill(_(u'See: "Wrye Bash.html, Installation - Windows Vista/7" for information on how to solve this problem.'))
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
@@ -33482,97 +33489,97 @@ def initLinks(appDir):
     try:
         import win32com.client
         for file in appDir.list():
-            if appDir.join(file).isfile() and file.cext == '.lnk':
+            if appDir.join(file).isfile() and file.cext == u'.lnk':
                 sh = win32com.client.Dispatch('WScript.Shell')
                 shortcut = sh.CreateShortCut(appDir.join(file).s)
                 description = shortcut.Description
                 if not description:
-                    description = _('Launch')+' '+file.sbody
+                    description = _(u'Launch')+u' '+file.sbody
                 links[file.s] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,description)
     except:
-        deprint(_("Error initializing links:"),traceback=True)
+        deprint(_(u"Error initializing links:"),traceback=True)
 
 def initDefaultTools():
     #-- Other tool directories
     #   First to default path
-    pf = [GPath(r'C:\Program Files'),GPath(r'C:\Program Files (x86)')]
+    pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
     def pathlist(*args): return [x.join(*args) for x in pf]
 
-    tooldirs['Tes4FilesPath'] = dirs['app'].join('Tools','TES4Files.exe')
-    tooldirs['Tes4EditPath'] = dirs['app'].join('TES4Edit.exe')
-    tooldirs['Tes4LodGenPath'] = dirs['app'].join('TES4LodGen.exe')
-    tooldirs['Tes4GeckoPath'] = dirs['app'].join('Tes4Gecko.jar')
-    tooldirs['OblivionBookCreatorPath'] = dirs['mods'].join('OblivionBookCreator.jar')
-    tooldirs['NifskopePath'] = pathlist('NifTools','NifSkope','Nifskope.exe')
-    tooldirs['BlenderPath'] = pathlist('Blender Foundation','Blender','blender.exe')
-    tooldirs['GmaxPath'] = GPath(r'C:\GMAX\gmax.exe')
-    tooldirs['MaxPath'] = pathlist('Autodesk','3ds Max 2010','3dsmax.exe')
+    tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools',u'TES4Files.exe')
+    tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
+    tooldirs['Tes4LodGenPath'] = dirs['app'].join(u'TES4LodGen.exe')
+    tooldirs['Tes4GeckoPath'] = dirs['app'].join(u'Tes4Gecko.jar')
+    tooldirs['OblivionBookCreatorPath'] = dirs['mods'].join(u'OblivionBookCreator.jar')
+    tooldirs['NifskopePath'] = pathlist(u'NifTools',u'NifSkope',u'Nifskope.exe')
+    tooldirs['BlenderPath'] = pathlist(u'Blender Foundation',u'Blender',u'blender.exe')
+    tooldirs['GmaxPath'] = GPath(u'C:\\GMAX').join(u'gmax.exe')
+    tooldirs['MaxPath'] = pathlist(u'Autodesk',u'3ds Max 2010',u'3dsmax.exe')
     tooldirs['MayaPath'] = undefinedPath
-    tooldirs['PhotoshopPath'] = pathlist('Adobe','Adobe Photoshop CS3','Photoshop.exe')
-    tooldirs['GIMP'] = pathlist('GIMP-2.0','bin','gimp-2.6.exe')
-    tooldirs['ISOBL'] = dirs['app'].join('ISOBL.exe')
-    tooldirs['ISRMG'] = dirs['app'].join('Insanitys ReadMe Generator.exe')
-    tooldirs['ISRNG'] = dirs['app'].join('Random Name Generator.exe')
-    tooldirs['ISRNPCG'] = dirs['app'].join('Random NPC.exe')
-    tooldirs['NPP'] = pathlist('Notepad++','notepad++.exe')
-    tooldirs['Fraps'] = GPath(r'C:\Fraps\Fraps.exe')
-    tooldirs['Audacity'] = pathlist('Audacity','Audacity.exe')
-    tooldirs['Artweaver'] = pathlist('Artweaver 1.0','Artweaver.exe')
-    tooldirs['DDSConverter'] = pathlist('DDS Converter 2','DDS Converter 2.exe')
-    tooldirs['PaintNET'] = pathlist('Paint.NET','PaintDotNet.exe')
-    tooldirs['Milkshape3D'] = pathlist('MilkShape 3D 1.8.4','ms3d.exe')
-    tooldirs['Wings3D'] = pathlist('wings3d_1.2','Wings3D.exe')
-    tooldirs['BSACMD'] = pathlist('BSACommander','bsacmd.exe')
-    tooldirs['MAP'] = dirs['app'].join('Modding Tools','Interactive Map of Cyrodiil and Shivering Isles 3.52','Mapa v 3.52.exe')
-    tooldirs['OBMLG'] = dirs['app'].join('Modding Tools','Oblivion Mod List Generator','Oblivion Mod List Generator.exe')
-    tooldirs['OBFEL'] = pathlist('Oblivion Face Exchange Lite','OblivionFaceExchangeLite.exe')
-    tooldirs['ArtOfIllusion'] = pathlist('ArtOfIllusion','Art of Illusion.exe')
-    tooldirs['ABCAmberAudioConverter'] = pathlist('ABC Amber Audio Converter','abcaudio.exe')
-    tooldirs['GimpShop'] = pathlist('GIMPshop','bin','gimp-2.2.exe')
-    tooldirs['PixelStudio'] = pathlist('Pixel','Pixel.exe')
-    tooldirs['TwistedBrush'] = pathlist('Pixarra','TwistedBrush Open Studio','tbrush_open_studio.exe')
-    tooldirs['PhotoScape'] = pathlist('PhotoScape','PhotoScape.exe')
-    tooldirs['Photobie'] = pathlist('Photobie','Photobie.exe')
-    tooldirs['PhotoFiltre'] = pathlist('PhotoFiltre','PhotoFiltre.exe')
-    tooldirs['PaintShopPhotoPro'] = pathlist('Corel','Corel PaintShop Photo Pro','X3','PSPClassic','Corel Paint Shop Pro Photo.exe')
-    tooldirs['Dogwaffle'] = pathlist('project dogwaffle','dogwaffle.exe')
-    tooldirs['GeneticaViewer'] = pathlist('Spiral Graphics','Genetica Viewer 3','Genetica Viewer 3.exe')
-    tooldirs['LogitechKeyboard'] = pathlist('Logitech','GamePanel Software','G-series Software','LGDCore.exe')
-    tooldirs['AutoCad'] = pathlist('Autodesk Architectural Desktop 3','acad.exe')
-    tooldirs['Genetica'] = pathlist('Spiral Graphics','Genetica 3.5','Genetica.exe')
-    tooldirs['IrfanView'] = pathlist('IrfanView','i_view32.exe')
-    tooldirs['XnView'] = pathlist('XnView','xnview.exe')
-    tooldirs['FastStone'] = pathlist('FastStone Image Viewer','FSViewer.exe')
-    tooldirs['Steam'] = pathlist('Steam','steam.exe')
-    tooldirs['EVGAPrecision'] = pathlist('EVGA Precision','EVGAPrecision.exe')
-    tooldirs['IcoFX'] = pathlist('IcoFX 1.6','IcoFX.exe')
-    tooldirs['AniFX'] = pathlist('AniFX 1.0','AniFX.exe')
-    tooldirs['WinMerge'] = pathlist('WinMerge','WinMergeU.exe')
-    tooldirs['FreeMind'] = pathlist('FreeMind','Freemind.exe')
-    tooldirs['MediaMonkey'] = pathlist('MediaMonkey','MediaMonkey.exe')
-    tooldirs['Inkscape'] = pathlist('Inkscape','inkscape.exe')
-    tooldirs['FileZilla'] = pathlist('FileZilla FTP Client','filezilla.exe')
-    tooldirs['RADVideo'] = pathlist('RADVideo','radvideo.exe')
-    tooldirs['EggTranslator'] = pathlist('Egg Translator','EggTranslator.exe')
-    tooldirs['Sculptris'] = pathlist('sculptris','Sculptris.exe')
-    tooldirs['Mudbox'] = pathlist('Autodesk','Mudbox2011','mudbox.exe')
-    tooldirs['Tabula'] = dirs['app'].join('Modding Tools','Tabula','Tabula.exe')
-    tooldirs['MyPaint'] = pathlist('MyPaint','mypaint.exe')
-    tooldirs['Pixia'] = pathlist('Pixia','pixia.exe')
-    tooldirs['DeepPaint'] = pathlist('Right Hemisphere','Deep Paint','DeepPaint.exe')
-    tooldirs['CrazyBump'] = pathlist('Crazybump','CrazyBump.exe')
-    tooldirs['xNormal'] = pathlist('Santiago Orgaz','xNormal','3.17.3','x86','xNormal.exe')
-    tooldirs['SoftimageModTool'] = GPath(r'C:\Softimage\Softimage_Mod_Tool_7.5\Application\bin\XSI.bat')
+    tooldirs['PhotoshopPath'] = pathlist(u'Adobe',u'Adobe Photoshop CS3',u'Photoshop.exe')
+    tooldirs['GIMP'] = pathlist(u'GIMP-2.0',u'bin',u'gimp-2.6.exe')
+    tooldirs['ISOBL'] = dirs['app'].join(u'ISOBL.exe')
+    tooldirs['ISRMG'] = dirs['app'].join(u'Insanitys ReadMe Generator.exe')
+    tooldirs['ISRNG'] = dirs['app'].join(u'Random Name Generator.exe')
+    tooldirs['ISRNPCG'] = dirs['app'].join(u'Random NPC.exe')
+    tooldirs['NPP'] = pathlist(u'Notepad++',u'notepad++.exe')
+    tooldirs['Fraps'] = GPath(u'C:\\Fraps').join(u'Fraps.exe')
+    tooldirs['Audacity'] = pathlist(u'Audacity',u'Audacity.exe')
+    tooldirs['Artweaver'] = pathlist(u'Artweaver 1.0',u'Artweaver.exe')
+    tooldirs['DDSConverter'] = pathlist(u'DDS Converter 2',u'DDS Converter 2.exe')
+    tooldirs['PaintNET'] = pathlist(u'Paint.NET',u'PaintDotNet.exe')
+    tooldirs['Milkshape3D'] = pathlist(u'MilkShape 3D 1.8.4',u'ms3d.exe')
+    tooldirs['Wings3D'] = pathlist(u'wings3d_1.2',u'Wings3D.exe')
+    tooldirs['BSACMD'] = pathlist(u'BSACommander',u'bsacmd.exe')
+    tooldirs['MAP'] = dirs['app'].join(u'Modding Tools',u'Interactive Map of Cyrodiil and Shivering Isles 3.52',u'Mapa v 3.52.exe')
+    tooldirs['OBMLG'] = dirs['app'].join(u'Modding Tools',u'Oblivion Mod List Generator',u'Oblivion Mod List Generator.exe')
+    tooldirs['OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
+    tooldirs['ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
+    tooldirs['ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
+    tooldirs['GimpShop'] = pathlist(u'GIMPshop',u'bin',u'gimp-2.2.exe')
+    tooldirs['PixelStudio'] = pathlist(u'Pixel',u'Pixel.exe')
+    tooldirs['TwistedBrush'] = pathlist(u'Pixarra',u'TwistedBrush Open Studio',u'tbrush_open_studio.exe')
+    tooldirs['PhotoScape'] = pathlist(u'PhotoScape',u'PhotoScape.exe')
+    tooldirs['Photobie'] = pathlist(u'Photobie',u'Photobie.exe')
+    tooldirs['PhotoFiltre'] = pathlist(u'PhotoFiltre',u'PhotoFiltre.exe')
+    tooldirs['PaintShopPhotoPro'] = pathlist(u'Corel',u'Corel PaintShop Photo Pro',u'X3',u'PSPClassic',u'Corel Paint Shop Pro Photo.exe')
+    tooldirs['Dogwaffle'] = pathlist(u'project dogwaffle',u'dogwaffle.exe')
+    tooldirs['GeneticaViewer'] = pathlist(u'Spiral Graphics',u'Genetica Viewer 3',u'Genetica Viewer 3.exe')
+    tooldirs['LogitechKeyboard'] = pathlist(u'Logitech',u'GamePanel Software',u'G-series Software',u'LGDCore.exe')
+    tooldirs['AutoCad'] = pathlist(u'Autodesk Architectural Desktop 3',u'acad.exe')
+    tooldirs['Genetica'] = pathlist(u'Spiral Graphics',u'Genetica 3.5',u'Genetica.exe')
+    tooldirs['IrfanView'] = pathlist(u'IrfanView',u'i_view32.exe')
+    tooldirs['XnView'] = pathlist(u'XnView',u'xnview.exe')
+    tooldirs['FastStone'] = pathlist(u'FastStone Image Viewer',u'FSViewer.exe')
+    tooldirs['Steam'] = pathlist(u'Steam',u'steam.exe')
+    tooldirs['EVGAPrecision'] = pathlist(u'EVGA Precision',u'EVGAPrecision.exe')
+    tooldirs['IcoFX'] = pathlist(u'IcoFX 1.6',u'IcoFX.exe')
+    tooldirs['AniFX'] = pathlist(u'AniFX 1.0',u'AniFX.exe')
+    tooldirs['WinMerge'] = pathlist(u'WinMerge',u'WinMergeU.exe')
+    tooldirs['FreeMind'] = pathlist(u'FreeMind',u'Freemind.exe')
+    tooldirs['MediaMonkey'] = pathlist(u'MediaMonkey',u'MediaMonkey.exe')
+    tooldirs['Inkscape'] = pathlist(u'Inkscape',u'inkscape.exe')
+    tooldirs['FileZilla'] = pathlist(u'FileZilla FTP Client',u'filezilla.exe')
+    tooldirs['RADVideo'] = pathlist(u'RADVideo',u'radvideo.exe')
+    tooldirs['EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')
+    tooldirs['Sculptris'] = pathlist(u'sculptris',u'Sculptris.exe')
+    tooldirs['Mudbox'] = pathlist(u'Autodesk',u'Mudbox2011',u'mudbox.exe')
+    tooldirs['Tabula'] = dirs['app'].join(u'Modding Tools',u'Tabula',u'Tabula.exe')
+    tooldirs['MyPaint'] = pathlist(u'MyPaint',u'mypaint.exe')
+    tooldirs['Pixia'] = pathlist(u'Pixia',u'pixia.exe')
+    tooldirs['DeepPaint'] = pathlist(u'Right Hemisphere',u'Deep Paint',u'DeepPaint.exe')
+    tooldirs['CrazyBump'] = pathlist(u'Crazybump',u'CrazyBump.exe')
+    tooldirs['xNormal'] = pathlist(u'Santiago Orgaz',u'xNormal',u'3.17.3',u'x86',u'xNormal.exe')
+    tooldirs['SoftimageModTool'] = GPath(u'C:\\Softimage').join(u'Softimage_Mod_Tool_7.5',u'Application',u'bin',u'XSI.bat')
     tooldirs['SpeedTree'] = undefinedPath
-    tooldirs['Treed'] = pathlist('gile[s]','plugins','tree[d]','tree[d].exe')
-    tooldirs['WinSnap'] = pathlist('WinSnap','WinSnap.exe')
-    tooldirs['PhotoSEAM'] = pathlist('PhotoSEAM','PhotoSEAM.exe')
-    tooldirs['TextureMaker'] = pathlist('Texture Maker','texturemaker.exe')
-    tooldirs['MaPZone'] = pathlist('Allegorithmic','MaPZone 2.6','MaPZone2.exe')
-    tooldirs['NVIDIAMelody'] = pathlist('NVIDIA Corporation','Melody','Melody.exe')
-    tooldirs['WTV'] = pathlist('WindowsTextureViewer','WTV.exe')
-    tooldirs['Switch'] = pathlist('NCH Swift Sound','Switch','switch.exe')
-    tooldirs['Freeplane'] = pathlist('Freeplane','freeplane.exe')
+    tooldirs['Treed'] = pathlist(u'gile[s]',u'plugins',u'tree[d]',u'tree[d].exe')
+    tooldirs['WinSnap'] = pathlist(u'WinSnap',u'WinSnap.exe')
+    tooldirs['PhotoSEAM'] = pathlist(u'PhotoSEAM',u'PhotoSEAM.exe')
+    tooldirs['TextureMaker'] = pathlist(u'Texture Maker',u'texturemaker.exe')
+    tooldirs['MaPZone'] = pathlist(u'Allegorithmic',u'MaPZone 2.6',u'MaPZone2.exe')
+    tooldirs['NVIDIAMelody'] = pathlist(u'NVIDIA Corporation',u'Melody',u'Melody.exe')
+    tooldirs['WTV'] = pathlist(u'WindowsTextureViewer',u'WTV.exe')
+    tooldirs['Switch'] = pathlist(u'NCH Swift Sound',u'Switch',u'switch.exe')
+    tooldirs['Freeplane'] = pathlist(u'Freeplane',u'freeplane.exe')
 
 def initDefaultSettings():
     #other settings from the INI:
@@ -33581,31 +33588,31 @@ def initDefaultSettings():
         inisettings['SteamInstall'] = True
     else:
         inisettings['SteamInstall'] = False
-    inisettings['ScriptFileExt']='.txt'
+    inisettings['ScriptFileExt']=u'.txt'
     inisettings['KeepLog'] = 0
-    inisettings['LogFile'] = dirs['mopy'].join('bash.log')
+    inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')
     inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
-    inisettings['OblivionTexturesBSAName'] = GPath('Oblivion - Textures - Compressed.bsa')
-    inisettings['Tes4GeckoJavaArg'] = '-Xmx1024m'
-    inisettings['OblivionBookCreatorJavaArg'] = '-Xmx1024m'
+    inisettings['OblivionTexturesBSAName'] = GPath(u'Oblivion - Textures - Compressed.bsa')
+    inisettings['Tes4GeckoJavaArg'] = u'-Xmx1024m'
+    inisettings['OblivionBookCreatorJavaArg'] = u'-Xmx1024m'
     inisettings['ShowTextureToolLaunchers'] = True
     inisettings['ShowModelingToolLaunchers'] = True
     inisettings['ShowAudioToolLaunchers'] = True
-    inisettings['7zExtraCompressionArguments'] = ''
+    inisettings['7zExtraCompressionArguments'] = u''
     inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
     inisettings['AutoSizeListColumns'] = 0
-    inisettings['SoundSuccess'] = GPath('')
-    inisettings['SoundError'] = GPath('')
+    inisettings['SoundSuccess'] = GPath(u'')
+    inisettings['SoundError'] = GPath(u'')
 
 def initOptions(bashIni):
     initDefaultTools()
     initDefaultSettings()
 
     defaultOptions = {}
-    type_key = {str:'s',list:'s',int:'i',bool:'b',bolt.Path:'s'}
+    type_key = {str:u's',unicode:u's',list:u's',int:u'i',bool:u'b',bolt.Path:u's'}
     allOptions = [tooldirs,inisettings]
     unknownSettings = {}
     for settingsDict in allOptions:
@@ -33620,15 +33627,15 @@ def initOptions(bashIni):
             options = bashIni.items(section)
             for key,value in options:
                 usedKey, usedSettings = defaultOptions.get(key,(key[1:],unknownSettings))
-                defaultValue = usedSettings.get(usedKey,'')
+                defaultValue = usedSettings.get(usedKey,u'')
                 settingType = type(defaultValue)
                 if settingType in (bolt.Path,list):
-                    if value == '.': continue
+                    if value == u'.': continue
                     value = GPath(value)
                     if not value.isabs():
                         value = dirs['app'].join(value)
                 elif settingType is bool:
-                    if value == '.': continue
+                    if value == u'.': continue
                     value = bashIni.getboolean(section,key)
                 else:
                     value = settingType(value)
@@ -33637,7 +33644,7 @@ def initOptions(bashIni):
                 if settingType is str:
                     compDefaultValue = compDefaultValue.lower()
                     compValue = compValue.lower()
-                    if compValue in (_('-option(s)'),_('tooltip text'),_('default')):
+                    if compValue in (_(u'-option(s)'),_(u'tooltip text'),_(u'default')):
                         compValue = compDefaultValue
                 if settingType is list:
                     if compValue != compDefaultValue[0]:
@@ -33645,17 +33652,18 @@ def initOptions(bashIni):
                 elif compValue != compDefaultValue:
                     usedSettings[usedKey] = value
 
-    tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join('TES4View.exe')
-    tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join('TES4Trans.exe')
+    tooldirs['Tes4ViewPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4View.exe')
+    tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4Trans.exe')
 
 def initLogFile():
     if inisettings['KeepLog'] == 0:
         if inisettings['LogFile'].exists():
             os.remove(inisettings['LogFile'].s)
     else:
-        with inisettings['LogFile'].open('a') as log:
-            log.write(Encode(
-                (_('%s Wrye Bash ini file read, Keep Log level: %d, initialized.')+u'\r\n') % (datetime.datetime.now(),inisettings['KeepLog']),'mbcs'))
+        with inisettings['LogFile'].open('a', encoding='utf8') as log:
+            log.write(
+                _(u'%s Wrye Bash ini file read, Keep Log level: %d, initialized.') % (datetime.datetime.now(),inisettings['KeepLog'])
+                + u'\r\n')
 
 def initBosh(personal='',localAppData='',oblivionPath=''):
     #--Bash Ini
@@ -33674,37 +33682,37 @@ def initSettings(readOnly=False):
     global settings
     try:
         settings = bolt.Settings(PickleDict(
-            dirs['saveBase'].join('BashSettings.dat'),
-            dirs['userApp'].join('bash config.pkl'),
+            dirs['saveBase'].join(u'BashSettings.dat'),
+            dirs['userApp'].join(u'bash config.pkl'),
             readOnly))
     except cPickle.UnpicklingError, err:
-        usebck = balt.askYes(None,_("Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash.") %(err),_("Settings Load Error"))
+        usebck = balt.askYes(None,_(u"Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash.") % err,_(u"Settings Load Error"))
         if usebck:
             try:
                 settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join('BashSettings.dat.bak'),
-                    dirs['userApp'].join('bash config.pkl'),
+                    dirs['saveBase'].join(u'BashSettings.dat.bak'),
+                    dirs['userApp'].join(u'bash config.pkl'),
                     readOnly))
             except cPickle.UnpicklingError, err:
-                delete = balt.askYes(None,_("Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)") %(err),_("Settings Load Error"))
+                delete = balt.askYes(None,_(u"Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)") % err,_(u"Settings Load Error"))
                 if delete:
-                    dirs['saveBase'].join('BashSettings.dat').remove()
+                    dirs['saveBase'].join(u'BashSettings.dat').remove()
                     settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join('BashSettings.dat'),
-                    dirs['userApp'].join('bash config.pkl'),
+                    dirs['saveBase'].join(u'BashSettings.dat'),
+                    dirs['userApp'].join(u'bash config.pkl'),
                     readOnly))
                 else:raise
         else:
-            delete = balt.askYes(None,_("Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)"),_("Settings Load Error"))
+            delete = balt.askYes(None,_(u"Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)"),_(u"Settings Load Error"))
             if delete:
-                dirs['saveBase'].join('BashSettings.dat').remove()
+                dirs['saveBase'].join(u'BashSettings.dat').remove()
                 settings = bolt.Settings(PickleDict(
-                dirs['saveBase'].join('BashSettings.dat'),
-                dirs['userApp'].join('bash config.pkl'),
+                dirs['saveBase'].join(u'BashSettings.dat'),
+                dirs['userApp'].join(u'bash config.pkl'),
                 readOnly))
-            else:raise
+            else: raise
     settings.loadDefaults(settingDefaults)
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
-    print _('Compiled')
+    print _(u'Compiled')

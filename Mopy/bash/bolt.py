@@ -40,6 +40,7 @@ import collections
 import codecs
 import gettext
 import traceback
+import csv
 from subprocess import Popen, PIPE
 close_fds = True
 import types
@@ -1302,21 +1303,26 @@ reUnixNewLine = re.compile(ur'(?<!\r)\n',re.U)
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class CsvReader:
-    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats."""
+    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
+       CSV files must be encoded in UTF-8"""
+    @staticmethod
+    def utf_8_encoder(unicode_csv_data):
+        for line in unicode_csv_data:
+            yield line.encode('utf8')
+
     def __init__(self,path):
-        import csv
-        self.ins = path.open('rb')
+        self.ins = path.open('rb',encoding='utf8')
         format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if format == 'excel':
             delimiter = (u',',u';')[u';' in self.ins.readline()]
             self.ins.seek(0)
-            self.reader = csv.reader(self.ins,format,delimiter=delimiter)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format,delimiter=delimiter)
         else:
             self.ins.seek(0)
-            self.reader = csv.reader(self.ins,format)
+            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format)
 
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.ins.clos()
+    def __exit__(self,*args,**kwdargs): self.ins.close()
 
     def __iter__(self):
         return self
@@ -2179,7 +2185,7 @@ def csvFormat(format):
     csvFormat = u''
     for char in format:
         if char in u'bBhHiIlLqQ': csvFormat += u',%d'
-        elif char in 'ufd': csvFormat += u',%f'
+        elif char in u'fd': csvFormat += u',%f'
         elif char in u's': csvFormat += u',"%s"'
     return csvFormat[1:] #--Chop leading comma
 
@@ -2446,30 +2452,36 @@ class StringTable(dict):
     def loadFile(self,path,progress):
         if path.cext == u'.strings': format = 0
         else: format = 1
-        with BinaryFile(path.s) as ins:
-            ins.seek(0,os.SEEK_END)
-            eof = ins.tell()
-            ins.seek(0)
+        try:
+            with BinaryFile(path.s) as ins:
+                ins.seek(0,os.SEEK_END)
+                eof = ins.tell()
+                ins.seek(0)
+                if eof < 8:
+                    # Missing the numIds and dataSize bytes, assume empty file
+                    return
 
-            numIds, = ins.unpack('I',4)
-            progress.setFull(max(numIds,1))
-            dataSize, = ins.unpack('I',4)
-            stringsStart = eof - dataSize
+                numIds, = ins.unpack('I',4)
+                progress.setFull(max(numIds,1))
+                dataSize, = ins.unpack('I',4)
+                stringsStart = eof - dataSize
 
-            for x in xrange(numIds):
-                progress(x)
-                id, = ins.unpack('I',4)
-                offset, = ins.unpack('I',4)
-                pos = ins.tell()
-                ins.seek(stringsStart+offset)
-                if format:
-                    strLen, = ins.unpack('I',4)
-                    value = ins.read(strLen)
-                else:
-                    value = ins.readCString()
-                value = unicode(cstrip(value),'cp1252')
-                ins.seek(pos)
-                self[id] = value
+                for x in xrange(numIds):
+                    progress(x)
+                    id, = ins.unpack('I',4)
+                    offset, = ins.unpack('I',4)
+                    pos = ins.tell()
+                    ins.seek(stringsStart+offset)
+                    if format:
+                        strLen, = ins.unpack('I',4)
+                        value = ins.read(strLen)
+                    else:
+                        value = ins.readCString()
+                    value = unicode(cstrip(value),'cp1252')
+                    ins.seek(pos)
+                    self[id] = value
+        except:
+            return
 
 # WryeText --------------------------------------------------------------------
 codebox = None
