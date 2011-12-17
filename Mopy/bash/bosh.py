@@ -10835,17 +10835,18 @@ class Installer(object):
             fileLower = file.lower()
             if fileLower.startswith((u'--',u'omod conversion data',u'fomod',u'wizard images')):
                 continue
-            sub = ''
+            sub = u''
             bSkip = False
             if type == 2: #--Complex archive
                 sub = full.split(u'\\',1)
                 if len(sub) == 1:
                     file, = sub
-                    sub = ''
+                    sub = u''
                 else:
                     sub,file = sub
-                if sub and sub not in activeSubs and sub not in allSubs:
-                    skipDirFilesAdd(file)
+                if sub not in activeSubs:
+                    if sub not in allSubs:
+                        skipDirFilesAdd(file)
                     bSkip = True
                 fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
