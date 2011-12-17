@@ -185,28 +185,6 @@ class CountDict(dict):
         self[key] += inc
 
 #------------------------------------------------------------------------------
-class Path(str):
-    """OBSOLETE. This has been replaced by bolt.Path. Retained for backward
-    compatibility with old pickle files."""
-    def __init__(self, path):
-        """Initialize."""
-        raise RuntimeError(_(u"Path necromancy!"))
-
-    def __getstate__(self):
-        """Used by pickler. State is determined by underlying string, so return psempty tuple."""
-        return (0,) #--Pseudo empty. If tuple were actually empty, then setstate wouldn't be run.
-
-    def __setstate__(self,state):
-        """Used by unpickler. Ignore state and reset from value of underlying string."""
-        path = str(self)
-        self._path = path
-        self._pathLC = path.lower()
-        self._pathNormLC = os.path.normpath(path).lower()
-
-    def __repr__(self):
-        return u"bosh.Path("+repr(self._path)+u")"
-
-#------------------------------------------------------------------------------
 class PickleDict(bolt.PickleDict):
     """Dictionary saved in a pickle file. Supports older bash pickle file formats."""
     def __init__(self,path,oldPath=None,readOnly=False):
@@ -2995,7 +2973,7 @@ class MreLigh(MelRecord):
                 #--Else 24 byte record (skips value and weight...
                 unpacked = ins.unpack('iI3BsIff',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for LIGH:DATA subrecord: ')+str(size))
+                raise ModError(ins.inName,_('Unexpected size encountered for LIGH:DATA subrecord: %i') % size)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3993,7 +3971,7 @@ class MreWatr(MelRecord):
                 #-- previous truncated record.
                 unpacked = ins.unpack('2s',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for WATR subrecord: ')+str(size))
+                raise ModError(ins.inName,_('Unexpected size encountered for WATR subrecord: %i') % size)
             unpacked = unpacked[:-1]
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
@@ -10878,86 +10856,77 @@ class Installer(object):
             else: rootLower = rootLower[0]
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
-            try:
-                #--Silent skips
-                if fileEndsWith((u'thumbs.db',u'desktop.ini',u'config')):
-                    continue #--Silent skip
-                elif skipDistantLOD and fileStartsWith(u'distantlod'):
+            #--Silent skips
+            if fileEndsWith((u'thumbs.db',u'desktop.ini',u'config')):
+                continue #--Silent skip
+            elif skipDistantLOD and fileStartsWith(u'distantlod'):
+                continue
+            elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\landscape\lod'):
+                continue
+            elif fileStartsWith(ur'textures\landscapelod\generated'):
+                if skipLandscapeLODNormals and fileEndsWith(ur'_fn.dds'):
                     continue
-                elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\landscape\lod'):
+                elif skipLandscapeLODTextures and not fileEndsWith(ur'_fn.dds'):
                     continue
-                elif fileStartsWith(ur'textures\landscapelod\generated'):
-                    if skipLandscapeLODNormals and fileEndsWith(ur'_fn.dds'):
+            elif skipVoices and fileStartsWith(ur'sound\voice'):
+                continue
+            elif skipScreenshots and fileStartsWith(u'screenshots'):
+                continue
+            elif fileLower == u'wizard.txt':
+                self.hasWizard = full
+                continue
+            elif skipImages and fileExt in imageExts:
+                continue
+            elif fileExt in docExts:
+                maReadMe = reReadMeMatch(file)
+                if maReadMe:
+                    self.hasReadme = full
+                if skipDocs:
+                    continue
+            elif fileStartsWith(u'--'):
+                continue
+            elif skipObse and fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
+                continue
+            elif fileExt in (u'.dll',u'.dlx'):
+                if skipObse: continue
+                if not fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
+                    continue
+                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
+                if not checkOBSE:
+                    pass
+                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
+                elif checkOBSE:
+                    message = (_(u'This installer (%s) has an %s plugin DLL.')
+                               + u'\n' +
+                               _(u'The file is %s')
+                               + u'\n' +
+                               _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.')
+                               + u'\n' +
+                               _(u'Are you sure you want to install this?')
+                               ) % (archiveRoot, bush.game.se.shortName, full)
+                    if fileLower in goodDlls:
+                        message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
+                    elif fileLower in badDlls:
+                        message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
+                    if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(u' DLL Warning')):
+                        badDlls.setdefault(fileLower,[])
+                        badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
-                    elif skipLandscapeLODTextures and not fileEndsWith(ur'_fn.dds'):
-                        continue
-                elif skipVoices and fileStartsWith(ur'sound\voice'):
-                    continue
-                elif skipScreenshots and fileStartsWith(u'screenshots'):
-                    continue
-                elif fileLower == u'wizard.txt':
-                    self.hasWizard = full
-                    continue
-                elif skipImages and fileExt in imageExts:
-                    continue
-                elif fileExt in docExts:
-                    maReadMe = reReadMeMatch(file)
-                    if maReadMe:
-                        self.hasReadme = full
-                    if skipDocs:
-                        continue
-                elif fileStartsWith(u'--'):
-                    continue
-                elif skipObse and fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
-                    continue
-                elif fileExt in (u'.dll',u'.dlx'):
-                    if skipObse: continue
-                    if not fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
-                        continue
-                    if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
-                    if not checkOBSE:
-                        pass
-                    elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
-                    elif checkOBSE:
-                        message = (_(u'This installer (%s) has an %s plugin DLL.')
-                                   + u'\n' +
-                                   _(u'The file is %s')
-                                   + u'\n' +
-                                   _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.')
-                                   + u'\n' +
-                                   _(u'Are you sure you want to install this?')
-                                   ) % (archiveRoot, bush.game.se.shortName, full)
-                        if fileLower in goodDlls:
-                            message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
-                        elif fileLower in badDlls:
-                            message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
-                        if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(u' DLL Warning')):
-                            badDlls.setdefault(fileLower,[])
-                            badDlls[fileLower].append([archiveRoot,size,crc])
-                            continue
-                        goodDlls.setdefault(fileLower,[])
-                        goodDlls[fileLower].append([archiveRoot,size,crc])
-                #--Noisy skips
-                elif file in bethFiles:
-                    if not bSkip: skipDirFilesAdd(full)
-                    continue
-                elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                    if not bSkip: skipDirFilesAdd(full)
-                    continue
-                elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                    if not bSkip: skipDirFilesAdd(full)
-                    continue
-                elif fileExt in skipExts:
-                    if not bSkip: skipExtFilesAdd(full)
-                    continue
-            except:
-                if isinstance(fileLower,unicode):
-                    deprint(u'error printing filename:', fileLower.encode('mbcs'),traceback=True)
-                else:
-                    deprint(u'unknown error printing filename:', str(fileLower), traceback=True)
-                raise
-
-
+                    goodDlls.setdefault(fileLower,[])
+                    goodDlls[fileLower].append([archiveRoot,size,crc])
+            #--Noisy skips
+            elif file in bethFiles:
+                if not bSkip: skipDirFilesAdd(full)
+                continue
+            elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
+                if not bSkip: skipDirFilesAdd(full)
+                continue
+            elif hasExtraData and rootLower and rootLower in dataDirsMinus:
+                if not bSkip: skipDirFilesAdd(full)
+                continue
+            elif fileExt in skipExts:
+                if not bSkip: skipExtFilesAdd(full)
+                continue
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
@@ -13053,7 +13022,7 @@ class CBash_ActorFactions:
                     actorEid = fid_eid.get(fid,u'Unknown')
                     for faction, rank in sorted(fid_factions[fid],key=lambda x: fid_eid.get(x[0])):
                         factionEid = fid_eid.get(faction,u'Unknown')
-                        out.write(rowFormat % (group,actorEid,str(fid[0]),fid[1],factionEid,str(faction[0]),faction[1],rank))
+                        out.write(rowFormat % (group,actorEid,fid[0].s,fid[1],factionEid,faction[0].s,faction[1],rank))
 
 #------------------------------------------------------------------------------
 class ActorLevels:
@@ -13268,11 +13237,11 @@ class CBash_ActorLevels:
             for mod in sorted(mod_fid_levels):
                 if mod.s.lower() == u'oblivion.esm': continue
                 fid_levels = mod_fid_levels[mod]
-                for fid in sorted(fid_levels,key=lambda k: (str(k[0]),fid_levels[k][0])):
+                for fid in sorted(fid_levels,key=lambda k: (k[0].s,fid_levels[k][0])):
                     eid, isOffset, offset, calcMin, calcMax = fid_levels[fid]
                     if isOffset:
-                        source = str(mod)
-                        fidMod, fidObject = str(fid[0]),fid[1]
+                        source = mod.s
+                        fidMod, fidObject = fid[0].s,fid[1]
                         out.write(rowFormat % (source, eid, fidMod, fidObject, offset, calcMin, calcMax))
                         oldLevels = obfid_levels.get(fid,None)
                         if oldLevels:
@@ -13546,7 +13515,7 @@ class CBash_EditorIds:
             for group in sorted(group_fid_eid):
                 fid_eid = group_fid_eid[group]
                 for fid in sorted(fid_eid,key = lambda a: fid_eid[a]):
-                    out.write(rowFormat % (group,str(fid[0]),fid[1],fid_eid[fid]))
+                    out.write(rowFormat % (group,fid[0].s,fid[1],fid_eid[fid]))
 
 #------------------------------------------------------------------------------
 class FactionRelations:
@@ -13753,7 +13722,7 @@ class CBash_FactionRelations:
                 faction_mod = fid_faction_mod[main]
                 for other, disp in sorted(faction_mod.items(),key=lambda x: fid_eid.get(x[0])):
                     otherEid = fid_eid.get(other,u'Unknown')
-                    out.write(rowFormat % (mainEid,str(main[0]),main[1],otherEid,str(other[0]),other[1],disp))
+                    out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
 
 #------------------------------------------------------------------------------
 class FidReplacer:
@@ -15783,7 +15752,7 @@ class CBash_ScriptText:
                     outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
                     with outpath.open('wb', encoding='utf8') as out:
                         formid = u'0x%06X' % longid[1]
-                        out.write(';'+Encode(str(longid[0]),'mbcs')+'\r\n;'+formid+'\r\n;'+eid+'\r\n'+text)
+                        out.write(u';'+longid[0].s+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
                     exportedScripts.append(eid)
         return (_(u'Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
 
@@ -33196,10 +33165,10 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
                     for entry in sorted(badEntries, key=itemgetter(0)):
                         longId = entry[1]
                         if entry[2]:
-                            modName = str(entry[2])
+                            modName = entry[2].s
                         else:
                             try:
-                                modName = str(longId[0])
+                                modName = longId[0].s
                             except:
                                 log(u'        . '+_(u'Unloaded Object or Undefined Reference'))
                                 continue
