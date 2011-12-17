@@ -909,7 +909,8 @@ class WryeParser(ScriptParser.Parser):
         if file.exists() and file.isfile():
             try:
                 with file.open(encoding='utf8') as script:
-                    self.lines = script.readlines()
+                    # Ensure \n line endings for the script parser
+                    self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
                 return self.Continue()
             except UnicodeError:
                 balt.showWarning(self.parent,_(u'Could not read the wizard file.  Please ensure it is encoded in UTF-8 format.'))
