@@ -6204,7 +6204,7 @@ def GetBashVersion():
     readme = bosh.dirs['mopy'].join(u'Wrye Bash.txt')
     if readme.exists() and readme.mtime != settings['bash.readme'][0]:
         reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
-        for line in readme.open():
+        for line in readme.open(encoding='utf-8-sig'):
             maVersion = reVersion.match(line)
             if maVersion:
                 return (readme.mtime,maVersion.group(1))
@@ -6569,7 +6569,7 @@ class PatchDialog(wx.Dialog):
                     patcher.saveConfig(patchConfigs)
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
-                log = bolt.LogFile(StringIO.StringIO())
+                log = bolt.LogFile(sio())
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
 
                 patchFile = bosh.CBash_PatchFile(patchName,patchers)
@@ -6667,7 +6667,7 @@ class PatchDialog(wx.Dialog):
                     patcher.saveConfig(patchConfigs)
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
-                log = bolt.LogFile(StringIO.StringIO())
+                log = bolt.LogFile(sio())
                 nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
                 patchFile = bosh.PatchFile(self.patchInfo,patchers)
@@ -6955,7 +6955,7 @@ class PatchDialog(wx.Dialog):
         #--Following isn't displaying correctly.
         if item < len(self.patchers):
             patcherClass = self.patchers[item].__class__
-            tip = patcherClass.tip or re.sub(ur'\..*','.',patcherClass.text.split(u'\n')[0],flags=re.U)
+            tip = patcherClass.tip or re.sub(ur'\..*',u'.',patcherClass.text.split(u'\n')[0],flags=re.U)
             self.gTipText.SetLabel(tip)
         else:
             self.gTipText.SetLabel(self.defaultTipText)
@@ -9743,7 +9743,7 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.config = config = data[project].getOmodConfig(project)
         #--GUI
         wx.Frame.__init__(self,parent,wx.ID_ANY,_(u'Omod Config: ')+project.s,
-            style=(wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN))
+            style=(wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |wx.TAB_TRAVERSAL))
         self.SetIcons(bashBlue)
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
@@ -9782,6 +9782,7 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done
+        self.FindWindowById(wx.ID_SAVE).SetDefault()
         self.SetSizerAndFit(sizer)
         self.SetSizer(sizer)
         self.SetSize((350,400))
@@ -13361,7 +13362,7 @@ class Mod_ListPatchConfig(Link):
             wx.TheClipboard.SetData(wx.TextDataObject(clip.getvalue()))
             wx.TheClipboard.Close()
         clip.close()
-        text = log.out.get()
+        text = log.out.getvalue()
         log.out.close()
         balt.showWryeLog(self.window,text,_(u'Bashed Patch Configuration'),
                          icons=bashBlue)

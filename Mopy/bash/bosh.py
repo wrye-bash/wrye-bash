@@ -303,15 +303,21 @@ encodingOrder = (
     'utf16',
     'mbcs',
     )
-def _unicode(text,encodings=encodingOrder):
+def _unicode(text,encodings=encodingOrder,firstEncoding=None):
     if isinstance(text,unicode): return text
+    if firstEncoding:
+        try: return unicode(text,firstEncoding)
+        except UnicodeDecodeError: pass
     for encoding in encodings:
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any of the following encodings: %s' % encodings)
 
-def _encode(text,encodings=encodingOrder):
+def _encode(text,encodings=encodingOrder,firstEncoding=None):
     if isinstance(text,str): return text
+    if firstEncoding:
+        try: return unicode(text,firstEncoding)
+        except UnicodeEncodeError: pass
     for encoding in encodings:
         try: return text.encode(encoding)
         except UnicodeEncodeError: pass
@@ -5937,7 +5943,7 @@ class SaveFile:
             #--Save Header, pcName
             gameHeaderSize, = ins.unpack('I',4)
             self.saveNum,pcNameSize, = ins.unpack('=IB',5)
-            self.pcName = cstrip(ins.read(pcNameSize))
+            self.pcName = _unicode(cstrip(ins.read(pcNameSize)))
             self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
             #--Masters
@@ -5945,7 +5951,7 @@ class SaveFile:
             numMasters, = ins.unpack('B',1)
             for count in range(numMasters):
                 size, = ins.unpack('B',1)
-                self.masters.append(GPath(ins.read(size)))
+                self.masters.append(GPath(_unicode(ins.read(size))))
 
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
@@ -6021,16 +6027,18 @@ class SaveFile:
             progress(0,_(u'Writing Header.'))
             out.write(self.header)
             #--Save Header
-            pcName = self.pcName
+            pcName = _encode(self.pcName)
             pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
                 self.saveNum, len(pcName)+1)
-            out.write(pcName+u'\x00')
+            out.write(pcName)
+            out.write('\x00')
             out.write(self.postNameHeader)
             #--Masters
             pack('B',len(self.masters))
             for master in self.masters:
-                pack('B',len(master))
-                out.write(master.s)
+                name = _encode(master.s)
+                pack('B',len(name))
+                out.write(name)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
             pack('I',0) #--Temp. Will write real value later.
@@ -10482,12 +10490,13 @@ class Installer(object):
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set((u'screenshots',))
-    dataDirsMinus = set((u'bash',u'replacers',u'fomod',u'--')) #--Will be skipped even if hasExtraData == True.
+    dataDirsMinus = set((u'bash',u'replacers',u'--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
     reReadMe = re.compile(ur'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
     skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
-                    u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.tb2',
-                    u'.lzma'))
+                    u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.fomod',
+                    u'.tb2',u'.lzma',
+                    ))
     skipExts.update(set(readExts))
     docExts = set((u'.txt',u'.rtf',u'.htm',u'.html',u'.doc',u'.docx',u'.odt',
                    u'.mht',u'.pdf',u'.css',u'.xls',u'.xlsx',u'.ods',u'.odp',
@@ -11910,11 +11919,12 @@ class InstallerProject(Installer):
         if configPath.exists():
             with bolt.StructFile(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
-                config.name = _unicode(ins.readNetString())
+                # OBMM can support UTF-8, so try that first, then fail back to
+                config.name = _unicode(ins.readNetString(),firstEncoding='utf-8')
                 config.vMajor, = ins.unpack('i',4)
                 config.vMinor, = ins.unpack('i',4)
                 for attr in ('author','email','website','abstract'):
-                    setattr(config,attr,_unicode(ins.readNetString()))
+                    setattr(config,attr,_unicode(ins.readNetString(),firstEncoding='utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
@@ -11926,11 +11936,12 @@ class InstallerProject(Installer):
         configPath.head.makedirs()
         with bolt.StructFile(configPath.temp.s,'wb') as out:
             out.pack('B',4)
-            out.writeNetString(_encode(config.name))
+            out.writeNetString(config.name.encode('utf8'))
             out.pack('i',config.vMajor)
             out.pack('i',config.vMinor)
             for attr in ('author','email','website','abstract'):
-                out.writeNetString(_encode(getattr(config,attr)))
+                # OBMM reads it fine if in UTF-8, so we'll do that.
+                out.writeNetString(getattr(config,attr).encode('utf-8'))
             out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
             out.pack('b',0) #--zip compression (will be ignored)
             out.write('\xFF\xFF\xFF\xFF')

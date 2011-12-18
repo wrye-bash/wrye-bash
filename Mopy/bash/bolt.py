@@ -2571,7 +2571,7 @@ class WryeText:
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
-            ins = srcPath.open()
+            ins = srcPath.open(encoding='utf-8-sig')
             out = outPath.open('w',encoding='utf-8-sig')
         else:
             srcPath = outPath = None
@@ -2606,7 +2606,11 @@ class WryeText:
         anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
-            anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'utf8')
+            # This one's weird.  Encode the url to utf-8, then allow urllib to do it's magic.
+            # urllib will automatically take any unicode characters and escape them, so to
+            # convert back to unicode for purposes of storing the string, everything will
+            # be in cp1252, due to the escapings.
+            anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             count = 0
             if re.match(ur'\d', anchor):
                 anchor = u'_' + anchor
@@ -2650,7 +2654,7 @@ class WryeText:
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'utf8')
+                if address == u'#': address += unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
                 address = address[1:]
@@ -2765,7 +2769,7 @@ class WryeText:
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(u' *=*#?$','',text.strip())
-                anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'utf8')
+                anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(ur'\d', anchor):
