@@ -11471,7 +11471,7 @@ class InstallerConverter(object):
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
-        command = u'"%s" x "%s" -y -o%s @%s -scsWIN' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
+        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
         #--Extract files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
@@ -11562,7 +11562,7 @@ class InstallerArchive(Installer):
                         elif key == u'CRC' and value:
                             crc = int(value,16)
                         elif key == u'Method':
-                            if file and not isdir and file != archive.s:
+                            if file and not isdir and file != tempArch.s:
                                 fileSizeCrcs.append((file,size,crc))
                                 cumCRC += crc
                             file = size = crc = isdir = 0
@@ -11578,7 +11578,7 @@ class InstallerArchive(Installer):
         if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
-        with self.tempList.open(encoding='utf-8-sig', mode='w') as out:
+        with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
         apath = dirs['installers'].join(archive)
         arch = apath.temp
@@ -11588,13 +11588,13 @@ class InstallerArchive(Installer):
                 args += u' -r'
             command = u'"%s" l %s' % (exe7z, args)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-            reExtracting = re.compile(u'^Extracting\s+(.+)',re.U)
+            reExtracting = re.compile(ur'^Extracting\s+(.+)',re.U)
             reError = re.compile(u'^Error:',re.U)
             numFiles = 0
             errorLine = []
             for line in ins:
                 if len(errorLine) or reError.match(line):
-                    errorLine.append(line)
+                    errorLine.append(_unicode(line))
                 # we'll likely get a few extra lines, but that's ok
                 numFiles += 1
             if ins.close():
@@ -11869,19 +11869,18 @@ class InstallerProject(Installer):
             progress(0,archive.s+u'\n'+_(u'Compressing files...'))
             progress.setFull(1+length)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
-            reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
+            reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
             regMatch = reCompressing.match
             reError = re.compile(u'Error: (.*)',re.U)
             regErrMatch = reError.match
             errorLine = []
             index = 0
             for line in ins:
-                # TODO: figure out why 7z isn't puttin anything out to stdout
                 maCompressing = regMatch(line)
                 if len(errorLine) or regErrMatch(line):
-                    errorLine.append(line)
+                    errorLine.append(unicode(line,'utf8'))
                 if maCompressing:
-                    progress(index,archive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1)).strip()
+                    progress(index,archive.s+u'\n'+_(u'Compressing files...')+u'\n%s' % unicode(maCompressing.group(1).strip(),'utf8'))
                     index += 1
             result = ins.close()
             self.tempList.remove()
