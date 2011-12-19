@@ -25,9 +25,6 @@
 files and environment. It does not provide interface functions which are instead
 provided by separate modules: bish for CLI and bash/basher for GUI."""
 
-# Use the 'with' statement for python 2.5
-from __future__ import with_statement
-
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
 import locale; locale.setlocale(locale.LC_ALL,u'')
@@ -90,7 +87,6 @@ startupinfo = bolt.startupinfo
 
 #--Unicode
 exe7z = u'7zUnicode.exe'
-unicodeConvert = lambda text: unicode(text,'UTF-8')
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -297,22 +293,39 @@ null4 = null1*4
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 encodingOrder = (
-    'cp936',    # GDK (simplified Chinese + some)
+    'ascii',    # Plain old ASCII (0-127)
+    'gbk',      # GBK (simplified Chinese + some)
     'cp932',    # Japanese
     'cp949',    # Korean
-    'cp1252',   # English
+    'cp1252',   # English (extended ASCII)
     'utf8',
     'cp500',
-    'utf16',
+    'UTF-16LE',
     'mbcs',
     )
+
+_encodingSwap = {
+    # The encoding detector reports back some encodings that
+    # are subsets of others.  Use the better encoding when
+    # given the option
+    # 'reported encoding':'actual encoding to use',
+    'GB2312': 'gbk',        # Simplified Chinese
+    'SHIFT_JIS': 'cp932',   # Japanese
+    }
+
 def _getbestencoding(text):
+    """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
+       detection library to find the best match (heurisitcs)"""
+    import encodings
     decoder = UniversalDetector()
     decoder.feed(text)
     decoder.close()
+    encoding = decoder.result['encoding']
+    encoding = _encodingSwap.get(encoding,encoding)
     ## Debug: uncomment the following to output stats on encoding detection
-    #print '%s: %s (%s)' % (repr(text),decoder.result['encoding'],decoder.result['confidence'])
-    return decoder.result['encoding']
+    #print
+    #print '%s: %s (%s)' % (repr(text),encoding,decoder.result['confidence'])
+    return encoding
 
 def _unicode(text,encoding=None):
     if isinstance(text,unicode): return text
@@ -3979,6 +3992,7 @@ class MreTes5(MreTes4Base):
         MreTes4Base.MelTes4Name('MAST','masters'),
         MelNull('DATA'),
         MelBase('INTV','intv'),
+        MelBase('ONAM','onam_p'),   # ONAM support (not decoded yet)
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -7423,7 +7437,7 @@ class OmodFile:
 
         with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
             for line in ins:
-                line = unicodeConvert(line)
+                line = unicode(line,'utf8')
                 maFinalLine = reFinalLine.match(line)
                 if maFinalLine:
                     totalSize = int(maFinalLine.group(1))
