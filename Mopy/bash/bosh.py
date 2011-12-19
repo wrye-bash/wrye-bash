@@ -10527,7 +10527,7 @@ class Installer(object):
     docDirs = set((u'screenshots',))
     dataDirsMinus = set((u'bash',u'replacers',u'--')) #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
-    reReadMe = re.compile(ur'^([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
+    reReadMe = re.compile(ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
     skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
                     u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.fomod',
                     u'.tb2',u'.lzma',
@@ -10611,6 +10611,7 @@ class Installer(object):
         setSkipDocs = settings['bash.installers.skipDocs']
         setSkipImages = settings['bash.installers.skipImages']
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
+        dataDirsMinus = Installer.dataDirsMinus
         if inisettings['KeepLog'] > 1:
             try: log = inisettings['LogFile'].open('a',encoding='utf-8-sig')
             except: log = None
@@ -10618,7 +10619,7 @@ class Installer(object):
         for asDir,sDirs,sFiles in os.walk(asRoot):
             progress(0.05,transProgress % (rootName,asDir[relPos:]))
             if rootIsMods and asDir == asRoot:
-                newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
+                newSDirs = (x for x in sDirs if x.lower() not in dataDirsMinus)
                 if setSkipLod:
                     newSDirs = (x for x in newSDirs if x.lower() != u'distandlod')
                 if setSkipScreen:
@@ -10643,11 +10644,12 @@ class Installer(object):
             rpDirJoin = rpDir.join
             apDirJoin = apDir.join
             for sFile in sFiles:
-                ext = sFile[sFile.rfind(u'.'):].lower()
+                sFileLower = sFile.lower()
+                ext = sFileLower[sFileLower.rfind(u'.'):]
                 rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
-                    if not rsDir and sFile.lower() in bethFiles: continue
+                    if not rsDir and sFileLower in bethFiles: continue
                     rpFile = ghostGet(rpFile,rpFile)
                 isEspm = not rsDir and ext in (u'.esp',u'.esm')
                 apFile = apDirJoin(sFile)
@@ -10847,6 +10849,7 @@ class Installer(object):
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         skipObse = not settings['bash.installers.allowOBSEPlugins']
+        obseDir = bush.game.se.shortName.lower()+u'\\'
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -10862,7 +10865,15 @@ class Installer(object):
         skipExtFiles = self.skipExtFiles
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
+        skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = skipExtFiles.add
+        commonlyEditedExts = Installer.commonlyEditedExts
+        if trackedInfos:
+            dirsModsJoin = dirs['mods'].join
+            _trackedInfosTrack = trackedInfos.track
+            trackedInfosTrack = lambda a: _trackedInfosTrack(dirsModsJoin(a))
+        else:
+            trackedInfosTrack = lambda a: None
         goodDlls, badDlls = settings['bash.installers.goodDlls'],settings['bash.installers.badDlls']
         espms = self.espms
         espmsAdd = espms.add
@@ -10870,6 +10881,7 @@ class Installer(object):
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
         reReadMeMatch = reReadMe.match
+        splitExt = os.path.splitext
         dest_src = {}
         #--Bad archive?
         if type not in (1,2): return dest_src
@@ -10880,7 +10892,6 @@ class Installer(object):
             if fileLower.startswith((u'--',u'omod conversion data',u'fomod',u'wizard images')):
                 continue
             sub = u''
-            bSkip = False
             if type == 2: #--Complex archive
                 sub = full.split(u'\\',1)
                 if len(sub) == 1:
@@ -10891,10 +10902,45 @@ class Installer(object):
                 if sub not in activeSubs:
                     if sub not in allSubs:
                         skipDirFilesAdd(file)
+                    # Run a modified version of the normal checks, just
+                    # looking for esp's for the wizard espmMap, wizard.txt
+                    # and readme's
                     bSkip = True
+                    fileLower = file.lower()
+                    subList = espmMapSetdefault(sub,[])
+                    subListAppend = subList.append
+                    rootLower,fileExt = splitExt(fileLower)
+                    rootLower = rootLower.split(u'\\',1)
+                    if len(rootLower) == 1: rootLower = u''
+                    else: rootLower = rootLower[0]
+                    if fileLower == u'wizard.txt':
+                        self.hasWizard = full
+                        skipDirFilesDiscard(file)
+                        continue
+                    elif fileExt in docExts:
+                        if reReadMeMatch(file):
+                            self.hasReadme = full
+                            skipDirFilesDiscard(file)
+                            if skipDocs:
+                                continue
+                            bSkip = False
+                    elif file in bethFiles:
+                        continue
+                    elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
+                        continue
+                    elif hasExtraData and rootLower and rootLower in dataDirsMinus:
+                        continue
+                    elif fileExt in skipExts:
+                        continue
+                    elif not rootLower and reModExtMatch(fileExt):
+                        #--Remap espms as defined by the user
+                        if file in self.remaps: file = self.remaps[file]
+                        if file not in subList: subListAppend(file)
+                    if bSkip: continue
                 fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
-            rootLower,fileExt = os.path.splitext(fileLower)
+            subListAppend = subList.append
+            rootLower,fileExt = splitExt(fileLower)
             rootLower = rootLower.split(u'\\',1)
             if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
@@ -10922,18 +10968,17 @@ class Installer(object):
             elif skipImages and fileExt in imageExts:
                 continue
             elif fileExt in docExts:
-                maReadMe = reReadMeMatch(file)
-                if maReadMe:
+                if reReadMeMatch(file):
                     self.hasReadme = full
                 if skipDocs:
                     continue
             elif fileStartsWith(u'--'):
                 continue
-            elif skipObse and fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
+            elif skipObse and fileStartsWith(obseDir):
                 continue
             elif fileExt in (u'.dll',u'.dlx'):
                 if skipObse: continue
-                if not fileStartsWith(bush.game.se.shortName.lower()+u'\\'):
+                if not fileStartsWith(obseDir):
                     continue
                 if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
                 if not checkOBSE:
@@ -10960,29 +11005,25 @@ class Installer(object):
                     goodDlls[fileLower].append([archiveRoot,size,crc])
             #--Noisy skips
             elif file in bethFiles:
-                if not bSkip: skipDirFilesAdd(full)
+                skipDirFilesAdd(full)
                 continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                if not bSkip: skipDirFilesAdd(full)
+                skipDirFilesAdd(full)
                 continue
             elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                if not bSkip: skipDirFilesAdd(full)
+                skipDirFilesAdd(full)
                 continue
             elif fileExt in skipExts:
-                if not bSkip: skipExtFilesAdd(full)
+                skipExtFilesAdd(full)
                 continue
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
-                if file in self.remaps:
-                    file = self.remaps[file]
-                if file not in subList:
-                    subList.append(file)
-                if bSkip: continue
+                if file in self.remaps: file = self.remaps[file]
+                if file not in subList: subListAppend(file)
                 pFile = GPath(file)
                 espmsAdd(pFile)
                 if pFile in espmNots: continue
-            elif bSkip: continue
             if skipEspmVoices and fileStartsWith(u'sound\\voice\\'):
                 farPos = file.find(u'\\',12)
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
@@ -11011,14 +11052,9 @@ class Installer(object):
                     dest = u'Docs\\'+file
                 elif fileExt in imageExts:
                     dest = u'Docs\\'+file
-            if fileExt in Installer.commonlyEditedExts:
-                if trackedInfos is not None:
-                    # The 'INI Tweaks' directory is already tracked by INIInfos,
-                    # But INIInfos wont update the Installers Tab UI on changes.
-                    try:
-                        trackedInfos.track(dirs['mods'].join(dest))
-                    except:
-                        deprint(u'An error occured while creating the path:', repr(dest), traceback=True)
+            if fileExt in commonlyEditedExts:
+                try: trackedInfosTrack(dest)
+                except: deprint(u'An error occured while creating the path:', repr(dest), traceback=True)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
