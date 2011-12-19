@@ -85,7 +85,6 @@ def rm(file):
 def mv(file, dest):
     if os.path.exists(file): shutil.move(file, dest)
 
-
 #--Create the standard manual installer version
 def BuildManualVersion(version, pipe=None):
     archive = os.path.join(dest, 'Wrye Bash %s - Python Source.7z' % version)
@@ -116,6 +115,11 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     exe = os.path.join(mopy, 'Wrye Bash.exe')
     w9xexe = os.path.join(mopy, 'w9xpopen.exe')
     setup = os.path.join(mopy, 'setup.py')
+    #--For l10n
+    msgfmt = os.path.join(sys.prefix,'Tools','i18n','msgfmt.py')
+    pygettext = os.path.join(sys.prefix,'Tools','i18n','pygettext.py')
+    msgfmtTo = os.path.join(mopy,'bash','msgfmt.py')
+    pygettextTo = os.path.join(mopy,'bash','pygettext.py')
 
     if not os.path.exists(script):
         print " Could not find 'setup.template', aborting StandAlone creation."
@@ -148,11 +152,19 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     file = open(setup, 'w')
     file.write(script)
     file.close()
+
+    # Copy the files needed for l10n
+    shutil.copy(msgfmt,msgfmtTo)
+    shutil.copy(pygettext,pygettextTo)
     
     # Call the setup script
     os.chdir(mopy)
     subprocess.call([setup, 'py2exe', '-q'], shell=True, stdout=pipe, stderr=pipe)
     os.chdir(root)
+
+    # Clean up the l10n files
+    rm(msgfmtTo)
+    rm(pygettextTo)
 
     # Copy the exe's to the Mopy folder
     dist = os.path.join(mopy, 'dist')
