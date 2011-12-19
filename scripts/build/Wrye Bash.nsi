@@ -111,7 +111,6 @@
     Var Function_DirPrompt
     Var unFunction_Browse
     Var Python_Path
-    Var Python_Ver
     Var Python_Comtypes
     Var Python_pywin32
     Var Python_wx
@@ -550,37 +549,6 @@
             ${If} $Python_Path == $Empty
                 ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
-            ${If} $Python_Path != $Empty
-                StrCpy $Python_Ver "27"
-            ${Else}
-                ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.6\InstallPath" ""
-                ${If} $Python_Path == $Empty
-                    ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
-                ${EndIf}
-                ${If} $Python_Path == $Empty
-                    ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.6\InstallPath" ""
-                ${EndIf}
-                ${If} $Python_Path == $Empty
-                    ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.6\InstallPath" ""
-                ${EndIf}
-                ${If} $Python_Path != $Empty
-                    StrCpy $Python_Ver "26"
-                ${Else}
-                    ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.5\InstallPath" ""
-                    ${If} $Python_Path == $Empty
-                        ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
-                    ${EndIf}
-                    ${If} $Python_Path == $Empty
-                        ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.5\InstallPath" ""
-                    ${EndIf}
-                    ${If} $Python_Path == $Empty
-                        ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.5\InstallPath" ""
-                    ${EndIf}
-                    ${If} $Python_Path != $Empty
-                        StrCpy $Python_Ver "25"
-                    ${EndIf}
-                ${EndIf}
-            ${EndIf}
 
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
@@ -599,19 +567,9 @@
                     ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
                     ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
 NoComTypes:
-                ${If} $Python_Ver == "25"
-                    ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py25_is1" "DisplayVersion"
-                    ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.5" "DisplayName"
-                    StrCpy $Python_pywin32 $1 3 -3
-                ${ElseIf} $Python_Ver == "26"
-                    ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py26_is1" "DisplayVersion"
-                    ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.6" "DisplayName"
-                    StrCpy $Python_pywin32 $1 3 -3
-                ${ElseIf} $Python_Ver == "27"
-                    ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-ansi-py27_is1" "DisplayVersion"
-                    ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
-                    StrCpy $Python_pywin32 $1 3 -3
-                ${EndIf}
+                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                StrCpy $Python_pywin32 $1 3 -3
                 ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
                 ${VersionConvert} $Python_wx "+" $Python_wx
                 ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
@@ -639,7 +597,7 @@ NoComTypes:
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_wx == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "wxPython 2.8.12.1-ansi"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "wxPython 2.8.12.1-unicode"
                         Pop $Check_wx
                         ${NSD_SetState} $Check_wx ${BST_CHECKED}
                     IntOp $0 $0 + 2
@@ -710,7 +668,6 @@ NoComTypes:
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Python "$0 - Installing..."
                     ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.2.msi"'
-                    StrCpy $Python_Ver "27"
                     ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_Python "$0 - Download Failed!"
@@ -722,13 +679,7 @@ NoComTypes:
                 SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_wx $0
                 ${NSD_SetText} $Check_wx "$0 - Downloading..."
-                ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
-                ${ElseIf} $Python_Ver == "25" ;last version of wxPython to suport py2.5x is 2.8.11 so download that version if you're using Python 2.5x
-                    NSISdl::download http://downloads.sourceforge.net/project/wxpython/wxPython/2.8.11.0/wxPython2.8-win32-ansi-2.8.11.0-py25.exe?r=http%3A%2F%2Fwxpython.org%2Fdownload.php&ts=1291222636&use_mirror=superb-sea2 "$TEMP\PythonInstallers\wxPython.exe"
-                ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-ansi-2.8.12.1-py26.exe "$TEMP\PythonInstallers\wxPython.exe"
-                ${EndIf}
+                NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-unicode-2.8.12.1-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_wx "$0 - Installing..."
@@ -760,13 +711,7 @@ NoComTypes:
                 SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_pywin32 $0
                 ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
-                ${If} $Python_Ver == "27"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\PythonInstallers\pywin32.exe"
-                ${ElseIf} $Python_Ver == "25"
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.5.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976176&use_mirror=voxel "$TEMP\PythonInstallers\pywin32.exe"
-                ${Else}
-                    NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.6.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976169&use_mirror=cdnetworks-us-2 "$TEMP\PythonInstallers\pywin32.exe"
-                ${EndIf}
+                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\PythonInstallers\pywin32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
