@@ -6569,7 +6569,7 @@ class PatchDialog(wx.Dialog):
                     patcher.saveConfig(patchConfigs)
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
-                log = bolt.LogFile(sio())
+                log = bolt.LogFile(StringIO.StringIO())
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
 
                 patchFile = bosh.CBash_PatchFile(patchName,patchers)
@@ -6667,7 +6667,7 @@ class PatchDialog(wx.Dialog):
                     patcher.saveConfig(patchConfigs)
                 bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
                 #--Do it
-                log = bolt.LogFile(sio())
+                log = bolt.LogFile(StringIO.StringIO())
                 nullProgress = bolt.Progress()
                 patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
                 patchFile = bosh.PatchFile(self.patchInfo,patchers)
@@ -6962,7 +6962,7 @@ class PatchDialog(wx.Dialog):
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
-        if event.GetKeyCode() == 1 and event.ControlDown(): # Ctrl+'A'
+        if event.GetKeyCode() == ord('A') and event.ControlDown(): # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
                 if event.ShiftDown():

@@ -968,15 +968,8 @@ class Path(object):
                 self._s.encode(locale.getpreferredencoding())
                 return self+u'.tmp'
             except UnicodeEncodeError:
-                baseName = u'bash_unicode_safe%i.tmp'
-                head = self.head
-                join = self.head.join
-                num = 0
-                tempName = join(baseName % num)
-                while tempName.exists():
-                    num += 1
-                    tempName = join(baseName % num)
-                return tempName
+                ret = self._s.encode(locale.getpreferredencoding(),'xmlcharrefreplace')+u'_unicode_safe.tmp'
+                return self.head.join(ret)
         else:
             return self+u'.tmp'
 

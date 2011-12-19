@@ -297,8 +297,8 @@ null4 = null1*4
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 encodingOrder = (
-    'cp932',    # Japanese
     'cp936',    # GDK (simplified Chinese + some)
+    'cp932',    # Japanese
     'cp949',    # Korean
     'cp1252',   # English
     'utf8',
@@ -310,11 +310,9 @@ def _getbestencoding(text):
     decoder = UniversalDetector()
     decoder.feed(text)
     decoder.close()
-    encoding = decoder.result['encoding']
     ## Debug: uncomment the following to output stats on encoding detection
-    #print '%s: %s (%s)' % (text,encoding,decoder.result['confidence'])
-    if encoding is None: return 'cp1252'
-    else: return encoding
+    #print '%s: %s (%s)' % (repr(text),decoder.result['encoding'],decoder.result['confidence'])
+    return decoder.result['encoding']
 
 def _unicode(text,encoding=None):
     if isinstance(text,unicode): return text
@@ -324,19 +322,27 @@ def _unicode(text,encoding=None):
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
     encoding = _getbestencoding(text)
-    try: return unicode(text,encoding)
-    # Use MBCS if all else fails
-    except UnicodeDecodeError: return unicode(text,'mbcs')
+    if encoding:
+        try: return unicode(text,encoding)
+        except UnicodeDecodeError: pass
+    # If even that fails, fall back to the old method, trial and error
+    for encoding in encodingOrder:
+        try: return unicode(text,encoding)
+        except UnicodeDecodeError: pass
+    raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
-def _encode(text,encodings=encodingOrder,firstEncoding=None):
-    if isinstance(text,str): return text
-    if firstEncoding:
-        try: return unicode(text,firstEncoding)
-        except UnicodeEncodeError: pass
-    for encoding in encodings:
-        try: return text.encode(encoding)
-        except UnicodeEncodeError: pass
-    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
+    def doit(text,encodings,firstEncoding):
+        if isinstance(text,str): return (text,None)
+        if firstEncoding:
+            try: return (unicode(text,firstEncoding),firstEncoding)
+            except UnicodeEncodeError: pass
+        for encoding in encodings:
+            try: return (text.encode(encoding),encoding)
+            except UnicodeEncodeError: pass
+        raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+    if returnEncoding: return doit(text,encodings,firstEncoding)
+    else: return doit(text,encodings,firstEncoding)[0]
 
 #--Header tags
 reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
@@ -1079,11 +1085,25 @@ class MelString(MelBase):
         value = record.__getattribute__(self.attr)
         if value != None:
             if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
-                value = value[:min(self.maxSize,len(value))]
-            value = _encode(value)
-            if self.maxSize:
-                value = value[:min(self.maxSize,len(value))]
+                value = bolt.winNewLines(value.strip())
+                size = min(self.maxSize,len(value))
+                value = value[:size]
+                test,encoding = _encode(value,returnEncoding=True)
+                # Check to see if encoded, it is too big
+                extra_encoded = len(test) - self.maxSize
+                if extra_encoded > 0:
+                    total = 0
+                    i = -1
+                    while total < extra_encoded:
+                        total += len(value[i].encode(encoding))
+                        i -= 1
+                    size += i + 1
+                    value = value[:size]
+                    value = _encode(value,firstEncoding=encoding)
+                else:
+                    value = test
+            else:
+                value = _encode(value)
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -17365,7 +17385,7 @@ class Save_NPCEdits:
         saveFile.load()
         (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
-        npc.full = newName
+        npc.full = _encode(newName)
         saveFile.pcName = newName
         saveFile.setRecord(npc.getTuple(fid,version))
         saveFile.safeSave()
