@@ -6086,7 +6086,7 @@ class DocBrowser(wx.Frame):
             else:
                 # Oddly, wxPython's LoadFile function doesn't read unicode correctly,
                 # even in unicode builds
-                with docPath.open('rb') as ins:
+                with docPath.open('r',encoding='utf-8-sig') as ins:
                     data = ins.read()
                 self.plainText.SetValue(data)
                 self.SetDocType('txt')
@@ -6678,7 +6678,7 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-                with readme.open('w',encoding='utf-8-sig') as file:
+                with readme.open('w',encoding='utf-8') as file:
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
@@ -10487,7 +10487,7 @@ class INI_Apply(Link):
             message = (_(u'Apply an ini tweak to %s?')
                        + u'\n\n' +
                        _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
-                       ) % iniList.data.ini.getPath().sbody
+                       ) % iniList.data.ini.path.stail
             if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                 return
         dir = self.window.data.dir
