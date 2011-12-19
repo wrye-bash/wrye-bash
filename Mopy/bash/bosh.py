@@ -332,17 +332,40 @@ def _unicode(text,encoding=None):
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
 def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
-    def doit(text,encodings,firstEncoding):
-        if isinstance(text,str): return (text,None)
-        if firstEncoding:
-            try: return (unicode(text,firstEncoding),firstEncoding)
-            except UnicodeEncodeError: pass
-        for encoding in encodings:
-            try: return (text.encode(encoding),encoding)
-            except UnicodeEncodeError: pass
-        raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
-    if returnEncoding: return doit(text,encodings,firstEncoding)
-    else: return doit(text,encodings,firstEncoding)[0]
+    if isinstance(text,str):
+        if returnEncoding: return (text,None)
+        else: return text
+    # Try user specified encoding
+    if firstEncoding:
+        try:
+            text = text.encode(firstEncoding)
+            if returnEncoding: return (text,firstEncoding)
+            else: return text
+        except UnicodeEncodeError:
+            pass
+    goodEncoding = None
+    # Try the list of encodings in order
+    for encoding in encodings:
+        try:
+            temp = text.encode(encoding)
+            detectedEncoding = _getbestencoding(temp)
+            if detectedEncoding == encoding:
+                # This encoding also happens to be detected
+                # By the encoding detector as the same thing,
+                # which means use it!
+                if returnEncoding: return (temp,encoding)
+                else: return temp
+            # The encoding detector didn't detect it, but
+            # it works, so save it for later
+            if not goodEncoding: goodEncoding = (temp,encoding)
+        except UnicodeEncodeError:
+            pass
+    # Non of the encodings also where detectable via the
+    # detector, so use the first one that encoded without error
+    if goodEncoding:
+        if returnEncoding: return goodEncoding
+        else: return goodEncoding[0]
+    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
 #--Header tags
 reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
