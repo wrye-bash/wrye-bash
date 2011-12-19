@@ -606,9 +606,11 @@ class ModReader:
             return self.readString(size,recType)
 
     def readString(self,size,recType='----'):
-        """Read string from file, stripping zero terminator.
-        strings are read in as raw bytes, no converting to unicode is performed."""
-        return _unicode(cstrip(self.read(size,recType)))
+        """Read string from file, stripping zero terminator."""
+        # Seperately decode each line, to allow mixing of encodings
+        # in DESC fields, etc
+        return u'\n'.join(_unicode(x) for x in cstrip(self.read(size,recType)).split('\n'))
+        #return _unicode(cstrip(self.read(size,recType)))
 
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
