@@ -85,6 +85,7 @@ import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist, sio
 from cint import *
+from chardet.universaldetector import UniversalDetector
 startupinfo = bolt.startupinfo
 
 #--Unicode
@@ -296,22 +297,36 @@ null4 = null1*4
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 encodingOrder = (
-    'cp932',
-    'cp1252',
+    'cp932',    # Japanese
+    'cp936',    # GDK (simplified Chinese + some)
+    'cp949',    # Korean
+    'cp1252',   # English
     'utf8',
     'cp500',
     'utf16',
     'mbcs',
     )
-def _unicode(text,encodings=encodingOrder,firstEncoding=None):
+def _getbestencoding(text):
+    decoder = UniversalDetector()
+    decoder.feed(text)
+    decoder.close()
+    encoding = decoder.result['encoding']
+    ## Debug: uncomment the following to output stats on encoding detection
+    #print '%s: %s (%s)' % (text,encoding,decoder.result['confidence'])
+    if encoding is None: return 'cp1252'
+    else: return encoding
+
+def _unicode(text,encoding=None):
     if isinstance(text,unicode): return text
-    if firstEncoding:
-        try: return unicode(text,firstEncoding)
-        except UnicodeDecodeError: pass
-    for encoding in encodings:
+    # Try the user specified encoding first
+    if encoding:
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
-    raise UnicodeDecodeError(u'Text could not be decoded using any of the following encodings: %s' % encodings)
+    # Try to detect the encoding next
+    encoding = _getbestencoding(text)
+    try: return unicode(text,encoding)
+    # Use MBCS if all else fails
+    except UnicodeDecodeError: return unicode(text,'mbcs')
 
 def _encode(text,encodings=encodingOrder,firstEncoding=None):
     if isinstance(text,str): return text
@@ -11920,11 +11935,11 @@ class InstallerProject(Installer):
             with bolt.StructFile(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = _unicode(ins.readNetString(),firstEncoding='utf-8')
+                config.name = _unicode(ins.readNetString(),encoding='utf-8')
                 config.vMajor, = ins.unpack('i',4)
                 config.vMinor, = ins.unpack('i',4)
                 for attr in ('author','email','website','abstract'):
-                    setattr(config,attr,_unicode(ins.readNetString(),firstEncoding='utf-8'))
+                    setattr(config,attr,_unicode(ins.readNetString(),encoding='utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
