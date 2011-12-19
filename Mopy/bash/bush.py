@@ -30,7 +30,7 @@ import struct
 import ctypes
 import _winreg
 
-from bolt import _,GPath,Path,deprint
+from bolt import GPath,Path,deprint
 
 # Setup -----------------------------------------------------------------------
 # Call this with the name of the game to setup bush.game for.
@@ -65,11 +65,11 @@ def setGame(gameName,workingDir=''):
         allGames[submod.name.lower()] = submod
         #--Get this game's install path
         for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
-            for wow6432 in ('','Wow6432Node\\'):
+            for wow6432 in (u'',u'Wow6432Node\\'):
                 for (subkey,entry) in submod.regInstallKeys:
                     try:
                         key = _winreg.OpenKey(hkey,
-                            'Software\\%s%s' % (wow6432,subkey))
+                            u'Software\\%s%s' % (wow6432,subkey))
                         value = _winreg.QueryValueEx(key,entry)
                     except: continue
                     if value[1] != _winreg.REG_SZ: continue
@@ -82,26 +82,26 @@ def setGame(gameName,workingDir=''):
     # unload some modules
     del pkgutil
     del _game
-    deprint('Detected the following supported games via Windows Registry:')
+    deprint(u'Detected the following supported games via Windows Registry:')
     for name in foundGames:
-        deprint(' %s:' % name, foundGames[name])
+        deprint(u' %s:' % name, foundGames[name])
     #--Second: Detect what game is installed on directory up from Mopy
     path = Path.getcwd()
-    if path.cs[-4:] == 'mopy':
+    if path.cs[-4:] == u'mopy':
         path = GPath(path.s[:-5])
     installPaths = [path]
     #--Third: Detect what game is installed at the specified "workingDir"
-    if workingDir != '':
+    if workingDir != u'':
         path = GPath(workingDir)
         if not path.isabs():
             path = Path.getcwd().join(path)
         installPaths.insert(0,path)
-    deprint('Detecting games via relative path and the -o argument:')
+    deprint(u'Detecting games via relative path and the -o argument:')
     for path in installPaths:
         name = path.tail.cs
         if name in allGames:
             # We have a config for that game
-            deprint(' %s:' % name, path)
+            deprint(u' %s:' % name, path)
             foundGames[name] = path
             break
         else:
@@ -110,7 +110,7 @@ def setGame(gameName,workingDir=''):
                 for _name in allGames:
                     if allGames[_name].exe == file:
                         # Must be this game
-                        deprint(' %s:' % _name, path)
+                        deprint(u' %s:' % _name, path)
                         name = _name
                         foundGames[name] = path
                         break
@@ -125,7 +125,7 @@ def setGame(gameName,workingDir=''):
         # The game specified was found
         gamePath = foundGames[gameName]
         game = allGames[gameName]
-        deprint('Specified game "%s" was found:' % gameName, gamePath)
+        deprint(u'Specified game "%s" was found:' % gameName, gamePath)
         # Unload the other modules
         for i in allGames.keys():
             if i != gameName:
@@ -134,15 +134,15 @@ def setGame(gameName,workingDir=''):
     #--Specified game not found, or game was not specified,
     #  so use the game found via workingDir or the cwd
     else:
-        if gameName == '':
-            deprint('No preferred game specified.')
+        if gameName == u'':
+            deprint(u'No preferred game specified.')
         else:
-            deprint('Specified game "%s" was not found.' % gameName)
+            deprint(u'Specified game "%s" was not found.' % gameName)
         if name in foundGames:
             # Game specified was not found, or no game was specified
             # try the game based on Wrye Bash install location
             gamePath = foundGames[name]
-            deprint(' Using %s game:' % name, gamePath)
+            deprint(u' Using %s game:' % name, gamePath)
             game = allGames[name]
             # Unload the other modules
             for i in allGames.keys():
@@ -158,77 +158,77 @@ def setGame(gameName,workingDir=''):
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
 wryeBashDataFiles = set((
-    r'Bashed Patch.esp',
-    r'Bashed Patch, 0.esp',
-    r'Bashed Patch, 1.esp',
-    r'Bashed Patch, 2.esp',
-    r'Bashed Patch, 3.esp',
-    r'Bashed Patch, 4.esp',
-    r'Bashed Patch, 5.esp',
-    r'Bashed Patch, 6.esp',
-    r'Bashed Patch, 7.esp',
-    r'Bashed Patch, 8.esp',
-    r'Bashed Patch, 9.esp',
-    r'Bashed Patch, CBash.esp',
-    r'Bashed Patch, Python.esp',
-    r'Bashed Patch, FCOM.esp',
-    r'Bashed Patch, Warrior.esp',
-    r'Bashed Patch, Thief.esp',
-    r'Bashed Patch, Mage.esp',
-    r'Bashed Patch, Test.esp',
-    r'ArchiveInvalidationInvalidated!.bsa',
-    r'Docs\Bash Readme Template.html',
-    r'Docs\wtxt_sand_small.css',
-    r'Docs\wtxt_teal.css',
-    r'Docs\Bash Readme Template.txt'
+    u'Bashed Patch.esp',
+    u'Bashed Patch, 0.esp',
+    u'Bashed Patch, 1.esp',
+    u'Bashed Patch, 2.esp',
+    u'Bashed Patch, 3.esp',
+    u'Bashed Patch, 4.esp',
+    u'Bashed Patch, 5.esp',
+    u'Bashed Patch, 6.esp',
+    u'Bashed Patch, 7.esp',
+    u'Bashed Patch, 8.esp',
+    u'Bashed Patch, 9.esp',
+    u'Bashed Patch, CBash.esp',
+    u'Bashed Patch, Python.esp',
+    u'Bashed Patch, FCOM.esp',
+    u'Bashed Patch, Warrior.esp',
+    u'Bashed Patch, Thief.esp',
+    u'Bashed Patch, Mage.esp',
+    u'Bashed Patch, Test.esp',
+    u'ArchiveInvalidationInvalidated!.bsa',
+    u'Docs\\Bash Readme Template.html',
+    u'Docs\\wtxt_sand_small.css',
+    u'Docs\\wtxt_teal.css',
+    u'Docs\\Bash Readme Template.txt'
     ))
 wryeBashDataDirs = set((
-    r'Bash Patches',
-    r'INI Tweaks'
+    u'Bash Patches',
+    u'INI Tweaks'
     ))
 ignoreDataFiles = set((
-    r'OBSE\Plugins\Construction Set Extender.dll',
-    r'OBSE\Plugins\Construction Set Extender.ini'
+    u'OBSE\\Plugins\\Construction Set Extender.dll',
+    u'OBSE\\Plugins\\Construction Set Extender.ini'
     ))
 ignoreDataFilePrefixes = set((
-    r'Meshes\Characters\_Male\specialanims\0FemaleVariableWalk_'
+    u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
     ))
 ignoreDataDirs = set((
-    r'OBSE\Plugins\ComponentDLLs\CSE',
-    r'LSData'
+    u'OBSE\\Plugins\\ComponentDLLs\\CSE',
+    u'LSData'
     ))
 
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
-    ('Root',),
-    ('Library',1),
-    ('Cosmetic',),
-    ('Clothing',),
-    ('Weapon',),
-    ('Tweak',2,-1),
-    ('Overhaul',4,-1),
-    ('Misc.',1),
-    ('Magic',2),
-    ('NPC',),
-    ('Home',1),
-    ('Place',1),
-    ('Quest',3,-1),
-    ('Last',1,-1),
+    (u'Root',),
+    (u'Library',1),
+    (u'Cosmetic',),
+    (u'Clothing',),
+    (u'Weapon',),
+    (u'Tweak',2,-1),
+    (u'Overhaul',4,-1),
+    (u'Misc.',1),
+    (u'Magic',2),
+    (u'NPC',),
+    (u'Home',1),
+    (u'Place',1),
+    (u'Quest',3,-1),
+    (u'Last',1,-1),
     )
 
 # Tes3 Group/Top Types -------------------------------------------------------------
 groupTypes = [
-    _('Top (Type)'),
-    _('World Children'),
-    _('Int Cell Block'),
-    _('Int Cell Sub-Block'),
-    _('Ext Cell Block'),
-    _('Ext Cell Sub-Block'),
-    _('Cell Children'),
-    _('Topic Children'),
-    _('Cell Persistent Childen'),
-    _('Cell Temporary Children'),
-    _('Cell Visible Distant Children'),
+    _(u'Top (Type)'),
+    _(u'World Children'),
+    _(u'Int Cell Block'),
+    _(u'Int Cell Sub-Block'),
+    _(u'Ext Cell Block'),
+    _(u'Ext Cell Sub-Block'),
+    _(u'Cell Children'),
+    _(u'Topic Children'),
+    _(u'Cell Persistent Childen'),
+    _(u'Cell Temporary Children'),
+    _(u'Cell Visible Distant Children'),
 ]
 
 #--Top types in Oblivion order.
@@ -248,35 +248,35 @@ recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.spli
 def getIdFunc(modName):
     return lambda x: (GPath(modName),x)
 
-ob = getIdFunc('Oblivion.esm')
-cobl = getIdFunc('Cobl Main.esm')
+ob = getIdFunc(u'Oblivion.esm')
+cobl = getIdFunc(u'Cobl Main.esm')
 
 # Race Info -------------------------------------------------------------------
 raceNames = {
-    0x23fe9 : _('Argonian'),
-    0x224fc : _('Breton'),
-    0x191c1 : _('Dark Elf'),
-    0x19204 : _('High Elf'),
-    0x00907 : _('Imperial'),
-    0x22c37 : _('Khajiit'),
-    0x224fd : _('Nord'),
-    0x191c0 : _('Orc'),
-    0x00d43 : _('Redguard'),
-    0x00019 : _('Vampire'),
-    0x223c8 : _('Wood Elf'),
+    0x23fe9 : _(u'Argonian'),
+    0x224fc : _(u'Breton'),
+    0x191c1 : _(u'Dark Elf'),
+    0x19204 : _(u'High Elf'),
+    0x00907 : _(u'Imperial'),
+    0x22c37 : _(u'Khajiit'),
+    0x224fd : _(u'Nord'),
+    0x191c0 : _(u'Orc'),
+    0x00d43 : _(u'Redguard'),
+    0x00019 : _(u'Vampire'),
+    0x223c8 : _(u'Wood Elf'),
     }
 
 raceShortNames = {
-    0x23fe9 : 'Arg',
-    0x224fc : 'Bre',
-    0x191c1 : 'Dun',
-    0x19204 : 'Alt',
-    0x00907 : 'Imp',
-    0x22c37 : 'Kha',
-    0x224fd : 'Nor',
-    0x191c0 : 'Orc',
-    0x00d43 : 'Red',
-    0x223c8 : 'Bos',
+    0x23fe9 : u'Arg',
+    0x224fc : u'Bre',
+    0x191c1 : u'Dun',
+    0x19204 : u'Alt',
+    0x00907 : u'Imp',
+    0x22c37 : u'Kha',
+    0x224fd : u'Nor',
+    0x191c0 : u'Orc',
+    0x00d43 : u'Red',
+    0x223c8 : u'Bos',
     }
 
 raceHairMale = {
@@ -521,176 +521,176 @@ fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 
 
 # Magic Info ------------------------------------------------------------------
 weaponTypes = (
-    _('Blade (1 Handed)'),
-    _('Blade (2 Handed)'),
-    _('Blunt (1 Handed)'),
-    _('Blunt (2 Handed)'),
-    _('Staff'),
-    _('Bow'),
+    _(u'Blade (1 Handed)'),
+    _(u'Blade (2 Handed)'),
+    _(u'Blunt (1 Handed)'),
+    _(u'Blunt (2 Handed)'),
+    _(u'Staff'),
+    _(u'Bow'),
     )
 
 magicEffects = {
-    'ABAT': [5,_('Absorb Attribute'),0.95],
-    'ABFA': [5,_('Absorb Fatigue'),6],
-    'ABHE': [5,_('Absorb Health'),16],
-    'ABSK': [5,_('Absorb Skill'),2.1],
-    'ABSP': [5,_('Absorb Magicka'),7.5],
-    'BA01': [1,_('Bound Armor Extra 01'),0],#--Formid == 0
-    'BA02': [1,_('Bound Armor Extra 02'),0],#--Formid == 0
-    'BA03': [1,_('Bound Armor Extra 03'),0],#--Formid == 0
-    'BA04': [1,_('Bound Armor Extra 04'),0],#--Formid == 0
-    'BA05': [1,_('Bound Armor Extra 05'),0],#--Formid == 0
-    'BA06': [1,_('Bound Armor Extra 06'),0],#--Formid == 0
-    'BA07': [1,_('Bound Armor Extra 07'),0],#--Formid == 0
-    'BA08': [1,_('Bound Armor Extra 08'),0],#--Formid == 0
-    'BA09': [1,_('Bound Armor Extra 09'),0],#--Formid == 0
-    'BA10': [1,_('Bound Armor Extra 10'),0],#--Formid == 0
-    'BABO': [1,_('Bound Boots'),12],
-    'BACU': [1,_('Bound Cuirass'),12],
-    'BAGA': [1,_('Bound Gauntlets'),8],
-    'BAGR': [1,_('Bound Greaves'),12],
-    'BAHE': [1,_('Bound Helmet'),12],
-    'BASH': [1,_('Bound Shield'),12],
-    'BRDN': [0,_('Burden'),0.21],
-    'BW01': [1,_('Bound Order Weapon 1'),1],
-    'BW02': [1,_('Bound Order Weapon 2'),1],
-    'BW03': [1,_('Bound Order Weapon 3'),1],
-    'BW04': [1,_('Bound Order Weapon 4'),1],
-    'BW05': [1,_('Bound Order Weapon 5'),1],
-    'BW06': [1,_('Bound Order Weapon 6'),1],
-    'BW07': [1,_('Summon Staff of Sheogorath'),1],
-    'BW08': [1,_('Bound Priest Dagger'),1],
-    'BW09': [1,_('Bound Weapon Extra 09'),0],#--Formid == 0
-    'BW10': [1,_('Bound Weapon Extra 10'),0],#--Formid == 0
-    'BWAX': [1,_('Bound Axe'),39],
-    'BWBO': [1,_('Bound Bow'),95],
-    'BWDA': [1,_('Bound Dagger'),14],
-    'BWMA': [1,_('Bound Mace'),91],
-    'BWSW': [1,_('Bound Sword'),235],
-    'CALM': [3,_('Calm'),0.47],
-    'CHML': [3,_('Chameleon'),0.63],
-    'CHRM': [3,_('Charm'),0.2],
-    'COCR': [3,_('Command Creature'),0.6],
-    'COHU': [3,_('Command Humanoid'),0.75],
-    'CUDI': [5,_('Cure Disease'),1400],
-    'CUPA': [5,_('Cure Paralysis'),500],
-    'CUPO': [5,_('Cure Poison'),600],
-    'DARK': [3,_('DO NOT USE - Darkness'),0],
-    'DEMO': [3,_('Demoralize'),0.49],
-    'DGAT': [2,_('Damage Attribute'),100],
-    'DGFA': [2,_('Damage Fatigue'),4.4],
-    'DGHE': [2,_('Damage Health'),12],
-    'DGSP': [2,_('Damage Magicka'),2.45],
-    'DIAR': [2,_('Disintegrate Armor'),6.2],
-    'DISE': [2,_('Disease Info'),0], #--Formid == 0
-    'DIWE': [2,_('Disintegrate Weapon'),6.2],
-    'DRAT': [2,_('Drain Attribute'),0.7],
-    'DRFA': [2,_('Drain Fatigue'),0.18],
-    'DRHE': [2,_('Drain Health'),0.9],
-    'DRSK': [2,_('Drain Skill'),0.65],
-    'DRSP': [2,_('Drain Magicka'),0.18],
-    'DSPL': [4,_('Dispel'),3.6],
-    'DTCT': [4,_('Detect Life'),0.08],
-    'DUMY': [2,_('Mehrunes Dagon'),0], #--Formid == 0
-    'FIDG': [2,_('Fire Damage'),7.5],
-    'FISH': [0,_('Fire Shield'),0.95],
-    'FOAT': [5,_('Fortify Attribute'),0.6],
-    'FOFA': [5,_('Fortify Fatigue'),0.04],
-    'FOHE': [5,_('Fortify Health'),0.14],
-    'FOMM': [5,_('Fortify Magicka Multiplier'),0.04],
-    'FOSK': [5,_('Fortify Skill'),0.6],
-    'FOSP': [5,_('Fortify Magicka'),0.15],
-    'FRDG': [2,_('Frost Damage'),7.4],
-    'FRNZ': [3,_('Frenzy'),0.04],
-    'FRSH': [0,_('Frost Shield'),0.95],
-    'FTHR': [0,_('Feather'),0.1],
-    'INVI': [3,_('Invisibility'),40],
-    'LGHT': [3,_('Light'),0.051],
-    'LISH': [0,_('Shock Shield'),0.95],
-    'LOCK': [0,_('DO NOT USE - Lock'),30],
-    'MYHL': [1,_('Summon Mythic Dawn Helm'),110],
-    'MYTH': [1,_('Summon Mythic Dawn Armor'),120],
-    'NEYE': [3,_('Night-Eye'),22],
-    'OPEN': [0,_('Open'),4.3],
-    'PARA': [3,_('Paralyze'),475],
-    'POSN': [2,_('Poison Info'),0],
-    'RALY': [3,_('Rally'),0.03],
-    'REAN': [1,_('Reanimate'),10],
-    'REAT': [5,_('Restore Attribute'),38],
-    'REDG': [4,_('Reflect Damage'),2.5],
-    'REFA': [5,_('Restore Fatigue'),2],
-    'REHE': [5,_('Restore Health'),10],
-    'RESP': [5,_('Restore Magicka'),2.5],
-    'RFLC': [4,_('Reflect Spell'),3.5],
-    'RSDI': [5,_('Resist Disease'),0.5],
-    'RSFI': [5,_('Resist Fire'),0.5],
-    'RSFR': [5,_('Resist Frost'),0.5],
-    'RSMA': [5,_('Resist Magic'),2],
-    'RSNW': [5,_('Resist Normal Weapons'),1.5],
-    'RSPA': [5,_('Resist Paralysis'),0.75],
-    'RSPO': [5,_('Resist Poison'),0.5],
-    'RSSH': [5,_('Resist Shock'),0.5],
-    'RSWD': [5,_('Resist Water Damage'),0], #--Formid == 0
-    'SABS': [4,_('Spell Absorption'),3],
-    'SEFF': [0,_('Script Effect'),0],
-    'SHDG': [2,_('Shock Damage'),7.8],
-    'SHLD': [0,_('Shield'),0.45],
-    'SLNC': [3,_('Silence'),60],
-    'STMA': [2,_('Stunted Magicka'),0],
-    'STRP': [4,_('Soul Trap'),30],
-    'SUDG': [2,_('Sun Damage'),9],
-    'TELE': [4,_('Telekinesis'),0.49],
-    'TURN': [1,_('Turn Undead'),0.083],
-    'VAMP': [2,_('Vampirism'),0],
-    'WABR': [0,_('Water Breathing'),14.5],
-    'WAWA': [0,_('Water Walking'),13],
-    'WKDI': [2,_('Weakness to Disease'),0.12],
-    'WKFI': [2,_('Weakness to Fire'),0.1],
-    'WKFR': [2,_('Weakness to Frost'),0.1],
-    'WKMA': [2,_('Weakness to Magic'),0.25],
-    'WKNW': [2,_('Weakness to Normal Weapons'),0.25],
-    'WKPO': [2,_('Weakness to Poison'),0.1],
-    'WKSH': [2,_('Weakness to Shock'),0.1],
-    'Z001': [1,_('Summon Rufio\'s Ghost'),13],
-    'Z002': [1,_('Summon Ancestor Guardian'),33.3],
-    'Z003': [1,_('Summon Spiderling'),45],
-    'Z004': [1,_('Summon Flesh Atronach'),1],
-    'Z005': [1,_('Summon Bear'),47.3],
-    'Z006': [1,_('Summon Gluttonous Hunger'),61],
-    'Z007': [1,_('Summon Ravenous Hunger'),123.33],
-    'Z008': [1,_('Summon Voracious Hunger'),175],
-    'Z009': [1,_('Summon Dark Seducer'),1],
-    'Z010': [1,_('Summon Golden Saint'),1],
-    'Z011': [1,_('Wabba Summon'),0],
-    'Z012': [1,_('Summon Decrepit Shambles'),45],
-    'Z013': [1,_('Summon Shambles'),87.5],
-    'Z014': [1,_('Summon Replete Shambles'),150],
-    'Z015': [1,_('Summon Hunger'),22],
-    'Z016': [1,_('Summon Mangled Flesh Atronach'),22],
-    'Z017': [1,_('Summon Torn Flesh Atronach'),32.5],
-    'Z018': [1,_('Summon Stitched Flesh Atronach'),75.5],
-    'Z019': [1,_('Summon Sewn Flesh Atronach'),195],
-    'Z020': [1,_('Extra Summon 20'),0],
-    'ZCLA': [1,_('Summon Clannfear'),75.56],
-    'ZDAE': [1,_('Summon Daedroth'),123.33],
-    'ZDRE': [1,_('Summon Dremora'),72.5],
-    'ZDRL': [1,_('Summon Dremora Lord'),157.14],
-    'ZFIA': [1,_('Summon Flame Atronach'),45],
-    'ZFRA': [1,_('Summon Frost Atronach'),102.86],
-    'ZGHO': [1,_('Summon Ghost'),22],
-    'ZHDZ': [1,_('Summon Headless Zombie'),56],
-    'ZLIC': [1,_('Summon Lich'),350],
-    'ZSCA': [1,_('Summon Scamp'),30],
-    'ZSKA': [1,_('Summon Skeleton Guardian'),32.5],
-    'ZSKC': [1,_('Summon Skeleton Champion'),152],
-    'ZSKE': [1,_('Summon Skeleton'),11.25],
-    'ZSKH': [1,_('Summon Skeleton Hero'),66],
-    'ZSPD': [1,_('Summon Spider Daedra'),195],
-    'ZSTA': [1,_('Summon Storm Atronach'),125],
-    'ZWRA': [1,_('Summon Faded Wraith'),87.5],
-    'ZWRL': [1,_('Summon Gloom Wraith'),260],
-    'ZXIV': [1,_('Summon Xivilai'),200],
-    'ZZOM': [1,_('Summon Zombie'),16.67],
+    'ABAT': [5,_(u'Absorb Attribute'),0.95],
+    'ABFA': [5,_(u'Absorb Fatigue'),6],
+    'ABHE': [5,_(u'Absorb Health'),16],
+    'ABSK': [5,_(u'Absorb Skill'),2.1],
+    'ABSP': [5,_(u'Absorb Magicka'),7.5],
+    'BA01': [1,_(u'Bound Armor Extra 01'),0],#--Formid == 0
+    'BA02': [1,_(u'Bound Armor Extra 02'),0],#--Formid == 0
+    'BA03': [1,_(u'Bound Armor Extra 03'),0],#--Formid == 0
+    'BA04': [1,_(u'Bound Armor Extra 04'),0],#--Formid == 0
+    'BA05': [1,_(u'Bound Armor Extra 05'),0],#--Formid == 0
+    'BA06': [1,_(u'Bound Armor Extra 06'),0],#--Formid == 0
+    'BA07': [1,_(u'Bound Armor Extra 07'),0],#--Formid == 0
+    'BA08': [1,_(u'Bound Armor Extra 08'),0],#--Formid == 0
+    'BA09': [1,_(u'Bound Armor Extra 09'),0],#--Formid == 0
+    'BA10': [1,_(u'Bound Armor Extra 10'),0],#--Formid == 0
+    'BABO': [1,_(u'Bound Boots'),12],
+    'BACU': [1,_(u'Bound Cuirass'),12],
+    'BAGA': [1,_(u'Bound Gauntlets'),8],
+    'BAGR': [1,_(u'Bound Greaves'),12],
+    'BAHE': [1,_(u'Bound Helmet'),12],
+    'BASH': [1,_(u'Bound Shield'),12],
+    'BRDN': [0,_(u'Burden'),0.21],
+    'BW01': [1,_(u'Bound Order Weapon 1'),1],
+    'BW02': [1,_(u'Bound Order Weapon 2'),1],
+    'BW03': [1,_(u'Bound Order Weapon 3'),1],
+    'BW04': [1,_(u'Bound Order Weapon 4'),1],
+    'BW05': [1,_(u'Bound Order Weapon 5'),1],
+    'BW06': [1,_(u'Bound Order Weapon 6'),1],
+    'BW07': [1,_(u'Summon Staff of Sheogorath'),1],
+    'BW08': [1,_(u'Bound Priest Dagger'),1],
+    'BW09': [1,_(u'Bound Weapon Extra 09'),0],#--Formid == 0
+    'BW10': [1,_(u'Bound Weapon Extra 10'),0],#--Formid == 0
+    'BWAX': [1,_(u'Bound Axe'),39],
+    'BWBO': [1,_(u'Bound Bow'),95],
+    'BWDA': [1,_(u'Bound Dagger'),14],
+    'BWMA': [1,_(u'Bound Mace'),91],
+    'BWSW': [1,_(u'Bound Sword'),235],
+    'CALM': [3,_(u'Calm'),0.47],
+    'CHML': [3,_(u'Chameleon'),0.63],
+    'CHRM': [3,_(u'Charm'),0.2],
+    'COCR': [3,_(u'Command Creature'),0.6],
+    'COHU': [3,_(u'Command Humanoid'),0.75],
+    'CUDI': [5,_(u'Cure Disease'),1400],
+    'CUPA': [5,_(u'Cure Paralysis'),500],
+    'CUPO': [5,_(u'Cure Poison'),600],
+    'DARK': [3,_(u'DO NOT USE - Darkness'),0],
+    'DEMO': [3,_(u'Demoralize'),0.49],
+    'DGAT': [2,_(u'Damage Attribute'),100],
+    'DGFA': [2,_(u'Damage Fatigue'),4.4],
+    'DGHE': [2,_(u'Damage Health'),12],
+    'DGSP': [2,_(u'Damage Magicka'),2.45],
+    'DIAR': [2,_(u'Disintegrate Armor'),6.2],
+    'DISE': [2,_(u'Disease Info'),0], #--Formid == 0
+    'DIWE': [2,_(u'Disintegrate Weapon'),6.2],
+    'DRAT': [2,_(u'Drain Attribute'),0.7],
+    'DRFA': [2,_(u'Drain Fatigue'),0.18],
+    'DRHE': [2,_(u'Drain Health'),0.9],
+    'DRSK': [2,_(u'Drain Skill'),0.65],
+    'DRSP': [2,_(u'Drain Magicka'),0.18],
+    'DSPL': [4,_(u'Dispel'),3.6],
+    'DTCT': [4,_(u'Detect Life'),0.08],
+    'DUMY': [2,_(u'Mehrunes Dagon'),0], #--Formid == 0
+    'FIDG': [2,_(u'Fire Damage'),7.5],
+    'FISH': [0,_(u'Fire Shield'),0.95],
+    'FOAT': [5,_(u'Fortify Attribute'),0.6],
+    'FOFA': [5,_(u'Fortify Fatigue'),0.04],
+    'FOHE': [5,_(u'Fortify Health'),0.14],
+    'FOMM': [5,_(u'Fortify Magicka Multiplier'),0.04],
+    'FOSK': [5,_(u'Fortify Skill'),0.6],
+    'FOSP': [5,_(u'Fortify Magicka'),0.15],
+    'FRDG': [2,_(u'Frost Damage'),7.4],
+    'FRNZ': [3,_(u'Frenzy'),0.04],
+    'FRSH': [0,_(u'Frost Shield'),0.95],
+    'FTHR': [0,_(u'Feather'),0.1],
+    'INVI': [3,_(u'Invisibility'),40],
+    'LGHT': [3,_(u'Light'),0.051],
+    'LISH': [0,_(u'Shock Shield'),0.95],
+    'LOCK': [0,_(u'DO NOT USE - Lock'),30],
+    'MYHL': [1,_(u'Summon Mythic Dawn Helm'),110],
+    'MYTH': [1,_(u'Summon Mythic Dawn Armor'),120],
+    'NEYE': [3,_(u'Night-Eye'),22],
+    'OPEN': [0,_(u'Open'),4.3],
+    'PARA': [3,_(u'Paralyze'),475],
+    'POSN': [2,_(u'Poison Info'),0],
+    'RALY': [3,_(u'Rally'),0.03],
+    'REAN': [1,_(u'Reanimate'),10],
+    'REAT': [5,_(u'Restore Attribute'),38],
+    'REDG': [4,_(u'Reflect Damage'),2.5],
+    'REFA': [5,_(u'Restore Fatigue'),2],
+    'REHE': [5,_(u'Restore Health'),10],
+    'RESP': [5,_(u'Restore Magicka'),2.5],
+    'RFLC': [4,_(u'Reflect Spell'),3.5],
+    'RSDI': [5,_(u'Resist Disease'),0.5],
+    'RSFI': [5,_(u'Resist Fire'),0.5],
+    'RSFR': [5,_(u'Resist Frost'),0.5],
+    'RSMA': [5,_(u'Resist Magic'),2],
+    'RSNW': [5,_(u'Resist Normal Weapons'),1.5],
+    'RSPA': [5,_(u'Resist Paralysis'),0.75],
+    'RSPO': [5,_(u'Resist Poison'),0.5],
+    'RSSH': [5,_(u'Resist Shock'),0.5],
+    'RSWD': [5,_(u'Resist Water Damage'),0], #--Formid == 0
+    'SABS': [4,_(u'Spell Absorption'),3],
+    'SEFF': [0,_(u'Script Effect'),0],
+    'SHDG': [2,_(u'Shock Damage'),7.8],
+    'SHLD': [0,_(u'Shield'),0.45],
+    'SLNC': [3,_(u'Silence'),60],
+    'STMA': [2,_(u'Stunted Magicka'),0],
+    'STRP': [4,_(u'Soul Trap'),30],
+    'SUDG': [2,_(u'Sun Damage'),9],
+    'TELE': [4,_(u'Telekinesis'),0.49],
+    'TURN': [1,_(u'Turn Undead'),0.083],
+    'VAMP': [2,_(u'Vampirism'),0],
+    'WABR': [0,_(u'Water Breathing'),14.5],
+    'WAWA': [0,_(u'Water Walking'),13],
+    'WKDI': [2,_(u'Weakness to Disease'),0.12],
+    'WKFI': [2,_(u'Weakness to Fire'),0.1],
+    'WKFR': [2,_(u'Weakness to Frost'),0.1],
+    'WKMA': [2,_(u'Weakness to Magic'),0.25],
+    'WKNW': [2,_(u'Weakness to Normal Weapons'),0.25],
+    'WKPO': [2,_(u'Weakness to Poison'),0.1],
+    'WKSH': [2,_(u'Weakness to Shock'),0.1],
+    'Z001': [1,_(u'Summon Rufio\'s Ghost'),13],
+    'Z002': [1,_(u'Summon Ancestor Guardian'),33.3],
+    'Z003': [1,_(u'Summon Spiderling'),45],
+    'Z004': [1,_(u'Summon Flesh Atronach'),1],
+    'Z005': [1,_(u'Summon Bear'),47.3],
+    'Z006': [1,_(u'Summon Gluttonous Hunger'),61],
+    'Z007': [1,_(u'Summon Ravenous Hunger'),123.33],
+    'Z008': [1,_(u'Summon Voracious Hunger'),175],
+    'Z009': [1,_(u'Summon Dark Seducer'),1],
+    'Z010': [1,_(u'Summon Golden Saint'),1],
+    'Z011': [1,_(u'Wabba Summon'),0],
+    'Z012': [1,_(u'Summon Decrepit Shambles'),45],
+    'Z013': [1,_(u'Summon Shambles'),87.5],
+    'Z014': [1,_(u'Summon Replete Shambles'),150],
+    'Z015': [1,_(u'Summon Hunger'),22],
+    'Z016': [1,_(u'Summon Mangled Flesh Atronach'),22],
+    'Z017': [1,_(u'Summon Torn Flesh Atronach'),32.5],
+    'Z018': [1,_(u'Summon Stitched Flesh Atronach'),75.5],
+    'Z019': [1,_(u'Summon Sewn Flesh Atronach'),195],
+    'Z020': [1,_(u'Extra Summon 20'),0],
+    'ZCLA': [1,_(u'Summon Clannfear'),75.56],
+    'ZDAE': [1,_(u'Summon Daedroth'),123.33],
+    'ZDRE': [1,_(u'Summon Dremora'),72.5],
+    'ZDRL': [1,_(u'Summon Dremora Lord'),157.14],
+    'ZFIA': [1,_(u'Summon Flame Atronach'),45],
+    'ZFRA': [1,_(u'Summon Frost Atronach'),102.86],
+    'ZGHO': [1,_(u'Summon Ghost'),22],
+    'ZHDZ': [1,_(u'Summon Headless Zombie'),56],
+    'ZLIC': [1,_(u'Summon Lich'),350],
+    'ZSCA': [1,_(u'Summon Scamp'),30],
+    'ZSKA': [1,_(u'Summon Skeleton Guardian'),32.5],
+    'ZSKC': [1,_(u'Summon Skeleton Champion'),152],
+    'ZSKE': [1,_(u'Summon Skeleton'),11.25],
+    'ZSKH': [1,_(u'Summon Skeleton Hero'),66],
+    'ZSPD': [1,_(u'Summon Spider Daedra'),195],
+    'ZSTA': [1,_(u'Summon Storm Atronach'),125],
+    'ZWRA': [1,_(u'Summon Faded Wraith'),87.5],
+    'ZWRL': [1,_(u'Summon Gloom Wraith'),260],
+    'ZXIV': [1,_(u'Summon Xivilai'),200],
+    'ZZOM': [1,_(u'Summon Zombie'),16.67],
     }
 mgef_school = dict((x,y) for x,[y,z,a] in magicEffects.items())
 mgef_name = dict((x,z) for x,[y,z,a] in magicEffects.items())
@@ -755,160 +755,160 @@ genericAVEffects = set([
 genericAVEffects |= set((ctypes.cast(x, ctypes.POINTER(ctypes.c_ulong)).contents.value for x in genericAVEffects))
 
 actorValues = [
-    _('Strength'), #--00
-    _('Intelligence'),
-    _('Willpower'),
-    _('Agility'),
-    _('Speed'),
-    _('Endurance'),
-    _('Personality'),
-    _('Luck'),
-    _('Health'),
-    _('Magicka'),
+    _(u'Strength'), #--00
+    _(u'Intelligence'),
+    _(u'Willpower'),
+    _(u'Agility'),
+    _(u'Speed'),
+    _(u'Endurance'),
+    _(u'Personality'),
+    _(u'Luck'),
+    _(u'Health'),
+    _(u'Magicka'),
 
-    _('Fatigue'), #--10
-    _('Encumbrance'),
-    _('Armorer'),
-    _('Athletics'),
-    _('Blade'),
-    _('Block'),
-    _('Blunt'),
-    _('Hand To Hand'),
-    _('Heavy Armor'),
-    _('Alchemy'),
+    _(u'Fatigue'), #--10
+    _(u'Encumbrance'),
+    _(u'Armorer'),
+    _(u'Athletics'),
+    _(u'Blade'),
+    _(u'Block'),
+    _(u'Blunt'),
+    _(u'Hand To Hand'),
+    _(u'Heavy Armor'),
+    _(u'Alchemy'),
 
-    _('Alteration'), #--20
-    _('Conjuration'),
-    _('Destruction'),
-    _('Illusion'),
-    _('Mysticism'),
-    _('Restoration'),
-    _('Acrobatics'),
-    _('Light Armor'),
-    _('Marksman'),
-    _('Mercantile'),
+    _(u'Alteration'), #--20
+    _(u'Conjuration'),
+    _(u'Destruction'),
+    _(u'Illusion'),
+    _(u'Mysticism'),
+    _(u'Restoration'),
+    _(u'Acrobatics'),
+    _(u'Light Armor'),
+    _(u'Marksman'),
+    _(u'Mercantile'),
 
-    _('Security'), #--30
-    _('Sneak'),
-    _('Speechcraft'),
-    'Aggression',
-    'Confidence',
-    'Energy',
-    'Responsibility',
-    'Bounty',
-    'UNKNOWN 38',
-    'UNKNOWN 39',
+    _(u'Security'), #--30
+    _(u'Sneak'),
+    _(u'Speechcraft'),
+    u'Aggression',
+    u'Confidence',
+    u'Energy',
+    u'Responsibility',
+    u'Bounty',
+    u'UNKNOWN 38',
+    u'UNKNOWN 39',
 
-    'MagickaMultiplier', #--40
-    'NightEyeBonus',
-    'AttackBonus',
-    'DefendBonus',
-    'CastingPenalty',
-    'Blindness',
-    'Chameleon',
-    'Invisibility',
-    'Paralysis',
-    'Silence',
+    u'MagickaMultiplier', #--40
+    u'NightEyeBonus',
+    u'AttackBonus',
+    u'DefendBonus',
+    u'CastingPenalty',
+    u'Blindness',
+    u'Chameleon',
+    u'Invisibility',
+    u'Paralysis',
+    u'Silence',
 
-    'Confusion', #--50
-    'DetectItemRange',
-    'SpellAbsorbChance',
-    'SpellReflectChance',
-    'SwimSpeedMultiplier',
-    'WaterBreathing',
-    'WaterWalking',
-    'StuntedMagicka',
-    'DetectLifeRange',
-    'ReflectDamage',
+    u'Confusion', #--50
+    u'DetectItemRange',
+    u'SpellAbsorbChance',
+    u'SpellReflectChance',
+    u'SwimSpeedMultiplier',
+    u'WaterBreathing',
+    u'WaterWalking',
+    u'StuntedMagicka',
+    u'DetectLifeRange',
+    u'ReflectDamage',
 
-    'Telekinesis', #--60
-    'ResistFire',
-    'ResistFrost',
-    'ResistDisease',
-    'ResistMagic',
-    'ResistNormalWeapons',
-    'ResistParalysis',
-    'ResistPoison',
-    'ResistShock',
-    'Vampirism',
+    u'Telekinesis', #--60
+    u'ResistFire',
+    u'ResistFrost',
+    u'ResistDisease',
+    u'ResistMagic',
+    u'ResistNormalWeapons',
+    u'ResistParalysis',
+    u'ResistPoison',
+    u'ResistShock',
+    u'Vampirism',
 
-    'Darkness', #--70
-    'ResistWaterDamage',
+    u'Darkness', #--70
+    u'ResistWaterDamage',
     ]
 
 acbs = {
-    'Armorer': 0,
-    'Athletics': 1,
-    'Blade': 2,
-    'Block': 3,
-    'Blunt': 4,
-    'Hand to Hand': 5,
-    'Heavy Armor': 6,
-    'Alchemy': 7,
-    'Alteration': 8,
-    'Conjuration': 9,
-    'Destruction': 10,
-    'Illusion': 11,
-    'Mysticism': 12,
-    'Restoration': 13,
-    'Acrobatics': 14,
-    'Light Armor': 15,
-    'Marksman': 16,
-    'Mercantile': 17,
-    'Security': 18,
-    'Sneak': 19,
-    'Speechcraft': 20,
-    'Health': 21,
-    'Strength': 25,
-    'Intelligence': 26,
-    'Willpower': 27,
-    'Agility': 28,
-    'Speed': 29,
-    'Endurance': 30,
-    'Personality': 31,
-    'Luck': 32,
+    u'Armorer': 0,
+    u'Athletics': 1,
+    u'Blade': 2,
+    u'Block': 3,
+    u'Blunt': 4,
+    u'Hand to Hand': 5,
+    u'Heavy Armor': 6,
+    u'Alchemy': 7,
+    u'Alteration': 8,
+    u'Conjuration': 9,
+    u'Destruction': 10,
+    u'Illusion': 11,
+    u'Mysticism': 12,
+    u'Restoration': 13,
+    u'Acrobatics': 14,
+    u'Light Armor': 15,
+    u'Marksman': 16,
+    u'Mercantile': 17,
+    u'Security': 18,
+    u'Sneak': 19,
+    u'Speechcraft': 20,
+    u'Health': 21,
+    u'Strength': 25,
+    u'Intelligence': 26,
+    u'Willpower': 27,
+    u'Agility': 28,
+    u'Speed': 29,
+    u'Endurance': 30,
+    u'Personality': 31,
+    u'Luck': 32,
     }
 
  # Save File Info --------------------------------------------------------------
 saveRecTypes = {
-    6 : _('Faction'),
-    19: _('Apparatus'),
-    20: _('Armor'),
-    21: _('Book'),
-    22: _('Clothing'),
-    25: _('Ingredient'),
-    26: _('Light'),
-    27: _('Misc. Item'),
-    33: _('Weapon'),
-    35: _('NPC'),
-    36: _('Creature'),
-    39: _('Key'),
-    40: _('Potion'),
-    48: _('Cell'),
-    49: _('Object Ref'),
-    50: _('NPC Ref'),
-    51: _('Creature Ref'),
-    58: _('Dialog Entry'),
-    59: _('Quest'),
-    61: _('AI Package'),
+    6 : _(u'Faction'),
+    19: _(u'Apparatus'),
+    20: _(u'Armor'),
+    21: _(u'Book'),
+    22: _(u'Clothing'),
+    25: _(u'Ingredient'),
+    26: _(u'Light'),
+    27: _(u'Misc. Item'),
+    33: _(u'Weapon'),
+    35: _(u'NPC'),
+    36: _(u'Creature'),
+    39: _(u'Key'),
+    40: _(u'Potion'),
+    48: _(u'Cell'),
+    49: _(u'Object Ref'),
+    50: _(u'NPC Ref'),
+    51: _(u'Creature Ref'),
+    58: _(u'Dialog Entry'),
+    59: _(u'Quest'),
+    61: _(u'AI Package'),
     }
 
 # Alchemical Catalogs ---------------------------------------------------------
 ingred_alchem = (
-    (1,0xCED,_('Alchemical Ingredients I'),250),
-    (2,0xCEC,_('Alchemical Ingredients II'),500),
-    (3,0xCEB,_('Alchemical Ingredients III'),1000),
-    (4,0xCE7,_('Alchemical Ingredients IV'),2000),
+    (1,0xCED,_(u'Alchemical Ingredients I'),250),
+    (2,0xCEC,_(u'Alchemical Ingredients II'),500),
+    (3,0xCEB,_(u'Alchemical Ingredients III'),1000),
+    (4,0xCE7,_(u'Alchemical Ingredients IV'),2000),
     )
 effect_alchem = (
-    (1,0xCEA,_('Alchemical Effects I'),500),
-    (2,0xCE9,_('Alchemical Effects II'),1000),
-    (3,0xCE8,_('Alchemical Effects III'),2000),
-    (4,0xCE6,_('Alchemical Effects IV'),4000),
+    (1,0xCEA,_(u'Alchemical Effects I'),500),
+    (2,0xCE9,_(u'Alchemical Effects II'),1000),
+    (3,0xCE8,_(u'Alchemical Effects III'),2000),
+    (4,0xCE6,_(u'Alchemical Effects IV'),4000),
     )
 
 # Power Exhaustion ------------------------------------------------------------
-orrery = getIdFunc('DLCOrrery.esp')
+orrery = getIdFunc(u'DLCOrrery.esp')
 id_exhaustion = {
     ob(0x014D23): 9, # AbPilgrimsGrace
     ob(0x022A43): 7, # BSLoverKiss
@@ -1075,7 +1075,7 @@ repairFactions_legitDroppedFactions = set((
     ))
 
 # Messages Text ===============================================================
-messagesHeader = """<html>
+messagesHeader = u"""<html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
 	<title>Private Message Archive</title>
