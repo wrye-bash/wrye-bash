@@ -89,20 +89,10 @@ class ess:
         headerSize, = struct.unpack('I',ins.read(4))
         #--Name, location
         version,saveNumber,size = struct.unpack('2IH',ins.read(10))
-        pcName = ins.read(size)
-        try:
-            # Skyrim only allows names saved in cp1252
-            header.pcName = unicode(pcName,'cp1252')
-        except UnicodeDecodeError:
-            header.pcName = unicode(pcName,'mbcs')
+        header.pcName = ins.read(size)
         header.pcLevel, = struct.unpack('I',ins.read(4))
         size, = struct.unpack('H',ins.read(2))
-        pcLocation = ins.read(size)
-        try:
-            # Skyrim only allows locations in cp1252
-            header.pcLocation = unicode(pcLocation,'cp1252')
-        except UnicodeDecodeError:
-            header.pcLocation = unicode(pcLocation,'mbcs')
+        header.pcLocation = ins.read(size)
         size, = struct.unpack('H',ins.read(2))
         header.gameDate = ins.read(size)
         hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
