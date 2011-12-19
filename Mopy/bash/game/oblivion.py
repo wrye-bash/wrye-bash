@@ -27,53 +27,53 @@
 import struct
 
 #--Name of the game
-name = 'Oblivion'
+name = u'Oblivion'
 #--Alternate display name to use instead of "Wrye Bash for ***"
-altName = 'Wrye Bash'
+altName = u'Wrye Bash'
 
 #--Exe to look for to see if this is the right game
-exe = 'Oblivion.exe'
+exe = u'Oblivion.exe'
 
 #--Registry keys to read to find the install location
 regInstallKeys = [
-    ('Bethesda Softworks\Oblivion','Installed Path'),
+    (u'Bethesda Softworks\\Oblivion',u'Installed Path'),
     ]
 
 #--patch information
-patchURL = 'http://www.elderscrolls.com/downloads/updates_patches.htm'
-patchTip = 'http://www.elderscrolls.com/'
+patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
+patchTip = u'http://www.elderscrolls.com/'
 
 #--Construction Set information
 class cs:
-    shortName = 'TESCS'             # Abbreviated name
-    longName = 'Construction Set'   # Full name
-    exe = 'TESConstructionSet.exe'  # Executable to run
-    seArgs = '-editor'              # Argument to pass to the SE to load the CS
-    imageName = 'tescs%s.png'       # Image name template for the status bar
+    shortName = u'TESCS'             # Abbreviated name
+    longName = u'Construction Set'   # Full name
+    exe = u'TESConstructionSet.exe'  # Executable to run
+    seArgs = u'-editor'              # Argument to pass to the SE to load the CS
+    imageName = u'tescs%s.png'       # Image name template for the status bar
 
 #--Script Extender information
 class se:
-    shortName = 'OBSE'                      # Abbreviated name
-    longName = 'Oblivion Script Extender'   # Full name
-    exe = 'obse_loader.exe'                 # Exe to run
-    steamExe = 'obse_1_2_416.dll'           # Exe to run if a steam install
-    url = 'http://obse.silverlock.org/'     # URL to download from
-    urlTip = 'http://obse.silverlock.org/'  # Tooltip for mouse over the URL
+    shortName = u'OBSE'                      # Abbreviated name
+    longName = u'Oblivion Script Extender'   # Full name
+    exe = u'obse_loader.exe'                 # Exe to run
+    steamExe = u'obse_1_2_416.dll'           # Exe to run if a steam install
+    url = u'http://obse.silverlock.org/'     # URL to download from
+    urlTip = u'http://obse.silverlock.org/'  # Tooltip for mouse over the URL
 
 #--Graphics Extender information
 class ge:
-    shortName = 'OBGE'
-    longName = 'Oblivion Graphics Extender'
-    exe = [('Data','obse','plugins','obge.dll'),
-           ('Data','obse','plugins','obgev2.dll'),
+    shortName = u'OBGE'
+    longName = u'Oblivion Graphics Extender'
+    exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
+           (u'Data',u'obse',u'plugins',u'obgev2.dll'),
            ]
-    url = 'http://www.tesnexus.com/downloads/file.php?id=30054'
-    urlTip = 'http://www.tesnexus.com/'
+    url = u'http://www.tesnexus.com/downloads/file.php?id=30054'
+    urlTip = u'http://www.tesnexus.com/'
 
 #--4gb Launcher
 class laa:
-    name = ''           # Name
-    exe = '**DNE**'     # Executable to run
+    name = u''           # Name
+    exe = u'**DNE**'     # Executable to run
     launchesSE = False  # Whether the launcher will automatically launch the SE as well
 
 #--Save Game format stuff
@@ -88,7 +88,7 @@ class ess:
         """Extract info from save file."""
         #--Header
         if ins.read(12) != 'TES4SAVEGAME':
-            raise Exception('Save file is not an Oblivion save game.')
+            raise Exception(u'Save file is not an Oblivion save game.')
         ins.seek(34)
         headerSize, = struct.unpack('I',ins.read(4))
         #--Name, location
@@ -145,139 +145,158 @@ class ess:
 
 #--The main plugin Wrye Bash should look for
 masterFiles = [
-    r'Oblivion.esm',
-    r'Nehrim.esm',
+    u'Oblivion.esm',
+    u'Nehrim.esm',
     ]
 
 #--INI files that should show up in the INI Edits tab
 iniFiles = [
-    r'Oblivion.ini',
+    u'Oblivion.ini',
     ]
 
 #--INI setting to setup Save Profiles
-saveProfilesKey = ('General','SLocalSavePath')
+saveProfilesKey = (u'General',u'SLocalSavePath')
 
 #--Game ESM/ESP/BSA files
 bethDataFiles = set((
     #--Vanilla
-    r'oblivion.esm',
-    r'oblivion_1.1.esm',
-    r'oblivion_si.esm',
-    r'oblivion_1.1.esm.ghost',
-    r'oblivion_si.esm.ghost',
-    r'oblivion - meshes.bsa',
-    r'oblivion - misc.bsa',
-    r'oblivion - sounds.bsa',
-    r'oblivion - textures - compressed.bsa',
-    r'oblivion - textures - compressed.bsa.orig',
-    r'oblivion - voices1.bsa',
-    r'oblivion - voices2.bsa',
+    u'oblivion.esm',
+    u'oblivion_1.1.esm',
+    u'oblivion_si.esm',
+    u'oblivion_1.1.esm.ghost',
+    u'oblivion_si.esm.ghost',
+    u'oblivion - meshes.bsa',
+    u'oblivion - misc.bsa',
+    u'oblivion - sounds.bsa',
+    u'oblivion - textures - compressed.bsa',
+    u'oblivion - textures - compressed.bsa.orig',
+    u'oblivion - voices1.bsa',
+    u'oblivion - voices2.bsa',
     #--Shivering Isles
-    r'dlcshiveringisles.esp',
-    r'dlcshiveringisles - meshes.bsa',
-    r'dlcshiveringisles - sounds.bsa',
-    r'dlcshiveringisles - textures.bsa',
-    r'dlcshiveringisles - voices.bsa',
+    u'dlcshiveringisles.esp',
+    u'dlcshiveringisles - meshes.bsa',
+    u'dlcshiveringisles - sounds.bsa',
+    u'dlcshiveringisles - textures.bsa',
+    u'dlcshiveringisles - voices.bsa',
     ))
 
 #--Every file in the Data directory from Bethsoft
 allBethFiles = set((
     #vanilla
-    r'Credits.txt',
-    r'Oblivion - Meshes.bsa',
-    r'Oblivion - Misc.bsa',
-    r'Oblivion - Sounds.bsa',
-    r'Oblivion - Textures - Compressed.bsa',
-    r'Oblivion - Voices1.bsa',
-    r'Oblivion - Voices2.bsa',
-    r'Oblivion.esm',
-    r'Music\Battle\battle_01.mp3',
-    r'Music\Battle\battle_02.mp3',
-    r'Music\Battle\battle_03.mp3',
-    r'Music\Battle\battle_04.mp3',
-    r'Music\Battle\battle_05.mp3',
-    r'Music\Battle\battle_06.mp3',
-    r'Music\Battle\battle_07.mp3',
-    r'Music\Battle\battle_08.mp3',
-    r'Music\Dungeon\Dungeon_01_v2.mp3',
-    r'Music\Dungeon\dungeon_02.mp3',
-    r'Music\Dungeon\dungeon_03.mp3',
-    r'Music\Dungeon\dungeon_04.mp3',
-    r'Music\Dungeon\dungeon_05.mp3',
-    r'Music\Explore\atmosphere_01.mp3',
-    r'Music\Explore\atmosphere_03.mp3',
-    r'Music\Explore\atmosphere_04.mp3',
-    r'Music\Explore\atmosphere_06.mp3',
-    r'Music\Explore\atmosphere_07.mp3',
-    r'Music\Explore\atmosphere_08.mp3',
-    r'Music\Explore\atmosphere_09.mp3',
-    r'Music\Public\town_01.mp3',
-    r'Music\Public\town_02.mp3',
-    r'Music\Public\town_03.mp3',
-    r'Music\Public\town_04.mp3',
-    r'Music\Public\town_05.mp3',
-    r'Music\Special\death.mp3',
-    r'Music\Special\success.mp3',
-    r'Music\Special\tes4title.mp3',
-    r'Shaders\shaderpackage001.sdp',
-    r'Shaders\shaderpackage002.sdp',
-    r'Shaders\shaderpackage003.sdp',
-    r'Shaders\shaderpackage004.sdp',
-    r'Shaders\shaderpackage005.sdp',
-    r'Shaders\shaderpackage006.sdp',
-    r'Shaders\shaderpackage007.sdp',
-    r'Shaders\shaderpackage008.sdp',
-    r'Shaders\shaderpackage009.sdp',
-    r'Shaders\shaderpackage010.sdp',
-    r'Shaders\shaderpackage011.sdp',
-    r'Shaders\shaderpackage012.sdp',
-    r'Shaders\shaderpackage013.sdp',
-    r'Shaders\shaderpackage014.sdp',
-    r'Shaders\shaderpackage015.sdp',
-    r'Shaders\shaderpackage016.sdp',
-    r'Shaders\shaderpackage017.sdp',
-    r'Shaders\shaderpackage018.sdp',
-    r'Shaders\shaderpackage019.sdp',
-    r'Video\2k games.bik',
-    r'Video\bethesda softworks HD720p.bik',
-    r'Video\CreditsMenu.bik',
-    r'Video\game studios.bik',
-    r'Video\Map loop.bik',
-    r'Video\Oblivion iv logo.bik',
-    r'Video\Oblivion Legal.bik',
-    r'Video\OblivionIntro.bik',
-    r'Video\OblivionOutro.bik',
+    u'Credits.txt',
+    u'Oblivion - Meshes.bsa',
+    u'Oblivion - Misc.bsa',
+    u'Oblivion - Sounds.bsa',
+    u'Oblivion - Textures - Compressed.bsa',
+    u'Oblivion - Voices1.bsa',
+    u'Oblivion - Voices2.bsa',
+    u'Oblivion.esm',
+    u'Music\\Battle\\battle_01.mp3',
+    u'Music\\Battle\\battle_02.mp3',
+    u'Music\\Battle\\battle_03.mp3',
+    u'Music\\Battle\\battle_04.mp3',
+    u'Music\\Battle\\battle_05.mp3',
+    u'Music\\Battle\\battle_06.mp3',
+    u'Music\\Battle\\battle_07.mp3',
+    u'Music\\Battle\\battle_08.mp3',
+    u'Music\\Dungeon\\Dungeon_01_v2.mp3',
+    u'Music\\Dungeon\\dungeon_02.mp3',
+    u'Music\\Dungeon\\dungeon_03.mp3',
+    u'Music\\Dungeon\\dungeon_04.mp3',
+    u'Music\\Dungeon\\dungeon_05.mp3',
+    u'Music\\Explore\\atmosphere_01.mp3',
+    u'Music\\Explore\\atmosphere_03.mp3',
+    u'Music\\Explore\\atmosphere_04.mp3',
+    u'Music\\Explore\\atmosphere_06.mp3',
+    u'Music\\Explore\\atmosphere_07.mp3',
+    u'Music\\Explore\\atmosphere_08.mp3',
+    u'Music\\Explore\\atmosphere_09.mp3',
+    u'Music\\Public\\town_01.mp3',
+    u'Music\\Public\\town_02.mp3',
+    u'Music\\Public\\town_03.mp3',
+    u'Music\\Public\\town_04.mp3',
+    u'Music\\Public\\town_05.mp3',
+    u'Music\\Special\\death.mp3',
+    u'Music\\Special\\success.mp3',
+    u'Music\\Special\\tes4title.mp3',
+    u'Shaders\\shaderpackage001.sdp',
+    u'Shaders\\shaderpackage002.sdp',
+    u'Shaders\\shaderpackage003.sdp',
+    u'Shaders\\shaderpackage004.sdp',
+    u'Shaders\\shaderpackage005.sdp',
+    u'Shaders\\shaderpackage006.sdp',
+    u'Shaders\\shaderpackage007.sdp',
+    u'Shaders\\shaderpackage008.sdp',
+    u'Shaders\\shaderpackage009.sdp',
+    u'Shaders\\shaderpackage010.sdp',
+    u'Shaders\\shaderpackage011.sdp',
+    u'Shaders\\shaderpackage012.sdp',
+    u'Shaders\\shaderpackage013.sdp',
+    u'Shaders\\shaderpackage014.sdp',
+    u'Shaders\\shaderpackage015.sdp',
+    u'Shaders\\shaderpackage016.sdp',
+    u'Shaders\\shaderpackage017.sdp',
+    u'Shaders\\shaderpackage018.sdp',
+    u'Shaders\\shaderpackage019.sdp',
+    u'Video\\2k games.bik',
+    u'Video\\bethesda softworks HD720p.bik',
+    u'Video\\CreditsMenu.bik',
+    u'Video\\game studios.bik',
+    u'Video\\Map loop.bik',
+    u'Video\\Oblivion iv logo.bik',
+    u'Video\\Oblivion Legal.bik',
+    u'Video\\OblivionIntro.bik',
+    u'Video\\OblivionOutro.bik',
     #SI
-    r'DLCShiveringIsles - Meshes.bsa',
-    r'DLCShiveringIsles - Textures.bsa',
-    r'DLCShiveringIsles - Sounds.bsa',
-    r'DLCShiveringIsles - Voices.bsa',
-    r'DLCShiveringIsles.esp',
-    r'Textures\Effects\TerrainNoise.dds',
+    u'DLCShiveringIsles - Meshes.bsa',
+    u'DLCShiveringIsles - Textures.bsa',
+    u'DLCShiveringIsles - Sounds.bsa',
+    u'DLCShiveringIsles - Voices.bsa',
+    u'DLCShiveringIsles.esp',
+    u'Textures\\Effects\\TerrainNoise.dds',
     #DLCs
-    r'DLCBattlehornCastle.bsa',
-    r'DLCBattlehornCastle.esp',
-    r'DLCFrostcrag.bsa',
-    r'DLCFrostcrag.esp',
-    r'DLCHorseArmor.bsa',
-    r'DLCHorseArmor.esp',
-    r'DLCMehrunesRazor.esp',
-    r'DLCOrrery.bsa',
-    r'DLCOrrery.esp',
-    r'DLCSpellTomes.esp',
-    r'DLCThievesDen.bsa',
-    r'DLCThievesDen.esp',
-    r'DLCVileLair.bsa',
-    r'DLCVileLair.esp',
-    r'Knights.bsa',
-    r'Knights.esp',
-    r'DLCList.txt',
+    u'DLCBattlehornCastle.bsa',
+    u'DLCBattlehornCastle.esp',
+    u'DLCFrostcrag.bsa',
+    u'DLCFrostcrag.esp',
+    u'DLCHorseArmor.bsa',
+    u'DLCHorseArmor.esp',
+    u'DLCMehrunesRazor.esp',
+    u'DLCOrrery.bsa',
+    u'DLCOrrery.esp',
+    u'DLCSpellTomes.esp',
+    u'DLCThievesDen.bsa',
+    u'DLCThievesDen.esp',
+    u'DLCVileLair.bsa',
+    u'DLCVileLair.esp',
+    u'Knights.bsa',
+    u'Knights.esp',
+    u'DLCList.txt',
     ))
 
 #--BAIN: Directories that are OK to install to
-dataDirs = set(('bash patches','distantlod','docs','facegen','fonts',
-    'menus','meshes','music','shaders','sound', 'textures', 'trees','video'))
-dataDirsPlus = set(('streamline','_tejon','ini tweaks','scripts','pluggy','ini','obse'))
+dataDirs = set((
+    u'bash patches',
+    u'distantlod',
+    u'docs',
+    u'facegen',
+    u'fonts',
+    u'menus',
+    u'meshes',
+    u'music',
+    u'shaders',
+    u'sound',
+    u'textures',
+    u'trees',
+    u'video'))
+dataDirsPlus = set((
+    u'streamline',
+    u'_tejon',
+    u'ini tweaks',
+    u'scripts',
+    u'pluggy',
+    u'ini',
+    u'obse'))
 
 #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.

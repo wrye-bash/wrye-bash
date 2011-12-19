@@ -55,9 +55,9 @@ from operator import attrgetter,itemgetter
 
 #--Local
 import bolt
-bolt.CBash = [os.path.join(os.getcwd(),'bash','compiled'),os.path.join(os.getcwd(),'compiled')]
+bolt.CBash = [os.path.join(os.getcwdu(),u'bash',u'compiled'),os.path.join(os.getcwdu(),u'compiled')]
 import bush
-ret = bush.setGame('')
+ret = bush.setGame(u'')
 if ret != False: # False == success
     if len(ret) != 1:
         # Python mode, use Tkinter here, since we don't know for sure if wx is present
@@ -75,7 +75,7 @@ if ret != False: # False == success
                 root.destroy()
         quit = onQuit()
 
-        button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+        button = Tkinter.Button(frame,text=u'Quit',fg=u'red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
         button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
         class onClick(object):
             def __init__(self,gameName):
@@ -223,10 +223,10 @@ def readRecord(record, melSet=0, skipLabel=0):
         elif isinstance(item,float):
             print report, round(item,6)
         elif attr in ['unk1','unk2','unk3','unk4','unk5','unk6']:
-            if sum(struct.unpack(str(len(item)) + 'b',item)) == 0:
+            if sum(struct.unpack(`len(item)`+'b',item)) == 0:
                 print report, 'Null'
             else:
-                print report, struct.unpack(str(len(item)) + 'b',item)
+                print report, struct.unpack(`len(item)`+'b',item)
         elif isinstance(item, basestring):
             if len(item.splitlines()) > 1:
                 item = item.splitlines()
@@ -234,7 +234,7 @@ def readRecord(record, melSet=0, skipLabel=0):
                 for line in item:
                     readRecord(line,[attr],1)
             else:
-                if sum(struct.unpack(str(len(item)) + 'b',item)) == 0:
+                if sum(struct.unpack(`len(item)`+'b',item)) == 0:
                     print report, ''
                 else:
                     print report, item
@@ -1051,8 +1051,6 @@ def dumpLSCR(fileName='Oblivion.esm'):
     with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
         modFile = Current.addMod(fileName.stail)
         Current.load()
-        print Current.Debug_DumpModFiles()
-        print modFile.LSCR
         #--Dump the info
         outFile = GPath(fileName.root+'.csv')
         with outFile.open('w') as file:
