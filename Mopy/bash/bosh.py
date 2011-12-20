@@ -10834,6 +10834,12 @@ class Installer(object):
             setter(self,attr,value)
         if self.dirty_sizeCrc == None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
+        #--Unicode: older non-unicode versions of Wrye Bash used
+        #  strings for filenames in self.fileSizeCrcs.  Now we're
+        #  fully unicode, which means we need to toss out any str
+        #  objects and just refresh.
+        if hasattr(self,'fileSizeCrcs'):
+            self.fileSizeCrcs = [(full,size,crc) for (full,size,crc) in self.fileSizeCrcs if not isinstance(full,str)]
         self.refreshDataSizeCrc()
 
     def __copy__(self,iClass=None):
