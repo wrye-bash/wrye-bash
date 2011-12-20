@@ -61,14 +61,18 @@ class Path(object): pass
 
 
 # Localization ----------------------------------------------------------------
-def dumpTranslator(outTxt,*files):
+def dumpTranslator(outPath,language,*files):
     """Dumps all tranlatable strings in python source files to a new text file.
        as this requires the source files, it will not work in WBSA mode, unless
        the source files are also installed"""
+    outTxt = u'%sNEW.txt' % language
+    fullTxt = os.path.join(outPath,outTxt)
+    tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % language)
+    oldTxt = os.path.join(outPath,u'%s.txt' % language)
     if not files:
         file = os.path.split(__file__)[1]
         files = [x for x in os.listdir(os.getcwdu()) if (x.lower().endswith(u'.py') or x.lower().endswith(u'.pyw'))]
-    args = [u'p',u'-a',u'-o',os.path.join(u'bash',u'l10n',outTxt)]
+    args = [u'p',u'-a',u'-o',fullTxt]
     args.extend(files)
     if hasattr(sys,'frozen'):
         import pygettext
@@ -80,6 +84,65 @@ def dumpTranslator(outTxt,*files):
         p = os.path.join(sys.prefix,u'Tools',u'i18n',u'pygettext.py')
         args[0] = p
         subprocess.call(args,shell=True)
+    # Fill in any already translated stuff...?
+    try:
+        reMsgIdsStart = re.compile('#:')
+        reEncoding = re.compile(r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$',re.I)
+        encoding = None
+        with open(tmpTxt,'w') as out:
+            outWrite = out.write
+            #--Copy old translation file header, and get encoding for strings
+            with open(oldTxt,'r') as ins:
+                for line in ins:
+                    if not encoding:
+                        match = reEncoding.match(line)
+                        if match:
+                            encoding = match.group(1)
+                    match = reMsgIdsStart.match(line)
+                    if match: break
+                    outWrite(line)
+            #--Read through the new translation file, fill in any already
+            #  translated strings
+            with open(fullTxt,'r') as ins:
+                header = False
+                msgIds = False
+                lastTranslated = False
+                for line in ins:
+                    if not header:
+                        match = reMsgIdsStart.match(line)
+                        if match:
+                            header = True
+                            outWrite(line)
+                        continue
+                    elif line[0:7] == 'msgid "':
+                        text = line[7:-1].strip('\r\n"')
+                        translated = _(text)
+                        if text != translated:
+                            # Already translated
+                            lastTranslated = True
+                            outWrite(line)
+                            outWrite('msgstr "')
+                            outWrite(translated.encode(encoding))
+                            outWrite('"\n')
+                        else:
+                            # Not translated
+                            outWrite(line)
+                            outWrite('msgstr ""\n')
+                    elif line[0:8] == 'msgstr "':
+                        continue
+                    else:
+                        outWrite(line)
+    except:
+        try: os.remove(tmpTxt)
+        except: pass
+    else:
+        try:
+            os.remove(fullTxt)
+            os.rename(tmpTxt,fullTxt)
+        except:
+            try: os.remove(tmpTxt)
+            except: pass
+    return outTxt
 
 def initTranslator(language=None,path=None):
     language = language or locale.getlocale()[0].split(u'_',1)[0]

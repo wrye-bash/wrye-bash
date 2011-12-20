@@ -10661,7 +10661,7 @@ class Mods_DumpTranslator(Link):
             return
         import locale
         language = locale.getlocale()[0].split('_',1)[0]
-        outPath = bosh.dirs['l10n'].join(u'NEW%s.txt' % (language,))
+        outPath = bosh.dirs['l10n']
         files = [GPath(u'bash').join(x+u'.py').s for x in (u'bolt',
                                                            u'balt',
                                                            u'bush',
@@ -10677,9 +10677,9 @@ class Mods_DumpTranslator(Link):
                                                            u'cint',
                                                            u'ScriptParser')]
         with balt.BusyCursor():
-            bolt.dumpTranslator(outPath.s,*files)
+            outFile = bolt.dumpTranslator(outPath.s,language,*files)
         balt.showOk(self.window,
-            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outPath.stail,
+            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outFile,
             _(u'Dump Translator')+u': '+outPath.stail)
 
 #------------------------------------------------------------------------------
