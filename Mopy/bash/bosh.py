@@ -11070,7 +11070,7 @@ class Installer(object):
             #--Remap docs
             dest = file
             if rootLower in docDirs:
-                dest = u'Docs\\'+file[rootPos+1:]
+                dest = u'Docs\\'+file[len(rootLower)+1:]
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
