@@ -25,6 +25,9 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 # 02110-1301  USA
+#
+# Edited 12/20/2011 by Lojack for Wrye Bash: removed the EUC-TW
+#  prober, due to Python 2.7.2 not having the EUC-TW codec.
 ######################### END LICENSE BLOCK #########################
 
 from charsetgroupprober import CharSetGroupProber
@@ -46,5 +49,5 @@ class MBCSGroupProber(CharSetGroupProber):
             GB2312Prober(),
             EUCKRProber(),
             Big5Prober(),
-            EUCTWProber()]
+            #EUCTWProber()]
         self.reset()
