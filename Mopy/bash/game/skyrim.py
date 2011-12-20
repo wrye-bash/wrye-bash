@@ -63,15 +63,18 @@ class se:
 class ge:
     shortName = u''
     longName = u''
-    exe = u''
+    exe = u'**DNE**'
     url = u''
     urlTip = u''
 
 #--4gb Launcher
 class laa:
-    name = u'4GB Launcher'          # Name
-    exe = u'skyrim4gb.exe'          # Executable to run
-    launchesSE = True               # Whether the launcher will automatically launch the SE as well
+    # Skyrim has a 4gb Launcher, but as of patch 1.3.10, it is
+    # no longer required (Bethsoft updated TESV.exe to already
+    # be LAA)
+    name = u''
+    exe = u'**DNE**'
+    launchesSE = False
 
 #--Save Game format stuff
 class ess:
