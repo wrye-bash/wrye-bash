@@ -2765,13 +2765,13 @@ class MreGmst(MelRecord):
     classType = 'GMST'
     class MelGmstValue(MelBase):
         def loadData(self,record,ins,type,size,readId):
-            format = record.eid[0] #-- s|i|f
+            format = _encode(record.eid[0]) #-- s|i|f
             if format == 's':
                 record.value = ins.readLString(size,readId)
             else:
                 record.value, = ins.unpack(format,size,readId)
         def dumpData(self,record,out):
-            format = record.eid[0] #-- s|i|f
+            format = _encode(record.eid[0]) #-- s|i|f
             if format == 's':
                 out.packSub0(self.subType,record.value)
             else:
@@ -31899,10 +31899,11 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = ('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Body-Size-M','Body-Size-F','Voice-M','Voice-F','R.Relations','R.Teeth',
-        'R.Mouth','R.Ears', 'R.Head','R.Attributes-F', 'R.Attributes-M',
-        'R.Skills', 'R.Description','R.AddSpells', 'R.ChangeSpells')
+    autoKey = (u'Hair',u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes',u'Body-M',
+        u'Body-F',u'Body-Size-M',u'Body-Size-F',u'Voice-M',u'Voice-F',
+        u'R.Relations',u'R.Teeth',u'R.Mouth',u'R.Ears',u'R.Head',
+        u'R.Attributes-F',u'R.Attributes-M',u'R.Skills',u'R.Description',
+        u'R.AddSpells',u'R.ChangeSpells',)
     forceAuto = True
     defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
 
@@ -31931,7 +31932,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         self.sizeKeys = set(('Height','Weight'))
         self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
         self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
-        self.eyeKeys = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
+        self.eyeKeys = set((u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes'))
         #--Mesh tuple for each defined eye. Derived from race records.
         defaultMesh = (u'characters\\imperial\\eyerighthuman.nif', u'characters\\imperial\\eyelefthuman.nif')
         self.eye_mesh = {}
@@ -31953,12 +31954,12 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))
             self.tempRaceData = {} #so as not to carry anything over!
-            if 'R.ChangeSpells' in bashTags and 'R.AddSpells' in bashTags:
+            if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
                 raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % srcMod.s)
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
-                if 'Hair' in bashTags:
+                if u'Hair' in bashTags:
                     raceHair = raceData.setdefault('hairs',[])
                     for hair in race.hairs:
                         if hair not in raceHair: raceHair.append(hair)
@@ -31968,51 +31969,51 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     raceEyes = raceData.setdefault('eyes',[])
                     for eye in race.eyes:
                         if eye not in raceEyes: raceEyes.append(eye)
-                if 'Voice-M' in bashTags:
+                if u'Voice-M' in bashTags:
                     tempRaceData['maleVoice'] = race.maleVoice
-                if 'Voice-F' in bashTags:
+                if u'Voice-F' in bashTags:
                     tempRaceData['femaleVoice'] = race.femaleVoice
-                if 'Body-M' in bashTags:
+                if u'Body-M' in bashTags:
                     for key in ['male'+key for key in self.bodyKeys]:
                         tempRaceData[key] = getattr(race,key)
-                if 'Body-F' in bashTags:
+                if u'Body-F' in bashTags:
                     for key in ['female'+key for key in self.bodyKeys]:
                         tempRaceData[key] = getattr(race,key)
-                if 'Body-Size-M' in bashTags:
+                if u'Body-Size-M' in bashTags:
                     for key in ['male'+key for key in self.sizeKeys]:
                         tempRaceData[key] = getattr(race,key)
-                if 'Body-Size-F' in bashTags:
+                if u'Body-Size-F' in bashTags:
                     for key in ['female'+key for key in self.sizeKeys]:
                         tempRaceData[key] = getattr(race,key)
-                if 'R.Teeth' in bashTags:
+                if u'R.Teeth' in bashTags:
                     for key in ('teethLower','teethUpper'):
                         tempRaceData[key] = getattr(race,key)
-                if 'R.Mouth' in bashTags:
+                if u'R.Mouth' in bashTags:
                     for key in ('mouth','tongue'):
                         tempRaceData[key] = getattr(race,key)
-                if 'R.Head' in bashTags:
+                if u'R.Head' in bashTags:
                     tempRaceData['head'] = race.head
-                if 'R.Ears' in bashTags:
+                if u'R.Ears' in bashTags:
                     for key in ('maleEars','femaleEars'):
                         tempRaceData[key] = getattr(race,key)
-                if 'R.Relations' in bashTags:
+                if u'R.Relations' in bashTags:
                     relations = raceData.setdefault('relations',{})
                     for x in race.relations:
                         relations[x.faction] = x.mod
-                if 'R.Attributes-F' in bashTags:
+                if u'R.Attributes-F' in bashTags:
                     for key in ['female'+key for key in self.raceAttributes]:
                         tempRaceData[key] = getattr(race,key)
-                if 'R.Attributes-M' in bashTags:
+                if u'R.Attributes-M' in bashTags:
                     for key in ['male'+key for key in self.raceAttributes]:
                         tempRaceData[key] = getattr(race,key)
-                if 'R.Skills' in bashTags:
+                if u'R.Skills' in bashTags:
                     for key in self.raceSkills:
                         tempRaceData[key] = getattr(race,key)
-                if 'R.AddSpells' in bashTags:
+                if u'R.AddSpells' in bashTags:
                     tempRaceData['AddSpells'] = race.spells
-                if 'R.ChangeSpells' in bashTags:
+                if u'R.ChangeSpells' in bashTags:
                     raceData['spellsOverride'] = race.spells
-                if 'R.Description' in bashTags:
+                if u'R.Description' in bashTags:
                     tempRaceData['text'] = race.text
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
@@ -32082,6 +32083,7 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
+                    print u'adding eye mesh %s from mod %s' % (eye,modFile.fileInfo.name)
                     eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
 
     def buildPatch(self,log,progress):
@@ -32171,7 +32173,12 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 keep(race.fid)
         #--Eye Mesh filtering
         eye_mesh = self.eye_mesh
-        blueEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x27308)]
+        try:
+            blueEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x27308)]
+        except KeyError:
+            print u'error getting blue eye mesh:'
+            print u'eye meshes:', eye_mesh
+            raise
         argonianEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x3e91e)]
         if debug:
             print u'== Eye Mesh Filtering'
