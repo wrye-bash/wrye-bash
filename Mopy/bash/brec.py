@@ -294,12 +294,12 @@ class ModReader:
     def unpackSubHeader(self,recType='----',expType=None,expSize=0):
         """Unpack a subrecord header.  Optionally checks for match with expected
         type and size."""
-        unpack = self.unpack
-        (type,size) = unpack('4sH',6,recType+'.SUB_HEAD')
+        selfUnpack = self.unpack
+        (type,size) = selfUnpack('4sH',6,recType+'.SUB_HEAD')
         #--Extended storage?
         while type == 'XXXX':
-            size, = unpack('I',4,recType+'.XXXX.SIZE.')
-            type, = unpack('4sH',6,recType+'.XXXX.TYPE') # size always == 0
+            size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
+            type = selfUnpack('4sH',6,recType+'.XXXX.TYPE')[0] #--Throw away size (always == 0)
         #--Match expected name?
         if expType and expType != type:
             raise ModError(self.inName,
@@ -925,7 +925,7 @@ class MelStructA(MelStructs):
 
     def dumpData(self,record,out):
         if record.__getattribute__(self.attr) is not None:
-            data = u''
+            data = ''
             attrs = self.attrs
             format = self.format
             for x in record.__getattribute__(self.attr):
