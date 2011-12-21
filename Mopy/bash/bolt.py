@@ -862,7 +862,28 @@ class PermissionError(BoltError):
     def __init__(self,message=u'Access is denied.'):
         BoltError.__init__(self,message)
 
+#------------------------------------------------------------------------------
+class FileError(BoltError):
+    """TES4/Tes4SaveFile Error: File is corrupted."""
+    def __init__(self,inName,message):
+        BoltError.__init__(self,message)
+        self.inName = inName
 
+    def __str__(self):
+        if self.inName:
+            if isinstance(self.inName, str):
+                return self.inName+u': '+self.message
+            return self.inName.s+u': '+self.message
+        else:
+            return u'Unknown File: '+self.message
+
+#------------------------------------------------------------------------------
+class FileEditError(BoltError):
+    """Unable to edit a file"""
+    def __init__(self,filePath,message=None):
+        message = message or u"Unable to edit file %s." % filePath.s
+        BoltError.__init__(self,message)
+        self.filePath = filePath
 
 # LowStrings ------------------------------------------------------------------
 class LString(object):
