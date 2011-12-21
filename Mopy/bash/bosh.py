@@ -10839,7 +10839,12 @@ class Installer(object):
         #  fully unicode, which means we need to toss out any str
         #  objects and just refresh.
         if hasattr(self,'fileSizeCrcs'):
+            old = self.fileSizeCrcs[:]
             self.fileSizeCrcs = [(full,size,crc) for (full,size,crc) in self.fileSizeCrcs if not isinstance(full,str)]
+            if len(old) != len(self.fileSizeCrcs):
+                # We had to remove some, so now we need to do a real refresh
+                if isinstance(self,(InstallerArchive,InstallerProject)):
+                    self.refreshSource(self.archive)
         self.refreshDataSizeCrc()
 
     def __copy__(self,iClass=None):
