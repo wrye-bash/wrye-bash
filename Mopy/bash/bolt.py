@@ -47,6 +47,7 @@ import types
 from binascii import crc32
 import ConfigParser
 import bass
+import chardet
 #-- To make commands executed with Popen hidden
 startupinfo = None
 if os.name == u'nt':
@@ -59,6 +60,94 @@ if os.name == u'nt':
 #-- Forward declarations
 class Path(object): pass
 
+# Unicode ---------------------------------------------------------------------
+#--decode unicode strings
+#  This is only useful when reading fields from mods, as the encoding is not
+#  known.  For normal filesystem interaction, these functions are not needed
+encodingOrder = (
+    'ascii',    # Plain old ASCII (0-127)
+    'gbk',      # GBK (simplified Chinese + some)
+    'cp932',    # Japanese
+    'cp949',    # Korean
+    'cp1252',   # English (extended ASCII)
+    'utf8',
+    'cp500',
+    'UTF-16LE',
+    'mbcs',
+    )
+
+_encodingSwap = {
+    # The encoding detector reports back some encodings that
+    # are subsets of others.  Use the better encoding when
+    # given the option
+    # 'reported encoding':'actual encoding to use',
+    'GB2312': 'gbk',        # Simplified Chinese
+    'SHIFT_JIS': 'cp932',   # Japanese
+    }
+
+def _getbestencoding(text):
+    """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
+       detection library to find the best match (heurisitcs)"""
+    result = chardet.detect(text)
+    encoding = result['encoding']
+    encoding = _encodingSwap.get(encoding,encoding)
+    ## Debug: uncomment the following to output stats on encoding detection
+    #print
+    #print '%s: %s (%s)' % (repr(text),encoding,result['confidence'])
+    return encoding
+
+def _unicode(text,encoding=None):
+    if isinstance(text,unicode): return text
+    # Try the user specified encoding first
+    if encoding:
+        try: return unicode(text,encoding)
+        except UnicodeDecodeError: pass
+    # Try to detect the encoding next
+    encoding = _getbestencoding(text)
+    if encoding:
+        try: return unicode(text,encoding)
+        except UnicodeDecodeError: pass
+    # If even that fails, fall back to the old method, trial and error
+    for encoding in encodingOrder:
+        try: return unicode(text,encoding)
+        except UnicodeDecodeError: pass
+    raise UnicodeDecodeError(u'Text could not be decoded using any method')
+
+def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
+    if isinstance(text,str):
+        if returnEncoding: return (text,None)
+        else: return text
+    # Try user specified encoding
+    if firstEncoding:
+        try:
+            text = text.encode(firstEncoding)
+            if returnEncoding: return (text,firstEncoding)
+            else: return text
+        except UnicodeEncodeError:
+            pass
+    goodEncoding = None
+    # Try the list of encodings in order
+    for encoding in encodings:
+        try:
+            temp = text.encode(encoding)
+            detectedEncoding = _getbestencoding(temp)
+            if detectedEncoding == encoding:
+                # This encoding also happens to be detected
+                # By the encoding detector as the same thing,
+                # which means use it!
+                if returnEncoding: return (temp,encoding)
+                else: return temp
+            # The encoding detector didn't detect it, but
+            # it works, so save it for later
+            if not goodEncoding: goodEncoding = (temp,encoding)
+        except UnicodeEncodeError:
+            pass
+    # Non of the encodings also where detectable via the
+    # detector, so use the first one that encoded without error
+    if goodEncoding:
+        if returnEncoding: return goodEncoding
+        else: return goodEncoding[0]
+    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
 # Localization ----------------------------------------------------------------
 def dumpTranslator(outPath,language,*files):
