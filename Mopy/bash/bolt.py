@@ -920,10 +920,8 @@ class Path(object):
         """Initialize."""
         if isinstance(name,Path):
             self.__setstate__(name._s)
-        elif isinstance(name,unicode):
-            self.__setstate__(name)
         else:
-            self.__setstate__(unicode(name))
+            self.__setstate__(name)
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
@@ -931,6 +929,8 @@ class Path(object):
 
     def __setstate__(self,norm):
         """Used by unpickler. Reconstruct _cs."""
+        # Older pickle files stored filename in str, not unicode
+        if not isinstance(norm,unicode): norm = _unicode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
