@@ -2758,8 +2758,13 @@ class MobBase(object):
     def __init__(self,header,loadFactory,ins=None,unpack=False):
         """Initialize."""
         self.header = header
-        (self.size,self.label,self.groupType,self.stamp) = (
-            header.size,header.label,header.groupType,header.stamp)
+        if header.recType == 'GRUP':
+            self.size,self.label,self.groupType,self.stamp = (
+                header.size,header.label,header.groupType,header.stamp)
+        else:
+            # Yes it's wierd, but this is how it needs to work
+            self.size,self.label,self.groupType,self.stamp = (
+                header.size,header.flags1,header.fid,header.flags2)
         self.debug = False
         self.data = None
         self.changed = False
@@ -3016,11 +3021,12 @@ class MobDials(MobObjects):
         """Returns size of records plus group and record headers."""
         if not self.changed:
             return self.size
-        size = 20
+        hsize = ModReader.recHeader.size
+        size = hsize
         for record in self.records:
-            size += 20 + record.getSize()
+            size += hsize + record.getSize()
             if record.infos:
-                size += 20 + sum(20+info.getSize() for info in record.infos)
+                size += hsize + sum(hsize+info.getSize() for info in record.infos)
         return size
 
     def getNumRecords(self,includeGroups=1):
@@ -3259,7 +3265,7 @@ class MobCells(MobBase):
         if fid in self.id_cellBlock:
             self.id_cellBlock[fid].cell = cell
         else:
-            cellBlock = MobCell(('GRUP',0,0,6,self.stamp),self.loadFactory,cell)
+            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),self.loadFactory,cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
             self.id_cellBlock[fid] = cellBlock
@@ -3279,18 +3285,18 @@ class MobCells(MobBase):
         bsbCellBlocks.sort(key = lambda x: x[1].cell.fid)
         bsbCellBlocks.sort(key = itemgetter(0))
         bsb_size = {}
-        totalSize = 20
+        totalSize = ModReader.recHeader.size
         bsb_setDefault = bsb_size.setdefault
         for bsb,cellBlock in bsbCellBlocks:
             cellBlockSize = cellBlock.getSize()
             totalSize += cellBlockSize
             bsb0 = (bsb[0],None) #--Block group
-            bsb_setDefault(bsb0,20)
-            if bsb_setDefault(bsb,20) == 20:
-                bsb_size[bsb0] += 20
+            bsb_setDefault(bsb0,ModReader.recHeader.size)
+            if bsb_setDefault(bsb,ModReader.recHeader.size) == ModReader.recHeader.size:
+                bsb_size[bsb0] += ModReader.recHeader.size
             bsb_size[bsb] += cellBlockSize
             bsb_size[bsb0] += cellBlockSize
-        totalSize += 20 * len(bsb_size)
+        totalSize += ModReader.recHeader.size * len(bsb_size)
         return totalSize,bsb_size,bsbCellBlocks
 
     def dumpBlocks(self,out,bsbCellBlocks,bsb_size,blockGroupType,subBlockGroupType):
@@ -3298,16 +3304,16 @@ class MobCells(MobBase):
         curBlock = None
         curSubblock = None
         stamp = self.stamp
-        outWriteGroup = out.writeGroup
+        outWrite = out.write
         for bsb,cellBlock in bsbCellBlocks:
             (block,subblock) = bsb
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWriteGroup(bsb_size[bsb0],block,blockGroupType,stamp)
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,blockGroupType,stamp).pack())
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWriteGroup(bsb_size[bsb],subblock,subBlockGroupType,stamp)
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,subBlockGroupType,stamp).pack())
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
@@ -3380,10 +3386,11 @@ class MobICells(MobCells):
                     raise ModError(self.inName,u'Interior cell <%X> %s outside of block or subblock.' % (cell.fid, cell.eid))
             elif recType == 'GRUP':
                 size,groupFid,groupType = header.size,header.label,header.groupType
+                delta = size-header.__class__.size
                 if groupType == 2: # Block number
-                    endBlockPos = insTell()+size-20
+                    endBlockPos = insTell()+delta
                 elif groupType == 3: # Sub-block number
-                    endSubblockPos = insTell()+size-20
+                    endSubblockPos = insTell()+delta
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
@@ -3393,7 +3400,7 @@ class MobICells(MobCells):
                             cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
                         else:
                             cellBlock = MobCell(header,selfLoadFactory,cell)
-                            insSeek(header.size-header.__class__.size,1)
+                            insSeek(delta,1)
                         cellBlocksAppend(cellBlock)
                         cell = None
                     else:
@@ -3452,10 +3459,11 @@ class MobWorld(MobCells):
                 subblock = None
             #--Get record info and handle it
             header = insRecHeader()
-            recType = header.recType
+            recType,size = header.recType,header.size
+            delta = size - header.__class__.size
             recClass = cellGet(recType)
             if recType == 'ROAD':
-                if not recClass: insSeek(header.size,1)
+                if not recClass: insSeek(size,1)
                 else: self.road = recClass(header,ins,True)
             elif recType == 'CELL':
                 if cell:
@@ -3472,15 +3480,15 @@ class MobWorld(MobCells):
                         raise ModError(self.inName,u'Exterior cell <%s> %s after block or'
                                 u' subblock.' % (hex(cell.fid), cell.eid))
             elif recType == 'GRUP':
-                size,groupFid,groupType = header.size,header.label,header.groupType
+                groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
                     block = structUnpack('2h',structPack('I',groupFid))
                     block = (block[1],block[0])
-                    endBlockPos = insTell() + size - header.__class__.size
+                    endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block
                     subblock = structUnpack('2h',structPack('I',groupFid))
                     subblock = (subblock[1],subblock[0])
-                    endSubblockPos = insTell() + size - header.__class__.size
+                    endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
@@ -3490,7 +3498,7 @@ class MobWorld(MobCells):
                             cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
                         else:
                             cellBlock = MobCell(header,selfLoadFactory,cell)
-                            insSeek(header.size-header.__class__.size,1)
+                            insSeek(delta,1)
                         if block:
                             cellBlocksAppend(cellBlock)
                         else:
@@ -3703,7 +3711,7 @@ class MobWorlds(MobBase):
         if fid in self.id_worldBlocks:
             self.id_worldBlocks[fid].world = world
         else:
-            worldBlock = MobWorld(('GRUP',0,0,1,self.stamp),self.loadFactory,world)
+            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),self.loadFactory,world)
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
@@ -16102,6 +16110,7 @@ class PatchFile(ModFile):
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
             except ModError:
+                deprint('load error:', traceback=True)
                 self.loadErrorMods.append(modName)
                 continue
             try:
@@ -30625,7 +30634,6 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
-                    print u'adding eye mesh %s from mod %s' % (eye,modFile.fileInfo.name)
                     eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
 
     def buildPatch(self,log,progress):
