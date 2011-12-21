@@ -8029,7 +8029,7 @@ class File_ListMasters(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
-        text = bosh.modInfos.getModList(fileInfo)
+        text = bosh.modInfos.getModList(fileInfo=fileInfo)
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
