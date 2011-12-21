@@ -10661,7 +10661,6 @@ class Mods_DumpTranslator(Link):
             return
         import bass
         language = bass.language
-        print repr(language)
         if not language:
             import locale
             language = locale.getlocale()[0].split('_',1)[0]

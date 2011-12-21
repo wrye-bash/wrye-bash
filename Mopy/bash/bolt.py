@@ -179,13 +179,13 @@ def dumpTranslator(outPath,language,*files):
         reEncoding = re.compile(r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$',re.I)
         reNonEscapedQuote = re.compile(r'[^\\]"')
         encoding = None
-        with open(tmpTxt,'w') as out:
+        with open(tmpTxt,'wb') as out:
             outWrite = out.write
             #--Copy old translation file header, and get encoding for strings
-            with open(oldTxt,'r') as ins:
+            with open(oldTxt,'rb') as ins:
                 for line in ins:
                     if not encoding:
-                        match = reEncoding.match(line)
+                        match = reEncoding.match(line.strip('\r\n'))
                         if match:
                             encoding = match.group(1)
                     match = reMsgIdsStart.match(line)
@@ -193,7 +193,7 @@ def dumpTranslator(outPath,language,*files):
                     outWrite(line)
             #--Read through the new translation file, fill in any already
             #  translated strings
-            with open(fullTxt,'r') as ins:
+            with open(fullTxt,'rb') as ins:
                 header = False
                 msgIds = False
                 lastTranslated = False
@@ -216,11 +216,11 @@ def dumpTranslator(outPath,language,*files):
                             translated = translated.encode(encoding)
                             translated = reNonEscapedQuote.sub('\\"',translated)
                             outWrite(translated)
-                            outWrite('"\n')
+                            outWrite('"\r\n')
                         else:
                             # Not translated
                             outWrite(line)
-                            outWrite('msgstr ""\n')
+                            outWrite('msgstr ""\r\n')
                     elif line[0:8] == 'msgstr "':
                         continue
                     else:
