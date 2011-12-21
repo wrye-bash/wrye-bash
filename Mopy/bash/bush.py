@@ -130,6 +130,7 @@ def setGame(gameName,workingDir=''):
         for i in allGames.keys():
             if i != gameName:
                 del allGames[i]
+        reload(game)
         return False
     #--Specified game not found, or game was not specified,
     #  so use the game found via workingDir or the cwd
@@ -148,6 +149,7 @@ def setGame(gameName,workingDir=''):
             for i in allGames.keys():
                 if i != name:
                     del allGames[i]
+            reload(game)
             return False
     # No match found return the list of possible games
     # Unload all the modules

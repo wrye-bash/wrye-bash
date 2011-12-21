@@ -6700,7 +6700,7 @@ class PatchDialog(wx.Dialog):
                             _(u'Unable to add mod %s because load list is full.')
                             % patchName.s)
                     modList.RefreshUI()
-            except bosh.FileEditError, error:
+            except bolt.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,u'%s'%error,_(u'File Edit Error'))
             except BoltError, error:
@@ -6794,7 +6794,7 @@ class PatchDialog(wx.Dialog):
                             _(u'Unable to add mod %s because load list is full.')
                             % patchName.s)
                     modList.RefreshUI()
-            except bosh.FileEditError, error:
+            except bolt.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,u'%s'%error,_(u'File Edit Error'))
             except BoltError, error:

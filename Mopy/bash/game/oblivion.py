@@ -25,6 +25,8 @@
    TES IV: Oblivion is set at the active game."""
 
 import struct
+from .. import brec
+from ..brec import *
 
 #--Name of the game
 name = u'Oblivion'
@@ -401,3 +403,73 @@ class esp:
                     'MreStat', 'MreTree', 'MreWatr', 'MreWeap', 'MreWthr',
                     'MreClmt', 'MreCsty', 'MreIdle', 'MreLtex', 'MreRegn',
                     'MreSbsp', 'MreSkil',)
+
+#--Mod I/O
+class RecordHeader(brec.BaseRecordHeader):
+    size = 20
+
+    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
+        self.recType = recType
+        self.size = size
+        if recType == 'GRUP':
+            self.label = arg1
+            self.groupType = arg2
+            self.stamp = arg3
+        else:
+            self.flags1 = arg1
+            self.fid = arg2
+            self.flags2 = arg2
+        self.extra = extra
+
+    @staticmethod
+    def unpack(ins):
+        """Returns a RecordHeader object by reading the input stream."""
+        type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
+        #--Bad?
+        if type not in esp.recordTypes:
+            raise brec.ModError(ins.inName,u'Bad header type: '+type)
+        #--Record
+        if type != 'GRUP':
+            pass
+        #--Top Group
+        elif uint1 == 0: # groupType == 0 (Top Group)
+            str0 = struct.pack('I',uint0)
+            if str0 in esp.topTypes:
+                uint0 = str0
+            elif str0 in esp.topIgTypes:
+                uint0 = esp.topIgTypes[str0]
+            else:
+                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+str0)
+        return RecordHeader(type,size,uint0,uint1,uint2)
+
+    def pack(self):
+        """Returns the record header packed into a string for writing to file."""
+        if self.recType == 'GRUP':
+            if isinstance(self.label,str):
+                return struct.pack('=4sI4sII',self.recType,self.size,self.label,self.groupType,self.stamp)
+            elif isinstance(self.label,tuple):
+                return struct.pack('=4sIhhII',self.recType,self.size,self.label[0],self.label[1],self.groupType,self.stamp)
+            else:
+                return struct.pack('=4s4I',self.recType,self.size,self.label,self.groupType,self.stamp)
+        else:
+            return struct.pack('=4s4I',self.recType,self.size,self.flags1,self.fid,self.flags2)
+brec.ModReader.recHeader = RecordHeader
+
+# Oblivion Records --------------------------------------------------------------
+
+#--Class that is the 'TES4' record for this game
+class MreHeader(MreHeaderBase):
+    """TES4 Record.  File header."""
+    classType = 'TES4'
+
+    #--Data elements
+    melSet = MelSet(
+        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',),  #--Obsolete?
+        MelBase('DELE','dele_p',),  #--Obsolete?
+        MelString('CNAM','author',u'',512),
+        MelString('SNAM','description',u'',512),
+        MreHeaderBase.MelMasterName('MAST','masters'),
+        MelNull('DATA'),
+        )
+    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()

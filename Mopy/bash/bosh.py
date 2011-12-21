@@ -79,10 +79,11 @@ import ctypes
 import balt
 import bolt
 import bush
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError
+from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist, sio
 from bolt import _unicode, _encode
 from cint import *
+from brec import *
 from chardet.universaldetector import UniversalDetector
 startupinfo = bolt.startupinfo
 
@@ -147,30 +148,6 @@ undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
 settingDefaults = {
     'bosh.modInfos.resetMTimes':True,
     }
-
-# Errors ----------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class FileError(BoltError):
-    """TES4/Tes4SaveFile Error: File is corrupted."""
-    def __init__(self,inName,message):
-        BoltError.__init__(self,message)
-        self.inName = inName
-
-    def __str__(self):
-        if self.inName:
-            if isinstance(self.inName, str):
-                return self.inName+u': '+self.message
-            return self.inName.s+u': '+self.message
-        else:
-            return u'Unknown File: '+self.message
-
-#------------------------------------------------------------------------------
-class FileEditError(BoltError):
-    """Unable to edit a file"""
-    def __init__(self,filePath,message=None):
-        message = message or u"Unable to edit file %s." % filePath.s
-        BoltError.__init__(self,message)
-        self.filePath = filePath
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -316,38 +293,6 @@ reSplitOnNonAlphaNumeric = re.compile(ur'\W+',re.U)
 
 
 # Util Functions --------------------------------------------------------------
-# Type coercion
-def _coerce(value, newtype, base=None,AllowNone=False):
-    try:
-        if newtype is float:
-            pack,unpack = struct.pack,struct.unpack
-            return round(unpack('f',pack('f',float(value)))[0], 6) #--Force standard precision
-        if newtype is bool:
-            if isinstance(value,basestring):
-                retValue = value.strip().lower()
-                if AllowNone and retValue == u'none': return None
-                return not retValue in (u'',u'none',u'false',u'no',u'0',u'0.0')
-            return bool(newtype)
-        if base: retValue = newtype(value, base)
-        else: retValue = newtype(value)
-        if AllowNone and isinstance(retValue,basestring) and retValue.lower() == u'none':
-            return None
-        return retValue
-    except (ValueError,TypeError):
-        if newtype is int: return 0
-        return None
-# .Net strings
-def netString(x):
-    """Encode a string into a .net string."""
-    lenx = len(x)
-    if lenx < 128:
-        return struct.pack('b',lenx)+x
-    elif lenx > 0x7FFF: #--Actually probably fails earlier.
-        raise UncodedError
-    else:
-        lenx =  x80 | lenx & 0x7f | (lenx & 0xff80) << 1
-        return struct.pack('H',lenx)+x
-
 # Groups
 reSplitModGroup = re.compile(ur'^(.+?)([-+]\d+)?$',re.U)
 
@@ -369,895 +314,7 @@ def joinModGroup(group,offset):
     else:
         return group
 
-# Reference (Fid)
-def strFid(fid):
-    """Returns a string representation of the fid."""
-    if isinstance(fid,tuple):
-        return u'(%s,0x%06X)' % (fid[0].s,fid[1])
-    else:
-        return u'%08X' % fid
-
-def genFid(modIndex,objectIndex):
-    """Generates fid from modIndex and ObjectIndex."""
-    return long(objectIndex) | (long(modIndex) << 24 )
-
-def getModIndex(fid):
-    """Return the modIndex portion of a fid."""
-    return int(fid >> 24)
-
-def getObjectIndex(fid):
-    """Return the objectIndex portion of a fid."""
-    return int(fid & 0xFFFFFFL)
-
-def getFormIndices(fid):
-    """Returns tuple of modindex and objectindex of fid."""
-    return (int(fid >> 24),int(fid & 0xFFFFFFL))
-
-# Mod I/O --------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class ModError(FileError):
-    """Mod Error: File is corrupted."""
-    pass
-
-#------------------------------------------------------------------------------
-class ModReadError(ModError):
-    """TES4 Error: Attempt to read outside of buffer."""
-    def __init__(self,inName,recType,tryPos,maxPos):
-        self.recType = recType
-        self.tryPos = tryPos
-        self.maxPos = maxPos
-        if tryPos < 0:
-            message = (u'%s: Attempted to read before (%d) beginning of file/buffer.'
-                % (recType,tryPos))
-        else:
-            message = (u'%s: Attempted to read past (%d) end (%d) of file/buffer.' %
-                (recType,tryPos,maxPos))
-        ModError.__init__(self,inName.s,message)
-
-#------------------------------------------------------------------------------
-class ModSizeError(ModError):
-    """TES4 Error: Record/subrecord has wrong size."""
-    def __init__(self,inName,recType,readSize,maxSize,exactSize=True):
-        self.recType = recType
-        self.readSize = readSize
-        self.maxSize = maxSize
-        self.exactSize = exactSize
-        if exactSize:
-            messageForm = u'%s: Expected size == %d, but got: %d '
-        else:
-            messageForm = u'%s: Expected size <= %d, but got: %d '
-        ModError.__init__(self,inName.s,messageForm % (recType,readSize,maxSize))
-
-
-#------------------------------------------------------------------------------
-class ModUnknownSubrecord(ModError):
-    """TES4 Error: Uknown subrecord."""
-    def __init__(self,inName,subType,recType):
-        ModError.__init__(self,u'Extraneous subrecord (%s) in %s record.'
-            % (subType,recType))
-
-#------------------------------------------------------------------------------
-class ModReader:
-    """Wrapper around an TES4 file in read mode.
-    Will throw a ModReadError if read operation fails to return correct size."""
-    def __init__(self,inName,ins):
-        """Initialize."""
-        self.inName = inName
-        self.ins = ins
-        #--Get ins size
-        curPos = ins.tell()
-        ins.seek(0,2)
-        self.size = ins.tell()
-        ins.seek(curPos)
-        self.strings = {}
-        self.hasStrings = False
-
-    # with statement
-    def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.ins.close()
-
-    def setStringTable(self,table={}):
-        if table is None:
-            self.hasStrings = False
-            self.strings = {}
-        else:
-            self.hasStrings = True
-            self.strings = table
-
-    #--IO Stream ------------------------------------------
-    def seek(self,offset,whence=0,recType='----'):
-        """File seek."""
-        if whence == 1:
-            newPos = self.ins.tell()+offset
-        elif whence == 2:
-            newPos = self.size + offset
-        else:
-            newPos = offset
-        if newPos < 0 or newPos > self.size:
-            raise ModReadError(self.inName, recType,newPos,self.size)
-        self.ins.seek(offset,whence)
-
-    def tell(self):
-        """File tell."""
-        return self.ins.tell()
-
-    def close(self):
-        """Close file."""
-        self.ins.close()
-
-    def atEnd(self,endPos=-1,recType='----'):
-        """Return True if current read position is at EOF."""
-        filePos = self.ins.tell()
-        if endPos == -1:
-            return (filePos == self.size)
-        elif filePos > endPos:
-            raise ModError(self.inName, u'Exceeded limit of: '+recType)
-        else:
-            return (filePos == endPos)
-
-    #--Read/unpack ----------------------------------------
-    def read(self,size,recType='----'):
-        """Read from file."""
-        endPos = self.ins.tell() + size
-        if endPos > self.size:
-            raise ModSizeError(self.inName, recType,endPos,self.size)
-        return self.ins.read(size)
-
-    def readLString(self,size,recType='----'):
-        if self.hasStrings:
-            if size != 4:
-                raise ModReadError(self.inName,recType,endPos,self.size)
-            id, = self.unpack('I',4,recType)
-            if id == 0:
-                return u''
-            else:
-                return self.strings.get(id,u'LOOKUP FAILED!')
-        else:
-            return self.readString(size,recType)
-
-    def readString(self,size,recType='----'):
-        """Read string from file, stripping zero terminator."""
-        # Seperately decode each line, to allow mixing of encodings
-        # in DESC fields, etc
-        return u'\n'.join(_unicode(x) for x in cstrip(self.read(size,recType)).split('\n'))
-        #return _unicode(cstrip(self.read(size,recType)))
-
-    def readStrings(self,size,recType='----'):
-        """Read strings from file, stripping zero terminator."""
-        return [_unicode(x) for x in self.read(size,recType).rstrip(null1).split(null1)]
-
-    def unpack(self,format,size,recType='----'):
-        """Read file and unpack according to struct format."""
-        endPos = self.ins.tell() + size
-        if endPos > self.size:
-            raise ModReadError(self.inName, recType,endPos,self.size)
-        return struct.unpack(format,self.ins.read(size))
-
-    def unpackRef(self,recType='----'):
-        """Read a ref (fid)."""
-        return self.unpack('I',4)[0]
-
-    def unpackRecHeader(self):
-        """Unpack a record header."""
-        header = self.unpack(bush.game.esp.header.format,
-                             bush.game.esp.header.size,
-                             'REC_HEADER')
-        (type,size,uint0,uint1,uint2) = header[0:5]
-        #--Bad?
-        if type not in bush.game.esp.recordTypes:
-            raise ModError(self.inName,u'Bad header type: '+type)
-        #--Record
-        if type != 'GRUP':
-            return header
-        #--Top Group
-        elif uint1 == 0:
-            str0 = struct.pack('I',uint0)
-            if str0 in bush.game.esp.topTypes:
-                header = list(header)
-                header[2] = str0
-                return tuple(header)
-            elif str0 in bush.game.esp.topIgTypes:
-                header = list(header)
-                header[2] = bush.game.esp.topIgTypes[str0]
-                return tuple(header)
-            else:
-                raise ModError(self.inName,u'Bad Top GRUP type: '+str0)
-        #--Other groups
-        else:
-            return header
-
-    def unpackSubHeader(self,recType='----',expType=None,expSize=0):
-        """Unpack a subrecord header. Optionally checks for match with expected type and size."""
-        selfUnpack = self.unpack
-        (type,size) = selfUnpack('4sH',6,recType+'.SUB_HEAD')
-        #--Extended storage?
-        while type == 'XXXX':
-            size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
-            type = selfUnpack('4sH',6,recType+'.XXXX.TYPE')[0] #--Throw away size (always == 0)
-        #--Match expected name?
-        if expType and expType != type:
-            raise ModError(self.inName,u'%s: Expected %s subrecord, but found %s instead.'
-                % (recType,expType,type))
-        #--Match expected size?
-        if expSize and expSize != size:
-            raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
-        return (type,size)
-
-    #--Find data ------------------------------------------
-    def findSubRecord(self,subType,recType='----'):
-        """Finds subrecord with specified type."""
-        selfAtEnd = self.atEnd
-        selfUnpack = self.unpack
-        selfSeek = self.seek
-        while not selfAtEnd():
-            (type,size) = selfUnpack('4sH',6,recType+'.SUB_HEAD')
-            if type == subType:
-                return self.read(size,recType+'.'+subType)
-            else:
-                selfSeek(size,1,recType+'.'+type)
-        #--Didn't find it?
-        else:
-            return None
-
-#------------------------------------------------------------------------------
-class ModWriter:
-    """Wrapper around an TES4 output stream. Adds utility functions."""
-
-    def __init__(self,out):
-        """Initialize."""
-        self.out = out
-
-    # with statement
-    def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.out.close()
-
-    #--Stream Wrapping
-    def write(self,data):
-        self.out.write(data)
-
-    def tell(self):
-        return self.out.tell()
-
-    def seek(self,offset,whence=0):
-        return self.out.seek(offset,whence)
-
-    def getvalue(self):
-        return self.out.getvalue()
-
-    def close(self):
-        self.out.close()
-
-    #--Additional functions.
-    def pack(self,format,*data):
-        self.out.write(struct.pack(format,*data))
-
-    def packSub(self,type,data,*values):
-        """Write subrecord header and data to output stream.
-        Call using either packSub(type,data), or packSub(type,format,values).
-        Will automatically add a prefacing XXXX size subrecord to handle data
-        with size > 0xFFFF."""
-        #if not ModWriter.reValidType.match(type): raise _('Invalid type: ') + unicode(type)
-        try:
-            if data == None: return
-            structPack = struct.pack
-            if values: data = structPack(data,*values)
-            outWrite = self.out.write
-            if len(data) <= 0xFFFF:
-                outWrite(structPack('=4sH',type,len(data)))
-                outWrite(data)
-            else:
-                outWrite(structPack('=4sHI','XXXX',4,len(data)))
-                outWrite(structPack('=4sH',type,0))
-                outWrite(data)
-        except Exception, e:
-            print e
-            print self,type,data,values
-
-    def packSub0(self,type,data):
-        """Write subrecord header plus zero terminated string to output stream."""
-        if data == None: return
-        lenData = len(data) + 1
-        outWrite = self.out.write
-        structPack = struct.pack
-        if lenData <= 0xFFFF:
-            outWrite(structPack('=4sH',type,lenData))
-        else:
-            outWrite(structPack('=4sHI','XXXX',4,lenData))
-            outWrite(structPack('=4sH',type,0))
-        outWrite(_encode(data))
-        outWrite('\x00')
-
-    def packRef(self,type,fid):
-        """Write subrecord header and fid reference."""
-        if fid != None: self.out.write(struct.pack('=4sHI',type,4,fid))
-
-    def writeGroup(self,size,label,groupType,stamp):
-        if type(label) is str:
-            format = bush.game.esp.header.formatTopGrup
-            args = ['GRUP',size,label,groupType,stamp]
-        elif type(label) is tuple:
-            format = bush.game.esp.header.formatTupleGrup
-            args = ['GRUP',size,label[1],label[0],groupType,stamp]
-        else:
-            format = bush.game.esp.header.format
-            args = ['GRUP',size,label,groupType,stamp]
-        fsize = struct.calcsize(format)
-        args.extend([0 for x in xrange((fsize-20)/4)])
-        self.pack(format,*args)
-
 # Mod Record Elements ---------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
-
-#------------------------------------------------------------------------------
-class MelObject(object):
-    """An empty class used by group and structure elements for data storage."""
-    def __eq__(self,other):
-        """Operator: =="""
-        return isinstance(other,MelObject) and self.__dict__ == other.__dict__
-
-    def __ne__(self,other):
-        """Operator: !="""
-        return not (isinstance(other,MelObject) and self.__dict__ == other.__dict__)
-
-#------------------------------------------------------------------------------
-class MelBase:
-    """Represents a mod record raw element. Typically used for unknown elements.
-    Also used as parent class for other element types."""
-
-    def __init__(self,type,attr,default=None):
-        """Initialize."""
-        self.subType, self.attr, self.default = type, attr, default
-        self._debug = False
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        self._debug = on
-        return self
-
-    def getSlotsUsed(self):
-        return (self.attr,)
-
-    def parseElements(self,*elements):
-        """Parses elements and returns attrs,defaults,actions,formAttrs where:
-        * attrs is tuple of attibute (names)
-        * formAttrs is tuple of attributes that have fids,
-        * defaults is tuple of default values for attributes
-        * actions is tuple of callables to be used when loading data
-        Note that each element of defaults and actions matches corresponding attr element.
-        Used by struct subclasses.
-        """
-        formAttrs = []
-        attrs,defaults,actions = [0]*len(elements),[0]*len(elements),[0]*len(elements)
-        formAttrsAppend = formAttrs.append
-        for index,element in enumerate(elements):
-            if not isinstance(element,tuple): element = (element,)
-            if element[0] == FID:
-                formAttrsAppend(element[1])
-            elif callable(element[0]):
-                actions[index] = element[0]
-            attrIndex = (1 if callable(element[0]) or element[0] in (FID,0)
-                         else 0)
-            attrs[index] = element[attrIndex]
-            defaults[index] = (0,element[-1])[len(element)-attrIndex == 2]
-        return map(tuple,(attrs,defaults,actions,formAttrs))
-
-    def getDefaulters(self,defaulters,base):
-        """Registers self as a getDefault(attr) provider."""
-        pass
-
-    def getLoaders(self,loaders):
-        """Adds self as loader for type."""
-        loaders[self.subType] = self
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        pass
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,self.default)
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        record.__setattr__(self.attr,ins.read(size,readId))
-        if self._debug: print u'%s' % record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        value = record.__getattribute__(self.attr)
-        if value != None: out.packSub(self.subType,value)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is True, then fid is set
-        to result of function."""
-        raise AbstractError
-
-#------------------------------------------------------------------------------
-class MelFid(MelBase):
-    """Represents a mod record fid element."""
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        record.__setattr__(self.attr,ins.unpackRef(readId))
-        if self._debug: print u'  %08X' % (record.__getattribute__(self.attr),)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        try:
-            value = record.__getattribute__(self.attr)
-        except AttributeError:
-            value = None
-        if value is not None: out.packRef(self.subType,value)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        attr = self.attr
-        try:
-            fid = record.__getattribute__(attr)
-        except AttributeError:
-            fid = None
-        result = function(fid)
-        if save: record.__setattr__(attr,result)
-
-#------------------------------------------------------------------------------
-class MelFids(MelBase):
-    """Represents a mod record fid elements."""
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,[])
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        fid = ins.unpackRef(readId)
-        record.__getattribute__(self.attr).append(fid)
-        if self._debug: print u' ',hex(fid)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        type = self.subType
-        outPackRef = out.packRef
-        for fid in record.__getattribute__(self.attr):
-            outPackRef(type,fid)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        fids = record.__getattribute__(self.attr)
-        for index,fid in enumerate(fids):
-            result = function(fid)
-            if save: fids[index] = result
-
-#------------------------------------------------------------------------------
-class MelFidList(MelFids):
-    """Represents a listmod record fid elements. The only difference from
-    MelFids is how the data is stored. For MelFidList, the data is stored
-    as a single subrecord rather than as separate subrecords."""
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        if not size: return
-        fids = ins.unpack(`size/4`+'I',size,readId)
-        record.__setattr__(self.attr,list(fids))
-        if self._debug:
-            for fid in fids:
-                print u'  %08X' % fid
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        fids = record.__getattribute__(self.attr)
-        if not fids: return
-        out.packSub(self.subType,`len(fids)`+'I',*fids)
-
-#------------------------------------------------------------------------------
-class MelGroup(MelBase):
-    """Represents a group record."""
-
-    def __init__(self,attr,*elements):
-        """Initialize."""
-        self.attr,self.elements,self.formElements,self.loaders = attr,elements,set(),{}
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements: element.debug(on)
-        return self
-
-    def getDefaulters(self,defaulters,base):
-        """Registers self as a getDefault(attr) provider."""
-        defaulters[base+self.attr] = self
-        for element in self.elements:
-            element.getDefaulters(defaulters,base+self.attr+'.')
-
-    def getLoaders(self,loaders):
-        """Adds self as loader for subelements."""
-        for element in self.elements:
-            element.getLoaders(self.loaders)
-        for type in self.loaders:
-            loaders[type] = self
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        for element in self.elements:
-            element.hasFids(self.formElements)
-        if self.formElements: formElements.add(self)
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,None)
-
-    def getDefault(self):
-        """Returns a default copy of object."""
-        target = MelObject()
-        for element in self.elements:
-            element.setDefault(target)
-        return target
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        target = record.__getattribute__(self.attr)
-        if target == None:
-            target = self.getDefault()
-            record.__setattr__(self.attr,target)
-        slots = []
-        slotsExtend = slots.extend
-        for element in self.elements:
-            slotsExtend(element.getSlotsUsed())
-        target.__slots__ = slots
-        self.loaders[type].loadData(target,ins,type,size,readId)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        target = record.__getattribute__(self.attr)
-        if not target: return
-        for element in self.elements:
-            element.dumpData(target,out)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        target = record.__getattribute__(self.attr)
-        if not target: return
-        for element in self.formElements:
-            element.mapFids(target,function,save)
-
-#------------------------------------------------------------------------------
-class MelGroups(MelGroup):
-    """Represents an array of group record."""
-
-    def __init__(self,attr,*elements):
-        """Initialize. Must have at least one element."""
-        MelGroup.__init__(self,attr,*elements)
-        self.type0 = self.elements[0].subType
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,[])
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        if type == self.type0:
-            target = self.getDefault()
-            record.__getattribute__(self.attr).append(target)
-        else:
-            target = record.__getattribute__(self.attr)[-1]
-        slots = []
-        for element in self.elements:
-            slots.extend(element.getSlotsUsed())
-        target.__slots__ = slots
-        self.loaders[type].loadData(target,ins,type,size,readId)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        elements = self.elements
-        for target in record.__getattribute__(self.attr):
-            for element in elements:
-                element.dumpData(target,out)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        formElements = self.formElements
-        for target in record.__getattribute__(self.attr):
-            for element in formElements:
-                element.mapFids(target,function,save)
-
-#------------------------------------------------------------------------------
-class MelNull(MelBase):
-    """Represents an obsolete record. Reads bytes from instream, but then
-    discards them and is otherwise inactive."""
-
-    def __init__(self,type):
-        """Initialize."""
-        self.subType = type
-        self._debug = False
-
-    def getSlotsUsed(self):
-        return ()
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        pass
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        junk = ins.read(size,readId)
-        if self._debug: print u' ',record.fid,unicode(junk)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        pass
-
-#------------------------------------------------------------------------------
-class MelXpci(MelNull):
-    """Handler for obsolete MelXpci record. Bascially just discards it."""
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        xpci = ins.unpackRef(readId)
-        #--Read ahead and get associated full as well.
-        pos = ins.tell()
-        (type,size) = ins.unpack('4sH',6,readId+'.FULL')
-        if type == 'FULL':
-            full = ins.read(size,readId)
-        else:
-            full = None
-            ins.seek(pos)
-        if self._debug: print u' ',strFid(record.fid),strFid(xpci),full
-
-#------------------------------------------------------------------------------
-class MelString(MelBase):
-    """Represents a mod record string element."""
-
-    def __init__(self,type,attr,default=None,maxSize=0):
-        """Initialize."""
-        MelBase.__init__(self,type,attr,default)
-        self.maxSize = maxSize
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        value = ins.readString(size,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        value = record.__getattribute__(self.attr)
-        if value != None:
-            if self.maxSize:
-                value = bolt.winNewLines(value.strip())
-                size = min(self.maxSize,len(value))
-                value = value[:size]
-                test,encoding = _encode(value,returnEncoding=True)
-                # Check to see if encoded, it is too big
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
-                else:
-                    value = test
-            else:
-                value = _encode(value)
-            out.packSub0(self.subType,value)
-
-#------------------------------------------------------------------------------
-class MelLString(MelString):
-    """Represents a mod record localized string."""
-    def loadData(self,record,ins,type,size,readId):
-        value = ins.readLString(size,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
-
-#------------------------------------------------------------------------------
-class MelStrings(MelString):
-    """Represents array of strings."""
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,[])
-
-    def getDefault(self):
-        """Returns a default copy of object."""
-        return []
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        value = ins.readStrings(size,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',value
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        strings = record.__getattribute__(self.attr)
-        if strings:
-            out.packSub0(self.subType,null1.join(strings)+null1)
-
-#------------------------------------------------------------------------------
-class MelStruct(MelBase):
-    """Represents a structure record."""
-
-    def __init__(self,type,format,*elements):
-        """Initialize."""
-        self.subType, self.format = type,format
-        self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*elements)
-        self._debug = False
-
-    def getSlotsUsed(self):
-        return self.attrs
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        if self.formAttrs: formElements.add(self)
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        setter = record.__setattr__
-        for attr,value,action in zip(self.attrs, self.defaults, self.actions):
-            if action: value = action(value)
-            setter(attr,value)
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        unpacked = ins.unpack(self.format,size,readId)
-        setter = record.__setattr__
-        for attr,value,action in zip(self.attrs,unpacked,self.actions):
-            if action: value = action(value)
-            setter(attr,value)
-        if self._debug:
-            print u' ',zip(self.attrs,unpacked)
-            if len(unpacked) != len(self.attrs):
-                print u' ',unpacked
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        values = []
-        valuesAppend = values.append
-        getter = record.__getattribute__
-        for attr,action in zip(self.attrs,self.actions):
-            value = getter(attr)
-            if action: value = value.dump()
-            valuesAppend(value)
-        try:
-            out.packSub(self.subType,self.format,*values)
-        except struct.error:
-            print self.subType,self.format,values
-            raise
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        getter = record.__getattribute__
-        setter = record.__setattr__
-        for attr in self.formAttrs:
-            result = function(getter(attr))
-            if save: setter(attr,result)
-
-#------------------------------------------------------------------------------
-class MelStructs(MelStruct):
-    """Represents array of structured records."""
-
-    def __init__(self,type,format,attr,*elements):
-        """Initialize."""
-        MelStruct.__init__(self,type,format,*elements)
-        self.attr = attr
-
-    def getSlotsUsed(self):
-        return (self.attr,)
-
-    def getDefaulters(self,defaulters,base):
-        """Registers self as a getDefault(attr) provider."""
-        defaulters[base+self.attr] = self
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,[])
-
-    def getDefault(self):
-        """Returns a default copy of object."""
-        target = MelObject()
-        setter = target.__setattr__
-        for attr,value,action in zip(self.attrs, self.defaults, self.actions):
-            if callable(action): value = action(value)
-            setter(attr,value)
-        return target
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        target = MelObject()
-        record.__getattribute__(self.attr).append(target)
-        target.__slots__ = self.attrs
-        MelStruct.loadData(self,target,ins,type,size,readId)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        melDump = MelStruct.dumpData
-        for target in record.__getattribute__(self.attr):
-            melDump(self,target,out)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        melMap = MelStruct.mapFids
-        if not record.__getattribute__(self.attr): return
-        for target in record.__getattribute__(self.attr):
-            melMap(self,target,function,save)
-
-#------------------------------------------------------------------------------
-class MelStructA(MelStructs):
-    """Represents a record with an array of fixed size repeating structured elements."""
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        if size == 0:
-            setattr(record, self.attr, None)
-            return
-        selfDefault = self.getDefault
-        getter = record.__getattribute__
-        recordAppend = record.__getattribute__(self.attr).append
-        selfAttrs = self.attrs
-        itemSize = struct.calcsize(self.format)
-        melLoadData = MelStruct.loadData
-        for x in range(size/itemSize):
-            target = selfDefault()
-            recordAppend(target)
-            target.__slots__ = selfAttrs
-            melLoadData(self,target,ins,type,itemSize,readId)
-
-    def dumpData(self,record,out):
-        if record.__getattribute__(self.attr) is not None:
-            data = u''
-            attrs = self.attrs
-            format = self.format
-            for x in record.__getattribute__(self.attr):
-                data += struct.pack(format, *[getattr(x,item) for item in attrs])
-            out.packSub(self.subType,data)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        if record.__getattribute__(self.attr) is not None:
-            melMap = MelStruct.mapFids
-            for target in record.__getattribute__(self.attr):
-                melMap(self,target,function,save)
-
-#------------------------------------------------------------------------------
-class MelTuple(MelBase):
-    """Represents a fixed length array that maps to a single subrecord.
-    (E.g., the stats array for NPC_ which maps to the DATA subrecord.)"""
-
-    def __init__(self,type,format,attr,defaults):
-        """Initialize."""
-        self.subType, self.format, self.attr, self.defaults = type, format, attr, defaults
-        self._debug = False
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,self.defaults[:])
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        unpacked = ins.unpack(self.format,size,readId)
-        record.__setattr__(self.attr,list(unpacked))
-        if self._debug: print record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        #print self.subType,self.format,self.attr,record.__getattribute__(self.attr)
-        out.packSub(self.subType,self.format,*record.__getattribute__(self.attr))
-
 #------------------------------------------------------------------------------
 # Common/Special Elements
 
@@ -1384,53 +441,6 @@ class MelEffects(MelGroups):
             )
 
 #------------------------------------------------------------------------------
-class MelFull0(MelString):
-    """Represents the main full. Use this only when there are additional FULLs
-    Which means when record has magic effects."""
-
-    def __init__(self):
-        """Initialize."""
-        MelString.__init__(self,'FULL','full')
-
-#------------------------------------------------------------------------------
-class MelModel(MelGroup):
-    """Represents a model record."""
-    typeSets = (
-        ('MODL','MODB','MODT'),
-        ('MOD2','MO2B','MO2T'),
-        ('MOD3','MO3B','MO3T'),
-        ('MOD4','MO4B','MO4T'),)
-
-    def __init__(self,attr='model',index=0):
-        """Initialize. Index is 0,2,3,4 for corresponding type id."""
-        types = MelModel.typeSets[(0,index-1)[index>0]]
-        MelGroup.__init__(self,attr,
-            MelString(types[0],'modPath'),
-            MelStruct(types[1],'f','modb'), ### Bound Radius, Float
-            MelBase(types[2],'modt_p'),) ###Texture Files Hashes, Byte Array
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements[:2]: element.debug(on)
-        return self
-
-#------------------------------------------------------------------------------
-class MelOptStruct(MelStruct):
-    """Represents an optional structure, where if values are null, is skipped."""
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        # TODO: Unfortunately, checking if the attribute is None is not
-        # really effective.  Checking it to be 0,empty,etc isn't effective either.
-        # It really just needs to check it against the default.
-        recordGetAttr = record.__getattribute__
-        for attr,default in zip(self.attrs,self.defaults):
-            oldValue=recordGetAttr(attr)
-            if oldValue is not None and oldValue != default:
-                MelStruct.dumpData(self,record,out)
-                break
-
-#------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
 
@@ -1473,124 +483,6 @@ class MelScrxen(MelFids):
                 result = function(value)
                 if save: scrxen[index] = (isFid,result)
 
-#------------------------------------------------------------------------------
-class MelSet:
-    """Set of mod record elments."""
-
-    def __init__(self,*elements):
-        """Initialize."""
-        self._debug = False
-        self.elements = elements
-        self.defaulters = {}
-        self.loaders = {}
-        self.formElements = set()
-        self.firstFull = None
-        self.full0 = None
-        for element in self.elements:
-            element.getDefaulters(self.defaulters,'')
-            element.getLoaders(self.loaders)
-            element.hasFids(self.formElements)
-            if isinstance(element,MelFull0):
-                self.full0 = element
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        self._debug = on
-        return self
-
-    def getSlotsUsed(self):
-        """This function returns all of the attributes used in record instances that use this instance."""
-        slots = []
-        slotsExtend = slots.extend
-        for element in self.elements:
-            slotsExtend(element.getSlotsUsed())
-        return slots
-
-    def initRecord(self,record,header,ins,unpack):
-        """Initialize record."""
-        for element in self.elements:
-            element.setDefault(record)
-        MreRecord.__init__(record,header,ins,unpack)
-
-    def getDefault(self,attr):
-        """Returns default instance of specified instance. Only useful for
-        MelGroup, MelGroups and MelStructs."""
-        return self.defaulters[attr].getDefault()
-
-    def loadData(self,record,ins,endPos):
-        """Loads data from input stream. Called by load()."""
-        doFullTest = (self.full0 != None)
-        recType = record.recType
-        loaders = self.loaders
-        _debug = self._debug
-        #--Read Records
-        if _debug: print u'\n>>>> %08X' % record.fid
-        insAtEnd = ins.atEnd
-        insSubHeader = ins.unpackSubHeader
-##        fullLoad = self.full0.loadData
-        while not insAtEnd(endPos,recType):
-            (type,size) = insSubHeader(recType)
-            if _debug: print type,size
-            readId = recType + '.' + type
-            try:
-                if type not in loaders:
-                    raise ModError(ins.inName,u'Unexpected subrecord: '+readId)
-                #--Hack to handle the fact that there can be two types of FULL in spell/ench/ingr records.
-                elif doFullTest and type == 'FULL':
-                    self.full0.loadData(record,ins,type,size,readId)
-                else:
-                    loaders[type].loadData(record,ins,type,size,readId)
-                doFullTest = doFullTest and (type != 'EFID')
-            except Exception, error:
-                print error
-                eid = getattr(record,'eid',u'<<NO EID>>')
-                if not eid: eid = u'<<NO EID>>)'
-                print u'Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d' % (record.recType,record.fid,eid,type,size)
-                raise
-        if _debug: print u'<<<<',getattr(record,'eid',u'[NO EID]')
-
-    def dumpData(self,record, out):
-        """Dumps state into out. Called by getSize()."""
-        for element in self.elements:
-            try:
-                element.dumpData(record,out)
-            except:
-                print u'Dumping:',getattr(record,'eid',u'<<NO EID>>'),record.fid,element
-                for attr in record.__slots__:
-                    if hasattr(record,attr):
-                        print u"> %s: %s" % (attr,getattr(record,attr))
-                raise
-
-    def mapFids(self,record,mapper,save=False):
-        """Maps fids of subelements."""
-        for element in self.formElements:
-            element.mapFids(record,mapper,save)
-
-    def convertFids(self,record, mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        if record.longFids == toLong: return
-        record.fid = mapper(record.fid)
-        for element in self.formElements:
-            element.mapFids(record,mapper,True)
-        record.longFids = toLong
-        record.setChanged()
-
-    def updateMasters(self,record,masters):
-        """Updates set of master names according to masters actually used."""
-        if not record.longFids: raise StateError(u"Fids not in long format")
-        def updater(fid):
-            masters.add(fid)
-        updater(record.fid)
-        for element in self.formElements:
-            element.mapFids(record,updater)
-
-    def getReport(self):
-        """Returns a report of structure."""
-        with sio() as buff:
-            for element in self.elements:
-                element.report(None,buff,u'')
-            return buff.getvalue()
 # Flags
 #------------------------------------------------------------------------------
 class MelBipedFlags(Flags):
@@ -1602,311 +494,6 @@ class MelBipedFlags(Flags):
         Flags.__init__(self,default,names)
 
 # Mod Records 0 ---------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MreSubrecord:
-    """Generic Subrecord."""
-    def __init__(self,type,size,ins=None):
-        self.changed = False
-        self.subType = type
-        self.size = size
-        self.data = None
-        self.inName = ins and ins.inName
-        if ins: self.load(ins)
-
-    def load(self,ins):
-        self.data = ins.read(self.size,'----.'+self.subType)
-
-    def setChanged(self,value=True):
-        """Sets changed attribute to value. [Default = True.]"""
-        self.changed = value
-
-    def setData(self,data):
-        """Sets data and size."""
-        self.data = data
-        self.size = len(data)
-
-    def getSize(self):
-        """Return size of self.data, after, if necessary, packing it."""
-        if not self.changed: return self.size
-        #--StringIO Object
-        with ModWriter(sio()) as out:
-            self.dumpData(out)
-            #--Done
-            self.data = out.getvalue()
-        self.size = len(self.data)
-        self.setChanged(False)
-        return self.size
-
-    def dumpData(self,out):
-        """Dumps state into out. Called by getSize()."""
-        raise AbstractError
-
-    def dump(self,out):
-        if self.changed: raise StateError(u'Data changed: '+self.subType)
-        if not self.data: raise StateError(u'Data undefined: '+self.subType)
-        out.packSub(self.subType,self.data)
-
-#------------------------------------------------------------------------------
-class MreRecord(object):
-    """Generic Record."""
-    subtype_attr = {'EDID':'eid','FULL':'full','MODL':'model'}
-    _flags1 = Flags(0L,Flags.getNames(
-        ( 0,'esm'),
-        ( 5,'deleted'),
-        ( 6,'borderRegion'),
-        ( 7,'turnFireOff'),
-        ( 9,'castsShadows'),
-        (10,'questItem'),
-        (10,'persistent'),
-        (11,'initiallyDisabled'),
-        (12,'ignored'),
-        (15,'visibleWhenDistant'),
-        (17,'dangerous'),
-        (18,'compressed'),
-        (19,'cantWait'),
-        ))
-    __slots__ = list(bush.game.esp.header.attrs) + ['changed','subrecords','data','inName','longFids',]
-    #--Set at end of class data definitions.
-    type_class = None
-    simpleTypes = None
-
-    def __init__(self,header,ins=None,unpack=False):
-        for i,attr in enumerate(bush.game.esp.header.attrs):
-            setattr(self,attr,header[i])
-        #(self.recType,self.size,flags1,self.fid,self.flags2) = header
-        self.flags1 = MreRecord._flags1(self.flags1)
-        self.longFids = False #--False: Short (numeric); True: Long (espname,objectindex)
-        self.changed = False
-        self.subrecords = None
-        self.data = ''
-        self.inName = ins and ins.inName
-        if ins: self.load(ins,unpack)
-
-    def __repr__(self):
-        if hasattr(self,'eid') and self.eid is not None:
-            eid=u' '+self.eid
-        else:
-            eid=u''
-        return u'<%s object: %s (%s)%s>' % (type(self).split(u"'")[1], self.recType, strFid(self.fid), eid)
-
-    def getHeader(self):
-        """Returns header tuple."""
-        return tuple([getattr(self,attr) for attr in bush.game.esp.header.attrs])
-
-    def getBaseCopy(self):
-        """Returns an MreRecord version of self."""
-        baseCopy = MreRecord(self.getHeader())
-        baseCopy.data = self.data
-        return baseCopy
-
-    def getTypeCopy(self,mapper=None):
-        """Returns a type class copy of self, optionaly mapping fids to long."""
-        if self.__class__ == MreRecord:
-            fullClass = MreRecord.type_class[self.recType]
-            myCopy = fullClass(self.getHeader())
-            myCopy.data = self.data
-            myCopy.load(unpack=True)
-        else:
-            myCopy = copy.deepcopy(self)
-        if mapper and not myCopy.longFids:
-            myCopy.convertFids(mapper,True)
-        myCopy.changed = True
-        myCopy.data = None
-        return myCopy
-
-    def mergeFilter(self,modSet):
-        """This method is called by the bashed patch mod merger. The intention is
-        to allow a record to be filtered according to the specified modSet. E.g.
-        for a list record, items coming from mods not in the modSet could be
-        removed from the list."""
-        pass
-
-    def getDecompressed(self):
-        """Return self.data, first decompressing it if necessary."""
-        if not self.flags1.compressed: return self.data
-        import zlib
-        size, = struct.unpack('I',self.data[:4])
-        decomp = zlib.decompress(self.data[4:])
-        if len(decomp) != size:
-            raise ModError(self.inName,
-                u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
-        return decomp
-
-    def load(self,ins=None,unpack=False):
-        """Load data from ins stream or internal data buffer."""
-        type = self.recType
-        #--Read, but don't analyze.
-        if not unpack:
-            self.data = ins.read(self.size,type)
-        #--Unbuffered analysis?
-        elif ins and not self.flags1.compressed:
-            inPos = ins.tell()
-            self.data = ins.read(self.size,type)
-            ins.seek(inPos,0,type+'_REWIND')
-            self.loadData(ins,inPos+self.size)
-        #--Buffered analysis (subclasses only)
-        else:
-            if ins:
-                self.data = ins.read(self.size,type)
-            if not self.__class__ == MreRecord:
-                with self.getReader() as reader:
-                    self.loadData(reader,reader.size)
-        #--Discard raw data?
-        if unpack == 2:
-            self.data = None
-            self.changed = True
-
-    def loadData(self,ins,endPos):
-        """Loads data from input stream. Called by load().
-
-        Subclasses should actually read the data, but MreRecord just skips over
-        it (assuming that the raw data has already been read to itself. To force
-        reading data into an array of subrecords, use loadSubrecords()."""
-        ins.seek(endPos)
-
-    def loadSubrecords(self):
-        """This is for MreRecord only. It reads data into an array of subrecords,
-        so that it can be handled in a simplistic way."""
-        self.subrecords = []
-        if not self.data: return
-        with self.getReader() as reader:
-            recType = self.recType
-            readAtEnd = reader.atEnd
-            readSubHeader = reader.unpackSubHeader
-            subAppend = self.subrecords.append
-            while not readAtEnd(reader.size,recType):
-                (type,size) = readSubHeader(recType)
-                subAppend(MreSubrecord(type,size,reader))
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        raise AbstractError(self.recType)
-
-    def updateMasters(self,masters):
-        """Updates set of master names according to masters actually used."""
-        raise AbstractError(self.recType)
-
-    def setChanged(self,value=True):
-        """Sets changed attribute to value. [Default = True.]"""
-        self.changed = value
-
-    def setData(self,data):
-        """Sets data and size."""
-        self.data = data
-        self.size = len(data)
-        self.changed = False
-
-    def getSize(self):
-        """Return size of self.data, after, if necessary, packing it."""
-        if not self.changed: return self.size
-        if self.longFids: raise StateError(
-            u'Packing Error: %s %s: Fids in long format.' % (self.recType,self.fid))
-        #--Pack data and return size.
-        with ModWriter(sio()) as out:
-            self.dumpData(out)
-            self.data = out.getvalue()
-        if self.flags1.compressed:
-            import zlib
-            dataLen = len(self.data)
-            comp = zlib.compress(self.data,6)
-            self.data = struct.pack('=I',dataLen) + comp
-        self.size = len(self.data)
-        self.setChanged(False)
-        return self.size
-
-    def dumpData(self,out):
-        """Dumps state into data. Called by getSize(). This default version
-        just calls subrecords to dump to out."""
-        if self.subrecords == None:
-            raise StateError(u'Subrecords not unpacked. [%s: %s %08X]' %
-                (self.inName, self.recType, self.fid))
-        for subrecord in self.subrecords:
-            subrecord.dump(out)
-
-    def dump(self,out):
-        """Dumps all data to output stream."""
-        if self.changed: raise StateError(u'Data changed: '+self.recType)
-        if not self.data and not self.flags1.deleted and self.size > 0:
-            raise StateError(u'Data undefined: '+self.recType+u' '+hex(self.fid))
-        args = [getattr(self,attr) for attr in bush.game.esp.header.attrs]
-        out.write(struct.pack(bush.game.esp.header.format,*args))
-        if self.size > 0: out.write(self.data)
-
-    def getReader(self):
-        """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,sio(self.getDecompressed()))
-
-    #--Accessing subrecords ---------------------------------------------------
-    def getSubString(self,subType):
-        """Returns the (stripped) string for a zero-terminated string record."""
-        #--Common subtype expanded in self?
-        attr = MreRecord.subtype_attr.get(subType)
-        value = None #--default
-        #--If not MreRecord, then will have info in data.
-        if self.__class__ != MreRecord:
-            if attr not in self.__slots__: return value
-            return self.__getattribute__(attr)
-        #--Subrecords available?
-        if self.subrecords != None:
-            for subrecord in self.subrecords:
-                if subrecord.subType == subType:
-                    value = cstrip(subrecord.data)
-                    break
-        #--No subrecords, but have data.
-        elif self.data:
-            with self.getReader() as reader:
-                recType = self.recType
-                readAtEnd = reader.atEnd
-                readSubHeader = reader.unpackSubHeader
-                readSeek = reader.seek
-                readRead = reader.read
-                while not readAtEnd(reader.size,recType):
-                    (type,size) = readSubHeader(recType)
-                    if type != subType:
-                        readSeek(size,1)
-                    else:
-                        value = cstrip(readRead(size))
-                        break
-        #--Return it
-        return _unicode(value)
-
-#------------------------------------------------------------------------------
-class MelRecord(MreRecord):
-    """Mod record built from mod record elements."""
-    melSet = None #--Subclasses must define as MelSet(*mels)
-    __slots__ = MreRecord.__slots__
-
-    def __init__(self,header,ins=None,unpack=False):
-        """Initialize."""
-        self.__class__.melSet.initRecord(self,header,ins,unpack)
-
-    def getDefault(self,attr):
-        """Returns default instance of specified instance. Only useful for
-        MelGroup, MelGroups and MelStructs."""
-        return self.__class__.melSet.getDefault(attr)
-
-    def loadData(self,ins,endPos):
-        """Loads data from input stream. Called by load()."""
-        self.__class__.melSet.loadData(self,ins,endPos)
-
-    def dumpData(self,out):
-        """Dumps state into out. Called by getSize()."""
-        self.__class__.melSet.dumpData(self,out)
-
-    def mapFids(self,mapper,save):
-        """Applies mapper to fids of sub-elements. Will replace fid with mapped value if save == True."""
-        self.__class__.melSet.mapFids(self,mapper,save)
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        self.__class__.melSet.convertFids(self,mapper,toLong)
-
-    def updateMasters(self,masters):
-        """Updates set of master names according to masters actually used."""
-        self.__class__.melSet.updateMasters(self,masters)
-
 #------------------------------------------------------------------------------
 class MreActor(MelRecord):
     """Creatures and NPCs."""
@@ -2572,7 +1159,7 @@ class MreDial(MelRecord):
         while not ins.atEnd(endPos,'INFO Block'):
             #--Get record info and handle it
             header = recHead()
-            recType = header[0]
+            recType = header.recType
             if recType == 'INFO':
                 info = infoClass(header,ins,True)
                 infosAppend(info)
@@ -3853,62 +2440,6 @@ class MreStat(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreTes4Base(MelRecord):
-    """TES4 Record. File header."""
-    classType = 'TES4' #--Used by LoadFactory
-    #--Masters array element
-    class MelTes4Name(MelBase):
-        def setDefault(self,record):
-            record.masters = []
-        def loadData(self,record,ins,type,size,readId):
-            name = GPath(ins.readString(size,readId))
-            record.masters.append(name)
-        def dumpData(self,record,out):
-            pack1 = out.packSub0
-            pack2 = out.packSub
-            for name in record.masters:
-                pack1('MAST',_encode(name.s))
-                pack2('DATA','Q',0)
-
-    def getNextObject(self):
-        """Gets next object index and increments it for next time."""
-        self.changed = True
-        self.nextObject += 1
-        return (self.nextObject -1)
-
-#------------------------------------------------------------------------------
-class MreTes4(MreTes4Base):
-    """TES4 Record for Oblivion."""
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
-        MelBase('OFST','ofst_p',), #--Obsolete?
-        MelBase('DELE','dele_p'), #--Obsolete?
-        MelString('CNAM','author',u'',512),
-        MelString('SNAM','description',u'',512),
-        MreTes4Base.MelTes4Name('MAST','masters'),
-        MelNull('DATA'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreTes5(MreTes4Base):
-    """TES4 Record for Skyrim."""
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR', 'f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
-        MelBase('OFST','ofst_p',), #--Unconfirmed for Skyrim
-        MelBase('DELE','dele_p',), #--Unconfirmed for Skyrim
-        MelString('CNAM','author',u'',512),
-        MelString('SNAM','description',u'',512),
-        MreTes4Base.MelTes4Name('MAST','masters'),
-        MelNull('DATA'),
-        MelBase('INTV','intv'),
-        MelBase('ONAM','onam_p'),   # ONAM support (not decoded yet)
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreTree(MelRecord):
     """Tree record."""
     classType = 'TREE'
@@ -4080,16 +2611,19 @@ MreRecord.type_class = dict((x.classType,x) for x in (
     MreCell, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact,
     MreFlor, MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr,
     MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreRefr,
-    MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreTes4,
+    MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
     MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp,
     MreDial, MreInfo, MreCobj,
     ))
+# File header (TES4) type.
+MreRecord.type_class[bush.game.MreHeader.classType] = bush.game.MreHeader
+
 # Hacky for now, will fix this up when I refactory this section
 if bush.game.name == u'Skyrim':
     MreRecord.type_class['AMMO'] = MreAmmoSkyrim
 
 MreRecord.simpleTypes = (set(MreRecord.type_class) -
-    set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
+    set((bush.game.MreHeader.classType,'ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
 
 # Mod Blocks, File ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -4219,11 +2753,13 @@ class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
     support unpacking, but can report its number of records and be written."""
 
-    __slots__=['size','label','groupType','stamp','debug','data','changed','numRecords','loadFactory','inName']
+    __slots__=['header','size','label','groupType','stamp','debug','data','changed','numRecords','loadFactory','inName']
 
     def __init__(self,header,loadFactory,ins=None,unpack=False):
         """Initialize."""
-        (grup, self.size, self.label, self.groupType, self.stamp) = header[0:5]
+        self.header = header
+        (self.size,self.label,self.groupType,self.stamp) = (
+            header.size,header.label,header.groupType,header.stamp)
         self.debug = False
         self.data = None
         self.changed = False
@@ -4237,10 +2773,10 @@ class MobBase(object):
         if self.debug: print u'GRUP load:',self.label
         #--Read, but don't analyze.
         if not unpack:
-            self.data = ins.read(self.size-bush.game.esp.header.size,type)
+            self.data = ins.read(self.size-self.header.__class__.size,type)
         #--Analyze ins.
         elif ins is not None:
-            self.loadData(ins, ins.tell()+self.size-bush.game.esp.header.size)
+            self.loadData(ins, ins.tell()+self.size-self.header.__class__.size)
         #--Analyze internal buffer.
         else:
             with self.getReader() as reader:
@@ -4282,7 +2818,7 @@ class MobBase(object):
             readerSeek = reader.seek
             while not readerAtEnd(reader.size,errLabel):
                 header = readerRecHeader()
-                type,size = header[0:2]
+                type,size = header.recType,header.size
                 if type == 'GRUP': size = 0
                 readerSeek(size,1)
                 numSubRecords += 1
@@ -4296,11 +2832,8 @@ class MobBase(object):
         if self.numRecords == -1:
             self.getNumRecords()
         if self.numRecords > 0:
-            format = bush.game.esp.header.formatTopGrup
-            fsize = struct.calcsize(format)
-            args = ['GRUP',self.size,self.label,self.groupType,self.stamp]
-            args.extend([0 for x in xrange((fsize-20)/4)])
-            out.pack(format,*args)
+            self.header.size = self.size
+            out.write(self.header.pack())
             out.write(self.data)
 
     def getReader(self):
@@ -4341,7 +2874,7 @@ class MobObjects(MobBase):
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
-            recType = header[0]
+            recType = header.recType
             if recType != expType:
                 raise ModError(ins.inName,u'Unexpected %s record in %s group.'
                     % (recType,expType))
@@ -4365,26 +2898,18 @@ class MobObjects(MobBase):
         if not self.changed:
             return self.size
         else:
-            hsize = bush.game.esp.header.size
+            hsize = ModReader.recHeader.size
             return hsize + sum((hsize + record.getSize()) for record in self.records)
 
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            format = bush.game.esp.header.formatTopGrup
-            fsize = struct.calcsize(format)
-            args = ['GRUP',self.size,self.label,0,self.stamp]
-            args.extend([0 for x in xrange((fsize-20)/4)])
-            out.pack(format,*args)
+            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,self.stamp).pack())
             out.write(self.data)
         else:
             size = self.getSize()
-            if size == bush.game.esp.header.size: return
-            format = bush.game.esp.header.formatTopGrup
-            fsize = struct.calcsize(format)
-            args = ['GRUP',size,self.label,0,self.stamp]
-            args.extend([0 for x in xrange((fsize-20)/4)])
-            out.pack(format,*args)
+            if size == ModReader.recHeader.size: return
+            out.write(ModReader.recHeader('GRUP',size,self.label,0,self.stamp).pack())
             for record in self.records:
                 record.dump(out)
 
@@ -4468,17 +2993,18 @@ class MobDials(MobObjects):
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
-            recType = header[0]
+            recType = header.recType
             if recType == expType:
                 record = recClass(header,ins,True)
                 recordLoadInfos = record.loadInfos
                 recordsAppend(record)
             elif recType == 'GRUP':
-                (recType,size,label,groupType,stamp) = header
+                (recType,size,label,groupType,stamp) = (
+                    header.recType,header.size,header.label,header.groupType,header.stamp)
                 if groupType == 7:
                     record.infoStamp = stamp
                     infoClass = loadGetRecClass('INFO')
-                    recordLoadInfos(ins,ins.tell()+size-20,infoClass)
+                    recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass)
                 else:
                     raise ModError(self.inName,u'Unexpected subgroup %d in DIAL group.' % groupType)
             else:
@@ -4535,10 +3061,10 @@ class MobCell(MobBase):
         while not insAtEnd(endPos,'Cell Block'):
             subgroupLoaded=[False,False,False]
             header=insRecHeader()
-            recType=header[0]
+            recType=header.recType
             recClass = cellGet(recType)
             if recType == 'GRUP':
-                groupType=header[3]
+                groupType=header.groupType
                 if groupType not in (8, 9, 10):
                     raise ModError(self.inName,u'Unexpected subgroup %d in cell children group.' % groupType)
                 if subgroupLoaded[groupType - 8]:
@@ -4548,7 +3074,7 @@ class MobCell(MobBase):
             elif recType not in cellType_class:
                 raise ModError(self.inName,u'Unexpected %s record in cell children group.' % recType)
             elif not recClass:
-                insSeek(header[1],1)
+                insSeek(header.size,1)
             elif recType in ('REFR','ACHR','ACRE'):
                 record = recClass(header,ins,True)
                 if   groupType ==  8: persistentAppend(record)
@@ -4562,29 +3088,29 @@ class MobCell(MobBase):
 
     def getSize(self):
         """Returns size (incuding size of any group headers)."""
-        return 20 + self.cell.getSize() + self.getChildrenSize()
+        return ModReader.recHeader.size + self.cell.getSize() + self.getChildrenSize()
 
     def getChildrenSize(self):
         """Returns size of all childen, including the group header.  This does not include the cell itself."""
         size = self.getPersistentSize() + self.getTempSize() + self.getDistantSize()
-        return size + 20*bool(size)
+        return size + ModReader.recHeader.size*bool(size)
 
     def getPersistentSize(self):
         """Returns size of all persistent children, including the persistent children group."""
-        size = sum(20 + x.getSize() for x in self.persistent)
-        return size + 20*bool(size)
+        size = sum(ModReader.recHeader.size + x.getSize() for x in self.persistent)
+        return size + ModReader.recHeader.size*bool(size)
 
     def getTempSize(self):
         """Returns size of all temporary children, including the temporary children group."""
-        size = sum(20 + x.getSize() for x in self.temp)
-        if self.pgrd: size += 20 + self.pgrd.getSize()
-        if self.land: size += 20 + self.land.getSize()
-        return size + 20*bool(size)
+        size = sum(ModReader.recHeader.size + x.getSize() for x in self.temp)
+        if self.pgrd: size += ModReader.recHeader.size + self.pgrd.getSize()
+        if self.land: size += ModReader.recHeader.size + self.land.getSize()
+        return size + ModReader.recHeader.size*bool(size)
 
     def getDistantSize(self):
         """Returns size of all distant children, including the distant children group."""
-        size = sum(20 + x.getSize() for x in self.distant)
-        return size + 20*bool(size)
+        size = sum(ModReader.recHeader.size + x.getSize() for x in self.distant)
+        return size + ModReader.recHeader.size*bool(size)
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
@@ -4844,7 +3370,7 @@ class MobICells(MobCells):
         insSeek = ins.seek
         while not insAtEnd(endPos,errLabel):
             header = insRecHeader()
-            recType = header[0]
+            recType = header.recType
             if recType == expType:
                 if cell:
                     cellBlock = MobCell(header,selfLoadFactory,cell)
@@ -4853,7 +3379,7 @@ class MobICells(MobCells):
                 if insTell() > endBlockPos or insTell() > endSubblockPos:
                     raise ModError(self.inName,u'Interior cell <%X> %s outside of block or subblock.' % (cell.fid, cell.eid))
             elif recType == 'GRUP':
-                size,groupFid,groupType = header[1:4]
+                size,groupFid,groupType = header.size,header.label,header.groupType
                 if groupType == 2: # Block number
                     endBlockPos = insTell()+size-20
                 elif groupType == 3: # Sub-block number
@@ -4867,7 +3393,7 @@ class MobICells(MobCells):
                             cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
                         else:
                             cellBlock = MobCell(header,selfLoadFactory,cell)
-                            insSeek(header[1]-20,1)
+                            insSeek(header.size-header.__class__.size,1)
                         cellBlocksAppend(cellBlock)
                         cell = None
                     else:
@@ -4881,11 +3407,12 @@ class MobICells(MobCells):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.writeGroup(*self.headers[1:])
+            out.write(self.header.pack())
             out.write(self.data)
         elif self.cellBlocks:
             (totalSize, bsb_size, blocks) = self.getBsbSizes()
-            out.writeGroup(totalSize,self.label,self.groupType,self.stamp)
+            self.header.size = totalSize
+            out.write(self.header.pack())
             self.dumpBlocks(out,blocks,bsb_size,2,3)
 
 #-------------------------------------------------------------------------------
@@ -4925,10 +3452,10 @@ class MobWorld(MobCells):
                 subblock = None
             #--Get record info and handle it
             header = insRecHeader()
-            recType = header[0]
+            recType = header.recType
             recClass = cellGet(recType)
             if recType == 'ROAD':
-                if not recClass: insSeek(header[1],1)
+                if not recClass: insSeek(header.size,1)
                 else: self.road = recClass(header,ins,True)
             elif recType == 'CELL':
                 if cell:
@@ -4945,15 +3472,15 @@ class MobWorld(MobCells):
                         raise ModError(self.inName,u'Exterior cell <%s> %s after block or'
                                 u' subblock.' % (hex(cell.fid), cell.eid))
             elif recType == 'GRUP':
-                size,groupFid,groupType = header[1:4]
+                size,groupFid,groupType = header.size,header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
                     block = structUnpack('2h',structPack('I',groupFid))
                     block = (block[1],block[0])
-                    endBlockPos = insTell() + size - 20
+                    endBlockPos = insTell() + size - header.__class__.size
                 elif groupType == 5: # Exterior Cell Sub-Block
                     subblock = structUnpack('2h',structPack('I',groupFid))
                     subblock = (subblock[1],subblock[0])
-                    endSubblockPos = insTell() + size - 20
+                    endSubblockPos = insTell() + size - header.__class__.size
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
@@ -4963,7 +3490,7 @@ class MobWorld(MobCells):
                             cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
                         else:
                             cellBlock = MobCell(header,selfLoadFactory,cell)
-                            insSeek(header[1]-20,1)
+                            insSeek(header.size-header.__class__.size,1)
                         if block:
                             cellBlocksAppend(cellBlock)
                         else:
@@ -4992,19 +3519,22 @@ class MobWorld(MobCells):
 
     def dump(self,out):
         """Dumps group header and then records.  Returns the total size of the world block."""
-        worldSize = self.world.getSize() + 20
+        worldSize = self.world.getSize() + ModReader.recHeader.size
         self.world.dump(out)
         if not self.changed:
-            out.writeGroup(*self.headers[1:])
+            out.write(self.header.pack())
             out.write(self.data)
             return self.size + worldSize
         elif self.cellBlocks or self.road or self.worldCellBlock:
             (totalSize, bsb_size, blocks) = self.getBsbSizes()
             if self.road:
-                totalSize += self.road.getSize() + 20
+                totalSize += self.road.getSize() + ModReader.recHeader.size
             if self.worldCellBlock:
                 totalSize += self.worldCellBlock.getSize()
-            out.writeGroup(totalSize,self.world.fid,1,self.stamp)
+            self.header.size = totalSize
+            self.header.label = world.fid
+            self.header.groupType = 1
+            out.write(self.header.pack())
             if self.road:
                 self.road.dump(out)
             if self.worldCellBlock:
@@ -5093,17 +3623,17 @@ class MobWorlds(MobBase):
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
-            recType = header[0]
+            recType = header.recType
             if recType == expType:
                 world = recWrldClass(header,ins,True)
             elif recType == 'GRUP':
-                groupFid,groupType = header[2:4]
+                groupFid,groupType = header.label,header.groupType
                 if groupType != 1:
                     raise ModError(ins.inName,u'Unexpected subgroup %d in CELL group.' % groupType)
                 if not world:
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD group.' % groupType)
                     #--Orphaned world records. Skip over.
-                    insSeek(header[1]-20,1)
+                    insSeek(header.size-header.__class__.size,1)
                     self.orphansSkipped += 1
                     continue
                 if groupFid != world.fid:
@@ -5117,18 +3647,19 @@ class MobWorlds(MobBase):
 
     def getSize(self):
         """Returns size (incuding size of any group headers)."""
-        return 20 + sum(x.getSize() for x in self.worldBlocks)
+        return ModReader.recHeader.size + sum(x.getSize() for x in self.worldBlocks)
 
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.writeGroup(*self.headers[1:])
+            out.write(self.header.pack())
             out.write(self.data)
         else:
             if not self.worldBlocks: return
             worldHeaderPos = out.tell()
-            out.writeGroup(0,self.label,0,self.stamp)
-            totalSize = 20 + sum(x.dump(out) for x in self.worldBlocks)
+            header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)
+            out.write(header.pack())
+            totalSize = header.__class__.size + sum(x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
             out.pack('I', totalSize)
             out.seek(worldHeaderPos + totalSize)
@@ -5192,7 +3723,7 @@ class ModFile:
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = globals()[bush.game.esp.tes4ClassName](bush.game.esp.header.defaults)
+        self.tes4 = bush.game.MreHeader(ModReader.recHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
@@ -5209,7 +3740,7 @@ class ModFile:
             return self.tops[topType]
         elif topType in bush.game.esp.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
-            self.tops[topType] = topClass(('GRUP',0,topType,0,0),self.loadFactory)
+            self.tops[topType] = topClass(ModReader.recHeader('GRUP',0,topType,0,0),self.loadFactory)
             self.tops[topType].setChanged()
             return self.tops[topType]
         elif topType == '__repr__':
@@ -5223,7 +3754,7 @@ class ModFile:
         #--Header
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
             header = ins.unpackRecHeader()
-            self.tes4 = globals()[bush.game.esp.tes4ClassName](header,ins,True)
+            self.tes4 = bush.game.MreHeader(header,ins,True)
             #--Strings
             if unpack and self.tes4.flags1[7] and loadStrings:
                 self.strings.load(self.fileInfo.getPath(),
@@ -5243,7 +3774,8 @@ class ModFile:
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
-                (type,size,label,groupType,stamp) = header[0:5]
+                (type,size,label,groupType,stamp) = (
+                    header.recType,header.size,header.label,header.groupType,header.stamp)
                 if type != 'GRUP' or groupType != 0:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
                 topClass = selfGetTopClass(label)
@@ -5253,7 +3785,7 @@ class ModFile:
                         self.tops[label].load(ins,unpack and (topClass != MobBase))
                     else:
                         selfTopsSkipAdd(label)
-                        insSeek(size-bush.game.esp.header.size,1,type + '.' + label)
+                        insSeek(size-header.__class__.size,1,type + '.' + label)
                 except:
                     print u"Error in %s" % self.fileInfo.name
         #--Done Reading
@@ -7975,7 +6507,7 @@ class ModInfo(FileInfo):
 
     def writeNew(self,masters=[],mtime=0):
         """Creates a new file with the given name, masters and mtime."""
-        header = MreTes4(('TES4',0,(self.isEsm() and 1 or 0),0,0))
+        header = bush.game.MreHeader((bush.game.MreHeader.classType,0,(self.isEsm() and 1 or 0),0,0))
         for master in masters:
             header.masters.append(master)
         header.setChanged()
@@ -8052,9 +6584,10 @@ class ModInfo(FileInfo):
         with ModReader(self.name,self.getPath().open('rb')) as ins:
             try:
                 recHeader = ins.unpackRecHeader()
-                if recHeader[0] != 'TES4':
-                    raise ModError(self.name,u'Expected TES4, but got '+recHeader[0])
-                self.header = globals()[bush.game.esp.tes4ClassName](recHeader,ins,True)
+                if recHeader.recType != bush.game.MreHeader.classType:
+                    raise ModError(self.name,u'Expected %s, but got %s'
+                                   % (bush.game.MreHeader.classType,recHeader.recType))
+                self.header = bush.game.MreHeader(recHeader,ins,True)
             except struct.error, rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Master Names/Order
@@ -8070,9 +6603,10 @@ class ModInfo(FileInfo):
                     #--Open original and skip over header
                     reader = ModReader(self.name,ins)
                     recHeader = reader.unpackRecHeader()
-                    if recHeader[0] != 'TES4':
-                        raise ModError(self.name,u'Expected TES4, but got '+recHeader[0])
-                    reader.seek(recHeader[1],1)
+                    if recHeader.recType != bush.game.MreHeader.classType:
+                        raise ModError(self.name,u'Expected %s, but got %s'
+                                       % (bush.game.MreHeader.classType,recHeader.recType))
+                    reader.seek(recHeader.size,1)
                     #--Write new header
                     self.header.getSize()
                     self.header.dump(out)
@@ -16303,28 +14837,30 @@ class ModDetails:
                 return (reader,sizeCheck)
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
-        records = group_records['TES4'] = []
+        records = group_records[bush.game.MreHeader.classType] = []
         with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
             while not ins.atEnd():
-                (type,size,str0,fid,uint2) = ins.unpackRecHeader()
-                if type == 'GRUP':
-                    progress(1.0*ins.tell()/modInfo.size,_("Scanning: ")+str0)
-                    records = group_records.setdefault(str0,[])
-                    if str0 in ('CELL','WRLD','DIAL'):
-                        ins.seek(size-20,1)
-                elif type != 'GRUP':
-                    eid = ''
+                header = ins.unpackRecHeader()
+                recType,size = header.recType,header.size
+                if recType == 'GRUP':
+                    label = header.label
+                    progress(1.0*ins.tell()/modInfo.size,_("Scanning: ")+label)
+                    records = group_records.setdefault(label,[])
+                    if label in ('CELL','WRLD','DIAL'):
+                        ins.seek(size-header.__class__.size,1)
+                elif recType != 'GRUP':
+                    eid = u''
                     nextRecord = ins.tell() + size
-                    recs,endRecs = getRecordReader(ins,str0,size)
+                    recs,endRecs = getRecordReader(ins,header.flags1,size)
                     while recs.tell() < endRecs:
                         (type,size) = recs.unpackSubHeader()
                         if type == 'EDID':
                             eid = recs.readString(size)
                             break
                         recs.seek(size,1)
-                    records.append((fid,eid))
+                    records.append((header.fid,eid))
                     ins.seek(nextRecord)
-        del group_records['TES4']
+        del group_records[bush.game.MreHeader.classType]
 
 #------------------------------------------------------------------------------
 class ModGroups:
@@ -16862,13 +15398,15 @@ class CleanMod:
                     out.write(buff)
                 while not ins.atEnd():
                     progress(ins.tell())
-                    (type,size,str0,fid,uint2) = ins.unpackRecHeader()
-                    copyPrev(20)
+                    header = ins.unpackRecHeader()
+                    type,size = header.recType,header.size
+                    #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
+                    copyPrev(header.__class__.size)
                     if type == 'GRUP':
-                        if fid != 0: #--Ignore sub-groups
+                        if header.groupType != 0: #--Ignore sub-groups
                             pass
-                        elif str0 not in ('CELL','WRLD'):
-                            copy(size-20)
+                        elif header.label not in ('CELL','WRLD'):
+                            copy(size-header.__class__.size)
                     #--Handle cells
                     elif type == 'CELL':
                         nextRecord = ins.tell() + size
@@ -17055,15 +15593,17 @@ class ModCleaner:
                     with ModReader(modInfo.name,path.open('rb')) as ins:
                         while not ins.atEnd():
                             subprogress(ins.tell())
-                            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                            header = ins.unpackRecHeader()
+                            type,size = header.recType,header.size
+                            #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
                             if type == 'GRUP':
-                                if fid != 0: #--Ignore sub-groups
+                                if header.groupType != 0: #--Ignore sub-groups
                                     pass
-                                elif flags not in ('CELL','WRLD'):
-                                    ins.read(size-20)
+                                elif header.label not in ('CELL','WRLD'):
+                                    ins.read(size-header.__class__.size)
                             else:
-                                if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                                    udr.add(fid)
+                                if doUDR and header.flags1 & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                    udr.add(header.fid)
                                 if doFog and type == 'CELL':
                                     nextRecord = ins.tell() + size
                                     while ins.tell() < nextRecord:
@@ -17073,14 +15613,14 @@ class ModCleaner:
                                         else:
                                             color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
                                             if not (near or far or clip):
-                                                fog.add(fid)
+                                                fog.add(header.fid)
                                 else:
                                     ins.read(size)
                     #--Done
                 ret.append((udr,itm,fog))
             return ret
         else:
-            return [(set(),set(),set()) for x in range(len(modInfos))]
+            return [(set(),set(),set()) for x in xrange(len(modInfos))]
 
     @staticmethod
     def _clean_CBash(cleaners,what,progress):
@@ -17175,17 +15715,19 @@ class ModCleaner:
                         changed = False
                         while not ins.atEnd():
                             subprogress(ins.tell())
-                            (type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                            header = ins.unpackRecHeader()
+                            type,size = header.recType,header.size
+                            #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
                             if type == 'GRUP':
-                                if fid != 0:
+                                if header.groupType != 0:
                                     pass
-                                elif flags not in ('CELL','WRLD'):
-                                    copy(size-20)
+                                elif header.label not in ('CELL','WRLD'):
+                                    copy(size-header.__class__.size)
                             else:
-                                if doUDR and flags & 0x20 and type in ('ACHR','ACRE','REFR'):
-                                    flags = (flags & ~0x20) | 0x1000
-                                    out.seek(-20,1)
-                                    out.write(struct.pack('=4s4I',type,size,flags,fid,uint2))
+                                if doUDR and header.flags1 & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                    header.flags1 = (header.flags1 & ~0x20) | 0x1000
+                                    out.seek(-header.__class__.size,1)
+                                    out.write(header.pack())
                                     change = True
                                 if doFog and type == 'CELL':
                                     nextRecord = ins.tell() + size
