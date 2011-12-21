@@ -1371,7 +1371,7 @@ class CsvReader:
         self.ins = path.open('rb',encoding='utf-8-sig')
         format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if format == 'excel':
-            delimiter = (u',',u';')[u';' in self.ins.readline()]
+            delimiter = (',',';')[u';' in self.ins.readline()]
             self.ins.seek(0)
             self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format,delimiter=delimiter)
         else:
