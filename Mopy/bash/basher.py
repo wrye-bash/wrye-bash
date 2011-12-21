@@ -10659,8 +10659,12 @@ class Mods_DumpTranslator(Link):
                    )
         if not balt.askContinue(self.window,message,'bash.dumpTranslator.continue',_(u'Dump Translator')):
             return
-        import locale
-        language = locale.getlocale()[0].split('_',1)[0]
+        import bass
+        language = bass.language
+        print repr(language)
+        if not language:
+            import locale
+            language = locale.getlocale()[0].split('_',1)[0]
         outPath = bosh.dirs['l10n']
         files = [GPath(u'bash').join(x+u'.py').s for x in (u'bolt',
                                                            u'balt',
