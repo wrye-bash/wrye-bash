@@ -25094,7 +25094,7 @@ class GmstTweak(MultiTweakItem):
                         keep(record.fid)
                     break
             else:
-                gmst = MreGmst(('GMST',0,0,0,0))
+                gmst = MreGmst(ModReader.recHeader('GMST',0,0,0,0))
                 gmst.eid,gmst.value,gmst.longFids = eid,value,True
                 fid = gmst.fid = keep(gmst.getGMSTFid())
                 patchFile.GMST.setRecord(gmst)
