@@ -88,6 +88,7 @@ def dumpTranslator(outPath,language,*files):
     try:
         reMsgIdsStart = re.compile('#:')
         reEncoding = re.compile(r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$',re.I)
+        reNonEscapedQuote = re.compile(r'[^\\]"')
         encoding = None
         with open(tmpTxt,'w') as out:
             outWrite = out.write
@@ -116,13 +117,16 @@ def dumpTranslator(outPath,language,*files):
                         continue
                     elif line[0:7] == 'msgid "':
                         text = line[7:-1].strip('\r\n"')
+                        text = text.replace('\\"','"')
                         translated = _(text)
                         if text != translated:
                             # Already translated
                             lastTranslated = True
                             outWrite(line)
                             outWrite('msgstr "')
-                            outWrite(translated.encode(encoding))
+                            translated = translated.encode(encoding)
+                            translated = reNonEscapedQuote.sub('\\"',translated)
+                            outWrite(translated)
                             outWrite('"\n')
                         else:
                             # Not translated
@@ -140,8 +144,9 @@ def dumpTranslator(outPath,language,*files):
             os.remove(fullTxt)
             os.rename(tmpTxt,fullTxt)
         except:
-            try: os.remove(tmpTxt)
-            except: pass
+            if os.path.exists(fullTxt):
+                try: os.remove(tmpTxt)
+                except: pass
     return outTxt
 
 def initTranslator(language=None,path=None):
@@ -150,69 +155,34 @@ def initTranslator(language=None,path=None):
     if language.lower() == u'german': language = u'de'
     txt,po,mo = (os.path.join(path,language+ext)
                  for ext in (u'.txt',u'.po',u'.mo'))
-    try:
-        if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
-            # Compile
-            shutil.copy(txt,po)
-            args = [u'm',u'-o',mo,po]
-            if hasattr(sys,'frozen'):
-                import msgfmt
-                old_argv = sys.argv[:]
-                sys.argv = args
-                msgfmt.main()
-                sys.argv = old_argv
-            else:
-                m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
-                subprocess.call([m,u'-o',mo,po],shell=True)
-            os.remove(po)
-        # install translator
-        with open(mo,'rb') as file:
-            trans = gettext.GNUTranslations(file)
-    except:
-        print 'Error loading translation file:'
-        traceback.print_exc()
+    if not os.path.exists(txt) and not os.path.exists(mo):
+        if language.lower != 'english':
+            print 'No translation file for language:', language
         trans = gettext.NullTranslations()
-        trans.install(unicode=True)
-        return
+    else:
+        try:
+            if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
+                # Compile
+                shutil.copy(txt,po)
+                args = [u'm',u'-o',mo,po]
+                if hasattr(sys,'frozen'):
+                    import msgfmt
+                    old_argv = sys.argv[:]
+                    sys.argv = args
+                    msgfmt.main()
+                    sys.argv = old_argv
+                else:
+                    m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
+                    subprocess.call([m,u'-o',mo,po],shell=True)
+                os.remove(po)
+            # install translator
+            with open(mo,'rb') as file:
+                trans = gettext.GNUTranslations(file)
+        except:
+            print 'Error loading translation file:'
+            traceback.print_exc()
+            trans = gettext.NullTranslations()
     trans.install(unicode=True)
-    # Dump the non-translated strings to a new file, so they know to translate
-    # TODO: figure out a unicode way that this will work.
-    ##num = 0
-    ##try:
-    ##    with open(txt,'rb') as ins:
-    ##        with open(txt[:-4]+u'_untranslated.txt','wb') as out:
-    ##            lines = []
-    ##            for line in ins:
-    ##                if line[0:1] == '#:':
-    ##                    lines.append(line)
-    ##                elif line[0:4] == 'msgid':
-    ##                    if not lines: continue
-    ##                    lines.append(line)
-    ##                elif line[0:5] == 'msgstr':
-    ##                    if 
-    ##                stripped = line.strip()
-    ##                if stripped.startswith(u'#:'):
-    ##                    lines.append(line)
-    ##                elif stripped.startswith(u'msgid'):
-    ##                    if not lines: continue
-    ##                    lines.append(line)
-    ##                elif stripped.startswith(u'msgstr'):
-    ##                    if not lines: continue
-    ##                    orig = lines[-1].strip()[7:-1]
-    ##                    if not orig:
-    ##                        lines = []
-    ##                        continue
-    ##                    trans = stripped[8:-1]
-    ##                    if not trans:
-    ##                        num += 1
-    ##                        lines.append(line)
-    ##                        out.write(u''.join(lines))
-    ##                        out.write(u'\r\n')
-    ##                        lines = []
-    ##    print unicode(num) + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
-    ##except:
-    ##    print u'Error dumping untranslated strings:'
-    ##    traceback.print_exc()
 
 #--Do translator test and set
 if locale.getlocale() == (None,None):
