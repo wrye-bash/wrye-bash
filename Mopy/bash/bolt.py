@@ -177,12 +177,13 @@ def dumpTranslator(outPath,language,*files):
     try:
         reMsgIdsStart = re.compile('#:')
         reEncoding = re.compile(r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$',re.I)
-        reNonEscapedQuote = re.compile(r'[^\\]"')
+        reNonEscapedQuote = re.compile(r'([^\\])"')
+        def subQuote(match): return match.group(1)+'\\"'
         encoding = None
-        with open(tmpTxt,'wb') as out:
+        with open(tmpTxt,'w') as out:
             outWrite = out.write
             #--Copy old translation file header, and get encoding for strings
-            with open(oldTxt,'rb') as ins:
+            with open(oldTxt,'r') as ins:
                 for line in ins:
                     if not encoding:
                         match = reEncoding.match(line.strip('\r\n'))
@@ -193,10 +194,9 @@ def dumpTranslator(outPath,language,*files):
                     outWrite(line)
             #--Read through the new translation file, fill in any already
             #  translated strings
-            with open(fullTxt,'rb') as ins:
+            with open(fullTxt,'r') as ins:
                 header = False
                 msgIds = False
-                lastTranslated = False
                 for line in ins:
                     if not header:
                         match = reMsgIdsStart.match(line)
@@ -205,22 +205,21 @@ def dumpTranslator(outPath,language,*files):
                             outWrite(line)
                         continue
                     elif line[0:7] == 'msgid "':
-                        text = line[7:-1].strip('\r\n"')
+                        text = line.strip('\r\n')[7:-1]
                         text = text.replace('\\"','"')
                         translated = _(text)
                         if text != translated:
                             # Already translated
-                            lastTranslated = True
                             outWrite(line)
                             outWrite('msgstr "')
                             translated = translated.encode(encoding)
-                            translated = reNonEscapedQuote.sub('\\"',translated)
+                            translated = reNonEscapedQuote.sub(subQuote,translated)
                             outWrite(translated)
-                            outWrite('"\r\n')
+                            outWrite('"\n')
                         else:
                             # Not translated
                             outWrite(line)
-                            outWrite('msgstr ""\r\n')
+                            outWrite('msgstr ""\n')
                     elif line[0:8] == 'msgstr "':
                         continue
                     else:
