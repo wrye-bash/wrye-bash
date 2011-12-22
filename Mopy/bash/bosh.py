@@ -84,6 +84,7 @@ from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, 
 from bolt import _unicode, _encode
 from cint import *
 from brec import *
+from brec import _coerce # Since it wont get imported by the import * (it begins with _)
 from chardet.universaldetector import UniversalDetector
 startupinfo = bolt.startupinfo
 
@@ -2142,6 +2143,8 @@ class SaveFile:
 
     def load(self,progress=None):
         """Extract info from save file."""
+        # TODO: This is Oblivion only code.  Needs to be refactored
+        # out into obivion.py, and a version implemented for skyrim as well
         import array
         path = self.fileInfo.getPath()
         with bolt.StructFile(path.s,'rb') as ins:
@@ -2191,7 +2194,7 @@ class SaveFile:
             for count in xrange(createdNum):
                 progress(ins.tell(),_(u'Reading created...'))
                 header = ins.unpack('4s4I',20)
-                self.created.append(MreRecord(header,modReader))
+                self.created.append(MreRecord(ModReader.recHeader(*header),modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
             with sio() as buff:
                 for count in range(4):
@@ -11983,6 +11986,7 @@ class CBash_ScriptText:
                     progress(((1/y)*z),_(u"Reading file %s.") % name.s)
                     with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
+                    if not lines: continue
                     modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs writes it in \r\n format.
                     eid_data[ISTRING(eid)] = (ISTRING(scriptText), formID) #script text is case insensitive
@@ -12001,6 +12005,7 @@ class CBash_ScriptText:
         with balt.Progress(_(u"Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
+                text = _unicode(text)
                 if skipcomments:
                     tmp = u''
                     for line in text.split(u'\n'):
@@ -13122,7 +13127,7 @@ class CleanMod:
                                 color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
                                 if not (near or far or clip):
                                     near = 0.0001
-                                    fixedCells.add(fid)
+                                    fixedCells.add(header.fid)
                                 out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
                     #--Non-Cells
                     else:

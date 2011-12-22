@@ -1009,6 +1009,7 @@ class TabDragMixin(object):
         self.__justSwapped = wx.NOT_FOUND
         self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
         self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEnd)
         self.Bind(wx.EVT_MOTION, self.__OnDragging)
 
     def __OnDragStart(self, event):
@@ -1024,7 +1025,10 @@ class TabDragMixin(object):
         if self.__dragging != wx.NOT_FOUND:
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             self.__dragging = wx.NOT_FOUND
-            self.ReleaseMouse()
+            try:
+                self.ReleaseMouse()
+            except:
+                pass
         event.Skip()
 
     def __OnDragging(self, event):
