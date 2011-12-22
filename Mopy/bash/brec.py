@@ -263,7 +263,13 @@ class ModReader:
         else:
             return self.readString(size,recType)
 
-    def readWString(self,size,recType='----'):
+    def readString16(self,size,recType='----'):
+        """Read wide pascal string: uint16 is used to indicate length."""
+        strLen, = self.unpack('H',2,recType)
+        return u'\n'.join(_unicode(x) for x in
+                          bolt.cstrip(self.read(strLen,recType)).split('\n'))
+
+    def readString32(self,size,recType='----'):
         """Read wide pascal string: uint32 is used to indicate length."""
         strLen, = self.unpack('I',4,recType)
         return u'\n'.join(_unicode(x) for x in
@@ -1226,7 +1232,7 @@ class MreRecord(object):
             eid=u' '+self.eid
         else:
             eid=u''
-        return u'<%s object: %s (%s)%s>' % (type(self).split(u"'")[1], self.recType, strFid(self.fid), eid)
+        return u'<%s object: %s (%s)%s>' % (unicode(type(self)).split(u"'")[1], self.recType, strFid(self.fid), eid)
 
     def getHeader(self):
         """Returns header tuple."""
