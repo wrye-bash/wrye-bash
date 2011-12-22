@@ -11836,7 +11836,7 @@ class ScriptText:
             for eid, data in eid_data.iteritems():
                 newText, longid = data
                 scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
-                newScript = MreRecord.type_class['SCPT'](MreRecord.recHeader('SCPT',0,0x40000,scriptFid,0))
+                newScript = MreRecord.type_class['SCPT'](ModReader.recHeader('SCPT',0,0x40000,scriptFid,0))
                 newScript.eid = eid
                 newScript.scriptText = newText
                 newScript.setChanged()
@@ -13044,7 +13044,7 @@ class PCFaces:
             eid = eidForm % count
         #--NPC
         npcid = genFid(len(tes4.masters),tes4.getNextObject())
-        npc = MreRecord.type_class['NPC_'](MreRecord.recHeader('NPC_',0,0x40000,npcid,0))
+        npc = MreRecord.type_class['NPC_'](ModReader.recHeader('NPC_',0,0x40000,npcid,0))
         npc.eid = eid
         npc.full = face.pcName
         npc.flags.female = face.gender
@@ -26799,7 +26799,7 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         keep = self.patchFile.getKeeper()
         #--Book generatator
         def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
-            book = MreRecord.type_class['BOOK'](MreRecord.recHeader('BOOK',0,0,0,0))
+            book = MreRecord.type_class['BOOK'](ModReader.recHeader('BOOK',0,0,0,0))
             book.longFids = True
             book.changed = True
             book.eid = eid
