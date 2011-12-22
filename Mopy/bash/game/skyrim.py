@@ -26,6 +26,7 @@
 
 import struct
 from .. import brec
+from .. import bolt
 from ..brec import *
 
 #--Name of the game
@@ -273,22 +274,6 @@ class esp:
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.94,)
 
-    #--Class to use to read the TES4 record
-    tes4ClassName = 'MreTes5'
-
-    #--Information on the ESP/ESM header format
-    class header:
-        format = '=4s5I'
-        formatTopGrup = '=4sI4sIII'
-        formatTupleGrup = '=4sIhhIII'
-        size = 24
-        attrs = ('recType','size','flags1','fid','flags2','unk')
-        defaults = ('TES4',0,0,0,0,0)
-
-    #--Extra read/write classes
-    readClasses = tuple()
-    writeClasses = tuple()
-
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
         'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL',
@@ -308,10 +293,6 @@ class esp:
 
     #-> this needs updating for Skyrim
     recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
-
-    #--class names for mergeable records
-    mergeClasses = ('MreGlob','MreGmst','MreCobj','MreAmmoSkyrim',
-                    )
 
 #--Mod I/O
 class RecordHeader(brec.BaseRecordHeader):
@@ -372,9 +353,27 @@ class RecordHeader(brec.BaseRecordHeader):
 #--Set ModReader to use the correct record header
 brec.ModReader.recHeader = RecordHeader
 
-# Skyrim Records --------------------------------------------------------------
+# Record Elements --------------------------------------------------------------
+#-------------------------------------------------------------------------------
+class MelBounds(MelStruct):
+    def __init__(self):
+        MelStruct.__init__(self,'OBND','=6h',
+            'x1','y1','z1',
+            'x2','y2','z2')
 
-#--Class that is the 'TES4' record for this game
+#-------------------------------------------------------------------------------
+class MelModel(brec.MelModel):
+    typeSets = (
+        ('MODL','MODT','MODS'),
+        ('MOD2','MO2T','MO2S'),
+        ('MOD3','MO3T','MO3S'),
+        ('MOD4','MO4T','MO4S'),
+        ('MOD5','MO5T','MO5S'),
+        ('DMDL','DMDT','DMDS'),
+        )
+
+# Skyrim Records ---------------------------------------------------------------
+#-------------------------------------------------------------------------------
 class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
@@ -390,3 +389,64 @@ class MreHeader(MreHeaderBase):
         MelBase('ONAM','onam_p'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGmst(MreGmstBase):
+    """Skyrim GMST record"""
+    Master = u'Skryim'
+
+#------------------------------------------------------------------------------
+class MreCobj(MelRecord):
+    """Constructible Object record (recipies)"""
+    classType = 'COBJ'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('COCT','I','componentCount'),
+        MelStructs('CNTO','=II','components',(FID,'item',None),'count'),
+        MelGroups('conditions',
+            MelBase('CTDA','condition'),
+            ),
+        MelFid('CNAM','resultingItem'),
+        MelStruct('NAM1','H','resultingQuantity'),
+        MelFid('BNAM','craftingStation'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAmmo(MelRecord):
+    """Ammo record (arrows)"""
+    classType = 'AMMO'
+    # TODO: verify these flags for Skyrim
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelLString('DESC','description'),
+        MelStruct('KSIZ','I','numKeywords'),
+        MelFidList('KWDA','keywords'),
+        MelStruct('DATA','fIff','speed',(_flags,'flags',0L),'damage','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+
+#--Record Types
+brec.MreRecord.type_class = dict((x.classType,x) for x in (
+    MreAmmo, MreCobj, MreGlob, MreGmst,MreHeader,
+    ))
+
+#--Simple records
+brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
+    set(('TES4')))
+
+#--Mergeable record types
+mergeClasses = (MreGlob, MreGmst, MreCobj, MreAmmo,
+                )
+
+#--Extra read/write classes
+readClasses = tuple()
+writeClasses = tuple()
