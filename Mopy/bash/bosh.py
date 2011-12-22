@@ -15082,11 +15082,11 @@ class UpdateReferences(ListPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return tuple(self.classes) if self.isActive else ()
+        return tuple(x.classType for x in self.classes) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return tuple(self.classes) if self.isActive else ()
+        return tuple(x.classType for x in self.classes) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
@@ -15352,11 +15352,11 @@ class ImportPatcher(ListPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return self.srcClasses if self.isActive else ()
+        return tuple(x.classType for x in self.srcClasses) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return self.srcClasses if self.isActive else ()
+        return tuple(x.classType for x in self.srcClasses) if self.isActive else ()
 
 class CBash_ImportPatcher(CBash_ListPatcher):
     """Subclass for patchers in group Importer."""
@@ -15686,7 +15686,7 @@ class GraphicsPatcher(ImportPatcher):
             recAttrs_class[recClass] = ('iconPath',)
         for recClass in (MreRecord.type_class[x] for x in ('ACTI','DOOR','FLOR','FURN','GRAS','STAT')):
             recAttrs_class[recClass] = ('model',)
-        for recClass in (MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISG','SGST','SLGM','WEAP','TREE')):
+        for recClass in (MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE')):
             recAttrs_class[recClass] = ('iconPath','model')
         for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
             recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
@@ -19313,11 +19313,11 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('AMMO',)
+        return ('ARMO',)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('AMMO',)
+        return ('ARMO',)
 
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
@@ -19864,11 +19864,11 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('AMMO',)
+        return ('ARMO',)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('AMMO',)
+        return ('ARMO',)
 
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
@@ -20229,8 +20229,12 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
             u'NoLightFlicker',
             (u'1.0',  u'1.0'),
             )
-        self.flags = flags = MreRecord.type_class['LIGH']._flags()
-        flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
+        try:
+            self.flags = flags = MreRecord.type_class['LIGH']._flags()
+            flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
+        except:
+            # Fails if the loaded game doesn't have LIGH records defined yet
+            pass
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -24970,21 +24974,11 @@ class TextReplacer(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CLAS','CLOT','CONT','CREA','DOOR',
-                'ENCH','EYES','FACT','FLOR','FURN','GMST',
-                'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
-                'MISC','NPC_','QUST','RACE','SCPT','SQST',
-                'SKIL','SLGM','SPEL','WEAP',)
+        return tuple(self.activeTypes)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CLAS','CLOT','CONT','CREA','DOOR',
-                'ENCH','EYES','CONT','CREA','FURN','GMST',
-                'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
-                'MISC','NPC_','QUST','RACE','SCPT','SQST',
-                'SKIL','SLGM','SPEL','WEAP',)
+        return tuple(self.activeTypes)
 
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
