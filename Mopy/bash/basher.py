@@ -5029,6 +5029,7 @@ class BashStatusBar(wx.StatusBar):
             # DnD events
             gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
             gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
+            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST,self.OnDragEnd)
             gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
@@ -5160,7 +5161,10 @@ class BashStatusBar(wx.StatusBar):
     def OnDragEnd(self,event):
         if self.dragging != wx.NOT_FOUND:
             button = self.buttons[self.dragging]
-            button.ReleaseMouse()
+            try:
+                button.ReleaseMouse()
+            except:
+                pass
             # -*- Hacky code! -*-
             # Since we've got to CaptureMouse to do DnD properly,
             # The button will never get a EVT_BUTTON event if you
@@ -12979,14 +12983,14 @@ class Mod_DecompileAll(Link):
                 balt.showWarning(self.window,_(u"Skipping %s") % fileName.s,_(u'Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
-            loadFactory = bosh.LoadFactory(True,bosh.MreScpt)
+            loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['SCPT'])
             modFile = bosh.ModFile(fileInfo,loadFactory)
             modFile.load(True)
             badGenericLore = False
             removed = []
             id_text = {}
             if modFile.SCPT.getNumRecords(False):
-                loadFactory = bosh.LoadFactory(False,bosh.MreScpt)
+                loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['SCPT'])
                 for master in modFile.tes4.masters:
                     masterFile = bosh.ModFile(bosh.modInfos[master],loadFactory)
                     masterFile.load(True)
@@ -13547,7 +13551,7 @@ class Mod_RemoveWorldOrphans(Link):
             #--Export
             orphans = 0
             with balt.Progress(_(u"Remove World Orphans")) as progress:
-                loadFactory = bosh.LoadFactory(True,bosh.MreCell,bosh.MreWrld)
+                loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
                 modFile = bosh.ModFile(fileInfo,loadFactory)
                 progress(0,_(u"Reading %s.") % fileName.s)
                 modFile.load(True,SubProgress(progress,0,0.7))
@@ -15218,7 +15222,8 @@ class Save_RepairFactions(Link):
             offsetFlag = 0x80
             npc_info = {}
             fact_eid = {}
-            loadFactory = bosh.LoadFactory(False,bosh.MreNpc,bosh.MreFact)
+            loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'],
+                                                 bosh.MreRecord.type_class['FACT'])
             ordered = list(bosh.modInfos.ordered)
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             for index,modName in enumerate(ordered):
@@ -15507,7 +15512,7 @@ class Save_UpdateNPCLevels(Link):
             #--Loop over active mods
             offsetFlag = 0x80
             npc_info = {}
-            loadFactory = bosh.LoadFactory(False,bosh.MreNpc)
+            loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'])
             ordered = list(bosh.modInfos.ordered)
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
