@@ -206,13 +206,17 @@ def dumpTranslator(outPath,language,*files):
                         continue
                     elif line[0:7] == 'msgid "':
                         text = line.strip('\r\n')[7:-1]
+                        # Replace escape sequences
                         text = text.replace('\\"','"')
+                        text = text.replace('\\\\', '\\')
                         translated = _(text)
                         if text != translated:
                             # Already translated
                             outWrite(line)
                             outWrite('msgstr "')
                             translated = translated.encode(encoding)
+                            # Re-escape the escape sequences
+                            translated = translated.replace('\\','\\\\')
                             translated = reNonEscapedQuote.sub(subQuote,translated)
                             outWrite(translated)
                             outWrite('"\n')
