@@ -355,6 +355,170 @@ brec.ModReader.recHeader = RecordHeader
 
 # Record Elements --------------------------------------------------------------
 #-------------------------------------------------------------------------------
+class MelVmad(MelBase):
+    """Virtual Machine data (VMAD)"""
+    class Vmad(object):
+        __slots__ = ('version','unk','scripts',)
+        def __init__(self):
+            self.version = 5
+            self.unk = 2
+            self.scripts = {}
+    class Script(object):
+        __slots__ = ('unk','properties')
+        def __init__(self):
+            self.unk = 0
+            self.properties = {}
+    class Property(object):
+        __slots__ = ('type','unk','value')
+        def __init__(self):
+            self.type = 1
+            self.unk = 1
+            self.value = 0
+
+    def __init__(self,type='VMAD',attr='vmdata'):
+        MelBase.__init__(self,type,attr)
+
+    def hasFids(self,formElements):
+        """Include self if has fids."""
+        formElements.add(self)
+
+    def setDefault(self,record):
+        record.__setattr__(self.attr,MelVmad.Vmad())
+
+    def getDefault(self):
+        target = MelObject()
+        return self.setDefault(target)
+
+    def loadData(self,record,ins,type,size,readId):
+        vmad = MelVmad.Vmad()
+        # Header
+        vmad.version,vmad.unk,scriptCount = ins.unpack('=3H',6,readId)
+        # Scripts
+        for x in xrange(scriptCount):
+            script = MelVmad.Script()
+            scriptName = ins.readString16(size,readId)
+            script.unk,propertyCount = ins.unpack('=BH',3,readId)
+            # Properties
+            props = script.properties
+            for y in xrange(propertyCount):
+                prop = MelVmad.Property()
+                propName = ins.readString16(size,readId)
+                type,prop.unk = ins.unpack('=2B',2,readId)
+                prop.type = type
+                if type == 1:
+                    # Object reference? (uint64?)
+                    value = ins.unpack('=HHI',8,readId) # unk,unk,fid
+                elif type == 2:
+                    # String
+                    value = ins.readString16(size,readId)
+                elif type == 3:
+                    # int32
+                    value = ins.unpack('i',4,readId)
+                elif type == 4:
+                    # float
+                    value = ins.unpack('f',4,readId)
+                elif type == 5:
+                    # bool (int8)
+                    value = ins.unpack('b',1,readId)
+                elif type == 11:
+                    # array of object refs? (uint64s?)
+                    count, = ins.unpack('I',4,readId)
+                    value = list(ins.unpack(`count`+'Q',count*8,readId))
+                elif type == 12:
+                    # array of strings
+                    count, = ins.unpack('I',4,readId)
+                    value = [ins.readString16(size,readId) for z in xrange(count)]
+                elif type == 13:
+                    # array of int32's
+                    count, = ins.unpack('I',4,readId)
+                    value = ins.unpack(`count`+'i',count*4,readId)
+                elif type == 14:
+                    # array of float's
+                    count, = ins.unpack('I',4,readId)
+                    value = ins.unpack(`count`+'f',count*4,readId)
+                elif type == 15:
+                    # array of bools's (int8's)
+                    count, = ins.unpack('I',4,readId)
+                    value = ins.unpack(`count`+'b',count*1,readId)
+                else:
+                    raise Exception(u'Unrecognized VM Data property type: %i' % type)
+                prop.value = value
+                props[propName] = prop
+            vmad.scripts[scriptName] = script
+        record.__setattr__(self.attr,vmad)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream"""
+        outPack = out.pack
+        outWrite = out.write
+        def packString(string):
+            string = _encode(string)
+            outPack('H',len(string))
+            outWrite(string)
+        vmad = record.__getattribute__(self.attr)
+        # Header
+        outPack('3h',vmad.version,vmad.unk,len(vmad.scripts))
+        # Scripts
+        for scriptName,script in vmad.scripts.iteritems():
+            packString(scriptName)
+            outPack('=BH',script.unk,len(script.properties))
+            # Properties
+            for propName,prop in script.properties.iteritems():
+                packString(propName)
+                type = prop.type
+                outPack('2B',type,prop.unk)
+                if type == 1:
+                    # Object reference
+                    outPack('=HHI',*prop.value)
+                elif type == 2:
+                    # String
+                    packString(prop.value)
+                elif type == 3:
+                    # int32
+                    outPack('i',prop.value)
+                elif type == 4:
+                    # float
+                    outPack('f',prop.value)
+                elif type == 5:
+                    # bool (int8)
+                    outPack('b',prop.value)
+                elif type == 11:
+                    # array of object references
+                    num = len(prop.value)
+                    outPack('=I'+`num`+'Q',num,*prop.value)
+                elif type == 12:
+                    # array of strings
+                    num = len(prop.value)
+                    outPack('I',num)
+                    for string in prop.value:
+                        packString(string)
+                elif type == 13:
+                    # array of int32's
+                    num = len(prop.value)
+                    outPack('=I'+`num`+'i',num,*prop.value)
+                elif type == 14:
+                    # array of float's
+                    num = len(prop.value)
+                    outPack('=I'+`num`+'f',num,*prop.value)
+                elif type == 15:
+                    # array of bools (int8)
+                    num = len(prop.value)
+                    outPack('=I'+`num`+'b',num,*prop.value)
+
+    def mapFids(self,record,function,save=False):
+        """Applies function to fids.  If save s true, then fid is set
+           to result of function."""
+        attr = self.attr
+        vmad = record.__getattribute__(attr)
+        for scriptName,script in vmad.scripts.iteritems():
+            for propName,prop in script.properties.iteritems():
+                if prop.type == 0:
+                    value = prop.value
+                    value = (value[0],value[1],function(value[2]))
+                    if save:
+                        prop.value = value
+
+#-------------------------------------------------------------------------------
 class MelBounds(MelStruct):
     def __init__(self):
         MelStruct.__init__(self,'OBND','=6h',
@@ -362,15 +526,246 @@ class MelBounds(MelStruct):
             'x2','y2','z2')
 
 #-------------------------------------------------------------------------------
-class MelModel(brec.MelModel):
-    typeSets = (
-        ('MODL','MODT','MODS'),
-        ('MOD2','MO2T','MO2S'),
-        ('MOD3','MO3T','MO3S'),
-        ('MOD4','MO4T','MO4S'),
-        ('MOD5','MO5T','MO5S'),
-        ('DMDL','DMDT','DMDS'),
-        )
+class MelString16(MelString):
+    """Represents a mod record string element."""
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        strLen = ins.unpack('H',2,readId)
+        value = ins.readString(strLen,readId)
+        record.__setattr__(self.attr,value)
+        if self._debug: print u' ',record.__getattribute__(self.attr)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        value = record.__getattribute__(self.attr)
+        if value != None:
+            if self.maxSize:
+                value = bolt.winNewLines(value.rstrip())
+                size = min(self.maxSize,len(value))
+                test,encoding = _encode(value,returnEncoding=True)
+                extra_encoded = len(test) - self.maxSize
+                if extra_encoded > 0:
+                    total = 0
+                    i = -1
+                    while total < extra_encoded:
+                        total += len(value[i].encode(encoding))
+                        i -= 1
+                    size += i + 1
+                    value = value[:size]
+                    value = _encode(value,firstEncoding=encoding)
+                else:
+                    value = test
+            else:
+                value = _encode(value)
+            value = struct.pack('H',len(value))+value
+            out.packSub0(self.subType,value)
+
+#-------------------------------------------------------------------------------
+class MelString32(MelString):
+    """Represents a mod record string element."""
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        strLen = ins.unpack('I',4,readId)
+        value = ins.readString(strLen,readId)
+        record.__setattr__(self.attr,value)
+        if self._debug: print u' ',record.__getattribute__(self.attr)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        value = record.__getattribute__(self.attr)
+        if value != None:
+            if self.maxSize:
+                value = bolt.winNewLines(value.rstrip())
+                size = min(self.maxSize,len(value))
+                test,encoding = _encode(value,returnEncoding=True)
+                extra_encoded = len(test) - self.maxSize
+                if extra_encoded > 0:
+                    total = 0
+                    i = -1
+                    while total < extra_encoded:
+                        total += len(value[i].encode(encoding))
+                        i -= 1
+                    size += i + 1
+                    value = value[:size]
+                    value = _encode(value,firstEncoding=encoding)
+                else:
+                    value = test
+            else:
+                value = _encode(value)
+            value = struct.pack('I',len(value))+value
+            out.packSub0(self.subType,value)
+
+#-------------------------------------------------------------------------------
+class MelMODS(MelBase):
+    """MODS/MO2S/etc/DMDS subrecord"""
+    def hasFids(self,formElements):
+        """Include self if has fids."""
+        formElements.add(self)
+
+    def setDefault(self,record):
+        """Sets default value for record instance."""
+        record.__setattr__(self.attr,[])
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        insUnpack = ins.unpack
+        insRead32 = ins.readString32
+        count, = insUnpack('I',4,readId)
+        data = []
+        dataAppend = data.append
+        for x in xrange(count):
+            string = ins.readString32(size,readId)
+            fid = ins.unpackRef(readId)
+            unk = ins.unpack('I',4,readId)
+            dataAppend((string,fid,unk))
+        record.__setattr__(self.attr,data)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        structPack = struct.pack
+        data = record.__getattribute__(self.attr)
+        outData = structPack('I',len(data))
+        for (string,fid,unk) in data:
+            outData += structPack('I',len(string))
+            outData += string
+            outData += structPack('=2I',fid,unk)
+        out.packSub(self.subType,outData)
+
+    def mapFids(self,record,function,save=False):
+        """Applies function to fids.  If save is true, then fid is set
+           to result of function."""
+        attr = self.attr
+        data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
+        if save: record.__setattr__(attr,data)
+
+#-------------------------------------------------------------------------------
+class MelBODT(MelStruct):
+    """Body Type data"""
+    btFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'skin'),
+        (1, 'head'),
+        (2, 'chest'),
+        (3, 'hands'),
+        (4, 'beard'),
+        (5, 'amulet'),
+        (6, 'ring'),
+        (7, 'feet'),
+        #8 = unk
+        (9, 'shield'),
+        (10,'animal_skin'),
+        (11,'underskin'),
+        (12,'crown'),
+        (13,'face'),
+        (14,'dragon_head'),
+        (15,'dragon_lwing'),
+        (16,'dragon_rwing'),
+        (17,'dragon_body'),
+        ))
+    otherFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (4,'notPlayable'),
+        ))
+    armorTypes = {
+        0:'Light Armor',
+        1:'Heavy Armor',
+        2:'Clothing',
+        }
+    def __init__(self,type='BODT'):
+        MelStruct.__init__(self,type,'=3I',
+                           (MelBODT.btFlags,'bodyFlags',0L),
+                           (MelBODT.otherFlags,'otherFlags',0L),
+                           ('armorType',0)
+                           )
+
+#-------------------------------------------------------------------------------
+class MelModel(MelGroup):
+    """Represents a model record."""
+    typeSets = {
+        'MODL': ('MODL','MODT','MODS'),
+        'MOD2': ('MOD2','MO2T','MO2S'),
+        'MOD3': ('MOD3','MO3T','MO3S'),
+        'MOD4': ('MOD4','MO4T','MO4S'),
+        'MOD5': ('MOD5','MO5T','MO5S'),
+        'DMDL': ('DMDL','DMDT','DMDS'),
+        }
+    def __init__(self,attr='model',type='MODL'):
+        """Initialize."""
+        types = self.__class__.typeSets[type]
+        MelGroup.__init__(self,attr,
+            MelString(types[0],'modPath'),
+            MelBase(types[1],'modt_p'),
+            MelMODS(types[2],'mod_s'),
+            )
+
+    def debug(self,on=True):
+        """Sets debug flag on self."""
+        for element in self.elements[:2]: element.debug(on)
+        return self
+
+#-------------------------------------------------------------------------------
+class MelConditions(MelStructs):
+    """Represents a set of quest/dialog/etc conditions. Difficulty is that FID
+    state of parameters depends on function index."""
+    def __init__(self):
+        """Initialize."""
+        MelStructs.__init__(self,'CTDA','=B3sfH2sii4sII','conditions',
+            'operFlag',('unused1',null3),'compValue',
+            'ifunc',('unused2',null2),'param1','param2',
+            ('unused3',null4),'reference','unknown')
+
+    def getDefault(self):
+        """Returns a default copy of object."""
+        target = MelStructs.getDefault(self)
+        target.form12 = 'ii'
+        return target
+
+    def hasFids(self,formElements):
+        """Include self if has fids."""
+        formElements.add(self)
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        target = MelObject()
+        record.conditions.append(target)
+        target.__slots__ = self.attrs
+        unpacked1 = ins.unpack('=B3sfH2s',12,readId)
+        (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
+        #--Get parameters
+        if ifunc not in allConditions:
+            raise bolt.BoltError(u'Unknown condition function: %d' % ifunc)
+        form1 = 'I' if ifunc in fid1Conditions else 'i'
+        form2 = 'I' if ifunc in fid2Conditions else 'i'
+        form12 = form1+form2
+        unpacked2 = ins.unpack(form12,8,readId)
+        (target.param1,target.param2) = unpacked2
+        target.unused3 = ins.read(4)
+        target.unused3,target.reference = ins.unpack('=2I',8,readId)
+        (target.ifunc,target.form12) = (ifunc,form12)
+        if self._debug:
+            unpacked = unpacked1+unpacked2
+            print u' ',zip(self.attrs,unpacked)
+            if len(unpacked) != len(self.attrs):
+                print u' ',unpacked
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        for target in record.conditions:
+            ##format = 'B3sfI'+target.form12+'4s'
+            out.packSub('CTDA','=B3sfH2s'+target.form12+'4sII',
+                target.operFlag, target.unused1, target.compValue,
+                target.ifunc, target.unused2, target.param1, target.param2,
+                target.unused3,target.reference)
+
+    def mapFids(self,record,function,save=False):
+        """Applies function to fids. If save is true, then fid is set
+        to result of function."""
+        for target in record.conditions:
+            form12 = target.form12
+            if form12[0] == 'I':
+                result = function(target.param1)
+                if save: target.param1 = result
+            if form12[1] == 'I':
+                result = function(target.param2)
+                if save: target.param2 = result
 
 # Skyrim Records ---------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -391,24 +786,104 @@ class MreHeader(MreHeaderBase):
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
-    """Skyrim GMST record"""
-    Master = u'Skryim'
-
-#------------------------------------------------------------------------------
-class MreCobj(MelRecord):
-    """Constructible Object record (recipies)"""
-    classType = 'COBJ'
+class MreAact(MelRecord):
+    """Action record."""
+    classType = 'AACT'
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('COCT','I','componentCount'),
-        MelStructs('CNTO','=II','components',(FID,'item',None),'count'),
-        MelGroups('conditions',
-            MelBase('CTDA','condition'),
-            ),
-        MelFid('CNAM','resultingItem'),
-        MelStruct('NAM1','H','resultingQuantity'),
-        MelFid('BNAM','craftingStation'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreActi(MelRecord):
+    """Activator."""
+    classType = 'ACTI'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelBase('DSTD','dstd_p'),
+        MelModel('depletedModel','DMDL'),
+        MelBase('PNAM','pnam_p'),
+        MelFid('VNAM','pickupSound'),
+        MelFid('SNAM','dropSound'),
+        MelFid('WNAM','water'),
+        MelGroup('keywords',
+                 MelStruct('KSIZ','I','num'),
+                 MelFidList('KWDA','keywords'),
+                 ),
+        MelLString('RNAM','rnam'),
+        MelBase('FNAM','fnam_p'),
+        MelFid('KNAM','keyword'),
+        MelBase('DSTF','dstf_p'), #--Always 0, what is it for?
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAddn(MelRecord):
+    """Addon"""
+    classType = 'ADDN'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelBase('DATA','data_p'),
+        MelBase('DNAM','dnam_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArma(MelRecord):
+    """Armor addon?"""
+    classType = 'ARMA'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBODT(),
+        MelFid('RNAM','race'),
+        MelBase('DNAM','dnam_p'),
+        MelModel('male_model','MOD2'),
+        MelModel('female_model','MOD3'),
+        MelModel('male_model_1st','MOD4'),
+        MelModel('female_model_1st','MOD5'),
+        MelFidList('MODL','races'),
+        MelFid('SNDD','foodSound'),
+        MelFid('NAM0','skin0'),
+        MelFid('NAM1','skin1'),
+        MelFid('NAM2','skin2'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArmo(MelRecord):
+    """Armor"""
+    classType = 'ARMO'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelFid('EITM','enchantment'),
+        MelModel('model1','MOD2'),
+        MelModel('model3','MOD4'),
+        MelBODT(),
+        MelFid('ETYP','equipType'),
+        MelFid('BIDS','bashImpact'),
+        MelFid('BAMT','material'),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelFid('RNAM','race'),
+        MelGroup('keywords',
+                 MelStruct('KSIZ','I','num'),
+                 MelFidList('KWDA','keywords'),
+                 ),
+        MelLString('DESC','description'),
+        MelFids('MODL','addons'),
+        MelStruct('DATA','=If','value','weight'),
+        MelFid('TNAM','baseItem'),
+        MelStruct('DNAM','I','armorRating'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -433,10 +908,50 @@ class MreAmmo(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreCobj(MelRecord):
+    """Constructible Object record (recipies)"""
+    classType = 'COBJ'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('COCT','I','componentCount'),
+        MelStructs('CNTO','=2I','components',(FID,'item',None),'count'),
+        MelBase('CTDA','conditions'), #MelConditions(),
+        MelFid('CNAM','resultingItem'),
+        MelStruct('NAM1','H','resultingQuantity'),
+        MelFid('BNAM','craftingStation'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGmst(MreGmstBase):
+    """Skyrim GMST record"""
+    Master = u'Skryim'
+
+#------------------------------------------------------------------------------
+class MreMisc(MelRecord):
+    """Misc. Item"""
+    classType = 'MISC'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelGroup('keywords',
+                 MelStruct('KSIZ','I','num'),
+                 MelFidList('KWDA','keywords'),
+                 ),
+        MelStruct('DATA','=If','value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 
 #--Record Types
 brec.MreRecord.type_class = dict((x.classType,x) for x in (
-    MreAmmo, MreCobj, MreGlob, MreGmst,MreHeader,
+    MreAact, MreActi, MreAddn, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob,
+    MreGmst, MreMisc,
+    MreHeader,
     ))
 
 #--Simple records
@@ -444,9 +959,10 @@ brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
     set(('TES4')))
 
 #--Mergeable record types
-mergeClasses = (MreGlob, MreGmst, MreCobj, MreAmmo,
-                )
+mergeClasses = (
+    MreAact, MreAmmo, MreArma, MreArmo, MreGlob, MreGmst, MreMisc,
+    )
 
 #--Extra read/write classes
-readClasses = tuple()
-writeClasses = tuple()
+readClasses = ()
+writeClasses = ()

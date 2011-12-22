@@ -1229,7 +1229,7 @@ class MobWorld(MobCells):
             if self.worldCellBlock:
                 totalSize += self.worldCellBlock.getSize()
             self.header.size = totalSize
-            self.header.label = world.fid
+            self.header.label = self.world.fid
             self.header.groupType = 1
             out.write(self.header.pack())
             if self.road:
