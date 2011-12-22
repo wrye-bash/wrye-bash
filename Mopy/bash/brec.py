@@ -28,6 +28,7 @@ import os
 import re
 import struct
 import copy
+import cPickle
 
 import bolt
 from bolt import _unicode, _encode, sio, GPath
@@ -986,7 +987,7 @@ class MelModel(MelGroup):
 
     def __init__(self,attr='model',index=0):
         """Initialize. Index is 0,2,3,4 for corresponding type id."""
-        types = MelModel.typeSets[(0,index-1)[index>0]]
+        types = self.__class__.typeSets[(0,index-1)[index>0]]
         MelGroup.__init__(self,attr,
             MelString(types[0],'modPath'),
             MelStruct(types[1],'f','modb'), ### Bound Radius, Float
@@ -1450,9 +1451,12 @@ class MelRecord(MreRecord):
         """Updates set of master names according to masters actually used."""
         self.__class__.melSet.updateMasters(self,masters)
 
-# Base record type for the file header record (TES4)
+#-------------------------------------------------------------------------------
+#-- Common Records
+
+#-------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
-    """File header."""
+    """File header.  Base class for all 'TES4' like records"""
     #--Masters array element
     class MelMasterName(MelBase):
         def setDefault(self,record): record.masters = []
@@ -1473,3 +1477,60 @@ class MreHeaderBase(MelRecord):
         return (self.nextObject -1)
 
     __slots__ = MelRecord.__slots__
+
+#-------------------------------------------------------------------------------
+class MreGlob(MelRecord):
+    """Global record.  Rather stupidly all values, despite their designation
+       (shotr,long,float), are stored as floats -- which means that very large
+       integers lose precision."""
+    classType = 'GLOB'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('FNAM','s',('format','s')),
+        MelStruct('FLTV','f','value'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#-------------------------------------------------------------------------------
+class MreGmstBase(MelRecord):
+    """Game Setting record.  Base class, each game should derive from this class
+       and set class member 'Master' to the file name of the game's main master
+       file."""
+    Master = None
+    Ids = None
+    classType = 'GMST'
+    class MelGmstValue(MelBase):
+        def loadData(self,record,ins,type,size,readId):
+            format = _encode(record.eid[0]) #-- s|i|f
+            if format == 's':
+                record.value = ins.readLString(size,readId)
+            else:
+                record.value = ins.unpack(format,size,readId)
+        def dumpData(self,record,out):
+            format = _encode(record.eid[0]) #-- s|i|f
+            if format == 's':
+                out.packSub0(self.subType,record.value)
+            else:
+                out.packSub(self.subType,format,record.value)
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGmstValue('DATA','value'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def getGMSTFid(self):
+        """Returns <Oblivion/Skyrim/etc>.esm fid in long format for specified
+           eid."""
+        cls = self.__class__
+        if not cls.Ids:
+            try:
+                fname = cls.Master+u'_ids.pkl'
+                import bosh # Late import to avoid circular imports
+                cls.Ids = cPickle.load(bosh.dirs['db'].join(fname).open())[cls.classType]
+            except:
+                old = bolt.deprintOn
+                bolt.deprintOn = True
+                bolt.deprint(u'Error loading %s:' % fname, traceback=True)
+                raise
+        return (GPath(cls.Master+u'.esm'),cls.Ids[self.eid])
+
