@@ -207,8 +207,9 @@ def dumpTranslator(outPath,language,*files):
                     elif line[0:7] == 'msgid "':
                         text = line.strip('\r\n')[7:-1]
                         # Replace escape sequences
-                        text = text.replace('\\"','"')
-                        text = text.replace('\\\\', '\\')
+                        text = text.replace('\\"','"')      # Quote
+                        text = text.replace('\\t','\t')     # Tab
+                        text = text.replace('\\\\', '\\')   # Backslash
                         translated = _(text)
                         if text != translated:
                             # Already translated
@@ -217,6 +218,7 @@ def dumpTranslator(outPath,language,*files):
                             translated = translated.encode(encoding)
                             # Re-escape the escape sequences
                             translated = translated.replace('\\','\\\\')
+                            translated = translated.replace('\t','\\t')
                             translated = reNonEscapedQuote.sub(subQuote,translated)
                             outWrite(translated)
                             outWrite('"\n')
@@ -2970,8 +2972,8 @@ class WryeText:
                 if cssPath.exists(): break
             else:
                 raise BoltError(u'Css file not found: '+cssName.s)
-            css = ''.join(cssPath.open().readlines())
-            if '<' in css:
+            css = u''.join(cssPath.open('r',encoding='utf-8-sig').readlines())
+            if u'<' in css:
                 raise BoltError(u'Non css tag in '+cssPath.s)
         #--Write Output ------------------------------------------------------
         out.write(WryeText.htmlHead % (title,css))
