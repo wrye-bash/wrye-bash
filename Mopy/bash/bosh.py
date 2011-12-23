@@ -10133,7 +10133,7 @@ class FullNames:
             id_name = type_id_name[type]
             for record in typeBlock.getActiveRecords():
                 longid = mapper(record.fid)
-                full = record.full or (type == 'LIGH' and 'NO NAME')
+                full = record.full or (type == 'LIGH' and u'NO NAME')
                 if record.eid and full:
                     id_name[longid] = (record.eid,full)
 
