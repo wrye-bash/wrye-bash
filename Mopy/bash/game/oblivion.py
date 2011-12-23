@@ -25,7 +25,6 @@
    TES IV: Oblivion is set at the active game."""
 
 import struct
-from operator import attrgetter,itemgetter
 from .. import brec
 from .. import bolt
 from .. import bush
