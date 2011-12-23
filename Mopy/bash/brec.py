@@ -29,6 +29,7 @@ import re
 import struct
 import copy
 import cPickle
+from operator import attrgetter
 
 import bolt
 from bolt import _unicode, _encode, sio, GPath
@@ -1621,7 +1622,7 @@ class MreLeveledListBase(MelRecord):
                 else:
                     otherlist = other.entries
                     otherlist.sort(key=attrgetter('listId','level','count'))
-                    for selfEntry,otherEntry in zip(self.entries,otherList):
+                    for selfEntry,otherEntry in zip(self.entries,otherlist):
                         if (selfEntry.listId != otherEntry.listId or
                             selfEntry.level != otherEntry.level or
                             selfEntry.count != otherEntry.count):
