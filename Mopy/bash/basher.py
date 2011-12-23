@@ -5921,11 +5921,10 @@ class DocBrowser(wx.Frame):
 
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
-        docPath = docPath or GPath(self.data.get(self.modName,''))
+        docPath = docPath or GPath(self.data.get(self.modName,u''))
         if not docPath.exists(): return False
-        textFile = docPath.open()
-        maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
-        textFile.close()
+        with docPath.open('r',encoding='utf-8-sig') as textFile:
+            maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
         return (maText != None)
 
     def DoHome(self, event):
@@ -6019,7 +6018,8 @@ class DocBrowser(wx.Frame):
         self.plainText.DiscardEdits()
         if not docPath:
             raise BoltError(_(u'Filename not defined.'))
-        self.plainText.SaveFile(docPath.s)
+        with docPath.open('w',encoding='utf-8-sig') as out:
+            out.write(self.plainText.GetValue()
         if self.docIsWtxt:
             docsDir = bosh.modInfos.dir.join(u'Docs')
             bolt.WryeText.genHtml(docPath, None, docsDir)
