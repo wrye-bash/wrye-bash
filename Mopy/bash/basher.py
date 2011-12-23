@@ -5029,7 +5029,7 @@ class BashStatusBar(wx.StatusBar):
             # DnD events
             gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
             gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
-            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST,self.OnDragEnd)
+            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST,self.OnDragEndForced)
             gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
@@ -5156,6 +5156,11 @@ class BashStatusBar(wx.StatusBar):
             self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
             button.CaptureMouse()
+        event.Skip()
+
+    def OnDragEndForced(self,event):
+        self.dragging = wx.NOT_FOUND
+        self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
         event.Skip()
 
     def OnDragEnd(self,event):
