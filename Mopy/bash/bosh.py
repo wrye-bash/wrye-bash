@@ -35,12 +35,12 @@ import operator
 
 def formatInteger(value):
     """Convert integer to string formatted to locale."""
-    return locale.format(u'%d',int(value),1)
+    return locale.format('%d',int(value),True)
 
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
     localtime = time.localtime(value)
-    return time.strftime(u'%c',localtime)
+    return time.strftime('%c',localtime)
 
 def unformatDate(str,format):
     """Basically a wrapper around time.strptime. Exists to get around bug in
