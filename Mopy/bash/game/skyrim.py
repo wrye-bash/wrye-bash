@@ -683,10 +683,16 @@ gmstEids = [
     # None
     ]
 
+#--Tags supported by this game
+allTags = sorted((u'Relev',u'Delev',))
+
 #--Patchers available when building a Bashed Patch
 patchers = (
-    u'AliasesPatcher', u'PatchMerger',
+    u'AliasesPatcher', u'PatchMerger', u'ListsMerger',
     )
+
+# For ListsMerger
+listTypes = ('LVLI','LVLN','LVSP',)
 
 #--CBash patchers available when building a Bashed Patch
 CBash_patchers = tuple()
@@ -1359,6 +1365,47 @@ class MreGmst(MreGmstBase):
     isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase):
+    """Skryim Leveled item/creature/spell list."""
+    class MelLevListLvlo(MelStructs):
+        def __init__(self):
+            MelStructs.__init__(self,'LVLO','=3I','entries','level',(FID,'listId',None),('count',1))
+        def dumpData(self,record,out):
+            out.packSub('LLCT','B',len(record.entries))
+            MelStructs.dumpData(self,record,out)
+        
+    melSet = MelSet(
+        # LVLI
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelNull('LLCT'),
+        MelLevListLvlo(),
+        MelFid('LVLG','glob'),
+        # LVLN
+        MelString('MODL','model'),
+        MelBase('MODT','modt_p'),
+        MelStruct('COED','=I8s',(FID,'coed_fid',None),'code_unk')
+        )
+    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLvli(MreLeveledList):
+    classType = 'LVLI'
+    __slots__ = MreLeveledList.__slots__
+
+#------------------------------------------------------------------------------
+class MreLvln(MreLeveledList):
+    classType = 'LVLN'
+    __slots__ = MreLeveledList.__slots__
+
+#------------------------------------------------------------------------------
+class MreLvsp(MreLeveledList):
+    classType = 'LVSP'
+    __slots__ = MreLeveledList.__slots__
+
+#------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
@@ -1381,7 +1428,7 @@ class MreMisc(MelRecord):
 #--Record Types
 brec.MreRecord.type_class = dict((x.classType,x) for x in (
     MreAact, MreActi, MreAddn, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob,
-    MreGmst, MreMisc,
+    MreGmst, MreLvli, MreLvln, MreLvsp, MreMisc,
     MreHeader,
     ))
 
@@ -1391,7 +1438,8 @@ brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
 
 #--Mergeable record types
 mergeClasses = (
-    MreAact, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob, MreGmst, MreMisc,
+    MreAact, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob, MreGmst, MreLvli,
+    MreLvln, MreLvsp, MreMisc,
     )
 
 #--Extra read/write classes

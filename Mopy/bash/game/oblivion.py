@@ -337,6 +337,9 @@ patchers = (
     'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
     )
 
+# For ListsMerger
+listTypes = ('LVLC','LVLI','LVSP',)
+
 #--CBash patchers available when building a Bashed Patch
 CBash_patchers = (
     'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
@@ -637,9 +640,8 @@ class MreActor(MelRecord):
         self.items = [x for x in self.items if x.item[0] in modSet]
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MelRecord):
+class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list.."""
-    _flags = bolt.Flags(0,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
     #--Special load classes
     class MelLevListLvld(MelStruct):
         """Subclass to support alternate format."""
@@ -663,87 +665,13 @@ class MreLeveledList(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLevListLvld('LVLD','B','chanceNone'),
-        MelStruct('LVLF','B',(_flags,'flags',0L)),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
         MelFid('SCRI','script'),
         MelFid('TNAM','template'),
         MelLevListLvlo('LVLO','h2sIh2s','entries','level',('unused1',null2),(FID,'listId',None),('count',1),('unused2',null2)),
         MelNull('DATA'),
         )
-    __slots__ = (MelRecord.__slots__ + melSet.getSlotsUsed() +
-        ['mergeOverLast','mergeSources','items','delevs','relevs'])
-
-    def __init__(self,header,ins=None,unpack=False):
-        """Initialize."""
-        MelRecord.__init__(self,header,ins,unpack)
-        self.mergeOverLast = False #--Merge overrides last mod merged
-        self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
-        self.delevs = None #--Set of items deleted by list (Delev and Relev mods)
-        self.relevs = None #--Set of items relevelled by list (Relev mods)
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet."""
-        if not self.longFids: raise bolt.StateError(u"Fids not in long format")
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
-
-    def mergeWith(self,other,otherMod):
-        """Merges newLevl settings and entries with self.
-        Requires that: self.items, other.delevs and other.relevs be defined."""
-        if not self.longFids: raise bolt.StateError(u"Fids not in long format")
-        if not other.longFids: raise bolt.StateError(u"Fids not in long format")
-        #--Relevel or not?
-        if other.relevs:
-            self.chanceNone = other.chanceNone
-            self.script = other.script
-            self.template = other.template
-            self.flags = other.flags()
-        else:
-            self.chanceNone = other.chanceNone or self.chanceNone
-            self.script   = other.script or self.script
-            self.template = other.template or self.template
-            self.flags |= other.flags
-        #--Remove items based on other.removes
-        if other.delevs or other.relevs:
-            removeItems = self.items & (other.delevs | other.relevs)
-            self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
-            self.items = (self.items | other.delevs) - other.relevs
-        hasOldItems = bool(self.items)
-        #--Add new items from other
-        newItems = set()
-        entriesAppend = self.entries.append
-        newItemsAdd = newItems.add
-        for entry in other.entries:
-            if entry.listId not in self.items:
-                entriesAppend(entry)
-                newItemsAdd(entry.listId)
-        if newItems:
-            self.items |= newItems
-            self.entries.sort(key=attrgetter('listId','level','count'))
-        #--Is merged list different from other? (And thus written to patch.)
-        if (self.chanceNone != other.chanceNone or
-            self.script != other.script or
-            self.template != other.template or
-            #self.flags != other.flags or
-            len(self.entries) != len(other.entries)
-            ):
-            self.mergeOverLast = True
-        else:
-            otherlist = other.entries
-            otherlist.sort(key=attrgetter('listId','level','count'))
-            for selfEntry,otherEntry in zip(self.entries,otherlist):
-                if (selfEntry.listId != otherEntry.listId or
-                    selfEntry.level != otherEntry.level or
-                    selfEntry.count != otherEntry.count):
-                    self.mergeOverLast = True
-                    break
-            else:
-                self.mergeOverLast = False
-        if self.mergeOverLast:
-            self.mergeSources.append(otherMod)
-        else:
-            self.mergeSources = [otherMod]
-        #--Done
-        self.setChanged(self.mergeOverLast)
+    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreHasEffects:
