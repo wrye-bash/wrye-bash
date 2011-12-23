@@ -646,18 +646,21 @@ class MobObjects(MobBase):
         """Adds record to record list and indexed."""
         if self.records and not self.id_records:
             self.indexRecords()
-        fid = record.fid
-        if fid in self.id_records:
-            oldRecord = self.id_records[fid]
+        id = record.fid
+        if record.isKeyedByEid:
+            if id == (GPath(modInfos.masterName),0):
+                id = record.eid
+        if id in self.id_records:
+            oldRecord = self.id_records[id]
             index = self.records.index(oldRecord)
             self.records[index] = record
         else:
             self.records.append(record)
-        self.id_records[fid] = record
+        self.id_records[id] = record
 
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
-        self.records = [record for record in self.records if record.fid in keepIds]
+        self.records = [record for record in self.records if (record.fid == (record.isKeyedByEid and GPath(modInfos.masterName),0) and record.eid in keepIds) or record.fid in keepIds]
         self.id_records.clear()
         self.setChanged()
 
@@ -13875,6 +13878,10 @@ class PatchFile(ModFile):
                 if iiSkipMerge: continue
                 record = record.getTypeCopy()
                 patchBlock.setRecord(record)
+                if record.isKeyedByEid and record.fid == (GPath(modInfos.masterName),0):
+                    mergeIds.add(record.eid)
+                else:
+                    mergeIds.add(record.fid)
                 mergeIds.add(record.fid)
             #--Filter records
             block.records = filtered
