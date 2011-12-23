@@ -652,6 +652,7 @@ class MreActor(MelRecord):
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list.."""
+    copyAttrs = ('script','template',)
     #--Special load classes
     class MelLevListLvld(MelStruct):
         """Subclass to support alternate format."""

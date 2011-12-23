@@ -1543,8 +1543,20 @@ class MreGmstBase(MelRecord):
 
 #-------------------------------------------------------------------------------
 class MreLeveledListBase(MelRecord):
-    """Base type for leveled item/creature/npc/spells."""
+    """Base type for leveled item/creature/npc/spells.
+       it requires the base class to use the following:
+       classAttributes:
+          copyAttrs -> List of attributes to modify by copying when merging
+       instanceAttributes:
+          entries -> List of items, with the following attributes:
+              listId
+              level
+              count
+          chanceNone
+          flags
+    """
     _flags = bolt.Flags(0L,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
+    copAttrs = ()
     __slots__ = (MelRecord.__slots__ +
         ['mergeOverLast','mergeSources','items','delevs','relevs'])
 
@@ -1570,29 +1582,14 @@ class MreLeveledListBase(MelRecord):
         #--Relevel or not?
         if other.relevs:
             self.chanceNone = other.chanceNone
-            #--Oblivion only attributes
-            if hasattr(self,'script'):
-                self.script = other.script
-                self.template = other.template
-            #--Skyrim only attributes
-            if hasattr(self,'glob'):
-                self.glob = other.glob
-                self.modt_p = other.modt_p
-                self.coed_fid = other.coed_fid
-                self.coed_unk = other.coed_unk
+            for attr in self.__class__.copyAttrs:
+                self.__setattr__(attr,other.__getattribute__(attr))
             self.flags = other.flags()
         else:
             self.chanceNone = other.chanceNone or self.chanceNone
-            #--Oblvion only attributes
-            if hasattr(self,'script'):
-                self.script = other.script or self.script
-                self.template = other.template or self.template
-            #--Skyrim only attributes
-            if hasattr(self,'glob'):
-                self.glob = other.glob or self.glob
-                self.modt_p = other.modt_p or self.modt_p
-                self.coed_fid = other.coed_fid or self.coed_fid
-                self.coed_unk = other.coed_unk or self.coed_unk
+            for attr in self.__class__.copyAttrs:
+                self.__setattr__(attr,other.__getattribute__(attr) or
+                                       self.__getattribute__(attr))
             #--Remove items based on other.removes
             if other.delevs or other.relevs:
                 removeItems = self.items & (other.delevs | other.relevs)
@@ -1612,27 +1609,26 @@ class MreLeveledListBase(MelRecord):
                 self.entries.sort(key=attrgetter('listId','level','count'))
             #--Is merged list different from other? (And thus written to patch.)
             if (self.chanceNone != other.chanceNone or
-                getattr(self,'script') != getattr(other,'script') or
-                getattr(self,'template') != getattr(other,'template') or
-                getattr(self,'glob') != getattr(other,'glob') or
-                getattr(self,'modt_p') != getattr(other,'modt_p') or
-                getattr(self,'coed_fid') != getattr(other,'coed_fid') or
-                getattr(self,'coed_unk') != getattr(other,'coed_unk') or
                 #self.flags != other.flags or
                 len(self.entries) != len(other.entries)
                 ):
                 self.mergeOverLast = True
             else:
-                otherlist = other.entries
-                otherlist.sort(key=attrgetter('listId','level','count'))
-                for selfEntry,otherEntry in zip(self.entries,otherList):
-                    if (selfEntry.listId != otherEntry.listId or
-                        selfEntry.level != otherEntry.level or
-                        selfEntry.count != otherEntry.count):
+                for attr in self.__class__.copyAttrs:
+                    if self.__getattribute__(attr) != other.__getattribute__(attr):
                         self.mergeOverLast = True
                         break
                 else:
-                    self.mergeOverLast = False
+                    otherlist = other.entries
+                    otherlist.sort(key=attrgetter('listId','level','count'))
+                    for selfEntry,otherEntry in zip(self.entries,otherList):
+                        if (selfEntry.listId != otherEntry.listId or
+                            selfEntry.level != otherEntry.level or
+                            selfEntry.count != otherEntry.count):
+                            self.mergeOverLast = True
+                            break
+                    else:
+                        self.mergeOverLast = False
             if self.mergeOverLast:
                 self.mergeSources.append(otherMod)
             else:
