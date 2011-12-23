@@ -9157,7 +9157,7 @@ class ActorFactions:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 8 or fields[3][:2] != '0x': continue
+                if len(fields) < 8 or fields[3][:2] != u'0x': continue
                 type,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
                 amod = GPath(amod)
                 fmod = GPath(fmod)
@@ -9260,11 +9260,11 @@ class CBash_ActorFactions:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 8 or fields[3][:2] != '0x': continue
+                if len(fields) < 8 or fields[3][:2] != u'0x': continue
                 group,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-                group = _coerce(group,str)
-                amod = GPath(_coerce(amod,str))
-                fmod = GPath(_coerce(fmod,str))
+                group = _coerce(group,unicode)
+                amod = GPath(_coerce(amod,unicode))
+                fmod = GPath(_coerce(fmod,unicode))
                 aid = FormID(aliases.get(amod,amod),_coerce(aobj[2:],int,16))
                 fid = FormID(aliases.get(fmod,fmod),_coerce(fobj[2:],int,16))
                 rank = _coerce(rank, int)
@@ -9297,18 +9297,6 @@ class ActorLevels:
         self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
         self.aliases = aliases or {}
         self.gotLevels = set()
-
-    @staticmethod
-    def coerce(value, type, base=None):
-        try:
-            if type is float:
-                pack,unpack = struct.pack,struct.unpack
-                return round(unpack('f',pack('f',float(value)))[0], 6) #--Force standard precision
-            if base:
-                return type(value, base)
-            return type(value)
-        except TypeError:
-            return None
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
@@ -9351,34 +9339,34 @@ class ActorLevels:
 
     def readFromText(self,textPath):
         """Imports NPC level data from specified text file."""
-        mod_id_levels, coerce = self.mod_id_levels, self.coerce
+        mod_id_levels = self.mod_id_levels
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if fields[0][:2] == '0x': #old format
+                if fields[0][:2] == u'0x': #old format
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
-                    fidObject = coerce(fid[4:], int, 16)
+                    fidObject = _coerce(fid[4:], int, 16)
                     fid = (GPath(u'Oblivion.esm'), fidObject)
-                    eid = coerce(eid, str)
-                    offset = coerce(offset, int)
-                    calcMin = coerce(calcMin, int)
-                    calcMax = coerce(calcMax, int)
+                    eid = _coerce(eid, unicode)
+                    offset = _coerce(offset, int)
+                    calcMin = _coerce(calcMin, int)
+                    calcMax = _coerce(calcMax, int)
                 else:
-                    if len(fields) < 7 or fields[3][:2] != '0x': continue
+                    if len(fields) < 7 or fields[3][:2] != u'0x': continue
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
-                    source = coerce(source, str)
+                    source = _coerce(source, unicode)
                     if source.lower() in (u'none', u'oblivion.esm'): continue
                     source = GPath(source)
-                    eid = coerce(eid, str)
-                    fidMod = GPath(coerce(fidMod, str))
+                    eid = _coerce(eid, unicode)
+                    fidMod = GPath(_coerce(fidMod, unicode))
                     if fidMod.s.lower() == u'none': continue
-                    fidObject = coerce(fidObject[2:], int, 16)
+                    fidObject = _coerce(fidObject[2:], int, 16)
                     if fidObject is None: continue
                     fid = (aliases.get(fidMod,fidMod),fidObject)
-                    offset = coerce(offset, int)
-                    calcMin = coerce(calcMin, int)
-                    calcMax = coerce(calcMax, int)
+                    offset = _coerce(offset, int)
+                    calcMin = _coerce(calcMin, int)
+                    calcMax = _coerce(calcMax, int)
                 id_levels = mod_id_levels.setdefault(source, {})
                 id_levels[fid] = (eid, 1, offset, calcMin, calcMax)
 
@@ -10180,13 +10168,13 @@ class FullNames:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 5 or fields[2][:2] != '0x': continue
+                if len(fields) < 5 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid,full = fields[:5]
-                group = _coerce(group, str)
-                mod = GPath(_coerce(mod, str))
+                group = _coerce(group, unicode)
+                mod = GPath(_coerce(mod, unicode))
                 longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
                 if group in type_id_name:
                     type_id_name[group][longid] = (eid,full)
                 else:
@@ -18163,7 +18151,10 @@ class NamesPatcher(ImportPatcher):
                 fullNames.readFromMod(srcInfo)
             else:
                 if srcPath not in patchesDir: continue
-                fullNames.readFromText(dirs['patches'].join(srcFile))
+                try:
+                    fullNames.readFromText(dirs['patches'].join(srcFile))
+                except UnicodeError:
+                    print srcFile,'is not saved in UTF-8 format.'
             progress.plus()
         #--Finish
         id_full = self.id_full
