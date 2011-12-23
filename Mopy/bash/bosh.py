@@ -2571,7 +2571,7 @@ class SaveFile:
                                     elif keyType == 3:
                                         keyLen, = unpack('=H',2)
                                         key = ins.read(keyLen)
-                                        keyStr = key
+                                        keyStr = _unicode(key)
                                     else:
                                         keyStr = 'BAD'
                                     dataType, = unpack('=B',1)
@@ -2584,11 +2584,11 @@ class SaveFile:
                                     elif dataType == 3:
                                         dataLen, = unpack('=H',2)
                                         data = ins.read(dataLen)
-                                        dataStr = data
+                                        dataStr = _unicode(data)
                                     elif dataType == 4:
                                         data, = unpack('=I',4)
                                         dataStr = u'%u' % data
-                                    log(u'    [%s]:%s = %s' % (keyStr,('BAD','NUM','REF','STR','ARR')[dataType],dataStr))
+                                    log(u'    [%s]:%s = %s' % (keyStr,(u'BAD',u'NUM',u'REF',u'STR',u'ARR')[dataType],dataStr))
                         elif (opcodeBase == 0x2330):    # Pluggy
                             if (chunkTypeNum == 1):
                                 #--Pluggy TypeESP
@@ -2610,7 +2610,7 @@ class SaveFile:
                                 strId,modId,strFlags, = unpack('=IBB',6)
                                 strData = ins.read(len(chunkBuff) - ins.tell())
                                 log(u'      '+_(u'StrID :')+u' %u' % strId)
-                                log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags :')+u' %u' % strFlags)
                                 log(u'      '+_(u'Data  :')+u' %s' % strData)
                             elif (chunkTypeNum == 3):
@@ -2618,7 +2618,7 @@ class SaveFile:
                                 log(_(u'    Pluggy Array'))
                                 arrId,modId,arrFlags,arrSize, = unpack('=IBBI',10)
                                 log(_(u'      ArrID : %u') % (arrId,))
-                                log(_(u'      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(_(u'      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(_(u'      Flags : %u') % (arrFlags,))
                                 log(_(u'      Size  : %u') % (arrSize,))
                                 while (ins.tell() < len(chunkBuff)):
@@ -2642,25 +2642,25 @@ class SaveFile:
                                 for i in range(len(refName)):
                                     ch = refName[i] if ((refName[i] >= chr(0x20)) and (refName[i] < chr(0x80))) else '.'
                                     newName = newName + ch
-                                log(_(u'      RefID : %08X') % (refId,))
-                                log(_(u'      Name  : %s') % (newName,))
+                                log(_(u'      RefID : %08X') % refId)
+                                log(_(u'      Name  : %s') % _unicode(newName))
                             elif (chunkTypeNum == 5):
                                 #--Pluggy TypeScr
                                 log(_(u'    Pluggy ScreenSize'))
                                 #UNTESTED - uncomment following line to skip this record type
                                 #continue
                                 scrW,scrH, = unpack('=II',8)
-                                log(_(u'      Width  : %u') % (scrW,))
-                                log(_(u'      Height : %u') % (scrH,))
+                                log(_(u'      Width  : %u') % scrW)
+                                log(_(u'      Height : %u') % scrH)
                             elif (chunkTypeNum == 6):
                                 #--Pluggy TypeHudS
                                 log(u'    '+_(u'Pluggy HudS'))
                                 #UNTESTED - uncomment following line to skip this record type
                                 #continue
                                 hudSid,modId,hudFlags,hudRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
-                                hudFileName = ins.read(len(chunkBuff) - ins.tell())
+                                hudFileName = _unicode(ins.read(len(chunkBuff) - ins.tell()))
                                 log(u'      '+_(u'HudSID :')+u' %u' % hudSid)
-                                log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
                                 log(u'      '+_(u'RootID :')+u' %u' % hudRootID)
                                 log(u'      '+_(u'Show   :')+u' %02X' % hudShow)
@@ -2679,11 +2679,11 @@ class SaveFile:
                                 hudTid,modId,hudFlags,hudShow,hudPosX,hudPosY,hudDepth, = unpack('=IBBBffh',17)
                                 hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale,hudWidth,hudHeight,hudFormat, = unpack('=ffBBBIIB',20)
                                 hudFontNameLen, = unpack('=I',4)
-                                hudFontName = ins.read(hudFontNameLen)
+                                hudFontName = _unicode(ins.read(hudFontNameLen))
                                 hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = unpack('=IIhBBBB',14)
-                                hudText = ins.read(len(chunkBuff) - ins.tell())
+                                hudText = _unicode(ins.read(len(chunkBuff) - ins.tell()))
                                 log(u'      '+_(u'HudTID :')+u' %u' % hudTid)
-                                log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else 'ERROR',))
+                                log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
                                 log(u'      '+_(u'Show   :')+u' %02X' % hudShow)
                                 log(u'      '+_(u'Pos    :')+u' %f,%f' % (hudPosX,hudPosY,))
@@ -12953,7 +12953,7 @@ class PCFaces:
         saveFile.load()
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveInfo.name,data,saveFile.pcName)
+        namePos = PCFaces.save_getNamePos(saveInfo.name,data,_encode(saveFile.pcName))
         raceRef,hairRef = struct.unpack('2I',data[namePos-22:namePos-14])
         if hairRef != 0: return False
         raceForm = raceRef and saveFile.fids[raceRef]

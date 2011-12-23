@@ -97,7 +97,7 @@ def _getbestencoding(text):
     return encoding
 
 def _unicode(text,encoding=None):
-    if isinstance(text,unicode): return text
+    if isinstance(text,unicode) or text is None: return text
     # Try the user specified encoding first
     if encoding:
         try: return unicode(text,encoding)
@@ -114,7 +114,7 @@ def _unicode(text,encoding=None):
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
 def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
-    if isinstance(text,str):
+    if isinstance(text,str) or text is None:
         if returnEncoding: return (text,None)
         else: return text
     # Try user specified encoding
