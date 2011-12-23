@@ -6019,7 +6019,7 @@ class DocBrowser(wx.Frame):
         if not docPath:
             raise BoltError(_(u'Filename not defined.'))
         with docPath.open('w',encoding='utf-8-sig') as out:
-            out.write(self.plainText.GetValue()
+            out.write(self.plainText.GetValue())
         if self.docIsWtxt:
             docsDir = bosh.modInfos.dir.join(u'Docs')
             bolt.WryeText.genHtml(docPath, None, docsDir)
