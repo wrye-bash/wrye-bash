@@ -6866,7 +6866,7 @@ class Installer(object):
                     date = apFile.mtime
                     done += size
                 except WindowsError:
-                    deprint(_('Failed to calculate crc for %s - please report this and or try the unicode build of Wrye Bash.') % (apFile.s))
+                    deprint(_('Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
                     continue
                 new_sizeCrcDate[rpFile] = (size,crc,date)
         old_sizeCrcDate.clear()
