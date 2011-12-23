@@ -1513,7 +1513,7 @@ class MreGmstBase(MelRecord):
             if format == 's':
                 record.value = ins.readLString(size,readId)
             else:
-                record.value = ins.unpack(format,size,readId)
+                record.value, = ins.unpack(format,size,readId)
         def dumpData(self,record,out):
             format = _encode(record.eid[0]) #-- s|i|f
             if format == 's':
