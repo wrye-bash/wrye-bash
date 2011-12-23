@@ -1387,7 +1387,7 @@ class MreLeveledList(MreLeveledListBase):
         # LVLN
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
-        MelStruct('COED','=I8s',(FID,'coed_fid',None),'code_unk')
+        MelStruct('COED','=I8s',(FID,'coed_fid',None),'coed_unk')
         )
     __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
 
