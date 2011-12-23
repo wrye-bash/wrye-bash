@@ -58,8 +58,10 @@ def _coerce(value, newtype, base=None, AllowNone=False):
         elif base: retValue = newtype(value, base)
         elif newtype is unicode: retValue = _encode(value)
         else: retValue = newtype(value)
-        if (AllowNone and isinstance(retValue,basestring)
-            and retValue.lower() == u'none'):
+        if (AllowNone and
+            (isinstance(retValue,str) and retValue.lower() == 'none') or
+            (isinstance(retValue,unicode) and retValue.lower() == u'none')
+            ):
             return None
         return retValue
     except (ValueError,TypeError):
