@@ -1560,7 +1560,7 @@ class MreLeveledListBase(MelRecord):
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
         if not self.longFids: raise bolt.StateError(u'Fids not in long format')
-        self.entries = [entry for entry in self.entry if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
