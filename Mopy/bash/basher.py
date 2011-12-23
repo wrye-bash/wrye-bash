@@ -1524,8 +1524,10 @@ class INIList(List):
         (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
         if hitItem < 0: return
         #-- If we're applying to Oblivion.ini, show the warning
-        if self.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
-            message = (_(u"Apply an ini tweak to Oblivion.ini?")
+        iniPanel = self.GetParent().GetParent().GetParent()
+        choice = iniPanel.GetChoice().tail
+        if choice in bush.game.iniFiles:
+            message = (_(u"Apply an ini tweak to %s?") % choice
                        + u'\n\n' +
                        _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                        )
@@ -1537,16 +1539,18 @@ class INIList(List):
         file = dir.join(self.items[hitItem])
         iniList.data.ini.applyTweakFile(file)
         iniList.RefreshUI('VALID')
-        self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
-        self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+        iniPanel.iniContents.RefreshUI()
+        iniPanel.tweakContents.RefreshUI(self.data[0])
 
     def OnLeftDown(self,event):
         """Left Down: Apply edit if not applied."""
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
         if hitItem >= 0 and hitFlag == wx.LIST_HITTEST_ONITEMICON:
             #-- If we're applying to Oblivion.ini, show the warning
-            if self.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
-                message = (_(u"Apply an ini tweak to Oblivion.ini?")
+            iniPanel = self.GetParent().GetParent().GetParent()
+            choice = iniPanel.GetChoice().tail
+            if choice in bush.game.iniFiles:
+                message = (_(u"Apply an ini tweak to %s?") % choice
                            + u'\n\n' +
                            _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                            )
@@ -1558,8 +1562,8 @@ class INIList(List):
                 file = dir.join(self.items[hitItem])
                 iniList.data.ini.applyTweakFile(file)
                 iniList.RefreshUI('VALID')
-                self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
-                self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+                iniPanel.iniContents.RefreshUI()
+                iniPanel.tweakContents.RefreshUI(self.data[0])
         #--Pass Event onward
         event.Skip()
 
@@ -9651,7 +9655,7 @@ class Installer_Espm_List(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        subs = _(u'Esp/m List for ')+u'"%s":\n[spoiler]' % (gInstallers.data[gInstallers.detailsItem].archive)
+        subs = _(u'Esp/m List for %s:')+u'\n[spoiler]' % (gInstallers.data[gInstallers.detailsItem].archive)
         for index in range(gInstallers.gEspmList.GetCount()):
             subs += [u'   ',u'** '][gInstallers.gEspmList.IsChecked(index)] + gInstallers.gEspmList.GetString(index) + '\n'
         subs += u'[/spoiler]'
@@ -9727,7 +9731,7 @@ class Installer_Subs_ListSubPackages(InstallerLink):
     def Execute(self,event):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
-        subs = _(u'Sub-Packages List for ')+ u'"%s":\n[spoiler]' % (installer.archive)
+        subs = _(u'Sub-Packages List for %s:')+ u'\n[spoiler]' % (installer.archive)
         for index in xrange(gInstallers.gSubList.GetCount()):
             subs += [u'   ',u'** '][gInstallers.gSubList.IsChecked(index)] + gInstallers.gSubList.GetString(index) + u'\n'
         subs += u'[/spoiler]'
@@ -10492,11 +10496,13 @@ class INI_Apply(Link):
     def Execute(self,event):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        if self.window.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
-            message = (_(u'Apply an ini tweak to %s?')
+        iniPanel = self.window.GetParent().GetParent().GetParent()
+        choice = iniPanel.GetChoice().tail
+        if choice in bush.game.iniFiles:
+            message = (_(u'Apply an ini tweak to %s?') % choice
                        + u'\n\n' +
                        _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
-                       ) % iniList.data.ini.path.stail
+                       )
             if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                 return
         dir = self.window.data.dir
@@ -10510,8 +10516,8 @@ class INI_Apply(Link):
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
-            self.window.GetParent().GetParent().GetParent().iniContents.RefreshUI()
-            self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+            iniPanel.iniContents.RefreshUI()
+            iniPanel.tweakContents.RefreshUI(self.data[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(Link):

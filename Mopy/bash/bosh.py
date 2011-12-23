@@ -5390,7 +5390,7 @@ class ModInfos(FileInfos):
                     if configHelpers.getBashTags(modInfo.name):
                         tagList += u'  * '+_(u'From BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by BOSS Masterlist and or userlist:) ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
+                        tagList += u'  * '+_(u'Removed by BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
                     tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
                 else: tagList += u'    '+_(u'No tags')
         else:
@@ -10154,7 +10154,7 @@ class FullNames:
                 longid = mapper(record.fid)
                 full = record.full
                 eid,newFull = id_name.get(longid,(0,0))
-                if newFull and newFull not in (full,'NO NAME'):
+                if newFull and newFull not in (full,u'NO NAME'):
                     record.full = newFull
                     record.setChanged()
                     changed[eid] = (full,newFull)
@@ -10258,13 +10258,13 @@ class CBash_FullNames:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 5 or fields[2][:2] != '0x': continue
+                if len(fields) < 5 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid,full = fields[:5]
-                group = _coerce(group, str)
-                mod = GPath(_coerce(mod, str))
+                group = _coerce(group, unicode)
+                mod = GPath(_coerce(mod, unicode))
                 longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
                 group_fid_name.setdefault(group, {})[longid] = (eid,full)
 
     def writeToText(self,textPath):
@@ -10292,40 +10292,40 @@ class CBash_MapMarkers:
         """Initialize."""
         self.fid_markerdata = {}
         self.aliases = aliases or {}
-        self.markerFid = FormID(GPath('Oblivion.esm'), 0x000010)
+        self.markerFid = FormID(GPath(u'Oblivion.esm'), 0x000010)
         self.attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
         self.markerTypeNumber_Name = {
-            None : 'NONE',
-            0 : 'NONE',
-            1 : 'Camp',
-            2 : 'Cave',
-            3 : 'City',
-            4 : 'Elven Ruin',
-            5 : 'Fort Ruin',
-            6 : 'Mine',
-            7 : 'Landmark',
-            8 : 'Tavern',
-            9 : 'Settlement',
-            10 : 'Daedric Shrine',
-            11 : 'Oblivion Gate',
-            12 : '?',
-            13 : 'Ayleid Well',
-            14 : 'Wayshrine',
-            15 : 'Magical Stone',
-            16 : 'Spire',
-            17 : 'Obelisk of Order',
-            18 : 'House',
-            19 : 'Player marker (flag)',
-            20 : 'Player marker (Q flag)',
-            21 : 'Player marker (i flag)',
-            22 : 'Player marker (? flag)',
-            23 : 'Harbor/dock',
-            24 : 'Stable',
-            25 : 'Castle',
-            26 : 'Farm',
-            27 : 'Chapel',
-            28 : 'Merchant',
-            29 : 'Ayleid Step (old Ayleid ruin icon)',}
+            None : u'NONE',
+            0 : u'NONE',
+            1 : u'Camp',
+            2 : u'Cave',
+            3 : u'City',
+            4 : u'Elven Ruin',
+            5 : u'Fort Ruin',
+            6 : u'Mine',
+            7 : u'Landmark',
+            8 : u'Tavern',
+            9 : u'Settlement',
+            10 : u'Daedric Shrine',
+            11 : u'Oblivion Gate',
+            12 : u'?',
+            13 : u'Ayleid Well',
+            14 : u'Wayshrine',
+            15 : u'Magical Stone',
+            16 : u'Spire',
+            17 : u'Obelisk of Order',
+            18 : u'House',
+            19 : u'Player marker (flag)',
+            20 : u'Player marker (Q flag)',
+            21 : u'Player marker (i flag)',
+            22 : u'Player marker (? flag)',
+            23 : u'Harbor/dock',
+            24 : u'Stable',
+            25 : u'Castle',
+            26 : u'Farm',
+            27 : u'Chapel',
+            28 : u'Merchant',
+            29 : u'Ayleid Step (old Ayleid ruin icon)',}
         self.markerTypeName_Number = dict([(y.lower(),x) for x,y in self.markerTypeNumber_Name.iteritems() if x is not None])
 
     def readFromMod(self,modInfo):
@@ -10373,12 +10373,12 @@ class CBash_MapMarkers:
         fid_markerdata,aliases,markerTypeName_Number = self.fid_markerdata,self.aliases,self.markerTypeName_Number
         with bolt.CsvReader(GPath(textPath)) as ins:
             for fields in ins:
-                if len(fields) < 13 or fields[1][:2] != '0x': continue
+                if len(fields) < 13 or fields[1][:2] != u'0x': continue
                 mod,objectIndex,eid,markerName,_markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fields[:13]
-                mod = GPath(_coerce(mod, str))
+                mod = GPath(_coerce(mod, unicode))
                 longid = FormID(aliases.get(mod,mod),_coerce(objectIndex, int, 16))
-                eid = _coerce(eid, str, AllowNone=True)
-                markerName = _coerce(markerName, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                markerName = _coerce(markerName, unicode, AllowNone=True)
                 markerType = _coerce(_markerType, int)
                 if markerType is None: #coercion failed
                     markerType = markerTypeName_Number.get(_markerType.lower(), 0)
@@ -10446,26 +10446,26 @@ class CBash_CellBlockInfo:
 #------------------------------------------------------------------------------
 class UsesEffectsMixin(object):
     """Mixin class to support reading/writing effect data to/from csv files"""
-    headers =(_('Effect'),_('Name'),_('Magnitude'),_('Area'),_('Duration'),_('Range'),_('Actor Value'),
-              _('SE Mod Name'),_('SE ObjectIndex'),_('SE school'),_('SE visual'),_('SE Is Hostile'),_('SE Name'))
-    headerFormat = '"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"'
+    headers =(_(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),_(u'Range'),_(u'Actor Value'),
+              _(u'SE Mod Name'),_(u'SE ObjectIndex'),_(u'SE school'),_(u'SE visual'),_(u'SE Is Hostile'),_(u'SE Name'))
+    headerFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"'
     recipientTypeNumber_Name = {
-        None : 'NONE',
-        0 : 'Self',
-        1 : 'Touch',
-        2 : 'Target',}
+        None : u'NONE',
+        0 : u'Self',
+        1 : u'Touch',
+        2 : u'Target',}
     recipientTypeName_Number = dict([(y.lower(),x) for x,y in recipientTypeNumber_Name.iteritems() if x is not None])
     actorValueNumber_Name = dict([(x, y) for x,y in enumerate(bush.actorValues)])
-    actorValueNumber_Name[None] = 'NONE'
+    actorValueNumber_Name[None] = u'NONE'
     actorValueName_Number = dict([(y.lower(),x) for x,y in actorValueNumber_Name.iteritems() if x is not None])
     schoolTypeNumber_Name = {
-        None : 'NONE',
-        0 : 'Alteration',
-        1 : 'Conjuration',
-        2 : 'Destruction',
-        3 : 'Illusion',
-        4 : 'Mysticism',
-        5 : 'Restoration',}
+        None : u'NONE',
+        0 : u'Alteration',
+        1 : u'Conjuration',
+        2 : u'Destruction',
+        3 : u'Illusion',
+        4 : u'Mysticism',
+        5 : u'Restoration',}
     schoolTypeName_Number = dict([(y.lower(),x) for x,y in schoolTypeNumber_Name.iteritems() if x is not None])
 
     def readEffects(self, _effects, aliases, doCBash):
@@ -10493,9 +10493,9 @@ class UsesEffectsMixin(object):
                 effect = [MGEFCode(name),magnitude,area,duration,range,ActorValue(actorvalue)]
             else:
                 effect = [name,magnitude,area,duration,range,actorvalue]
-            semod = _coerce(semod, str, AllowNone=True)
+            semod = _coerce(semod, unicode, AllowNone=True)
             seobj = _coerce(seobj, int, 16, AllowNone=True)
-            seschool = _coerce(seschool, str, AllowNone=True)
+            seschool = _coerce(seschool, unicode, AllowNone=True)
             if seschool:
                 seschool = schoolTypeName_Number.get(seschool.lower(),_coerce(seschool,int))
             sevisuals = _coerce(sevisual, int, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes visual MGEFCode is raw)
@@ -10508,7 +10508,7 @@ class UsesEffectsMixin(object):
                     sevisuals = 0
             else:
                 if sevisuals == '' or sevisuals is None:
-                    sevisuals = '\x00\x00\x00\x00'
+                    sevisuals = u'\x00\x00\x00\x00'
             sevisual = sevisuals
             seflags = _coerce(seflags, int, AllowNone=True)
             sename = _coerce(sename, str, AllowNone=True)
@@ -10532,9 +10532,9 @@ class UsesEffectsMixin(object):
         schoolTypeNumber_Name = UsesEffectsMixin.schoolTypeNumber_Name
         recipientTypeNumber_Name = UsesEffectsMixin.recipientTypeNumber_Name
         actorValueNumber_Name = UsesEffectsMixin.actorValueNumber_Name
-        effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
-        scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
-        noscriptEffectFiller = ',"None","None","None","None","None","None"'
+        effectFormat = u',,"%s","%d","%d","%d","%s","%s"'
+        scriptEffectFormat = u',"%s","0x%06X","%s","%s","%s","%s"'
+        noscriptEffectFiller = u',"None","None","None","None","None","None"'
         output = []
         for effect in effects:
             if doCBash:
@@ -10558,18 +10558,19 @@ class UsesEffectsMixin(object):
                     seschool = schoolTypeNumber_Name.get(seschool,seschool)
                     sevisual = sevisual[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes visual MGEFCode is raw)
                     if sevisual in (None, 0, ''):
-                        sevisual = 'NONE'
+                        sevisual = u'NONE'
                     output.append(scriptEffectFormat % (semod,seobj,seschool,sevisual,seflags,sename))
             else:
                 if len(scripteffect):
                     longid,seschool,sevisual,seflags,sename = scripteffect
                     if sevisual == '\x00\x00\x00\x00':
-                        sevisual = 'NONE'
+                        sevisual = u'NONE'
                     seschool = schoolTypeNumber_Name.get(seschool,seschool)
                     output.append(scriptEffectFormat % (longid[0].s,longid[1],seschool,sevisual,seflags,sename))
                 else:
                     output.append(noscriptEffectFiller)
-        return ''.join(output)
+        return u''.join(output)
+
 #------------------------------------------------------------------------------
 class SigilStoneDetails(UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
