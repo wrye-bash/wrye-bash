@@ -128,14 +128,7 @@ noSolidExts = set((u'.zip',))
 settings = None
 installersWindow = None
 
-allTags = sorted((u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags',
-                  u'C.Owner', u'C.Water',u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter', u'Graphics', u'Hair',
-                  u'IIM', u'Invent', u'Names', u'NoMerge', u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents', u'Sound',
-                  u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F',
-                  u'R.Attributes-M', u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads', u'Actors.Anims',
-                  u'Actors.AIData', u'Actors.DeathItem', u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
-                  u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',u'Actors.SpellsForceAdd',
-                  u'NPC.Race',u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly',u'Npc.EyesOnly')) ##, 'ForceMerge'
+allTags = bush.game.allTags
 allTagsSet = set(allTags)
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
@@ -1475,10 +1468,10 @@ class ModFile:
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
-                (type,size,label,groupType,stamp) = (
-                    header.recType,header.size,header.label,header.groupType,header.stamp)
-                if type != 'GRUP' or groupType != 0:
+                type = header.recType
+                if type != 'GRUP' or header.groupType != 0:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
+                label,size = header.label,header.size
                 topClass = selfGetTopClass(label)
                 try:
                     if topClass:
@@ -1488,7 +1481,8 @@ class ModFile:
                         selfTopsSkipAdd(label)
                         insSeek(size-header.__class__.size,1,type + '.' + label)
                 except:
-                    print u"Error in %s" % self.fileInfo.name
+                    print u'Error in',self.fileInfo.name
+                    break
         #--Done Reading
 
     def load_unpack(self):
@@ -27290,7 +27284,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.srcMods = set(self.getConfigChecked()) & set(loadMods)
-        self.listTypes = ('LVLC','LVLI','LVSP')
+        self.listTypes = bush.game.listTypes
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
         self.mastersScanned = set()
@@ -27344,11 +27338,11 @@ class ListsMerger(SpecialPatcher,ListPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('LVLC','LVLI','LVSP',)
+        return self.listTypes
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('LVLC','LVLI','LVSP',)
+        return self.listTypes
 
     def scanModFile(self, modFile, progress):
         """Add lists from modFile."""
@@ -27419,7 +27413,8 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         for leveler in (self.levelers or []):
             log(u'* '+self.getItemLabel(leveler))
         #--Save to patch file
-        for label, type in ((_(u'Creature'),'LVLC'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
+        for label, type in ((_(u'Creature'),'LVLC'), (_(u'Actor'),'LVLN'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
+            if label not in self.type_list: continue
             log.setHeader(u'=== '+_(u'Merged %s Lists') % label)
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
@@ -27431,7 +27426,8 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                 for mod in record.mergeSources:
                     log(u'  * ' + self.getItemLabel(mod))
         #--Discard empty sublists
-        for label, type in ((_(u'Creature'),'LVLC'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
+        for label, type in ((_(u'Creature'),'LVLC'), (_(u'Actor'),'LVLN'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
+            if label not in self.type_list: continue
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
             #--Empty lists

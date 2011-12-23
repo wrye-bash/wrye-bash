@@ -1540,3 +1540,101 @@ class MreGmstBase(MelRecord):
                 raise
         return (GPath(cls.Master+u'.esm'),cls.Ids[self.eid])
 
+#-------------------------------------------------------------------------------
+class MreLeveledListBase(MelRecord):
+    """Base type for leveled item/creature/npc/spells."""
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
+    __slots__ = (MelRecord.__slots__ +
+        ['mergeOverLast','mergeSources','items','delevs','relevs'])
+
+    def __init__(self,header,ins=None,unpack=False):
+        """Initialize"""
+        MelRecord.__init__(self,header,ins,unpack)
+        self.mergeOverLast = False #--Merge overrides last mod merged
+        self.mergeSources = None #--Set to list by other functions
+        self.items  = None #--Set of items included in list
+        self.delevs = None #--Set of items deleted by list (Delev and Relev mods)
+        self.relevs = None #--Set of items relevelled by list (Relev mods)
+
+    def mergeFilter(self,modSet):
+        """Filter out items that don't come from specified modSet."""
+        if not self.longFids: raise bolt.StateError(u'Fids not in long format')
+        self.entries = [entry for entry in self.entry if entry.listId[0] in modSet]
+
+    def mergeWith(self,other,otherMod):
+        """Merges newLevl settings and entries with self.
+        Requires that: self.items, other.delevs and other.relevs be defined."""
+        if not self.longFids or not other.longFids:
+            raise bolt.StateError(u'Fids not in long format')
+        #--Relevel or not?
+        if other.relevs:
+            self.chanceNone = other.chanceNone
+            #--Oblivion only attributes
+            if hasattr(self,'script'):
+                self.script = other.script
+                self.template = other.template
+            #--Skyrim only attributes
+            if hasattr(self,'glob'):
+                self.glob = other.glob
+                self.modt_p = other.modt_p
+                self.coed_fid = other.coed_fid
+                self.coed_unk = other.coed_unk
+            self.flags = other.flags()
+        else:
+            self.chanceNone = other.chanceNone or self.chanceNone
+            #--Oblvion only attributes
+            if hasattr(self,'script'):
+                self.script = other.script or self.script
+                self.template = other.template or self.template
+            #--Skyrim only attributes
+            if hasattr(self,'glob'):
+                self.glob = other.glob or self.glob
+                self.modt_p = other.modt_p or self.modt_p
+                self.coed_fid = other.coed_fid or self.coed_fid
+                self.coed_unk = other.coed_unk or self.coed_unk
+            #--Remove items based on other.removes
+            if other.delevs or other.relevs:
+                removeItems = self.items & (other.delevs | other.relevs)
+                self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
+                self.items = (self.items | other.delevs) - other.relevs
+            hasOldItems = bool(self.items)
+            #--Add new items from other
+            newItems = set()
+            entriesAppend = self.entries.append
+            newItemsAdd = newItems.add
+            for entry in other.entries:
+                if entry.listId not in self.items:
+                    entriesAppend(entry)
+                    newItemsAdd(entry.listId)
+            if newItems:
+                self.items |= newItems
+                self.entries.sort(key=attrgetter('listId','level','count'))
+            #--Is merged list different from other? (And thus written to patch.)
+            if (self.chanceNone != other.chanceNone or
+                getattr(self,'script') != getattr(other,'script') or
+                getattr(self,'template') != getattr(other,'template') or
+                getattr(self,'glob') != getattr(other,'glob') or
+                getattr(self,'modt_p') != getattr(other,'modt_p') or
+                getattr(self,'coed_fid') != getattr(other,'coed_fid') or
+                getattr(self,'coed_unk') != getattr(other,'coed_unk') or
+                #self.flags != other.flags or
+                len(self.entries) != len(other.entries)
+                ):
+                self.mergeOverLast = True
+            else:
+                otherlist = other.entries
+                otherlist.sort(key=attrgetter('listId','level','count'))
+                for selfEntry,otherEntry in zip(self.entries,otherList):
+                    if (selfEntry.listId != otherEntry.listId or
+                        selfEntry.level != otherEntry.level or
+                        selfEntry.count != otherEntry.count):
+                        self.mergeOverLast = True
+                        break
+                else:
+                    self.mergeOverLast = False
+            if self.mergeOverLast:
+                self.mergeSources.append(otherMod)
+            else:
+                self.mergeSources = [otherMod]
+            #--Done
+            self.setChanged(self.mergeOverLast)
