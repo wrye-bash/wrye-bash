@@ -1049,7 +1049,7 @@ class MelMODS(MelBase):
         for x in xrange(count):
             string = ins.readString32(size,readId)
             fid = ins.unpackRef(readId)
-            unk = ins.unpack('I',4,readId)
+            unk, = ins.unpack('I',4,readId)
             dataAppend((string,fid,unk))
         record.__setattr__(self.attr,data)
 
