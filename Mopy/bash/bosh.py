@@ -24156,7 +24156,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             _(u"Chance of NPCs engaging each other in conversation (possibly also with the player) - In Interiors."),
             (u'fAISocialchanceForConversationInterior',),
             (u'10',10.0),
-            (_(u'[25]'),25.0),
+            (u'[25]',25.0),
             (u'50',50.0),
             (u'100',100.0),
             (_(u'Custom'),100.0),
@@ -29603,7 +29603,7 @@ def getLocalAppDataPath(bashIni, path):
         sErrorInfo = _(u"Folder path specified on command line (-l)")
     elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
         path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
-        sErrorInfo = _(u"Folder path specified  in bash.ini (%s)") % (u'sLocalAppDataPath')
+        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % (u'sLocalAppDataPath')
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
