@@ -228,7 +228,7 @@ groupTypes = [
     _(u'Ext Cell Sub-Block'),
     _(u'Cell Children'),
     _(u'Topic Children'),
-    _(u'Cell Persistent Childen'),
+    _(u'Cell Persistent Children'),
     _(u'Cell Temporary Children'),
     _(u'Cell Visible Distant Children'),
 ]
