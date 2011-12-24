@@ -9896,9 +9896,10 @@ class CBash_FactionRelations:
     def readFromMod(self,modInfo):
         """Imports faction relations from specified mod."""
         fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,self.fid_eid,self.gotFactions
+        importFile = modInfo.getPath().tail
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
+            modFile = Current.addMod(importFile.s, Saveable=False)
             Current.load()
 
             for modFile in Current.LoadOrderMods:
@@ -10224,7 +10225,7 @@ class CBash_FullNames:
                 fid_name = group_fid_name.setdefault(group[:4],{})
                 for record in getattr(modFile,group):
                     if(hasattr(record, 'full')):
-                        full = record.full or (group == 'LIGH' and 'NO NAME')
+                        full = record.full or (group == 'LIGH' and u'NO NAME')
                         eid = record.eid
                         if eid and full:
                             fid_name[record.fid] = (eid,full)
