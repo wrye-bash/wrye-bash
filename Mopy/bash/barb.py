@@ -406,7 +406,7 @@ class RestoreSettings(BaseBackupSettings):
         if self.quit: return
         basher.appRestart = True
         showWarning(self.parent,
-            _(u'Your Bash settings have been successfuly restored.')+u'\n' +
+            _(u'Your Bash settings have been successfully restored.')+u'\n' +
             _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n' +
             u'\n' +
             _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
