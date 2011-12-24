@@ -33,27 +33,6 @@ import locale; locale.setlocale(locale.LC_ALL,u'')
 import time
 import operator
 
-def formatInteger(value):
-    """Convert integer to string formatted to locale."""
-    return locale.format('%d',int(value),True)
-
-def formatDate(value):
-    """Convert time to string formatted to to locale's default date/time."""
-    localtime = time.localtime(value)
-    return time.strftime('%c',localtime)
-
-def unformatDate(str,format):
-    """Basically a wrapper around time.strptime. Exists to get around bug in
-    strptime for Japanese locale."""
-    try:
-        return time.strptime(str,u'%c')
-    except ValueError:
-        if format == u'%c' and u'Japanese' in locale.getlocale()[0]:
-            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str,flags=re.U)
-            return time.strptime(str,u'%c')
-        else:
-            raise
-
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
@@ -90,6 +69,29 @@ startupinfo = bolt.startupinfo
 
 #--Unicode
 exe7z = u'7zUnicode.exe'
+
+
+def formatInteger(value):
+    """Convert integer to string formatted to locale."""
+    return _unicode(locale.format('%d',int(value),True))
+
+def formatDate(value):
+    """Convert time to string formatted to to locale's default date/time."""
+    localtime = time.localtime(value)
+    return _unicode(time.strftime('%c',localtime))
+
+def unformatDate(str,format):
+    """Basically a wrapper around time.strptime. Exists to get around bug in
+    strptime for Japanese locale."""
+    try:
+        return _unicode(time.strptime(str,'%c'))
+    except ValueError:
+        if format == '%c' and u'Japanese' in locale.getlocale()[0]:
+            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str,flags=re.U)
+            return _unicode(time.strptime(str,'%c'))
+        else:
+            raise
+
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
