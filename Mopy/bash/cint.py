@@ -7,7 +7,7 @@ from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, Path
+    from bolt import GPath, deprint, Path, _unicode, _encode
 except:
     #It isn't, so replace the imported items with bare definitions
     CBashEnabled = "."
@@ -20,17 +20,55 @@ except:
     def _(obj):
         return obj
 
-def _Encode(name,tryFirstEncoding=False):
-    if isinstance(name,Path): name = unicode(name)
-    elif isinstance(name,str): return name
-    if isinstance(name,unicode):
-        if tryFirstEncoding:
+    # Unicode ---------------------------------------------------------------------
+    #--decode unicode strings
+    #  This is only useful when reading fields from mods, as the encoding is not
+    #  known.  For normal filesystem interaction, these functions are not needed
+    encodingOrder = (
+        'ascii',    # Plain old ASCII (0-127)
+        'gbk',      # GBK (simplified Chinese + some)
+        'cp932',    # Japanese
+        'cp949',    # Korean
+        'cp1252',   # English (extended ASCII)
+        'utf8',
+        'cp500',
+        'UTF-16LE',
+        'mbcs',
+        )
+
+    def _unicode(text,encoding=None):
+        if isinstance(text,unicode) or text is None: return text
+        # Try the user specified encoding first
+        if encoding:
+            try: return unicode(text,encoding)
+            except UnicodeDecodeError: pass
+        # If that fails, fall back to the old method, trial and error
+        for encoding in encodingOrder:
+            try: return unicode(text,encoding)
+            except UnicodeDecodeError: pass
+        raise UnicodeDecodeError(u'Text could not be decoded using any method')
+
+    def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
+        if isinstance(text,str) or text is None:
+            if returnEncoding: return (text,None)
+            else: return text
+        # Try user specified encoding
+        if firstEncoding:
             try:
-                return name.encode(tryFirstEncoding)
+                text = text.encode(firstEncoding)
+                if returnEncoding: return (text,firstEncoding)
+                else: return text
             except UnicodeEncodeError:
-                print u"Unable to encode '%s' in %s." % (name, tryFirstEncoding)
-                raise
-    return name
+                pass
+        # Try the list of encodings in order
+        for encoding in encodings:
+            try:
+                if returnEncoding: return (text.encode(encoding),encoding)
+                else: return text.encode(encoding)
+            except UnicodeEncodeError:
+                pass
+        raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+
 
 _CBashRequiredVersion = (0,6,0)
 
@@ -284,9 +322,9 @@ class API_FIELDS(object):
 for value, attr in enumerate(API_FIELDS.__slots__):
     setattr(API_FIELDS, attr, value)
 
-class ISTRING(str):
-    """Case insensitive strings class. Performs like str except comparisons are case insensitive."""
-
+class ICASEMixin:
+    """Case insesnsitive string/unicode class mixin.  Performs like str/unicode,
+       except comparisons are case insensitive."""
     def __eq__(self, other):
         try: return self.lower() == other.lower()
         except AttributeError: return False
@@ -362,6 +400,16 @@ class ISTRING(str):
             return str.startswith(self.lower(), other.lower(), *args)
         except AttributeError: return False
 
+class ISTRING(str,ICASEMixin):
+    """Case insensitive strings class. Performs like str except comparisons are case insensitive."""
+    pass
+
+class IUNICODE(unicode,ICASEMixin):
+    """Case insensitive unicode class.  Performs like unicode except comparisons
+       are case insensitive."""
+    pass
+
+
 class FormID(object):
     __slots__ = ['formID']
     """Represents a FormID"""
@@ -382,19 +430,19 @@ class FormID(object):
             self.master, self.objectID = master, objectID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "UnvalidatedFormID('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """Unvalidated FormIDs have to be tested for each destination collection
                A FormID is valid if its master is part of the destination collection"""
             targetID = target.GetParentCollection()._CollectionID
-            modID = _CGetModIDByName(targetID, _Encode(self.master,'mbcs'))
+            modID = _CGetModIDByName(targetID, _encode(self.master))
             return FormID.ValidFormID(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 0), targetID) if modID else self
 
         def GetShortFormID(self, target):
@@ -450,13 +498,13 @@ class FormID(object):
             self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "ValidFormID('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"ValidFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """This FormID has already been validated for a specific collection.
@@ -617,13 +665,13 @@ class ActorValue(object):
             self.master, self.objectID = master, objectID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "UnvalidatedActorValue('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """Unvalidated ActorValues have to be tested for each destination collection.
@@ -631,7 +679,7 @@ class ActorValue(object):
 
                Resolved Actor Value's are not formIDs, but can be treated as such for resolution."""
             targetID = target.GetParentCollection()._CollectionID
-            modID = _CGetModIDByName(targetID, _Encode(self.master,'mbcs'))
+            modID = _CGetModIDByName(targetID, _encode(self.master))
             return ActorValue.ValidActorValue(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 0), targetID) if modID else self
 
         def GetShortActorValue(self, target):
@@ -685,13 +733,13 @@ class ActorValue(object):
             self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "ValidActorValue('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"ValidActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """This ActorValue has already been validated for a specific record.
@@ -857,13 +905,13 @@ class MGEFCode(object):
             self.master, self.objectID = master, objectID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
-            return "UnvalidatedMGEFCode('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0xFFFFFF00L))
+            return u"UnvalidatedMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
 
         def Validate(self, target):
             """Unvalidated MGEFCodes have to be tested for each destination collection.
@@ -871,7 +919,7 @@ class MGEFCode(object):
 
                Resolved MGEFCode's are not formIDs, but can be treated as such for resolution."""
             targetID = target.GetParentCollection()._CollectionID
-            modID = _CGetModIDByName(targetID, _Encode(self.master,'mbcs'))
+            modID = _CGetModIDByName(targetID, _encode(self.master))
             return MGEFCode.ValidMGEFCode(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 1), targetID) if modID else self
 
         def GetShortMGEFCode(self, target):
@@ -925,13 +973,13 @@ class MGEFCode(object):
             self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
-            return "ValidMGEFCode('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0xFFFFFF00L))
+            return u"ValidMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
 
         def Validate(self, target):
             """This MGEFCode has already been validated for a specific record.
@@ -986,7 +1034,9 @@ class MGEFCode(object):
            This class should never be instantiated except by class MGEFCode(object)."""
 
         def __init__(self, shortID):
-            self.shortID = _Encode(str(shortID) if isinstance(shortID, ISTRING) else shortID,'mbcs') if isinstance(shortID, basestring) else shortID
+            self.shortID = (str(shortID) if isinstance(shortID,ISTRING)
+                            else _encode(shortID) if isinstance(shortID,unicode)
+                            else shortID)
 
         def __hash__(self):
             return hash((self.shortID, None))
@@ -1394,11 +1444,11 @@ class CBashSTRING_GROUP(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING_GROUP(object):
     __slots__ = ['_FieldID']
@@ -1408,11 +1458,11 @@ class CBashISTRING_GROUP(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashLIST_GROUP(object):
     __slots__ = ['_FieldID','_Type','_AsList']
@@ -1497,14 +1547,14 @@ class CBashISTRINGARRAY(object):
         if(numRecords > 0):
             cRecords = (POINTER(c_char_p) * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [ISTRING(string_at(cRecords[x])) for x in range(numRecords)]
+            return [IUNICODE(_unicode(string_at(cRecords[x]))) for x in range(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nValue)
-            nValue = [_Encode(value,'mbcs') for value in nValue]
+            nValue = [_encode(value) for value in nValue]
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_char_p * length)(*nValue)), length)
 
 class CBashGeneric(object):
@@ -1595,13 +1645,13 @@ class CBashFORMID_OR_STRING(object):
         IsFormID = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID
         _CGetField.restype = POINTER(c_ulong) if IsFormID else c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else retValue if retValue else None
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         IsFormID = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID
         nValue = None if nValue is None else nValue.GetShortFormID(instance) if IsFormID else nValue
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)) if IsFormID else _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)) if IsFormID else _encode(nValue), 0)
 
 class CBashFORMID_OR_UINT32_ARRAY(object):
     __slots__ = ['_FieldID','_Size']
@@ -1749,11 +1799,11 @@ class CBashSTRING(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING(object):
     __slots__ = ['_FieldID']
@@ -1763,11 +1813,11 @@ class CBashISTRING(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashRECORDARRAY(object):
     __slots__ = ['_Type','_TypeName']
@@ -2036,11 +2086,11 @@ class CBashSTRING_LIST(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING_LIST(object):
     __slots__ = ['_ListFieldID']
@@ -2050,11 +2100,11 @@ class CBashISTRING_LIST(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _encode(nValue), 0)
 
 # ListX2 Descriptors
 class CBashLIST_LISTX2(object):
@@ -2206,11 +2256,11 @@ class CBashSTRING_LISTX2(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING_LISTX2(object):
     __slots__ = ['_ListX2FieldID']
@@ -2220,11 +2270,11 @@ class CBashISTRING_LISTX2(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _encode(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX2(object):
     __slots__ = ['_ListX2FieldID']
@@ -2320,11 +2370,11 @@ class CBashSTRING_LISTX3(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _encode(nValue), 0)
 
 class CBashISTRING_LISTX3(object):
     __slots__ = ['_ListX3FieldID']
@@ -2334,11 +2384,11 @@ class CBashISTRING_LISTX3(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _encode(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX3(object):
     __slots__ = ['_ListX3FieldID']
@@ -2940,9 +2990,9 @@ class FnvBaseRecord(object):
     def get_eid(self):
         _CGetField.restype = c_char_p
         retValue = _CGetField(self._RecordID, 4, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
     def set_eid(self, nValue):
-        nValue = 0 if nValue is None or not len(nValue) else _Encode(nValue,'mbcs')
+        nValue = 0 if nValue is None or not len(nValue) else _encode(nValue)
         _CGetField.restype = POINTER(c_ulong)
         _CSetIDFields(self._RecordID, _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0).contents.value, nValue)
     eid = property(get_eid, set_eid)
@@ -4783,12 +4833,12 @@ class FnvGMSTRecord(FnvBaseRecord):
         if fieldtype == API_FIELDS.UNKNOWN: return None
         _CGetField.restype = POINTER(c_long) if fieldtype == API_FIELDS.SINT32 else POINTER(c_float) if fieldtype == API_FIELDS.FLOAT32 else c_char_p
         retValue = _CGetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 0)
-        return (retValue if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
+        return (_unicode(retValue) if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
     def set_value(self, nValue):
         if nValue is None: _CDeleteField(self._RecordID, 7, 0, 0, 0, 0, 0, 0)
         else:
             fieldtype = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 2)
-            _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _Encode(str(nValue),'mbcs'), 0)
+            _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _encode(nValue), 0)
     value = property(get_value, set_value)
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['value']
 
@@ -10533,9 +10583,9 @@ class ObBaseRecord(object):
     def get_eid(self):
         _CGetField.restype = c_char_p
         retValue = _CGetField(self._RecordID, 4, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
     def set_eid(self, nValue):
-        nValue = 0 if nValue is None or not len(nValue) else _Encode(nValue,'mbcs')
+        nValue = 0 if nValue is None or not len(nValue) else _encode(nValue)
         _CGetField.restype = POINTER(c_ulong)
         _CSetIDFields(self._RecordID, _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0).contents.value, nValue)
     eid = property(get_eid, set_eid)
@@ -10601,12 +10651,12 @@ class ObGMSTRecord(ObBaseRecord):
         if fieldtype == API_FIELDS.UNKNOWN: return None
         _CGetField.restype = POINTER(c_long) if fieldtype == API_FIELDS.SINT32 else POINTER(c_float) if fieldtype == API_FIELDS.FLOAT32 else c_char_p
         retValue = _CGetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 0)
-        return (retValue if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
+        return (_unicode(retValue) if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
     def set_value(self, nValue):
         if nValue is None: _CDeleteField(self._RecordID, 5, 0, 0, 0, 0, 0, 0)
         else:
             fieldtype = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 2)
-            try: _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_long(int(nValue))) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _Encode(str(nValue),'mbcs'), 0)
+            try: _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_long(int(nValue))) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _encode(nValue), 0)
             except TypeError: return
             except ValueError: return
     value = property(get_value, set_value)
@@ -14002,11 +14052,11 @@ class ObModFile(object):
 
     @property
     def FileName(self):
-        return _CGetFileNameByID(self._ModID) or 'Missing'
+        return _CGetFileNameByID(self._ModID) or u'Missing'
 
     @property
     def ModName(self):
-        return _CGetModNameByID(self._ModID) or 'Missing'
+        return _CGetModNameByID(self._ModID) or u'Missing'
 
     @property
     def GName(self):
@@ -14017,13 +14067,13 @@ class ObModFile(object):
 
     def HasRecord(self, RecordIdentifier):
         if not RecordIdentifier: return False
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return False
         return bool(_CGetRecordID(self._ModID, formID, editorID))
 
     def LookupRecord(self, RecordIdentifier):
         if not RecordIdentifier: return None
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return None
         RecordID = _CGetRecordID(self._ModID, formID, editorID)
         if RecordID:
@@ -14087,7 +14137,7 @@ class ObModFile(object):
         _CUnloadMod(self._ModID)
 
     def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
-        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _Encode(DestinationName,'mbcs') if DestinationName else DestinationName)
+        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _encode(DestinationName) if DestinationName else DestinationName)
 
     @property
     def TES4(self):
@@ -14448,13 +14498,13 @@ class FnvModFile(object):
 
     def HasRecord(self, RecordIdentifier):
         if not RecordIdentifier: return False
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return False
         return bool(_CGetRecordID(self._ModID, formID, editorID))
 
     def LookupRecord(self, RecordIdentifier):
         if not RecordIdentifier: return None
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return None
         RecordID = _CGetRecordID(self._ModID, formID, editorID)
         if RecordID:
@@ -14518,7 +14568,7 @@ class FnvModFile(object):
         _CUnloadMod(self._ModID)
 
     def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
-        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _Encode(DestinationName,'mbcs') if DestinationName else DestinationName)
+        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _encode(DestinationName) if DestinationName else DestinationName)
 
     @property
     def TES4(self):
@@ -15129,7 +15179,7 @@ class ObCollection:
         #CollectionType == 0, Oblivion
         #CollectionType == 1, Fallout 3
         #CollectionType == 2, Fallout New Vegas
-        self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(_Encode(ModsPath,'mbcs'), CollectionType),CollectionType)
+        self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(_encode(ModsPath), CollectionType),CollectionType)
         self._ModIndex, self.LoadOrderMods, self.AllMods = -1, [], []
         self._ModType = ObModFile if self._WhichGame == 0 else FnvModFile
 
@@ -15233,7 +15283,7 @@ class ObCollection:
 ##        fIsSkipAllRecords        = 0x00002000
 
         if Flags is None: Flags = 0x00000069 | (0x00000800 if CreateNew else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
-        return self._ModType(_CAddMod(self._CollectionID, _Encode(FileName,'mbcs'), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002)))
+        return self._ModType(_CAddMod(self._CollectionID, _encode(FileName), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002)))
 
     def addMergeMod(self, FileName):
         #fIsIgnoreInactiveMasters, fIsSkipNewRecords
@@ -15263,12 +15313,12 @@ class ObCollection:
         return [record for record in [mod.LookupRecord(RecordIdentifier) for mod in reversed(self.AllMods if GetExtendedConflicts else self.LoadOrderMods)] if record is not None]
 
     def LookupModFile(self, ModName):
-        ModID = _CGetModIDByName(self._CollectionID, _Encode(ModName,'mbcs'))
+        ModID = _CGetModIDByName(self._CollectionID, _encode(ModName))
         if ModID == 0: raise KeyError(_("ModName(%s) not found in collection (%08X)") % (ModName, self._CollectionID) + self.Debug_DumpModFiles() + u'\n')
         return self._ModType(ModID)
 
     def LookupModFileLoadOrder(self, ModName):
-        return _CGetModLoadOrderByName(self._CollectionID, _Encode(ModName,'mbcs'))
+        return _CGetModLoadOrderByName(self._CollectionID, _encode(ModName))
 
     def UpdateReferences(self, Old_NewFormIDs):
         return sum([mod.UpdateReferences(Old_NewFormIDs) for mod in self.LoadOrderMods])
