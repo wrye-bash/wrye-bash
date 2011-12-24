@@ -84,11 +84,11 @@ def unformatDate(str,format):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale."""
     try:
-        return _unicode(time.strptime(str,'%c'))
+        return time.strptime(str,'%c')
     except ValueError:
         if format == '%c' and u'Japanese' in locale.getlocale()[0]:
             str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str,flags=re.U)
-            return _unicode(time.strptime(str,'%c'))
+            return time.strptime(str,'%c')
         else:
             raise
 
