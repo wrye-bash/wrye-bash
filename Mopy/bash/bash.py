@@ -183,7 +183,7 @@ def main():
     if len(extra) > 0:
         return
 
-    # useful for understanding context of bug reprots
+    # useful for understanding context of bug reports
     if opts.debug: dump_environment()
 
     if opts.Psyco:
@@ -209,6 +209,12 @@ def main():
     ret = bush.setGame(opts.gameName,opts.oblivionPath)
     if ret != False: # False == success
         if len(ret) != 1:
+            if len(ret) == 0:
+                msgtext = _(u"Wrye Bash could not find a game to manage. Please use -o command line argument to specify the game path")
+            else:
+                msgtext = _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.") 
+                msgtext += u'\n\n'
+                msgtext += _(u'To prevent this message in the future, use the -g command line argument to specify the game')
             if hasattr(sys,'frozen'):
                 # Standalone is guaranteed to have wxPython, so use that
                 import wx
@@ -226,10 +232,7 @@ def main():
                         self.callback = callback
                         self.panel = panel = wx.Panel(self,wx.ID_ANY)
                         sizer = wx.BoxSizer(wx.VERTICAL)
-                        sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,
-                                              _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.")
-                                              + u'\n\n' +
-                                              _(u'To preven this message in the future, use the -g command line argument to specify the game'),
+                        sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,msgtext,
                                               style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_BESTWRAP),
                                   1,wx.GROW|wx.ALL,5)
                         for gameName in gameNames:
@@ -285,9 +288,8 @@ def main():
                     button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                     button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 w = Tkinter.Text(frame)
-                w.insert(Tkinter.END, _(u'Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.')
-                                      + u'\n\n' +
-                                      _(u'To preven this message in the future, use the -g command line argument to specify the game'))
+                
+                w.insert(Tkinter.END,msgtext)
                 w.config(state=Tkinter.DISABLED)
                 w.pack()
                 root.mainloop()
