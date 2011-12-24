@@ -45,7 +45,7 @@ class WizardReturn(object):
     __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install',
                  'IniEdits', 'PageSize', 'Pos',
                  )
-    # Canceled: Set to true if the user canceled the wizard, or if an error occured
+    # Canceled: Set to true if the user canceled the wizard, or if an error occurred
     # SelectEspms: List of ESP's/ESM's to 'select' for install
     # RenameEspms: Dictionary of renames for ESP/M's.  In the format of:
     #   'original name':'new name'
@@ -926,7 +926,7 @@ class WryeParser(ScriptParser.Parser):
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
                 return PageError(self.parent, _(u'Installer Wizard'),
-                                 _(u'An error occured in the wizard script')
+                                 _(u'An error occurred in the wizard script')
                                  +u':\n '+
                                  _(u'Line')
                                  +u':\t%s\n'+newline.strip(u'\n')+u' '+
@@ -934,7 +934,7 @@ class WryeParser(ScriptParser.Parser):
                                  +u':\t%s' % e)
             except Exception:
                 o = StringIO.StringIO()
-                o.write(_(u'An unhandled error occured while parsing the wizard')
+                o.write(_(u'An unhandled error occurred while parsing the wizard')
                         +u' :\n '+
                         _(u'Line')
                         +u'(%s):\t%s\n\n' % (self.cLine, newline.strip(u'\n')))

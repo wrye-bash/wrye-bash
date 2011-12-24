@@ -118,7 +118,7 @@ settings = None
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
     'default.text': (_(u'Default Text'),
-                     _(u'This is the text color used for list items when no other is specifid.  For example, an ESP that is not mergeable or ghosted, and has no other problems.'),
+                     _(u'This is the text color used for list items when no other is specified.  For example, an ESP that is not mergeable or ghosted, and has no other problems.'),
                      ),
     'default.bkgd': (_(u'Default Background'),
                      _(u'This is the text background color used for list items when no other is specified.  For example, an ESM that is not ghosted.'),
@@ -3317,7 +3317,7 @@ class InstallersList(balt.Tank):
                     progress(i,omod.stail)
                     outDir = bosh.dirs['installers'].join(omod.body)
                     if outDir.exists():
-                        if balt.askYes(progress.dialog,_(u"The project '%s' already exitsts.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
+                        if balt.askYes(progress.dialog,_(u"The project '%s' already exists.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
                             outDir.rmtree(omod.sbody)
                         else:
                             continue
@@ -3353,7 +3353,7 @@ class InstallersList(balt.Tank):
                 msg = u''
                 if len(completed) > 0:
                     completed = [u' * ' + x.stail for x in completed]
-                    msg += _(u'The following OMOds were unpacked:')+u'\n%s\n\n' % u'\n'.join(completed)
+                    msg += _(u'The following OMODs were unpacked:')+u'\n%s\n\n' % u'\n'.join(completed)
                 if len(skipped) > 0:
                     skipped = [u' * ' + x.stail for x in skipped]
                     msg += _(u'The following OMODs were skipped:')+u'\n%s\n\n' % u'\n'.join(skipped)
@@ -5269,7 +5269,7 @@ class BashFrame(wx.Frame):
         self.SetSizer(sizer)
         wxver = wx.version()
         if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
-            balt.showWarning(bashFrame,_(u'Warning you appear to be using a non-unicode version of wxPython (%s).  This will cause problems, it is reccomended you use a unicode version of wxPython instead.') % wxver)
+            balt.showWarning(bashFrame,_(u'Warning you appear to be using a non-unicode version of wxPython (%s).  This will cause problems, it is recommended you use a unicode version of wxPython instead.') % wxver)
         if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
             message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.name
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
@@ -5403,7 +5403,7 @@ class BashFrame(wx.Frame):
                 msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
                 message.append(msg)
             dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-                     _(u'Files have been remobed from load list:'),
+                     _(u'Files have been removed from load list:'),
                      message,liststyle='list',Cancel=False)
             dialog.ShowModal()
             dialog.Destroy()
@@ -5446,7 +5446,7 @@ class BashFrame(wx.Frame):
             message = [u'',_(u"Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: ")]
             message.extend(sorted(bolt.Path.mtimeResets))
             dialog = ListBoxes(self,_(u'Warning: Dates Reset'),
-                     _(u'Modified dates have been reste to an earlier date for  these files'),
+                     _(u'Modified dates have been reset to an earlier date for  these files'),
                      [message],liststyle='list',Cancel=False)
             dialog.ShowModal()
             dialog.Destroy()
@@ -5494,7 +5494,7 @@ class BashFrame(wx.Frame):
         try:
             self.SaveSettings()
         except:
-            deprint(u'An error occured while trying to save settings:', traceback=True)
+            deprint(u'An error occurred while trying to save settings:', traceback=True)
             pass
         self.Destroy()
 
@@ -5779,7 +5779,7 @@ class ColorDialog(wx.Dialog):
                         color = colors[key]
                     file.write(key+u': '+color+u'\n')
         except Exception,e:
-            balt.showError(self,_(u'An error occured writing to ')+outPahth.stail+u':\n\n%s'%e)
+            balt.showError(self,_(u'An error occurred writing to ')+outPahth.stail+u':\n\n%s'%e)
 
     def OnImport(self,event):
         event.Skip()
@@ -5819,7 +5819,7 @@ class ColorDialog(wx.Dialog):
                     if color == colors[key]: continue
                     self.changes[key] = color
         except Exception, e:
-            balt.showError(bashFrame,_(u'An error occured reading from ')+inPath.stail+u':\n\n%s'%e)
+            balt.showError(bashFrame,_(u'An error occurred reading from ')+inPath.stail+u':\n\n%s'%e)
         self.UpdateUIButtons()
 
     def OnComboBox(self,event):
@@ -8326,7 +8326,7 @@ class Installers_AddMarker(Link):
     """Add an installer marker."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Add Marker...'),_(u'Adds a Marker, a special type of package useful for seperating and labeling your packages.'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Add Marker...'),_(u'Adds a Marker, a special type of package useful for separating and labelling your packages.'))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -9344,7 +9344,7 @@ class Installer_OpenSkyrimNexus(InstallerLink):
         menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
 
     def Execute(self,event):
-        message = _(u"Attemp to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
+        message = _(u"Attempt to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_(u'Open at Skyrim Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
             os.startfile(u'http://www.skyrimnexus.com/downloads/file.php?id='+id)
@@ -10787,7 +10787,7 @@ class Mods_BOSSDisableLockTimes(BoolLink):
     def __init__(self): BoolLink.__init__(self,
                                           _(u'BOSS Disable Lock Times'),
                                           'BOSS.ClearLockTimes',
-                                          _(u"If selected, will temporarilly disable Bash's Lock Times when running BOSS through Bash.")
+                                          _(u"If selected, will temporarily disable Bash's Lock Times when running BOSS through Bash.")
                                           )
 
 #------------------------------------------------------------------------------
@@ -11024,7 +11024,7 @@ class Settings_CheckForUpdates(Link):
                     versions = result.get()
                 except Exception, e:
                     balt.showError(self.window,
-                        _(u'An error occured while contacting TESNexus')
+                        _(u'An error occurred while contacting TESNexus')
                         + u':\n\n%s' % e)
                     return
         except CancelError:
@@ -11095,7 +11095,7 @@ class Settings_CheckForUpdates(Link):
             else:
                 msg = (_('You are using an older version of Wrye Bash (%s).  There is a newer stable release available (%s).')
                        + u'\n\n' +
-                       _(u'Would you like to visist TESNexus to download the updated version?')
+                       _(u'Would you like to visit TESNexus to download the updated version?')
                        ) % (currentStr, mainStr)
         if msg:
             if balt.askYes(self.window,msg,title):
@@ -13262,7 +13262,7 @@ class Mod_Patch_Update(Link):
             checklists.append(group)
         if merge:
             group = [mergeKey,
-                     _(u"These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Ovlivion maximum esp/esm limit."),
+                     _(u"These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Oblivion maximum esp/esm limit."),
                      ]
             group.extend(merge)
             checklists.append(group)
@@ -13318,7 +13318,7 @@ class Mod_Patch_Update(Link):
             previousMods.add(mod)
         if missing or delinquent:
             warning = ListBoxes(bashFrame,_(u'Master Errors'),
-                _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those probem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
+                _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those problem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
                 [[_(u'Missing Master Errors'),_(u'These mods have missing masters; which will make your game unusable, and you will probably have to regenerate your patch after fixing them.  So just go fix them now.'),missing],
                 [_(u'Delinquent Master Errors'),_(u'These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them.  So just go fix them now.'),delinquent]],
                 liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_('Continue Despite Errors')})
@@ -14458,7 +14458,7 @@ class Mod_ScanDirty(Link):
             return
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= '+_(u'Scan Mods'))
-        log(_(u'This is a report of records that where detected as either Identical To Master (ITM) or a deleted reference (UDR).')
+        log(_(u'This is a report of records that were detected as either Identical To Master (ITM) or a deleted reference (UDR).')
             + u'\n')
         def strFid(fid):
             # Change a FID to something better for displaying
@@ -15089,7 +15089,7 @@ class Save_EditCreatedEnchantmentCosts(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         dialog = balt.askNumber(self.window,
-            (_(u'Enter the number of uses you desire per recharge for all custom made enchantements.')
+            (_(u'Enter the number of uses you desire per recharge for all custom made enchantments.')
              + u'\n' +
              _(u'(Enter 0 for unlimited uses)')),
             prompt=_(u'Uses'),title=_(u'Number of Uses'),value=50,min=0,max=10000)
@@ -15516,7 +15516,7 @@ class Save_UpdateNPCLevels(Link):
 
     def Execute(self,event):
         debug = True
-        message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supercedes the older "Import NPC Levels" command.')
+        message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
         if not balt.askContinue(self.window,message,'bash.updateNpcLevels.continue',_(u'Update NPC Levels')):
             return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
@@ -16052,7 +16052,7 @@ class App_Button(StatusBar_Button):
                     subprocess.Popen((self.java.stail,u'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except UnicodeError:
                     balt.showError(bashFrame,
-                                   _(u'Execution failed, because one or more of the command line arguemnts failed to encode.'),
+                                   _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
                 except Exception, error:
                     balt.showError(
@@ -16093,7 +16093,7 @@ class App_Button(StatusBar_Button):
                     subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except UnicodeError:
                     balt.showError(bashFrame,
-                                   _(u'Execution failed, because one or more of the command line arguemnts failed to encode.'),
+                                   _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
                 except WindowsError, werr:
                     if werr.winerror != 740:
@@ -16148,7 +16148,7 @@ class App_Button(StatusBar_Button):
                         os.startfile(self.exePath.s)
                     except UnicodeError:
                         balt.showError(bashFrame,
-                                       _(u'Execution failed, because one or more of the command line arguemnts failed to encode.'),
+                                       _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                        _(u"Could not launch '%s'") % self.exePath.stail)
                     except Exception, error:
                         balt.showError(

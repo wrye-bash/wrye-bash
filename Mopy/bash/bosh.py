@@ -785,7 +785,7 @@ class MobCell(MobBase):
         return ModReader.recHeader.size + self.cell.getSize() + self.getChildrenSize()
 
     def getChildrenSize(self):
-        """Returns size of all childen, including the group header.  This does not include the cell itself."""
+        """Returns size of all children, including the group header.  This does not include the cell itself."""
         size = self.getPersistentSize() + self.getTempSize() + self.getDistantSize()
         return size + ModReader.recHeader.size*bool(size)
 
@@ -3522,7 +3522,7 @@ class OblivionIni(IniFile):
 
 #------------------------------------------------------------------------------
 class OmodFile:
-    """Class for extracting data from omods."""
+    """Class for extracting data from OMODs."""
     def __init__(self, path):
         self.path = path
 
@@ -6044,7 +6044,7 @@ class ConfigHelpers:
                                         cleanIt = False
                                     self.bossDirtyMods[crc] = (cleanIt, action)
                                 except:
-                                    deprint(_(u"An error occured parsing BOSS's masterlist for dirty crc's:")+u'\n', traceback=True)
+                                    deprint(_(u"An error occurred parsing BOSS's masterlist for dirty crc's:")+u'\n', traceback=True)
                 except UnicodeDecodeError:
                     # try because the first time this runs, the wx.App isn't started yet
                     try:
@@ -7240,7 +7240,7 @@ class Installer(object):
                     dest = u'Docs\\'+file
             if fileExt in commonlyEditedExts:
                 try: trackedInfosTrack(dest)
-                except: deprint(u'An error occured while creating the path:', repr(dest), traceback=True)
+                except: deprint(u'An error occurred while creating the path:', repr(dest), traceback=True)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
@@ -19650,7 +19650,7 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'=== '+_(u'Skyrim Style Weapons'))
-        log(u'* '+_(u'Weapons Ajusted: %d') % sum(mod_count.values()))
+        log(u'* '+_(u'Weapons Adjusted: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
@@ -21702,7 +21702,7 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels"),
-            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
+            _(u'The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
             u'Attenuation%:',
             (_(u'0%'), 0),
             (_(u'5%'), 5),
@@ -23349,7 +23349,7 @@ class GmstTweaker(MultiTweaker):
             (_(u'Custom'),0),
             ),
         GmstTweak(_(u'Combat: Maximum Armor Rating'),
-            _(u"The Maximun amount of protection you will get from armor."),
+            _(u"The Maximum amount of protection you will get from armor."),
             (u'fMaxArmorRating',),
             (u'50',50.0),
             (u'75',75.0),
@@ -24002,7 +24002,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_(u'Custom'),0),
             ),
         CBash_GmstTweak(_(u'Combat: Maximum Armor Rating'),
-            _(u"The Maximun amount of protection you will get from armor."),
+            _(u"The Maximum amount of protection you will get from armor."),
             (u'fMaxArmorRating',),
             (u'50',50.0),
             (u'75',75.0),
@@ -25297,21 +25297,21 @@ class NamesTweaker(MultiTweaker):
         TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
             ur'\1wemer',
             _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurances of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
+            _(u'Replace any occurences of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
             u'Dwemer',
             ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
             ),
         TextReplacer(ur'\b(d|D)(?:warfs)\b',
             ur'\1warves',
             _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurances of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
+            _(u'Replace any occurences of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
             u'Dwarfs',
             ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
             ),
         TextReplacer(ur'\b(s|S)(?:taffs)\b',
             ur'\1taves',
             _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurances of the words "Staffs" with "Staves" to better follow proper English.'),
+            _(u'Replace any occurences of the words "Staffs" with "Staves" to better follow proper English.'),
             u'Staffs',
             ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
             ),
@@ -25376,21 +25376,21 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
         CBash_TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
             ur'\1wemer',
             _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurances of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
+            _(u'Replace any occurences of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
             u'Dwemer',
             ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
             ),
         CBash_TextReplacer(ur'\b(d|D)(?:warfs)\b',
             ur'\1warves',
             _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurances of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
+            _(u'Replace any occurences of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
             u'Dwarfs',
             ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
             ),
         CBash_TextReplacer(ur'\b(s|S)(?:taffs)\b',
             ur'\1taves',
             _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurances of the words "Staffs" with "Staves" to better follow proper English.'),
+            _(u'Replace any occurences of the words "Staffs" with "Staves" to better follow proper English.'),
             u'Staffs',
             ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
             ),
@@ -29932,7 +29932,7 @@ def initSettings(readOnly=False):
                     dirs['userApp'].join(u'bash config.pkl'),
                     readOnly))
             except cPickle.UnpicklingError, err:
-                delete = balt.askYes(None,_(u"Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)") % err,_(u"Settings Load Error"))
+                delete = balt.askYes(None,_(u"Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash won't start up)") % err,_(u"Settings Load Error"))
                 if delete:
                     dirs['saveBase'].join(u'BashSettings.dat').remove()
                     settings = bolt.Settings(PickleDict(
@@ -29941,7 +29941,7 @@ def initSettings(readOnly=False):
                     readOnly))
                 else:raise
         else:
-            delete = balt.askYes(None,_(u"Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)"),_(u"Settings Load Error"))
+            delete = balt.askYes(None,_(u"Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash won't start up)"),_(u"Settings Load Error"))
             if delete:
                 dirs['saveBase'].join(u'BashSettings.dat').remove()
                 settings = bolt.Settings(PickleDict(
