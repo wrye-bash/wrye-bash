@@ -7,7 +7,11 @@ from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, Path, _unicode, _encode
+    from bolt import GPath, deprint, Path, _unicode
+    from bolt import _encode as _enc
+    def _encode(text,*args,**kwdargs):
+        if isinstance(text,Path): text = text.s
+        return _enc(text,*args,**kwdargs)
 except:
     #It isn't, so replace the imported items with bare definitions
     CBashEnabled = "."
@@ -2926,9 +2930,9 @@ class FnvBaseRecord(object):
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
             try:
-                deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
             except: #a record type that doesn't have a full chunk:
-                deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
             del conflicting[attr]
 
         return conflicting
@@ -10521,9 +10525,9 @@ class ObBaseRecord(object):
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
             try:
-                deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
             except: #a record type that doesn't have a full chunk:
-                deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
             del conflicting[attr]
 
         return conflicting
