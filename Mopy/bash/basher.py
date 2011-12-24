@@ -2224,14 +2224,15 @@ class ModDetails(SashPanel):
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.modInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % (fileStr,))
+            balt.showError(self,_(u"File %s already exists.") % fileStr)
             self.file.SetValue(self.fileStr)
         #--Else bad name?
-        elif bosh.modInfos.isBadFileName(fileStr):
-            balt.showError(self,
-                _(u"File name %s cannot be used.  It cannot be encoded to the proper format in plugins.txt for %s to load it.")
-                % (fileStr,bush.game.name))
-            self.file.SetValue(self.fileStr)
+        elif (bosh.modInfos.isBadFileName(fileStr) and
+              not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
+                                   % (fileStr,bush.game.name),
+                                   'bash.rename.isBadFileName')
+              ):
+              self.file.SetValue(self.fileStr)
         #--Okay?
         else:
             self.fileStr = fileStr
