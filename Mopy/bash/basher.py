@@ -14379,9 +14379,9 @@ class Mod_IngredientDetails_Import(Link):
                 Ingredients = bosh.CBash_IngredientDetails()
             else:
                 Ingredients = bosh.IngredientDetails()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
+            progress(0.1,_(u'Reading %s.') % textName.s)
             Ingredients.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+filename.s+u'.')
+            progress(0.2,_(u'Applying to %s.') % fileName.s)
             changed = Ingredients.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
