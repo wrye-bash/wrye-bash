@@ -2703,7 +2703,7 @@ class WryeText:
     body { background-color: #ffffcc; }
     """
 
-    # Conversion ------------------------------------------------------------------
+    # Conversion ---------------------------------------------------------------
     @staticmethod
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
@@ -2717,6 +2717,9 @@ class WryeText:
             out = outPath.open('w',encoding='utf-8-sig')
         else:
             srcPath = outPath = None
+        # Setup
+        outWrite = out.write
+
         cssDirs = map(GPath,cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
@@ -2818,6 +2821,8 @@ class WryeText:
         #--Init
         outLines = []
         contents = []
+        outLinesAppend = outLines.append
+        outLinesExtend = outLines.extend
         addContents = 0
         inPre = False
         anchorHeaders = True
@@ -2829,13 +2834,13 @@ class WryeText:
                     maCodeBoxEnd = reCodeBoxEnd.match(line)
                     if maCodeBoxEnd:
                         codeboxLines.append(maCodeBoxEnd.group(1))
-                        outLines.append(u'<pre style="width:850px;">')
+                        outLinesAppend(u'<pre style="width:850px;">')
                         try:
                             codeboxLines = codebox(codeboxLines)
                         except:
                             pass
-                        outLines.extend(codeboxLines)
-                        outLines.append(u'</pre>')
+                        outLinesExtend(codeboxLines)
+                        outLinesAppend(u'</pre>')
                         codeboxLines = None
                         continue
                     else:
@@ -2845,10 +2850,10 @@ class WryeText:
                 if maCodeBox:
                     outLines.append(u'<pre style="width:850px;">')
                     try:
-                        outLines.extend(codebox([maCodeBox.group(1)]))
+                        outLinesExtend(codebox([maCodeBox.group(1)]))
                     except:
-                        outLines.append(maCodeBox.group(1))
-                    outLines.append(u'</pre>\n')
+                        outLinesAppend(maCodeBox.group(1))
+                    outLinesAppend(u'</pre>\n')
                     continue
                 maCodeBoxStart = reCodeBoxStart.match(line)
                 if maCodeBoxStart:
@@ -2863,7 +2868,7 @@ class WryeText:
                             codeLines = codebox(codeLines,False)
                         except:
                             pass
-                        outLines.extend(codeLines)
+                        outLinesExtend(codeLines)
                         codeLines = None
                         line = maCodeEnd.group(2)
                     else:
@@ -2879,7 +2884,7 @@ class WryeText:
             maPreEnd = rePreEnd.search(line)
             if inPre or maPreBegin or maPreEnd:
                 inPre = maPreBegin or (inPre and not maPreEnd)
-                outLines.append(line)
+                outLinesAppend(line)
                 continue
             #--Font/Background Color
             line = reColor.sub(subColor,line)
@@ -2973,11 +2978,12 @@ class WryeText:
                 if cssPath.exists(): break
             else:
                 raise BoltError(u'Css file not found: '+cssName.s)
-            css = u''.join(cssPath.open('r',encoding='utf-8-sig').readlines())
+            with cssPath.open('r',encoding='utf-8-sig') as cssIns:
+                css = u''.join(cssIns.readlines())
             if u'<' in css:
                 raise BoltError(u'Non css tag in '+cssPath.s)
         #--Write Output ------------------------------------------------------
-        out.write(WryeText.htmlHead % (title,css))
+        outWrite(WryeText.htmlHead % (title,css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
@@ -2986,11 +2992,11 @@ class WryeText:
                     for (level,name,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            out.write(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
                     didContents = True
             else:
-                out.write(line)
-        out.write(u'</body>\n</html>\n')
+                outWrite(line)
+        outWrite(u'</body>\n</html>\n')
         #--Close files?
         if srcPath:
             ins.close()
