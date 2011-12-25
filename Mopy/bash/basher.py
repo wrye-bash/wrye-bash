@@ -2226,13 +2226,6 @@ class ModDetails(SashPanel):
         elif self.modInfo.dir.join(fileStr).exists():
             balt.showError(self,_(u"File %s already exists.") % fileStr)
             self.file.SetValue(self.fileStr)
-        #--Else bad name?
-        elif (bosh.modInfos.isBadFileName(fileStr) and
-              not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
-                                   % (fileStr,bush.game.name),
-                                   'bash.rename.isBadFileName')
-              ):
-              self.file.SetValue(self.fileStr)
         #--Okay?
         else:
             self.fileStr = fileStr
@@ -2314,7 +2307,14 @@ class ModDetails(SashPanel):
         #--Change Name?
         fileName = modInfo.name
         if changeName:
-            (oldName,newName) = (modInfo.name,GPath(self.fileStr.strip()))
+            oldName,newName = modInfo.name,GPath(self.fileStr.strip())
+            #--Bad name?
+            if (bosh.modInfos.isBadFileName(newName.s) and
+                not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
+                                     % (newName.s,bush.game.name),
+                                     'bash.rename.isBadFileName')
+                ):
+                return
             modList.items[modList.items.index(oldName)] = newName
             settings.getChanged('bash.mods.renames')[oldName] = newName
             bosh.modInfos.rename(oldName,newName)
@@ -12193,9 +12193,10 @@ class Mod_CreateDummyMasters(Link):
                            _(u"To remove these files later, use 'Clean Dummy Masters...'"),
                            _(u'Create Files')):
             return
+        doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
         modInfo = bosh.modInfos[self.data[0]]
         lastTime = modInfo.mtime - 1
-        if settings['bash.CBashEnabled']:
+        if doCBash:
             newFiles = []
         refresh = []
         for master in modInfo.header.masters:
@@ -12207,7 +12208,7 @@ class Mod_CreateDummyMasters(Link):
             newTime = lastTime
             newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
             refresh.append(master)
-            if settings['bash.CBashEnabled']:
+            if doCBash:
                 # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
                 # files, then rename them to the correct unicode name later
                 newFiles.append(newInfo.getPath().stail)
@@ -12215,7 +12216,7 @@ class Mod_CreateDummyMasters(Link):
                 newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
                 newFile.tes4.author = u'BASHED DUMMY'
                 newFile.safeSave()
-        if settings['bash.CBashEnabled']:
+        if doCBash:
             with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
                 tempname = u'_DummyMaster.esp.tmp'
                 modFile = Current.addMod(tempname, CreateNew=True)
