@@ -30,6 +30,7 @@ import StringIO
 import copy
 import locale
 import os
+import stat
 import re
 import shutil
 import struct
