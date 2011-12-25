@@ -137,7 +137,7 @@ class ModSizeError(ModError):
             messageForm = u'%s: Expected size == %d, but got: %d '
         else:
             messageForm = u'%s: Expected size <= %d, but got: %d '
-        ModError.__init__(self,inName.s,messageFrom % (recType,readSize,maxSize))
+        ModError.__init__(self,inName.s,messageForm % (recType,readSize,maxSize))
 
 #-------------------------------------------------------------------------------
 class ModUnknownSubrecord(ModError):
