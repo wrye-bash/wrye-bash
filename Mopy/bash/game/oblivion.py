@@ -48,6 +48,9 @@ regInstallKeys = [
 patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
 patchTip = u'http://www.elderscrolls.com/'
 
+#--URL to the Nexus site for this game
+nexusUrl = u'http://www.tesnexus.com/'
+
 #--Construction Set information
 class cs:
     shortName = u'TESCS'             # Abbreviated name

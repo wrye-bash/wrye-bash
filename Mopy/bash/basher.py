@@ -11821,7 +11821,7 @@ class Mod_CreateBOSSReport(Link):
                 url = None
                 ma = bosh.reTesNexus.search(installer)
                 if ma and ma.group(2):
-                    url = u'http://www.tesnexus.com/downloads/file.php?id='+ma.group(2)
+                    url = bush.game.nexusUrl+u'downloads/file.php?id='+ma.group(2)
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
