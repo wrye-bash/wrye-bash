@@ -2480,6 +2480,7 @@ class INIPanel(SashPanel):
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshUI()
+        self.SetStatusCount()
 
     def RefreshUI(self,what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
