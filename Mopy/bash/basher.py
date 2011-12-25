@@ -12146,16 +12146,14 @@ class Mod_CreateBlankBashedPatch(Link):
 
 #------------------------------------------------------------------------------
 class Mod_CreateBlank(Link):
-    """Create a duplicate of the file."""
+    """Create a new blank mod."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'New Mod...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
 
     def Execute(self,event):
         data = self.data
-        fileName = GPath(data[0])
         fileInfos = self.window.data
         fileInfo = fileInfos[fileName]
         count = 0
@@ -12164,7 +12162,7 @@ class Mod_CreateBlank(Link):
             count += 1
             newName = GPath(u'New Mod %d.esp' % count)
         newInfo = bosh.ModInfo(fileInfo.dir,newName)
-        newTime = fileInfo.mtime + 20
+        newTime = max(data[x].mtime for x in data)
         newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
         newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
         newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
@@ -17365,8 +17363,16 @@ def InitModLinks():
     ModList.mainMenu.append(List_Columns('bash.mods.cols',['File']))
     #--------------------------------------------
     ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Files_Open())
-    ModList.mainMenu.append(Files_Unhide('mod'))
+    #--File Menu---------------------------------
+    if True:
+        fileMenu = MenuLink(_(u'File'))
+        if bush.game.esp.canBash:
+            fileMenu.links.append(Mod_CreateBlankBashedPatch())
+            fileMenu.links.append(Mod_CreateBlank())
+            fileMenu.links.append(SeparatorLink())
+        fileMenu.links.append(Files_Open())
+        fileMenu.links.append(Files_Unhide('mod'))
+        ModList.mainMenu.append(fileMenu)
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_ListMods())
     ModList.mainMenu.append(Mods_ListBashTags())
@@ -17391,8 +17397,6 @@ def InitModLinks():
     if True: #--File
         fileMenu = MenuLink(_(u"File"))
         if bush.game.esp.canBash:
-            fileMenu.links.append(Mod_CreateBlankBashedPatch())
-            fileMenu.links.append(Mod_CreateBlank())
             fileMenu.links.append(Mod_CreateDummyMasters())
             fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_Backup())
