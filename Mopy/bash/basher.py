@@ -6252,7 +6252,7 @@ class ModChecker(wx.Frame):
         logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
         cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
         ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w') as out:
+        with logPath.open('w',encoding='utf-8-sig') as out:
             bolt.WryeText.genHtml(ins,out,cssDir)
         self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
 
