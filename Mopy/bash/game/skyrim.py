@@ -816,7 +816,7 @@ class MelVmad(MelBase):
         formElements.add(self)
 
     def setDefault(self,record):
-        record.__setattr__(self.attr,MelVmad.Vmad())
+        record.__setattr__(self.attr,None)
 
     def getDefault(self):
         target = MelObject()
@@ -882,67 +882,68 @@ class MelVmad(MelBase):
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream"""
-        outPack = out.pack
-        outWrite = out.write
+        vmad = record.__getattribute__(self.attr)
+        if vmad is None: return
+        structPack = struct.pack
         def packString(string):
             string = _encode(string)
-            outPack('H',len(string))
-            outWrite(string)
-        vmad = record.__getattribute__(self.attr)
+            return structPack('H',len(string))+string
         # Header
-        outPack('3h',vmad.version,vmad.unk,len(vmad.scripts))
+        data = structPack('3h',vmad.version,vmad.unk,len(vmad.scripts))
         # Scripts
         for scriptName,script in vmad.scripts.iteritems():
-            packString(scriptName)
-            outPack('=BH',script.unk,len(script.properties))
+            data += packString(scriptName)
+            data += structPack('=BH',script.unk,len(script.properties))
             # Properties
             for propName,prop in script.properties.iteritems():
-                packString(propName)
+                data += packString(propName)
                 type = prop.type
-                outPack('2B',type,prop.unk)
+                data += structPack('2B',type,prop.unk)
                 if type == 1:
                     # Object reference
-                    outPack('=HHI',*prop.value)
+                    data += structPack('=HHI',*prop.value)
                 elif type == 2:
                     # String
-                    packString(prop.value)
+                    data += packString(prop.value)
                 elif type == 3:
                     # int32
-                    outPack('i',prop.value)
+                    data += structPack('i',prop.value)
                 elif type == 4:
                     # float
-                    outPack('f',prop.value)
+                    data += structPack('f',prop.value)
                 elif type == 5:
                     # bool (int8)
-                    outPack('b',prop.value)
+                    data += structPack('b',prop.value)
                 elif type == 11:
                     # array of object references
                     num = len(prop.value)
-                    outPack('=I'+`num`+'Q',num,*prop.value)
+                    data += structPack('=I'+`num`+'Q',num,*prop.value)
                 elif type == 12:
                     # array of strings
                     num = len(prop.value)
-                    outPack('I',num)
+                    data += structPack('I',num)
                     for string in prop.value:
-                        packString(string)
+                        data += packString(string)
                 elif type == 13:
                     # array of int32's
                     num = len(prop.value)
-                    outPack('=I'+`num`+'i',num,*prop.value)
+                    data += structPack('=I'+`num`+'i',num,*prop.value)
                 elif type == 14:
                     # array of float's
                     num = len(prop.value)
-                    outPack('=I'+`num`+'f',num,*prop.value)
+                    data += structPack('=I'+`num`+'f',num,*prop.value)
                 elif type == 15:
                     # array of bools (int8)
                     num = len(prop.value)
-                    outPack('=I'+`num`+'b',num,*prop.value)
+                    data += structPack('=I'+`num`+'b',num,*prop.value)
+        out.packSub(self.subType,data)
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids.  If save s true, then fid is set
            to result of function."""
         attr = self.attr
         vmad = record.__getattribute__(attr)
+        if vmad is None: return
         for scriptName,script in vmad.scripts.iteritems():
             for propName,prop in script.properties.iteritems():
                 if prop.type == 0:
@@ -957,6 +958,13 @@ class MelBounds(MelStruct):
         MelStruct.__init__(self,'OBND','=6h',
             'x1','y1','z1',
             'x2','y2','z2')
+
+#-------------------------------------------------------------------------------
+class MelKeywords(MelFidList):
+    """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
+    def dumpData(self,record,out):
+        out.packSub('KSIZ','I',len(record.__getattribute__(self.attr)))
+        MelFidList.dumpData(self,record,out)
 
 #-------------------------------------------------------------------------------
 class MelString16(MelString):
@@ -1037,7 +1045,7 @@ class MelMODS(MelBase):
 
     def setDefault(self,record):
         """Sets default value for record instance."""
-        record.__setattr__(self.attr,[])
+        record.__setattr__(self.attr,None)
 
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
@@ -1055,21 +1063,25 @@ class MelMODS(MelBase):
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
-        structPack = struct.pack
         data = record.__getattribute__(self.attr)
-        outData = structPack('I',len(data))
-        for (string,fid,unk) in data:
-            outData += structPack('I',len(string))
-            outData += _encode(string)
-            outData += structPack('=2I',fid,unk)
-        out.packSub(self.subType,outData)
+        if data is not None:
+            structPack = struct.pack
+            data = record.__getattribute__(self.attr)
+            outData = structPack('I',len(data))
+            for (string,fid,unk) in data:
+                outData += structPack('I',len(string))
+                outData += _encode(string)
+                outData += structPack('=2I',fid,unk)
+            out.packSub(self.subType,outData)
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids.  If save is true, then fid is set
            to result of function."""
         attr = self.attr
-        data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
-        if save: record.__setattr__(attr,data)
+        data = record.__getattribute__(attr)
+        if data is not None:
+            data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
+            if save: record.__setattr__(attr,data)
 
 #-------------------------------------------------------------------------------
 class MelBODT(MelStruct):
@@ -1246,10 +1258,8 @@ class MreActi(MelRecord):
         MelFid('VNAM','pickupSound'),
         MelFid('SNAM','dropSound'),
         MelFid('WNAM','water'),
-        MelGroup('keywords',
-                 MelStruct('KSIZ','I','num'),
-                 MelFidList('KWDA','keywords'),
-                 ),
+        MelNull('KSIZ'), # Handled by MelKeywords
+        MelKeywords('KWDA','keywords'),
         MelLString('RNAM','rnam'),
         MelBase('FNAM','fnam_p'),
         MelFid('KNAM','keyword'),
@@ -1310,10 +1320,8 @@ class MreArmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelFid('RNAM','race'),
-        MelGroup('keywords',
-                 MelStruct('KSIZ','I','num'),
-                 MelFidList('KWDA','keywords'),
-                 ),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
         MelFids('MODL','addons'),
         MelStruct('DATA','=If','value','weight'),
@@ -1336,8 +1344,7 @@ class MreAmmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
-        MelStruct('KSIZ','I','numKeywords'),
-        MelFidList('KWDA','keywords'),
+        MelKeywords('KWDA','keywords'),
         MelStruct('DATA','fIff','speed',(_flags,'flags',0L),'damage','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -1416,10 +1423,8 @@ class MreMisc(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelGroup('keywords',
-                 MelStruct('KSIZ','I','num'),
-                 MelFidList('KWDA','keywords'),
-                 ),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
         MelStruct('DATA','=If','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
