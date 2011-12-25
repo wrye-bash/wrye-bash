@@ -6060,6 +6060,7 @@ class ConfigHelpers:
                         mod = None
                         reRule = re.compile(ur'(ADD:\s|FOR:\s|OVERIDE:\s)([_[(\w!].*?\.es[pm]$)',re.U)
                         for line in ins:
+                            line = line.strip()
                             maMod = reRule.match(line)
                             maBashTags = reBashTags.match(line)
                             if maMod:
