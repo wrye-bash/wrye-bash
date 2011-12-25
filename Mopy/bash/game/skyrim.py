@@ -46,6 +46,9 @@ regInstallKeys = [
 patchURL = u'' # Update via steam
 patchTip = u'Update via Steam'
 
+#--URL to the Nexus site for this game
+nexusUrl = u'http://www.skyrimnexus.com/'
+
 #--Creation Kit Set information
 class cs:
     shortName = u'CK'                # Abbreviated name
@@ -1228,7 +1231,7 @@ class MreHeader(MreHeaderBase):
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'),
         MelBase('INTV','ingv_p'),
-        MelBase('ONAM','onam_p'),
+        MelFidList('ONAM','overrides'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
