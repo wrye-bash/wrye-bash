@@ -46,7 +46,7 @@ import barb
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
-from bolt import LString, GPath, SubProgress, deprint, delist
+from bolt import LString, GPath, SubProgress, deprint, delist, sio
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -7455,7 +7455,7 @@ class TweakPatcher(Patcher):
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith(u'Custom'):
-                if isinstance(tweak.choiceValues[tweak.chosen][0],(str,unicode)):
+                if isinstance(tweak.choiceValues[tweak.chosen][0],basestring):
                     label += u' %s' % tweak.choiceValues[tweak.chosen][0]
                 else:
                     label += u' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
@@ -7538,7 +7538,7 @@ class TweakPatcher(Patcher):
             if label == u'----':
                 menu.AppendSeparator()
             elif label.startswith(_(u'Custom')):
-                if isinstance(tweaks[tweakIndex].choiceValues[index][0],(str,unicode)):
+                if isinstance(tweaks[tweakIndex].choiceValues[index][0],basestring):
                     menulabel = label + u' %s' % tweaks[tweakIndex].choiceValues[index][0]
                 else:
                     menulabel = label + u' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
@@ -7568,8 +7568,7 @@ class TweakPatcher(Patcher):
         tweak = self.tweaks[tweakIndex]
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
-            subtweaktype = type(v)
-            if subtweaktype == float:
+            if isinstance(v,float):
                 label = (_(u'Enter the desired custom tweak value.')
                          + u'\n' +
                          _(u'Due to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.')
@@ -7581,14 +7580,14 @@ class TweakPatcher(Patcher):
                 if new == None: #user hit cancel
                     return
                 value.append(float(new)/10)
-            elif subtweaktype == int:
+            elif isinstance(v,int):
                 label = _(u'Enter the desired custom tweak value.')+u'\n'+tweak.key[i]
                 new = balt.askNumber(self.gConfigPanel,label,prompt=_(u'Value'),
                     title=tweak.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return
                 value.append(new)
-            elif subtweaktype in (str,unicode):
+            elif isinstance(v,basestring):
                 label = _(u'Enter the desired custom tweak text.')+u'\n'+tweak.key[i]
                 new = balt.askText(self.gConfigPanel,label,
                     title=tweak.label+_(u' ~ Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i])
@@ -7598,7 +7597,7 @@ class TweakPatcher(Patcher):
         if not value: value = tweak.choiceValues[index]
         tweak.choiceValues[index] = tuple(value)
         tweak.chosen = index
-        if isinstance(tweak.choiceValues[index][0],(str,unicode)):
+        if isinstance(tweak.choiceValues[index][0],basestring):
             menulabel = tweak.getListLabel() + u' %s' % tweak.choiceValues[index][0]
         else:
             menulabel = tweak.getListLabel() + u' %4.2f ' % tweak.choiceValues[index][0]

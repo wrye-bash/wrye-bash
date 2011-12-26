@@ -365,43 +365,63 @@ class ICASEMixin:
         except AttributeError: return False
 
     def count(self, other, *args):
-        try: return str.count(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.count
+            else: func = unicode.count
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return 0
 
     def endswith(self, other, *args):
         try:
+            if isinstance(self,str): func = str.endswith
+            else: func = unicode.endswith
             if isinstance(other, tuple):
                 for value in other:
-                    if str.endswith(self.lower(), value.lower(), *args):
+                    if func(self.lower(), value.lower(), *args):
                         return True
                 return False
-            return str.endswith(self.lower(), other.lower(), *args)
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return False
 
     def find(self, other, *args):
-        try: return str.find(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.find
+            else: func = unicode.find
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return -1
 
     def index(self, other, *args):
-        try: return str.index(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.index
+            else: func = unicode.index
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return ValueError
 
     def rfind(self, other, *args):
-        try: return str.rfind(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.rfind
+            else: func = unicode.rfind
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return -1
 
     def rindex(self, other, *args):
-        try: return str.rindex(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.rindex
+            else: func = unicode.rindex
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return ValueError
 
     def startswith(self, other, *args):
         try:
+            if isinstance(self,str): func = str.startswith
+            else: func = unicode.startswith
             if isinstance(other, tuple):
                 for value in other:
-                    if str.startswith(self.lower(), value.lower(), *args):
+                    if isinstance
+                    if funct(self.lower(), value.lower(), *args):
                         return True
                 return False
-            return str.startswith(self.lower(), other.lower(), *args)
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return False
 
 class ISTRING(str,ICASEMixin):
