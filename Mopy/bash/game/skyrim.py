@@ -710,6 +710,13 @@ class esp:
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.94,)
 
+    #--Strings Files
+    stringsFiles = [
+        ('mods',(u'Strings',),u'%(body)s_%(language)s.STRINGS'),
+        ('mods',(u'Strings',),u'%(body)s_%(language)s.DLSTRINGS'),
+        ('mods',(u'Strings',),u'%(body)s_%(language)s.ILSTRINGS'),
+        ]
+
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
         'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL',

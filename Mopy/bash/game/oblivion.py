@@ -381,6 +381,8 @@ class esp:
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.8,1.0)
 
+    stringsFiles = []
+
     #--Top types in Oblivion order.
     topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
         'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI', 'APPA', 'ARMO', 'BOOK',

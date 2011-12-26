@@ -4181,6 +4181,9 @@ class ModInfo(FileInfo):
         """True if has a master with un unencodable name in cp1252."""
         return modInfos.hasBadMasterNames(self.name)
 
+    def isMissingStrings(self):
+        return modInfos.isMissingStrings(self.name)
+
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
@@ -4811,6 +4814,8 @@ class ModInfos(FileInfos):
         self.exGroup_mods = {}
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
+        self.missing_strings = set() #--Set of all mods with missing .STRINGS files
+        self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
         self.activeBad = set() #--Set of all mods with bad names that are active
         self.merged = set() #--For bash merged files
         self.imported = set() #--For bash imported files
@@ -4861,8 +4866,9 @@ class ModInfos(FileInfos):
         hasSorted = self.autoSort()
         self.refreshInfoLists()
         hasNewBad = self.refreshBadNames()
+        hasMissingStrings = self.refreshMissingStrings()
         self.getOblivionVersions()
-        return bool(hasChanged) or hasSorted or hasGhosted or hasNewBad
+        return bool(hasChanged) or hasSorted or hasGhosted or hasNewBad or hasMissingStrings
 
     def refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
@@ -4881,6 +4887,19 @@ class ModInfos(FileInfos):
                 else:
                     bad.add(fileName)
         return bool(activeBad)
+
+    def refreshMissingStrings(self):
+        """Refreshes which mods are supposed to have strings files,
+           but are missing them (=CTD)."""
+        oldBad = self.missing_strings
+        bad = set()
+        for fileName in self.data:
+            if self.data[fileName].isMissingStrings():
+                bad.add(fileName)
+        new = bad - oldBad
+        self.missing_strings = bad
+        self.new_missing_strings = new
+        return bool(new)
 
     def refreshHeaders(self):
         """Updates group_header."""
@@ -5482,6 +5501,21 @@ class ModInfos(FileInfos):
             return False
         except UnicodeEncodeError:
             return True
+
+    def isMissingStrings(self,modName):
+        """True if the mod says it has .STRINGS files, but the files are missing."""
+        if self.data[modName].header.flags1.hasStrings:
+            language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
+            sbody,ext = modName.sbody,modName.ext
+            for stringsFile in bush.game.esp.stringsFiles:
+                dir,join,format = stringsFile
+                dirJoin = dirs[dir].join(*join).join
+                fname = format % {'body':sbody,
+                                  'ext':ext,
+                                  'language':language}
+                if not dirJoin(fname).exists():
+                    return True
+        return False
 
     def hasBadMasterNames(self,modName):
         """True if there mod has master's with unencodable names."""

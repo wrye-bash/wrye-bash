@@ -1844,6 +1844,8 @@ class ModList(List):
         mouseText = u''
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
+        if fileName in bosh.modInfos.missing_strings:
+            mouseText += _(u'Plugin is missing String Localization files.  ')
         if fileInfo.isEsm():
             item.SetTextColour(colors['mods.text.esm'])
             mouseText += _(u"Master file. ")
@@ -1873,6 +1875,11 @@ class ModList(List):
         #--Text BG
         if fileName in bosh.modInfos.bad_names:
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+        elif fileName in bosh.modInfos.missing_strings:
+            if fileName in bosh.modInfos.ordered:
+                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+            else:
+                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif fileInfo.hasBadMasterNames():
             if bosh.modInfos.isSelected(fileName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
@@ -5327,7 +5334,8 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refresh()
         #--Check plugins.txt and mods directory...
-        if bosh.modInfos.refresh(doAutoGroup=True):
+        modInfosChanged = bosh.modInfos.refresh(doAutoGroup=True)
+        if modInfosChanged:
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
@@ -5431,6 +5439,11 @@ class BashFrame(wx.Frame):
             m.extend(sorted(invalidVersions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
+        if bosh.modInfos.new_missing_strings:
+            m = [_(u'Missing String Localization files:'),_(u'This will cause CTDs if activated.')]
+            m.extend(sorted(bosh.modInfos.missing_strings))
+            message.append(m)
+            del bosh.modInfos.new_missing_strings[:]
         if message:
             dialog = ListBoxes(self,_(u'Warning: Corrupt/Unrecognized Files'),
                      _(u'Some files have corrupted headers or TES4 header versions:'),
