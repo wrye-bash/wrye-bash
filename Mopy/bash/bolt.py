@@ -251,7 +251,7 @@ def initTranslator(language=None,path=None):
     txt,po,mo = (os.path.join(path,language+ext)
                  for ext in (u'.txt',u'.po',u'.mo'))
     if not os.path.exists(txt) and not os.path.exists(mo):
-        if language.lower != 'english':
+        if language.lower() != 'english':
             print 'No translation file for language:', language
         trans = gettext.NullTranslations()
     else:
