@@ -376,7 +376,7 @@ class LoadFactory:
     def addClass(self,recClass):
         """Adds specified class."""
         cellTypes = ('WRLD','ROAD','CELL','REFR','ACHR','ACRE','PGRD','LAND')
-        if isinstance(recClass,str):
+        if isinstance(recClass,basestring):
             recType = recClass
             recClass = MreRecord
         else:
@@ -3230,7 +3230,7 @@ class IniFile(object):
                     elif maSetting and sectionSettings and LString(maSetting.group(1)) in sectionSettings:
                         key = LString(maSetting.group(1))
                         value = sectionSettings[key]
-                        if isinstance(value,str) and value[-1] == u'\n':
+                        if isinstance(value,basestring) and value[-1] == u'\n':
                             line = value
                         else:
                             line = u'%s=%s\n' % (key,value)
@@ -3419,7 +3419,7 @@ class OBSEIniFile(IniFile):
                         if LString(maSet.group(1)) in section:
                             key = LString(maSet.group(1))
                             value = section[key]
-                            if isinstance(value,str) and value[-1] == u'\n':
+                            if isinstance(value,basestring) and value[-1] == u'\n':
                                 line = value
                             else:
                                 line = u'Set %s to %s\n' % (key,value)
@@ -3428,7 +3428,7 @@ class OBSEIniFile(IniFile):
                         if LString(maSetGS.group(1)) in section:
                             key = LString(maSetGS.group(1))
                             value = section[key]
-                            if isinstance(value,str) and value[-1] == u'\n':
+                            if isinstance(value,basestring) and value[-1] == u'\n':
                                 line = value
                             else:
                                 line = u'SetGS %s %s' % (key,value)
@@ -6172,7 +6172,7 @@ class ConfigHelpers:
             shouldDeactivateB = [x for x in active if u'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
             shouldActivateA = [x for x in imported if u'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
             #--Mods with invalid TES4 version
-            invalidVersion = [(x,str(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
+            invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
             if True:
                 #--Look for dirty edits
                 shouldClean = {}
@@ -9486,23 +9486,23 @@ class CBash_ActorLevels:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if fields[0][:2] == '0x': #old format
+                if fields[0][:2] == u'0x': #old format
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
                     fid = FormID(GPath(u'Oblivion.esm'), fidObject)
-                    eid = _coerce(eid, str, AllowNone=True)
+                    eid = _coerce(eid, unicode, AllowNone=True)
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
                     calcMax = _coerce(calcMax, int)
                 else:
-                    if len(fields) < 7 or fields[3][:2] != '0x': continue
+                    if len(fields) < 7 or fields[3][:2] != u'0x': continue
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
-                    source = _coerce(source, str)
+                    source = _coerce(source, unicode)
                     if source.lower() in (u'none', u'oblivion.esm'): continue
                     source = GPath(source)
-                    eid = _coerce(eid, str, AllowNone=True)
-                    fidMod = GPath(_coerce(fidMod, str))
+                    eid = _coerce(eid, unicode, AllowNone=True)
+                    fidMod = GPath(_coerce(fidMod, unicode))
                     if fidMod.s.lower() == u'none': continue
                     fidObject = _coerce(fidObject[2:], int, 16)
                     if fidObject is None: continue
@@ -9645,15 +9645,15 @@ class EditorIds:
         type_id_eid = self.type_id_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            reValidEid = re.compile('^[a-zA-Z0-9]+$')
-            reGoodEid = re.compile('^[a-zA-Z]')
+            reValidEid = re.compile(u'^[a-zA-Z0-9]+$')
+            reGoodEid = re.compile(u'^[a-zA-Z]')
             for fields in ins:
-                if len(fields) < 4 or fields[2][:2] != '0x': continue
+                if len(fields) < 4 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid = fields[:4]
-                group = _coerce(group,str)
-                mod = GPath(_coerce(mod,str))
+                group = _coerce(group,unicode)
+                mod = GPath(_coerce(mod,unicode))
                 longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-                eid = _coerce(eid,str, AllowNone=True)
+                eid = _coerce(eid,unicode, AllowNone=True)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
                         badEidsList.append(eid)
@@ -9664,7 +9664,7 @@ class EditorIds:
                 id_eid[longid] = eid
                 #--Explicit old to new def? (Used for script updating.)
                 if len(fields) > 4:
-                    self.old_new[_coerce(fields[4], str).lower()] = eid
+                    self.old_new[_coerce(fields[4], unicode).lower()] = eid
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -9773,16 +9773,16 @@ class CBash_EditorIds:
         group_fid_eid = self.group_fid_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            reValidEid = re.compile('^[a-zA-Z0-9]+$')
-            reGoodEid = re.compile('^[a-zA-Z]')
+            reValidEid = re.compile(u'^[a-zA-Z0-9]+$')
+            reGoodEid = re.compile(u'^[a-zA-Z]')
             for fields in ins:
-                if len(fields) < 4 or fields[2][:2] != '0x': continue
+                if len(fields) < 4 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid = fields[:4]
-                group = _coerce(group,str)[:4]
+                group = _coerce(group,unicode)[:4]
                 if group not in validTypes: continue
-                mod = GPath(_coerce(mod,str))
+                mod = GPath(_coerce(mod,unicode))
                 longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-                eid = _coerce(eid,str, AllowNone=True)
+                eid = _coerce(eid,unicode, AllowNone=True)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
                         badEidsList.append(eid)
@@ -9793,7 +9793,7 @@ class CBash_EditorIds:
                 fid_eid[longid] = eid
                 #--Explicit old to new def? (Used for script updating.)
                 if len(fields) > 4:
-                    self.old_new[_coerce(fields[4], str).lower()] = eid
+                    self.old_new[_coerce(fields[4], unicode).lower()] = eid
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -10034,12 +10034,12 @@ class FidReplacer:
         with bolt.CsvReader(textPath) as ins:
             pack,unpack = struct.pack,struct.unpack
             for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
+                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod = _coerce(oldMod, str)
-                oldEid = _coerce(oldEid, str, AllowNone=True)
-                newEid = _coerce(newEid, str, AllowNone=True)
-                newMod = _coerce(newMod, str)
+                oldMod = _coerce(oldMod, unicode)
+                oldEid = _coerce(oldEid, unicode, AllowNone=True)
+                newEid = _coerce(newEid, unicode, AllowNone=True)
+                newMod = _coerce(newMod, unicode)
                 oldMod,newMod = map(GPath,(oldMod,newMod))
                 oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
                 newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
@@ -10105,12 +10105,12 @@ class CBash_FidReplacer:
         with bolt.CsvReader(textPath) as ins:
             pack,unpack = struct.pack,struct.unpack
             for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != '0x' or fields[6][:2] != '0x': continue
+                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod = _coerce(oldMod, str)
-                oldEid = _coerce(oldEid, str)
-                newEid = _coerce(newEid, str, AllowNone=True)
-                newMod = _coerce(newMod, str, AllowNone=True)
+                oldMod = _coerce(oldMod, unicode)
+                oldEid = _coerce(oldEid, unicode)
+                newEid = _coerce(newEid, unicode, AllowNone=True)
+                newMod = _coerce(newMod, unicode, AllowNone=True)
                 oldMod,newMod = map(GPath,(oldMod,newMod))
                 oldId = FormID(GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
                 newId = FormID(GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
@@ -10312,7 +10312,8 @@ class CBash_FullNames:
         headFormat = u'"%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name')))
+            outWrite = out.write
+            outWrite(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name')))
             for group in sorted(group_fid_name):
                 fid_name = group_fid_name[group]
                 longids = fid_name.keys()
@@ -10320,7 +10321,7 @@ class CBash_FullNames:
                 longids.sort(key=itemgetter(0))
                 for longid in longids:
                     eid,name = fid_name[longid]
-                    out.write(rowFormat % (group,longid[0],longid[1],eid,name.replace(u'"',u'""')))
+                    outWrite(rowFormat % (group,longid[0],longid[1],eid,name.replace(u'"',u'""')))
 
 #------------------------------------------------------------------------------
 class CBash_MapMarkers:
@@ -10440,14 +10441,15 @@ class CBash_MapMarkers:
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),_(u'Type'),_(u'IsVisible'),_(u'IsCanTravelTo'),_(u'posX'),_(u'posY'),_(u'posZ'),_(u'rotX'),_(u'rotY'),_(u'rotZ')))
+            outWrite = out.write
+            outWrite(headFormat % (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),_(u'Type'),_(u'IsVisible'),_(u'IsCanTravelTo'),_(u'posX'),_(u'posY'),_(u'posZ'),_(u'rotX'),_(u'rotY'),_(u'rotZ')))
             longids = fid_markerdata.keys()
             longids.sort(key=lambda a: fid_markerdata[a][0])
             longids.sort(key=itemgetter(0))
             for longid in longids:
                 eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fid_markerdata[longid]
                 markerType = markerTypeNumber_Name.get(markerType,markerType)
-                out.write(rowFormat % (longid[0],longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
+                outWrite(rowFormat % (longid[0],longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
 
 #------------------------------------------------------------------------------
 class CBash_CellBlockInfo:
@@ -10518,14 +10520,14 @@ class UsesEffectsMixin(object):
         while len(_effects) >= 13:
             _effect, _effects = _effects[1:13], _effects[13:]
             name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
-            name = _coerce(name, str, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
+            name = _coerce(name, unicode, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
             magnitude = _coerce(magnitude, int, AllowNone=True)
             area = _coerce(area, int, AllowNone=True)
             duration = _coerce(duration, int, AllowNone=True)
-            range = _coerce(range, str, AllowNone=True)
+            range = _coerce(range, unicode, AllowNone=True)
             if range:
                 range = recipientTypeName_Number.get(range.lower(),_coerce(range,int))
-            actorvalue = _coerce(actorvalue, str, AllowNone=True)
+            actorvalue = _coerce(actorvalue, unicode, AllowNone=True)
             if actorvalue:
                 actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
             if None in (name,magnitude,area,duration,range,actorvalue):
@@ -10541,7 +10543,7 @@ class UsesEffectsMixin(object):
                 seschool = schoolTypeName_Number.get(seschool.lower(),_coerce(seschool,int))
             sevisuals = _coerce(sevisual, int, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes visual MGEFCode is raw)
             if sevisuals is None:
-                sevisuals = _coerce(sevisual, str, AllowNone=True)
+                sevisuals = _coerce(sevisual, unicode, AllowNone=True)
             else:
                 sevisuals = ctypes.cast(ctypes.byref(ctypes.c_ulong(sevisuals)), ctypes.POINTER(ctypes.c_char *4)).contents.value
             if doCBash:
@@ -10552,7 +10554,7 @@ class UsesEffectsMixin(object):
                     sevisuals = u'\x00\x00\x00\x00'
             sevisual = sevisuals
             seflags = _coerce(seflags, int, AllowNone=True)
-            sename = _coerce(sename, str, AllowNone=True)
+            sename = _coerce(sename, unicode, AllowNone=True)
             if None in (semod,seobj,seschool,sevisual,seflags,sename):
                 if doCBash:
                     effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
@@ -10682,18 +10684,18 @@ class SigilStoneDetails(UsesEffectsMixin):
         fid_stats,aliases = self.fid_stats, self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 12 or fields[1][:2] != '0x': continue
+                if len(fields) < 12 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
-                mmod = _coerce(mmod, str)
+                mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-                smod = _coerce(smod, str, AllowNone=True)
+                smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = None
                 else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
-                modPath = _coerce(modPath, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
+                modPath = _coerce(modPath, unicode, AllowNone=True)
                 modb = _coerce(modb, float)
-                iconPath = _coerce(iconPath, str, AllowNone=True)
+                iconPath = _coerce(iconPath, unicode, AllowNone=True)
                 uses = _coerce(uses, int)
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
@@ -10711,7 +10713,8 @@ class SigilStoneDetails(UsesEffectsMixin):
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%d","%f"'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % header)
+            outWrite = out.write
+            outWrite(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0].lower()):
                 eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
@@ -10721,7 +10724,7 @@ class SigilStoneDetails(UsesEffectsMixin):
                     output = altrowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],uses,value,weight)
                 output += self.writeEffects(effects, False)
                 output += u'\n'
-                out.write(output)
+                outWrite(output)
 
 class CBash_SigilStoneDetails(UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
@@ -10773,18 +10776,18 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
         fid_stats,aliases = self.fid_stats, self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 12 or fields[1][:2] != '0x': continue
+                if len(fields) < 12 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,value,weight = fields[:12]
-                mmod = _coerce(mmod, str)
+                mmod = _coerce(mmod, unicode)
                 mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-                smod = _coerce(smod, str, AllowNone=True)
+                smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = FormID(None,None)
                 else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
-                modPath = _coerce(modPath, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
+                modPath = _coerce(modPath, unicode, AllowNone=True)
                 modb = _coerce(modb, float)
-                iconPath = _coerce(iconPath, str, AllowNone=True)
+                iconPath = _coerce(iconPath, unicode, AllowNone=True)
                 uses = _coerce(uses, int)
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
@@ -10802,7 +10805,8 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%d","%f"'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % header)
+            outWrite = out.write
+            outWrite(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
                 eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
@@ -10812,7 +10816,7 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
                     output = altrowFormat % (fid[0],fid[1],eid,name,modpath,modb,iconpath,scriptfid[0],scriptfid[1],uses,value,weight)
                 output += self.writeEffects(effects, True)
                 output += u'\n'
-                out.write(output)
+                outWrite(output)
 
 #------------------------------------------------------------------------------
 class ItemStats:
@@ -10835,7 +10839,7 @@ class ItemStats:
 
     @staticmethod
     def sstr(value):
-        return _coerce(value, str, AllowNone=True)
+        return _coerce(value, unicode, AllowNone=True)
 
     @staticmethod
     def sfloat(value):
@@ -10916,7 +10920,7 @@ class ItemStats:
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[0:3]
-                modName = GPath(_coerce(modName,str))
+                modName = GPath(_coerce(modName,unicode))
                 longid = (GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
                 attrs = self.class_attrs[group]
                 attr_value = {}
@@ -11036,7 +11040,7 @@ class CBash_ItemStats:
 
     @staticmethod
     def sstr(value):
-        return _coerce(value, str, AllowNone=True)
+        return _coerce(value, unicode, AllowNone=True)
 
     @staticmethod
     def sfloat(value):
@@ -11114,9 +11118,9 @@ class CBash_ItemStats:
         with bolt.CsvReader(textPath) as ins:
             attr_type = self.attr_type
             for fields in ins:
-                if len(fields) < 3 or fields[2][:2] != '0x': continue
+                if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[0:3]
-                modName = GPath(_coerce(modName,str))
+                modName = GPath(_coerce(modName,unicode))
                 longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
                 attrs = self.class_attrs[group]
                 attr_value = {}
@@ -11267,14 +11271,14 @@ class ItemPrices:
         class_fid_stats, aliases = self.class_fid_stats, self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 6 or not fields[1].startswith(u'0x'): continue
+                if len(fields) < 6 or fields[1][:2] != u'0x': continue
                 mmod,mobj,value,eid,name,group = fields[:6]
-                mmod = GPath(_coerce(mmod, str))
+                mmod = GPath(_coerce(mmod, unicode))
                 longid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
                 value = _coerce(value, int)
-                eid = _coerce(eid, str, AllowNone=True)
-                name = _coerce(name, str, AllowNone=True)
-                group = _coerce(group, str)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                name = _coerce(name, unicode, AllowNone=True)
+                group = _coerce(group, unicode)
                 class_fid_stats[group][longid] = [value,eid,name]
 
     def writeToText(self,textPath):
@@ -11341,14 +11345,14 @@ class CBash_ItemPrices:
         class_fid_stats, aliases = self.class_fid_stats, self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 6 or not fields[1].startswith(u'0x'): continue
+                if len(fields) < 6 or fields[1][:2] != u'0x': continue
                 mmod,mobj,value,eid,name,group = fields[:6]
-                mmod = GPath(_coerce(mmod, str))
+                mmod = GPath(_coerce(mmod, unicode))
                 longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
                 value = _coerce(value, int)
-                eid = _coerce(eid, str, AllowNone=True)
-                name = _coerce(name, str, AllowNone=True)
-                group = _coerce(group, str)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                name = _coerce(name, unicode, AllowNone=True)
+                group = _coerce(group, unicode)
                 class_fid_stats[group][longid] = [value,eid,name]
 
     def writeToText(self,textPath):
@@ -11458,55 +11462,55 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
                 if type == 'ALCH':
                     alch[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value)
-                        zip((str,sfloat,int,str),fields[4:8]))
+                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'AMMO':
                     ammo[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, damage, speed, enchantPoints)
-                        zip((str,sfloat,int,int,sfloat,int,str),fields[4:11]))
+                        zip((_unicode,sfloat,int,int,sfloat,int,_unicode),fields[4:11]))
                 elif type == 'APPA':
                     appa[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight,value,quantity)
-                        zip((str,sfloat,int,sfloat,str),fields[4:9]))
+                        zip((_unicode,sfloat,int,sfloat,_unicode),fields[4:9]))
                 elif type == 'ARMO':
                     armor[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, health, strength)
-                        zip((str,sfloat,int,int,int,str,str),fields[4:10]))
+                        zip((_unicode,sfloat,int,int,int,_unicode,_unicode),fields[4:10]))
                 elif type == 'BOOK':
                    books[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, echantPoints)
-                        zip((str,sfloat,int,int,str),fields[4:9]))
+                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
                 elif type == 'CLOT':
                     clothing[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, echantPoints)
-                        zip((str,sfloat,int,int,str,str),fields[4:10]))
+                        zip((_unicode,sfloat,int,int,_unicode,_unicode),fields[4:10]))
                 elif type == 'INGR':
                     ingredients[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value)
-                        zip((str,sfloat,int,str),fields[4:8]))
+                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'KEYM':
                     keys[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value)
-                        zip((str,sfloat,int,str),fields[4:8]))
+                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'LIGH':
                    lights[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, duration)
-                        zip((str,sfloat,int,int,str),fields[4:9]))
+                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
                 elif type == 'MISC':
                     misc[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value)
-                        zip((str,sfloat,int,str),fields[4:8]))
+                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'SGST':
                    sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, uses)
-                        zip((str,sfloat,int,int,str),fields[4:9]))
+                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
                 elif type == 'SLGM':
                     soulgems[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value)
-                        zip((str,sfloat,int,str),fields[4:8]))
+                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'WEAP':
                     weapons[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, health, damage, speed, reach, epoints)
-                        zip((str,sfloat,int,int,int,sfloat,sfloat,int,str),fields[4:13]))
+                        zip((_unicode,sfloat,int,int,int,sfloat,sfloat,int,_unicode),fields[4:13]))
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -11595,7 +11599,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
     @staticmethod
     def sstr(value):
-        return _coerce(value, str, AllowNone=True)
+        return _coerce(value, unicode, AllowNone=True)
 
     @staticmethod
     def sfloat(value):
@@ -11666,25 +11670,25 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         while len(_effects) >= 13:
             _effect, _effects = _effects[1:13], _effects[13:]
             name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
-            name = _coerce(name, str, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
+            name = _coerce(name, unicode, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
             magnitude = _coerce(magnitude, int, AllowNone=True)
             area = _coerce(area, int, AllowNone=True)
             duration = _coerce(duration, int, AllowNone=True)
-            range = _coerce(range, str, AllowNone=True)
+            range = _coerce(range, unicode, AllowNone=True)
             if range:
                 range = recipientTypeName_Number.get(range.lower(),_coerce(range,int))
-            actorvalue = _coerce(actorvalue, str, AllowNone=True)
+            actorvalue = _coerce(actorvalue, unicode, AllowNone=True)
             if actorvalue:
                 actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
             if None in (name,magnitude,area,duration,range,actorvalue):
                 continue
             effect = [MGEFCode(name),magnitude,area,duration,range,ActorValue(actorvalue)]
-            semod = _coerce(semod, str, AllowNone=True)
+            semod = _coerce(semod, unicode, AllowNone=True)
             seobj = _coerce(seobj, int, 16, AllowNone=True)
             seschool = _coerce(seschool, int, AllowNone=True)
             sevisual = _coerce(sevisual, int, AllowNone=True)
             seflags = _coerce(seflags, int, AllowNone=True)
-            sename = _coerce(sename, str, AllowNone=True)
+            sename = _coerce(sename, unicode, AllowNone=True)
             if None in (semod,seobj,seschool,sevisual,seflags,sename):
                 effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
             else:
@@ -11696,14 +11700,14 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         aliases = self.aliases
         eid,full,weight,value,uses,iconPath,modPath,modb,smod,sobj = fields[:10]
         fields = fields[:10]
-        smod = _coerce(smod, str, AllowNone=True)
+        smod = _coerce(smod, unicode, AllowNone=True)
         if smod is None: sid = FormID(None,None)
         else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-        eid = _coerce(eid, str, AllowNone=True)
-        full = _coerce(full, str, AllowNone=True)
-        modPath = _coerce(modPath, str, AllowNone=True)
+        eid = _coerce(eid, unicode, AllowNone=True)
+        full = _coerce(full, unicode, AllowNone=True)
+        modPath = _coerce(modPath, unicode, AllowNone=True)
         modb = _coerce(modb, float)
-        iconPath = _coerce(iconPath, str, AllowNone=True)
+        iconPath = _coerce(iconPath, unicode, AllowNone=True)
         uses = _coerce(uses, int)
         value = _coerce(value, int)
         weight = _coerce(weight, float)
@@ -11719,7 +11723,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[:3]
                 fields = fields[3:]
-                modName = GPath(_coerce(modName,str))
+                modName = GPath(_coerce(modName,unicode))
                 longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
                 attrs = self.class_attrs[group]
                 if group == 'ALCH':
@@ -12169,16 +12173,16 @@ class SpellRecords(UsesEffectsMixin):
                 if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
                 fields = fields[8:]
-                group = _coerce(group, str)
-                if group.lower() != 'spel': continue
-                mmod = _coerce(mmod, str)
+                group = _coerce(group, unicode)
+                if group.lower() != u'spel': continue
+                mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
                 cost = _coerce(cost, int)
-                levelType = _coerce(levelType, str)
+                levelType = _coerce(levelType, unicode)
                 levelType = levelTypeName_Number.get(levelType.lower(),_coerce(levelType,int) or 0)
-                spellType = _coerce(spellType, str)
+                spellType = _coerce(spellType, unicode)
                 spellType = spellTypeName_Number.get(spellType.lower(),_coerce(spellType,int) or 0)
                 if not detailed or len(fields) < 7:
                     fid_stats[mid] = [eid,full,cost,levelType,spellType]
@@ -12298,16 +12302,16 @@ class CBash_SpellRecords(UsesEffectsMixin):
                 if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
                 fields = fields[8:]
-                group = _coerce(group, str)
-                if group.lower() != 'spel': continue
-                mmod = _coerce(mmod, str)
+                group = _coerce(group, unicode)
+                if group.lower() != u'spel': continue
+                mmod = _coerce(mmod, unicode)
                 mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
                 cost = _coerce(cost, int)
-                levelType = _coerce(levelType, str)
+                levelType = _coerce(levelType, unicode)
                 levelType = levelTypeName_Number.get(levelType.lower(),_coerce(levelType,int) or 0)
-                spellType = _coerce(spellType, str)
+                spellType = _coerce(spellType, unicode)
                 spellType = spellTypeName_Number.get(spellType.lower(),_coerce(spellType,int) or 0)
                 if not detailed or len(fields) < 7:
                     fid_stats[mid] = [eid,full,cost,levelType,spellType]
@@ -12426,16 +12430,16 @@ class IngredientDetails(UsesEffectsMixin):
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
-                mmod = _coerce(mmod, str)
+                mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-                smod = _coerce(smod, str, AllowNone=True)
+                smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = None
                 else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
-                modPath = _coerce(modPath, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
+                modPath = _coerce(modPath, unicode, AllowNone=True)
                 modb = _coerce(modb, float)
-                iconPath = _coerce(iconPath, str, AllowNone=True)
+                iconPath = _coerce(iconPath, unicode, AllowNone=True)
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
                 effects = self.readEffects(fields[11:], aliases, False)
@@ -12515,16 +12519,16 @@ class CBash_IngredientDetails(UsesEffectsMixin):
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
-                mmod = _coerce(mmod, str)
+                mmod = _coerce(mmod, unicode)
                 mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
-                smod = _coerce(smod, str, AllowNone=True)
+                smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = FormID(None,None)
                 else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
-                eid = _coerce(eid, str, AllowNone=True)
-                full = _coerce(full, str, AllowNone=True)
-                modPath = _coerce(modPath, str, AllowNone=True)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
+                modPath = _coerce(modPath, unicode, AllowNone=True)
                 modb = _coerce(modb, float)
-                iconPath = _coerce(iconPath, str, AllowNone=True)
+                iconPath = _coerce(iconPath, unicode, AllowNone=True)
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
                 effects = self.readEffects(fields[11:], aliases, True)
@@ -12542,7 +12546,8 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
 
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % header)
+            outWrite = out.wr
+            outWrite(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
                 eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
@@ -12552,7 +12557,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
                     output = altrowFormat % (fid[0],fid[1],eid,name,modpath,modb,iconpath,scriptfid[0],scriptfid[1],value,weight)
                 output += self.writeEffects(effects, True)
                 output += u'\n'
-                out.write(output)
+                outWrite(output)
 
 #------------------------------------------------------------------------------
 class ModDetails:
@@ -13811,7 +13816,7 @@ class PatchFile(ModFile):
         def updateClasses(type_classes,newClasses):
             if not newClasses: return
             for item in newClasses:
-                if not isinstance(item,str):
+                if not isinstance(item,basestring):
                     type_classes[item.classType] = item
                 elif item not in type_classes:
                     type_classes[item] = item
@@ -14624,7 +14629,7 @@ class ListPatcher(Patcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = self.__class__.autoKey
-        if isinstance(autoKey,(unicode,str)):
+        if isinstance(autoKey,basestring):
             autoKey = set((autoKey,))
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
@@ -14710,7 +14715,7 @@ class CBash_ListPatcher(CBash_Patcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = self.__class__.autoKey
-        if isinstance(autoKey,str):
+        if isinstance(autoKey,basestring):
             autoKey = set((autoKey,))
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
@@ -15858,7 +15863,7 @@ class GraphicsPatcher(ImportPatcher):
                 fid = record.fid
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
-                    if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
+                    if isinstance(record.__getattribute__(attr),basestring) and isinstance(value,basestring):
                         if record.__getattribute__(attr).lower() != value.lower():
                             break
                         continue
@@ -16085,7 +16090,7 @@ class ActorImporter(ImportPatcher):
                     fid = mapper(record.fid)
                     temp_id_data[fid] = dict()
                     for attr in attrs:
-                        if isinstance(attr, str):
+                        if isinstance(attr,basestring):
                             temp_id_data[fid][attr] = reduce(getattr, attr.split('.'), record)
                         elif isinstance(attr,(list,tuple,set)):
                             temp_id_data[fid][attr] = dict((subattr,reduce(getattr, subattr.split('.'), record)) for subattr in attr)
@@ -16107,7 +16112,7 @@ class ActorImporter(ImportPatcher):
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
-                            if isinstance(attr,str):
+                            if isinstance(attr,basestring):
                                 if value == reduce(getattr, attr.split('.'), record): continue
                                 else:
                                     if fid not in id_data: id_data[fid] = dict()
@@ -20047,8 +20052,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         self.inBold = False
         def replaceBold(mo):
             self.inBold = not self.inBold
-            str = u'<font face=3 color=%s>' % (u'444444',u'440000')[self.inBold]
-            return str
+            return u'<font face=3 color=%s>' % (u'440000' if self.inBold else u'444444')
         def replaceAlign(mo):
             return u'<div align=%s>' % align_text[mo.group(1)]
         for record in patchFile.BOOK.records:
@@ -20110,8 +20114,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         """Edits patch file as desired."""
         def replaceBold(mo):
             self.inBold = not self.inBold
-            str = u'<font face=3 color=%s>' % (u'444444',u'440000')[self.inBold]
-            return str
+            return u'<font face=3 color=%s>' % (u'440000' if self.inBold else u'444444')
         def replaceAlign(mo):
             return u'<div align=%s>' % align_text[mo.group(1)]
 
@@ -22939,7 +22942,7 @@ class GmstTweak(MultiTweakItem):
                 patchFile.GMST.setRecord(gmst)
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
-                if isinstance(self.choiceValues[self.chosen][0],(str,unicode)):
+                if isinstance(self.choiceValues[self.chosen][0],basestring):
                     log(u'* %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
                 else:
                     log(u'* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
@@ -23008,7 +23011,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         #--Log
         if len(self.choiceLabels) > 1:
             if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
-                if isinstance(self.values[0],(str,unicode)):
+                if isinstance(self.values[0],basestring):
                     log(u'  * %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
                 else:
                     log(u'  * %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
@@ -30014,7 +30017,7 @@ def initOptions(bashIni):
                     value = settingType(value)
                 compDefaultValue = defaultValue
                 compValue = value
-                if settingType is str:
+                if settingType in (str,unicode):
                     compDefaultValue = compDefaultValue.lower()
                     compValue = compValue.lower()
                     if compValue in (_(u'-option(s)'),_(u'tooltip text'),_(u'default')):
