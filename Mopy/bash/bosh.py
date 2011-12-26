@@ -9822,10 +9822,10 @@ class FactionRelations:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != '0x': continue
+                if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-                mmod = _coerce(mmod, str)
-                omod = _coerce(omod, str)
+                mmod = _coerce(mmod, unicode)
+                omod = _coerce(omod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
                 oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
                 disp = _coerce(disp, int)
@@ -9906,7 +9906,7 @@ class CBash_FactionRelations:
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
                 if modName in gotFactions: continue
-                if modFile == importFile:
+                if modName == importFile:
                     for record in modFile.FACT:
                         fid = record.fid
                         fid_eid[fid] = record.eid
@@ -9926,10 +9926,10 @@ class CBash_FactionRelations:
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != '0x': continue
+                if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-                mmod = _coerce(mmod, str)
-                omod = _coerce(omod, str)
+                mmod = _coerce(mmod, unicode)
+                omod = _coerce(omod, unicode)
                 mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
                 oid = FormID(GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
                 disp = _coerce(disp, int)
