@@ -11883,7 +11883,7 @@ class Mod_CopyModInfo(Link):
                 url = None
                 ma = bosh.reTesNexus.search(installer)
                 if ma and ma.group(2):
-                    url = u'http://www.tesnexus.com/downloads/file.php?id='+ma.group(2)
+                    url = bush.game.nexusUrl+u'downloads/file.php?id='+ma.group(2)
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
@@ -13165,15 +13165,16 @@ class Mod_FullNames_Import(Link):
         if not renamed:
             balt.showOk(self.window,_(u"No changes required."))
         else:
-            buff = StringIO.StringIO()
-            format = u'%s:   %s >> %s\n'
-            #buff.write(format % (_('Editor Id'),_('Name')))
-            for eid in sorted(renamed.keys()):
-                full,newFull = renamed[eid]
-                buff.write(format % (eid,full,newFull))
-            text = buff.getvalue()
-            buff.close()
-            balt.showLog(self.window,text,_(u'Objects Renamed'),icons=bashBlue)
+            with sio() as buff:
+                format = u'%s:   %s >> %s\n'
+                #buff.write(format % (_('Editor Id'),_('Name')))
+                for eid in sorted(renamed.keys()):
+                    full,newFull = renamed[eid]
+                    try:
+                        buff.write(format % (eid,full,newFull))
+                    except:
+                        print u'unicode error:', (format, eid, full, newFull)
+                balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Patch_Update(Link):

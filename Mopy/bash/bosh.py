@@ -10249,7 +10249,7 @@ class CBash_FullNames:
                     fid = record.fid
                     full = record.full
                     eid,newFull = fid_name.get(fid,(0,0))
-                    if newFull and newFull not in (full,'NO NAME'):
+                    if newFull and newFull not in (full,u'NO NAME'):
                         record.full = newFull
                         changed[eid] = (full,newFull)
             if changed: modFile.save()
@@ -10363,6 +10363,9 @@ class CBash_MapMarkers:
                 oldValues = [getattr(record, attr) for attr in attrs]
                 newValues = fid_markerdata[fid]
                 if oldValues == newValues:
+                    deprint(' ')
+                    deprint('oldValues:', oldValues)
+                    deprint('newValues:', newValues)
                     record.UnloadRecord()
                     continue
                 changed.append(oldValues[0]) #eid
@@ -10722,6 +10725,9 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
                 oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script,
                             record.uses, record.value, record.weight, record.effects_list]
                 if oldStats != newStats:
+                    deprint(' ')
+                    deprint('oldStats:', oldStats)
+                    deprint('newStats:', newStats)
                     changed.append(oldStats[0]) #eid
                     record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, effects = newStats
                     record.effects_list = effects
@@ -11979,7 +11985,7 @@ class CBash_ScriptText:
                     if not lines: continue
                     modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
                     scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs writes it in \r\n format.
-                    eid_data[ISTRING(eid)] = (ISTRING(scriptText), formID) #script text is case insensitive
+                    eid_data[IUNICODE(eid)] = (IUNICODE(scriptText), formID) #script text is case insensitive
         if eid_data: return True
         return False
 
@@ -12459,6 +12465,9 @@ class CBash_IngredientDetails(UsesEffectsMixin):
                 if not ValidateList(newStats, modFile): continue
                 oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
                 if oldStats != newStats:
+                    deprint(' ')
+                    deprint('oldStats:', oldStats)
+                    deprint('newStats:', newStats)
                     changed.append(oldStats[0]) #eid
                     record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, effects = newStats
                     record.effects_list = effects
