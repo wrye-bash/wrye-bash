@@ -3308,7 +3308,10 @@ class InstallersList(balt.Tank):
             if refreshNeeded:
                 self.data.refresh(what='I')
                 modList.RefreshUI()
-                iniList.RefreshUI()
+                if iniList is not None:
+                    # It will be None if the INI Edits Tab was hidden at startup,
+                    # and never initialized
+                    iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
 
