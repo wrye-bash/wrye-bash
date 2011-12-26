@@ -3793,10 +3793,24 @@ class Plugins:
                 # It wont accept filenames in any other encoding
                 try:
                     modName = reComment.sub('',line).strip()
-                    modName = _unicode(modName)
-                except UnicodeError:
-                    continue
-                if not modName: continue
+                    if not modName: continue
+                    test = _unicode(modName)
+                except UnicodeError: continue
+                if GPath(test) not in modInfos:
+                    # The automatic encoding detector could have returned
+                    # an encoding it actually wasn't.  Luckily, we
+                    # have a way to doulbe check: modInfos.data
+                    for encoding in bolt.encodingOrder:
+                        try:
+                            test2 = unicode(modName,encoding)
+                            if GPath(test2) not in modInfos:
+                                continue
+                            modName = test2
+                            break
+                        except UnicodeError:
+                            pass
+                    else:
+                        modName = test
                 modName = GPath(modName)
                 if modName in modNames: #--In case it's listed twice.
                     pass
