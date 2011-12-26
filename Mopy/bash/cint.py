@@ -417,7 +417,6 @@ class ICASEMixin:
             else: func = unicode.startswith
             if isinstance(other, tuple):
                 for value in other:
-                    if isinstance
                     if funct(self.lower(), value.lower(), *args):
                         return True
                 return False
