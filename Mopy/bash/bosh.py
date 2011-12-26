@@ -22091,6 +22091,94 @@ class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_TextlessLSCRs(MultiTweakItem):
+    """Sets light fade value when not set to 1.0."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"No Description Loading Screens"),
+            _(u"Removes the description from loading screens."),
+            u'NoDescLSCR',
+            (u'1.0',  u'1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('LSCR',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('LSCR',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.LSCR
+        for record in modFile.LSCR.getActiveRecords():
+            if record.text:
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.LSCR.records:
+            if record.text:
+                record.text = u''
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(u'=== '+_(u'No Description Loading Screens'))
+        log(u'* '+_(u'Loading screens tweaked: %d') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_AssortedTweak_TextlessLSCRs(CBash_MultiTweakItem):
+    """Remove light flickering for low end machines."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"No Description Loading Screens")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"No Description Loading Screens"),
+            _(u"Removes the description from loading screens."),
+            u'NoDescLSCR',
+            (u'1.0',  u'1.0'),
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['LSCR']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.text:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.text = u''
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+_(u'No Description Loading Screens'))
+        log(u'* '+_(u'Loading screens tweaked: %d') % sum(mod_count.values()))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -22138,6 +22226,7 @@ class AssortedTweaker(MultiTweaker):
         AssortedTweak_FactioncrimeGoldMultiplier(),
         AssortedTweak_LightFadeValueFix(),
         AssortedTweak_SkyrimStyleWeapons(),
+        AssortedTweak_TextlessLSCRs(),
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -22214,6 +22303,7 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
         CBash_AssortedTweak_LightFadeValueFix(),
         CBash_AssortedTweak_SkyrimStyleWeapons(),
+        CBash_AssortedTweak_TextlessLSCRs(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
