@@ -413,6 +413,7 @@ settingDefaults = {
     'bash.installers.skipLandscapeLODTextures':False,
     'bash.installers.skipLandscapeLODNormals':False,
     'bash.installers.allowOBSEPlugins':True,
+    'bash.installers.renameStrings':True,
     'bash.installers.sortProjects':False,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,
@@ -8679,6 +8680,16 @@ class Installers_SkipOBSEPlugins(Installers_Skip):
         menu.AppendItem(menuItem)
         menuItem.Check(not settings[self.key])
         bosh.installersWindow = self.gTank
+
+#------------------------------------------------------------------------------
+class Installers_RenameStrings(Installers_Skip):
+    """Toggle auto-renaming of .STRINGS files"""
+    def __init__(self):
+        if bush.game.esp.stringsFiles:
+            BoolLink.__init__(self,
+                              _(u'Auto-name String Translation Files'),
+                              'bash.installers.renameStrings',
+                              )
 
 #------------------------------------------------------------------------------
 class Installers_SortActive(BoolLink):
@@ -17249,6 +17260,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODNormals())
+    InstallersPanel.mainMenu.append(Installers_RenameStrings())
 
     #--Item links
     #--File
