@@ -43,6 +43,7 @@ import bush
 import bosh
 import bolt
 import barb
+import bass
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
@@ -63,6 +64,7 @@ import sys
 import textwrap
 import time
 import subprocess
+import locale
 from types import *
 from operator import attrgetter,itemgetter
 
@@ -10699,11 +10701,7 @@ class Mods_DumpTranslator(Link):
                    )
         if not balt.askContinue(self.window,message,'bash.dumpTranslator.continue',_(u'Dump Translator')):
             return
-        import bass
-        language = bass.language
-        if not language:
-            import locale
-            language = locale.getlocale()[0].split('_',1)[0]
+        language = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         outPath = bosh.dirs['l10n']
         files = [GPath(u'bash').join(x+u'.py').s for x in (u'bolt',
                                                            u'balt',
@@ -11125,6 +11123,7 @@ class Settings_CheckForUpdates(Link):
         if msg:
             if balt.askYes(self.window,msg,title):
                 os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+unicode(WBFileId))
+
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
     """Handle hiding/unhiding tabs."""
@@ -11221,6 +11220,63 @@ class Settings_StatusBar_ShowVersions(Link):
         if settings['bash.obse.on']:
             for button in App_Button.obseButtons:
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
+
+#------------------------------------------------------------------------------
+class Settings_Languages(Link):
+    """Menu for available Languages."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        languages = []
+        for file in bosh.dirs['l10n'].list():
+            if file.cext == u'.txt':
+                languages.append(file.body)
+        if languages:
+            subMenu = wx.Menu()
+            menu.AppendMenu(self.id,_(u'Language'),subMenu)
+            for language in languages:
+                Settings_Language(language.s).AppendToMenu(subMenu,window,data)
+            if bolt.Path('english') not in languages:
+                Settings_Language('English').AppendToMenu(subMenu,window,data)
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_(u'Language'))
+            menu.AppendItem(menuItem)
+            menuItem.Enable(False)
+
+#------------------------------------------------------------------------------
+class Settings_Language(Link):
+    """Specific language for Wrye Bash."""
+    languageMap = {
+        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
+        u'de': _('German') + u' (Deutsch)',
+        u'pt_opt': _('Portuguese') + u' (português)',
+        u'italian': _('Italian') + u' (italiano)',
+        u'russian': _('Russian') + u' (русский язык, russkiy yazyk)',
+        u'english': _('English') + u' (English)',
+        }
+        
+    def __init__(self,language):
+        Link.__init__(self)
+        self.language = language
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        label = self.__class__.languageMap.get(self.language.lower(),self.language)
+        menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO)
+        menu.AppendItem(menuItem)
+        bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+        if self.language == bassLang:
+            menuItem.Check(True)
+
+    def Execute(self,event):
+        if balt.askYes(bashFrame,
+                       _('Wrye Bash needs to restart to change languages.  Do you want to restart?'),
+                       _('Restart Wrye Bash')):
+            global appRestart
+            if '--Language' in sys.argv:
+                appRestart = ('--Language',self.language)
+            else:
+                appRestart = ('-L',self.language)
+            bashFrame.Close(True)
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
@@ -17750,6 +17806,7 @@ def InitSettingsLinks():
         SettingsMenu.append(sbMenu)
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Settings_CheckForUpdates())
+    SettingsMenu.append(Settings_Languages())
 
 def InitLinks():
     """Call other link initializers."""
