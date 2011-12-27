@@ -10415,9 +10415,6 @@ class CBash_MapMarkers:
                 oldValues = [getattr(record, attr) for attr in attrs]
                 newValues = fid_markerdata[fid]
                 if oldValues == newValues:
-                    deprint(' ')
-                    deprint('oldValues:', oldValues)
-                    deprint('newValues:', newValues)
                     record.UnloadRecord()
                     continue
                 changed.append(oldValues[0]) #eid
@@ -10779,9 +10776,6 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
                 oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script,
                             record.uses, record.value, record.weight, record.effects_list]
                 if oldStats != newStats:
-                    deprint(' ')
-                    deprint('oldStats:', oldStats)
-                    deprint('newStats:', newStats)
                     changed.append(oldStats[0]) #eid
                     record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.uses, record.value, record.weight, effects = newStats
                     record.effects_list = effects
@@ -12520,9 +12514,6 @@ class CBash_IngredientDetails(UsesEffectsMixin):
                 if not ValidateList(newStats, modFile): continue
                 oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
                 if oldStats != newStats:
-                    deprint(' ')
-                    deprint('oldStats:', oldStats)
-                    deprint('newStats:', newStats)
                     changed.append(oldStats[0]) #eid
                     record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, effects = newStats
                     record.effects_list = effects
