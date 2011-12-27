@@ -20914,7 +20914,7 @@ class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'=== '+_(u'Reweigh: Arrows'))
-        log(_u('Arrows set to maximum weight of %f') % self.choiceValues[self.chosen][0])
+        log(_(u'Arrows set to maximum weight of %f') % self.choiceValues[self.chosen][0])
         log(u'* '+_(u'Arrows Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
