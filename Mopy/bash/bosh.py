@@ -7076,6 +7076,7 @@ class Installer(object):
             skipLandscapeLODMeshes = False
             skipLandscapeLODTextures = False
             skipLandscapeLODNormals = False
+            renameStrings = False
         else:
             skipVoices = self.skipVoices
             skipEspmVoices = set(x.cs for x in espmNots)
@@ -7086,6 +7087,8 @@ class Installer(object):
             skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
+            renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
+        language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         skipObse = not settings['bash.installers.allowOBSEPlugins']
         obseDir = bush.game.se.shortName.lower()+u'\\'
         hasExtraData = self.hasExtraData
@@ -7266,10 +7269,22 @@ class Installer(object):
                 farPos = file.find(u'\\',12)
                 if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
                     continue
-            #--Remap docs
+            #--Remap docs, strings
             dest = file
             if rootLower in docDirs:
                 dest = u'Docs\\'+file[len(rootLower)+1:]
+            elif (renameStrings and fileStartsWith(u'strings\\') and
+                  fileExt in (u'.strings',u'.dlstrings',u'.ilstrings')):
+                langSep = fileLower.rfind(u'_')
+                extSep = fileLower.rfind(u'.')
+                lang = fileLower[langSep+1:extSep]
+                if lang != language.lower():
+                    dest = file[:langSep]+u'_'+language+file[extSep:]
+                    # Check to ensure not overriding an already provided
+                    # language file for that language
+                    key = GPath(dest)
+                    if key in data_sizeCrc:
+                        dest = file
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
