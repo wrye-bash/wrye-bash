@@ -404,9 +404,20 @@ def main():
     else:
         app = basher.BashApp()
 
-    if sys.version[0:3] < u'2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
+    import wx
+    wxver = wx.version()
+    if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
+        # Can't use translatable strings, because they'd most likely end up being in unicode!
+        if not balt.askYes(None,
+            'Warning: you appear to be using a non-unicode version of wxPython (%s).  This will cause problems!  It is highly recommended you use a unicode version of wxPython instead.  Do you still want to run Wrye Bash?'
+            % wxver,
+            'Warning: Non-Unicode wxPython detected',
+            ):
+            return
+    sysVersion = (sys.version_info[0],sys.version_info[1],sys.version_info[2])
+    if sysVersion < (2,6): #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
-        if sys.version[0:3] == u'2.5':
+        if sysVersion[:2] == (2,5):
             run = balt.askYes(None,
                               _(u"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur.  Updating to Python 2.7x is recommended but not imperative.  Do you still want to run Wrye Bash right now?"),
                               _(u"Warning OLD Python version detected")
