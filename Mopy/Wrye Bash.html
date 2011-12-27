@@ -44,7 +44,7 @@
 <h3><a id='Contents'>Contents</a></h3>
 <p class="list-1">&bull;&nbsp; <a href="#Installation">Installation</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#GetandInstall">Get and Install</a></p>
-<p class="list-2">&bull;&nbsp; <a href="#WindowsVista7">Windows Vista/7</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#WindowsVista7andlater">Windows Vista/7 and later</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#StartingWryeBash">Starting Wrye Bash</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#IfBashWontStart"><span style="color:red;">If Bash Won't Start</span></a></p>
 <p class="list-2">&bull;&nbsp; <a href="#CommonProblems">Common Problems</a></p>
@@ -334,36 +334,53 @@
 <p class="empty">&nbsp;</p>
 <h2><a id='Installation'>Installation</a></h2>
 <h3><a id='GetandInstall'>Get and Install</a></h3>
-<p class="list-1">&bull;&nbsp;  <b>Download and run Wrye Python (<a href="http://tesnexus.com/downloads/file.php?id=22368">TESNexus</a>)</b></p>
-  <p class="list-2">&bull;&nbsp;  Install all components. It's best to accept the default settings for each installer.</p>
-  <p class="list-2">&bull;&nbsp;  <b>Note:</b> This is not part of Wrye Bash itself &#150; rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see <a href="#PythonComponents">Python Components</a>.</p>
-<p class="list-1">&bull;&nbsp;  <b>Download and Unzip (<a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Bash XXX.zip</a>) or Install (<a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Bash XXX.exe</a>)</b></p>
-  <p class="list-2">&bull;&nbsp;  For the manual archive installation, unzip the files <i>into your Oblivion installation directory.</i> If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy.</p>
+<p class="list-1">&bull;&nbsp;  <b>Download and run Wrye Bash XXX - Installer (<a href="http://tesnexus.com/downloads/file.php?id=22368">TESNexus</a> | <a href="http://www.skyrimnexus.com/downloads/file.php?id=1840">Skyrim Nexus</a>)</b></p>
+  <p class="list-2">&bull;&nbsp;  If you choose to install the Python version, this will check for the required dependancies.  If required, it will prompt you to allow it to download and install any missing dependancies.</p>
+  <p class="list-2">&bull;&nbsp;  If you choose to install the Standalone version (default), this will check for the required MSVC Runtime.  If missing, it will prompt you to allow it to download and install the missing dependancy.</p>
+<p class="list-1">&bull;&nbsp;  <b>Manually installing Python (source code) version of Wrye Bash:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>Download and run (<a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Python XX</a>)</b></p>
+    <p class="list-3">&bull;&nbsp;  Install all components. It's best to accept the default settings for each installer.</p>
+    <p class="list-3">&bull;&nbsp;  <b>Note:</b> This is not part of Wrye Bash itself &#150; rather it is a bundled installation of Python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see <a href="#PythonComponents">Python Components</a>.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Download and Unzip (<a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Bash XXX - Python Source.7z</a>) or Install via the Installer.</b></p>
+  <p class="list-2">&bull;&nbsp;  For the manual archive installation, unzip the files <i>into your game installation directory.</i> If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skryim\Mopy.</p>
   <p class="list-2">&bull;&nbsp;  Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.</p>
+<p class="list-1">&bull;&nbsp;  <b>Manually installing the Standalone (default) version of Wrye Bash:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>Download and unzip (<a href="http://tesnexus.com/downloads/file.php?id=22368">Wrye Bash XXX - Standalone Executable.7z</a>) or Install via the Installer.</b></p>
+  <p class="list-2">&bull;&nbsp;  For the manual archive installation, unzip the files <i>into your game installation directory.</i> If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skyrim\Mopy.</p>
+  <p class="list-2">&bull;&nbsp;  Note: This is the actual Wrye Bash application.  It is comprised of the source files bundled together with an internal Python interpreter.</p>
 <p class="list-1">&bull;&nbsp;  <b>Upgrading</b></p>
-  <p class="list-2">&bull;&nbsp;  If you're upgrading from an older version of Wrye bash, then just get the latest Wrye Bash XXX.zip or Wrye Bash XXX.exe file from TesNexus and install it. There's no need to remove anything or reinstall any python components.</p>
+  <p class="list-2">&bull;&nbsp;  If you're upgrading from an older version of Wrye bash, then just get the latest Wrye Bash XXX.zip or Wrye Bash XXX.exe file from TesNexus and install it. There's no need to remove anything or reinstall any Python components.</p>
 <p class="list-1">&bull;&nbsp;  <b>Advanced:</b></p>
-  <p class="list-2">&bull;&nbsp;  You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the <a href="#StartingWryeBash">OblivionPath</a> option.</p>
+  <p class="list-2">&bull;&nbsp;  You can place the "\Mopy\" folders outside of the game directory.  Wrye Bash will attempt to detect where your games are installed to, but you may have to set the <a href="#StartingWryeBash">Game Path</a> option.</p>
     <p class="list-3">&bull;&nbsp;  This will probably only be useful for Bash developers (latest stable release in Oblivion directory + development version outside = my life is easier).</p>
     <p class="list-3">&bull;&nbsp;  May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).</p>
     <p class="list-3">&bull;&nbsp;  Remember when upgrading to install the "Data" folder to "\Oblivion\" and the "Mopy" folder to wherever you have it now</p>
     <p class="empty">&nbsp;</p>
-<h3><a id='WindowsVista7'>Windows Vista/7</a></h3>
-<p class="list-1">&bull;&nbsp;  On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).</p>
-<p class="list-1">&bull;&nbsp;  <i><b>Best Solution:</b></i> Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to c:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.</p>
-<p class="list-1">&bull;&nbsp;  <i><b>Alternate Solutions:</b></i> Alternatively, you might always run as admin, or turn off UAC &#150; but both of those approaches are ill-advised. For more advice, see the <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help">Unofficial Help</a> page at UESP.</p>
+<h3><a id='WindowsVista7andlater'>Windows Vista/7 and later</a></h3>
+<p class="list-1">&bull;&nbsp;  On Windows Vista and later, the UAC (User Account Control) protects the Program Files directory (usually C:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).</p>
+<p class="list-1">&bull;&nbsp;  <i><b>Best Solution:</b></i> Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to C:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.</p>
+<p class="list-1">&bull;&nbsp;  <i><b>Alternate Solution:</b></i></p>
+  <p class="list-2">&bull;&nbsp;  Change the file permissions on your game directory, granting 'Full' privelages to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.</p>
+<p class="list-1">&bull;&nbsp;  <i><b>Other solutions (not recommended):</b></i></p>
+  <p class="list-2">&bull;&nbsp;  Always run as full admin: To do this, for the Standalone, right click on Wrye Bash.exe and select 'Run as Admin'.</p>
+  <p class="list-2">&bull;&nbsp;  Disable UAC: Do this via the Windows Control Panel.</p>
+  <p class="list-2">&bull;&nbsp;  Both of these approaches significantly reduce the security of your computer, and so are not recommened.</p>
+<p class="list-1">&bull;&nbsp;  For more advice, see the <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help">Unofficial Help</a> page at UESP.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='StartingWryeBash'>Starting Wrye Bash</a></h3>
 <p class="list-1">&bull;&nbsp;  <i><b>Double click</b></i> the "Wrye Bash Launcher.pyw" file.</p>
 <p class="list-1">&bull;&nbsp;  Launching from another location:</p>
   <p class="list-2">&bull;&nbsp;  You can drag "Wrye Bash Launcher" to your Quick Launch toolbar. OR...</p>
   <p class="list-2">&bull;&nbsp;  In Explorer, copy "Wrye Bash Launcher", then go to the other location and use "Paste Shortcut".</p>
-<p class="list-1">&bull;&nbsp;  Advanced: You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the OblivionPath through "bash.ini" or the -o argument.</p>
+<p class="list-1">&bull;&nbsp;  Advanced: You can place the "\Mopy\" folders outside of the game directory, but you may need to set the game or game path via the -g or -o.</p>
   <p class="list-2">&bull;&nbsp;  bash.ini:</p>
     <p class="list-3">&bull;&nbsp;  See "bash_default.ini" for full instructions - look for <b>sOblivionPath</b> under <b>General</b>.</p>
   <p class="list-2">&bull;&nbsp;  -o Argument:</p>
     <p class="list-3">&bull;&nbsp;  <b>Type:</b> <code>"Wrye Bash Launcher.pyw" -o "C:\\Games\\Oblivion\\"</code></p>
     <p class="list-3">&bull;&nbsp;  Note that Python treats the back-slash <code>\</code> as an escape character... even from the command prompt.</p>
+  <p class="list-2">&bull;&nbsp;  -g Argument:</p>
+    <p class="list-3">&bull;&nbsp;  <b>Type:</b> <code>"Wrye Bash Launcher.pyw" -g oblivion</code></p>
+    <p class="list-3">&bull;&nbsp;  This will try to determine the location of your Oblivion install, and manage it.</p>
     <p class="empty">&nbsp;</p>
 <h3><a id='IfBashWontStart'><span style="color:red;">If Bash Won't Start</span></a></h3>
 <p class="list-1">&bull;&nbsp;  <i><b>If Bash refuses to start, or quits after quickly flashing up a window...</b></i></p>
@@ -373,15 +390,14 @@
   <p class="list-2">&bull;&nbsp;  Sometimes the error will be written to a file in the Mopy directory called <b>bash.log</b>. If that file is there, then that's the bug dump. You can open it with any text editor.</p>
   <p class="list-2">&bull;&nbsp;  If it's not present, then you'll have to generate the bug dump yourself...</p>
 <p class="list-1">&bull;&nbsp;  <b>Generating the Bugdump</b></p>
-  <p class="list-2">&bull;&nbsp;  Open a command shell (Start: Programs: Accessories: Command Prompt).</p>
-  <p class="list-2">&bull;&nbsp;  <b>chdir</b> to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code></p>
-  <p class="list-2">&bull;&nbsp;  <b>Type:</b> <code>"Wrye Bash Debug.py" -d</code></p>
-    <p class="list-3">&bull;&nbsp;  This requires that the file associations for .pyw files is set in windows.  If it is not, you can try the old way:</p>
-    <p class="list-3">&nbsp;&nbsp;  <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code></p>
-    <p class="list-3">&nbsp;&nbsp;  Note that this is assuming you have installed Python 2.7 to the default directory.  Make sure you use the correct path to python.exe</p>
-  <p class="list-2">&bull;&nbsp;  Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.</p>
-  <p class="list-2">&bull;&nbsp;  If there is too much text printed to the console, you can direct it to a text file like this:</p>
-  <p class="list-2">&nbsp;&nbsp;  <code>"Wrye Bash Debug.py" -d > bugdump.txt</code></p>
+  <p class="list-2">&bull;&nbsp;  Easy method (usually works):</p>
+    <p class="list-3">&bull;&nbsp;  Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguements to dump all errors to "BashBugDump.log"</p>
+  <p class="list-2">&bull;&nbsp;  Manual method (if the Batch file doesn't work):</p>
+    <p class="list-3">&bull;&nbsp;  Open a command shell (Start: Programs: Accessories: Command Prompt).</p>
+    <p class="list-3">&bull;&nbsp;  <b>chdir</b> to your Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code></p>
+    <p class="list-3">&bull;&nbsp;  <b>Type:</b> <code>"C:\Python27\python.exe" "Wrye Bash Launcher.pyw" -d >BashBugDump.log 2>$1</code></p>
+      <p class="list-4">&nbsp;&nbsp;  Note that this is assuming you have installed Python 2.7 to the default directory.  Make sure you use the correct path to python.exe</p>
+  <p class="list-2">&bull;&nbsp;  Doing this will cause any error messages that Bash generates to be written to the BashBugDump.log file.</p>
 <p class="list-1">&bull;&nbsp;  <b>Dealing with Bugdump</b></p>
   <p class="list-2">&bull;&nbsp;  First, <i><b>look at it!</b></i> &#150; especially the last several lines &#150; this will often give you a good clue as to what the problem is, and you may be able to resolve it on your own.</p>
   <p class="list-2">&bull;&nbsp;  Second, see following section for common problems and their solution.</p>
@@ -390,10 +406,10 @@
 <p class="list-1">&bull;&nbsp;  <b>Can't find bash.py</b></p>
   <p class="list-2">&bull;&nbsp;  Make sure that you chdir to the Mopy directory first.</p>
 <p class="list-1">&bull;&nbsp;  <b>Can't Find User Directory</b></p>
-  <p class="list-2">&bull;&nbsp;  The problem here is that python is not very good at getting the user directories. There are two options here.</p>
-  <p class="list-2">&bull;&nbsp;  This used to be semi-common problem but should not be an issue for users who have pywin32 installed. (PyWin32 is included in the Wrye Python installer.)</p>
+  <p class="list-2">&bull;&nbsp;  The problem here is that Python is not very good at getting the user directories. There are two options here.</p>
+  <p class="list-2">&bull;&nbsp;  This used to be semi-common problem but should not be an issue for users who have PyWin32 installed. (PyWin32 is included in the Wrye Python installer.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Can't Find wxversion</b></p>
-  <p class="list-2">&bull;&nbsp;  I don't understand the source of the problem, but it has something to do with the way python is installed. The solution seems to be to reinstall python and wxpython in that order. (You may have to first uninstall both of them.)</p>
+  <p class="list-2">&bull;&nbsp;  I don't understand the source of the problem, but it has something to do with the way Python is installed. The solution seems to be to reinstall Python and wxPython in that order. (You may have to first uninstall both of them.)</p>
 <p class="list-1">&bull;&nbsp;  <b>no module named wx</b></p>
   <p class="list-2">&bull;&nbsp;  You haven't installed wxPython or you haven't installed it in the right place.</p>
   <p class="list-2">&bull;&nbsp;  Be sure that you actually installed (not just downloaded) wxPython.</p>
@@ -404,11 +420,8 @@
   <p class="list-2">&bull;&nbsp;  The very first time you run Bash after installing ComTypes, you may get a popup with six lines similar to: <code># Generating comtypes.gen.stdole</code></p>
   <p class="list-2">&bull;&nbsp;  Close the popup and ignore it. It shouldn't appear again unless you reinstall ComTypes.</p>
 <p class="list-1">&bull;&nbsp;  <b>UNCommon Problems</b></p>
-  <p class="list-2">&bull;&nbsp;  If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump. Preferably, you should post the dump in the <i><b>Relz/Help</b></i> topic (see <a href="#WryeBash">Discussion</a> link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.</p>
-  <p class="list-2">&bull;&nbsp;  <i><b>Hint:</b></i> Control-C does not work in the command line window, but you can still copy text from it by:</p>
-    <p class="list-3">&bull;&nbsp;  Right click and select "Select All" to selecting the text,</p>
-    <p class="list-3">&bull;&nbsp;  Hitting the <b>Enter</b> key.</p>
-    <p class="empty">&nbsp;</p>
+  <p class="list-2">&bull;&nbsp;  If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump (in spoiler and code tags please - code tags preseves the formatting, spoiler tags makes it take up less space). Preferably, you should post the dump in the <i><b>Relz/Help</b></i> topic (see <a href="#WryeBash">Discussion</a> link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.</p>
+  <p class="empty">&nbsp;</p>
 <h3><a id='PythonComponents'>Python Components</a></h3>
 <p class="list-1">&bull;&nbsp;  If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.</p>
 <p class="list-1">&bull;&nbsp;  If uninstalling old Python and Python addon versions (recommended) make sure to uninstall all of them starting with the addons via the control panel->Add/Remove Programs or Programs &amp; Features.</p>
@@ -416,17 +429,20 @@
   <p class="list-2">&bull;&nbsp;  <b>Python 2.7</b></p>
     <p class="list-3">&bull;&nbsp;  This is the main install for <a href="http://www.python.org/">Python</a>. It provides the base interpreter/compiler and the basic libraries.</p>
     <p class="list-3">&bull;&nbsp;  Download link: <b>Python [ <a href="http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi">Python 2.7.2</a> ]</b></p>
-  <p class="list-2">&bull;&nbsp;  <b>wxPython 2.8.12.0 ANSI</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>wxPython 2.8.12.1 Unicode</b></p>
     <p class="list-3">&bull;&nbsp;  Python supports several different GUI libraries. Wrye Bash uses <a href="http://www.wxpython.org/">wxPython</a>.</p>
-    <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe">wxPython 2.8.12.0 ansi for Python 2.7</a> ]</b></p>
+    <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.0 ansi for Python 2.7</a> ]</b></p>
   <p class="list-2">&bull;&nbsp;  <b>PyWin32</b></p>
-    <p class="list-3">&bull;&nbsp;  Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards, so it is required for Wizards to function.</p>
+    <p class="list-3">&bull;&nbsp;  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.  Wrye Bash also uses this module to display HTML files.</p>
     <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download">PyWin32 216 for Python 2.7</a> ]</b></p>
   <p class="list-2">&bull;&nbsp;  <b>ComTypes 0.6.2</b></p>
     <p class="list-3">&bull;&nbsp;  Optional component (for the PM Archives Tab).  If <a href="http://starship.python.net/crew/theller/comtypes/">ComTypes</a> is not installed, the PM Archives tab will not be visible.</p>
     <p class="list-3">&bull;&nbsp;  Download link:  <b>[ <a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">comtypes 0.6.2 for Python (all versions)</a> ]</b></p>
 <p class="list-1">&bull;&nbsp;  <b>Alternate Python Installations</b></p>
-  <p class="list-2">&bull;&nbsp;  Alternate python installations <i>might</i> work, however no guarantee is made. Currently (and for the foreseeable future), Python 2.7, wxPython 2.8.12.0, etc. are the preferred versions.</p>
+  <p class="list-2">&bull;&nbsp;  Python 2.6 <i>might</i> work, however as Wrye Bash is being developed with Python 2.7, it's very likely that new features not supported by Python 2.6 are being used.</p>
+  <p class="list-2">&bull;&nbsp;  Python 2.5 or less: Not supported.</p>
+  <p class="list-2">&bull;&nbsp;  Python 3.x: Not supported.</p>
+  <p class="list-2">&bull;&nbsp;  wxPython: an earlier version of wxPython 2.8 <i>might</i> work, but the Unicode version <i>is</i> required.</p>
   <p class="empty">&nbsp;</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='Help'>Help!</a></h2>
@@ -2671,36 +2687,67 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="empty">&nbsp;</p>
 <h2><a id='Extending'>Extending</a></h2>
 <h3><a id='Internationalization'>Internationalization</a></h3>
-<p>Bash now supports localization for most? western languages (translation of program strings to local language). It still probably does not support non-roman character sets (Cyrillic, Arabic, Asian languages, etc.). Since you're looking here, I'm assuming that you're trying to add translations for your language. Here's how:
+<p>Bash now supports localization for most? western languages (translation of program strings to local language). Since you're looking here, I'm assuming that you're trying to add translations for your language. Here's how:
 </p>
 <p class="list-1">&bull;&nbsp;  <i><b>Custom Program Strings</b></i></p>
-  <p class="list-2">&bull;&nbsp;  Custom program strings are translated from lookup files that you'll find in the <code>Mopy\Data</code>. E.g., for English, it would be <code>Mopy\Data\English.pkl</code>. (Of course, the program is already in English, so this isn't needed.)</p>
-  <p class="list-2">&bull;&nbsp;  These pkl files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\Data\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this &#150; once someone does the txt files for a language, they can redistribute them to other people &#150; including me, so that I can include them in next Bash release.</p>
+  <p class="list-2">&bull;&nbsp;  Custom program strings are translated from lookup files that you'll find in the <code>Mopy\bash\l10n</code>. E.g., for English, it would be <code>Mopy\bash\l10n\English.mo</code>. (Of course, the program is already in English, so this isn't needed.)</p>
+  <p class="list-2">&bull;&nbsp;  These .mo files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\bash\l10n\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this &#150; once someone does the txt files for a language, they can redistribute them to other people &#150; including me, so that I can include them in next Bash release.</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Generating the Translation</b></i></p>
 <p class="list-1">&nbsp;&nbsp;  To begin translating, or update an existing translation file...</p>
   <p class="list-2">&bull;&nbsp;  Go to Mods tab, right click on <i><b>File</b></i> column header and select <i><b>Dump Translator</b></i> from the popup menu.</p>
-  <p class="list-2">&bull;&nbsp;  This will generate a new version of the translator file for your locale. It will be named appropriately (except for the leading "NEW") and will contain any translations that have already been done.</p>
+  <p class="list-2">&bull;&nbsp;  This will generate a new version of the translator file for your locale. It will be named appropriately (except for with a trailing "NEW") and will contain any translations that have already been done.</p>
   <p class="list-2">&bull;&nbsp;  Delete the old translator text file, and rename the new one to replace it.</p>
   <p class="list-2">&bull;&nbsp;  Edit the new translator file, adding translations to replace any that are missing or incorrect.</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Translation Tips</b></i></p>
-  <p class="list-2">&bull;&nbsp;  Here's part of the a translator file:</p>
+  <p class="list-2">&bull;&nbsp;  Here's the start of a new translator file:</p>
 <pre>
-=== basher.py, 3711
-Active profile cannot be removed.
->>>>
-
-=== basher.py, 3717
-Delete profile %s and the %d save files it contains?
->>>>
-DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
-
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2011-12-18 18:26+Alaskan Standard Time\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
 </pre>
+  <p class="list-2">&nbsp;&nbsp;  The important bit here you <i><b>must</b></i> change is: <code>"Content-Type: text/plain; charset=CHARSET\n"</code>.  Change <code>CHARSET<code> to the Unicode codepage that your language is in.  This will be the same encoding that you save the txt file in.  For example, the Russian translation uses "koi8-r" or "cp1251" (both are different names for the same codepage).</p>
+  <p class="empty">&nbsp;</p>
+  <p class="list-2">&bull;&nbsp;  Here's part of a translator file:</p>
+<pre>
+#: bash\bolt.py:734
+msgid "Argument is out of allowed ranged of values"
+msgstr "юПЦСЛЕМР ОПЕБШЯХК ДНОСЯРХЛНЕ ГМЮВЕМХЕ"
+</pre>
+  <p class="empty">&nbsp;</p>
   <p class="list-2">&bull;&nbsp;  Each entry begins with the source file and the line number (in case this helps you figure out how to translate the code).</p>
-  <p class="list-2">&bull;&nbsp;  After that is the original text, then a <code>>>>></code> dividing line, then the translated text. Here, the second entry has been translated, while the first has not. (Here the "translation" consists of changing it to upper case.</p>
-  <p class="list-2">&bull;&nbsp;  It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X \n</code>. The '%' strings are place holders where file names, counts, etc. are entered &#150; if they're not present, Bash will throw an exception. The \n combinations are newline characters &#150; I use them in dialogs and other places where I want line breaks.</p>
-  <p class="list-2">&bull;&nbsp;  In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> &#150; this is the name of the Mods tab. And right under it is the name of the Saves tab.</p>
-  <p class="list-2">&bull;&nbsp;  To test your translations, just save your changes to the text file, and restart Bash. Your changes should appear immediately.</p>
-  <p class="list-2">&bull;&nbsp;  Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)</p>
+  <p class="list-2">&bull;&nbsp;  After that is the <b>msgid</b> entry: This is the original text, in quotes.</p>
+    <p class="list-3">&bull;&nbsp;  If you see something strange, like:</p>
+<pre>
+#: bash\bolt.py:734
+msgid "Argument is out"
+""
+"of allowed ranged of values"
+</pre>
+    <p class="list-3">&nbsp;&nbsp;  it means that some newline characters got into the strings.  Please report these, so we can take them out (it makes it easier to translate).</p>
+  <p class="list-2">&bull;&nbsp;  Next is the <b>msgstr</b> entry: This is the translated text, in quotes.  In this example, the string has been translated to Russian.</p>
+  <p class="list-2">&bull;&nbsp;  It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X</code>. The '%' strings are place holders where file names, counts, etc. are entered &#150; if they're not present, Bash will throw an exception.</p>
+    <p class="list-3">&bull;&nbsp;  In the future, these will be updated to be <b>named formating characters</b>, which look like <code> %(filename)s %(number)d %(formId)08X</code>.  With these, you must keep the same number and names of the placeholders, but you are free to rearrange them as necessary for your translation.</p>
+  <p class="list-2">&bull;&nbsp;  Some special characters have to be "escaped".  This means, they follow a backslash character.  When translating, these still need to be escaped (if you use them in the translation).  Here's some escaped characters:</p>
+<pre>
+\"
+\t
+\\
+</pre>
+  <p class="list-2">&bull;&nbsp;  In translating, I would suggest that you translate the strings that you see the most first.</p>
+  <p class="list-2">&bull;&nbsp;  To test your translations, just save your changes to the text file, then select the language from the Settings->Language menu.  If your changes don't show up, it's possible there is an error in your translation file.  To check for this, generate a bugdump using your language file.  If you need help interpretting the output, just post it on the latest official thread.</p>
+  <p class="list-2">&bull;&nbsp;  Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the .mo file.)</p>
   <p class="list-2">&bull;&nbsp;  Spell checking: If you're using an office suite, you might want to turn on dictionaries for both English and your language &#150; Abot mentions that Open Office allows you to do this.</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='Versions'>Versions</a></h2>
