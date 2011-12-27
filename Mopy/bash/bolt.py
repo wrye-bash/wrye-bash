@@ -2828,6 +2828,7 @@ class WryeText:
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
+            line = line.replace('\r\n','\n')
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:
@@ -2840,7 +2841,7 @@ class WryeText:
                         except:
                             pass
                         outLinesExtend(codeboxLines)
-                        outLinesAppend(u'</pre>')
+                        outLinesAppend(u'</pre>\n')
                         codeboxLines = None
                         continue
                     else:
