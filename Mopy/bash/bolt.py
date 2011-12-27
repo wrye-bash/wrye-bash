@@ -949,7 +949,7 @@ def GPath(name):
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
     elif isinstance(name,unicode): norm = os.path.normpath(name)
-    else: norm = os.path.normpath(unicode(name))
+    else: norm = os.path.normpath(_unicode(name))
     path = _gpaths.get(norm)
     if path is not None: return path
     else: return _gpaths.setdefault(norm,Path(norm))
@@ -967,7 +967,7 @@ class Path(object):
     def get(name):
         """Returns path object for specified name/path."""
         if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(unicode(name))
+        elif isinstance(name,str): norm = os.path.normpath(_unicode(name))
         else: norm = os.path.normpath(name)
         return Path.norm_path.setdefault(norm,Path(norm))
 
@@ -976,7 +976,7 @@ class Path(object):
         """Return the normpath for specified name/path object."""
         if not name: return name
         elif isinstance(name,Path): return name._s
-        elif isinstance(name,str): name = unicode(name)
+        elif isinstance(name,str): name = _unicode(name)
         return os.path.normpath(name)
 
     @staticmethod
@@ -984,7 +984,7 @@ class Path(object):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
         if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = unicode(name)
+        elif isinstance(name,str): name = _unicode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod

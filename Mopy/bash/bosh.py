@@ -3811,6 +3811,8 @@ class Plugins:
                             pass
                     else:
                         modName = test
+                else:
+                    modName = test
                 modName = GPath(modName)
                 if modName in modNames: #--In case it's listed twice.
                     pass
@@ -3827,15 +3829,16 @@ class Plugins:
         """Write data to Plugins.txt file."""
         self.selected.sort()
         with self.path.open('wb') as out:
-            out.write('# This file is used to tell %s which data files to load.\r\n\r\n' % bush.game.name)
+            outWrite = out.write
+            outWrite('# This file is used to tell %s which data files to load.\r\n\r\n' % bush.game.name)
             for modName in self.selected:
                 # Ok, this seems to work for Oblivon, but not Skyrim
                 # Skyrim seems to refuse to have any non-cp1252 named file in
                 # plugins.txt.  Even activating through the SkyrimLauncher
                 # doesn't work.
                 try:
-                    out.write(_encode(modName.s))
-                    out.write('\r\n')
+                    outWrite(_encode(modName.s))
+                    outWrite('\r\n')
                 except:
                     pass
         self.mtime = self.path.mtime
