@@ -56,7 +56,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
                 return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')
             else: return bool(value)
         elif base: retValue = newtype(value, base)
-        elif newtype is unicode: retValue = _encode(value)
+        elif newtype is unicode: retValue = _unicode(value)
         else: retValue = newtype(value)
         if (AllowNone and
             (isinstance(retValue,str) and retValue.lower() == 'none') or
