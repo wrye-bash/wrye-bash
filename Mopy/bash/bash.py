@@ -149,6 +149,25 @@ def exit():
         if appRestart:
             exePath = GPath(sys.executable)
             sys.argv = [exePath.stail] + sys.argv + [u'--restarting']
+            def updateArgv(args):
+                if isinstance(args,(list,tuple)):
+                    if len(args) > 0 and isinstance(args[0],(list,tuple)):
+                        for arg in args:
+                            updateArgv(arg)
+                    else:
+                        found = 0
+                        for i in xrange(len(sys.argv)):
+                            if not found and sys.argv[i] == args[0]:
+                                found = 1
+                            elif found:
+                                if found < len(args):
+                                    sys.argv[i] = args[found]
+                                    found += 1
+                                else:
+                                    break
+                        else:
+                            sys.argv.extend(args)
+            updateArgv(appRestart)
             try:
                 import subprocess
                 subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
