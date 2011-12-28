@@ -11919,9 +11919,10 @@ class Mod_CreateBOSSReport(Link):
             #-- CRC
             text += u'\n'+_(u'CRC')+u': %08X' % fileInfo.cachedCrc()
             #-- Dirty edits
-            udrs,itms,fogs = udr_itm_fog[i]
-            if udrs or itms:
-                text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+            if udr_itm_fog:
+                udrs,itms,fogs = udr_itm_fog[i]
+                if udrs or itms:
+                    text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
             text += u'\n\n'
         if spoiler: text += u'[/spoiler]'
 
