@@ -8691,7 +8691,7 @@ class Installers_RenameStrings(Installers_Skip):
 
     def AppendToMenu(self,menu,window,data):
         if bush.game.esp.stringsFiles:
-            super(Installers_RenameStrings,self).AppendToMenu(menu,window,data)
+            Installers_RenameStrings.AppendToMenu(self,menu,window,data)
 
 #------------------------------------------------------------------------------
 class Installers_SortActive(BoolLink):
