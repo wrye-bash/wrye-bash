@@ -7344,29 +7344,31 @@ class Installer(object):
         dataDirs = self.dataDirsPlus
         type = 0
         subNameSet = set()
-        subNameSet.add(u'')
+        subNameSetAdd = subNameSet.add
+        subNameSetAdd(u'')
+        reDataFileSearch = reDataFile.search
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
             if type != 1:
                 frags = file.split(u'\\')
                 nfrags = len(frags)
                 #--Type 1?
-                if (nfrags == 1 and reDataFile.search(frags[0]) or
+                if (nfrags == 1 and reDataFileSearch(frags[0]) or
                     nfrags > 1 and frags[0].lower() in dataDirs):
                     type = 1
                     break
                 #--Type 2?
                 elif nfrags > 2 and frags[1].lower() in dataDirs:
-                    subNameSet.add(frags[0])
+                    subNameSetAdd(frags[0])
                     type = 2
-                elif nfrags == 2 and reDataFile.search(frags[1]):
-                    subNameSet.add(frags[0])
+                elif nfrags == 2 and reDataFileSearch(frags[1]):
+                    subNameSetAdd(frags[0])
                     type = 2
         self.type = type
         #--SubNames, SubActives
         if type == 2:
             self.subNames = sorted(subNameSet,key=string.lower)
-            actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == ''))
+            actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
                 self.subActives = [True,True]
             else:

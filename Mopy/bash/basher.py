@@ -7053,7 +7053,7 @@ class PatchDialog(wx.Dialog):
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
-        if event.GetKeyCode() == ord('A') and event.ControlDown(): # Ctrl+'A'
+        if event.GetKeyCode() == 1 and event.CmdDown(): # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
                 if event.ShiftDown():
@@ -15987,6 +15987,7 @@ class StatusBar_Button(Link):
         if self.gButton is not None:
             self.gButton.Destroy()
         self.gButton = bitmapButton(*args, **kwdargs)
+        return self.gButton
 
     def DoPopupMenu(self,event):
         if self.canHide:
@@ -16613,12 +16614,11 @@ class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        self.createButton(
+        return self.createButton(
             window,
             Image(GPath(bosh.dirs['images'].join(u'ModChecker%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
             style=style,
             tip=_(u"Mod Checker"))
-        return self.gButton
 
     def Execute(self,event):
         """Handle menu selection."""
