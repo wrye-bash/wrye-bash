@@ -84,28 +84,30 @@ _encodingSwap = {
     # 'reported encoding':'actual encoding to use',
     'GB2312': 'gbk',        # Simplified Chinese
     'SHIFT_JIS': 'cp932',   # Japanese
+    'windows-1252': 'cp1252',
+    'windows-1251': 'cp1251',
     }
 
 def _getbestencoding(text):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heurisitcs)"""
     result = chardet.detect(text)
-    encoding = result['encoding']
+    encoding,confidence = result['encoding'],result['confidence']
     encoding = _encodingSwap.get(encoding,encoding)
     ## Debug: uncomment the following to output stats on encoding detection
     #print
-    #print '%s: %s (%s)' % (repr(text),encoding,result['confidence'])
-    return encoding
+    #print '%s: %s (%s)' % (repr(text),encoding,confidence)
+    return encoding,confidence
 
-def _unicode(text,encoding=None):
+def _unicode(text,encoding=None,avoidEncodings=()):
     if isinstance(text,unicode) or text is None: return text
     # Try the user specified encoding first
     if encoding:
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
-    encoding = _getbestencoding(text)
-    if encoding:
+    encoding,confidence = _getbestencoding(text)
+    if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
         try: return unicode(text,encoding)
         except UnicodeDecodeError: pass
     # If even that fails, fall back to the old method, trial and error

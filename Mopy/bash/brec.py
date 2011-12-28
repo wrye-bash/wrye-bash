@@ -270,23 +270,21 @@ class ModReader:
     def readString16(self,size,recType='----'):
         """Read wide pascal string: uint16 is used to indicate length."""
         strLen, = self.unpack('H',2,recType)
-        return u'\n'.join(_unicode(x) for x in
-                          bolt.cstrip(self.read(strLen,recType)).split('\n'))
+        return self.readString(strLen,recType)
 
     def readString32(self,size,recType='----'):
         """Read wide pascal string: uint32 is used to indicate length."""
         strLen, = self.unpack('I',4,recType)
-        return u'\n'.join(_unicode(x) for x in
-                          bolt.cstrip(self.read(strLen,recType)).split('\n'))
+        return self.readString(strLen,recType)
 
     def readString(self,size,recType='----'):
         """Read string from file, stripping zero terminator."""
-        return u'\n'.join(_unicode(x) for x in
+        return u'\n'.join(_unicode(x,avoidEncodings=('utf8','utf-8')) for x in
                           bolt.cstrip(self.read(size,recType)).split('\n'))
 
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
-        return [_unicode(x) for x in
+        return [_unicode(x,avoidEncodings=('utf8','utf-8')) for x in
                 self.read(size,recType).rstrip(null1).split(null1)]
 
     def unpack(self,format,size,recType='----'):
