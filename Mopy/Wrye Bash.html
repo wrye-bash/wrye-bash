@@ -276,6 +276,7 @@
   <p class="list-2">&bull;&nbsp;  Italian: Abot</p>
   <p class="list-2">&bull;&nbsp;  Portuguese: Hadoki</p>
   <p class="list-2">&bull;&nbsp;  Russian: DJ_Kovrik</p>
+  <p class="list-2">&bull;&nbsp;  Chinese: bluesky404</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Mod and Save File Gurus</b></i></p>
   <p class="list-2">&bull;&nbsp;  GhostWheel</p>
   <p class="list-2">&bull;&nbsp;  Dave Humphreys</p>
@@ -360,7 +361,7 @@
 <p class="list-1">&bull;&nbsp;  On Windows Vista and later, the UAC (User Account Control) protects the Program Files directory (usually C:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Best Solution:</b></i> Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to C:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Alternate Solution:</b></i></p>
-  <p class="list-2">&bull;&nbsp;  Change the file permissions on your game directory, granting 'Full' privelages to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.</p>
+  <p class="list-2">&bull;&nbsp;  Change the file permissions on your game directory, granting 'Full' privileges to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.</p>
 <p class="list-1">&bull;&nbsp;  <i><b>Other solutions (not recommended):</b></i></p>
   <p class="list-2">&bull;&nbsp;  Always run as full admin: To do this, for the Standalone, right click on Wrye Bash.exe and select 'Run as Admin'.</p>
   <p class="list-2">&bull;&nbsp;  Disable UAC: Do this via the Windows Control Panel.</p>
@@ -386,12 +387,10 @@
 <p class="list-1">&bull;&nbsp;  <i><b>If Bash refuses to start, or quits after quickly flashing up a window...</b></i></p>
   <p class="list-2">&bull;&nbsp;  Most likely there is a problem with your setup. Alternatively there may be a bug with Bash.</p>
   <p class="list-2">&bull;&nbsp;  You can usually figure out the problem by getting the <i><b>bug dump</b></i> and reviewing it. And if you can't puzzle it out, someone on the Elder Scrolls forums may be able to help.</p>
-<p class="list-1">&bull;&nbsp;  <b>Finding the Bugdump</b></p>
-  <p class="list-2">&bull;&nbsp;  Sometimes the error will be written to a file in the Mopy directory called <b>bash.log</b>. If that file is there, then that's the bug dump. You can open it with any text editor.</p>
-  <p class="list-2">&bull;&nbsp;  If it's not present, then you'll have to generate the bug dump yourself...</p>
-<p class="list-1">&bull;&nbsp;  <b>Generating the Bugdump</b></p>
+<p>s* <b>Generating the Bugdump</b>
+</p>
   <p class="list-2">&bull;&nbsp;  Easy method (usually works):</p>
-    <p class="list-3">&bull;&nbsp;  Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguements to dump all errors to "BashBugDump.log"</p>
+    <p class="list-3">&bull;&nbsp;  Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguments to dump all errors to "BashBugDump.log"</p>
   <p class="list-2">&bull;&nbsp;  Manual method (if the Batch file doesn't work):</p>
     <p class="list-3">&bull;&nbsp;  Open a command shell (Start: Programs: Accessories: Command Prompt).</p>
     <p class="list-3">&bull;&nbsp;  <b>chdir</b> to your Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code></p>
@@ -431,7 +430,7 @@
     <p class="list-3">&bull;&nbsp;  Download link: <b>Python [ <a href="http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi">Python 2.7.2</a> ]</b></p>
   <p class="list-2">&bull;&nbsp;  <b>wxPython 2.8.12.1 Unicode</b></p>
     <p class="list-3">&bull;&nbsp;  Python supports several different GUI libraries. Wrye Bash uses <a href="http://www.wxpython.org/">wxPython</a>.</p>
-    <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.0 ansi for Python 2.7</a> ]</b></p>
+    <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 Unicode for Python 2.7</a> ]</b></p>
   <p class="list-2">&bull;&nbsp;  <b>PyWin32</b></p>
     <p class="list-3">&bull;&nbsp;  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.  Wrye Bash also uses this module to display HTML files.</p>
     <p class="list-3">&bull;&nbsp;  Download link: <b>[ <a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download">PyWin32 216 for Python 2.7</a> ]</b></p>
