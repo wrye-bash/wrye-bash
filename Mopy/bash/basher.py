@@ -8684,11 +8684,14 @@ class Installers_SkipOBSEPlugins(Installers_Skip):
 class Installers_RenameStrings(Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
     def __init__(self):
+        BoolLink.__init__(self,
+                          _(u'Auto-name String Translation Files'),
+                          'bash.installers.renameStrings',
+                          )
+
+    def AppendToMenu(self,menu,window,data):
         if bush.game.esp.stringsFiles:
-            BoolLink.__init__(self,
-                              _(u'Auto-name String Translation Files'),
-                              'bash.installers.renameStrings',
-                              )
+            super(Installers_RenameStrings,self).AppendToMenu(menu,window,data)
 
 #------------------------------------------------------------------------------
 class Installers_SortActive(BoolLink):
