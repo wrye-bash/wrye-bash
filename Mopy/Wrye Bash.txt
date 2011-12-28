@@ -56,6 +56,7 @@ In particular, see:
   * Italian: Abot
   * Portuguese: Hadoki
   * Russian: DJ_Kovrik
+  * Chinese: bluesky404
 * **Mod and Save File Gurus**
   * GhostWheel
   * Dave Humphreys
@@ -140,7 +141,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * On Windows Vista and later, the UAC (User Account Control) protects the Program Files directory (usually C:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 * **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to C:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
 * **Alternate Solution:**
-  * Change the file permissions on your game directory, granting 'Full' privelages to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.
+  * Change the file permissions on your game directory, granting 'Full' privileges to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.
 * **Other solutions (not recommended):**
   * Always run as full admin: To do this, for the Standalone, right click on Wrye Bash.exe and select 'Run as Admin'.
   * Disable UAC: Do this via the Windows Control Panel.
@@ -166,12 +167,9 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
   * Most likely there is a problem with your setup. Alternatively there may be a bug with Bash.
   * You can usually figure out the problem by getting the **bug dump** and reviewing it. And if you can't puzzle it out, someone on the Elder Scrolls forums may be able to help.
-* __Finding the Bugdump__
-  * Sometimes the error will be written to a file in the Mopy directory called __bash.log__. If that file is there, then that's the bug dump. You can open it with any text editor.
-  * If it's not present, then you'll have to generate the bug dump yourself...
-* __Generating the Bugdump__
+s* __Generating the Bugdump__
   * Easy method (usually works):
-    * Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguements to dump all errors to "BashBugDump.log"
+    * Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguments to dump all errors to "BashBugDump.log"
   * Manual method (if the Batch file doesn't work):
     * Open a command shell (Start: Programs: Accessories: Command Prompt).
     * __chdir__ to your Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code>
@@ -211,7 +209,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
     * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi|Python 2.7.2]] ]__
   * __wxPython 2.8.12.1 Unicode__
     * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/|wxPython]].
-    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe|wxPython 2.8.12.0 ansi for Python 2.7]] ]__
+    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe|wxPython 2.8.12.1 Unicode for Python 2.7]] ]__
   * __PyWin32__
     * PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.  Wrye Bash also uses this module to display HTML files.
     * Download link: __[ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download|PyWin32 216 for Python 2.7]] ]__
