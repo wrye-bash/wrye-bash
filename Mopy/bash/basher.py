@@ -8691,7 +8691,7 @@ class Installers_RenameStrings(Installers_Skip):
 
     def AppendToMenu(self,menu,window,data):
         if bush.game.esp.stringsFiles:
-            Installers_RenameStrings.AppendToMenu(self,menu,window,data)
+            Installers_Skip.AppendToMenu(self,menu,window,data)
 
 #------------------------------------------------------------------------------
 class Installers_SortActive(BoolLink):
@@ -11231,7 +11231,7 @@ class Settings_Languages(Link):
         Link.AppendToMenu(self,menu,window,data)
         languages = []
         for file in bosh.dirs['l10n'].list():
-            if file.cext == u'.txt':
+            if file.cext == u'.txt' and file.csbody[-3:] != u'new':
                 languages.append(file.body)
         if languages:
             subMenu = wx.Menu()
@@ -11253,7 +11253,7 @@ class Settings_Language(Link):
         u'de': _('German') + u' (Deutsch)',
         u'pt_opt': _('Portuguese') + u' (português)',
         u'italian': _('Italian') + u' (italiano)',
-        u'russian': _('Russian') + u' (русский язык, russkiy yazyk)',
+        u'russian': _('Russian') + u' (русский язык)',
         u'english': _('English') + u' (English)',
         }
         
@@ -11264,13 +11264,16 @@ class Settings_Language(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         label = self.__class__.languageMap.get(self.language.lower(),self.language)
-        menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO)
-        menu.AppendItem(menuItem)
         bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         if self.language == bassLang:
-            menuItem.Check(True)
+            menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO)
+        else:
+            menuItem = wx.MenuItem(menu,self.id,label)
+        menu.AppendItem(menuItem)
 
     def Execute(self,event):
+        bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+        if self.language == bassLang: return
         if balt.askYes(bashFrame,
                        _('Wrye Bash needs to restart to change languages.  Do you want to restart?'),
                        _('Restart Wrye Bash')):
