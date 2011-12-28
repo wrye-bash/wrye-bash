@@ -8983,52 +8983,52 @@ class FnvCELLRecord(FnvBaseRecord):
     xcmt_p = CBashUINT8ARRAY(55)
     music = CBashFORMID(56)
     def create_ACHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvACHRRecord(RecordID) if RecordID else None
     ACHR = CBashSUBRECORDARRAY(57, FnvACHRRecord, "ACHR")
 
     def create_ACRE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvACRERecord(RecordID) if RecordID else None
     ACRE = CBashSUBRECORDARRAY(58, FnvACRERecord, "ACRE")
 
     def create_REFR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvREFRRecord(RecordID) if RecordID else None
     REFR = CBashSUBRECORDARRAY(59, FnvREFRRecord, "REFR")
 
     def create_PGRE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPGRERecord(RecordID) if RecordID else None
     PGRE = CBashSUBRECORDARRAY(60, FnvPGRERecord, "PGRE")
 
     def create_PMIS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PMIS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PMIS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPMISRecord(RecordID) if RecordID else None
     PMIS = CBashSUBRECORDARRAY(61, FnvPMISRecord, "PMIS")
 
     def create_PBEA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PBEA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PBEA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPBEARecord(RecordID) if RecordID else None
     PBEA = CBashSUBRECORDARRAY(62, FnvPBEARecord, "PBEA")
 
     def create_PFLA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PFLA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PFLA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPFLARecord(RecordID) if RecordID else None
     PFLA = CBashSUBRECORDARRAY(63, FnvPFLARecord, "PFLA")
 
     def create_PCBE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PCBE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PCBE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPCBERecord(RecordID) if RecordID else None
     PCBE = CBashSUBRECORDARRAY(64, FnvPCBERecord, "PCBE")
 
     def create_NAVM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("NAVM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("NAVM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvNAVMRecord(RecordID) if RecordID else None
     NAVM = CBashSUBRECORDARRAY(65, FnvNAVMRecord, "NAVM")
 
     def create_LAND(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvLANDRecord(RecordID) if RecordID else None
     LAND = CBashSUBRECORD(66, FnvLANDRecord, "LAND")
 
@@ -9146,12 +9146,12 @@ class FnvWRLDRecord(FnvBaseRecord):
     ofst_p = CBashUINT8ARRAY(48)
 
     def create_WorldCELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(49, FnvCELLRecord, "WCEL")
  ##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvCELLRecord(RecordID) if RecordID else None
     CELLS = CBashSUBRECORDARRAY(50, FnvCELLRecord, "CELL")
 
@@ -9238,7 +9238,7 @@ class FnvDIALRecord(FnvBaseRecord):
     dialType = CBashGeneric(12, c_ubyte)
     flags = CBashGeneric(13, c_ubyte)
     def create_INFO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvINFORecord(RecordID) if RecordID else None
     INFO = CBashSUBRECORDARRAY(14, FnvINFORecord, "INFO")
 
@@ -11474,27 +11474,27 @@ class ObCELLRecord(ObBaseRecord):
     posY = CBashUNKNOWN_OR_GENERIC(33, c_long)
     water = CBashFORMID(34)
     def create_ACHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObACHRRecord(RecordID) if RecordID else None
     ACHR = CBashSUBRECORDARRAY(35, ObACHRRecord, "ACHR")
 
     def create_ACRE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObACRERecord(RecordID) if RecordID else None
     ACRE = CBashSUBRECORDARRAY(36, ObACRERecord, "ACRE")
 
     def create_REFR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObREFRRecord(RecordID) if RecordID else None
     REFR = CBashSUBRECORDARRAY(37, ObREFRRecord, "REFR")
 
     def create_PGRD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObPGRDRecord(RecordID) if RecordID else None
     PGRD = CBashSUBRECORD(38, ObPGRDRecord, "PGRD")
 
     def create_LAND(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObLANDRecord(RecordID) if RecordID else None
     LAND = CBashSUBRECORD(39, ObLANDRecord, "LAND")
 
@@ -11947,7 +11947,7 @@ class ObDIALRecord(ObBaseRecord):
     full = CBashSTRING(7)
     dialType = CBashGeneric(8, c_ubyte)
     def create_INFO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObINFORecord(RecordID) if RecordID else None
     INFO = CBashSUBRECORDARRAY(9, ObINFORecord, "INFO")
 
@@ -13802,17 +13802,17 @@ class ObWRLDRecord(ObBaseRecord):
     musicType = CBashGeneric(21, c_ulong)
     ofst_p = CBashUINT8ARRAY(22)
     def create_ROAD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ROAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ROAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObROADRecord(RecordID) if RecordID else None
     ROAD = CBashSUBRECORD(23, ObROADRecord, "ROAD")
 
     def create_WorldCELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(24, ObCELLRecord, "WCEL")
  ##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObCELLRecord(RecordID) if RecordID else None
     CELLS = CBashSUBRECORDARRAY(25, ObCELLRecord, "CELL")
 
@@ -14167,282 +14167,282 @@ class ObModFile(object):
         return ObTES4Record(_CGetRecordID(self._ModID, 0, 0))
 
     def create_GMST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObGMSTRecord(RecordID) if RecordID else None
     GMST = CBashRECORDARRAY(ObGMSTRecord, 'GMST')
 
     def create_GLOB(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObGLOBRecord(RecordID) if RecordID else None
     GLOB = CBashRECORDARRAY(ObGLOBRecord, 'GLOB')
 
     def create_CLAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCLASRecord(RecordID) if RecordID else None
     CLAS = CBashRECORDARRAY(ObCLASRecord, 'CLAS')
 
     def create_FACT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObFACTRecord(RecordID) if RecordID else None
     FACT = CBashRECORDARRAY(ObFACTRecord, 'FACT')
 
     def create_HAIR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObHAIRRecord(RecordID) if RecordID else None
     HAIR = CBashRECORDARRAY(ObHAIRRecord, 'HAIR')
 
     def create_EYES(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObEYESRecord(RecordID) if RecordID else None
     EYES = CBashRECORDARRAY(ObEYESRecord, 'EYES')
 
     def create_RACE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObRACERecord(RecordID) if RecordID else None
     RACE = CBashRECORDARRAY(ObRACERecord, 'RACE')
 
     def create_SOUN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSOUNRecord(RecordID) if RecordID else None
     SOUN = CBashRECORDARRAY(ObSOUNRecord, 'SOUN')
 
     def create_SKIL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SKIL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SKIL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSKILRecord(RecordID) if RecordID else None
     SKIL = CBashRECORDARRAY(ObSKILRecord, 'SKIL')
 
     def create_MGEF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObMGEFRecord(RecordID) if RecordID else None
     MGEF = CBashRECORDARRAY(ObMGEFRecord, 'MGEF')
 
     def create_SCPT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSCPTRecord(RecordID) if RecordID else None
     SCPT = CBashRECORDARRAY(ObSCPTRecord, 'SCPT')
 
     def create_LTEX(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLTEXRecord(RecordID) if RecordID else None
     LTEX = CBashRECORDARRAY(ObLTEXRecord, 'LTEX')
 
     def create_ENCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObENCHRecord(RecordID) if RecordID else None
     ENCH = CBashRECORDARRAY(ObENCHRecord, 'ENCH')
 
     def create_SPEL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSPELRecord(RecordID) if RecordID else None
     SPEL = CBashRECORDARRAY(ObSPELRecord, 'SPEL')
 
     def create_BSGN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BSGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BSGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObBSGNRecord(RecordID) if RecordID else None
     BSGN = CBashRECORDARRAY(ObBSGNRecord, 'BSGN')
 
     def create_ACTI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObACTIRecord(RecordID) if RecordID else None
     ACTI = CBashRECORDARRAY(ObACTIRecord, 'ACTI')
 
     def create_APPA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("APPA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("APPA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObAPPARecord(RecordID) if RecordID else None
     APPA = CBashRECORDARRAY(ObAPPARecord, 'APPA')
 
     def create_ARMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObARMORecord(RecordID) if RecordID else None
     ARMO = CBashRECORDARRAY(ObARMORecord, 'ARMO')
 
     def create_BOOK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObBOOKRecord(RecordID) if RecordID else None
     BOOK = CBashRECORDARRAY(ObBOOKRecord, 'BOOK')
 
     def create_CLOT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLOT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLOT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCLOTRecord(RecordID) if RecordID else None
     CLOT = CBashRECORDARRAY(ObCLOTRecord, 'CLOT')
 
     def create_CONT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCONTRecord(RecordID) if RecordID else None
     CONT = CBashRECORDARRAY(ObCONTRecord, 'CONT')
 
     def create_DOOR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObDOORRecord(RecordID) if RecordID else None
     DOOR = CBashRECORDARRAY(ObDOORRecord, 'DOOR')
 
     def create_INGR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObINGRRecord(RecordID) if RecordID else None
     INGR = CBashRECORDARRAY(ObINGRRecord, 'INGR')
 
     def create_LIGH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLIGHRecord(RecordID) if RecordID else None
     LIGH = CBashRECORDARRAY(ObLIGHRecord, 'LIGH')
 
     def create_MISC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObMISCRecord(RecordID) if RecordID else None
     MISC = CBashRECORDARRAY(ObMISCRecord, 'MISC')
 
     def create_STAT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSTATRecord(RecordID) if RecordID else None
     STAT = CBashRECORDARRAY(ObSTATRecord, 'STAT')
 
     def create_GRAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObGRASRecord(RecordID) if RecordID else None
     GRAS = CBashRECORDARRAY(ObGRASRecord, 'GRAS')
 
     def create_TREE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObTREERecord(RecordID) if RecordID else None
     TREE = CBashRECORDARRAY(ObTREERecord, 'TREE')
 
     def create_FLOR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FLOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FLOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObFLORRecord(RecordID) if RecordID else None
     FLOR = CBashRECORDARRAY(ObFLORRecord, 'FLOR')
 
     def create_FURN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObFURNRecord(RecordID) if RecordID else None
     FURN = CBashRECORDARRAY(ObFURNRecord, 'FURN')
 
     def create_WEAP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWEAPRecord(RecordID) if RecordID else None
     WEAP = CBashRECORDARRAY(ObWEAPRecord, 'WEAP')
 
     def create_AMMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObAMMORecord(RecordID) if RecordID else None
     AMMO = CBashRECORDARRAY(ObAMMORecord, 'AMMO')
 
     def create_NPC_(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObNPC_Record(RecordID) if RecordID else None
     NPC_ = CBashRECORDARRAY(ObNPC_Record, 'NPC_')
 
     def create_CREA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCREARecord(RecordID) if RecordID else None
     CREA = CBashRECORDARRAY(ObCREARecord, 'CREA')
 
     def create_LVLC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLVLCRecord(RecordID) if RecordID else None
     LVLC = CBashRECORDARRAY(ObLVLCRecord, 'LVLC')
 
     def create_SLGM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SLGM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SLGM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSLGMRecord(RecordID) if RecordID else None
     SLGM = CBashRECORDARRAY(ObSLGMRecord, 'SLGM')
 
     def create_KEYM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObKEYMRecord(RecordID) if RecordID else None
     KEYM = CBashRECORDARRAY(ObKEYMRecord, 'KEYM')
 
     def create_ALCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObALCHRecord(RecordID) if RecordID else None
     ALCH = CBashRECORDARRAY(ObALCHRecord, 'ALCH')
 
     def create_SBSP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SBSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SBSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSBSPRecord(RecordID) if RecordID else None
     SBSP = CBashRECORDARRAY(ObSBSPRecord, 'SBSP')
 
     def create_SGST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SGST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SGST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSGSTRecord(RecordID) if RecordID else None
     SGST = CBashRECORDARRAY(ObSGSTRecord, 'SGST')
 
     def create_LVLI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLVLIRecord(RecordID) if RecordID else None
     LVLI = CBashRECORDARRAY(ObLVLIRecord, 'LVLI')
 
     def create_WTHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWTHRRecord(RecordID) if RecordID else None
     WTHR = CBashRECORDARRAY(ObWTHRRecord, 'WTHR')
 
     def create_CLMT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCLMTRecord(RecordID) if RecordID else None
     CLMT = CBashRECORDARRAY(ObCLMTRecord, 'CLMT')
 
     def create_REGN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObREGNRecord(RecordID) if RecordID else None
     REGN = CBashRECORDARRAY(ObREGNRecord, 'REGN')
 
     def create_WRLD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWRLDRecord(RecordID) if RecordID else None
     WRLD = CBashRECORDARRAY(ObWRLDRecord, 'WRLD')
 
     def create_CELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCELLRecord(RecordID) if RecordID else None
     CELL = CBashRECORDARRAY(ObCELLRecord, 'CELL')
 
     def create_DIAL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObDIALRecord(RecordID) if RecordID else None
     DIAL = CBashRECORDARRAY(ObDIALRecord, 'DIAL')
 
     def create_QUST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObQUSTRecord(RecordID) if RecordID else None
     QUST = CBashRECORDARRAY(ObQUSTRecord, 'QUST')
 
     def create_IDLE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObIDLERecord(RecordID) if RecordID else None
     IDLE = CBashRECORDARRAY(ObIDLERecord, 'IDLE')
 
     def create_PACK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObPACKRecord(RecordID) if RecordID else None
     PACK = CBashRECORDARRAY(ObPACKRecord, 'PACK')
 
     def create_CSTY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCSTYRecord(RecordID) if RecordID else None
     CSTY = CBashRECORDARRAY(ObCSTYRecord, 'CSTY')
 
     def create_LSCR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLSCRRecord(RecordID) if RecordID else None
     LSCR = CBashRECORDARRAY(ObLSCRRecord, 'LSCR')
 
     def create_LVSP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLVSPRecord(RecordID) if RecordID else None
     LVSP = CBashRECORDARRAY(ObLVSPRecord, 'LVSP')
 
     def create_ANIO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObANIORecord(RecordID) if RecordID else None
     ANIO = CBashRECORDARRAY(ObANIORecord, 'ANIO')
 
     def create_WATR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWATRRecord(RecordID) if RecordID else None
     WATR = CBashRECORDARRAY(ObWATRRecord, 'WATR')
 
     def create_EFSH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObEFSHRecord(RecordID) if RecordID else None
     EFSH = CBashRECORDARRAY(ObEFSHRecord, 'EFSH')
 
@@ -14598,507 +14598,507 @@ class FnvModFile(object):
         return FnvTES4Record(_CGetRecordID(self._ModID, 0, 0))
 
     def create_GMST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvGMSTRecord(RecordID) if RecordID else None
     GMST = CBashRECORDARRAY(FnvGMSTRecord, 'GMST')
 
     def create_TXST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TXST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TXST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTXSTRecord(RecordID) if RecordID else None
     TXST = CBashRECORDARRAY(FnvTXSTRecord, 'TXST')
 
     def create_MICN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MICN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MICN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMICNRecord(RecordID) if RecordID else None
     MICN = CBashRECORDARRAY(FnvMICNRecord, 'MICN')
 
     def create_GLOB(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvGLOBRecord(RecordID) if RecordID else None
     GLOB = CBashRECORDARRAY(FnvGLOBRecord, 'GLOB')
 
     def create_CLAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCLASRecord(RecordID) if RecordID else None
     CLAS = CBashRECORDARRAY(FnvCLASRecord, 'CLAS')
 
     def create_FACT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvFACTRecord(RecordID) if RecordID else None
     FACT = CBashRECORDARRAY(FnvFACTRecord, 'FACT')
 
     def create_HDPT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HDPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HDPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvHDPTRecord(RecordID) if RecordID else None
     HDPT = CBashRECORDARRAY(FnvHDPTRecord, 'HDPT')
 
     def create_HAIR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvHAIRRecord(RecordID) if RecordID else None
     HAIR = CBashRECORDARRAY(FnvHAIRRecord, 'HAIR')
 
     def create_EYES(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvEYESRecord(RecordID) if RecordID else None
     EYES = CBashRECORDARRAY(FnvEYESRecord, 'EYES')
 
     def create_RACE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRACERecord(RecordID) if RecordID else None
     RACE = CBashRECORDARRAY(FnvRACERecord, 'RACE')
 
     def create_SOUN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSOUNRecord(RecordID) if RecordID else None
     SOUN = CBashRECORDARRAY(FnvSOUNRecord, 'SOUN')
 
     def create_ASPC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ASPC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ASPC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvASPCRecord(RecordID) if RecordID else None
     ASPC = CBashRECORDARRAY(FnvASPCRecord, 'ASPC')
 
     def create_MGEF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMGEFRecord(RecordID) if RecordID else None
     MGEF = CBashRECORDARRAY(FnvMGEFRecord, 'MGEF')
 
     def create_SCPT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSCPTRecord(RecordID) if RecordID else None
     SCPT = CBashRECORDARRAY(FnvSCPTRecord, 'SCPT')
 
     def create_LTEX(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLTEXRecord(RecordID) if RecordID else None
     LTEX = CBashRECORDARRAY(FnvLTEXRecord, 'LTEX')
 
     def create_ENCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvENCHRecord(RecordID) if RecordID else None
     ENCH = CBashRECORDARRAY(FnvENCHRecord, 'ENCH')
 
     def create_SPEL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSPELRecord(RecordID) if RecordID else None
     SPEL = CBashRECORDARRAY(FnvSPELRecord, 'SPEL')
 
     def create_ACTI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvACTIRecord(RecordID) if RecordID else None
     ACTI = CBashRECORDARRAY(FnvACTIRecord, 'ACTI')
 
     def create_TACT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTACTRecord(RecordID) if RecordID else None
     TACT = CBashRECORDARRAY(FnvTACTRecord, 'TACT')
 
     def create_TERM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TERM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TERM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTERMRecord(RecordID) if RecordID else None
     TERM = CBashRECORDARRAY(FnvTERMRecord, 'TERM')
 
     def create_ARMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvARMORecord(RecordID) if RecordID else None
     ARMO = CBashRECORDARRAY(FnvARMORecord, 'ARMO')
 
     def create_BOOK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvBOOKRecord(RecordID) if RecordID else None
     BOOK = CBashRECORDARRAY(FnvBOOKRecord, 'BOOK')
 
     def create_CONT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCONTRecord(RecordID) if RecordID else None
     CONT = CBashRECORDARRAY(FnvCONTRecord, 'CONT')
 
     def create_DOOR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDOORRecord(RecordID) if RecordID else None
     DOOR = CBashRECORDARRAY(FnvDOORRecord, 'DOOR')
 
     def create_INGR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvINGRRecord(RecordID) if RecordID else None
     INGR = CBashRECORDARRAY(FnvINGRRecord, 'INGR')
 
     def create_LIGH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLIGHRecord(RecordID) if RecordID else None
     LIGH = CBashRECORDARRAY(FnvLIGHRecord, 'LIGH')
 
     def create_MISC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMISCRecord(RecordID) if RecordID else None
     MISC = CBashRECORDARRAY(FnvMISCRecord, 'MISC')
 
     def create_STAT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSTATRecord(RecordID) if RecordID else None
     STAT = CBashRECORDARRAY(FnvSTATRecord, 'STAT')
 
     def create_SCOL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SCOL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SCOL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSCOLRecord(RecordID) if RecordID else None
     SCOL = CBashRECORDARRAY(FnvSCOLRecord, 'SCOL')
 
     def create_MSTT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MSTT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MSTT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMSTTRecord(RecordID) if RecordID else None
     MSTT = CBashRECORDARRAY(FnvMSTTRecord, 'MSTT')
 
     def create_PWAT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PWAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PWAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPWATRecord(RecordID) if RecordID else None
     PWAT = CBashRECORDARRAY(FnvPWATRecord, 'PWAT')
 
     def create_GRAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvGRASRecord(RecordID) if RecordID else None
     GRAS = CBashRECORDARRAY(FnvGRASRecord, 'GRAS')
 
     def create_TREE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTREERecord(RecordID) if RecordID else None
     TREE = CBashRECORDARRAY(FnvTREERecord, 'TREE')
 
     def create_FURN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvFURNRecord(RecordID) if RecordID else None
     FURN = CBashRECORDARRAY(FnvFURNRecord, 'FURN')
 
     def create_WEAP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWEAPRecord(RecordID) if RecordID else None
     WEAP = CBashRECORDARRAY(FnvWEAPRecord, 'WEAP')
 
     def create_AMMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvAMMORecord(RecordID) if RecordID else None
     AMMO = CBashRECORDARRAY(FnvAMMORecord, 'AMMO')
 
     def create_NPC_(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvNPC_Record(RecordID) if RecordID else None
     NPC_ = CBashRECORDARRAY(FnvNPC_Record, 'NPC_')
 
     def create_CREA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCREARecord(RecordID) if RecordID else None
     CREA = CBashRECORDARRAY(FnvCREARecord, 'CREA')
 
     def create_LVLC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLVLCRecord(RecordID) if RecordID else None
     LVLC = CBashRECORDARRAY(FnvLVLCRecord, 'LVLC')
 
     def create_LVLN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLVLNRecord(RecordID) if RecordID else None
     LVLN = CBashRECORDARRAY(FnvLVLNRecord, 'LVLN')
 
     def create_KEYM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvKEYMRecord(RecordID) if RecordID else None
     KEYM = CBashRECORDARRAY(FnvKEYMRecord, 'KEYM')
 
     def create_ALCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvALCHRecord(RecordID) if RecordID else None
     ALCH = CBashRECORDARRAY(FnvALCHRecord, 'ALCH')
 
     def create_IDLM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IDLM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IDLM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIDLMRecord(RecordID) if RecordID else None
     IDLM = CBashRECORDARRAY(FnvIDLMRecord, 'IDLM')
 
     def create_NOTE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NOTE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NOTE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvNOTERecord(RecordID) if RecordID else None
     NOTE = CBashRECORDARRAY(FnvNOTERecord, 'NOTE')
 
     def create_COBJ(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("COBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("COBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCOBJRecord(RecordID) if RecordID else None
     COBJ = CBashRECORDARRAY(FnvCOBJRecord, 'COBJ')
 
     def create_PROJ(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PROJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PROJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPROJRecord(RecordID) if RecordID else None
     PROJ = CBashRECORDARRAY(FnvPROJRecord, 'PROJ')
 
     def create_LVLI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLVLIRecord(RecordID) if RecordID else None
     LVLI = CBashRECORDARRAY(FnvLVLIRecord, 'LVLI')
 
     def create_WTHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWTHRRecord(RecordID) if RecordID else None
     WTHR = CBashRECORDARRAY(FnvWTHRRecord, 'WTHR')
 
     def create_CLMT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCLMTRecord(RecordID) if RecordID else None
     CLMT = CBashRECORDARRAY(FnvCLMTRecord, 'CLMT')
 
     def create_REGN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvREGNRecord(RecordID) if RecordID else None
     REGN = CBashRECORDARRAY(FnvREGNRecord, 'REGN')
 
     def create_NAVI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NAVI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NAVI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvNAVIRecord(RecordID) if RecordID else None
     NAVI = CBashRECORDARRAY(FnvNAVIRecord, 'NAVI')
 
     def create_CELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCELLRecord(RecordID) if RecordID else None
     CELL = CBashRECORDARRAY(FnvCELLRecord, 'CELL')
 
     def create_WRLD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWRLDRecord(RecordID) if RecordID else None
     WRLD = CBashRECORDARRAY(FnvWRLDRecord, 'WRLD')
 
     def create_DIAL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDIALRecord(RecordID) if RecordID else None
     DIAL = CBashRECORDARRAY(FnvDIALRecord, 'DIAL')
 
     def create_QUST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvQUSTRecord(RecordID) if RecordID else None
     QUST = CBashRECORDARRAY(FnvQUSTRecord, 'QUST')
 
     def create_IDLE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIDLERecord(RecordID) if RecordID else None
     IDLE = CBashRECORDARRAY(FnvIDLERecord, 'IDLE')
 
     def create_PACK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPACKRecord(RecordID) if RecordID else None
     PACK = CBashRECORDARRAY(FnvPACKRecord, 'PACK')
 
     def create_CSTY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCSTYRecord(RecordID) if RecordID else None
     CSTY = CBashRECORDARRAY(FnvCSTYRecord, 'CSTY')
 
     def create_LSCR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLSCRRecord(RecordID) if RecordID else None
     LSCR = CBashRECORDARRAY(FnvLSCRRecord, 'LSCR')
 
     def create_ANIO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvANIORecord(RecordID) if RecordID else None
     ANIO = CBashRECORDARRAY(FnvANIORecord, 'ANIO')
 
     def create_WATR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWATRRecord(RecordID) if RecordID else None
     WATR = CBashRECORDARRAY(FnvWATRRecord, 'WATR')
 
     def create_EFSH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvEFSHRecord(RecordID) if RecordID else None
     EFSH = CBashRECORDARRAY(FnvEFSHRecord, 'EFSH')
 
     def create_EXPL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EXPL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EXPL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvEXPLRecord(RecordID) if RecordID else None
     EXPL = CBashRECORDARRAY(FnvEXPLRecord, 'EXPL')
 
     def create_DEBR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DEBR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DEBR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDEBRRecord(RecordID) if RecordID else None
     DEBR = CBashRECORDARRAY(FnvDEBRRecord, 'DEBR')
 
     def create_IMGS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IMGS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IMGS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIMGSRecord(RecordID) if RecordID else None
     IMGS = CBashRECORDARRAY(FnvIMGSRecord, 'IMGS')
 
     def create_IMAD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IMAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IMAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIMADRecord(RecordID) if RecordID else None
     IMAD = CBashRECORDARRAY(FnvIMADRecord, 'IMAD')
 
     def create_FLST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FLST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FLST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvFLSTRecord(RecordID) if RecordID else None
     FLST = CBashRECORDARRAY(FnvFLSTRecord, 'FLST')
 
     def create_PERK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PERK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PERK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPERKRecord(RecordID) if RecordID else None
     PERK = CBashRECORDARRAY(FnvPERKRecord, 'PERK')
 
     def create_BPTD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BPTD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BPTD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvBPTDRecord(RecordID) if RecordID else None
     BPTD = CBashRECORDARRAY(FnvBPTDRecord, 'BPTD')
 
     def create_ADDN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ADDN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ADDN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvADDNRecord(RecordID) if RecordID else None
     ADDN = CBashRECORDARRAY(FnvADDNRecord, 'ADDN')
 
     def create_AVIF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AVIF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AVIF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvAVIFRecord(RecordID) if RecordID else None
     AVIF = CBashRECORDARRAY(FnvAVIFRecord, 'AVIF')
 
     def create_RADS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RADS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RADS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRADSRecord(RecordID) if RecordID else None
     RADS = CBashRECORDARRAY(FnvRADSRecord, 'RADS')
 
     def create_CAMS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CAMS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CAMS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCAMSRecord(RecordID) if RecordID else None
     CAMS = CBashRECORDARRAY(FnvCAMSRecord, 'CAMS')
 
     def create_CPTH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CPTH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CPTH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCPTHRecord(RecordID) if RecordID else None
     CPTH = CBashRECORDARRAY(FnvCPTHRecord, 'CPTH')
 
     def create_VTYP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("VTYP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("VTYP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvVTYPRecord(RecordID) if RecordID else None
     VTYP = CBashRECORDARRAY(FnvVTYPRecord, 'VTYP')
 
     def create_IPCT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IPCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IPCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIPCTRecord(RecordID) if RecordID else None
     IPCT = CBashRECORDARRAY(FnvIPCTRecord, 'IPCT')
 
     def create_IPDS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IPDS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IPDS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIPDSRecord(RecordID) if RecordID else None
     IPDS = CBashRECORDARRAY(FnvIPDSRecord, 'IPDS')
 
     def create_ARMA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ARMA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ARMA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvARMARecord(RecordID) if RecordID else None
     ARMA = CBashRECORDARRAY(FnvARMARecord, 'ARMA')
 
     def create_ECZN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ECZN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ECZN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvECZNRecord(RecordID) if RecordID else None
     ECZN = CBashRECORDARRAY(FnvECZNRecord, 'ECZN')
 
     def create_MESG(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MESG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MESG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMESGRecord(RecordID) if RecordID else None
     MESG = CBashRECORDARRAY(FnvMESGRecord, 'MESG')
 
     def create_RGDL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RGDL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RGDL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRGDLRecord(RecordID) if RecordID else None
     RGDL = CBashRECORDARRAY(FnvRGDLRecord, 'RGDL')
 
     def create_DOBJ(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DOBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DOBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDOBJRecord(RecordID) if RecordID else None
     DOBJ = CBashRECORDARRAY(FnvDOBJRecord, 'DOBJ')
 
     def create_LGTM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LGTM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LGTM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLGTMRecord(RecordID) if RecordID else None
     LGTM = CBashRECORDARRAY(FnvLGTMRecord, 'LGTM')
 
     def create_MUSC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MUSC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MUSC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMUSCRecord(RecordID) if RecordID else None
     MUSC = CBashRECORDARRAY(FnvMUSCRecord, 'MUSC')
 
     def create_IMOD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IMOD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IMOD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIMODRecord(RecordID) if RecordID else None
     IMOD = CBashRECORDARRAY(FnvIMODRecord, 'IMOD')
 
     def create_REPU(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("REPU", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("REPU", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvREPURecord(RecordID) if RecordID else None
     REPU = CBashRECORDARRAY(FnvREPURecord, 'REPU')
 
     def create_RCPE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RCPE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RCPE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRCPERecord(RecordID) if RecordID else None
     RCPE = CBashRECORDARRAY(FnvRCPERecord, 'RCPE')
 
     def create_RCCT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RCCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RCCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRCCTRecord(RecordID) if RecordID else None
     RCCT = CBashRECORDARRAY(FnvRCCTRecord, 'RCCT')
 
     def create_CHIP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CHIP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CHIP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCHIPRecord(RecordID) if RecordID else None
     CHIP = CBashRECORDARRAY(FnvCHIPRecord, 'CHIP')
 
     def create_CSNO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CSNO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CSNO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCSNORecord(RecordID) if RecordID else None
     CSNO = CBashRECORDARRAY(FnvCSNORecord, 'CSNO')
 
     def create_LSCT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LSCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LSCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLSCTRecord(RecordID) if RecordID else None
     LSCT = CBashRECORDARRAY(FnvLSCTRecord, 'LSCT')
 
     def create_MSET(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MSET", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MSET", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMSETRecord(RecordID) if RecordID else None
     MSET = CBashRECORDARRAY(FnvMSETRecord, 'MSET')
 
     def create_ALOC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ALOC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ALOC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvALOCRecord(RecordID) if RecordID else None
     ALOC = CBashRECORDARRAY(FnvALOCRecord, 'ALOC')
 
     def create_CHAL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CHAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CHAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCHALRecord(RecordID) if RecordID else None
     CHAL = CBashRECORDARRAY(FnvCHALRecord, 'CHAL')
 
     def create_AMEF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AMEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AMEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvAMEFRecord(RecordID) if RecordID else None
     AMEF = CBashRECORDARRAY(FnvAMEFRecord, 'AMEF')
 
     def create_CCRD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CCRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CCRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCCRDRecord(RecordID) if RecordID else None
     CCRD = CBashRECORDARRAY(FnvCCRDRecord, 'CCRD')
 
     def create_CMNY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CMNY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CMNY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCMNYRecord(RecordID) if RecordID else None
     CMNY = CBashRECORDARRAY(FnvCMNYRecord, 'CMNY')
 
     def create_CDCK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CDCK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CDCK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCDCKRecord(RecordID) if RecordID else None
     CDCK = CBashRECORDARRAY(FnvCDCKRecord, 'CDCK')
 
     def create_DEHY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DEHY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DEHY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDEHYRecord(RecordID) if RecordID else None
     DEHY = CBashRECORDARRAY(FnvDEHYRecord, 'DEHY')
 
     def create_HUNG(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HUNG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HUNG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvHUNGRecord(RecordID) if RecordID else None
     HUNG = CBashRECORDARRAY(FnvHUNGRecord, 'HUNG')
 
     def create_SLPD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SLPD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SLPD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSLPDRecord(RecordID) if RecordID else None
     SLPD = CBashRECORDARRAY(FnvSLPDRecord, 'SLPD')
 
