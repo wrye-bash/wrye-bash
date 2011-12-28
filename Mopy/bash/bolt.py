@@ -1468,10 +1468,8 @@ class CsvReader:
     def __exit__(self,*args,**kwdargs): self.ins.close()
 
     def __iter__(self):
-        return self
-
-    def next(self):
-        return self.reader.next()
+        for iter in self.reader:
+            yield [unicode(x,'utf8') for x in iter]
 
     def close(self):
         self.reader = None
