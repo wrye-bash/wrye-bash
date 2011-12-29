@@ -1469,7 +1469,11 @@ class MreHeaderBase(MelRecord):
     class MelMasterName(MelBase):
         def setDefault(self,record): record.masters = []
         def loadData(self,record,ins,type,size,readId):
-            name = GPath(ins.readString(size,readId))
+            # Don't use ins.readString, becuase it will try to use bolt.pluginEncoding
+            # for the filename.  This is one case where we want to use Automatic
+            # encoding detection
+            name = _unicode(ins.read(size,readId),avoidEncodings=('utf8','utf-8'))
+            name = GPath(name)
             record.masters.append(name)
         def dumpData(self,record,out):
             pack1 = out.packSub0
