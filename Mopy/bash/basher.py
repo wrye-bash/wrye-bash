@@ -254,6 +254,7 @@ settingDefaults = {
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     'bash.useAltName':True,
+    'bash.pluginEncoding': None,
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -5287,6 +5288,28 @@ class BashFrame(wx.Frame):
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.name
             balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
+
+    def Restart(self,args=True):
+        if not args: return
+
+        def argConvert(arg):
+            """Converts --args into -a args"""
+            if not isinstance(arg,basestring): return arg
+            elif arg in sys.argv: return arg
+            elif arg[:2] == '--': return '-'+arg[2]
+            else: return arg
+
+        newargs = []
+        if isinstance(args,(list,tuple)):
+            args = [[argconvert(x) for x in arg] if isinstance(arg,(list,tuple))
+                    else argConvert(arg)
+                    for arg in args]
+        else:
+            args = argConvert(args)
+
+        global appRestart
+        appRestart = args
+        self.Close(True)
 
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""
@@ -11277,12 +11300,75 @@ class Settings_Language(Link):
         if balt.askYes(bashFrame,
                        _('Wrye Bash needs to restart to change languages.  Do you want to restart?'),
                        _('Restart Wrye Bash')):
-            global appRestart
-            if '--Language' in sys.argv:
-                appRestart = ('--Language',self.language)
-            else:
-                appRestart = ('-L',self.language)
-            bashFrame.Close(True)
+            bashFrame.Restart(('--Language',self.language))
+
+#------------------------------------------------------------------------------
+class Settings_PluginEncodings(Link):
+    encodings = {
+        'gbk': _(u'Chinese (Simplified)'),
+        'big5': _(u'Chinese (Traditional)'),
+        'cp1251': _(u'Russian'),
+        'cp932': _(u'Japanese'),
+        }
+    def __init__(self):
+        Link.__init__(self)
+        bolt.pluginEncoding = settings['bash.pluginEncoding']
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_(u'Plugin Encoding'),subMenu)
+        Settings_PluginEncoding(_(u'Automatic'),None).AppendToMenu(subMenu,window,data)
+        SeparatorLink().AppendToMenu(subMenu,window,data)
+        enc_name = sorted(Settings_PluginEncodings.encodings.items(),key=lambda x: x[1])
+        for encoding,name in enc_name:
+            Settings_PluginEncoding(name,encoding).AppendToMenu(subMenu,window,data)
+
+#------------------------------------------------------------------------------
+class Settings_PluginEncoding(Link):
+    def __init__(self,name,encoding):
+        Link.__init__(self)
+        self.name = name
+        self.encoding = encoding
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if self.encoding == settings['bash.pluginEncoding']:
+            menuItem = wx.MenuItem(menu,self.id,self.name,kind=wx.ITEM_RADIO)
+        else:
+            menuItem = wx.MenuItem(menu,self.id,self.name)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        settings['bash.pluginEncoding'] = self.encoding
+        bolt.pluginEncoding = self.encoding
+
+#------------------------------------------------------------------------------
+class Settings_Games(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        foundGames,allGames,name = bush.detectGames()
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_(u'Game'),subMenu)
+        for game in foundGames:
+            game = game[0].upper()+game[1:]
+            Settings_Game(game).AppendToMenu(subMenu,window,data)
+
+class Settings_Game(Link):
+    def __init__(self,game):
+        Link.__init__(self)
+        self.game = game
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,self.game,kind=wx.ITEM_RADIO)
+        menu.AppendItem(menuItem)
+        if self.game.lower() == bush.game.name.lower():
+            menuItem.Check(True)
+
+    def Execute(self,event):
+        if self.game.lower() == bush.game.name.lower(): return
+        bashFrame.Restart(('--game',self.game))
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
@@ -17814,6 +17900,8 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Settings_CheckForUpdates())
     SettingsMenu.append(Settings_Languages())
+    SettingsMenu.append(Settings_PluginEncodings())
+    SettingsMenu.append(Settings_Games())
 
 def InitLinks():
     """Call other link initializers."""

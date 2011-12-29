@@ -279,12 +279,12 @@ class ModReader:
 
     def readString(self,size,recType='----'):
         """Read string from file, stripping zero terminator."""
-        return u'\n'.join(_unicode(x,avoidEncodings=('utf8','utf-8')) for x in
+        return u'\n'.join(_unicode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                           bolt.cstrip(self.read(size,recType)).split('\n'))
 
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
-        return [_unicode(x,avoidEncodings=('utf8','utf-8')) for x in
+        return [_unicode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                 self.read(size,recType).rstrip(null1).split(null1)]
 
     def unpack(self,format,size,recType='----'):
@@ -384,7 +384,7 @@ class ModWriter:
         stream."""
         if data is None: return
         elif isinstance(data,unicode):
-            data = _encode(data)
+            data = _encode(data,firstEncoding=bolt.pluginEncoding)
         lenData = len(data) + 1
         outWrite = self.out.write
         structPack = struct.pack
@@ -753,7 +753,7 @@ class MelString(MelBase):
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,returnEncoding=True)
+                test,encoding = _encode(value,firstEncoding=bolt.pluginEncoding,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
@@ -767,7 +767,7 @@ class MelString(MelBase):
                 else:
                     value = test
             else:
-                value = _encode(value)
+                value = _encode(value,firstEncoding=bolt.pluginEncoding)
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -800,7 +800,7 @@ class MelStrings(MelString):
         """Dumps data from record to outstream."""
         strings = record.__getattribute__(self.attr)
         if strings:
-            out.packSub0(self.subType,null1.join(_encode(x) for x in strings)+null1)
+            out.packSub0(self.subType,null1.join(_encode(x,firstEncoding=bolt.pluginEncoding) for x in strings)+null1)
 
 #------------------------------------------------------------------------------
 class MelStruct(MelBase):

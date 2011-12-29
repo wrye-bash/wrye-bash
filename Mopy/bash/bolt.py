@@ -88,6 +88,11 @@ _encodingSwap = {
     'windows-1251': 'cp1251',
     }
 
+# Preferred encoding to use when decoding/encoding strings in plugin files
+# None = auto
+# setting it tries the specified encoding first
+pluginEncoding = None
+
 def _getbestencoding(text):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heurisitcs)"""
