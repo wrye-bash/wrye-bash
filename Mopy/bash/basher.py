@@ -254,7 +254,7 @@ settingDefaults = {
     'bash.frameSize.min': (400,600),
     'bash.page':1,
     'bash.useAltName':True,
-    'bash.pluginEncoding': None,
+    'bash.pluginEncoding': 'cp1252',    # Western European
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -11309,6 +11309,7 @@ class Settings_PluginEncodings(Link):
         'big5': _(u'Chinese (Traditional)'),
         'cp1251': _(u'Russian'),
         'cp932': _(u'Japanese'),
+        'cp1252': _(u'Western European (English, French, German, etc)'),
         }
     def __init__(self):
         Link.__init__(self)
