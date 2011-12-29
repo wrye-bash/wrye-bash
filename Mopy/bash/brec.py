@@ -1472,7 +1472,7 @@ class MreHeaderBase(MelRecord):
             # Don't use ins.readString, becuase it will try to use bolt.pluginEncoding
             # for the filename.  This is one case where we want to use Automatic
             # encoding detection
-            name = _unicode(ins.read(size,readId),avoidEncodings=('utf8','utf-8'))
+            name = _unicode(bolt.cstrip(ins.read(size,readId)),avoidEncodings=('utf8','utf-8'))
             name = GPath(name)
             record.masters.append(name)
         def dumpData(self,record,out):
