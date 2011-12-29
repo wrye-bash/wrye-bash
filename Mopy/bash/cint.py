@@ -7,11 +7,25 @@ from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
-    from bolt import GPath, deprint, Path, _unicode
+    from bolt import GPath, deprint, Path
     from bolt import _encode as _enc
+    from bolt import _unicode as _uni
+    import bolt
     def _encode(text,*args,**kwdargs):
+        if len(args) > 1:
+            args = list(args)
+            args[1] = bolt.pluginEncoding
+        else:
+            kwdargs['firstEncoding'] = bolt.pluginEncoding
         if isinstance(text,Path): text = text.s
         return _enc(text,*args,**kwdargs)
+    def _unicode(text,*args,**kwdargs):
+        if args:
+            args = list(args)
+            args[1] = bolt.pluginEncoding
+        else:
+            kwdargs['encoding'] = bolt.pluginEncoding
+        return _uni(text,*args,**kwdargs)
 except:
     #It isn't, so replace the imported items with bare definitions
     CBashEnabled = "."

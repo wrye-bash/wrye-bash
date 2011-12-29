@@ -37,7 +37,7 @@ from bolt import GPath,Path,deprint
 game = None
 gamePath = None
 
-def setGame(gameName,workingDir=''):
+def detectGames(workingDir=u''):
     """If gameName is specified:
         - Try to find that game's intall path via windows registry
         - Try to find that game at "workingDir"
@@ -46,11 +46,8 @@ def setGame(gameName,workingDir=''):
         - Use the game found at "workingDir"
         - Use the game found one directory up from the cwd."""
     #--First: Find all supported games via the registry
-    gameName = gameName.lower()
     import pkgutil
     import game as _game
-    global game
-    global gamePath
     foundGames = {}
     allGames = {}
     # Detect the known games
@@ -120,6 +117,13 @@ def setGame(gameName,workingDir=''):
             else:
                 continue
             break
+    return foundGames,allGames,name
+
+def setGame(gameName,workingDir=u''):
+    global gamePath
+    global game
+    foundGames,allGames,name = detectGames(workingDir)
+    gameName = gameName.lower()
     #--See if the specified game is one that was found
     if gameName in foundGames:
         # The game specified was found
