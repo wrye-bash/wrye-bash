@@ -13747,7 +13747,7 @@ class PatchFile(ModFile):
                 reasons += u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s
 
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-        if 'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
+        if u'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
             if not verbose: return False
             reasons += u'\n.    '+_(u"Has 'NoMerge' tag.")
         #--Load test
@@ -22954,8 +22954,9 @@ class GmstTweak(MultiTweakItem):
             if value < 0:
                 deprint(_(u"GMST float value can't be a negative number - currently %s - skipping setting GMST.") % value)
                 return
+            eidLower = eid.lower()
             for record in patchFile.GMST.records:
-                if record.eid.lower() == eid.lower():
+                if record.eid.lower() == eidLower:
                     if record.value != value:
                         record.value = value
                         keep(record.fid)
