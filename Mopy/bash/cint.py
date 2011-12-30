@@ -65,6 +65,7 @@ except:
             try: return unicode(text,encoding)
             except UnicodeDecodeError: pass
         raise UnicodeDecodeError(u'Text could not be decoded using any method')
+    _uni = _unicode
 
     def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
         if isinstance(text,str) or text is None:
@@ -86,6 +87,7 @@ except:
             except UnicodeEncodeError:
                 pass
         raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+    _enc = _encode
 
 
 _CBashRequiredVersion = (0,6,0)
@@ -1584,7 +1586,7 @@ class CBashISTRINGARRAY(object):
         if(numRecords > 0):
             cRecords = (POINTER(c_char_p) * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [IUNICODE(_unicode(string_at(cRecords[x]))) for x in range(numRecords)]
+            return [IUNICODE(_unicode(string_at(cRecords[x]))) for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1592,6 +1594,29 @@ class CBashISTRINGARRAY(object):
         else:
             length = len(nValue)
             nValue = [_encode(value) for value in nValue]
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_char_p * length)(*nValue)), length)
+
+class CBashIUNICODEARRAY(object):
+    # Almost exactly like CBashISTRINGARRAY, but instead of using the bolt.pluginEncoding
+    # for encoding, uses the automatic encoding detection.  Only really useful for TES4
+    # record (masters)
+    __slots__ = ['_FieldID']
+    def __init__(self, FieldID):
+        self._FieldID = FieldID
+
+    def __get__(self, instance, owner):
+        numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
+        if (numRecords > 0):
+            cRecords = (POINTER(c_char_p) * numRecords)()
+            _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
+            return [IUNICODE(_uni(string_at(cRecords[x]))) for x in xrange(numRecords)]
+        return []
+
+    def __set__(self, instance, nValue):
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        else:
+            length = len(nValue)
+            nValue = [_enc(value) for value in nValue]
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_char_p * length)(*nValue)), length)
 
 class CBashGeneric(object):
@@ -1841,6 +1866,23 @@ class CBashSTRING(object):
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
+
+class CBashUNICODE(object):
+    # Almost exactly like CBashSTRING, only instead of using the bolt.pluginEncoding
+    # specified encoding first, uses the automatic encoding detection.  Only really
+    # useful for the TES4 record
+    __slots__ = ['_FieldID']
+    def __init__(self, FieldID):
+        self._FieldID = FieldID
+
+    def __get__(self, instance, owner):
+        _CGetField.restype = c_char_p
+        retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return _uni(retValue,avoidEncodings=('utf8','utf-8')) if retValue else None
+
+    def __set__(self, instance, nValue):
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._FieldID, self._FieldID, 0, 0, 0, 0, 0, 0, _enc(nValue), 0)
 
 class CBashISTRING(object):
     __slots__ = ['_FieldID']
@@ -3103,9 +3145,9 @@ class FnvTES4Record(object):
     nextObject = CBashGeneric(7, c_ulong)
     ofst_p = CBashUINT8ARRAY(8)
     dele_p = CBashUINT8ARRAY(9)
-    author = CBashSTRING(10)
-    description = CBashSTRING(11)
-    masters = CBashISTRINGARRAY(12)
+    author = CBashUNICODE(10)
+    description = CBashUNICODE(11)
+    masters = CBashIUNICODEARRAY(12)
     DATA = CBashJunk(13)
     overrides = CBashFORMIDARRAY(16)
     screenshot_p = CBashUINT8ARRAY(17)
@@ -10672,9 +10714,9 @@ class ObTES4Record(object):
     nextObject = CBashGeneric(7, c_ulong)
     ofst_p = CBashUINT8ARRAY(8)
     dele_p = CBashUINT8ARRAY(9)
-    author = CBashSTRING(10)
-    description = CBashSTRING(11)
-    masters = CBashISTRINGARRAY(12)
+    author = CBashUNICODE(10)
+    description = CBashUNICODE(11)
+    masters = CBashIUNICODEARRAY(12)
     DATA = CBashJunk(13)
     IsESM = CBashBasicFlag('flags1', 0x00000001)
     exportattrs = copyattrs = ['flags1', 'flags2', 'version', 'numRecords', 'nextObject',
