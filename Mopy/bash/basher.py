@@ -11273,6 +11273,7 @@ class Settings_Language(Link):
     """Specific language for Wrye Bash."""
     languageMap = {
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
+        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁體中文)',
         u'de': _('German') + u' (Deutsch)',
         u'pt_opt': _('Portuguese') + u' (português)',
         u'italian': _('Italian') + u' (italiano)',
