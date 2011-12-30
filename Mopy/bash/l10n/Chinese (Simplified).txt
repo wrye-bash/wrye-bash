@@ -7,11 +7,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "POT-Creation-Date: 2011-12-11 12:53+China Standard Time\n"
-"PO-Revision-Date: 2011-12-29 22:35+China Standard Time\n"
+"PO-Revision-Date: 2011-12-30 11:57+China Standard Time\n"
 "Last-Translator: bluesky404 aka icedream <icedream728@gmail.com>\n"
 "Language-Team: Chinese (Simplified)\n"
-"MIME-Version: for SVN 2096\n"
-"Content-Type: text/plain; charset=gb2312\n"
+"MIME-Version: for SVN 2098\n"
+"Content-Type: text/plain; charset=gbk\n"
 "Content-Transfer-Encoding: utf8\n"
 "Generated-By: pygettext.py 1.5\n"
 
@@ -128,7 +128,7 @@ msgstr "ÎŞĞ§ÉùÒôÎÄ¼ş%s¡£"
 msgid "Action"
 msgstr "²Ù×÷"
 
-#: bash\balt.py:856 bash\basher.py:7267 bash\basher.py:11690
+#: bash\balt.py:856 bash\basher.py:7267 bash\basher.py:11691
 msgid "Add"
 msgstr "Ìí¼Ó"
 
@@ -136,12 +136,12 @@ msgstr "Ìí¼Ó"
 msgid "Edit"
 msgstr "±à¼­"
 
-#: bash\balt.py:858 bash\balt.py:931 bash\basher.py:11691
+#: bash\balt.py:858 bash\balt.py:931 bash\basher.py:11692
 msgid "Rename"
 msgstr "ÖØÃüÃû"
 
 #: bash\balt.py:859 bash\basher.py:2411 bash\basher.py:7268
-#: bash\basher.py:11692
+#: bash\basher.py:11693
 msgid "Remove"
 msgstr "ÒÆ³ı"
 
@@ -158,8 +158,8 @@ msgstr "È¡Ïû"
 msgid "Rename to:"
 msgstr "ÖØÃüÃûÎª£º"
 
-#: bash\balt.py:935 bash\basher.py:12870 bash\basher.py:14727
-#: bash\basher.py:14744
+#: bash\balt.py:935 bash\basher.py:12871 bash\basher.py:14728
+#: bash\basher.py:14745
 msgid "Name must be unique."
 msgstr "Ãû×Ö²»ÄÜÖØ¸´¡£"
 
@@ -167,7 +167,7 @@ msgstr "Ãû×Ö²»ÄÜÖØ¸´¡£"
 msgid "Progress"
 msgstr "½ø³Ì"
 
-#: bash\balt.py:1741 bash\basher.py:12425
+#: bash\balt.py:1741 bash\basher.py:12426
 msgid "Delete these items? This operation cannot be undone."
 msgstr "È·ÈÏÉ¾³ıÎÄ¼ş£¿×¢Òâ´Ë²Ù×÷²»¿É»Ö¸´£¡"
 
@@ -184,7 +184,7 @@ msgstr "´ò¿ª'%s'"
 msgid "Open..."
 msgstr "´ò¿ª..."
 
-#: bash\balt.py:1883 bash\basher.py:7951 bash\basher.py:15906
+#: bash\balt.py:1883 bash\basher.py:7951 bash\basher.py:15907
 msgid "Delete"
 msgstr "É¾³ı"
 
@@ -363,7 +363,7 @@ msgstr "ÕıÔÚÑ¹ËõÎÄ¼ş¡­¡­"
 msgid "Extracting files..."
 msgstr "ÕıÔÚ½âÑ¹ÎÄ¼ş¡­¡­"
 
-#: bash\barb.py:507 bash\basher.py:17922 bash\bosh.py:30120
+#: bash\barb.py:507 bash\basher.py:17923 bash\bosh.py:30120
 msgid "Compiled"
 msgstr "ÒÑ±àÒë"
 
@@ -669,7 +669,7 @@ msgstr "×÷Õß"
 msgid "Cell"
 msgstr "³¡¾°"
 
-#: bash\basher.py:342 bash\basher.py:12009
+#: bash\basher.py:342 bash\basher.py:12010
 msgid "CRC"
 msgstr ""
 
@@ -685,8 +685,8 @@ msgstr "ÈÕÆÚ"
 msgid "Day"
 msgstr "ÌìÊı"
 
-#: bash\basher.py:346 bash\basher.py:17542 bash\basher.py:17572
-#: bash\basher.py:17714 bash\basher.py:17780
+#: bash\basher.py:346 bash\basher.py:17543 bash\basher.py:17573
+#: bash\basher.py:17715 bash\basher.py:17781
 msgid "File"
 msgstr "ÎÄ¼ş"
 
@@ -694,7 +694,7 @@ msgstr "ÎÄ¼ş"
 msgid "Files"
 msgstr "ÎÄ¼ş"
 
-#: bash\basher.py:348 bash\basher.py:17589 bash\bosh.py:12683
+#: bash\basher.py:348 bash\basher.py:17590 bash\bosh.py:12683
 msgid "Group"
 msgstr "Èº×é"
 
@@ -749,7 +749,7 @@ msgstr "Ğ¡Ê±"
 msgid "Player"
 msgstr "Íæ¼Ò"
 
-#: bash\basher.py:360 bash\basher.py:17595
+#: bash\basher.py:360 bash\basher.py:17596
 msgid "Rating"
 msgstr "ÆÀ·Ö"
 
@@ -769,7 +769,7 @@ msgstr "×´Ì¬"
 msgid "Subject"
 msgstr "¶ÔÏó"
 
-#: bash\basher.py:964 bash\basher.py:12422
+#: bash\basher.py:964 bash\basher.py:12423
 msgid "Uncheck items to skip deleting them if desired."
 msgstr "È¡Ïû²»ÏëÒªÉ¾³ıµÄ¶ÔÏó"
 
@@ -980,7 +980,7 @@ msgstr "ÎÄ¼şÃû%sÎŞ·¨±àÒë³ÉASCII¡£Õâ¿ÉÄÜµ¼ÖÂ%sÎŞ·¨¼¤»îmod¡£ÊÇ·ñÒÀ¾ÉĞŞ¸ÄmodµÄÃû×Ö£
 msgid "File corrupted on save!"
 msgstr "±£´æÎÄ¼şÊ±³ö´í£¡"
 
-#: bash\basher.py:2370 bash\basher.py:7265 bash\basher.py:11321
+#: bash\basher.py:2370 bash\basher.py:7265 bash\basher.py:11322
 msgid "Automatic"
 msgstr "×Ô¶¯"
 
@@ -988,7 +988,7 @@ msgstr "×Ô¶¯"
 msgid "Copy to Description"
 msgstr "¸´ÖÆµ½ÃèÊö"
 
-#: bash\basher.py:2413 bash\basher.py:11889
+#: bash\basher.py:2413 bash\basher.py:11890
 msgid "Edit..."
 msgstr "±à¼­¡­¡­"
 
@@ -1106,7 +1106,7 @@ msgstr "ÒÆ¶¯"
 msgid "Copy"
 msgstr "¸´ÖÆ"
 
-#: bash\basher.py:3586 bash\basher.py:6566 bash\basher.py:13527
+#: bash\basher.py:3586 bash\basher.py:6566 bash\basher.py:13528
 #: bash\bosh.py:15001 bash\bosh.py:15025 bash\bosh.py:15051 bash\bosh.py:15079
 #: bash\bosh.py:15109 bash\bosh.py:15319
 msgid "General"
@@ -1317,7 +1317,7 @@ msgstr "PM£º"
 msgid "People:"
 msgstr "ÁªÏµÈË£º"
 
-#: bash\basher.py:4884 bash\basher.py:12007 bash\basher.py:12095
+#: bash\basher.py:4884 bash\basher.py:12008 bash\basher.py:12096
 msgid "Version"
 msgstr "°æ±¾"
 
@@ -1365,8 +1365,8 @@ msgstr "ÕıÔÚ¹ÜÀí"
 msgid "(Standalone)"
 msgstr "£¨¶ÀÁ¢°æ£©"
 
-#: bash\basher.py:5334 bash\basher.py:5693 bash\basher.py:14799
-#: bash\basher.py:15295 bash\basher.py:15308 bash\basher.py:15318
+#: bash\basher.py:5334 bash\basher.py:5693 bash\basher.py:14800
+#: bash\basher.py:15296 bash\basher.py:15309 bash\basher.py:15319
 msgid "Default"
 msgstr "Ä¬ÈÏ"
 
@@ -1510,7 +1510,7 @@ msgstr "ÕıÈ·µÄ°²×°½«´´½¨%s\\Mopy¡¢%s\\Data\\DocsÒÔ¼°%s\\Data\\INI TweaksÄ¿Â¼¡£"
 msgid "Incomplete Installation"
 msgstr "°²×°²»ÍêÕû"
 
-#: bash\basher.py:5525 bash\basher.py:12684 bash\basher.py:13415
+#: bash\basher.py:5525 bash\basher.py:12685 bash\basher.py:13416
 msgid "Mark Mergeable"
 msgstr "¼ì²éÕûºÏĞÔ"
 
@@ -1530,11 +1530,11 @@ msgstr "È«²¿Ä¬ÈÏ"
 msgid "Apply All"
 msgstr "Ó¦ÓÃÈ«²¿"
 
-#: bash\basher.py:5697 bash\basher.py:15943
+#: bash\basher.py:5697 bash\basher.py:15944
 msgid "Export..."
 msgstr "µ¼³ö¡­¡­"
 
-#: bash\basher.py:5698 bash\basher.py:15962
+#: bash\basher.py:5698 bash\basher.py:15963
 msgid "Import..."
 msgstr "µ¼Èë¡­¡­"
 
@@ -1558,7 +1558,7 @@ msgstr "´Ó¡­¡­µ¼ÈëÑÕÉ«ÅäÖÃ£º"
 msgid "An error occurred reading from "
 msgstr "³ö´íÁË£¬ÎŞ·¨¶ÁÈ¡"
 
-#: bash\basher.py:5903 bash\basher.py:16678
+#: bash\basher.py:5903 bash\basher.py:16679
 msgid "Doc Browser"
 msgstr "ÎÄµµ²é¿´"
 
@@ -1598,7 +1598,7 @@ msgstr "ĞŞ¸ÄÎÄ¼şÃûÎª£º"
 msgid "Filename not defined."
 msgstr "ÎÄ¼şÃûÒÑĞŞ¸Ä¡£"
 
-#: bash\basher.py:6189 bash\basher.py:16714
+#: bash\basher.py:6189 bash\basher.py:16715
 msgid "Mod Checker"
 msgstr "Mod¼ì²é"
 
@@ -1634,11 +1634,11 @@ msgstr "CRC"
 msgid "Version Numbers"
 msgstr "°æ±¾Êı"
 
-#: bash\basher.py:6214 bash\basher.py:14620
+#: bash\basher.py:6214 bash\basher.py:14621
 msgid "Scan for Dirty Edits"
 msgstr "É¨ÃèDirty Edits"
 
-#: bash\basher.py:6216 bash\basher.py:14622
+#: bash\basher.py:6216 bash\basher.py:14623
 msgid "Scan for UDR's"
 msgstr "É¨ÃèUDR"
 
@@ -1690,7 +1690,7 @@ msgstr "ÊôĞÔ"
 msgid "Class"
 msgstr "Ö°Òµ"
 
-#: bash\basher.py:6464 bash\basher.py:6599 bash\basher.py:17642
+#: bash\basher.py:6464 bash\basher.py:6599 bash\basher.py:17643
 msgid "Import"
 msgstr "µ¼Èë"
 
@@ -1706,17 +1706,17 @@ msgstr "Á³²¿ÒÑµ¼Èë¡£"
 msgid "Update "
 msgstr "¸üĞÂ"
 
-#: bash\basher.py:6566 bash\basher.py:13527 bash\bosh.py:15413
+#: bash\basher.py:6566 bash\basher.py:13528 bash\bosh.py:15413
 #: bash\bosh.py:15435
 msgid "Importers"
 msgstr "µ¼Èë¹¤¾ß"
 
-#: bash\basher.py:6566 bash\basher.py:13528 bash\bosh.py:14941
+#: bash\basher.py:6566 bash\basher.py:13529 bash\bosh.py:14941
 #: bash\bosh.py:14966
 msgid "Tweakers"
 msgstr "µ÷Õû¹¤¾ß"
 
-#: bash\basher.py:6566 bash\basher.py:13528 bash\bosh.py:26899
+#: bash\basher.py:6566 bash\basher.py:13529 bash\bosh.py:26899
 msgid "Special"
 msgstr "ÌØÊâ×÷ÓÃ"
 
@@ -1734,7 +1734,7 @@ msgstr "È«Ñ¡"
 msgid "Deselect All"
 msgstr "È«²»"
 
-#: bash\basher.py:6598 bash\basher.py:17624
+#: bash\basher.py:6598 bash\basher.py:17625
 msgid "Export"
 msgstr "µ¼³ö"
 
@@ -1750,7 +1750,7 @@ msgstr "»Ö¸´ÖÁÄ¬ÈÏÅäÖÃ"
 msgid "Items that are new since the last time this patch was built are displayed in bold"
 msgstr "Ïà¶ÔÓÚ¾ÉµÄÅäÖÃ£¬ĞÂµÄÑ¡Ïî½«ÒÔ¼Ó´ÖÏÔÊ¾"
 
-#: bash\basher.py:6698 bash\basher.py:6794 bash\basher.py:15670
+#: bash\basher.py:6698 bash\basher.py:6794 bash\basher.py:15671
 msgid "Saving..."
 msgstr "ÕıÔÚ±£´æ¡­¡­"
 
@@ -1801,7 +1801,7 @@ msgstr "Bash±£´æ%sÊ±·¢Éú´íÎó¡£"
 msgid "_Configuration.dat"
 msgstr ""
 
-#: bash\basher.py:6879 bash\basher.py:13643
+#: bash\basher.py:6879 bash\basher.py:13644
 msgid "Export Bashed Patch configuration to:"
 msgstr "µ¼³öBashed PatchÅäÖÃÖÁ£º"
 
@@ -2410,8 +2410,8 @@ msgstr "%sÀ©Õ¹Ãû(%s)´íÎó¡£"
 msgid "Hide..."
 msgstr "Òş²Ø¡­¡­"
 
-#: bash\basher.py:9128 bash\basher.py:9642 bash\basher.py:15012
-#: bash\basher.py:15871
+#: bash\basher.py:9128 bash\basher.py:9642 bash\basher.py:15013
+#: bash\basher.py:15872
 msgid "Rename..."
 msgstr "ÖØÃüÃû¡­¡­"
 
@@ -2833,8 +2833,8 @@ msgstr "°üº¬"
 msgid "BCF Information"
 msgstr "BCFĞÅÏ¢"
 
-#: bash\basher.py:10370 bash\basher.py:12874 bash\basher.py:12886
-#: bash\basher.py:14731 bash\basher.py:14748
+#: bash\basher.py:10370 bash\basher.py:12875 bash\basher.py:12887
+#: bash\basher.py:14732 bash\basher.py:14749
 msgid "Name must be between 1 and 64 characters long."
 msgstr "Ãû×Ö³¤¶È±ØĞëÔÚ1ÖÁ64Ö®¼ä"
 
@@ -2842,7 +2842,7 @@ msgstr "Ãû×Ö³¤¶È±ØĞëÔÚ1ÖÁ64Ö®¼ä"
 msgid "All"
 msgstr "È«²¿"
 
-#: bash\basher.py:10405 bash\basher.py:10894 bash\basher.py:12933
+#: bash\basher.py:10405 bash\basher.py:10894 bash\basher.py:12934
 #: bash\bosh.py:15392 bash\bosh.py:28696 bash\bosh.py:28702 bash\bosh.py:28708
 #: bash\bosh.py:29240 bash\bosh.py:29247 bash\bosh.py:29253 bash\bosh.py:29259
 msgid "None"
@@ -2912,7 +2912,7 @@ msgstr "INIµ÷Õû´íÎó"
 msgid "Applies '%s' to '%s'."
 msgstr "Ó¦ÓÃ'%s'ÖÁ'%s'¡£"
 
-#: bash\basher.py:10540 bash\basher.py:17452
+#: bash\basher.py:10540 bash\basher.py:17453
 msgid "Apply"
 msgstr "Ó¦ÓÃ"
 
@@ -2995,7 +2995,7 @@ msgstr "¿ªÆôÍêÕûBalo£¿"
 msgid "Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order.  Full Balo is still in development and may have some rough edges."
 msgstr "ÍêÕûBalo¸ù¾İÈº×éĞÅÏ¢·ÖÀëMod£¬È»ºóÔÚÈº×éÖĞ°´ÕÕ×ÖÄ¸ÅÅĞòÕâĞ©Mod¡£ÍêÕûBalo¹¦ÄÜÕıÔÚ¿ª·¢ÖĞ²¢ÇÒ´æÔÚÒ»Ğ©ÏŞÖÆ¡£"
 
-#: bash\basher.py:10703 bash\basher.py:11679
+#: bash\basher.py:10703 bash\basher.py:11680
 msgid "Balo Groups"
 msgstr "BaloÈº×é"
 
@@ -3023,11 +3023,11 @@ msgstr "ÏÔÊ¾Mod¡­¡­"
 msgid "Active Mod Files"
 msgstr "ÒÑ¼¤»îModÎÄ¼ş"
 
-#: bash\basher.py:10773 bash\basher.py:12110
+#: bash\basher.py:10773 bash\basher.py:12111
 msgid "List Bash Tags..."
 msgstr "ÏÔÊ¾Bash±êÇ©"
 
-#: bash\basher.py:10782 bash\basher.py:12122
+#: bash\basher.py:10782 bash\basher.py:12123
 msgid "Bash Tags"
 msgstr "Bash±êÇ©"
 
@@ -3259,2249 +3259,2253 @@ msgstr "·±ÌåÖĞÎÄ"
 msgid "Japanese"
 msgstr "ÈÕÓï"
 
-#: bash\basher.py:11320
+#: bash\basher.py:11312
+msgid "Western European (English, French, German, etc)"
+msgstr "Î÷Å·£¨Ó¢Óï¡¢·¨Óï¡¢µÂÓïµÈ£©"
+
+#: bash\basher.py:11321
 msgid "Plugin Encoding"
 msgstr "²å¼ş±àÂë"
 
-#: bash\basher.py:11352
+#: bash\basher.py:11353
 msgid "Game"
 msgstr "ÓÎÏ·"
 
-#: bash\basher.py:11385 bash\basher.py:11389
+#: bash\basher.py:11386 bash\basher.py:11390
 msgid "Unhide Buttons"
 msgstr "È¡ÏûÒş²ØµÄÍ¼±ê"
 
-#: bash\basher.py:11414
+#: bash\basher.py:11415
 msgid "Unhide the '%s' status bar button."
 msgstr "È¡Ïû×´Ì¬À¸ÖĞÒş²ØµÄÍ¼±ê¡£"
 
-#: bash\basher.py:11424
+#: bash\basher.py:11425
 msgid "Use Alternate Wrye Bash Name"
 msgstr "Ê¹ÓÃÆäËûWrye BashÃû"
 
-#: bash\basher.py:11426
+#: bash\basher.py:11427
 msgid "Use an alternate display name for Wrye Bash based on the game it is managing."
 msgstr "¸ù¾İWrye Bash¹ÜÀíµÄÓÎÏ·°æ±¾ĞŞ¸Ä³ÌĞòÃû×ÖµÄÏÔÊ¾¡£"
 
-#: bash\basher.py:11438
+#: bash\basher.py:11439
 msgid "Hide '%s'"
 msgstr "Òş²Ø'%s'"
 
-#: bash\basher.py:11451 bash\basher.py:11494
+#: bash\basher.py:11452 bash\basher.py:11495
 msgid "NPC Levels..."
 msgstr "NPCµÈ¼¶¡­¡­"
 
-#: bash\basher.py:11456
+#: bash\basher.py:11457
 msgid "This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported."
 msgstr "´Ë²Ù×÷µ¼³öNPCµÈ¼¶ĞÅÏ¢¡£µ¼³öµÄµç×ÓÎÄµµ¿ÉÒÔÓÃÏà¹Ø³ÌĞòĞŞ¸Ä²¢Ö§³ÖÔÙ´Îµ¼Èë¡£"
 
-#: bash\basher.py:11458 bash\basher.py:11501 bash\basher.py:12488
-#: bash\basher.py:12578
+#: bash\basher.py:11459 bash\basher.py:11502 bash\basher.py:12489
+#: bash\basher.py:12579
 msgid "See the Bash help file for more info."
 msgstr "²é¿´°ïÖúÎÄµµ»ñÈ¡¸ü¶àĞÅÏ¢¡£"
 
-#: bash\basher.py:11461
+#: bash\basher.py:11462
 msgid "Export NPC Levels"
 msgstr "µ¼³öNPCµÈ¼¶"
 
-#: bash\basher.py:11469
+#: bash\basher.py:11470
 msgid "Export NPC levels to:"
 msgstr "µ¼³öNPCµÈ¼¶µ½£º"
 
-#: bash\basher.py:11474 bash\basher.py:12551
+#: bash\basher.py:11475 bash\basher.py:12552
 msgid "Export Factions"
 msgstr "µ¼³ö×ÚÅÉ"
 
-#: bash\basher.py:11483 bash\basher.py:11527 bash\basher.py:12470
-#: bash\basher.py:12513 bash\basher.py:12560 bash\basher.py:12604
-#: bash\basher.py:14057 bash\basher.py:14108 bash\basher.py:14149
-#: bash\basher.py:14198 bash\basher.py:14236 bash\basher.py:14320
-#: bash\basher.py:14363 bash\basher.py:14417 bash\basher.py:14465
-#: bash\basher.py:14514
+#: bash\basher.py:11484 bash\basher.py:11528 bash\basher.py:12471
+#: bash\basher.py:12514 bash\basher.py:12561 bash\basher.py:12605
+#: bash\basher.py:14058 bash\basher.py:14109 bash\basher.py:14150
+#: bash\basher.py:14199 bash\basher.py:14237 bash\basher.py:14321
+#: bash\basher.py:14364 bash\basher.py:14418 bash\basher.py:14466
+#: bash\basher.py:14515
 msgid "Reading"
 msgstr "ÕıÔÚ¶ÁÈ¡"
 
-#: bash\basher.py:11485 bash\basher.py:12472 bash\basher.py:14110
-#: bash\basher.py:14200 bash\basher.py:14322 bash\basher.py:14419
-#: bash\basher.py:14516
+#: bash\basher.py:11486 bash\basher.py:12473 bash\basher.py:14111
+#: bash\basher.py:14201 bash\basher.py:14323 bash\basher.py:14420
+#: bash\basher.py:14517
 msgid "Exporting to"
 msgstr "Õıµ¼³öÖÁ"
 
-#: bash\basher.py:11487 bash\basher.py:11531 bash\basher.py:12474
-#: bash\basher.py:12517 bash\basher.py:12564 bash\basher.py:12608
-#: bash\basher.py:13080 bash\basher.py:13123 bash\basher.py:13249
-#: bash\basher.py:13290 bash\basher.py:13335 bash\basher.py:13747
-#: bash\basher.py:13934 bash\basher.py:13975 bash\basher.py:14023
-#: bash\basher.py:14065 bash\basher.py:14112 bash\basher.py:14157
-#: bash\basher.py:14202 bash\basher.py:14240 bash\basher.py:14287
-#: bash\basher.py:14324 bash\basher.py:14367 bash\basher.py:14421
-#: bash\basher.py:14469 bash\basher.py:14518 bash\basher.py:14559
+#: bash\basher.py:11488 bash\basher.py:11532 bash\basher.py:12475
+#: bash\basher.py:12518 bash\basher.py:12565 bash\basher.py:12609
+#: bash\basher.py:13081 bash\basher.py:13124 bash\basher.py:13250
+#: bash\basher.py:13291 bash\basher.py:13336 bash\basher.py:13748
+#: bash\basher.py:13935 bash\basher.py:13976 bash\basher.py:14024
+#: bash\basher.py:14066 bash\basher.py:14113 bash\basher.py:14158
+#: bash\basher.py:14203 bash\basher.py:14241 bash\basher.py:14288
+#: bash\basher.py:14325 bash\basher.py:14368 bash\basher.py:14422
+#: bash\basher.py:14470 bash\basher.py:14519 bash\basher.py:14560
 msgid "Done."
 msgstr "Íê³É¡£"
 
-#: bash\basher.py:11499
+#: bash\basher.py:11500
 msgid "This command will import NPC level info from a previously exported file."
 msgstr "´Ë²Ù×÷½«´ÓÖ®Ç°µ¼³öµÄÎÄ¼şÖĞµ¼ÈëNPCµÈ¼¶ĞÅÏ¢¡£"
 
-#: bash\basher.py:11504 bash\basher.py:11522 bash\basher.py:11535
-#: bash\basher.py:11539
+#: bash\basher.py:11505 bash\basher.py:11523 bash\basher.py:11536
+#: bash\basher.py:11540
 msgid "Import NPC Levels"
 msgstr "µ¼ÈëNPCµÈ¼¶"
 
-#: bash\basher.py:11511
+#: bash\basher.py:11512
 msgid "Import NPC levels from:"
 msgstr "´Ó¡­¡­µ¼ÈëNPCµÈ¼¶£º"
 
-#: bash\basher.py:11518
+#: bash\basher.py:11519
 msgid "Source file must be a _NPC_Levels.csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇXXX_NPC_Levels.csvÎÄ¼ş¡£"
 
-#: bash\basher.py:11529 bash\basher.py:12515 bash\basher.py:12606
-#: bash\basher.py:14063 bash\basher.py:14155 bash\basher.py:14238
-#: bash\basher.py:14365 bash\basher.py:14467
+#: bash\basher.py:11530 bash\basher.py:12516 bash\basher.py:12607
+#: bash\basher.py:14064 bash\basher.py:14156 bash\basher.py:14239
+#: bash\basher.py:14366 bash\basher.py:14468
 msgid "Applying to"
 msgstr "ÕıÓ¦ÓÃµ½"
 
-#: bash\basher.py:11534
+#: bash\basher.py:11535
 msgid "No relevant NPC levels to import."
 msgstr "Ã»ÓĞÏà¹ØNPCµÈ¼¶ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:11547
+#: bash\basher.py:11548
 msgid "Add Masters..."
 msgstr "Ìí¼ÓMaster¡­¡­"
 
-#: bash\basher.py:11551
+#: bash\basher.py:11552
 msgid "WARNING!  For advanced modders only!  Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master.  Useful for splitting mods into esm/esp pairs."
 msgstr "¾¯¸æ£¡¸ß¼¶ModÖÆ×÷Õß×¨ÓÃ£¡¸øModÌí¼ÓMaster£¬»á¸îÈÃĞÂÎïÆ·µÄËùÓĞÈ¨ÖÁĞÂÔöµÄMaster¡£·½±ã°ÑMod·ÖÀë³ÉEsm/Esp¶Ô¡£"
 
-#: bash\basher.py:11552
+#: bash\basher.py:11553
 msgid "Add Masters"
 msgstr "Ìí¼ÓMaster"
 
-#: bash\basher.py:11555 bash\basher.py:11604
+#: bash\basher.py:11556 bash\basher.py:11605
 msgid "Masters"
 msgstr "Master"
 
-#: bash\basher.py:11556
+#: bash\basher.py:11557
 msgid "Add masters:"
 msgstr "Ìí¼ÓMaster£º"
 
-#: bash\basher.py:11564 bash\basher.py:11655
+#: bash\basher.py:11565 bash\basher.py:11656
 msgid "File must be selected from %s Data Files directory."
 msgstr "ÎÄ¼ş±ØĞë´Ó%s DataÄ¿Â¼ÏÂÑ¡Ôñ¡£"
 
-#: bash\basher.py:11568
+#: bash\basher.py:11569
 msgid "is already a master."
 msgstr "%sÒÑ¾­ÊÇMaster£¡"
 
-#: bash\basher.py:11584
+#: bash\basher.py:11585
 msgid "Clean Masters..."
 msgstr "ÇåÀíMaster¡­¡­"
 
-#: bash\basher.py:11588
+#: bash\basher.py:11589
 msgid "WARNING!  For advanced modders only!  Removes masters that are not referenced in any records."
 msgstr "¾¯¸æ£¡¸ß¼¶modÖÆ×÷Õß×¨ÓÃ£¡ÒÆ³ıÎ´±»Ê¹ÓÃÈÎºÎÊı¾İµÄmaster¡£"
 
-#: bash\basher.py:11590 bash\basher.py:11630
+#: bash\basher.py:11591 bash\basher.py:11631
 msgid "Clean Masters"
 msgstr "ÇåÀíMaster"
 
-#: bash\basher.py:11606
+#: bash\basher.py:11607
 msgid "These master files are not referenced within the mod, and can safely be removed."
 msgstr "ÕâĞ©masterÎÄ¼şÃ»ÓĞ±»modËùÊ¹ÓÃ£¬¿ÉÒÔ°²È«ÒÆ³ı¡£"
 
-#: bash\basher.py:11610
+#: bash\basher.py:11611
 msgid "Remove these masters?"
 msgstr "ÒÆ³ıÕâĞ©master£¿"
 
-#: bash\basher.py:11611
+#: bash\basher.py:11612
 msgid "The following master files can be safely removed."
 msgstr "ÒÔÏÂmasterÄÜ¹»±»°²È«ÒÆ³ı¡£"
 
-#: bash\basher.py:11627
+#: bash\basher.py:11628
 msgid "to remove:"
 msgstr "½«ÒÆ³ı£º"
 
-#: bash\basher.py:11629
+#: bash\basher.py:11630
 msgid "No Masters to clean."
 msgstr "Ã»ÓĞĞèÒªÇåÀíµÄmaster¡£"
 
-#: bash\basher.py:11637
+#: bash\basher.py:11638
 msgid "Add Master..."
 msgstr "Ìí¼ÓMaster¡­¡­"
 
-#: bash\basher.py:11642
+#: bash\basher.py:11643
 msgid "WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs."
 msgstr "¾¯¸æ£¡¸ß¼¶ModÖÆ×÷Õß×¨ÓÃ£¡¸øModÌí¼ÓMaster£¬»á¸îÈÃĞÂÎïÆ·µÄËùÓĞÈ¨ÖÁĞÂÔöµÄMaster¡£·½±ã°ÑMod·ÖÀë³ÉEsm/Esp¶Ô¡£"
 
-#: bash\basher.py:11643
+#: bash\basher.py:11644
 msgid "Add Master"
 msgstr "Ìí¼ÓMaster"
 
-#: bash\basher.py:11647
+#: bash\basher.py:11648
 msgid "%s Masters"
 msgstr "%s¸öMaster"
 
-#: bash\basher.py:11648
+#: bash\basher.py:11649
 msgid "Add master:"
 msgstr "Ìí¼Ómaster£º"
 
-#: bash\basher.py:11657
+#: bash\basher.py:11658
 msgid "%s is already a master!"
 msgstr "%sÒÑ¾­ÊÇmaster£¡"
 
-#: bash\basher.py:11693
+#: bash\basher.py:11694
 msgid "Move Up"
 msgstr "ÉÏÒÆ"
 
-#: bash\basher.py:11694
+#: bash\basher.py:11695
 msgid "Move Down"
 msgstr "ÏÂÒÆ"
 
-#: bash\basher.py:11705
+#: bash\basher.py:11706
 msgid "Offsets"
 msgstr "³·Ïú"
 
-#: bash\basher.py:11732
+#: bash\basher.py:11733
 msgid "Group name must be letters, spaces, underscores only!"
 msgstr "Èº×éÃû×ÖÖ»ÄÜ°üº¬×ÖÄ¸£¬¿Õ¸ñÓëÏÂ»®Ïß£¡"
 
-#: bash\basher.py:11735
+#: bash\basher.py:11736
 msgid "group %s already exists."
 msgstr "Èº×é%sÒÑ´æÔÚ¡£"
 
-#: bash\basher.py:11738
+#: bash\basher.py:11739
 msgid "Group names must be less than forty characters."
 msgstr "Èº×éÃû×Ö±ØĞëĞ¡ÓÚ40¸ö×Ö·û´®¡£"
 
-#: bash\basher.py:11791
+#: bash\basher.py:11792
 msgid "Add Balo Group"
 msgstr "Ìí¼ÓBaloÈº×é"
 
-#: bash\basher.py:11796
+#: bash\basher.py:11797
 msgid "Name of new group (spaces and letters only):"
 msgstr "ĞÂÈº×éÃû×Ö£¨½öÖ§³Ö¿Õ¸ñÓë×ÖÄ¸£©£º"
 
-#: bash\basher.py:11820
+#: bash\basher.py:11821
 msgid "Rename Balo Group"
 msgstr "ÖØÃüÃûBaloÈº×é"
 
-#: bash\basher.py:11825
+#: bash\basher.py:11826
 msgid "Rename %s to (spaces, letters and underscores only):"
 msgstr "ÖØÃüÃû%sÎª£¨½öÖ§³Ö¿Õ¸ñ,×ÖÄ¸ÓëÏÂ»®Ïß£©£º"
 
-#: bash\basher.py:11938
+#: bash\basher.py:11939
 msgid "Allow Ghosting"
 msgstr "ÔÊĞí¹íÒş"
 
-#: bash\basher.py:11958
+#: bash\basher.py:11959
 msgid "Create BOSS Report..."
 msgstr "Éú³ÉBOSS±¨¸æ¡­¡­"
 
-#: bash\basher.py:11973 bash\basher.py:14629
+#: bash\basher.py:11974 bash\basher.py:14630
 msgid "Dirty Edits"
 msgstr ""
 
-#: bash\basher.py:12014
+#: bash\basher.py:12015
 msgid "(via Wrye Bash)"
 msgstr "£¨Í¨¹ıWrye Bash£©"
 
-#: bash\basher.py:12022
+#: bash\basher.py:12023
 msgid "BOSS Report"
 msgstr "BOSS±¨¸æ"
 
-#: bash\basher.py:12029
+#: bash\basher.py:12030
 msgid "Copy Mod Info..."
 msgstr "¸´ÖÆModĞÅÏ¢¡­¡­"
 
-#: bash\basher.py:12102
+#: bash\basher.py:12103
 msgid "Mod Info Report"
 msgstr "ModĞÅÏ¢±¨¸æ"
 
-#: bash\basher.py:12128
+#: bash\basher.py:12129
 msgid "Disallow Ghosting"
 msgstr "½ûÖ¹¹íÒş"
 
-#: bash\basher.py:12147
+#: bash\basher.py:12148
 msgid "Ghost"
 msgstr "¹íÒş"
 
-#: bash\basher.py:12166
+#: bash\basher.py:12167
 msgid "Invert Ghosting"
 msgstr "·´Ñ¡¹íÒş"
 
-#: bash\basher.py:12188
+#: bash\basher.py:12189
 msgid "Don't Ghost"
 msgstr "²»Òª¹íÒş"
 
-#: bash\basher.py:12194
+#: bash\basher.py:12195
 msgid "Ghosting"
 msgstr "¹íÒş"
 
-#: bash\basher.py:12218 bash\basher.py:12255
+#: bash\basher.py:12219 bash\basher.py:12256
 msgid "Don't check against BOSS's dirty mod list"
 msgstr "²»Òª¼ì²éBOSSµÄDirty ModÁĞ±í"
 
-#: bash\basher.py:12220
+#: bash\basher.py:12221
 msgid "Check against BOSS's dirty mod list"
 msgstr "¼ì²éBOSSµÄDirty ModÁĞ±í"
 
-#: bash\basher.py:12238
+#: bash\basher.py:12239
 msgid "Invert checking against BOSS's dirty mod list"
 msgstr "·´Ñ¡'¼ì²éBOSSµÄDirty ModÁĞ±í'"
 
-#: bash\basher.py:12261
+#: bash\basher.py:12262
 msgid "Dirty edit scanning"
 msgstr "ÕıÔÚÉ¨ÃèDirty Edit"
 
-#: bash\basher.py:12278 bash\basher.py:12285 bash\basher.py:12287
-#: bash\basher.py:12300 bash\basher.py:12304 bash\bosh.py:20206
+#: bash\basher.py:12279 bash\basher.py:12286 bash\basher.py:12288
+#: bash\basher.py:12301 bash\basher.py:12305 bash\bosh.py:20206
 #: bash\bosh.py:20245 bash\bosh.py:20253 bash\bosh.py:20257 bash\bosh.py:20289
 msgid "Nvidia Fog Fix"
 msgstr "NvidiaºÚÆÁĞŞ¸´"
 
-#: bash\basher.py:12283
+#: bash\basher.py:12284
 msgid "Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug."
 msgstr "Ó¦ÓÃNvidiaÎíĞŞ¸´¡£´Ë²Ù×÷ĞŞ¸ÄÊÒÍâ³¡¾°µÄÎíÖµÒÔ±ÜÃâNvidiaµÄºÚÆÁbug¡£"
 
-#: bash\basher.py:12292 bash\basher.py:14598
+#: bash\basher.py:12293 bash\basher.py:14599
 msgid "Scanning"
 msgstr "ÕıÔÚÉ¨Ãè"
 
-#: bash\basher.py:12299
+#: bash\basher.py:12300
 msgid "Cells Fixed"
 msgstr "ÒÑĞŞ¸´³¡¾°"
 
-#: bash\basher.py:12303 bash\basher.py:13126 bash\basher.py:13210
-#: bash\basher.py:13252 bash\basher.py:13338 bash\basher.py:13752
-#: bash\basher.py:14610
+#: bash\basher.py:12304 bash\basher.py:13127 bash\basher.py:13211
+#: bash\basher.py:13253 bash\basher.py:13339 bash\basher.py:13753
+#: bash\basher.py:14611
 msgid "No changes required."
 msgstr "²»ĞèÒªĞŞ¸Ä¡£"
 
-#: bash\basher.py:12311
+#: bash\basher.py:12312
 msgid "New Bashed Patch..."
 msgstr "ĞÂ½¨Bashed Patch¡­¡­"
 
-#: bash\basher.py:12324
+#: bash\basher.py:12325
 msgid "New Mod..."
 msgstr "ĞÂ½¨Mod¡­¡­"
 
-#: bash\basher.py:12352
+#: bash\basher.py:12353
 msgid "Create Dummy Masters..."
 msgstr "Éú³ÉĞé¼ÙMaster¡­¡­"
 
-#: bash\basher.py:12362
+#: bash\basher.py:12363
 msgid "This is an advanced feature for editing 'Filter' patches in TES4Edit.  It will create dummy plugins for each missing master.  Are you sure you want to continue?"
 msgstr "ÕâÊÇÎªÁË·½±ãÔÚTES4EditÖĞ±à¼­'Filter'²¹¶¡¡£½«¸ù¾İËù¶ªÊ§µÄmasterÉú³ÉÏàÓ¦µÄĞé¼Ùmaster¡£ÊÇ·ñ¼ÌĞø£¿"
 
-#: bash\basher.py:12364
+#: bash\basher.py:12365
 msgid "To remove these files later, use 'Clean Dummy Masters...'"
 msgstr "ÒªÉ¾³ıÕâĞ©ÎÄ¼ş£¬ÇëÊ¹ÓÃ'É¾³ıĞé¼ÙMaster¡­¡­'"
 
-#: bash\basher.py:12365
+#: bash\basher.py:12366
 msgid "Create Files"
 msgstr "Éú³ÉÎÄ¼ş"
 
-#: bash\basher.py:12405
+#: bash\basher.py:12406
 msgid "Remove Dummy Masters..."
 msgstr "É¾³ıĞé¼ÙMaster¡­¡­"
 
-#: bash\basher.py:12424
+#: bash\basher.py:12425
 msgid "Delete Dummy Masters"
 msgstr "É¾³ıĞé¼ÙMaster"
 
-#: bash\basher.py:12445 bash\basher.py:12481
+#: bash\basher.py:12446 bash\basher.py:12482
 msgid "Relations..."
 msgstr "ÁªÏµ¡­¡­"
 
-#: bash\basher.py:12456
+#: bash\basher.py:12457
 msgid "Export faction relations to:"
 msgstr "µ¼³ö×ÚÅÉÁªÏµµ½£º"
 
-#: bash\basher.py:12461
+#: bash\basher.py:12462
 msgid "Export Relations"
 msgstr "µ¼³ö×ÚÅÉÁªÏµ"
 
-#: bash\basher.py:12486
+#: bash\basher.py:12487
 msgid "This command will import faction relation info from a previously exported file."
 msgstr "´Ë²Ù×÷´ÓÖ®Ç°µ¼³öµÄÎÄµµÖĞµ¼Èë×ÚÅÉÁªÏµĞÅÏ¢¡£"
 
-#: bash\basher.py:12490 bash\basher.py:12508 bash\basher.py:12522
-#: bash\basher.py:12528 bash\bosh.py:17179 bash\bosh.py:17285
+#: bash\basher.py:12491 bash\basher.py:12509 bash\basher.py:12523
+#: bash\basher.py:12529 bash\bosh.py:17179 bash\bosh.py:17285
 msgid "Import Relations"
 msgstr ""
 
-#: bash\basher.py:12497
+#: bash\basher.py:12498
 msgid "Import faction relations from:"
 msgstr "´Ó¡­¡­µ¼Èë×ÚÅÉÁªÏµ£º"
 
-#: bash\basher.py:12504
+#: bash\basher.py:12505
 msgid "Source file must be a _Relations.csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇ_Relations.csvÎÄ¼ş¡£"
 
-#: bash\basher.py:12521
+#: bash\basher.py:12522
 msgid "No relevant faction relations to import."
 msgstr "ÎŞÏà¹Ø×ÚÅÉÁªÏµĞÅÏ¢ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:12535 bash\basher.py:12571
+#: bash\basher.py:12536 bash\basher.py:12572
 msgid "Factions..."
 msgstr "×ÚÅÉ¡­¡­"
 
-#: bash\basher.py:12546
+#: bash\basher.py:12547
 msgid "Export factions to:"
 msgstr "µ¼³ö×ÚÅÉĞÅÏ¢µ½£º"
 
-#: bash\basher.py:12562
+#: bash\basher.py:12563
 msgid "Exporting to "
 msgstr "Õıµ¼³öµ½"
 
-#: bash\basher.py:12576
+#: bash\basher.py:12577
 msgid "This command will import faction ranks from a previously exported file."
 msgstr "´Ë²Ù×÷´ÓÖ®Ç°µ¼³öµÄÎÄµµÖĞµ¼Èë×ÚÅÉµÈ¼¶ĞÅÏ¢¡£"
 
-#: bash\basher.py:12580 bash\basher.py:12599 bash\basher.py:12612
-#: bash\basher.py:12619 bash\bosh.py:16962 bash\bosh.py:17073
+#: bash\basher.py:12581 bash\basher.py:12600 bash\basher.py:12613
+#: bash\basher.py:12620 bash\bosh.py:16962 bash\bosh.py:17073
 msgid "Import Factions"
 msgstr ""
 
-#: bash\basher.py:12587
+#: bash\basher.py:12588
 msgid "Import Factions from:"
 msgstr "´Ó¡­¡­µ¼Èë×ÚÅÉĞÅÏ¢£º"
 
-#: bash\basher.py:12595
+#: bash\basher.py:12596
 msgid "Source file must be a _Factions.csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇ_Factions.csvÎÄ¼ş¡£"
 
-#: bash\basher.py:12611
+#: bash\basher.py:12612
 msgid "No relevant faction ranks to import."
 msgstr "ÎŞÏà¹Ø×ÚÅÉµÈ¼¶ĞÅÏ¢ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:12626
+#: bash\basher.py:12627
 msgid "Mark Levelers..."
 msgstr "±ê¼ÇLeveler¡­¡­"
 
-#: bash\basher.py:12631
+#: bash\basher.py:12632
 msgid "Obsolete. Mods are now automatically tagged when possible."
 msgstr "ÒÑ·ÏÆú¡£ModÏÖÔÚÄÜ¹»×ÔĞĞÌí¼Ó±êÇ©¡£"
 
-#: bash\basher.py:12632
+#: bash\basher.py:12633
 msgid "Mark Levelers"
 msgstr "±ê¼ÇLeveler"
 
-#: bash\basher.py:12644
+#: bash\basher.py:12645
 msgid "Mark Mergeable (CBash)..."
 msgstr "¼ì²éÕûºÏĞÔ£¨CBash£©¡­¡­"
 
-#: bash\basher.py:12646
+#: bash\basher.py:12647
 msgid "Mark Mergeable..."
 msgstr "¼ì²éÕûºÏĞÔ¡­¡­"
 
-#: bash\basher.py:12659
+#: bash\basher.py:12660
 msgid "Marked non-mergeable at request of mod author."
 msgstr "mod×÷ÕßÒªÇó²»ÒªÕûºÏ¡£"
 
-#: bash\basher.py:12669 bash\bosh.py:5111 bash\bosh.py:13752
+#: bash\basher.py:12670 bash\bosh.py:5111 bash\bosh.py:13752
 #: bash\bosh.py:14072
 msgid "Has 'NoMerge' tag."
 msgstr "º¬'NoMerge'±êÇ©¡£"
 
-#: bash\basher.py:12674
+#: bash\basher.py:12675
 msgid "Mergeability"
 msgstr "¿ÉÕûºÏĞÔ"
 
-#: bash\basher.py:12676 bash\basher.py:13428 bash\bosh.py:6226
+#: bash\basher.py:12677 bash\basher.py:13429 bash\bosh.py:6226
 msgid "Mergeable"
 msgstr "¿ÉÕûºÏ"
 
-#: bash\basher.py:12680
+#: bash\basher.py:12681
 msgid "Not Mergeable"
 msgstr "²»¿ÉÕûºÏ"
 
-#: bash\basher.py:12693
+#: bash\basher.py:12694
 msgid "Copy to Esm"
 msgstr "¸´ÖÆÎªEsm"
 
-#: bash\basher.py:12693
+#: bash\basher.py:12694
 msgid "Copy to Esp"
 msgstr "¸´ÖÆÎªEsp"
 
-#: bash\basher.py:12711
+#: bash\basher.py:12712
 msgid "Replace existing %s?"
 msgstr "Ìæ»»ÒÑ´æÔÚµÄ%s£¿"
 
-#: bash\basher.py:12732
+#: bash\basher.py:12733
 msgid "Face..."
 msgstr "Á³²¿¡­¡­"
 
-#: bash\basher.py:12739 bash\basher.py:14893
+#: bash\basher.py:12740 bash\basher.py:14894
 msgid "%s Files"
 msgstr "%s¸öÎÄ¼ş"
 
-#: bash\basher.py:12741 bash\basher.py:14895
+#: bash\basher.py:12742 bash\basher.py:14896
 msgid "Face Source:"
 msgstr "Á³²¿Ô´Êı¾İ£º"
 
-#: bash\basher.py:12761
+#: bash\basher.py:12762
 msgid "Imported face to: %s"
 msgstr "ÒÑµ¼ÈëÁ³²¿Êı¾İµ½£º%s"
 
-#: bash\basher.py:12768
+#: bash\basher.py:12769
 msgid "Esmify Masters"
 msgstr "MasterÎÄ¼şEsm»¯"
 
-#: bash\basher.py:12780
+#: bash\basher.py:12781
 msgid "Espify Masters"
 msgstr "MasterÎÄ¼şEsp»¯"
 
-#: bash\basher.py:12788
+#: bash\basher.py:12789
 msgid "WARNING! For advanced modders only! Flips esp/esm bit of esp masters to convert them to/from esm state. Useful for building/analyzing esp mastered mods."
 msgstr "¾¯¸æ£¡¸ß¼¶modÖÆ×÷Õß×¨ÓÃ£¡×ª»»espÎªesm£¬»òÓÉesm×ª»»Îªesp£¬·½±ã´´½¨/·ÖÎöº¬espµÄmasterÎÄ¼şµÄmod¡£"
 
-#: bash\basher.py:12811
+#: bash\basher.py:12812
 msgid "Esmify Self"
 msgstr "×ÔÉíEsm»¯"
 
-#: bash\basher.py:12811
+#: bash\basher.py:12812
 msgid "Espify Self"
 msgstr "×ÔÉíEsp»¯"
 
-#: bash\basher.py:12821
+#: bash\basher.py:12822
 msgid "WARNING! For advanced modders only!"
 msgstr "¾¯¸æ£¡¸ß¼¶modÖÆ×÷Õß×¨ÓÃ£¡"
 
-#: bash\basher.py:12823
+#: bash\basher.py:12824
 msgid "This command flips an internal bit in the mod, converting an esp to an esm and vice versa.  Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod."
 msgstr "´Ë²Ù×÷ĞŞ¸ÄÁËmodÄÚ²¿µÄĞ¡²¿·ÖÄÚÈİ£¬´Ó¶ø×ª»»espÎªesm»ò×ª»»esmÎªesp¡£×¢ÒâespÓëesmµÄÇø±ğÔÚÓÚ´Ë²¿·ÖÄÚÈİµÄ²î±ğ£¬¶ø²»ÊÇµ¥´¿µÄºó×ºÃû²»Í¬¡£"
 
-#: bash\basher.py:12825
+#: bash\basher.py:12826
 msgid "Flip to Esm"
 msgstr "×ª»»ÎªEsm"
 
-#: bash\basher.py:12972
+#: bash\basher.py:12973
 msgid "Edit Groups..."
 msgstr "±à¼­Èº×é¡­¡­"
 
-#: bash\basher.py:12973
+#: bash\basher.py:12974
 msgid "Groups"
 msgstr "Èº×é"
 
-#: bash\basher.py:12974
+#: bash\basher.py:12975
 msgid "Add group:"
 msgstr "Ìí¼ÓÈº×é£º"
 
-#: bash\basher.py:12990 bash\basher.py:13018
+#: bash\basher.py:12991 bash\basher.py:13019
 msgid "Groups..."
 msgstr "Èº×é¡­¡­"
 
-#: bash\basher.py:13001
+#: bash\basher.py:13002
 msgid "Export groups to:"
 msgstr "µ¼³öÈº×éµ½£º"
 
-#: bash\basher.py:13009
+#: bash\basher.py:13010
 msgid "Exported %d mod/groups."
 msgstr "ÒÑµ¼³ö %d mod/Èº×é"
 
-#: bash\basher.py:13010
+#: bash\basher.py:13011
 msgid "Export Groups"
 msgstr "µ¼³öÈº×é"
 
-#: bash\basher.py:13023
+#: bash\basher.py:13024
 msgid "Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered."
 msgstr "´ÓÎÄ±¾ÎÄµµÖĞµ¼ÈëÈº×éĞÅÏ¢¡£ËùÓĞmod¶¼½«ÖØĞÂ¹éÀàµ½Èº×éÖĞ²¢ÖØĞÂÅÅĞò¡£"
 
-#: bash\basher.py:13025 bash\basher.py:13045
+#: bash\basher.py:13026 bash\basher.py:13046
 msgid "Import Groups"
 msgstr "µ¼ÈëÈº×é"
 
-#: bash\basher.py:13029 bash\basher.py:13101 bash\basher.py:13311
+#: bash\basher.py:13030 bash\basher.py:13102 bash\basher.py:13312
 msgid "Import names from:"
 msgstr "µ¼ÈëÃû×Ö£º"
 
-#: bash\basher.py:13035 bash\basher.py:13107 bash\basher.py:13236
+#: bash\basher.py:13036 bash\basher.py:13108 bash\basher.py:13237
 msgid "Source file must be a csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇcsvÎÄ¼ş¡£"
 
-#: bash\basher.py:13044
+#: bash\basher.py:13045
 msgid "Imported %d mod/groups (%d changed)."
 msgstr "ÒÑµ¼³ö %d mod/Èº×é£¨%dÒÑ¸Ä±ä£©¡£"
 
-#: bash\basher.py:13052 bash\basher.py:13087
+#: bash\basher.py:13053 bash\basher.py:13088
 msgid "Editor Ids..."
 msgstr "Editor Ids¡­¡­"
 
-#: bash\basher.py:13063
+#: bash\basher.py:13064
 msgid "Export eids to:"
 msgstr "µ¼³öeidsµ½£º"
 
-#: bash\basher.py:13067
+#: bash\basher.py:13068
 msgid "Export Editor Ids"
 msgstr "µ¼³öEditor Ids"
 
-#: bash\basher.py:13076 bash\basher.py:13119 bash\basher.py:13245
-#: bash\basher.py:13286 bash\basher.py:13327 bash\basher.py:13741
-#: bash\basher.py:13930 bash\basher.py:13971 bash\basher.py:14019
-#: bash\basher.py:14283 bash\basher.py:14555
+#: bash\basher.py:13077 bash\basher.py:13120 bash\basher.py:13246
+#: bash\basher.py:13287 bash\basher.py:13328 bash\basher.py:13742
+#: bash\basher.py:13931 bash\basher.py:13972 bash\basher.py:14020
+#: bash\basher.py:14284 bash\basher.py:14556
 msgid "Reading %s."
 msgstr "ÕıÔÚ¶ÁÈ¡%s¡­¡­"
 
-#: bash\basher.py:13078 bash\basher.py:13288 bash\basher.py:13932
-#: bash\basher.py:14021 bash\basher.py:14285
+#: bash\basher.py:13079 bash\basher.py:13289 bash\basher.py:13933
+#: bash\basher.py:14022 bash\basher.py:14286
 msgid "Exporting to %s."
 msgstr "Õıµ¼³öµ½%s¡£"
 
-#: bash\basher.py:13092
+#: bash\basher.py:13093
 msgid "Import editor ids from a text file. This will replace existing ids and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµÖĞµ¼Èëeditor ids¡£Õâ½«Ìæ»»ËùÓĞÒÑ´æÔÚµÄid²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:13094 bash\basher.py:13114
+#: bash\basher.py:13095 bash\basher.py:13115
 msgid "Import Editor Ids"
 msgstr "µ¼ÈëEditor Ids"
 
-#: bash\basher.py:13121 bash\basher.py:13247 bash\basher.py:13333
-#: bash\basher.py:13973 bash\basher.py:14557
+#: bash\basher.py:13122 bash\basher.py:13248 bash\basher.py:13334
+#: bash\basher.py:13974 bash\basher.py:14558
 msgid "Applying to %s."
 msgstr "ÕıÓ¦ÓÃµ½%s¡£"
 
-#: bash\basher.py:13137
+#: bash\basher.py:13138
 msgid "These editor ids begin with numbers and may therefore cause the script compiler to generate unexpected results"
 msgstr "ÕâĞ©idÒÔÊı×Ö¿ªÍ·£¬»áµ¼ÖÂ½Å±¾±àÒëÆ÷²úÉúÎŞ·¨Ô¤²âµÄ½á¹û¡£"
 
-#: bash\basher.py:13139
+#: bash\basher.py:13140
 msgid "The following EIDs are malformed and were not imported:"
 msgstr "ÒÔÏÂEID¸ñÊ½´íÎó£¬Î´µ¼Èë£º"
 
-#: bash\basher.py:13144 bash\basher.py:13254
+#: bash\basher.py:13145 bash\basher.py:13255
 msgid "Objects Changed"
 msgstr "¶ÔÏóÒÑĞŞ¸Ä"
 
-#: bash\basher.py:13155 bash\basher.py:13162 bash\basher.py:13167
+#: bash\basher.py:13156 bash\basher.py:13163 bash\basher.py:13168
 msgid "Decompile All"
 msgstr "È«²¿·´±àÒë"
 
-#: bash\basher.py:13161
+#: bash\basher.py:13162
 msgid "This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override."
 msgstr "´Ë²Ù×÷½«ÒÆ³ıÓÉcompile all¶ø²úÉúµÄÓëËù¸²¸ÇµÄ°æ±¾ÖĞµÄÏàÍ¬½Å±¾¡£"
 
-#: bash\basher.py:13167 bash\basher.py:13733
+#: bash\basher.py:13168 bash\basher.py:13734
 msgid "Skipping %s"
 msgstr "ÕıÌø¹ı%s"
 
-#: bash\basher.py:13202
+#: bash\basher.py:13203
 msgid "Scripts removed: %d."
 msgstr "ÒÑÒÆ³ı½Å±¾Êı£º%d¡£"
 
-#: bash\basher.py:13204
+#: bash\basher.py:13205
 msgid "Scripts remaining: %d"
 msgstr "±£ÁôµÄ½Å±¾Êı£º%d"
 
-#: bash\basher.py:13208
+#: bash\basher.py:13209
 msgid "Only %d scripts were identical.  This is probably intentional, so no changes have been made."
 msgstr "½ö%d¸ö½Å±¾ÊÇÏàÍ¬µÄ¡£Õâ¿ÉÄÜÊÇÓĞÒâµÄ£¬ËùÒÔÎ´·¢ÉúÈÎºÎ±ä»¯¡£"
 
-#: bash\basher.py:13217
+#: bash\basher.py:13218
 msgid "Form IDs..."
 msgstr "Form IDs¡­¡­"
 
-#: bash\basher.py:13222
+#: bash\basher.py:13223
 msgid "For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file."
 msgstr "¸ß¼¶modÖÆ×÷Õß×¨ÓÃ£¡¸ù¾İReplacers.csvÏµÍ³ĞÔµØÌæ»»NPC¡¢ÉúÎï¡¢ÈİÆ÷ºÍleveled listµÄForm Ids¡£"
 
-#: bash\basher.py:13224 bash\basher.py:13240
+#: bash\basher.py:13225 bash\basher.py:13241
 msgid "Import Form IDs"
 msgstr "µ¼ÈëForm ID"
 
-#: bash\basher.py:13230
+#: bash\basher.py:13231
 msgid "Form ID mapper file:"
 msgstr "Form IDÓ³ÉäÎÄ¼ş£º"
 
-#: bash\basher.py:13261 bash\basher.py:13297
+#: bash\basher.py:13262 bash\basher.py:13298
 msgid "Names..."
 msgstr "Ãû×Ö¡­¡­"
 
-#: bash\basher.py:13272
+#: bash\basher.py:13273
 msgid "Export names to:"
 msgstr "µ¼³öÃû×Öµ½£º"
 
-#: bash\basher.py:13277
+#: bash\basher.py:13278
 msgid "Export Names"
 msgstr "µ¼³öÃû×Ö"
 
-#: bash\basher.py:13302
+#: bash\basher.py:13303
 msgid "Import record names from a text file. This will replace existing names and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµÖĞµ¼Èë¶ÔÏóÃû×Ö¡£Õâ½«Ìæ»»Ô­´æÔÚµÄÃû×Ö²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:13304 bash\basher.py:13322 bash\bosh.py:18202
+#: bash\basher.py:13305 bash\basher.py:13323 bash\bosh.py:18202
 #: bash\bosh.py:18302
 msgid "Import Names"
 msgstr ""
 
-#: bash\basher.py:13312
+#: bash\basher.py:13313
 msgid "Mod/Text File"
 msgstr "Mod/ÎÄ±¾ÎÄ¼ş"
 
-#: bash\basher.py:13318
+#: bash\basher.py:13319
 msgid "Source file must be mod (.esp or .esm) or csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇmod£¨.esp»ò.esm£©»òÕßcsvÎÄ¼ş¡£"
 
-#: bash\basher.py:13349
+#: bash\basher.py:13350
 msgid "Objects Renamed"
 msgstr "¸ö¶ÔÏóÃû×ÖÒÑĞŞ¸Ä"
 
-#: bash\basher.py:13363
+#: bash\basher.py:13364
 msgid "Rebuild Patch (CBash *BETA*)..."
 msgstr "ÖØ½¨²¹¶¡£¨CBash *²âÊÔ*£©¡­¡­"
 
-#: bash\basher.py:13365
+#: bash\basher.py:13366
 msgid "Rebuild Patch..."
 msgstr "ÖØ½¨²¹¶¡¡­¡­"
 
-#: bash\basher.py:13388
+#: bash\basher.py:13389
 msgid "That which does not exist cannot be patched."
 msgstr "²»´æÔÚµÄÎÄ¼ş²»ÄÜ´ò²¹¶¡¡£"
 
-#: bash\basher.py:13390
+#: bash\basher.py:13391
 msgid "Load some mods and try again."
 msgstr "¼ÓÔØÎÄ¼şÔÙÖØÊÔ¡£"
 
-#: bash\basher.py:13391
+#: bash\basher.py:13392
 msgid "Existential Error"
 msgstr "´æÔÚÅĞ¶Ï´íÎó"
 
-#: bash\basher.py:13395
+#: bash\basher.py:13396
 msgid "Building with CBash is cool.  It's faster and allows more things to be handled, but it is still in BETA.  If you have problems, post them in the official thread, then use the non-CBash build function."
 msgstr "CBashÄ£Ê½¿´ÆğÀ´²»´í£¬ËÙ¶È¸ü¿ì£¬Ö§³Ö´¦Àí¸ü¶àµÄÊı¾İ£¬µ«ÈÔ´¦ÓÚ²âÊÔ½×¶Î¡£Èç¹ûÄãÓöµ½ÁËÊ²Ã´ÎÊÌâ£¬ÇëÔÚ¹Ù·½Ìû×ÓÖĞ±¨¸æ²¢ÇÒ¸ÄÓÃ·ÇCBashµÄÄ£Ê½¡£"
 
-#: bash\basher.py:13401
+#: bash\basher.py:13402
 msgid "The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Should Wrye Bash attempt to import your settings (some may not be copied correctly)?  Selecting 'No' will load the bashed patch defaults."
 msgstr "Äã´òËãÖØ½¨µÄ²¹¶¡(%s)ÊÇÓÃ%sÄ£Ê½´´½¨µÄ¡£ÏÖÔÚÄã´òËãÊ¹ÓÃ%sÄ£Ê½¡£ÊÇ·ñÈÃWrye Bashµ¼ÈëÄãÖ®Ç°µÄÅäÖÃ£¨²¿·ÖÅäÖÃ¿ÉÄÜµ¼Èë´íÎó£©£¿Ñ¡Ôñ¡®·ñ¡¯½«ÔØÈëÄ¬ÈÏÅäÖÃ¡£"
 
-#: bash\basher.py:13427
+#: bash\basher.py:13428
 msgid "Tagged 'Filter'"
 msgstr "º¬'Filter'±êÇ©"
 
-#: bash\basher.py:13429
+#: bash\basher.py:13430
 msgid "Mergeable, but tagged 'NoMerge'"
 msgstr "¿ÉÕûºÏ£¬µ«º¬'NoMerge'±êÇ©"
 
-#: bash\basher.py:13430
+#: bash\basher.py:13431
 msgid "Tagged 'Deactivate'"
 msgstr "º¬'Deactivate'±êÇ©"
 
-#: bash\basher.py:13433
+#: bash\basher.py:13434
 msgid "These mods should be deactivated before building the patch, and then merged or imported into the Bashed Patch."
 msgstr "ÕâĞ©modÔÚ´´½¨²¹¶¡Ç°ĞèÒªÈ¡Ïû¼¤»î£¬È»ºóÕûºÏ»òÕßµ¼Èëµ½Bashed Patch¡£"
 
-#: bash\basher.py:13439
+#: bash\basher.py:13440
 msgid "These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Oblivion maximum esp/esm limit."
 msgstr "ÕâĞ©modÊÇ¿ÉÒÔÕûºÏµÄ¡£ËäÈ»´Ë²Ù×÷¶ÔWrye Bash»òÕßBashed PatchµÄÔËĞĞÃ»¶à´óÓ°Ïì£¬µ«»¹ÊÇ½¨Òé¼¤»îÈ»ºóÕûºÏµ½²¹¶¡ÄÚ¡£ÕâÑùÄÜ´ó´óµÄ¼õÉÙmodµÄÊıÁ¿£¬±ÜÃâmodÊıÁ¿ÏŞÖÆ¡£"
 
-#: bash\basher.py:13445
+#: bash\basher.py:13446
 msgid "These mods are mergeable, but tagged 'NoMerge'.  They should be deactivated before building the patch and imported into the Bashed Patch."
 msgstr "ÕâĞ©modÊÇ¿ÉÒÔÕûºÏµÄ¡£µ«º¬'NoMerge'±êÇ©¡£ÔÚ´´½¨²¹¶¡Ç°ĞèÒªÈ¡Ïû¼¤»î£¬È»ºóµ¼Èëµ½Bashed Patch¡£"
 
-#: bash\basher.py:13451
+#: bash\basher.py:13452
 msgid "These mods are tagged 'Deactivate'.  They should be deactivated before building the patch, and merged or imported into the Bashed Patch."
 msgstr "ÕâĞ©moº¬'Deactivate'±êÇ©¡£ÔÚ´´½¨²¹¶¡Ç°ĞèÒªÈ¡Ïû¼¤»î£¬È»ºóÕûºÏ»òÕßµ¼Èëµ½Bashed Patch¡£"
 
-#: bash\basher.py:13456
+#: bash\basher.py:13457
 msgid "Deactivate these mods prior to patching"
 msgstr "´´½¨²¹¶¡Ç°È¡Ïû¼¤»îÕâĞ©mod"
 
-#: bash\basher.py:13457
+#: bash\basher.py:13458
 msgid "The following mods should be deactivated prior to building the patch."
 msgstr "ÒÔÏÂmodÔÚ´´½¨²¹¶¡Ç°ĞèÒªÈ¡Ïû¼¤»î¡£"
 
-#: bash\basher.py:13458
+#: bash\basher.py:13459
 msgid "Skip"
 msgstr "Ìø¹ı"
 
-#: bash\basher.py:13494
+#: bash\basher.py:13495
 msgid "Master Errors"
 msgstr "Master´íÎó"
 
-#: bash\basher.py:13495
+#: bash\basher.py:13496
 msgid "The following mod(s) have master file error(s).  Please adjust your load order to rectify those problem(s) before continuing.  However you can still proceed if you want to.  Proceed?"
 msgstr "ÒÔÏÂmodº¬masterÎÄ¼ş´íÎó¡£Çëµ÷Õû¼ÓÔØË³Ğò¸ÄÕı´æÔÚµÄ´íÎóÈ»ºóÔÙ¼ÌĞø¡£²»¹ıÄãÒ²¿ÉÒÔÑ¡ÔñÖ±½Ó¼ÌĞø²Ù×÷¡£ÊÇ·ñÖ±½Ó¼ÌĞø²Ù×÷£¿"
 
-#: bash\basher.py:13495
+#: bash\basher.py:13496
 msgid "WARNING!"
 msgstr "¾¯¸æ£¡"
 
-#: bash\basher.py:13496
+#: bash\basher.py:13497
 msgid "Missing Master Errors"
 msgstr "¶ªÊ§Master"
 
-#: bash\basher.py:13496
+#: bash\basher.py:13497
 msgid "These mods have missing masters; which will make your game unusable, and you will probably have to regenerate your patch after fixing them.  So just go fix them now."
 msgstr "ÕâĞ©modº¬¶ªÊ§µÄmaster£»Õâ½«µ¼ÖÂÓÎÏ·²»¿ÉÔËĞĞ£¬²¢ÇÒÄã¿ÉÄÜĞèÒªÔÚĞŞ¸´ÍêÎÊÌâÖØ½¨²¹¶¡¡£½¨ÒéÏÖÔÚĞŞ¸´ÎÊÌâ¡£"
 
-#: bash\basher.py:13497
+#: bash\basher.py:13498
 msgid "Delinquent Master Errors"
 msgstr "²»Á¼Master"
 
-#: bash\basher.py:13497
+#: bash\basher.py:13498
 msgid "These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them.  So just go fix them now."
 msgstr "ÕâĞ©modº¬²»Á¼µÄmaster£»Õâ½«µ¼ÖÂÓÎÏ·²»¿ÉÔËĞĞ£¬²¢ÇÒÄã¿ÉÄÜĞèÒªÔÚĞŞ¸´ÍêÎÊÌâÖØ½¨²¹¶¡¡£½¨ÒéÏÖÔÚĞŞ¸´ÎÊÌâ¡£"
 
-#: bash\basher.py:13498
+#: bash\basher.py:13499
 msgid "Continue Despite Errors"
 msgstr "¼ÌĞø£¬ÎŞÊÓ´íÎó"
 
-#: bash\basher.py:13516
+#: bash\basher.py:13517
 msgid "List Patch Config..."
 msgstr "ÏÔÊ¾²¹¶¡ÅäÖÃ¡­¡­"
 
-#: bash\basher.py:13542 bash\basher.py:13545
+#: bash\basher.py:13543 bash\basher.py:13546
 msgid "Config"
 msgstr "ÅäÖÃ"
 
-#: bash\basher.py:13543
+#: bash\basher.py:13544
 msgid "This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard."
 msgstr "ÕâÊÇBashed PatchµÄµ±Ç°ÅäÖÃ¡£´Ë±¨¸æÒÑ¸´ÖÆµ½¼ôÌù°åÖĞ¡£"
 
-#: bash\basher.py:13548 bash\basher.py:13549
+#: bash\basher.py:13549 bash\basher.py:13550
 msgid "Patch Mode"
 msgstr "²¹¶¡Ä£Ê½"
 
-#: bash\basher.py:13619
+#: bash\basher.py:13620
 msgid "Bashed Patch Configuration"
 msgstr "Bashed PatchÅäÖÃ"
 
-#: bash\basher.py:13628
+#: bash\basher.py:13629
 msgid "Export Patch Config..."
 msgstr "µ¼³ö²¹¶¡ÅäÖÃ¡­¡­"
 
-#: bash\basher.py:13657
+#: bash\basher.py:13658
 msgid "Edit Ratings..."
 msgstr "ĞŞ¸ÄÆÀ·Ö¡­¡­"
 
-#: bash\basher.py:13658
+#: bash\basher.py:13659
 msgid "Ratings"
 msgstr "ÆÀ·Ö"
 
-#: bash\basher.py:13659
+#: bash\basher.py:13660
 msgid "Add rating:"
 msgstr "Ìí¼ÓÆÀ·Ö£º"
 
-#: bash\basher.py:13669
+#: bash\basher.py:13670
 msgid "Version 0.8"
 msgstr "°æ±¾0.8"
 
-#: bash\basher.py:13675
+#: bash\basher.py:13676
 msgid "WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way."
 msgstr "¾¯¸æ£¡¸ß¼¶modÖÆ×÷Õß×¨ÓÃ£¡´Ë²Ù×÷Í¨¹ıÖØÖÃÎÄ¼şÄÚ²¿µÄ°æ±¾ºÅÎª0.8´Ó¶øÈÃTES Construction Set¿ÉÒÔ±à¼­ÔçÆÚµÄ¹Ù·½mod¡£ËäÈ»´Ë²Ù×÷ÈÃmod¿É±à¼­£¬µ«Ò²¿ÉÄÜÔÚÄ³Ğ©·½ÃæÈÃmodÊ§Ğ§¡£"
 
-#: bash\basher.py:13676
+#: bash\basher.py:13677
 msgid "Set File Version"
 msgstr "ÉèÖÃÎÄ¼ş°æ±¾"
 
-#: bash\basher.py:13690
+#: bash\basher.py:13691
 msgid "Details..."
 msgstr "ÏêÏ¸¡­¡­"
 
-#: bash\basher.py:13701
+#: bash\basher.py:13702
 msgid "Sorting records."
 msgstr "ÕıÔÚÕûÀíÊı¾İ¡£"
 
-#: bash\basher.py:13705
+#: bash\basher.py:13706
 msgid "(Details not provided for this record type.)"
 msgstr "£¨²»Ö§³Ö´ËÀàĞÍ¡££©"
 
-#: bash\basher.py:13722 bash\basher.py:13728 bash\basher.py:13733
-#: bash\basher.py:13738
+#: bash\basher.py:13723 bash\basher.py:13729 bash\basher.py:13734
+#: bash\basher.py:13739
 msgid "Remove World Orphans"
 msgstr "ÒÆ³ıÊÀ½ç¶ÀÁ¢³¡¾°¿é"
 
-#: bash\basher.py:13727
+#: bash\basher.py:13728
 msgid "In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans."
 msgstr "ÔÚÄ³Ğ©Çé¿öÏÂ£¬±à¼­modºó½«ÔÚÊÀ½çÈº×éÖĞÒÅÁô¶ÀÁ¢³¡¾°¿é¡£´Ë²Ù×÷½«ÒÆ³ıÕâĞ©¶ÀÁ¢¿é¡£"
 
-#: bash\basher.py:13745
+#: bash\basher.py:13746
 msgid "Saving %s."
 msgstr "ÕıÔÚ±£´æ%s¡£"
 
-#: bash\basher.py:13750
+#: bash\basher.py:13751
 msgid "Orphan cell blocks removed: %d."
 msgstr "ÒÑÒÆ³ı¶ÀÁ¢³¡¾°¿é£º%d¡£"
 
-#: bash\basher.py:13759
+#: bash\basher.py:13760
 msgid "Readme..."
 msgstr "ËµÃ÷ÎÄµµ¡­¡­"
 
-#: bash\basher.py:13778 bash\basher.py:13848
+#: bash\basher.py:13779 bash\basher.py:13849
 msgid "Scripts..."
 msgstr "½Å±¾¡­¡­"
 
-#: bash\basher.py:13791
+#: bash\basher.py:13792
 msgid "Export Scripts Options"
 msgstr "µ¼³ö½Å±¾Ñ¡Ïî"
 
-#: bash\basher.py:13795
+#: bash\basher.py:13796
 msgid "Filter Out Comments"
 msgstr "ÂËµô±¸×¢"
 
-#: bash\basher.py:13796
+#: bash\basher.py:13797
 msgid "If active doesn't export comments in the scripts"
 msgstr "Èç¹û¹´Ñ¡£¬½Å±¾ÖĞµÄ±¸×¢ÄÚÈİ½«ÒÆ³ı"
 
-#: bash\basher.py:13801
+#: bash\basher.py:13802
 msgid "Skip prefix (leave blank to not skip any), non-case sensitive):"
 msgstr "Ìø¹ıÇ°×º£¨Ê¹ÓÃ¿Õ¸ñ²»Ìø¹ı£©£¬²»Çø·Ö´óĞ¡Ğ´£©£º"
 
-#: bash\basher.py:13804
+#: bash\basher.py:13805
 msgid "Remove prefix from file names i.e. enter cob to save script cobDenockInit"
 msgstr "´ÓÎÄ¼şÃûÒÆ³ıÇ°×º£¬Èç£ºÊäÈëcob´Ó¶ø±£´æ½Å±¾cobDenockInit"
 
-#: bash\basher.py:13806
+#: bash\basher.py:13807
 msgid "as DenockInit.ext rather than as cobDenockInit.ext"
 msgstr "ÎªDenockInit.ext¶ø·ÇcobDenockInit.ext¡£"
 
-#: bash\basher.py:13808
+#: bash\basher.py:13809
 msgid "(Leave blank to not cut any prefix, non-case sensitive):"
 msgstr "£¨·Å¿Õ½«²»ÒÆ³ıÇ°×º, ²»Çø·Ö´óĞ¡Ğ´£©"
 
-#: bash\basher.py:13825
+#: bash\basher.py:13826
 msgid "Choose directory to export scripts to"
 msgstr "Ñ¡Ôñµ¼³ö½Å±¾µÄÄ¿Â¼"
 
-#: bash\basher.py:13840 bash\bosh.py:11870 bash\bosh.py:11948
+#: bash\basher.py:13841 bash\bosh.py:11870 bash\bosh.py:11948
 #: bash\bosh.py:11992 bash\bosh.py:12067
 msgid "Export Scripts"
 msgstr "µ¼³ö½Å±¾"
 
-#: bash\basher.py:13853
+#: bash\basher.py:13854
 msgid "Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼Èë½Å±¾¡£Õâ½«Ìæ»»ÒÑ´æÔÚµÄ½Å±¾²¢ÇÒ²»¿É»Ö¸´£¨³ı·ÇÊ¹ÓÃ\"»Ö¸´µ½±¸·İ\"£©£¡"
 
-#: bash\basher.py:13855 bash\basher.py:13870 bash\basher.py:13880
-#: bash\basher.py:13898 bash\bosh.py:11917 bash\bosh.py:12039
+#: bash\basher.py:13856 bash\basher.py:13871 bash\basher.py:13881
+#: bash\basher.py:13899 bash\bosh.py:11917 bash\bosh.py:12039
 #: bash\bosh.py:17366 bash\bosh.py:17499
 msgid "Import Scripts"
 msgstr ""
 
-#: bash\basher.py:13863
+#: bash\basher.py:13864
 msgid "Choose directory to import scripts from"
 msgstr "Ñ¡Ôñµ¼Èë½Å±¾µÄÄ¿Â¼"
 
-#: bash\basher.py:13866
+#: bash\basher.py:13867
 msgid "Import scripts that don't exist in the esp as new scripts?"
 msgstr "µ¼ÈëespÖĞ²»´æÔÚµÄ½Å±¾²¢µ±×÷ĞÂ½¨µÄ½Å±¾£¿"
 
-#: bash\basher.py:13868 bash\basher.py:14403 bash\basher.py:14448
+#: bash\basher.py:13869 bash\basher.py:14404 bash\basher.py:14449
 msgid "(If not they will just be skipped)."
 msgstr "£¨Ñ¡Ôñ'·ñ'½«Ìø¹ı²»²Ù×÷£©¡£"
 
-#: bash\basher.py:13879
+#: bash\basher.py:13880
 msgid "No changed or new scripts to import."
 msgstr "Ã»ÓĞÒÑĞŞ¸Ä»òÕßĞÂµÄ½Å±¾µ¼Èë¡£"
 
-#: bash\basher.py:13883
+#: bash\basher.py:13884
 msgid "Imported %d changed scripts from %s:"
 msgstr "ÒÑµ¼Èë%d¸öÒÑĞŞ¸Ä½Å±¾À´Ô´ÓÚ%s:"
 
-#: bash\basher.py:13888
+#: bash\basher.py:13889
 msgid "Imported %d new scripts from %s:"
 msgstr "ÒÑµ¼Èë%d¸öĞÂ½Å±¾À´Ô´ÓÚ%s£º"
 
-#: bash\basher.py:13905 bash\basher.py:13941
+#: bash\basher.py:13906 bash\basher.py:13942
 msgid "Stats..."
 msgstr "Í³¼ÆÖµ¡­¡­"
 
-#: bash\basher.py:13916
+#: bash\basher.py:13917
 msgid "Export stats to:"
 msgstr "µ¼³öÍ³¼ÆÖµÖÁ£º"
 
-#: bash\basher.py:13921
+#: bash\basher.py:13922
 msgid "Export Stats"
 msgstr "µ¼³öÍ³¼ÆÖµ"
 
-#: bash\basher.py:13946
+#: bash\basher.py:13947
 msgid "Import item stats from a text file. This will replace existing stats and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëÍ³¼ÆÖµ¡£Õâ½«È¡´úÔ­ÓĞ×´Ì¬²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:13948 bash\basher.py:13966 bash\basher.py:13978
-#: bash\basher.py:13981 bash\basher.py:13986 bash\bosh.py:18981
+#: bash\basher.py:13949 bash\basher.py:13967 bash\basher.py:13979
+#: bash\basher.py:13982 bash\basher.py:13987 bash\bosh.py:18981
 #: bash\bosh.py:19105
 msgid "Import Stats"
 msgstr ""
 
-#: bash\basher.py:13955
+#: bash\basher.py:13956
 msgid "Import stats from:"
 msgstr "´Ó¡­¡­µ¼ÈëÍ³¼ÆÖµ£º"
 
-#: bash\basher.py:13962
+#: bash\basher.py:13963
 msgid "Source file must be a Stats.csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇStats.csvÎÄ¼ş¡£"
 
-#: bash\basher.py:13978
+#: bash\basher.py:13979
 msgid "No relevant stats to import."
 msgstr "Ã»ÓĞÏà¹ØÍ³¼ÆÖµĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:13981
+#: bash\basher.py:13982
 msgid "No changed stats to import."
 msgstr "Ã»ÓĞÒÑ¸Ä±äÍ³¼ÆÖµĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:13994 bash\basher.py:14030
+#: bash\basher.py:13995 bash\basher.py:14031
 msgid "Item Data..."
 msgstr "ÎïÆ·Êı¾İ¡­¡­"
 
-#: bash\basher.py:14005
+#: bash\basher.py:14006
 msgid "Export item data to:"
 msgstr "µ¼³öÎïÆ·Êı¾İÖÁ£º"
 
-#: bash\basher.py:14010
+#: bash\basher.py:14011
 msgid "Export Item Data"
 msgstr "µ¼³öÎïÆ·Êı¾İ"
 
-#: bash\basher.py:14035
+#: bash\basher.py:14036
 msgid "Import pretty much complete item data from a text file.  This will replace existing data and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëÍêÕûµÄÎïÆ·Êı¾İ¡£Õâ½«Ìæ»»ÒÑ´æÔÚµÄÊı¾İ²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:14037 bash\basher.py:14055 bash\basher.py:14069
-#: bash\basher.py:14075
+#: bash\basher.py:14038 bash\basher.py:14056 bash\basher.py:14070
+#: bash\basher.py:14076
 msgid "Import Item Data"
 msgstr "µ¼ÈëÎïÆ·Êı¾İ"
 
-#: bash\basher.py:14044
+#: bash\basher.py:14045
 msgid "Import item data from:"
 msgstr "´Ó¡­¡­µ¼ÈëÎïÆ·Êı¾İ£º"
 
-#: bash\basher.py:14051
+#: bash\basher.py:14052
 msgid "Source file must be a ItemData.csv file."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇItemData.csvÎÄ¼ş¡£"
 
-#: bash\basher.py:14068
+#: bash\basher.py:14069
 msgid "No relevant data to import."
 msgstr "Ã»ÓĞÏà¹ØĞÅÏ¢ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:14073
+#: bash\basher.py:14074
 msgid "Imported Item Data:"
 msgstr "ÒÑµ¼ÈëÎïÆ·Êı¾İ£º"
 
-#: bash\basher.py:14083 bash\basher.py:14119
+#: bash\basher.py:14084 bash\basher.py:14120
 msgid "Prices..."
 msgstr "¼Û¸ñ¡­¡­"
 
-#: bash\basher.py:14094
+#: bash\basher.py:14095
 msgid "Export prices to:"
 msgstr "µ¼³ö¼Û¸ñĞÅÏ¢ÖÁ£º"
 
-#: bash\basher.py:14099
+#: bash\basher.py:14100
 msgid "Export Prices"
 msgstr "µ¼³ö¼Û¸ñ"
 
-#: bash\basher.py:14124
+#: bash\basher.py:14125
 msgid "Import item prices from a text file.  This will replace existing prices and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëÎïÆ·¼Û¸ñ¡£Õâ½«Ìæ»»ÒÑ´æÔÚµÄ¼Û¸ñ²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:14126
+#: bash\basher.py:14127
 msgid "Import prices"
 msgstr "µ¼Èë¼Û¸ñ"
 
-#: bash\basher.py:14133
+#: bash\basher.py:14134
 msgid "Import prices from:"
 msgstr "´Ó¡­¡­µ¼Èë¼Û¸ñ£º"
 
-#: bash\basher.py:14140
+#: bash\basher.py:14141
 msgid "Source file must be a Prices.csv file or esp/m."
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇPrices.csvÎÄ¼ş»òÕßesp/m¡£"
 
-#: bash\basher.py:14144 bash\basher.py:14161 bash\basher.py:14167
+#: bash\basher.py:14145 bash\basher.py:14162 bash\basher.py:14168
 msgid "Import Prices"
 msgstr "µ¼Èë¼Û¸ñ"
 
-#: bash\basher.py:14160
+#: bash\basher.py:14161
 msgid "No relevant prices to import."
 msgstr "Ã»ÓĞÏà¹Ø¼Û¸ñĞÅÏ¢µ¼Èë¡£"
 
-#: bash\basher.py:14165
+#: bash\basher.py:14166
 msgid "Imported Prices:"
 msgstr "ÒÑµ¼Èë¼Û¸ñ£º"
 
-#: bash\basher.py:14176 bash\basher.py:14209
+#: bash\basher.py:14177 bash\basher.py:14210
 msgid "Map Markers..."
 msgstr "µØÍ¼±êÖ¾¡­¡­"
 
-#: bash\basher.py:14187
+#: bash\basher.py:14188
 msgid "Export Map Markers to:"
 msgstr "µ¼³öµØÍ¼±êÖ¾ÖÁ£º"
 
-#: bash\basher.py:14192
+#: bash\basher.py:14193
 msgid "Export Map Markers"
 msgstr "µ¼³öµØÍ¼±êÖ¾"
 
-#: bash\basher.py:14214
+#: bash\basher.py:14215
 msgid "Import Map Markers data from a text file.  This will replace existing the data on map markers with the same editor ids and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëµØÍ¼±êÖ¾Êı¾İ¡£Õâ½«Ìæ»»ÒÑ´æÔÚµÄº¬ÏàÍ¬Editor IDµÄµØÍ¼±êÖ¾£¬²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:14216 bash\basher.py:14234 bash\basher.py:14244
-#: bash\basher.py:14251
+#: bash\basher.py:14217 bash\basher.py:14235 bash\basher.py:14245
+#: bash\basher.py:14252
 msgid "Import Map Markers"
 msgstr "µ¼ÈëµØÍ¼±êÖ¾"
 
-#: bash\basher.py:14223
+#: bash\basher.py:14224
 msgid "Import Map Markers from:"
 msgstr "´Ó¡­¡­µ¼ÈëµØÍ¼±êÖ¾£º"
 
-#: bash\basher.py:14230
+#: bash\basher.py:14231
 msgid "Source file must be a MapMarkers.csv file"
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇMapMarkers.csvÎÄ¼ş"
 
-#: bash\basher.py:14243
+#: bash\basher.py:14244
 msgid "No relevant Map Markers to import."
 msgstr "Ã»ÓĞÏà¹ØµØÍ¼±êÖ¾ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:14247
+#: bash\basher.py:14248
 msgid "Imported Map Markers to mod %s:"
 msgstr "ÒÑµ¼ÈëµØÍ¼±êÖ¾µ½mod %s£º"
 
-#: bash\basher.py:14261
+#: bash\basher.py:14262
 msgid "Cell Block Info..."
 msgstr "³¡¾°ÇøÓòĞÅÏ¢¡­¡­"
 
-#: bash\basher.py:14272
+#: bash\basher.py:14273
 msgid "Export Cell Block Info to:"
 msgstr "µ¼³ö³¡¾°ÇøÓòĞÅÏ¢ÖÁ£º"
 
-#: bash\basher.py:14277
+#: bash\basher.py:14278
 msgid "Export Cell Block Info"
 msgstr "µ¼³ö³¡¾°ÇøÓòĞÅÏ¢"
 
-#: bash\basher.py:14294 bash\basher.py:14331
+#: bash\basher.py:14295 bash\basher.py:14332
 msgid "Sigil Stones..."
 msgstr "Ó¡¼ÇÊ¯¡­¡­"
 
-#: bash\basher.py:14306
+#: bash\basher.py:14307
 msgid "Export Sigil Stone details to:"
 msgstr "µ¼³öÓ¡¼ÇÊ¯ĞÅÏ¢ÖÁ£º"
 
-#: bash\basher.py:14311
+#: bash\basher.py:14312
 msgid "Export Sigil Stone details"
 msgstr "µ¼³öÓ¡¼ÇÊ¯ĞÅÏ¢"
 
-#: bash\basher.py:14336
+#: bash\basher.py:14337
 msgid "Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµÖĞµ¼ÈëÓ¡¼ÇÊ¯ĞÅÏ¢¡£Õâ½«Ìæ»»ÒÑ´æÔÚµÄº¬ÏàÍ¬Form IDµÄÓ¡¼ÇÊ¯Êı¾İ£¬²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:14339
+#: bash\basher.py:14340
 msgid "Import Sigil Stones details"
 msgstr "µ¼ÈëÓ¡¼ÇÊ¯ĞÅÏ¢"
 
-#: bash\basher.py:14347
+#: bash\basher.py:14348
 msgid "Import Sigil Stone details from:"
 msgstr "´Ó¡­¡­µ¼ÈëÓ¡¼ÇÊ¯ĞÅÏ¢£º"
 
-#: bash\basher.py:14354
+#: bash\basher.py:14355
 msgid "Source file must be a _SigilStones.csv file"
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇ_SigilStones.csvÎÄ¼ş"
 
-#: bash\basher.py:14358 bash\basher.py:14372 bash\basher.py:14380
+#: bash\basher.py:14359 bash\basher.py:14373 bash\basher.py:14381
 msgid "Import Sigil Stone details"
 msgstr "µ¼ÈëÓ¡¼ÇÊ¯ĞÅÏ¢"
 
-#: bash\basher.py:14371
+#: bash\basher.py:14372
 msgid "No relevant Sigil Stone details to import."
 msgstr "Ã»ÓĞÏà¹ØÓ¡¼ÇÊ¯ÏêÏ¸ĞÅÏ¢ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:14375
+#: bash\basher.py:14376
 msgid "Imported Sigil Stone details to mod %s:"
 msgstr "ÒÑµ¼ÈëÓ¡¼ÇÊ¯ĞÅÏ¢µ½mod %s£º"
 
-#: bash\basher.py:14388 bash\basher.py:14428
+#: bash\basher.py:14389 bash\basher.py:14429
 msgid "Spells..."
 msgstr "Ä§·¨¡­¡­"
 
-#: bash\basher.py:14399
+#: bash\basher.py:14400
 msgid "Export Spell details to:"
 msgstr "µ¼³öÄ§·¨ĞÅÏ¢ÖÁ£º"
 
-#: bash\basher.py:14401
+#: bash\basher.py:14402
 msgid "Export flags and effects?"
 msgstr "µ¼³ö±ê¼ÇÓëĞ§¹û£¿"
 
-#: bash\basher.py:14405
+#: bash\basher.py:14406
 msgid "Export Spells"
 msgstr "µ¼³öÄ§·¨"
 
-#: bash\basher.py:14408
+#: bash\basher.py:14409
 msgid "Export Spell details"
 msgstr "µ¼³öÄ§·¨ĞÅÏ¢"
 
-#: bash\basher.py:14433
+#: bash\basher.py:14434
 msgid "Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëÄ§·¨ĞÅÏ¢¡£Õâ½«Ìæ»»º¬ÏàÍ¬Form IDµÄÄ§·¨£¬²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:14436 bash\basher.py:14450 bash\basher.py:14460
-#: bash\basher.py:14473 bash\basher.py:14480
+#: bash\basher.py:14437 bash\basher.py:14451 bash\basher.py:14461
+#: bash\basher.py:14474 bash\basher.py:14481
 msgid "Import Spell details"
 msgstr "µ¼ÈëÄ§·¨ĞÅÏ¢"
 
-#: bash\basher.py:14443
+#: bash\basher.py:14444
 msgid "Import Spell details from:"
 msgstr "´Ó¡­¡­µ¼ÈëÄ§·¨ĞÅÏ¢£º"
 
-#: bash\basher.py:14446
+#: bash\basher.py:14447
 msgid "Import flags and effects?"
 msgstr "µ¼Èë±ê¼ÇÓëĞ§¹û£¿"
 
-#: bash\basher.py:14456
+#: bash\basher.py:14457
 msgid "Source file must be a _Spells.csv file"
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇ_Spells.csvÎÄ¼ş"
 
-#: bash\basher.py:14472
+#: bash\basher.py:14473
 msgid "No relevant Spell details to import."
 msgstr "Ã»ÓĞÏà¹ØÄ§·¨ĞÅÏ¢ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:14476
+#: bash\basher.py:14477
 msgid "Imported Spell details to mod %s:"
 msgstr "ÒÑµ¼ÈëÄ§·¨ÏêÏ¸ĞÅÏ¢µ½mod %s£º"
 
-#: bash\basher.py:14489 bash\basher.py:14524
+#: bash\basher.py:14490 bash\basher.py:14525
 msgid "Ingredients..."
 msgstr "Ô­ÁÏ¡­¡­"
 
-#: bash\basher.py:14500
+#: bash\basher.py:14501
 msgid "Export Ingredient details to:"
 msgstr "µ¼³öÔ­ÁÏÏêÏ¸ĞÅÏ¢µ½£º"
 
-#: bash\basher.py:14505
+#: bash\basher.py:14506
 msgid "Export Ingredient details"
 msgstr "µ¼³öÔ­ÁÏÏêÏ¸ĞÅÏ¢"
 
-#: bash\basher.py:14529
+#: bash\basher.py:14530
 msgid "Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëÔ­ÁÏĞÅÏ¢¡£Õâ½«Ìæ»»º¬ÏàÍ¬Form IDµÄÔ­ÁÏ£¬²¢ÇÒ²»¿É»Ö¸´£¡"
 
-#: bash\basher.py:14532
+#: bash\basher.py:14533
 msgid "Import Ingredients details"
 msgstr "µ¼ÈëÔ­ÁÏĞÅÏ¢"
 
-#: bash\basher.py:14539
+#: bash\basher.py:14540
 msgid "Import Ingredient details from:"
 msgstr "´Ó¡­¡­µ¼ÈëÔ­ÁÏĞÅÏ¢£º"
 
-#: bash\basher.py:14546
+#: bash\basher.py:14547
 msgid "Source file must be a _Ingredients.csv file"
 msgstr "Ô´ÎÄ¼ş±ØĞëÊÇ_Ingredients.csvÎÄ¼ş"
 
-#: bash\basher.py:14550 bash\basher.py:14564 bash\basher.py:14572
+#: bash\basher.py:14551 bash\basher.py:14565 bash\basher.py:14573
 msgid "Import Ingredient details"
 msgstr "µ¼ÈëÔ­ÁÏÏêÏ¸ĞÅÏ¢"
 
-#: bash\basher.py:14563
+#: bash\basher.py:14564
 msgid "No relevant Ingredient details to import."
 msgstr "Ã»ÓĞÏà¹ØÔ­ÁÏĞÅÏ¢ĞèÒªµ¼Èë¡£"
 
-#: bash\basher.py:14567
+#: bash\basher.py:14568
 msgid "Imported Ingredient details to mod %s:"
 msgstr "ÒÑµ¼ÈëÔ­ÁÏÏêÏ¸ĞÅÏ¢µ½mod %s£º"
 
-#: bash\basher.py:14580 bash\basher.py:14587 bash\basher.py:14589
-#: bash\basher.py:14596 bash\basher.py:14611
+#: bash\basher.py:14581 bash\basher.py:14588 bash\basher.py:14590
+#: bash\basher.py:14597 bash\basher.py:14612
 msgid "Undelete Refs"
 msgstr "»Ö¸´Ref"
 
-#: bash\basher.py:14585
+#: bash\basher.py:14586
 msgid "Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing."
 msgstr "ĞŞ¸ÄÒÑÉ¾³ıµÄRefÒÔ±»ºöÂÔ¡£´Ë²Ù×÷ÊÇ¸ß¼¶¹¦ÄÜ£¬³ı·ÇÄãÍêÈ«Ã÷È·×Ô¼ºÔÚ¸ÉÂï¡£"
 
-#: bash\basher.py:14595
+#: bash\basher.py:14596
 msgid "Skipping"
 msgstr "ÕıÔÚÌø¹ı"
 
-#: bash\basher.py:14634
+#: bash\basher.py:14635
 msgid "Scan Mods"
 msgstr "É¨ÃèMod"
 
-#: bash\basher.py:14635
+#: bash\basher.py:14636
 msgid "This is a report of records that were detected as either Identical To Master (ITM) or a deleted reference (UDR)."
 msgstr "ÕâÊÇ¹ØÓÚ¼ì²âµ½Identical To Master(ITM)»òÕßdeleted reference(UDR)µÄModµÄ±¨¸æ¡£"
 
-#: bash\basher.py:14667
+#: bash\basher.py:14668
 msgid "UDR"
 msgstr ""
 
-#: bash\basher.py:14672
+#: bash\basher.py:14673
 msgid "ITM"
 msgstr ""
 
-#: bash\basher.py:14679
+#: bash\basher.py:14680
 msgid "Detected %d dirty mods:"
 msgstr "¼ì²âµ½%d¸ödirty mod£º"
 
-#: bash\basher.py:14682
+#: bash\basher.py:14683
 msgid "Detected %d clean mods:"
 msgstr "¼ì²âµ½%d¸ö¸É¾»mod£º"
 
-#: bash\basher.py:14685
+#: bash\basher.py:14686
 msgid "Dirty Edit Scan Results"
 msgstr "Dirty EditÉ¨Ãè½á¹û"
 
-#: bash\basher.py:14715
+#: bash\basher.py:14716
 msgid "About %s:"
 msgstr "¹ØÓÚ%s£º"
 
-#: bash\basher.py:14723
+#: bash\basher.py:14724
 msgid "Enter profile name:"
 msgstr "ÊäÈëÅäÖÃÃû×Ö£º"
 
-#: bash\basher.py:14765
+#: bash\basher.py:14766
 msgid "Active profile cannot be removed."
 msgstr "Ê¹ÓÃÖĞ, ÎŞ·¨É¾³ı¡£"
 
-#: bash\basher.py:14771
+#: bash\basher.py:14772
 msgid "Delete profile %s and the %d save files it contains?"
 msgstr "ÊÇ·ñÉ¾³ıÅäÖÃÒÔ¼°ËüËù°üº¬µÄ%d¸ö´æµµ£¿"
 
-#: bash\basher.py:14772
+#: bash\basher.py:14773
 msgid "Delete Profile"
 msgstr "É¾³ıÅäÖÃ"
 
-#: bash\basher.py:14795
+#: bash\basher.py:14796
 msgid "Edit Profiles..."
 msgstr "±à¼­ÅäÖÃ¡­¡­"
 
-#: bash\basher.py:14814
+#: bash\basher.py:14815
 msgid "Save Profiles"
 msgstr "±£´æÅäÖÃ"
 
-#: bash\basher.py:14864
+#: bash\basher.py:14865
 msgid "Load Masters"
 msgstr "¼ÓÔØMaster"
 
-#: bash\basher.py:14883
+#: bash\basher.py:14884
 msgid "Import Face..."
 msgstr "µ¼ÈëÁ³ĞÍ¡­¡­"
 
-#: bash\basher.py:14925
+#: bash\basher.py:14926
 msgid "No player (PC) faces found in %s."
 msgstr "%s ÖĞ²»´æÔÚÍæ¼Ò(PC)µÄÁ³ĞÍÊı¾İ¡£"
 
-#: bash\basher.py:14937
+#: bash\basher.py:14938
 msgid "Rename Player..."
 msgstr "ĞŞ¸ÄÍæ¼ÒÃû×Ö¡­¡­"
 
-#: bash\basher.py:14943
+#: bash\basher.py:14944
 msgid "Enter new player name. E.g. Conan the Bold"
 msgstr "ÊäÈëÍæ¼ÒĞÂÃû×Ö¡£Èç£ºConan the Bold"
 
-#: bash\basher.py:14944
+#: bash\basher.py:14945
 msgid "Rename player"
 msgstr "ĞŞ¸ÄÍæ¼ÒÃû×Ö"
 
-#: bash\basher.py:14956
+#: bash\basher.py:14957
 msgid "Export Screenshot..."
 msgstr "µ¼³ö½ØÍ¼"
 
-#: bash\basher.py:14962
+#: bash\basher.py:14963
 msgid "Save Screenshot as:"
 msgstr "±£´æ½ØÍ¼Îª"
 
-#: bash\basher.py:14962
+#: bash\basher.py:14963
 msgid "Screenshot %s.jpg"
 msgstr "½ØÍ¼%s.jpg"
 
-#: bash\basher.py:14974
+#: bash\basher.py:14975
 msgid "Diff Masters..."
 msgstr "Çø·ÖMaster"
 
-#: bash\basher.py:14985
+#: bash\basher.py:14986
 msgid "Active Masters"
 msgstr "ÒÑ¼¤»îMaster"
 
-#: bash\basher.py:14994
+#: bash\basher.py:14995
 msgid "Masters are the same."
 msgstr "ÏàÆ¥ÅäMaster¡£"
 
-#: bash\basher.py:14995 bash\basher.py:15005
+#: bash\basher.py:14996 bash\basher.py:15006
 msgid "Diff Masters"
 msgstr "Çø·ÖMaster"
 
-#: bash\basher.py:14999
+#: bash\basher.py:15000
 msgid "Removed Masters"
 msgstr "ÒÑÒÆ³ıMaster"
 
-#: bash\basher.py:15003
+#: bash\basher.py:15004
 msgid "Added Masters"
 msgstr "ÒÑÌí¼ÓMaster"
 
-#: bash\basher.py:15027
+#: bash\basher.py:15028
 msgid "Re-number Save(s)..."
 msgstr "ĞŞ¸Ä´æµµĞòºÅ¡­¡­"
 
-#: bash\basher.py:15033
+#: bash\basher.py:15034
 msgid "Enter new number to start numbering the selected saves at."
 msgstr "ÊäÈëĞÂĞòºÅ£¬²¢µ±³É»ù´¡ĞòºÅµİÔö±àºÅ¡£"
 
-#: bash\basher.py:15034
+#: bash\basher.py:15035
 msgid "Re-number Saves"
 msgstr "ĞŞ¸Ä´æµµĞòºÅ"
 
-#: bash\basher.py:15034
+#: bash\basher.py:15035
 msgid "Save Number"
 msgstr "´æµµĞòºÅ"
 
-#: bash\basher.py:15097 bash\basher.py:15102
+#: bash\basher.py:15098 bash\basher.py:15103
 msgid "Flags: "
 msgstr "±ê¼Ç£º"
 
-#: bash\basher.py:15097 bash\bosh.py:25440 bash\bosh.py:25519 bash\bush.py:882
+#: bash\basher.py:15098 bash\bosh.py:25440 bash\bosh.py:25519 bash\bush.py:882
 msgid "Armor"
 msgstr "¿ø¼×"
 
-#: bash\basher.py:15102 bash\bush.py:884
+#: bash\basher.py:15103 bash\bush.py:884
 msgid "Clothing"
 msgstr "·ş×°"
 
-#: bash\basher.py:15110
+#: bash\basher.py:15111
 msgid "Enchantment:"
 msgstr "¸½Ä§£º"
 
-#: bash\basher.py:15126
+#: bash\basher.py:15127
 msgid "Name is too long."
 msgstr "Ãû×ÖÌ«³¤¡£"
 
-#: bash\basher.py:15129
+#: bash\basher.py:15130
 msgid "Name is already used."
 msgstr "Ãû×ÖÒÑ´æÔÚ¡£"
 
-#: bash\basher.py:15139
+#: bash\basher.py:15140
 msgid "No changes made."
 msgstr "Î´·¢Éú¸Ä±ä¡£"
 
-#: bash\basher.py:15151
+#: bash\basher.py:15152
 msgid "Names modified: %d."
 msgstr "ÒÑĞŞ¸ÄÃû×Ö: %d¡£"
 
-#: bash\basher.py:15156
+#: bash\basher.py:15157
 msgid "Rename Enchanted..."
 msgstr "ĞŞ¸Ä¸½Ä§ÎïÆ·Ãû×Ö¡­¡­"
 
-#: bash\basher.py:15157
+#: bash\basher.py:15158
 msgid "Rename Spells..."
 msgstr "ĞŞ¸ÄÄ§·¨Ãû×Ö¡­¡­"
 
-#: bash\basher.py:15158
+#: bash\basher.py:15159
 msgid "Rename Potions..."
 msgstr "ĞŞ¸ÄÒ©Ë®Ãû×Ö¡­¡­"
 
-#: bash\basher.py:15181 bash\bosh.py:13298 bash\bosh.py:13418
+#: bash\basher.py:15182 bash\bosh.py:13298 bash\bosh.py:13418
 #: bash\bosh.py:13871
 msgid "Loading..."
 msgstr "ÕıÔÚ¼ÓÔØ¡­¡­"
 
-#: bash\basher.py:15188
+#: bash\basher.py:15189
 msgid "No items to edit."
 msgstr "Ã»ÓĞĞèÒªĞŞ¸ÄµÄÏîÄ¿¡£"
 
-#: bash\basher.py:15202
+#: bash\basher.py:15203
 msgid "Loading Masters"
 msgstr "ÕıÔÚ¼ÓÔØMaster"
 
-#: bash\basher.py:15240
+#: bash\basher.py:15241
 msgid "Delete Spells..."
 msgstr "É¾³ıÄ§·¨¡­¡­"
 
-#: bash\basher.py:15248
+#: bash\basher.py:15249
 msgid "Player Spells"
 msgstr "Íæ¼ÒÄ§·¨"
 
-#: bash\basher.py:15258
+#: bash\basher.py:15259
 msgid "Set Number of Uses for Weapon Enchantments..."
 msgstr "ÉèÖÃÓÎÏ·ÖĞ¸½Ä§ÎäÆ÷µÄÊ¹ÓÃ´ÎÊı¡­¡­"
 
-#: bash\basher.py:15266
+#: bash\basher.py:15267
 msgid "Enter the number of uses you desire per recharge for all custom made enchantments."
 msgstr "ÊäÈëËùÓĞ×Ô¶¨Òå¸½Ä§Îï³äÄÜºóµÄÊ¹ÓÃ´ÎÊı¡£"
 
-#: bash\basher.py:15268
+#: bash\basher.py:15269
 msgid "(Enter 0 for unlimited uses)"
 msgstr "£¨ÊäÈë0±íÊ¾ÎŞÏŞÊ¹ÓÃ´ÎÊı£©"
 
-#: bash\basher.py:15269
+#: bash\basher.py:15270
 msgid "Number of Uses"
 msgstr "Ê¹ÓÃ´ÎÊı"
 
-#: bash\basher.py:15269 bash\bosh.py:10742 bash\bosh.py:10831
+#: bash\basher.py:15270 bash\bosh.py:10742 bash\bosh.py:10831
 #: bash\bosh.py:11031 bash\bosh.py:11230 bash\bosh.py:11599 bash\bosh.py:11834
 msgid "Uses"
 msgstr "Ê¹ÓÃ"
 
-#: bash\basher.py:15321
+#: bash\basher.py:15322
 msgid "You can't move saves to the current profile!"
 msgstr "Äã²»ÄÜÒÆ¶¯´æµµÖÁµ±Ç°ÅäÖÃ£¡"
 
-#: bash\basher.py:15330
+#: bash\basher.py:15331
 msgid "A file named %s already exists in %s. Overwrite it?"
 msgstr "ÎÄ¼şÃû%sÒÑ´æÔÚÓë%s¡£ÊÇ·ñ¸²¸Ç£¿"
 
-#: bash\basher.py:15332
+#: bash\basher.py:15333
 msgid "Move File"
 msgstr "ÒÆ¶¯ÎÄ¼ş"
 
-#: bash\basher.py:15346
+#: bash\basher.py:15347
 msgid "%d files copied to %s."
 msgstr "%d¸öÎÄ¼ş±»¸´ÖÆµ½%s¡£"
 
-#: bash\basher.py:15346
+#: bash\basher.py:15347
 msgid "Copy File"
 msgstr "¸´ÖÆÎÄ¼ş"
 
-#: bash\basher.py:15353 bash\basher.py:15369 bash\basher.py:15375
-#: bash\basher.py:15378
+#: bash\basher.py:15354 bash\basher.py:15370 bash\basher.py:15376
+#: bash\basher.py:15379
 msgid "Repair Abomb"
 msgstr "ĞŞ¸´Abomb"
 
-#: bash\basher.py:15369
+#: bash\basher.py:15370
 msgid "Abomb counter is too low to reset."
 msgstr "Abomb¼ÆÊıÆ÷Ì«ÉÙ²»ĞèÒªÖØÖÃ¡£"
 
-#: bash\basher.py:15371
+#: bash\basher.py:15372
 msgid "Reset Abomb counter? (Current progress: %.0f%%.)"
 msgstr "ÖØÖÃAbomb¼ÆÊıÆ÷£¿£¨µ±Ç°³Ì¶È: %.0f%%£©"
 
-#: bash\basher.py:15373
+#: bash\basher.py:15374
 msgid "Note: Abomb animation slowing won't occur until progress is near 100%%."
 msgstr "×¢Òâ£ºAbomb¶¯×÷»ºÂıÔÚ³Ì¶È½Ó½ü100%%Ç°²»»á·¢Éú¡£"
 
-#: bash\basher.py:15378
+#: bash\basher.py:15379
 msgid "Abomb counter reset."
 msgstr "Abomb¼ÆÊıÆ÷ÖØÖÃ¡£"
 
-#: bash\basher.py:15386 bash\basher.py:15397 bash\basher.py:15400
-#: bash\basher.py:15404 bash\basher.py:15513
+#: bash\basher.py:15387 bash\basher.py:15398 bash\basher.py:15401
+#: bash\basher.py:15405 bash\basher.py:15514
 msgid "Repair Factions"
 msgstr "ĞŞ¸´×ÚÅÉ"
 
-#: bash\basher.py:15392
+#: bash\basher.py:15393
 msgid "This will (mostly) repair faction membership errors due to Wrye Bash v 105 bug and/or faction changes in underlying mods."
 msgstr "´Ë²Ù×÷½«£¨¾¡¿ÉÄÜµØ£©ĞŞ¸´Wrye Bash v105²úÉúµÄ×ÚÅÉ³ÉÔ±´íÎó»òÕßModÖĞ´æÔÚµÄÇ±ÔÚ×ÚÅÉĞŞ¸Ä¡£"
 
-#: bash\basher.py:15394
+#: bash\basher.py:15395
 msgid "WARNING!  This repair is NOT perfect!  Do not use it unless you have to!"
 msgstr "¾¯¸æ£¡´Ë²Ù×÷²¢²»ÍêÉÆ£¡½öÔÚÄã±Æ²»µÃÒÑµÄÇé¿öÏÂ½øĞĞ£¡"
 
-#: bash\basher.py:15399
+#: bash\basher.py:15400
 msgid "Restore dropped factions too?  WARNING:  This may involve clicking through a LOT of yes/no dialogs."
 msgstr "Í¬Ê±»Ö¸´¶ªÊ§µÄ×ÚÅÉÊı¾İ£¿¾¯¸æ£º´Ë²Ù×÷»á³öÏÖĞí¶àÊÇ·ñÑ¡Ôñ¿ò¡£"
 
-#: bash\basher.py:15415 bash\basher.py:15705
+#: bash\basher.py:15416 bash\basher.py:15706
 msgid "Scanning "
 msgstr "ÕıÔÚÉ¨Ãè"
 
-#: bash\basher.py:15437
+#: bash\basher.py:15438
 msgid "NPC Factions Restored/UnNulled:"
 msgstr "NPC×ÚÅÉÊı¾İÒÑĞŞ¸´/ÓĞĞ§»¯£º"
 
-#: bash\basher.py:15440 bash\basher.py:15509 bash\basher.py:15724
-#: bash\basher.py:15755
+#: bash\basher.py:15441 bash\basher.py:15510 bash\basher.py:15725
+#: bash\basher.py:15756
 msgid "Updating "
 msgstr "ÕıÔÚ¸üĞÂ"
 
-#: bash\basher.py:15458
+#: bash\basher.py:15459
 msgid "Factions"
 msgstr "×ÚÅÉ"
 
-#: bash\basher.py:15462
+#: bash\basher.py:15463
 msgid "Modifiers"
 msgstr "ĞŞ¸ÄÆ÷"
 
-#: bash\basher.py:15466 bash\bosh.py:19290 bash\bosh.py:24840
+#: bash\basher.py:15467 bash\bosh.py:19290 bash\bosh.py:24840
 #: bash\bosh.py:24921
 msgid "Spells"
 msgstr "Ä§·¨"
 
-#: bash\basher.py:15475
+#: bash\basher.py:15476
 msgid "DefaultPlayerSpell"
 msgstr "È±Ê¡Íæ¼ÒÄ§·¨"
 
-#: bash\basher.py:15482
+#: bash\basher.py:15483
 msgid "PlayerFaction, 0"
 msgstr "Íæ¼Ò×ÚÅÉ£¬0"
 
-#: bash\basher.py:15497
+#: bash\basher.py:15498
 msgid "Restore %s to %s faction?"
 msgstr "»Ö¸´%sÖÁ%s×ÚÅÉ£¿"
 
-#: bash\basher.py:15498
+#: bash\basher.py:15499
 msgid "refactioned"
 msgstr "ÒÑÖØÖÃ×ÚÅÉ"
 
-#: bash\basher.py:15521
+#: bash\basher.py:15522
 msgid "Repair Hair"
 msgstr "ĞŞ¸´·¢ĞÍ"
 
-#: bash\basher.py:15530
+#: bash\basher.py:15531
 msgid "Hair repaired."
 msgstr "·¢ĞÍÒÑĞŞ¸´¡£"
 
-#: bash\basher.py:15532
+#: bash\basher.py:15533
 msgid "No repair necessary."
 msgstr "Ã»ÓĞĞŞ¸´µÄ±ØÒª¡£"
 
-#: bash\basher.py:15539
+#: bash\basher.py:15540
 msgid "Reweigh Potions..."
 msgstr "ĞŞ¸ÄÒ©Ë®ÖÊÁ¿¡­¡­"
 
-#: bash\basher.py:15546
+#: bash\basher.py:15547
 msgid "Set weight of all player potions to..."
 msgstr "ÉèÖÃËùÓĞÍæ¼Ò´´½¨Ò©Ë®ÖÊÁ¿Îª¡­¡­"
 
-#: bash\basher.py:15547 bash\basher.py:15561
+#: bash\basher.py:15548 bash\basher.py:15562
 msgid "Reweigh Potions"
 msgstr "ĞŞ¸ÄÒ©Ë®ÖÊÁ¿"
 
-#: bash\basher.py:15555
+#: bash\basher.py:15556
 msgid "Invalid weight: %s"
 msgstr "ÎŞĞ§ÖÊÁ¿ÊıÖµ£º%s"
 
-#: bash\basher.py:15565 bash\bosh.py:13840
+#: bash\basher.py:15566 bash\bosh.py:13840
 msgid "Processing."
 msgstr "ÕıÔÚ²Ù×÷¡£"
 
-#: bash\basher.py:15576
+#: bash\basher.py:15577
 msgid "Potions reweighed: %d."
 msgstr "ÖØÖÃÒ©Ë®ÖÊÁ¿£º%d"
 
-#: bash\basher.py:15579
+#: bash\basher.py:15580
 msgid "No potions to reweigh!"
 msgstr "Ã»ÓĞĞèÒªĞŞ¸ÄÖÊÁ¿µÄÒ©Ë®£¡"
 
-#: bash\basher.py:15586 bash\basher.py:15594
+#: bash\basher.py:15587 bash\basher.py:15595
 msgid "Statistics"
 msgstr "Í³¼ÆÊı¾İ"
 
-#: bash\basher.py:15597 bash\basher.py:15626
+#: bash\basher.py:15598 bash\basher.py:15627
 msgid "Calculating statistics."
 msgstr "ÕıÔÚ·ÖÎöÍ³¼ÆÊı¾İ¡£"
 
-#: bash\basher.py:15609
+#: bash\basher.py:15610
 msgid ".%s Statistics"
 msgstr ".%sÍ³¼ÆÊı¾İ"
 
-#: bash\basher.py:15637
+#: bash\basher.py:15638
 msgid "Remove Bloat..."
 msgstr "ÒÆ³ıBloat¡­¡­"
 
-#: bash\basher.py:15646
+#: bash\basher.py:15647
 msgid "Scanning for Bloat"
 msgstr "ÕıÔÚÉ¨ÃèBloat"
 
-#: bash\basher.py:15653
+#: bash\basher.py:15654
 msgid "No bloating found."
 msgstr "Ã»ÓĞËÑµ½Bloat¡£"
 
-#: bash\basher.py:15660
+#: bash\basher.py:15661
 msgid "Null Ref Objects:"
 msgstr "¿Õ°×RefÊı¾İ£º"
 
-#: bash\basher.py:15661
+#: bash\basher.py:15662
 msgid "Remove savegame bloating?"
 msgstr "ÒÆ³ı´æµµBloat£¿"
 
-#: bash\basher.py:15663
+#: bash\basher.py:15664
 msgid "WARNING: This is a risky procedure that may corrupt your savegame!  Use only if necessary!"
 msgstr "¾¯¸æ£º´Ë²Ù×÷´æÔÚÒ»¶¨·çÏÕ£¬»áµ¼ÖÂ´æµµËğ»µ£¡½öÔÚ±ØÒªµÄÊ±ºòÊ¹ÓÃ£¡"
 
-#: bash\basher.py:15665
+#: bash\basher.py:15666
 msgid "Remove bloating?"
 msgstr "ÒÆ³ıBloat£¿"
 
-#: bash\basher.py:15668
+#: bash\basher.py:15669
 msgid "Removing Bloat"
 msgstr "ÕıÔÚÒÆ³ıBloat"
 
-#: bash\basher.py:15673
+#: bash\basher.py:15674
 msgid "Uncreated Objects: %d"
 msgstr "·Ç´´½¨ÎïÌå£º%d"
 
-#: bash\basher.py:15675
+#: bash\basher.py:15676
 msgid "Uncreated Refs: %d"
 msgstr "·Ç´´½¨Refs£º%d"
 
-#: bash\basher.py:15677
+#: bash\basher.py:15678
 msgid "UnNulled Refs: %d"
 msgstr "·Ç¿Õ°×Refs£º%d"
 
-#: bash\basher.py:15687
+#: bash\basher.py:15688
 msgid "Update NPC Levels..."
 msgstr "¸üĞÂNPC¼¶±ğ¡­¡­"
 
-#: bash\basher.py:15693
+#: bash\basher.py:15694
 msgid "This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older \"Import NPC Levels\" command."
 msgstr "´Ë²Ù×÷½«¸ù¾İµ±Ç°¹´Ñ¡µÄModĞŞ¸ÄËùÑ¡´æµµÖĞNPCµÄ¼¶±ğ¡£´Ë²Ù×÷È¡´ú¾É°æµÄ\"Import NPC Levels\" ²Ù×÷¡£"
 
-#: bash\basher.py:15694 bash\basher.py:15696 bash\basher.py:15762
+#: bash\basher.py:15695 bash\basher.py:15697 bash\basher.py:15763
 msgid "Update NPC Levels"
 msgstr "¸üĞÂNPC¼¶±ğ"
 
-#: bash\basher.py:15722
+#: bash\basher.py:15723
 msgid "NPCs Releveled:"
 msgstr "µÈ¼¶ÒÑĞŞ¸ÄNPC£º"
 
-#: bash\basher.py:15760
+#: bash\basher.py:15761
 msgid "Some mods had load errors and were skipped:"
 msgstr "²¿·ÖMod¼ÓÔØ´íÎó£¬ÒÑºöÂÔ£º"
 
-#: bash\basher.py:15770 bash\basher.py:15781
+#: bash\basher.py:15771 bash\basher.py:15782
 msgid "Next Shot..."
 msgstr "ÏÂÒ»ÕÅ½ØÍ¼¡­¡­"
 
-#: bash\basher.py:15778
+#: bash\basher.py:15779
 msgid "Screenshot base name, optionally with next screenshot number."
 msgstr "½ØÍ¼»ù±¾Ãû×Ö£¬Ëæ±ãÊäÈëÒ»¸ö½ØÍ¼ĞòºÅ¡£"
 
-#: bash\basher.py:15780
+#: bash\basher.py:15781
 msgid "E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201."
 msgstr "Àı£ºScreenShot»òÕßScreenShot_101»òÕß×ÓÄ¿Â¼\\ScreenShots_201¡£"
 
-#: bash\basher.py:15808
+#: bash\basher.py:15809
 msgid "Convert to %s"
 msgstr "×ª»»Îª%s"
 
-#: bash\basher.py:15816
+#: bash\basher.py:15817
 msgid "Converting to %s"
 msgstr "ÕıÔÚ×ª»»Îª%s"
 
-#: bash\basher.py:15856 bash\basher.py:15863
+#: bash\basher.py:15857 bash\basher.py:15864
 msgid "Custom [%i]"
 msgstr "×Ô¶¨Òå[%i]"
 
-#: bash\basher.py:15859 bash\basher.py:17823
+#: bash\basher.py:15860 bash\basher.py:17824
 msgid "JPEG Quality"
 msgstr "JPEGÖÊÁ¿"
 
-#: bash\basher.py:15887
+#: bash\basher.py:15888
 msgid "Import Archives..."
 msgstr "µ¼Èëµµ°¸¡­¡­"
 
-#: bash\basher.py:15893
+#: bash\basher.py:15894
 msgid "Import message archive(s):"
 msgstr "µ¼Èë¶ÌĞÅÏ¢µµ°¸£º"
 
-#: bash\basher.py:15909
+#: bash\basher.py:15910
 msgid "Delete these %d message(s)? This operation cannot be undone."
 msgstr "É¾³ıÕâ%d¸ö¶ÌĞÅÏ¢£¿´Ë²Ù×÷²»¿É»Ö¸´¡£"
 
-#: bash\basher.py:15910
+#: bash\basher.py:15911
 msgid "Delete Messages"
 msgstr "É¾³ı¶ÌĞÅÏ¢"
 
-#: bash\basher.py:15924
+#: bash\basher.py:15925
 msgid "Add..."
 msgstr "Ìí¼Ó¡­¡­"
 
-#: bash\basher.py:15926
+#: bash\basher.py:15927
 msgid "Add New Person"
 msgstr "Ìí¼ÓĞÂÁªÏµÈË"
 
-#: bash\basher.py:15929
+#: bash\basher.py:15930
 msgid "Add new person:"
 msgstr "Ìí¼ÓĞÂÁªÏµÈË£º"
 
-#: bash\basher.py:15932
+#: bash\basher.py:15933
 msgid " already exists."
 msgstr "ÒÑ´æÔÚ¡£"
 
-#: bash\basher.py:15945
+#: bash\basher.py:15946
 msgid "Export People"
 msgstr "µ¼³öÁªÏµÈË"
 
-#: bash\basher.py:15950
+#: bash\basher.py:15951
 msgid "Export people to text file:"
 msgstr "µ¼³öÁªÏµÈËÖÁÎÄ±¾ÎÄµµ£º"
 
-#: bash\basher.py:15955
+#: bash\basher.py:15956
 msgid "Records exported: %d."
 msgstr "ÒÑµ¼³ö¼ÇÂ¼£º%d¡£"
 
-#: bash\basher.py:15964
+#: bash\basher.py:15965
 msgid "Import People"
 msgstr "µ¼ÈëÁªÏµÈË"
 
-#: bash\basher.py:15969
+#: bash\basher.py:15970
 msgid "Import people from text file:"
 msgstr "´ÓÎÄ±¾ÎÄµµµ¼ÈëÁªÏµÈË£º"
 
-#: bash\basher.py:15974
+#: bash\basher.py:15975
 msgid "People imported: %d"
 msgstr "ÒÑµ¼ÈëÁªÏµÈË£º%d"
 
-#: bash\basher.py:16008
+#: bash\basher.py:16009
 msgid "Change to..."
 msgstr "ĞŞ¸ÄÎª¡­¡­"
 
-#: bash\basher.py:16017
+#: bash\basher.py:16018
 msgid "%s Mod Files"
 msgstr "%s¸öModÎÄ¼ş"
 
-#: bash\basher.py:16018
+#: bash\basher.py:16019
 msgid "Change master name to:"
 msgstr "ĞŞ¸ÄmasterÃû×ÖÎª£º"
 
-#: bash\basher.py:16025
+#: bash\basher.py:16026
 msgid "File must be selected from Oblivion Data Files directory."
 msgstr "ÎÄ¼ş±ØĞë´ÓOblivion DataÄ¿Â¼ÏÂÑ¡Ôñ¡£"
 
-#: bash\basher.py:16041 bash\bosh.py:21155 bash\bosh.py:21206
+#: bash\basher.py:16042 bash\bosh.py:21155 bash\bosh.py:21206
 msgid "Disable"
 msgstr "¹Ø±Õ"
 
-#: bash\basher.py:16230 bash\basher.py:16271 bash\basher.py:16326
+#: bash\basher.py:16231 bash\basher.py:16272 bash\basher.py:16327
 msgid "Execution failed, because one or more of the command line arguments failed to encode."
 msgstr "ÔËĞĞ´íÎó£¬Ò»¸ö»ò¶à¸öÃüÁî±àÒëÊ§°Ü¡£"
 
-#: bash\basher.py:16231 bash\basher.py:16238 bash\basher.py:16272
-#: bash\basher.py:16280 bash\basher.py:16290 bash\basher.py:16297
-#: bash\basher.py:16327 bash\basher.py:16334
+#: bash\basher.py:16232 bash\basher.py:16239 bash\basher.py:16273
+#: bash\basher.py:16281 bash\basher.py:16291 bash\basher.py:16298
+#: bash\basher.py:16328 bash\basher.py:16335
 msgid "Could not launch '%s'"
 msgstr "ÎŞ·¨¼ÓÔØ'%s'"
 
-#: bash\basher.py:16236 bash\basher.py:16278 bash\basher.py:16288
-#: bash\basher.py:16295 bash\basher.py:16332
+#: bash\basher.py:16237 bash\basher.py:16279 bash\basher.py:16289
+#: bash\basher.py:16296 bash\basher.py:16333
 msgid "Used Path: "
 msgstr "Ê¹ÓÃµÄÂ·¾¶£º"
 
-#: bash\basher.py:16237 bash\basher.py:16279 bash\basher.py:16289
-#: bash\basher.py:16296 bash\basher.py:16333
+#: bash\basher.py:16238 bash\basher.py:16280 bash\basher.py:16290
+#: bash\basher.py:16297 bash\basher.py:16334
 msgid "Used Arguments: "
 msgstr "Ê¹ÓÃµÄÃüÁî£º"
 
-#: bash\basher.py:16339 bash\basher.py:16484
+#: bash\basher.py:16340 bash\basher.py:16485
 msgid "Application missing: %s"
 msgstr "ÎŞ·¨ÕÒµ½³ÌĞò£º%s"
 
-#: bash\basher.py:16443
+#: bash\basher.py:16444
 msgid "Executing BOSS"
 msgstr "ÕıÔÚÔËĞĞBOSS"
 
-#: bash\basher.py:16446
+#: bash\basher.py:16447
 msgid "Processing... deghosting mods"
 msgstr "ÕıÔÚÔËĞĞ¡­¡­È¡Ïû¹íÒş"
 
-#: bash\basher.py:16467
+#: bash\basher.py:16468
 msgid "Processing... launching BOSS."
 msgstr "ÕıÔÚÔËĞĞ¡­¡­ÕıÔÚ¼ÓÔØBOSS¡£"
 
-#: bash\basher.py:16477
+#: bash\basher.py:16478
 msgid "Used Path: %s"
 msgstr "Ê¹ÓÃµÄÂ·¾¶£º%s"
 
-#: bash\basher.py:16478
+#: bash\basher.py:16479
 msgid "Used Arguments: %s"
 msgstr "Ê¹ÓÃµÄÃüÁî£º%s"
 
-#: bash\basher.py:16479 bash\basher.py:16485
+#: bash\basher.py:16480 bash\basher.py:16486
 msgid "Could not launch BOSS"
 msgstr "BOSSÔËĞĞÊ§°Ü"
 
-#: bash\basher.py:16560
+#: bash\basher.py:16561
 msgid "%s %s Disabled"
 msgstr "%s %s ÒÑ½ûµô"
 
-#: bash\basher.py:16560
+#: bash\basher.py:16561
 msgid "%s %s Enabled"
 msgstr "%s %s ÒÑ¿ªÆô"
 
-#: bash\basher.py:16607
+#: bash\basher.py:16608
 msgid " Disabled"
 msgstr "ÒÑ¹Ø±Õ"
 
-#: bash\basher.py:16607
+#: bash\basher.py:16608
 msgid " Enabled"
 msgstr "ÒÑ¿ªÆô"
 
-#: bash\basher.py:16636
+#: bash\basher.py:16637
 msgid "Auto-Quit Disabled"
 msgstr "¹Ø±Õ×Ô¶¯ÍË³ö"
 
-#: bash\basher.py:16636
+#: bash\basher.py:16637
 msgid "Auto-Quit Enabled"
 msgstr "¿ªÆô×Ô¶¯ÍË³ö"
 
-#: bash\basher.py:16659
+#: bash\basher.py:16660
 msgid "Help File"
 msgstr "°ïÖúÎÄµµ"
 
-#: bash\basher.py:16698
+#: bash\basher.py:16699
 msgid "Settings"
 msgstr "ÉèÖÃ"
 
-#: bash\basher.py:16826 bash\basher.py:16827 bash\basher.py:16834
-#: bash\basher.py:16835 bash\bosh.py:29899
+#: bash\basher.py:16827 bash\basher.py:16828 bash\basher.py:16835
+#: bash\basher.py:16836 bash\bosh.py:29899
 msgid "Launch"
 msgstr "ÔËĞĞ"
 
-#: bash\basher.py:16842
+#: bash\basher.py:16843
 msgid "Launch OBMM"
 msgstr "ÔËĞĞOBMM"
 
-#: bash\basher.py:16848
+#: bash\basher.py:16849
 msgid "Launch InsanitySorrow's Oblivion Launcher"
 msgstr "ÔËĞĞInsanitySorrow's Oblivion Launcher"
 
-#: bash\basher.py:16853
+#: bash\basher.py:16854
 msgid "Launch InsanitySorrow's Readme Generator"
 msgstr "ÔËĞĞInsanitySorrow's Readme Generator"
 
-#: bash\basher.py:16858
+#: bash\basher.py:16859
 msgid "Launch InsanitySorrow's Random Name Generator"
 msgstr "ÔËĞĞInsanitySorrow's Random Name Generator"
 
-#: bash\basher.py:16863
+#: bash\basher.py:16864
 msgid "Launch InsanitySorrow's Random NPC Generator"
 msgstr "ÔËĞĞInsanitySorrow's Random NPC Generator"
 
-#: bash\basher.py:16868
+#: bash\basher.py:16869
 msgid "Oblivion Face Exchange Lite"
 msgstr ""
 
-#: bash\basher.py:16873
+#: bash\basher.py:16874
 msgid "Oblivion Mod List Generator"
 msgstr ""
 
-#: bash\basher.py:16878
+#: bash\basher.py:16879
 msgid "Launch Oblivion Book Creator"
 msgstr "ÔËĞĞOblivion Book Creator"
 
-#: bash\basher.py:16884
+#: bash\basher.py:16885
 msgid "Launch BSA Commander"
 msgstr "ÔËĞĞBSA Commander"
 
-#: bash\basher.py:16889
+#: bash\basher.py:16890
 msgid "Launch Tabula"
 msgstr "ÔËĞĞTabula"
 
-#: bash\basher.py:16894
+#: bash\basher.py:16895
 msgid "Launch TES4Files"
 msgstr "ÔËĞĞTES4Files"
 
-#: bash\basher.py:16899
+#: bash\basher.py:16900
 msgid "Launch Tes4Gecko"
 msgstr "ÔËĞĞTes4Gecko"
 
-#: bash\basher.py:16905
+#: bash\basher.py:16906
 msgid "Launch TES4View"
 msgstr "ÔËĞĞTES4View"
 
-#: bash\basher.py:16911
+#: bash\basher.py:16912
 msgid "Launch TES4Edit"
 msgstr "ÔËĞĞTES4Edit"
 
-#: bash\basher.py:16917
+#: bash\basher.py:16918
 msgid "Launch TES4Trans"
 msgstr "ÔËĞĞTES4Trans"
 
-#: bash\basher.py:16923
+#: bash\basher.py:16924
 msgid "Launch Tes4LODGen"
 msgstr "ÔËĞĞTes4LODGen"
 
-#: bash\basher.py:16935
+#: bash\basher.py:16936
 msgid "Launch BOSS"
 msgstr "ÔËĞĞBOSS"
 
-#: bash\basher.py:16942
+#: bash\basher.py:16943
 msgid "Launch AutoCad"
 msgstr "ÔËĞĞAutoCad"
 
-#: bash\basher.py:16947
+#: bash\basher.py:16948
 msgid "Launch Blender"
 msgstr "ÔËĞĞBlender"
 
-#: bash\basher.py:16952
+#: bash\basher.py:16953
 msgid "Launch Dogwaffle"
 msgstr "ÔËĞĞDogwaffle"
 
-#: bash\basher.py:16957
+#: bash\basher.py:16958
 msgid "Launch Gmax"
 msgstr "ÔËĞĞGmax"
 
-#: bash\basher.py:16962
+#: bash\basher.py:16963
 msgid "Launch Maya"
 msgstr "ÔËĞĞMaya"
 
-#: bash\basher.py:16967
+#: bash\basher.py:16968
 msgid "Launch 3dsMax"
 msgstr "ÔËĞĞ3dsMax"
 
-#: bash\basher.py:16972
+#: bash\basher.py:16973
 msgid "Launch Milkshape 3D"
 msgstr "ÔËĞĞMilkshape 3D"
 
-#: bash\basher.py:16977
+#: bash\basher.py:16978
 msgid "Launch Mudbox"
 msgstr "ÔËĞĞMudbox"
 
-#: bash\basher.py:16982
+#: bash\basher.py:16983
 msgid "Launch Sculptris"
 msgstr "ÔËĞĞSculptris"
 
-#: bash\basher.py:16987
+#: bash\basher.py:16988
 msgid "Launch Softimage Mod Tool"
 msgstr "ÔËĞĞSoftimage Mod Tool"
 
-#: bash\basher.py:16993
+#: bash\basher.py:16994
 msgid "Launch SpeedTree"
 msgstr "ÔËĞĞSpeedTree"
 
-#: bash\basher.py:16998
+#: bash\basher.py:16999
 msgid "Launch Tree\\[d\\]"
 msgstr "ÔËĞĞTree\\[d\\]"
 
-#: bash\basher.py:17003
+#: bash\basher.py:17004
 msgid "Launch Wings 3D"
 msgstr "ÔËĞĞWings 3D"
 
-#: bash\basher.py:17009
+#: bash\basher.py:17010
 msgid "Launch Nifskope"
 msgstr "ÔËĞĞNifskope"
 
-#: bash\basher.py:17015
+#: bash\basher.py:17016
 msgid "Launch AniFX"
 msgstr "ÔËĞĞAniFX"
 
-#: bash\basher.py:17020
+#: bash\basher.py:17021
 msgid "Launch Art Of Illusion"
 msgstr "ÔËĞĞArt Of Illusion"
 
-#: bash\basher.py:17025
+#: bash\basher.py:17026
 msgid "Launch Artweaver"
 msgstr "ÔËĞĞArtweaver"
 
-#: bash\basher.py:17030
+#: bash\basher.py:17031
 msgid "Launch CrazyBump"
 msgstr "ÔËĞĞCrazyBump"
 
-#: bash\basher.py:17035
+#: bash\basher.py:17036
 msgid "Launch DDSConverter"
 msgstr "ÔËĞĞDDSConverter"
 
-#: bash\basher.py:17040
+#: bash\basher.py:17041
 msgid "Launch DeepPaint"
 msgstr "ÔËĞĞDeepPaint"
 
-#: bash\basher.py:17045
+#: bash\basher.py:17046
 msgid "Launch FastStone Image Viewer"
 msgstr "ÔËĞĞFastStone Image Viewer"
 
-#: bash\basher.py:17050
+#: bash\basher.py:17051
 msgid "Launch Genetica"
 msgstr "ÔËĞĞGenetica"
 
-#: bash\basher.py:17055
+#: bash\basher.py:17056
 msgid "Launch Genetica Viewer"
 msgstr "ÔËĞĞGenetica Viewer"
 
-#: bash\basher.py:17060
+#: bash\basher.py:17061
 msgid "Launch GIMP"
 msgstr "ÔËĞĞGIMP"
 
-#: bash\basher.py:17065
+#: bash\basher.py:17066
 msgid "Launch GIMP Shop"
 msgstr "ÔËĞĞGIMP Shop"
 
-#: bash\basher.py:17070
+#: bash\basher.py:17071
 msgid "Launch IcoFX"
 msgstr "ÔËĞĞIcoFX"
 
-#: bash\basher.py:17075
+#: bash\basher.py:17076
 msgid "Launch Inkscape"
 msgstr "ÔËĞĞInkscape"
 
-#: bash\basher.py:17080
+#: bash\basher.py:17081
 msgid "Launch IrfanView"
 msgstr "ÔËĞĞIrfanView"
 
-#: bash\basher.py:17085
+#: bash\basher.py:17086
 msgid "Launch MaPZone"
 msgstr "ÔËĞĞMaPZone"
 
-#: bash\basher.py:17090
+#: bash\basher.py:17091
 msgid "Launch MyPaint"
 msgstr "ÔËĞĞMyPaint"
 
-#: bash\basher.py:17095
+#: bash\basher.py:17096
 msgid "Launch Nvidia Melody"
 msgstr "ÔËĞĞNvidia Melody"
 
-#: bash\basher.py:17100
+#: bash\basher.py:17101
 msgid "Launch Paint.NET"
 msgstr "ÔËĞĞPaint.NET"
 
-#: bash\basher.py:17105
+#: bash\basher.py:17106
 msgid "Launch PaintShop Photo Pro"
 msgstr "ÔËĞĞPaintShop Photo Pro"
 
-#: bash\basher.py:17110
+#: bash\basher.py:17111
 msgid "Launch Photoshop"
 msgstr "ÔËĞĞPhotoshop"
 
-#: bash\basher.py:17115
+#: bash\basher.py:17116
 msgid "Launch PhotoScape"
 msgstr "ÔËĞĞPhotoScape"
 
-#: bash\basher.py:17120
+#: bash\basher.py:17121
 msgid "Launch PhotoSEAM"
 msgstr "ÔËĞĞPhotoSEAM"
 
-#: bash\basher.py:17125
+#: bash\basher.py:17126
 msgid "Launch Photobie"
 msgstr "ÔËĞĞPhotobie"
 
-#: bash\basher.py:17130
+#: bash\basher.py:17131
 msgid "Launch PhotoFiltre"
 msgstr "ÔËĞĞPhotoFiltre"
 
-#: bash\basher.py:17135
+#: bash\basher.py:17136
 msgid "Launch Pixel Studio Pro"
 msgstr "ÔËĞĞPixel Studio Pro"
 
-#: bash\basher.py:17140
+#: bash\basher.py:17141
 msgid "Launch Pixia"
 msgstr "ÔËĞĞPixia"
 
-#: bash\basher.py:17145
+#: bash\basher.py:17146
 msgid "Launch TextureMaker"
 msgstr "ÔËĞĞTextureMaker"
 
-#: bash\basher.py:17150
+#: bash\basher.py:17151
 msgid "Launch TwistedBrush"
 msgstr "ÔËĞĞTwistedBrush"
 
-#: bash\basher.py:17155
+#: bash\basher.py:17156
 msgid "Launch Windows Texture Viewer"
 msgstr "ÔËĞĞWindows Texture Viewer"
 
-#: bash\basher.py:17160
+#: bash\basher.py:17161
 msgid "Launch xNormal"
 msgstr "ÔËĞĞxNormal"
 
-#: bash\basher.py:17165
+#: bash\basher.py:17166
 msgid "Launch XnView"
 msgstr "ÔËĞĞXnView"
 
-#: bash\basher.py:17171
+#: bash\basher.py:17172
 msgid "Launch Audacity"
 msgstr "ÔËĞĞAudacity"
 
-#: bash\basher.py:17176
+#: bash\basher.py:17177
 msgid "Launch ABC Amber Audio Converter"
 msgstr "ÔËĞĞABC Amber Audio Converter"
 
-#: bash\basher.py:17181
+#: bash\basher.py:17182
 msgid "Launch Switch"
 msgstr "ÔËĞĞSwitch"
 
-#: bash\basher.py:17186
+#: bash\basher.py:17187
 msgid "Launch Fraps"
 msgstr "ÔËĞĞFraps"
 
-#: bash\basher.py:17191
+#: bash\basher.py:17192
 msgid "Interactive Map of Cyrodiil and Shivering Isles"
 msgstr ""
 
-#: bash\basher.py:17196
+#: bash\basher.py:17197
 msgid "Launch LogitechKeyboard"
 msgstr "ÔËĞĞLogitechKeyboard"
 
-#: bash\basher.py:17201
+#: bash\basher.py:17202
 msgid "Launch MediaMonkey"
 msgstr "ÔËĞĞMediaMonkey"
 
-#: bash\basher.py:17206
+#: bash\basher.py:17207
 msgid "Launch Notepad++"
 msgstr "ÔËĞĞNotepad++"
 
-#: bash\basher.py:17211
+#: bash\basher.py:17212
 msgid "Launch Steam"
 msgstr "ÔËĞĞSteam"
 
-#: bash\basher.py:17216
+#: bash\basher.py:17217
 msgid "Launch EVGA Precision"
 msgstr "ÔËĞĞEVGA Precision"
 
-#: bash\basher.py:17221
+#: bash\basher.py:17222
 msgid "Launch WinMerge"
 msgstr "ÔËĞĞWinMerge"
 
-#: bash\basher.py:17226
+#: bash\basher.py:17227
 msgid "Launch FreeMind"
 msgstr "ÔËĞĞFreeMind"
 
-#: bash\basher.py:17231
+#: bash\basher.py:17232
 msgid "Launch Freeplane"
 msgstr "ÔËĞĞFreeplane"
 
-#: bash\basher.py:17236
+#: bash\basher.py:17237
 msgid "Launch FileZilla"
 msgstr "ÔËĞĞFileZilla"
 
-#: bash\basher.py:17241
+#: bash\basher.py:17242
 msgid "Launch Egg Translator"
 msgstr "ÔËĞĞEgg Translator"
 
-#: bash\basher.py:17246
+#: bash\basher.py:17247
 msgid "Launch RAD Video Tools"
 msgstr "ÔËĞĞRAD Video Tools"
 
-#: bash\basher.py:17251
+#: bash\basher.py:17252
 msgid "Launch WinSnap"
 msgstr "ÔËĞĞWinSnap"
 
-#: bash\basher.py:17297
+#: bash\basher.py:17298
 msgid "Error finding icon for %s:"
 msgstr "%sÍ¼±ê´íÎó£º"
 
-#: bash\basher.py:17324
+#: bash\basher.py:17325
 msgid "Launch BashMon"
 msgstr "ÔËĞĞBashMon"
 
-#: bash\basher.py:17335 bash\basher.py:17357 bash\basher.py:17484
-#: bash\basher.py:17512 bash\basher.py:17685 bash\basher.py:17769
+#: bash\basher.py:17336 bash\basher.py:17358 bash\basher.py:17485
+#: bash\basher.py:17513 bash\basher.py:17686 bash\basher.py:17770
 msgid "Sort by"
 msgstr "ÅÅĞò"
 
-#: bash\basher.py:17417
+#: bash\basher.py:17418
 msgid "Open at"
 msgstr "´ò¿ª"
 
-#: bash\basher.py:17450
+#: bash\basher.py:17451
 msgid "Conversions"
 msgstr "×ª»»Æ÷"
 
-#: bash\basher.py:17508
+#: bash\basher.py:17509
 msgid "Load"
 msgstr "¼ÓÔØ"
 
-#: bash\basher.py:17662
+#: bash\basher.py:17663
 msgid "Mod Cleaning"
 msgstr "ModÇåÀí"
 
-#: bash\basher.py:17701
+#: bash\basher.py:17702
 msgid "Profile"
 msgstr "ÅäÖÃ"
 
-#: bash\basher.py:17728
+#: bash\basher.py:17729
 msgid "Move To"
 msgstr "×ªÒÆµ½"
 
-#: bash\basher.py:17732
+#: bash\basher.py:17733
 msgid "Copy To"
 msgstr "¸´ÖÆµ½"
 
-#: bash\basher.py:17836
+#: bash\basher.py:17837
 msgid "Convert"
 msgstr "×ª»»"
 
-#: bash\basher.py:17883
+#: bash\basher.py:17884
 msgid "Tabs"
 msgstr "±êÇ©"
 
-#: bash\basher.py:17890
+#: bash\basher.py:17891
 msgid "Status bar"
 msgstr "×´Ì¬À¸"
 
-#: bash\basher.py:17893
+#: bash\basher.py:17894
 msgid "Icon size"
 msgstr "Í¼±ê´óĞ¡"
 

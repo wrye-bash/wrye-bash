@@ -634,8 +634,8 @@ class MreHeader(MreHeaderBase):
         MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
         MelBase('OFST','ofst_p',),  #--Obsolete?
         MelBase('DELE','dele_p',),  #--Obsolete?
-        MelString('CNAM','author',u'',512),
-        MelString('SNAM','description',u'',512),
+        MelUnicode('CNAM','author',u'',512),
+        MelUnicode('SNAM','description',u'',512),
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'),
         )
