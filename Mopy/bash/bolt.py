@@ -1039,9 +1039,6 @@ class Path(object):
     def __repr__(self):
         return u"bolt.Path("+repr(self._s)+u")"
 
-    def __str__(self):
-        return self._s
-
     def __unicode__(self):
         return self._s
 
@@ -1121,10 +1118,10 @@ class Path(object):
         (Popen automatically tries to encode the name)"""
         if unicodeSafe:
             try:
-                self._s.encode(locale.getpreferredencoding())
+                self._s.encode('ascii')
                 return self+u'.tmp'
             except UnicodeEncodeError:
-                ret = self._s.encode(locale.getpreferredencoding(),'xmlcharrefreplace')+u'_unicode_safe.tmp'
+                ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
                 return self.head.join(ret)
         else:
             return self+u'.tmp'

@@ -13919,7 +13919,7 @@ class PatchFile(ModFile):
         selfMergeFactoryType_class = self.mergeFactory.type_class
         selfReadFactoryAddClass = self.readFactory.addClass
         selfLoadFactoryAddClass = self.loadFactory.addClass
-        nullFid = GPath(modInfos.masterName,0)
+        nullFid = (GPath(modInfos.masterName),0)
         for blockType,block in modFile.tops.iteritems():
             iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
             #--Make sure block type is also in read and write factories
