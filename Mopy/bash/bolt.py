@@ -1321,7 +1321,7 @@ class Path(object):
     def clearRO(self):
         """Clears RO flag on self"""
         if not self.isdir():
-            os.chmod(path,stat.S_IWUSR|stat.S_IWOTH)
+            os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
                 cmd = ur'attrib -R "%s\*" /S /D' % self._s
