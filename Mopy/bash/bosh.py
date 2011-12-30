@@ -13900,7 +13900,7 @@ class PatchFile(ModFile):
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.name))
                     patcher.scanModFile(modFile,nullProgress)
                 # Clip max version at 1.0.  See explanation in the CBash version as to why.
-                self.tes4.version = min(max(modFile.tes4.version, self.tes4.version),1.0)
+                self.tes4.version = min(max(modFile.tes4.version, self.tes4.version),max(bush.game.esp.validHeaderVersions))
             except bolt.CancelError:
                 raise
             except:
@@ -13911,38 +13911,47 @@ class PatchFile(ModFile):
     def mergeModFile(self,modFile,progress,doFilter,iiMode):
         """Copies contents of modFile into self."""
         mergeIds = self.mergeIds
+        mergeIdsAdd = mergeIds.add
         loadSet = self.loadSet
         modFile.convertToLongFids()
         badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        selfLoadFactoryRecTypes = self.loadFactory.recTypes
+        selfMergeFactoryType_class = self.mergeFactory.type_class
+        selfReadFactoryAddClass = self.readFactory.addClass
+        selfLoadFactoryAddClass = self.loadFactory.addClass
+        nullFid = GPath(modInfos.masterName,0)
         for blockType,block in modFile.tops.iteritems():
             iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
             #--Make sure block type is also in read and write factories
-            if blockType not in self.loadFactory.recTypes:
-                recClass = self.mergeFactory.type_class[blockType]
-                self.readFactory.addClass(recClass)
-                self.loadFactory.addClass(recClass)
+            if blockType not in selfLoadFactoryRecTypes:
+                recClass = selfMergeFactoryType_class[blockType]
+                selfReadFactoryAddClass(recClass)
+                selfLoadFactoryAddClass(recClass)
             patchBlock = getattr(self,blockType)
+            patchBlockSetRecord = patchBlock.setRecord
             if not isinstance(patchBlock,MobObjects):
                 raise BoltError(u"Merge unsupported for type: "+blockType)
             filtered = []
+            filteredAppend = filtered.append
+            loadSetIssuperset = loadSet.issuperset
             for record in block.getActiveRecords():
-                if record.fid == badForm: continue
+                fid = record.fid
+                if fid == badForm: continue
                 #--Include this record?
                 if doFilter:
                     record.mergeFilter(loadSet)
                     masters = MasterSet()
                     record.updateMasters(masters)
-                    if not loadSet.issuperset(masters):
+                    if not loadSetIssuperset(masters):
                         continue
-                filtered.append(record)
+                filteredAppend(record)
                 if iiSkipMerge: continue
                 record = record.getTypeCopy()
-                patchBlock.setRecord(record)
-                if record.isKeyedByEid and record.fid == (GPath(modInfos.masterName),0):
-                    mergeIds.add(record.eid)
+                patchBlockSetRecord(record)
+                if record.isKeyedByEid and fid == nullFid:
+                    mergeIdsAdd(record.eid)
                 else:
-                    mergeIds.add(record.fid)
-                mergeIds.add(record.fid)
+                    mergeIdsAdd(fid)
             #--Filter records
             block.records = filtered
             block.indexRecords()
