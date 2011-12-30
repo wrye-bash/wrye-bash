@@ -680,7 +680,7 @@ allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
 
-#--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
+#--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
 gmstEids = [
     # None
@@ -717,7 +717,7 @@ class esp:
         ('mods',(u'Strings',),u'%(body)s_%(language)s.ILSTRINGS'),
         ]
 
-    #--Top types in Oblivion order.
+    #--Top types in Skyrim order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
         'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL',
         'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC',
