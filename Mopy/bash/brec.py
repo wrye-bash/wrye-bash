@@ -750,10 +750,11 @@ class MelString(MelBase):
         """Dumps data from record to outstream."""
         value = record.__getattribute__(self.attr)
         if value != None:
+            firstEncoding = bolt.pluginEncoding
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,firstEncoding=bolt.pluginEncoding,returnEncoding=True)
+                test,encoding = _encode(value,firstEncoding=firstEncoding,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
@@ -767,7 +768,45 @@ class MelString(MelBase):
                 else:
                     value = test
             else:
-                value = _encode(value,firstEncoding=bolt.pluginEncoding)
+                value = _encode(value,firstEncoding=firstEncoding)
+            out.packSub0(self.subType,value)
+
+#------------------------------------------------------------------------------
+class MelUnicode(MelString):
+    """Like MelString, but instead of using bolt.pluginEncoding to read the
+       string, it tries the encoding specified in the constructor instead"""
+    def __init__(self,type,attr,default=None,maxSize=0,encoding=None):
+        MelString.__init__(self,type,attr,default,maxSize)
+        self.encoding = encoding # None == automatic detection
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute"""
+        value = u'\n'.join(_unicode(x,self.encoding,avoidEncodings=('utf8','utf-8'))
+                           for x in bolt.cstrip(ins.read(size,readId)).split('\n'))
+        record.__setattr__(self.attr,value)
+
+    def dumpData(self,record,out):
+        value = record.__getattribute__(self.attr)
+        if value != None:
+            firstEncoding = self.encoding
+            if self.maxSize:
+                value = bolt.winNewLines(value.strip())
+                size = min(self.maxSize,len(value))
+                test,encoding = _encode(value,firstEncoding=firstEncoding,returnEncoding=True)
+                extra_encoded = len(test) - self.maxSize
+                if extra_encoded > 0:
+                    total = 0
+                    i = -1
+                    while total < extra_encoded:
+                        total += len(value[i].encode(encoding))
+                        i -= 1
+                    size += i + 1
+                    value = value[:size]
+                    value = _encode(value,firstEncoding=encoding)
+                else:
+                    value = test
+            else:
+                value = _encode(value,firstEncoding=firstEncoding)
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
