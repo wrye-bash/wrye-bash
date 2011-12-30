@@ -445,6 +445,9 @@ The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButt
   * __Show App Version:__ Shows the version of the Application in its tooltip.
 * __Use Alternate Wrye Bash Name:__ If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for &lt;game name&gt;".
 * __Check for updates:__ Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
+* __Language:__ Change the display language of Wrye Bash.  This will load up the selected translation file from the Mopy\bash\l10n directory and apply it.  Requires a restart of Wrye Bash.
+* __Plugin Encoding:__ This is used to select the default encoding used when reading and writing plugin files.  The default is 'Western European', which supports most languages in use.  Changing this has a global effect, meaning that if you change it to 'Chinese (Simplified)', Wrye Bash will attempt to read all strings using the Simplified Chinese encoding, even if they are really English or another language.  Changing this will not have an immediate effect on the Mods Tab UI, but it will affect Bashed Patch creation, and the Import/Export mod commands.
+* __Game:__ Use this menu to quickly switch to managing another installed game.  This will restart Wrye Bash.  Keep in mind that your settings are specific to the game you are managing, so changes to settings won't be carried over to the other game.
 
 === Colors Dialog
 <img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
@@ -2469,13 +2472,18 @@ msgid "Argument is out"
 === 295.3 [X/XX/XXXX] [Lojack,bluesky404,PacificMorrowind]
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
+  * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
+    * To modify this behavior, there is a new setting, accessible via the [[#Settings|Setting Menu]], Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other langauges that don't fall under the 'Western European' encoding.
+    * This is a global setting, so changing it will have an effect on ~~all~~ plugins.
+    * Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
+    * Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.
   * Some minor inconsistancies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
   * Unicode file names are fully supported.
   * Limitations:
     * Skryim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarentee that activated plugins with Unicode file names will actually be loaded.
     * Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bashe's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
     * The masterlist.txt and userlist.txt files for BOSS are expected to also be in UTF-8 format.  This is a requirement imposed by BOSS, so no change should be noticed there.
-  * Translation files format has changed.  Old translation files have been converted to the new format.
+  * [[#Internationalization|Translation files]] format has changed.  Old translation files have been converted to the new format.
 * More refactoring for multi-game support.
 * New Skyrim features:
   * Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.
@@ -2489,13 +2497,13 @@ msgid "Argument is out"
   * An uncommon Drag and Drop of Tabs related bug is fixed (relating to Mouse Capture).
   * [[#ListMastersSave|List Masters]] command corrected to display the masters of a Save File, rather than the current Load Order.
   * Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
-  * Startup crash when Skryim.esm was ghosted, and set to be deactive withing Wrye Bash.
+  * Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.
 * Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
 * Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
 * Other improvements:
   * New Simplified Chinese translation, provided by bluesky404.
-  * Minor BAIN tweaks.  Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
-  * The Open At Skyrim Nexus and Open At Tes Nexus commands will detect files with file id's less than 4 digits now.
+  * Minor [[#InstallersTab|BAIN]] tweaks: Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+  * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
   * Better support for Mac Command button.
   * [[#INIEditsTab|INI Edits]]: 
     * Double click to apply an INI Tweak
@@ -2503,6 +2511,7 @@ msgid "Argument is out"
   * [[#BashedPatches|Bashed Patch]]:
     * New [[#TweakAssorted|Assorted Tweaker]]: No Description Loading Screens (requested by hellwing).
   * Wrye Bash will ask to backup your settings on ~~every~~ update now, instead of just a major version update (like from 294 to 295).
+  * Quickly switching beteween games can be accomplished via the [[#Settings|Settings Menu]].
 
 === 295.2 [2/12/2011] [Lojack,bluesky404,Metallicow]
 * Bugfixes:
