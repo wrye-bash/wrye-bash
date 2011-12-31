@@ -29,16 +29,17 @@ import urllib
 import urllib2
 
 #--TESNexus stuff -------------------------------------------------------------
-urlFiles = r'http://www.tesnexus.com/downloads/file/files.php?id=%i'
+urlFiles = u'http://www.tesnexus.com/downloads/file/files.php?id=%i'
 reFileGroupStart = re.compile(
-    '.*?<h3>\s*(.+?)\s*</h3>\s*<ol\s+class\s*=\s*"files-tab-files-list"\s*>(.*)',
-    re.I)
-reFileStart = re.compile('.*?<li>(.*)', re.I)
-reFileEnd = re.compile('.*?</li>(.*)', re.I)
+    u'.*?<h3>\s*(.+?)\s*</h3>\s*<ol\s+class\s*=\s*"files-tab-files-list"\s*>(.*)',
+    re.I|re.U)
+reFileStart = re.compile(u'.*?<li>(.*)', re.I|re.U)
+reFileEnd = re.compile(u'.*?</li>(.*)', re.I|re.U)
 reFileName = re.compile(
-    '.*?<span\s+class\s*=\s*"name"\s*>.*?>(.+?)</a></span>(.*)', re.I)
+    u'.*?<span\s+class\s*=\s*"name"\s*>.*?>(.+?)</a></span>(.*)', re.I|re.U)
 reFileVersion = re.compile(
-    '.*?<span\s+class\s*=\s*"version"\s*>\s*version\s+(.+?)\s*</span>(.*)', re.I)
+    u'.*?<span\s+class\s*=\s*"version"\s*>\s*version\s+(.+?)\s*</span>(.*)',
+    re.I|re.U)
 
 def getTESNexusFiles(fileId, groups=None):
     inGroup = {}
@@ -84,7 +85,7 @@ def getTESNexusFiles(fileId, groups=None):
             currentVersion = maFileVersion.group(1)
             line = maFileVersion.group(2)
             try:
-                currentVersion = tuple([int(x) for x in currentVersion.split('.')])
+                currentVersion = tuple([int(x) for x in currentVersion.split(u'.')])
             except:
                 currentVersion = None
         maFileEnd = reFileEnd.match(line)

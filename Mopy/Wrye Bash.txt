@@ -1,4 +1,4 @@
-= Wrye Bash ====================================================================#
+﻿= Wrye Bash ====================================================================#
 <table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
@@ -56,6 +56,7 @@ In particular, see:
   * Italian: Abot
   * Portuguese: Hadoki
   * Russian: DJ_Kovrik
+  * Chinese: bluesky404
 * **Mod and Save File Gurus**
   * GhostWheel
   * Dave Humphreys
@@ -114,54 +115,67 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 
 == Installation ===============================================================
 === Get and Install
-* __Download and run Wrye Python ([[http://tesnexus.com/downloads/file.php?id=22368|TESNexus]])__
-  * Install all components. It's best to accept the default settings for each installer.
-  * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see [[#|Python Components]].
-* __Download and Unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.zip]]) or Install ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX.exe]])__
-  * For the manual archive installation, unzip the files ~~into your Oblivion installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy.
+* __Download and run Wrye Bash XXX - Installer ([[http://tesnexus.com/downloads/file.php?id=22368|TESNexus]] | [[http://www.skyrimnexus.com/downloads/file.php?id=1840|Skyrim Nexus]])__
+  * If you choose to install the Python version, this will check for the required dependancies.  If required, it will prompt you to allow it to download and install any missing dependancies.
+  * If you choose to install the Standalone version (default), this will check for the required MSVC Runtime.  If missing, it will prompt you to allow it to download and install the missing dependancy.
+* __Manually installing Python (source code) version of Wrye Bash:__
+  * __Download and run ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Python XX]])__
+    * Install all components. It's best to accept the default settings for each installer.
+    * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of Python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see [[#|Python Components]].
+  * __Download and Unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX - Python Source.7z]]) or Install via the Installer.__
+  * For the manual archive installation, unzip the files ~~into your game installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skryim\Mopy.
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
+* __Manually installing the Standalone (default) version of Wrye Bash:__
+  * __Download and unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX - Standalone Executable.7z]]) or Install via the Installer.__
+  * For the manual archive installation, unzip the files ~~into your game installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skyrim\Mopy.
+  * Note: This is the actual Wrye Bash application.  It is comprised of the source files bundled together with an internal Python interpreter.
 * __Upgrading__
-  * If you're upgrading from an older version of Wrye bash, then just get the latest Wrye Bash XXX.zip or Wrye Bash XXX.exe file from TesNexus and install it. There's no need to remove anything or reinstall any python components.
+  * If you're upgrading from an older version of Wrye bash, then just get the latest Wrye Bash XXX.zip or Wrye Bash XXX.exe file from TesNexus and install it. There's no need to remove anything or reinstall any Python components.
 * __Advanced:__
-  * You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the [[#StartingWryeBash|OblivionPath]] option.
+  * You can place the "\Mopy\" folders outside of the game directory.  Wrye Bash will attempt to detect where your games are installed to, but you may have to set the [[#StartingWryeBash|Game Path]] option.
     * This will probably only be useful for Bash developers (latest stable release in Oblivion directory + development version outside = my life is easier).
     * May also be useful for running Bash from a flash drive (!!! WILD SPECULATION !!!).
     * Remember when upgrading to install the "Data" folder to "\Oblivion\" and the "Mopy" folder to wherever you have it now
 
-=== Windows Vista/7
-* On Windows Vista, the UAC (User Account Control) protects the Program Files directory (usually c:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
-* **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to c:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
-* **Alternate Solutions:** Alternatively, you might always run as admin, or turn off UAC -- but both of those approaches are ill-advised. For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help|Unofficial Help]] page at UESP.
+=== Windows Vista/7 and later
+* On Windows Vista and later, the UAC (User Account Control) protects the Program Files directory (usually C:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
+* **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to C:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
+* **Alternate Solution:**
+  * Change the file permissions on your game directory, granting 'Full' privileges to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.
+* **Other solutions (not recommended):**
+  * Always run as full admin: To do this, for the Standalone, right click on Wrye Bash.exe and select 'Run as Admin'.
+  * Disable UAC: Do this via the Windows Control Panel.
+  * Both of these approaches significantly reduce the security of your computer, and so are not recommened.
+* For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help|Unofficial Help]] page at UESP.
 
 === Starting Wrye Bash
 * **Double click** the "Wrye Bash Launcher.pyw" file.
 * Launching from another location:
   * You can drag "Wrye Bash Launcher" to your Quick Launch toolbar. OR...
   * In Explorer, copy "Wrye Bash Launcher", then go to the other location and use "Paste Shortcut".
-* Advanced: You can place the "\Mopy\" folders outside of the Oblivion directory, but you'll need to set the OblivionPath through "bash.ini" or the -o argument.
+* Advanced: You can place the "\Mopy\" folders outside of the game directory, but you may need to set the game or game path via the -g or -o.
   * bash.ini:
     * See "bash_default.ini" for full instructions - look for __sOblivionPath__ under __General__.
   * -o Argument:
     * __Type:__ <code>"Wrye Bash Launcher.pyw" -o "C:\\Games\\Oblivion\\"</code>
     * Note that Python treats the back-slash <code>\</code> as an escape character... even from the command prompt.
+  * -g Argument:
+    * __Type:__ <code>"Wrye Bash Launcher.pyw" -g oblivion</code>
+    * This will try to determine the location of your Oblivion install, and manage it.
 
 === [color=red]If Bash Won't Start[/color]
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
   * Most likely there is a problem with your setup. Alternatively there may be a bug with Bash.
   * You can usually figure out the problem by getting the **bug dump** and reviewing it. And if you can't puzzle it out, someone on the Elder Scrolls forums may be able to help.
-* __Finding the Bugdump__
-  * Sometimes the error will be written to a file in the Mopy directory called __bash.log__. If that file is there, then that's the bug dump. You can open it with any text editor.
-  * If it's not present, then you'll have to generate the bug dump yourself...
-* __Generating the Bugdump__
-  * Open a command shell (Start: Programs: Accessories: Command Prompt).
-  * __chdir__ to the Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code>
-  * __Type:__ <code>"Wrye Bash Debug.py" -d</code>
-    * This requires that the file associations for .pyw files is set in windows.  If it is not, you can try the old way:
-    . <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code>
-    . Note that this is assuming you have installed Python 2.7 to the default directory.  Make sure you use the correct path to python.exe
-  * Doing this will cause any error messages that Bash generates on start to spew to the command shell. This is the bugdump.
-  * If there is too much text printed to the console, you can direct it to a text file like this:
-  . <code>"Wrye Bash Debug.py" -d > bugdump.txt</code>
+s* __Generating the Bugdump__
+  * Easy method (usually works):
+    * Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguments to dump all errors to "BashBugDump.log"
+  * Manual method (if the Batch file doesn't work):
+    * Open a command shell (Start: Programs: Accessories: Command Prompt).
+    * __chdir__ to your Mopy directory. "chdir" means "change directory". E.g.: <code>chdir /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code>
+    * __Type:__ <code>"C:\Python27\python.exe" "Wrye Bash Launcher.pyw" -d >BashBugDump.log 2>$1</code>
+      . Note that this is assuming you have installed Python 2.7 to the default directory.  Make sure you use the correct path to python.exe
+  * Doing this will cause any error messages that Bash generates to be written to the BashBugDump.log file.
 * __Dealing with Bugdump__
   * First, **look at it!** -- especially the last several lines -- this will often give you a good clue as to what the problem is, and you may be able to resolve it on your own.
   * Second, see following section for common problems and their solution.
@@ -170,10 +184,10 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * __Can't find bash.py__
   * Make sure that you chdir to the Mopy directory first.
 * __Can't Find User Directory__
-  * The problem here is that python is not very good at getting the user directories. There are two options here.
-  * This used to be semi-common problem but should not be an issue for users who have pywin32 installed. (PyWin32 is included in the Wrye Python installer.)
+  * The problem here is that Python is not very good at getting the user directories. There are two options here.
+  * This used to be semi-common problem but should not be an issue for users who have PyWin32 installed. (PyWin32 is included in the Wrye Python installer.)
 * __Can't Find wxversion__
-  * I don't understand the source of the problem, but it has something to do with the way python is installed. The solution seems to be to reinstall python and wxpython in that order. (You may have to first uninstall both of them.)
+  * I don't understand the source of the problem, but it has something to do with the way Python is installed. The solution seems to be to reinstall Python and wxPython in that order. (You may have to first uninstall both of them.)
 * __no module named wx__
   * You haven't installed wxPython or you haven't installed it in the right place.
   * Be sure that you actually installed (not just downloaded) wxPython.
@@ -184,10 +198,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * The very first time you run Bash after installing ComTypes, you may get a popup with six lines similar to: <code># Generating comtypes.gen.stdole</code>
   * Close the popup and ignore it. It shouldn't appear again unless you reinstall ComTypes.
 * __UNCommon Problems__
-  * If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump. Preferably, you should post the dump in the **Relz/Help** topic (see [[#WryeBash|Discussion]] link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.
-  * **Hint:** Control-C does not work in the command line window, but you can still copy text from it by:
-    * Right click and select "Select All" to selecting the text,
-    * Hitting the __Enter__ key.
+  * If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump (in spoiler and code tags please - code tags preseves the formatting, spoiler tags makes it take up less space). Preferably, you should post the dump in the **Relz/Help** topic (see [[#WryeBash|Discussion]] link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.
 
 === Python Components
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
@@ -196,17 +207,20 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * __Python 2.7__
     * This is the main install for [[http://www.python.org/|Python]]. It provides the base interpreter/compiler and the basic libraries.
     * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi|Python 2.7.2]] ]__
-  * __wxPython 2.8.12.0 ANSI__
+  * __wxPython 2.8.12.1 Unicode__
     * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/|wxPython]].
-    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe|wxPython 2.8.12.0 ansi for Python 2.7]] ]__
+    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe|wxPython 2.8.12.1 Unicode for Python 2.7]] ]__
   * __PyWin32__
-    * Optional component.  PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards, so it is required for Wizards to function.
+    * PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.  Wrye Bash also uses this module to display HTML files.
     * Download link: __[ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download|PyWin32 216 for Python 2.7]] ]__
   * __ComTypes 0.6.2__
     * Optional component (for the PM Archives Tab).  If [[http://starship.python.net/crew/theller/comtypes/|ComTypes]] is not installed, the PM Archives tab will not be visible.
     * Download link:  __[ [[http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download|comtypes 0.6.2 for Python (all versions)]] ]__
 * __Alternate Python Installations__
-  * Alternate python installations ~~might~~ work, however no guarantee is made. Currently (and for the foreseeable future), Python 2.7, wxPython 2.8.12.0, etc. are the preferred versions.
+  * Python 2.6 ~~might~~ work, however as Wrye Bash is being developed with Python 2.7, it's very likely that new features not supported by Python 2.6 are being used.
+  * Python 2.5 or less: Not supported.
+  * Python 3.x: Not supported.
+  * wxPython: an earlier version of wxPython 2.8 ~~might~~ work, but the Unicode version ~~is~~ required.
 
 
 == Help! ======================================================================
@@ -431,6 +445,9 @@ The Wrye Bash Settings Menu can be accessed by clicking on the [[#BashOptionButt
   * __Show App Version:__ Shows the version of the Application in its tooltip.
 * __Use Alternate Wrye Bash Name:__ If set, Wrye Bash will be displayed in it's alternate, game specific name, for example "Wrye Smash" if managing Skyrim.  Otherwise, the name will be displayed as "Wrye Bash for &lt;game name&gt;".
 * __Check for updates:__ Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
+* __Language:__ Change the display language of Wrye Bash.  This will load up the selected translation file from the Mopy\bash\l10n directory and apply it.  Requires a restart of Wrye Bash.
+* __Plugin Encoding:__ This is used to select the default encoding used when reading and writing plugin files.  The default is 'Western European', which supports most languages in use.  Changing this has a global effect, meaning that if you change it to 'Chinese (Simplified)', Wrye Bash will attempt to read all strings using the Simplified Chinese encoding, even if they are really English or another language.  Changing this will not have an immediate effect on the Mods Tab UI, but it will affect Bashed Patch creation, and the Import/Export mod commands.
+* __Game:__ Use this menu to quickly switch to managing another installed game.  This will restart Wrye Bash.  Keep in mind that your settings are specific to the game you are managing, so changes to settings won't be carried over to the other game.
 
 === Colors Dialog
 <img src="bash/images/wryebash_colors.png" style="border: 0;" alt="Colors Dialog"></img>
@@ -764,6 +781,7 @@ The following commands are available by right clicking on the column header of t
   * __Skip LOD Meshes:__ If checked, landscape LOD meshes will be skipped.
   * __Skip LOD Textures:__ If checked, landscape LOD textures will be skipped.
   * __Skip LOD Normals:__ If checked, landscape LOD normals will be skipped.
+  * __Auto-name String Translation files:__ If checked, .STRINGS, .DLSTRINGS, and .ILSTRINGS will be renamed to load for your language, if the package doesn't already include String Translation files for your language.
 
 == Replacers Tab ==============================================================
 **As of version 295, the Replacers Tab has removed and superseded by the [[#|Installers Tab]].**
@@ -1695,6 +1713,8 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
   * Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0. (The effect of this is not 100% known but it *might* avoid bugs -- at the least it'll make Tes4Edit happy.)
 * __Harvest Chance__
   * Sets the harvest chance of all flora to the desired chance.
+* __No Description Loading Screens__
+  * Removes all text from all Loading Screens.
 * __No Wind__
   * Sets wind speed for all weathers to 0; this means that bushes and trees don't move in the wind since there isn't any. May help on machines with low end graphic cards.
 * __Reweigh: Arrows__
@@ -2380,40 +2400,115 @@ Bash now indicates the current version of Oblivion.esm in several places...
 
 == Extending ==================================================================
 === Internationalization
-Bash now supports localization for most? western languages (translation of program strings to local language). It still probably does not support non-roman character sets (Cyrillic, Arabic, Asian languages, etc.). Since you're looking here, I'm assuming that you're trying to add translations for your language. Here's how:
+Bash now supports localization for most? western languages (translation of program strings to local language). Since you're looking here, I'm assuming that you're trying to add translations for your language. Here's how:
 * **Custom Program Strings**
-  * Custom program strings are translated from lookup files that you'll find in the <code>Mopy\Data</code>. E.g., for English, it would be <code>Mopy\Data\English.pkl</code>. (Of course, the program is already in English, so this isn't needed.)
-  * These pkl files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\Data\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this -- once someone does the txt files for a language, they can redistribute them to other people -- including me, so that I can include them in next Bash release.
+  * Custom program strings are translated from lookup files that you'll find in the <code>Mopy\bash\l10n</code>. E.g., for English, it would be <code>Mopy\bash\l10n\English.mo</code>. (Of course, the program is already in English, so this isn't needed.)
+  * These .mo files are automatically compiled from the corresponding txt files (e.g., <code>Mopy\bash\l10n\English.txt</code>) as needed when Bash (or bish) starts up. So, to update the program strings for your language all you have to do is edit the txt file in a text editor, adding translations for strings. Naturally, not everyone needs to do this -- once someone does the txt files for a language, they can redistribute them to other people -- including me, so that I can include them in next Bash release.
 * **Generating the Translation**
 . To begin translating, or update an existing translation file...
   * Go to Mods tab, right click on **File** column header and select **Dump Translator** from the popup menu.
-  * This will generate a new version of the translator file for your locale. It will be named appropriately (except for the leading "NEW") and will contain any translations that have already been done.
+  * This will generate a new version of the translator file for your locale. It will be named appropriately (except for with a trailing "NEW") and will contain any translations that have already been done.
   * Delete the old translator text file, and rename the new one to replace it.
   * Edit the new translator file, adding translations to replace any that are missing or incorrect.
 * **Translation Tips**
-  * Here's part of the a translator file:
+  * Here's the start of a new translator file:
 <pre>
-=== basher.py, 3711
-Active profile cannot be removed.
->>>>
-
-=== basher.py, 3717
-Delete profile %s and the %d save files it contains?
->>>>
-DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
-
+&#35; SOME DESCRIPTIVE TITLE.
+&#35; Copyright (C) YEAR ORGANIZATION
+&#35; FIRST AUTHOR &lt;EMAIL&#64;ADDRESS&gt;, YEAR.
+&#35;
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2011-12-18 18:26+Alaskan Standard Time\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME &lt;EMAIL&#64;ADDRESS&gt;n"
+"Language-Team: LANGUAGE &lt;LL&#64;li.org&gt;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
 </pre>
+  . The important bit here you **must** change is: <code>"Content-Type: text/plain; charset=CHARSET\n"</code>.  Change <code>CHARSET</code> to the Unicode codepage that your language is in.  This will be the same encoding that you save the txt file in.  For example, the Russian translation uses "koi8-r" or "cp1251" (both are different names for the same codepage).
+
+  * Here's part of a translator file:
+<pre>
+&#35;: bash\bolt.py:734
+msgid "Argument is out of allowed ranged of values"
+msgstr "юПЦСЛЕМР ОПЕБШЯХК ДНОСЯРХЛНЕ ГМЮВЕМХЕ"
+</pre>
+
   * Each entry begins with the source file and the line number (in case this helps you figure out how to translate the code).
-  * After that is the original text, then a <code>>>>></code> dividing line, then the translated text. Here, the second entry has been translated, while the first has not. (Here the "translation" consists of changing it to upper case.
-  * It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X \n</code>. The '%' strings are place holders where file names, counts, etc. are entered -- if they're not present, Bash will throw an exception. The \n combinations are newline characters -- I use them in dialogs and other places where I want line breaks.
-  * In translating, I would suggest that you translate the strings that you see the most first. E.g., a good one for a quick test is <code>basher.py, 1916: Mods</code> -- this is the name of the Mods tab. And right under it is the name of the Saves tab.
-  * To test your translations, just save your changes to the text file, and restart Bash. Your changes should appear immediately.
-  * Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the pkl file.)
+  * After that is the __msgid__ entry: This is the original text, in quotes.
+    * If you see something strange, like:
+<pre>
+&#35;: bash\bolt.py:734
+msgid "Argument is out"
+""
+"of allowed ranged of values"
+</pre>
+    . it means that some newline characters got into the strings.  Please report these, so we can take them out (it makes it easier to translate).
+  * Next is the __msgstr__ entry: This is the translated text, in quotes.  In this example, the string has been translated to Russian.
+  * It's important that you leave the formatting characters in place and in order! Formatting characters are text like <code> %s %d %08X</code>. The '%' strings are place holders where file names, counts, etc. are entered -- if they're not present, Bash will throw an exception.
+    * In the future, these will be updated to be __named formating characters__, which look like <code> %(filename)s %(number)d %(formId)08X</code>.  With these, you must keep the same number and names of the placeholders, but you are free to rearrange them as necessary for your translation.
+  * Some special characters have to be "escaped".  This means, they follow a backslash character.  When translating, these still need to be escaped (if you use them in the translation).  Here's some escaped characters:
+<pre>
+\"
+\t
+\\
+</pre>
+  * In translating, I would suggest that you translate the strings that you see the most first.
+  * To test your translations, just save your changes to the text file, then select the language from the Settings->Language menu.  If your changes don't show up, it's possible there is an error in your translation file.  To check for this, generate a bugdump using your language file.  If you need help interpretting the output, just post it on the latest official thread.
+  * Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the .mo file.)
   * Spell checking: If you're using an office suite, you might want to turn on dictionaries for both English and your language -- Abot mentions that Open Office allows you to do this.
 
 == Versions ===================================================================
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
+
+=== 295.3 [X/XX/XXXX] [Lojack,bluesky404,PacificMorrowind]
+* Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
+  * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
+  * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
+    * To modify this behavior, there is a new setting, accessible via the [[#Settings|Setting Menu]], Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other langauges that don't fall under the 'Western European' encoding.
+    * This is a global setting, so changing it will have an effect on ~~all~~ plugins.
+    * Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
+    * Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.
+  * Some minor inconsistancies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
+  * Unicode file names are fully supported.
+  * Limitations:
+    * Skryim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarentee that activated plugins with Unicode file names will actually be loaded.
+    * Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bashe's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
+    * The masterlist.txt and userlist.txt files for BOSS are expected to also be in UTF-8 format.  This is a requirement imposed by BOSS, so no change should be noticed there.
+  * [[#Internationalization|Translation files]] format has changed.  Old translation files have been converted to the new format.
+* More refactoring for multi-game support.
+* New Skyrim features:
+  * Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.
+  * Merge support for AACT, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC added.
+  * Basic ONAM support for TES4 records.
+  * Two Bashed Tags are supported: Delev and Relev.  These can be used to intelligently merge leveled lists.
+  * Better merging of records with NULL Form ID's, for records that allow it (COBJ and GMST for example).
+  * New [[#InstallersTab|BAIN]] option: [[#PackageHeaderCommands|Auto-name String Translation files]]:
+    * Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.
+* Bugfixes:
+  * An uncommon Drag and Drop of Tabs related bug is fixed (relating to Mouse Capture).
+  * [[#ListMastersSave|List Masters]] command corrected to display the masters of a Save File, rather than the current Load Order.
+  * Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
+  * Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.
+* Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
+* Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
+* Other improvements:
+  * New Simplified Chinese translation, provided by bluesky404.
+  * Minor [[#InstallersTab|BAIN]] tweaks: Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+  * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
+  * Better support for Mac Command button.
+  * [[#INIEditsTab|INI Edits]]: 
+    * Double click to apply an INI Tweak
+    * Left Click on the checkbox to apply an INI Tweak
+  * [[#BashedPatches|Bashed Patch]]:
+    * New [[#TweakAssorted|Assorted Tweaker]]: No Description Loading Screens (requested by hellwing).
+  * Wrye Bash will ask to backup your settings on ~~every~~ update now, instead of just a major version update (like from 294 to 295).
+  * Quickly switching beteween games can be accomplished via the [[#Settings|Settings Menu]].
 
 === 295.2 [2/12/2011] [Lojack,bluesky404,Metallicow]
 * Bugfixes:

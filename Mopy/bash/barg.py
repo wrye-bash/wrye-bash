@@ -121,15 +121,6 @@ def parse():
                         const=1,
                         dest='mode',
                         help='disables CBash and uses python code to build bashed patch.')
-    parser.set_defaults(unicode='')
-    parser.add_option('-U', '--Unicode',
-                        action='store_true',
-                        dest='unicode',
-                        help='enables Unicode mode, overriding the ini if it exists.')
-    parser.add_option('-A', '--Ansi',
-                        action='store_false',
-                        dest='unicode',
-                        help='disables Unicode mode, overriding the ini if it exists.')
     parser.add_option('--restarting',
                         action='store_true',
                         default=False,

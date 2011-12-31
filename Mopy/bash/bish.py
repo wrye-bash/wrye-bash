@@ -55,9 +55,53 @@ from operator import attrgetter,itemgetter
 
 #--Local
 import bolt
-bolt.CBash = os.path.join(os.getcwd(),'..','bash','compiled')
-import bosh
+bolt.CBash = [os.path.join(os.getcwdu(),u'bash',u'compiled'),os.path.join(os.getcwdu(),u'compiled')]
 import bush
+ret = bush.setGame(u'')
+if ret != False: # False == success
+    if len(ret) != 1:
+        # Python mode, use Tkinter here, since we don't know for sure if wx is present
+        import Tkinter
+        root = Tkinter.Tk()
+        frame = Tkinter.Frame(root)
+        frame.pack()
+
+        class onQuit(object):
+            def __init__(self):
+                self.canceled = False
+
+            def onClick(self):
+                self.canceled = True
+                root.destroy()
+        quit = onQuit()
+
+        button = Tkinter.Button(frame,text=u'Quit',fg=u'red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+        button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+        class onClick(object):
+            def __init__(self,gameName):
+                self.gameName = gameName
+
+            def onClick(self):
+                bush.setGame(self.gameName)
+                root.destroy()
+        for gameName in ret:
+            text = gameName[0].upper() + gameName[1:]
+            command = onClick(gameName).onClick
+            button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+            button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
+        w = Tkinter.Text(frame)
+        w.insert(Tkinter.END, _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.")
+                 + u'\n\n'+
+                 _(u"To preven this message in the future, use the -g command line argument to specify the game"))
+        w.config(state=Tkinter.DISABLED)
+        w.pack()
+        root.mainloop()
+        #if quit.canceled:
+            #return
+        del Tkinter # Unload TKinter, it's not needed anymore
+    else:
+        bush.setGame(ret[0])
+import bosh
 from bolt import _, GPath, Path, mainfunc
 
 indent = 0
@@ -181,10 +225,10 @@ def readRecord(record, melSet=0, skipLabel=0):
         elif isinstance(item,float):
             print report, round(item,6)
         elif attr in ['unk1','unk2','unk3','unk4','unk5','unk6']:
-            if sum(struct.unpack(str(len(item)) + 'b',item)) == 0:
+            if sum(struct.unpack(`len(item)`+'b',item)) == 0:
                 print report, 'Null'
             else:
-                print report, struct.unpack(str(len(item)) + 'b',item)
+                print report, struct.unpack(`len(item)`+'b',item)
         elif isinstance(item, basestring):
             if len(item.splitlines()) > 1:
                 item = item.splitlines()
@@ -192,7 +236,7 @@ def readRecord(record, melSet=0, skipLabel=0):
                 for line in item:
                     readRecord(line,[attr],1)
             else:
-                if sum(struct.unpack(str(len(item)) + 'b',item)) == 0:
+                if sum(struct.unpack(`len(item)`+'b',item)) == 0:
                     print report, ''
                 else:
                     print report, item
@@ -234,7 +278,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     """Copies eyes and hair from one race to another."""
     init(3)
     if dstMod.lower() == 'oblivion.esm':
-        raise bolt.BoltError(_("You don't REALLY want to overwrite Oblivion.esm, do you?"))
+        raise bolt.BoltError(u"You don't REALLY want to overwrite Oblivion.esm, do you?")
     srcFactory = bosh.LoadFactory(False,bosh.MreRace)
     dstFactory = bosh.LoadFactory(True,bosh.MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
@@ -253,8 +297,8 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
         if record.eid == dstRaceEid:
             dstRace = record
             break
-    if not srcRace: raise bosh.ModError(srcMod,_("Didn't find race (eid) %s.") % (srcRaceEid))
-    if not dstRace: raise bosh.ModError(dstMod,_("Didn't find race (eid) %s.") % (dstRaceEid))
+    if not srcRace: raise bosh.ModError(srcMod,u"Didn't find race (eid) %s." % srcRaceEid)
+    if not dstRace: raise bosh.ModError(dstMod,u"Didn't find race (eid) %s." % dstRaceEid)
     #--Get mapper
     srcMasters = srcFile.tes4.masters[:] + [GPath(srcMod)]
     dstMasters = dstFile.tes4.masters[:] + [GPath(dstMod)]
@@ -280,7 +324,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     dstRace.setChanged()
     #--Save Changes
     dstFile.safeSave()
-    print _("  Added %d eyes, %d hair") % (cntEyes,cntHair)
+    print _(u"  Added %d eyes, %d hair") % (cntEyes,cntHair)
 
 #------------------------------------------------------------------------------
 @mainfunc
@@ -497,8 +541,8 @@ def perfTest():
 def makeOOO_NoGuildOwnership():
     bosh.initBosh()
     Current = bosh.Collection(ModsPath=bosh.dirs['mods'].s)
-    modFile = Current.addMod("Oscuro's_Oblivion_Overhaul.esp")
-    destFile = Current.addMod("OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
+    modFile = Current.addMod(u"Oscuro's_Oblivion_Overhaul.esp")
+    destFile = Current.addMod(u"OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
     Current.minimalLoad(LoadMasters=True)
     guildCells = set([0x0002C178,0x00003AAC,0x00030534,0x0000A2BC,0x00027D58,
                       0x0003E0E4,0x00086588,0x0002C179,0x000855AD,0x0002CA2F,
@@ -544,7 +588,7 @@ def makeOOO_NoGuildOwnership():
     if sum(changed.values()): destFile.safeCloseSave()
     del Current
 @mainfunc
-def bsaReport(fileName,printAll='False'):
+def bsaReport(fileName,printAll=u'False'):
     printAll = eval(printAll)
     init(2)
     bsaFile = bosh.BsaFile(GPath(fileName))
@@ -671,7 +715,7 @@ def getIds(fileName=None):
             decomp = zlib.decompress(ins.read(size-4))
             if len(decomp) != sizeCheck:
                 raise ModError(self.inName,
-                    _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
+                    u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
             reader = bosh.ModReader(fileName,stringBuffer(decomp))
             return (reader,sizeCheck)
     init(2)
@@ -753,7 +797,7 @@ def gmstIds(fileName=None):
     if maxId > maxOld:
         outData = {'GMST':fids}
         cPickle.dump(outData,GPath(r'Oblivion_ids.pkl').open('w'))
-        print _("%d new gmst ids written to Oblivion_ids.pkl") % ((maxId - maxOld),)
+        print _(u"%d new gmst ids written to Oblivion_ids.pkl") % ((maxId - maxOld),)
 
 #------------------------------------------------------------------------------
 @mainfunc
@@ -998,9 +1042,9 @@ def parseRecords(fileName='Oblivion.esm'):
     modFile.fileInfo.setType('esp')
 
 @mainfunc
-def dumpLSCR(fileName='Oblivion.esm'):
+def dumpLSCR(fileName=u'Oblivion.esm'):
     def strFid(longFid):
-        return '%s: %06X' % (longFid[0].stail, longFid[1])
+        return u'%s: %06X' % (longFid[0].stail, longFid[1])
     bosh.initBosh()
     fileName = GPath(fileName)
     #--Load up in CBash
@@ -1010,14 +1054,14 @@ def dumpLSCR(fileName='Oblivion.esm'):
     collection.load()
     modFile = collection.LookupModFile(fileName.stail)
     #--Dump the info
-    outFile = GPath(fileName.root+'.csv')
+    outFile = GPath(fileName.root+u'.csv')
     with outFile.open('w') as file:
         count = 0
-        file.write('"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
+        file.write(u'"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
         for lscr in modFile.LSCR:
-            file.write('"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
+            file.write(u'"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
             count += 1
-        print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
+        print u'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 @mainfunc
 def createLSCR(*args):
@@ -1163,7 +1207,7 @@ def createLSCR(*args):
                         masterName = bosh.dirs['mods'].join(masterName)
                         self.fids_eids.append(((masterName.tail,recordId),eid))
             except Exception, e:
-                print "WARNING: An error occured while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
+                print "WARNING: An error occurred while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
 
         def loadDESCS(self,descFile):
             descFile = GPath(descFile)
@@ -1180,7 +1224,7 @@ def createLSCR(*args):
                         if len(line) > 0:
                             self.DESC.append(line)
             except Exception, e:
-                print "WARNING: An error occured while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
+                print "WARNING: An error occurred while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
             random.shuffle(self.DESC)
 
         def loadLNAMS(self,lnamFile,clearLNAM):
@@ -1209,7 +1253,7 @@ def createLSCR(*args):
                         masterName = bosh.dirs['mods'].join(masterName)
                         self.LNAM.append((masterName.tail,recordId))
             except Exception, e:
-                print "WARNING: An error occured while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
+                print "WARNING: An error occurred while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
 
         def updateMasters(self):
             self.masters = set()
@@ -1568,7 +1612,7 @@ def test(file):
 def create_sample_project(read_file=None,dest_path=None):
     """create a sample project for BAIN testing from a text file list of paths - ie as exported by 'list structure'"""
     if not read_file:
-        print _("read file must be specified")
+        print _(u"read file must be specified")
         return
     if not dest_path:
         dest_path = GPath(os.getcwd()).join("Test BAIN Project")

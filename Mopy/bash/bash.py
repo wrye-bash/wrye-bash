@@ -29,19 +29,16 @@ import atexit
 import os
 from time import time, sleep
 import sys
-if sys.version[:3] == '2.4':
-    import wxversion
-    wxversion.select("2.5.3.1")
 import re
 import traceback
-import cStringIO
+import StringIO
 
 import bass
 import barg
 opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
-from bolt import _, GPath, deprint
+from bolt import GPath, deprint
 basherImported = False
 # ----------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -65,8 +62,8 @@ def SetUserPath(iniPath, uArg=None):
         SetHomePath(uArg)
     elif os.path.exists(iniPath):
         bashIni = GetBashIni(iniPath)
-        if bashIni and bashIni.has_option('General', 'sUserPath') and not bashIni.get('General', 'sUserPath') == '.':
-            SetHomePath(bashIni.get('General', 'sUserPath'))
+        if bashIni and bashIni.has_option(u'General', u'sUserPath') and not bashIni.get(u'General', u'sUserPath') == u'.':
+            SetHomePath(bashIni.get(u'General', u'sUserPath'))
 
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
@@ -112,7 +109,7 @@ def cmdRestore():
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
 def oneInstanceChecker():
     global pidpath, lockfd
-    pidpath = bolt.Path.getcwd().root.join('pidfile.tmp')
+    pidpath = bolt.Path.getcwd().root.join(u'pidfile.tmp')
     lockfd = None
 
     if opts.restarting: # wait up to 10 seconds for previous instance to close
@@ -123,10 +120,12 @@ def oneInstanceChecker():
         # if a stale pidfile exists, remove it (this will fail if the file is currently locked)
         if pidpath.exists(): os.remove(pidpath.s)
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-        os.write(lockfd, "%d" % os.getpid())
+        os.write(lockfd, u"%d" % os.getpid())
     except OSError, e:
         # lock file exists and is currently locked by another process
-        print _('already started')
+        msg = _(u'Already started')
+        try: print msg
+        except UnicodeError: print msg.encode('mbcs')
         return False
 
     return True
@@ -149,31 +148,47 @@ def exit():
         from basher import appRestart
         if appRestart:
             exePath = GPath(sys.executable)
-            sys.argv = [exePath.stail] + sys.argv + ['--restarting']
-            # For some reason, quoting the sys.argv items caused it not to work for me.
-            # Is this correct?
-            #sys.argv = ['\"' + x + '\"' for x in sys.argv] #quote all args in sys.argv
+            sys.argv = [exePath.stail] + sys.argv + [u'--restarting']
+            def updateArgv(args):
+                if isinstance(args,(list,tuple)):
+                    if len(args) > 0 and isinstance(args[0],(list,tuple)):
+                        for arg in args:
+                            updateArgv(arg)
+                    else:
+                        found = 0
+                        for i in xrange(len(sys.argv)):
+                            if not found and sys.argv[i] == args[0]:
+                                found = 1
+                            elif found:
+                                if found < len(args):
+                                    sys.argv[i] = args[found]
+                                    found += 1
+                                else:
+                                    break
+                        else:
+                            sys.argv.extend(args)
+            updateArgv(appRestart)
             try:
                 import subprocess
                 subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
             except Exception, error:
                 print error
-                print _("Error Attempting to Restart Wrye Bash!")
-                print _("cmd line: "), exePath.s, sys.argv
+                print u'Error Attempting to Restart Wrye Bash!'
+                print u'cmd line: %s %s' %(exePath.s, sys.argv)
                 print
                 raise
 
 def dump_environment():
     import locale
-    print "Wrye Bash starting"
-    print "Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
+    print u"Wrye Bash starting"
+    print u"Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
     try:
         import wx
-        print "wxPython version: %s" % wx.version()
+        print u"wxPython version: %s" % wx.version()
     except ImportError:
-        print "wxPython not found"
+        print u"wxPython not found"
     # Standalone: stdout will actually be pointing to stderr, which has no 'encoding' attribute
-    print "input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, getattr(sys.stdout,'encoding',None), locale.getdefaultlocale())
+    print u"input encoding: %s; output encoding: %s; locale: %s" % (sys.stdin.encoding, getattr(sys.stdout,'encoding',None), locale.getdefaultlocale())
 
 # Main ------------------------------------------------------------------------
 def main():
@@ -187,7 +202,7 @@ def main():
     if len(extra) > 0:
         return
 
-    # useful for understanding context of bug reprots
+    # useful for understanding context of bug reports
     if opts.debug: dump_environment()
 
     if opts.Psyco:
@@ -196,8 +211,6 @@ def main():
             psyco.full()
         except:
             pass
-    if opts.unicode != '':
-        bolt.bUseUnicode = int(opts.unicode)
 
     # ensure we are in the correct directory so relative paths will work properly
     if hasattr(sys,"frozen"):
@@ -211,10 +224,16 @@ def main():
     # Detect the game we're running for
     import bush
     if opts.debug:
-        print 'Searching for game to manage:'
+        print u'Searching for game to manage:'
     ret = bush.setGame(opts.gameName,opts.oblivionPath)
     if ret != False: # False == success
         if len(ret) != 1:
+            if len(ret) == 0:
+                msgtext = _(u"Wrye Bash could not find a game to manage. Please use -o command line argument to specify the game path")
+            else:
+                msgtext = _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.") 
+                msgtext += u'\n\n'
+                msgtext += _(u'To prevent this message in the future, use the -g command line argument to specify the game')
             if hasattr(sys,'frozen'):
                 # Standalone is guaranteed to have wxPython, so use that
                 import wx
@@ -232,8 +251,7 @@ def main():
                         self.callback = callback
                         self.panel = panel = wx.Panel(self,wx.ID_ANY)
                         sizer = wx.BoxSizer(wx.VERTICAL)
-                        sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,
-                                              "Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game",
+                        sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,msgtext,
                                               style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_BESTWRAP),
                                   1,wx.GROW|wx.ALL,5)
                         for gameName in gameNames:
@@ -255,6 +273,7 @@ def main():
                 frame.Show()
                 frame.Center()
                 _app.MainLoop()
+                del _app
                 if retCode.get() is None: return
                 bush.setGame(retCode.get(),opts.oblivionPath)
             else:
@@ -273,7 +292,7 @@ def main():
                         root.destroy()
                 quit = onQuit()
 
-                button = Tkinter.Button(frame,text='Quit',fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+                button = Tkinter.Button(frame,text=_(u'Quit'),fg='red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                 button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 class onClick(object):
                     def __init__(self,gameName):
@@ -288,7 +307,8 @@ def main():
                     button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                     button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 w = Tkinter.Text(frame)
-                w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
+                
+                w.insert(Tkinter.END,msgtext)
                 w.config(state=Tkinter.DISABLED)
                 w.pack()
                 root.mainloop()
@@ -312,7 +332,7 @@ def main():
 
     #--Initialize Directories and some settings
     #  required before the rest has imported
-    SetUserPath('bash.ini',opts.userPath)
+    SetUserPath(u'bash.ini',opts.userPath)
 
     try:
         # Force Python mode if CBash can't work with this game
@@ -323,10 +343,14 @@ def main():
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
-            print _("generating HTML file from: '%s'") % opts.genHtml
+            msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
+            msg2 = _(u'done')
+            try: print msg1
+            except UnicodeError: print msg1.encode('mbcs')
             import belt
             bolt.WryeText.genHtml(opts.genHtml)
-            print _("done")
+            try: print msg2
+            except UnicodeError: print msg2.encode('mbcs')
             return
 
         import basher
@@ -335,7 +359,7 @@ def main():
     except (bolt.PermissionError, bolt.BoltError), e:
         # try really hard to be able to show the error in the GUI
         try:
-            if "basher" not in locals():
+            if 'basher' not in locals():
                 # we get here if initBosh threw
                 import basher
                 import barb
@@ -350,7 +374,7 @@ def main():
             bolt.deprintOn = True
         else:
             app = basher.BashApp()
-        balt.showError(None,str(e))
+        balt.showError(None,u'%s'%e)
         app.MainLoop()
         raise e
     except (ImportError, StandardError), e:
@@ -361,15 +385,18 @@ def main():
             frame = Tkinter.Frame(root)
             frame.pack()
 
-            button = Tkinter.Button(frame, text="QUIT", fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+            button = Tkinter.Button(frame, text=_(u"QUIT"), fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
 
-            o = cStringIO.StringIO()
+            o = StringIO.StringIO()
             traceback.print_exc(file=o)
             msg = o.getvalue()
             o.close()
             w = Tkinter.Text(frame)
-            w.insert(Tkinter.END, _("Error! Unable to start Wrye Bash.\n\n Please ensure Wrye Bash is correctly installed.\n\n\n%s") % (msg,))
+            w.insert(Tkinter.END, _(u'Error! Unable to start Wrye Bash.')
+                                  + u'\n\n' +
+                                  _(u'Please ensure Wrye Bash is correctly installed.')
+                                  + u'\n\n\n%s' % (msg,))
             w.config(state=Tkinter.DISABLED)
             w.pack()
             root.mainloop()
@@ -396,12 +423,29 @@ def main():
     else:
         app = basher.BashApp()
 
-    if sys.version[0:3] < '2.6': #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
+    import wx
+    wxver = wx.version()
+    if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
+        # Can't use translatable strings, because they'd most likely end up being in unicode!
+        if not balt.askYes(None,
+            'Warning: you appear to be using a non-unicode version of wxPython (%s).  This will cause problems!  It is highly recommended you use a unicode version of wxPython instead.  Do you still want to run Wrye Bash?'
+            % wxver,
+            'Warning: Non-Unicode wxPython detected',
+            ):
+            return
+    sysVersion = (sys.version_info[0],sys.version_info[1],sys.version_info[2])
+    if sysVersion < (2,6): #nasty, may cause failure in oneInstanceChecker but better than bash failing to open things for no (user) apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
-        if sys.version[0:3] == 2.5:
-            run = balt.askYes(None,"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur. Updating to Python 2.7x is recommended but not imperative. Do you still want to run Wrye Bash right now?","Warning OLD Python version detected")
+        if sysVersion[:2] == (2,5):
+            run = balt.askYes(None,
+                              _(u"Warning: You are using a python version prior to 2.6 and there may be some instances that failures will occur.  Updating to Python 2.7x is recommended but not imperative.  Do you still want to run Wrye Bash right now?"),
+                              _(u"Warning OLD Python version detected")
+                              )
         else:
-            run = balt.askYes(None,"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work. Please update to a more recent version of Python(2.7x is preferred). Do you still want to run Wrye Bash?", "Warning OLD Python version detected")
+            run = balt.askYes(None,
+                              _(u"Warning: You are using a Python version prior to 2.5x which is totally out of date and ancient and Bash will likely not like it and may totally refuse to work.  Please update to a more recent version of Python(2.7x is preferred).  Do you still want to run Wrye Bash?"),
+                              _(u"Warning OLD Python version detected")
+                              )
         if not run:
             return
 
