@@ -812,7 +812,7 @@ class CBashIUNICODEARRAY(object):
         self._FieldID = FieldID
 
     def __get__(self, instance, owner):
-        numRecords = _CGetFieldAttribute(instance._CollectionID, isntance._ModID, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
+        numRecords = _CGetFieldAttribute(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
         if (numRecords > 0):
             cRecords = (POINTER(c_char_p) * numRecords)()
             _CGetField(instance._CollectionID, instance._ModID, instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))

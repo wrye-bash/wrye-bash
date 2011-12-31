@@ -12651,7 +12651,7 @@ class Mod_MarkMergeable(Link):
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
-                no.append(u"%s:%s" % (fileName.s,reason))
+                no.append(u"%s:%s" % (fileName.s,canMerge))
         message = u'== %s ' % ([u'Python',u'CBash'][self.doCBash])+_(u'Mergeability')+u'\n\n'
         if yes:
             message += u'=== '+_(u'Mergeable')+u'\n* '+u'\n\n* '.join(x.s for x in yes)
