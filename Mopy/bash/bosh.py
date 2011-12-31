@@ -9758,7 +9758,7 @@ class CBash_EditorIds:
                     if newEid and newEid != oldEid:
                         record.eid = newEid
                         if record.eid == newEid: #Can silently fail if a record keyed by editorID (GMST,MGEF) already has the value
-                            changed.append((oldEid or '',newEid or ''))
+                            changed.append((oldEid or u'',newEid or u''))
             #--Update scripts
             old_new = dict(self.old_new)
             old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
@@ -9968,13 +9968,13 @@ class CBash_FactionRelations:
         importFile = modInfo.getPath().tail
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(importFile.s, Saveable=False)
+            importFile = Current.addMod(importFile.s, Saveable=False)
             Current.load()
 
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
                 if modName in gotFactions: continue
-                if modName == importFile:
+                if modFile == importFile:
                     for record in modFile.FACT:
                         fid = record.fid
                         fid_eid[fid] = record.eid
@@ -11989,8 +11989,7 @@ class CBash_ScriptText:
             modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
 
-            progress = balt.Progress(_("Export Scripts"))
-            try:
+            with balt.Progress(_("Export Scripts")) as progress:
                 records = modFile.SCPT
                 y = len(records)
                 z = 0
@@ -11998,8 +11997,6 @@ class CBash_ScriptText:
                     z += 1
                     progress((0.5/y*z),_("Reading scripts in %s.") % (file))
                     eid_data[record.eid] = (record.scriptText, record.fid)
-            finally: #just to ensure the progress bar gets destroyed
-                progress = progress.Destroy()
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
@@ -14268,7 +14265,7 @@ class CBash_PatchFile(ObModFile):
         self.Current.load()
 
         if self.Current.LookupModFileLoadOrder(self.patchName.temp.s) <= 0:
-            print (_("Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.") +
+            print (_(u"Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.") +
                    u'\n' +
                    _(u'Also with:') +
                    u'\n' +
@@ -14420,7 +14417,7 @@ class CBash_PatchFile(ObModFile):
         # and if they do come about, we can always change this.  Plus this will solve issues where
         # Mod files mistakenly get have the header version set > 1.0
         self.Current.ClearReferenceLog()
-        self.TES4.version = min(maxVersion,1.0)
+        self.TES4.version = min(maxVersion,max(bush.game.esp.validHeaderVersions))
         #Finish the patch
         progress(len(groupOrder))
         subProgress = SubProgress(progress,len(groupOrder))
@@ -18241,7 +18238,7 @@ class NamesPatcher(ImportPatcher):
                 try:
                     fullNames.readFromText(dirs['patches'].join(srcFile))
                 except UnicodeError:
-                    print srcFile,'is not saved in UTF-8 format.'
+                    print srcFile,u'is not saved in UTF-8 format.'
             progress.plus()
         #--Finish
         id_full = self.id_full
@@ -24386,8 +24383,8 @@ class CBash_NamesTweak_BodyTags(CBash_MultiTweakItem):
         CBash_MultiTweakItem.__init__(self,_(u"Body Part Codes"),
             _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
             u'bodyTags',
-            ('ARGHTCCPBS','ARGHTCCPBS'),
-            ('ABGHINOPSL','ABGHINOPSL'),
+            (u'ARGHTCCPBS',u'ARGHTCCPBS'),
+            (u'ABGHINOPSL',u'ABGHINOPSL'),
             )
 
     def getTypes(self):
@@ -24581,7 +24578,7 @@ class NamesTweak_Potions(MultiTweakItem):
             if record.flags.isFood:
                 record.full = u'.'+full
             else:
-                label = (u'',u'X')[isPoison] + 'ACDIMRU'[school]
+                label = (u'X' if isPoison else u'') + u'ACDIMRU'[school]
                 record.full = format % label + full
             keep(record.fid)
             srcMod = record.fid[0]
@@ -24643,7 +24640,7 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
             if record.IsFood:
                 newFull = u'.' + newFull
             else:
-                label = (u'',u'X')[isPoison] + 'ACDIMRU'[schoolType]
+                label = (u'X' if isPoison else u'') + u'ACDIMRU'[schoolType]
                 newFull = self.format % label + newFull
 
             if record.full != newFull:
@@ -24819,7 +24816,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
                         else:
                             schoolType = self.patchFile.mgef_school.get(effect.name,6)
                 newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
-                newFull = magicFormat % 'ACDIMRU'[schoolType] + newFull
+                newFull = magicFormat % u'ACDIMRU'[schoolType] + newFull
             #--Ordering
             newFull = self.orderFormat[isEnchanted] + newFull
 
@@ -24906,9 +24903,9 @@ class NamesTweak_Spells(MultiTweakItem):
             newFull = reOldLabel.sub(u'',record.full) #--Remove existing label
             if not removeTags:
                 if showLevel:
-                    newFull = format % ('ACDIMRU'[school],record.level) + newFull
+                    newFull = format % (u'ACDIMRU'[school],record.level) + newFull
                 else:
-                    newFull = format % 'ACDIMRU'[school] + newFull
+                    newFull = format % u'ACDIMRU'[school] + newFull
             if newFull != record.full:
                 record.full = newFull
                 keep(record.fid)
@@ -24971,9 +24968,9 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
             newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
             if not self.removeTags:
                 if self.showLevel:
-                    newFull = self.format % ('ACDIMRU'[schoolType],record.levelType) + newFull
+                    newFull = self.format % (u'ACDIMRU'[schoolType],record.levelType) + newFull
                 else:
-                    newFull = self.format % 'ACDIMRU'[schoolType] + newFull
+                    newFull = self.format % u'ACDIMRU'[schoolType] + newFull
 
             if record.full != newFull:
                 override = record.CopyAsOverride(self.patchFile)
@@ -25054,9 +25051,9 @@ class NamesTweak_Weapons(MultiTweakItem):
         for record in patchFile.WEAP.records:
             if not record.full: continue
             if showStat:
-                record.full = format % ('CDEFGB'[record.weaponType],record.damage) + record.full
+                record.full = format % (u'CDEFGB'[record.weaponType],record.damage) + record.full
             else:
-                record.full = format % 'CDEFGB'[record.weaponType] + record.full
+                record.full = format % u'CDEFGB'[record.weaponType] + record.full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
@@ -25106,9 +25103,9 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
             else:
                 type = record.weaponType
             if self.showStat:
-                newFull = self.format % ('CDEFGBA'[type], record.damage) + newFull
+                newFull = self.format % (u'CDEFGBA'[type], record.damage) + newFull
             else:
-                newFull = self.format % 'CDEFGBA'[type] + newFull
+                newFull = self.format % u'CDEFGBA'[type] + newFull
             if record.full != newFull:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -25588,8 +25585,8 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
                 group_patchers.setdefault(type,[]).append(tweak)
             tweak.format = tweak.choiceValues[tweak.chosen][0]
             if isinstance(tweak, CBash_NamesTweak_Body):
-                tweak.showStat = '%02d' in tweak.format
-                tweak.codes = getattr(self.patchFile,'bodyTags','ARGHTCCPBS')
+                tweak.showStat = u'%02d' in tweak.format
+                tweak.codes = getattr(self.patchFile,'bodyTags',u'ARGHTCCPBS')
                 tweak.amulet,tweak.ring,tweak.gloves,tweak.head,tweak.tail,tweak.robe,tweak.chest,tweak.pants,tweak.shoes,tweak.shield = [
                     x for x in tweak.codes]
 
@@ -27193,6 +27190,7 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         log.setHeader(u'= '+self.__class__.name)
         log(u'* '+_(u'Ingredients Cataloged: %d') % len(id_ingred))
         log(u'* '+_(u'Effects Cataloged: %d') % len(effect_ingred))
+
 #------------------------------------------------------------------------------
 class CoblExhaustion(SpecialPatcher,ListPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion feature."""
@@ -27364,7 +27362,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             #--Okay, do it
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.full = '+' + override.full
+                override.full = u'+' + override.full
                 override.IsLesserPower = True
                 effect = override.create_effect()
                 effect.name = self.SEFF
@@ -28614,7 +28612,6 @@ class RacePatcher(SpecialPatcher,ListPatcher):
                     mesh_eye[mesh] = []
                 mesh_eye[mesh].append(eye)
             currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
-            #print race.eid, mesh_eye
             try:
                 maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]),reverse=True)[0]
             except IndexError:
@@ -28762,7 +28759,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
-        if(fid in self.fid_faction_mod):
+        if fid in self.fid_faction_mod:
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
             curRelations = set(record.relations_list)
             changed = newRelations - curRelations
