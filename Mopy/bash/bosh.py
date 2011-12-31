@@ -18277,8 +18277,8 @@ class NamesPatcher(ImportPatcher):
                 if srcPath not in patchesDir: continue
                 try:
                     fullNames.readFromText(dirs['patches'].join(srcFile))
-                except UnicodeError:
-                    print srcFile,u'is not saved in UTF-8 format.'
+                except UnicodeError as e:
+                    print srcFile.stail,u'is not saved in UTF-8 format:', e
             progress.plus()
         #--Finish
         id_full = self.id_full
