@@ -13630,13 +13630,14 @@ class ModCleaner:
                         modFile.save(False)
                     except WindowsError, werr:
                         if werr.winerror != 32: raise
-                        while balt.askYes(None,_(u'Bash encountered an error when saving %s.')
-                                               + u'\n\n' +
-                                               _(u'The file is in use by another process such as TES4Edit.')
-                                               + u'\n' +
-                                               _(u'Please close the other program that is accessing %s.')
-                                               + u'\n\n' +
-                                               _(u'Try again?') % (modPath.stail,modPath.stail),_(u'%s - Save Error') % modPath.stail):
+                        while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
+                                                + u'\n\n' +
+                                                _(u'The file is in use by another process such as TES4Edit.')
+                                                + u'\n' +
+                                                _(u'Please close the other program that is accessing %s.')
+                                                + u'\n\n' +
+                                                _(u'Try again?')
+                                                ) % (modPath.stail,modPath.stail),_(u'%s - Save Error') % modPath.stail):
                             try:
                                 modFile.save(False)
                             except WindowsError, werr:
