@@ -3656,13 +3656,15 @@ class OmodFile:
         pluginSize = sizes.get('plugins',0)
         dataSize = sizes.get('data',0)
         subprogress = bolt.SubProgress(progress, 0.5, 1)
-        if tempDir.join(u'plugins.crc').exists() and tempDir.join(u'plugins').exists():
-            pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
-            extract(tempDir.join(u'plugins.crc'),tempDir.join(u'plugins'),outDir,pluginProgress)
-        if tempDir.join(u'data.crc').exists() and tempDir.join(u'data').exists():
-            dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
-            extract(tempDir.join(u'data.crc'),tempDir.join(u'data'),outDir,dataProgress)
-        progress(1,self.path.stail+u'\n'+_(u'Extracted'))
+        tempOut = outDir.temp
+        with outDir.tempMoveTo(tempOut):
+            if tempDir.join(u'plugins.crc').exists() and tempDir.join(u'plugins').exists():
+                pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
+                extract(tempDir.join(u'plugins.crc'),tempDir.join(u'plugins'),tempOut,pluginProgress)
+            if tempDir.join(u'data.crc').exists() and tempDir.join(u'data').exists():
+                dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
+                extract(tempDir.join(u'data.crc'),tempDir.join(u'data'),tempOut,dataProgress)
+            progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
         # Clean up temp dir
         dirs['mopy'].join(u'temp').rmtree(u'temp')
