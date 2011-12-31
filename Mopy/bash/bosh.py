@@ -3552,7 +3552,7 @@ class OmodFile:
             file.write(_encode(filename))
             file.write('\n\n[basic info]\n')
             file.write('Name: ')
-            file.write(_encode(modName.s))
+            file.write(_encode(filename[:-5]))
             file.write('\nAuthor: ')
             file.write(_encode(self.author))
             file.write('\nVersion:') # TODO, fix this?
@@ -3572,52 +3572,56 @@ class OmodFile:
     def getOmodContents(self):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
-        cmd7z = [exe7z, u'l', u'-r', self.path.s]
         filesizes = dict()
         totalSize = 0
         reFileSize = re.compile(ur'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
-        with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
-            for line in ins:
-                line = unicode(line,'utf8')
-                maFinalLine = reFinalLine.match(line)
-                if maFinalLine:
-                    totalSize = int(maFinalLine.group(1))
-                    break
-                maFileSize = reFileSize.match(line)
-                if maFileSize:
-                    size = int(maFileSize.group(1))
-                    name = maFileSize.group(2).strip().strip(u'\r')
-                    filesizes[name] = size
+        tempOmod = self.path.temp
+        with self.path.tempMoveTo(tempOmod):
+            cmd7z = [exe7z, u'l', u'-r', tempOmod.s]
+            with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
+                for line in ins:
+                    line = unicode(line,'utf8')
+                    maFinalLine = reFinalLine.match(line)
+                    if maFinalLine:
+                        totalSize = int(maFinalLine.group(1))
+                        break
+                    maFileSize = reFileSize.match(line)
+                    if maFileSize:
+                        size = int(maFileSize.group(1))
+                        name = maFileSize.group(2).strip().strip(u'\r')
+                        filesizes[name] = size
         return filesizes,totalSize
 
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
         if progress is None: progress = bolt.Progress()
         # First, extract the files to a temp directory
-        tempDir = dirs['mopy'].join(u'temp',self.path.body)
+        tempDir = dirs['mopy'].join(u'temp',self.path.temp.body)
+        tempOmod = self.path.temp
 
         # Get contents of archive
         sizes,total = self.getOmodContents()
 
         # Extract the files
-        cmd7z = [exe7z,u'e',u'-r',self.path.s,u'-o%s' % tempDir.s]
+        cmd7z = [exe7z,u'e',u'-r',tempOmod.s,u'-o%s' % tempDir.s]
         reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
         reError = re.compile(ur'Error:',re.U)
         progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
 
         subprogress = bolt.SubProgress(progress, 0, 0.4)
         current = 0
-        with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
-            for line in ins:
-                line = unicode(line,'utf8')
-                maExtracting = reExtracting.match(line)
-                if maExtracting:
-                    name = maExtracting.group(1).strip().strip(u'\r')
-                    size = sizes[name]
-                    subprogress(float(current)/total,self.path.stail+u'\n'+_(u'Extracting...')+u'\n'+name)
-                    current += size
+        with self.path.tempMoveTo(tempOmod):
+            with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
+                for line in ins:
+                    line = unicode(line,'utf8')
+                    maExtracting = reExtracting.match(line)
+                    if maExtracting:
+                        name = maExtracting.group(1).strip().strip(u'\r')
+                        size = sizes[name]
+                        subprogress(float(current)/total,self.path.stail+u'\n'+_(u'Extracting...')+u'\n'+name)
+                        current += size
 
         # Get compression type
         progress(0.4,self.path.stail+u'\n'+_(u'Reading config'))
