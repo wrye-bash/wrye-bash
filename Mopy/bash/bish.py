@@ -1043,9 +1043,9 @@ def parseRecords(fileName='Oblivion.esm'):
     modFile.fileInfo.setType('esp')
 
 @mainfunc
-def dumpLSCR(fileName='Oblivion.esm'):
+def dumpLSCR(fileName=u'Oblivion.esm'):
     def strFid(longFid):
-        return '%s: %06X' % (longFid[0].stail, longFid[1])
+        return u'%s: %06X' % (longFid[0].stail, longFid[1])
     bosh.initBosh()
     fileName = GPath(fileName)
     #--Load up in CBash
@@ -1054,14 +1054,14 @@ def dumpLSCR(fileName='Oblivion.esm'):
         modFile = Current.addMod(fileName.stail)
         Current.load()
         #--Dump the info
-        outFile = GPath(fileName.root+'.csv')
+        outFile = GPath(fileName.root+u'.csv')
         with outFile.open('w') as file:
             count = 0
-            file.write('"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
+            file.write(u'"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
             for lscr in modFile.LSCR:
-                file.write('"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
+                file.write(u'"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
                 count += 1
-            print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
+            print u'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 @mainfunc
 def createLSCR(*args):

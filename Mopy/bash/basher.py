@@ -3352,7 +3352,7 @@ class InstallersList(balt.Tank):
                             bolt.deprint(_(u'Failed to clean up temp dir:')+u'\n', traceback=True)
                         raise
                     except:
-                        bolt.deprint(_(u"Failed to extract '%s'.")+u'\n\n' % omod.stail, traceback=True)
+                        bolt.deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
 
                         # Clean up
                         failed.append(u' * ' + omod.stail)
