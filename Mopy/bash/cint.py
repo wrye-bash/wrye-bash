@@ -1,4 +1,25 @@
 # -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#
+# =============================================================================
 
 from ctypes import *
 import struct
@@ -114,13 +135,13 @@ CBash = None
 # path to compiled dir hardcoded since importing bosh would be circular
 # TODO: refactor to avoid circular deps
 if CBashEnabled == 0: #regular depends on the filepath existing.
-    paths = [join("bash", "compiled", "CBash.dll"),join("compiled", "CBash.dll")]
+    paths = [join(u'bash', u'compiled', u'CBash.dll'),join(u'compiled', u'CBash.dll')]
 elif CBashEnabled == 1: #force python mode
     paths = []
 elif CBashEnabled == 2: #attempt to force CBash mode
-    paths = [join("bash", "compiled", filename) for filename in ["CBash.dll","rename_CBash.dll","_CBash.dll"]]
+    paths = [join(u'bash',u'compiled',filename) for filename in [u'CBash.dll',u'rename_CBash.dll',u'_CBash.dll']]
 else: #attempt to force path to CBash dll
-    paths = [join(path,"CBash.dll") for path in CBashEnabled]
+    paths = [join(path,u'CBash.dll') for path in CBashEnabled]
 
 try:
     for path in paths:
@@ -128,13 +149,7 @@ try:
             CBash = CDLL(path)
             break
     del paths
-except AttributeError, error:
-    CBash = None
-    print error
-except ImportError, error:
-    CBash = None
-    print error
-except OSError, error:
+except (AttributeError,ImportError,OSError) as error:
     CBash = None
     print error
 except:
@@ -1538,7 +1553,7 @@ class CBashLIST(object):
             if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements)
+            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements)
 
 class CBashUNKNOWN_OR_GENERIC(object):
     __slots__ = ['_FieldID','_Type','_ResType']
@@ -1673,7 +1688,7 @@ class CBashFORMIDARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(numRecords)]
+            return [FormID(instance._RecordID, cRecords.contents[x]) for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1773,7 +1788,7 @@ class CBashUINT8ARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1793,7 +1808,7 @@ class CBashUINT32ARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1950,7 +1965,7 @@ class CBashLIST_LIST(object):
         self._ListFieldID, self._Type, self._AsList = ListFieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]
+        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
@@ -1959,7 +1974,7 @@ class CBashLIST_LIST(object):
             if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements)
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements)
 
 class CBashGeneric_LIST(object):
     __slots__ = ['_ListFieldID','_Type','_ResType']
@@ -2015,7 +2030,7 @@ class CBashFORMIDARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(numRecords)]
+            return [FormID(instance._RecordID, cRecords.contents[x]) for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2086,7 +2101,7 @@ class CBashUINT8ARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2106,7 +2121,7 @@ class CBashUINT32ARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2192,7 +2207,7 @@ class CBashLIST_LISTX2(object):
         self._ListX2FieldID, self._Type, self._AsList = ListX2FieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]
+        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
@@ -2201,7 +2216,7 @@ class CBashLIST_LISTX2(object):
             if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements)
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements)
 
 class CBashGeneric_LISTX2(object):
     __slots__ = ['_ListX2FieldID','_Type','_ResType']
@@ -2257,7 +2272,7 @@ class CBashUINT8ARRAY_LISTX2(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2399,7 +2414,7 @@ class CBashUINT8ARRAY_LISTX3(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -11106,7 +11121,7 @@ class ObLANDRecord(ObBaseRecord):
     data_p = CBashUINT8ARRAY(5)
 
     def get_normals(self):
-        return [[self.Normal(self._RecordID, 6, x, 0, y) for y in range(0,33)] for x in range(0,33)]
+        return [[self.Normal(self._RecordID, 6, x, 0, y) for y in xrange(0,33)] for x in xrange(0,33)]
     def set_normals(self, nElements):
         if nElements is None or len(nElements) != 33: return
         for oElement, nElement in zip(self.normals, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
@@ -15406,7 +15421,7 @@ class ObCollection:
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)
 
     def Debug_DumpModFiles(self):
-        col = [_("Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
-        files = [_("Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]
+        col = [_(u"Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
+        files = [_(u"Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]
         col.extend(files)
-        return '\n'.join(col)
+        return u'\n'.join(col)
