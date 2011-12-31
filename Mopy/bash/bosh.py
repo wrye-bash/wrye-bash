@@ -10174,7 +10174,7 @@ class CBash_FidReplacer:
             modFile.save()
             entries = [(count,old_eid[oldId],new_eid[newId]) for count, oldId, newId in zip(counts, old_new.keys(), old_new.values())]
             entries.sort(key=itemgetter(1))
-            return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
+            return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
 
 #------------------------------------------------------------------------------
 class FullNames:
@@ -14076,7 +14076,7 @@ class CBash_PatchFile(ObModFile):
 
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         tags = modInfos[modInfo.name].getBashTags()
-        if 'NoMerge' in tags:
+        if u'NoMerge' in tags:
             if not verbose: return False
             reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
         if reasons: return reasons
