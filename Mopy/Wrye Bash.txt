@@ -2413,27 +2413,27 @@ Bash now supports localization for most? western languages (translation of progr
 * **Translation Tips**
   * Here's the start of a new translator file:
 <pre>
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR ORGANIZATION
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+&#35; SOME DESCRIPTIVE TITLE.
+&#35; Copyright (C) YEAR ORGANIZATION
+&#35; FIRST AUTHOR &lt;EMAIL&#64;ADDRESS&gt;, YEAR.
+&#35;
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "POT-Creation-Date: 2011-12-18 18:26+Alaskan Standard Time\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Last-Translator: FULL NAME &lt;EMAIL&#64;ADDRESS&gt;n"
+"Language-Team: LANGUAGE &lt;LL&#64;li.org&gt;\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 </pre>
-  . The important bit here you **must** change is: <code>"Content-Type: text/plain; charset=CHARSET\n"</code>.  Change <code>CHARSET<code> to the Unicode codepage that your language is in.  This will be the same encoding that you save the txt file in.  For example, the Russian translation uses "koi8-r" or "cp1251" (both are different names for the same codepage).
+  . The important bit here you **must** change is: <code>"Content-Type: text/plain; charset=CHARSET\n"</code>.  Change <code>CHARSET</code> to the Unicode codepage that your language is in.  This will be the same encoding that you save the txt file in.  For example, the Russian translation uses "koi8-r" or "cp1251" (both are different names for the same codepage).
 
   * Here's part of a translator file:
 <pre>
-#: bash\bolt.py:734
+&#35;: bash\bolt.py:734
 msgid "Argument is out of allowed ranged of values"
 msgstr "юПЦСЛЕМР ОПЕБШЯХК ДНОСЯРХЛНЕ ГМЮВЕМХЕ"
 </pre>
@@ -2442,7 +2442,7 @@ msgstr "юПЦСЛЕМР ОПЕБШЯХК ДНОСЯРХЛНЕ ГМЮВЕМХЕ"
   * After that is the __msgid__ entry: This is the original text, in quotes.
     * If you see something strange, like:
 <pre>
-#: bash\bolt.py:734
+&#35;: bash\bolt.py:734
 msgid "Argument is out"
 ""
 "of allowed ranged of values"
