@@ -4702,7 +4702,9 @@ class FileInfos(DataDict):
                     elif isUpdated: updated.add(name)
             newNames.add(name)
         deleted = oldNames - newNames
-        for name in deleted: data.pop(name)
+        for name in deleted:
+            # Can run into multiple pops if one of the files is corrupted
+            if name in data: data.pop(name)
         return bool(added) or bool(updated) or bool(deleted)
 
     #--Right File Type? [ABSTRACT]
@@ -6843,9 +6845,11 @@ class Installer(object):
         pendingAdd = pending.add
         apRootJoin = apRoot.join
         obse = bush.game.se.shortName.lower()
+        sd = bush.game.sd.installDir.lower()
         setSkipLod = settings['bash.installers.skipDistantLOD']
         setSkipScreen = settings['bash.installers.skipScreenshots']
         setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
+        setSkipSD = bush.game.sd.shortName and setSkipOBSE
         setSkipDocs = settings['bash.installers.skipDocs']
         setSkipImages = settings['bash.installers.skipImages']
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
@@ -6864,6 +6868,8 @@ class Installer(object):
                     newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
                 if setSkipOBSE:
                     newSDirs = (x for x in newSDirs if x.lower() != obse)
+                if setSkipSD:
+                    newSDirs = (x for x in newSDirs if x.lower() != sd)
                 if setSkipDocs and setSkipImages:
                     newSDirs = (x for x in newSDirs if x.lower() != u'docs')
                 sDirs[:] = [x for x in newSDirs]
@@ -7095,6 +7101,8 @@ class Installer(object):
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         skipObse = not settings['bash.installers.allowOBSEPlugins']
         obseDir = bush.game.se.shortName.lower()+u'\\'
+        skipSd = bush.game.sd.shortName and skipObse
+        sdDir = bush.game.sd.installDir.lower()+u'\\'
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -7243,6 +7251,32 @@ class Installer(object):
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
                     if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(u' DLL Warning')):
+                        badDlls.setdefault(fileLower,[])
+                        badDlls[fileLower].append([archiveRoot,size,crc])
+                        continue
+                    goodDlls.setdefault(fileLower,[])
+                    goodDlls[fileLower].append([archiveRoot,size,crc])
+            elif fileExt == u'.asi':
+                if skipSd: continue
+                if not fileStartsWith(sdDir): continue
+                if fileLower in badDlls and [archiveRoo,size,crc] in badDlls[fileLower]: continue
+                if not checkOBSE:
+                    pass
+                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
+                elif checkOBSE:
+                    message = (_(u'This intaller (%s) has an %s plugin ASI.')
+                               + u'\n' +
+                               _(u'The file is %s')
+                               + u'\n' +
+                               _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.')
+                               + u'\n' +
+                               _(u'Are you sure you want to install this?')
+                               ) % (archiveRoot, bush.game.sd.longName, full)
+                    if fileLower in goodDlls:
+                        message += _(u' You have previously chosen to install an asi by this name but with a different size, crc and or source archive name.')
+                    elif fileLower in badDlls:
+                        message += _(u' You have previously chosen to NOT install an asi by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
+                    if not balt.askYes(installersWindow,message,bush.game.sd.longName + _(u' ASI Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
