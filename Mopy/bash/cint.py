@@ -1897,7 +1897,7 @@ class CBashUNICODE(object):
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._FieldID, self._FieldID, 0, 0, 0, 0, 0, 0, _enc(nValue), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _enc(nValue), 0)
 
 class CBashISTRING(object):
     __slots__ = ['_FieldID']
