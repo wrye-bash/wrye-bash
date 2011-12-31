@@ -68,6 +68,15 @@ class se:
     url = u'http://obse.silverlock.org/'     # URL to download from
     urlTip = u'http://obse.silverlock.org/'  # Tooltip for mouse over the URL
 
+#--Script Dragon
+class sd:
+    shortName = u''
+    longName = u''
+    installDir = u''
+
+#--Quick shortcut for combining the SE and SD names
+se_sd = se.shortName
+
 #--Graphics Extender information
 class ge:
     shortName = u'OBGE'
