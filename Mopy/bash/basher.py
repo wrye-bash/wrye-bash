@@ -8689,14 +8689,13 @@ class Installers_skipLandscapeLODNormals(Installers_Skip):
 
 #------------------------------------------------------------------------------
 class Installers_SkipOBSEPlugins(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip %s Plugins') % bush.game.se.shortName,
-                                          'bash.installers.allowOBSEPlugins',
-                                          )
+    """Toggle allowOBSEPlugins setting and update."""
+    def __init__(self):
+        BoolLink.__init__(self,_(u'Skip %s Plugins') % bush.game.se_sd,
+                          'bash.installers.allowOBSEPlugins')
 
     def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == '': return
+        if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,self.text,self.help,kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
@@ -10944,10 +10943,10 @@ class Settings_SaveSettings(Link):
 class Settings_ExportDllInfo(Link):
     """Exports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == u'': return
+        if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,
-            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se.shortName)
+            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10955,7 +10954,7 @@ class Settings_ExportDllInfo(Link):
         textDir.makedirs()
         #--File dialog
         textPath = balt.askSave(self.window,
-            _(u'Export list of allowed/disallowed %s plugin dlls to:') % bush.game.se.shortName,
+            _(u'Export list of allowed/disallowed %s plugin dlls to:') % bush.game.se_sd,
             textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
             u'*.txt')
         if not textPath: return
@@ -10979,10 +10978,10 @@ class Settings_ExportDllInfo(Link):
 class Settings_ImportDllInfo(Link):
     """Imports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == u'': return
+        if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,
-            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se.shortName)
+            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd)
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10990,7 +10989,7 @@ class Settings_ImportDllInfo(Link):
         textDir.makedirs()
         #--File dialog
         textPath = balt.askOpen(self.window,
-            _(u'Import list of allowed/disallowed %s plugin dlls from:') % bush.game.se.shortName,
+            _(u'Import list of allowed/disallowed %s plugin dlls from:') % bush.game.se_sd,
             textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
             u'*.txt',mustExist=True)
         if not textPath: return

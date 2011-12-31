@@ -66,6 +66,15 @@ class se:
     url = u'http://skse.silverlock.org/'     # URL to download from
     urlTip = u'http://skse.silverlock.org/'  # Tooltip for mouse over the URL
 
+#--Script Dragon
+class sd:
+    shortName = u'SD'
+    longName = u'Script Dragon'
+    installDir = u'asi'
+
+#--Quick shortcut for combining both the SE and SD names
+se_sd = se.shortName+u'/'+sd.longName
+
 #--Graphics Extender information
 class ge:
     shortName = u''
@@ -252,6 +261,7 @@ dataDirsPlus = set((
     u'ini tweaks',
     u'skse',
     u'ini',
+    u'asi',
     ))
 
 # Function Info ----------------------------------------------------------------
