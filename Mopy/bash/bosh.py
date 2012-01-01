@@ -14435,7 +14435,7 @@ class CBash_PatchFile(ObModFile):
 
         # Load parent records from winning mods first
         for parentFid in otherParentsToLoad:
-            parent = self.ObCollection.LookupRecords(parentFid)
+            parent = self.Current.LookupRecords(parentFid)
             if parent:
                 # Deal with WorldCELL's copy flags not being set properly
                 if isWorldCELL(parent[0]):
@@ -14445,7 +14445,7 @@ class CBash_PatchFile(ObModFile):
                     parent[0].CopyAsOverride(self)
         # Load parent records from this mod
         for parentFid in parentsToLoad:
-            parent = self.ObCollection.LookupRecords(parentFid,True)
+            parent = self.Current.LookupRecords(parentFid,True)
             if parent:
                 for p in parent:
                     if p.GName == modFile.GName:
@@ -18983,7 +18983,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
                 return
 
-            parent = self.patchFile.ObCollection.LookupRecords(copyRoad.Parent.fid)
+            parent = self.patchFile.Current.LookupRecords(copyRoad.Parent.fid)
             override = parent[0].CopyAsOverride(self.patchFile) #Copies the winning parent world over if needed
             if override:
                 override = copyRoad.CopyAsOverride(self.patchFile) #Copies the road over
