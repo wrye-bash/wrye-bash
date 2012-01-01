@@ -15043,6 +15043,93 @@ class CBash_MultiTweaker(CBash_Patcher):
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
 
+class DoublePatcher(ListPatcher):
+    """Subclass for patchers that have GUI lists of objects."""
+    
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        Patcher.getConfig(self,configs)
+        if self.forceAuto:
+            self.autoIsChecked = True
+        #--Verify file existence
+        newConfigItems = []
+        patchesDir = dirs['patches'].list()
+        for srcPath in self.configItems:
+            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
+                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                    newConfigItems.append(srcPath)
+        self.configItems = newConfigItems
+        if self.__class__.forceItemCheck:
+            for item in self.configItems:
+                self.configChecks[item] = True
+        #--Make sure configChoices are set (if choiceMenu exists).
+        if self.choiceMenu:
+            for item in self.configItems:
+                self.getChoice(item)
+        #--AutoItems?
+        if self.autoIsChecked:
+            self.getAutoItems()
+        self.tweaks = copy.deepcopy(self.__class__.tweaks)
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
+        for tweak in self.tweaks:
+            tweak.getConfig(config)
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        listSet = set(self.configItems)
+        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
+        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
+        Patcher.saveConfig(self,configs)
+        config = configs[self.__class__.__name__]
+        for tweak in self.tweaks:
+            tweak.saveConfig(config)
+        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
+
+class CBash_DoublePatcher(CBash_ListPatcher):
+    """Subclass for patchers that have GUI lists of objects."""
+
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        CBash_Patcher.getConfig(self,configs)
+        if self.forceAuto:
+            self.autoIsChecked = True
+        #--Verify file existence
+        newConfigItems = []
+        patchesDir = dirs['patches'].list()
+        for srcPath in self.configItems:
+            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
+                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                    newConfigItems.append(srcPath)
+        self.configItems = newConfigItems
+        if self.__class__.forceItemCheck:
+            for item in self.configItems:
+                self.configChecks[item] = True
+        #--Make sure configChoices are set (if choiceMenu exists).
+        if self.choiceMenu:
+            for item in self.configItems:
+                self.getChoice(item)
+        #--AutoItems?
+        if self.autoIsChecked:
+            self.getAutoItems()
+        self.tweaks = copy.deepcopy(self.__class__.tweaks)
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
+        for tweak in self.tweaks:
+            tweak.getConfig(config)
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        listSet = set(self.configItems)
+        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
+        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
+        CBash_Patcher.saveConfig(self,configs)
+        config = configs[self.__class__.__name__]
+        for tweak in self.tweaks:
+            tweak.saveConfig(config)
+        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
+
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class AliasesPatcher(Patcher):
@@ -26896,7 +26983,6 @@ class TweakActors(MultiTweaker):
         AsIntendedBoarsPatcher(),
         QuietFeetPatcher(),
         IrresponsibleCreaturesPatcher(),
-        BiggerOrcsandNords(),
         RWALKNPCAnimationPatcher(),
         SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
@@ -26942,7 +27028,6 @@ class CBash_TweakActors(CBash_MultiTweaker):
         CBash_AsIntendedBoarsPatcher(),
         CBash_QuietFeetPatcher(),
         CBash_IrresponsibleCreaturesPatcher(),
-        CBash_BiggerOrcsandNords(),
         CBash_RWALKNPCAnimationPatcher(),
         CBash_SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
@@ -28355,7 +28440,7 @@ class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class RacePatcher(SpecialPatcher,ListPatcher):
+class RacePatcher(SpecialPatcher,DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
@@ -28371,6 +28456,10 @@ class RacePatcher(SpecialPatcher,ListPatcher):
         u'R.AddSpells',u'R.ChangeSpells',)
     forceAuto = True
     defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
+    subLabel = _(u'Race Tweaks')
+    tweaks = sorted([
+        BiggerOrcsandNords(),
+        ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
     def getAutoItems(self):
@@ -28549,6 +28638,8 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             for eye in record.eyes:
                 if eye in srcEyes:
                     eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
+        for tweak in self.enabledTweaks:
+            tweak.scanModFile(modFile,progress,self.patchFile)
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
@@ -28782,7 +28873,9 @@ class RacePatcher(SpecialPatcher,ListPatcher):
             log(u'\n=== '+_(u'Eyes/Hair Assigned for NPCs'))
             for srcMod in sorted(mod_npcsFixed):
                 log(u'* %s: %d' % (srcMod.s,len(mod_npcsFixed[srcMod])))
-
+        for tweak in self.enabledTweaks:
+            tweak.buildPatch(log,progress,self.patchFile)
+            
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
     autoKey = set(('R.Relations',))
@@ -29249,7 +29342,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 npc.UnloadRecord()
             pstate += 1
 
-class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
+class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
@@ -29263,13 +29356,18 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
         'R.AddSpells', 'R.ChangeSpells','Body-Size-M','Body-Size-F',))
     forceAuto = True
-    tweaks = [
+    tweakers = [
         CBash_RacePatcher_Relations(),
         CBash_RacePatcher_Imports(),
         CBash_RacePatcher_Spells(),
         CBash_RacePatcher_Eyes(),
         ]
     defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
+    subLabel = _(u'Race Tweaks')
+    tweaks = sorted([
+        CBash_BiggerOrcsandNords(),
+        ],key=lambda a: a.label.lower())
+
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -29277,13 +29375,19 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         #This single tweak is broken into several parts to make it easier to manage
         #Each part is a group of tags that are processed similarly
-        for tweak in self.tweaks:
+        for tweak in self.tweakers:
             tweak.initPatchFile(self.srcs,patchFile,loadMods)
+        for tweak in self.tweaks:
+            tweak.patchFile = patchFile
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        for tweak in self.tweaks:
+        for tweak in self.tweakers:
             tweak.initData(group_patchers,progress)
+        for tweak in self.enabledTweaks:
+            for type in tweak.getTypes():
+                group_patchers.setdefault(type,[]).append(tweak)
+        
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
@@ -29292,7 +29396,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
         racesSorted = set()
         racesFiltered = []
         mod_npcsFixed = {}
-        for tweak in self.tweaks:
+        for tweak in self.tweakers:
             if hasattr(tweak, 'racesPatched'):
                 racesPatched |= tweak.racesPatched
             if hasattr(tweak, 'racesSorted'):
@@ -29337,6 +29441,8 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
                 else:
                     name = srcMod.s
                 log(u'* %s: %d' % (name,len(mod_npcsFixed[srcMod])))
+        for tweak in self.enabledTweaks:
+            tweak.buildPatchLog(log)
 
 #--------------------------------------------
 #------------------------------------------------------------------------------
