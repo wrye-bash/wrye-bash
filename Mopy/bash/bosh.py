@@ -697,7 +697,10 @@ class MobDials(MobObjects):
                 if groupType == 7:
                     record.infoStamp = stamp
                     infoClass = loadGetRecClass('INFO')
-                    recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass)
+                    if infoClass:
+                        recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass)
+                    else:
+                        ins.seek(ins.tell()+size-header.__class__.size)
                 else:
                     raise ModError(self.inName,u'Unexpected subgroup %d in DIAL group.' % groupType)
             else:
@@ -18310,14 +18313,25 @@ class NamesPatcher(ImportPatcher):
         for type in self.activeTypes:
             if type not in modFile.tops: continue
             patchBlock = getattr(self.patchFile,type)
-            id_records = patchBlock.id_records
-            for record in modFile.tops[type].getActiveRecords():
+            if type == 'CELL':
+                id_records = patchBlock.id_cellBlock
+                activeRecords = (cellBlock.cell for cellBlock in modFile.CELL.cellBlocks if not cellBlock.cell.flags1.ignored)
+                setter = patchBlock.setCell
+            elif type == 'WRLD':
+                id_records = patchBlock.id_worldBlocks
+                activeRecords = (worldBlock.world for worldBlock in modFile.WRLD.worldBlocks if not worldBlock.world.flags1.ignored)
+                setter = patchBlock.setWorld
+            else:
+                id_records = patchBlock.id_records
+                activeRecords = modFile.tops[type].getActiveRecords()
+                setter = patchBlock.setRecord
+            for record in activeRecords:
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid in id_records: continue
                 if fid not in id_full: continue
                 if record.full != id_full[fid]:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
+                    setter(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
@@ -18329,7 +18343,13 @@ class NamesPatcher(ImportPatcher):
         for type in self.activeTypes:
             if type not in modFile.tops: continue
             type_count[type] = 0
-            for record in modFile.tops[type].records:
+            if type == 'CELL':
+                records = (cellBlock.cell for cellBlock in modFile.CELL.cellBlocks)
+            elif type == 'WRLD':
+                records = (worldBlock.world for worldBlock in modFile.WRLD.worldBlocks)
+            else:
+                records = modFile.tops[type].records
+            for record in records:
                 fid = record.fid
                 if fid in id_full and record.full != id_full[fid]:
                     record.full = id_full[fid]
