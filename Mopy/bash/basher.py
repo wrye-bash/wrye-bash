@@ -6916,17 +6916,17 @@ class PatchDialog(wx.Dialog):
             patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try:
                         patcher.gList.Check(index,patcher.configChecks[item])
                     except KeyError: pass#deprint(_('item %s not in saved configs') % (item))
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                        patcher.gTweakList.Check(index,item.isEnabled)
+                        patcher.gTweakList.SetString(index,item.getListLabel())
                     except: deprint(_(u'item %s not in saved configs') % (item))
         self.SetOkEnable()
 
@@ -6960,16 +6960,16 @@ class PatchDialog(wx.Dialog):
             patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                        patcher.gTweakList.Check(index,item.isEnabled)
+                        patcher.gTweakList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
@@ -6980,13 +6980,13 @@ class PatchDialog(wx.Dialog):
             patcher.SetIsFirstLoad(True)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 patcher.SetItems(patcher.getAutoItems())
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                        patcher.gTweakList.Check(index,item.isEnabled)
+                        patcher.gTweakList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
@@ -6995,14 +6995,14 @@ class PatchDialog(wx.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
             patcher.isEnabled = True
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 if patcher.getName() == 'Leveled Lists': continue
                 for index, item in enumerate(patcher.items):
                     patcher.gList.Check(index,True)
                     patcher.configChecks[item] = True
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
-                    patcher.gList.Check(index,True)
+                    patcher.gTweakList.Check(index,True)
                     item.isEnabled = True
             self.gExecute.Enable(True)
 
@@ -7011,10 +7011,12 @@ class PatchDialog(wx.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
             patcher.isEnabled = False
-            if not hasattr(patcher, 'gList'): continue
-            if patcher.getName() == 'Leveled Lists': continue # special case that one.
-            patcher.gList.SetChecked([])
-            patcher.OnListCheck()
+            if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
+            if hasattr(patcher, 'gList'): 
+                patcher.gList.SetChecked([])
+                patcher.OnListCheck()
+            if hasattr(patcher, 'gTweakList'): 
+                patcher.gTweakList.SetChecked([])
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
@@ -7126,29 +7128,6 @@ class Patcher:
         """Layout control components."""
         if self.gConfigPanel:
             self.gConfigPanel.Layout()
-
-    def SelectAll(self,event=None):
-        """'Select All' Button was pressed, update all configChecks states."""
-        if hasattr(self, 'items'): items = self.items
-        elif hasattr(self, 'tweaks'): items = self.tweaks
-        else: return
-        try:
-            for index, item in enumerate(items):
-                self.gList.Check(index,True)
-            self.OnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
-
-    def DeselectAll(self,event=None):
-        """'Deselect All' Button was pressed, update all configChecks states."""
-        if hasattr(self, 'gList'):
-            try:
-                self.gList.SetChecked([])
-                self.OnListCheck()
-            except AttributeError:
-                pass #ListBox instead of CheckListBox
-            self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
 #------------------------------------------------------------------------------
 class AliasesPatcher(Patcher,bosh.AliasesPatcher):
@@ -7428,6 +7407,24 @@ class ListPatcher(Patcher):
             self.getChoice(item)
         self.gList.SetString(itemIndex,self.getItemLabel(item))
 
+    def SelectAll(self,event=None):
+        """'Select All' Button was pressed, update all configChecks states."""
+        try:
+            for index, item in enumerate(self.items):
+                self.gList.Check(index,True)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+    def DeselectAll(self,event=None):
+        """'Deselect All' Button was pressed, update all configChecks states."""
+        try:
+            self.gList.SetChecked([])
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 #------------------------------------------------------------------------------
 class TweakPatcher(Patcher):
     """Patcher panel with list of checkable, configurable tweaks."""
@@ -7441,31 +7438,31 @@ class TweakPatcher(Patcher):
         gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
-        self.gList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gTweakList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
         #--Events
-        self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
-        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gList.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
+        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
+        self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_UP,self.TweakOnMouse)
         self.mouseItem = -1
         self.mouseState = None
         if self.selectCommands:
-            self.gSelectAll= button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
-            self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+            self.gSelectAll= button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
+            self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
             gSelectSizer = (vSizer(
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
         #--Init GUI
-        self.SetItems()
+        self.SetTweaks()
         #--Layout
         gSizer = vSizer(
             (gText,),
             (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
                 ((4,0),0,wx.EXPAND),
-                (self.gList,1,wx.EXPAND|wx.TOP,2),
+                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gSelectSizer,
                 ),1,wx.EXPAND|wx.TOP,4),
             )
@@ -7473,9 +7470,9 @@ class TweakPatcher(Patcher):
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
-    def SetItems(self):
+    def SetTweaks(self):
         """Set item to specified set of items."""
-        self.gList.Clear()
+        self.gTweakList.Clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherBold = False
         for index,tweak in enumerate(self.tweaks):
@@ -7485,32 +7482,32 @@ class TweakPatcher(Patcher):
                     label += u' %s' % tweak.choiceValues[tweak.chosen][0]
                 else:
                     label += u' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
-            self.gList.Insert(label,index)
-            self.gList.Check(index,tweak.isEnabled)
+            self.gTweakList.Insert(label,index)
+            self.gTweakList.Check(index,tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
                 # indicate that this is a new item by bolding it and its parent patcher
                 font = self.gConfigPanel.GetFont()
                 font.SetWeight(wx.FONTWEIGHT_BOLD)
-                self.gList.SetItemFont(index, font)
+                self.gTweakList.SetItemFont(index, font)
                 patcherBold = True
         if patcherBold:
             self._BoldPatcherLabel()
 
-    def OnListCheck(self,event=None):
+    def TweakOnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
         ensureEnabled = False
         for index, tweak in enumerate(self.tweaks):
-            checked = self.gList.IsChecked(index)
+            checked = self.gTweakList.IsChecked(index)
             tweak.isEnabled = checked
             if checked:
                 ensureEnabled = True
         if event is not None:
-            if self.gList.IsChecked(event.GetSelection()):
+            if self.gTweakList.IsChecked(event.GetSelection()):
                 self._EnsurePatcherEnabled()
         elif ensureEnabled:
             self._EnsurePatcherEnabled()
 
-    def OnMouse(self,event):
+    def TweakOnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.RightDown():
             self.mouseState = (event.m_x,event.m_y)
@@ -7527,7 +7524,7 @@ class TweakPatcher(Patcher):
                 if max(abs(event.m_x-oldx),abs(event.m_y-oldy)) > 4:
                     self.mouseState = None
         elif event.Moving():
-            mouseItem = event.m_y/self.gList.GetItemHeight() + self.gList.GetScrollPos(wx.VERTICAL)
+            mouseItem = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
             self.mouseState = False
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
@@ -7549,7 +7546,7 @@ class TweakPatcher(Patcher):
     def ShowChoiceMenu(self,event):
         """Displays a popup choice menu if applicable."""
         #--Tweak Index
-        tweakIndex = event.m_y/self.gList.GetItemHeight() + self.gList.GetScrollPos(wx.VERTICAL)
+        tweakIndex = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
         self.rightClickTweakIndex = tweakIndex
         #--Tweaks
         tweaks = self.tweaks
@@ -7557,7 +7554,7 @@ class TweakPatcher(Patcher):
         choiceLabels = tweaks[tweakIndex].choiceLabels
         if len(choiceLabels) <= 1: return
         chosen = tweaks[tweakIndex].chosen
-        self.gList.SetSelection(tweakIndex)
+        self.gTweakList.SetSelection(tweakIndex)
         #--Build Menu
         menu = wx.Menu()
         for index,label in enumerate(choiceLabels):
@@ -7571,21 +7568,21 @@ class TweakPatcher(Patcher):
                 menuItem = wx.MenuItem(menu,index,menulabel,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
-                wx.EVT_MENU(self.gList,index,self.OnTweakCustomChoice)
+                wx.EVT_MENU(self.gTweakList,index,self.OnTweakCustomChoice)
             else:
                 menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
-                wx.EVT_MENU(self.gList,index,self.OnTweakChoice)
+                wx.EVT_MENU(self.gTweakList,index,self.OnTweakChoice)
         #--Show/Destroy Menu
-        self.gList.PopupMenu(menu)
+        self.gTweakList.PopupMenu(menu)
         menu.Destroy()
 
     def OnTweakChoice(self,event):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
         self.tweaks[tweakIndex].chosen = event.GetId()
-        self.gList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
+        self.gTweakList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
 
     def OnTweakCustomChoice(self,event):
         """Handle choice menu selection."""
@@ -7627,8 +7624,87 @@ class TweakPatcher(Patcher):
             menulabel = tweak.getListLabel() + u' %s' % tweak.choiceValues[index][0]
         else:
             menulabel = tweak.getListLabel() + u' %4.2f ' % tweak.choiceValues[index][0]
-        self.gList.SetString(tweakIndex,(menulabel))
+        self.gTweakList.SetString(tweakIndex,(menulabel))
 
+    def TweakSelectAll(self,event=None):
+        """'Select All' Button was pressed, update all configChecks states."""
+        try:
+            for index, item in enumerate(self.tweaks):
+                self.gTweakList.Check(index,True)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+    def TweakDeselectAll(self,event=None):
+        """'Deselect All' Button was pressed, update all configChecks states."""
+        try:
+            self.gTweakList.SetChecked([])
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+#------------------------------------------------------------------------------
+class DoublePatcher(TweakPatcher,ListPatcher):
+    """Patcher panel with option to select source elements."""
+    listLabel = _(u'Source Mods/Files')
+
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+        """Show config."""
+        if self.gConfigPanel: return self.gConfigPanel
+        #--Else...
+        self.gTipText = gTipText
+        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+        text = fill(self.text,70)
+        gText = staticText(self.gConfigPanel,text)
+        #--Import List
+        self.gList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
+        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
+        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
+        #--Tweak List
+        self.gTweakList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
+        self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_UP,self.TweakOnMouse)
+        self.mouseItem = -1
+        self.mouseState = None
+        #--Buttons
+        self.gSelectAll = button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
+        self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+        gSelectSizer = (vSizer(
+            (self.gSelectAll,0,wx.TOP,12),
+            (self.gDeselectAll,0,wx.TOP,4),
+            ),0,wx.EXPAND|wx.LEFT,4)
+        self.gTweakSelectAll = button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
+        self.gTweakDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
+        gTweakSelectSizer = (vSizer(
+            (self.gTweakSelectAll,0,wx.TOP,12),
+            (self.gTweakDeselectAll,0,wx.TOP,4),
+            ),0,wx.EXPAND|wx.LEFT,4)
+        #--Layout
+        gSizer = vSizer(
+            (gText,),
+            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+                ((4,0),0,wx.EXPAND),
+                (self.gList,1,wx.EXPAND|wx.TOP,2),
+                gSelectSizer,),1,wx.EXPAND|wx.TOP,4),
+            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.subLabel),
+                ((4,0),0,wx.EXPAND),
+                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
+                gTweakSelectSizer,),1,wx.EXPAND|wx.TOP,4),
+            )
+        gConfigPanel.SetSizer(gSizer)
+        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
+        #--Initialize
+        self.SetItems(self.getAutoItems())
+        self.SetTweaks()
+        return gConfigPanel
+       
+#------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
@@ -7671,9 +7747,9 @@ class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
 class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
 class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
 
-class RacePatcher(bosh.RacePatcher,ListPatcher):
+class RacePatcher(bosh.RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
-class CBash_RacePatcher(bosh.CBash_RacePatcher,ListPatcher):
+class CBash_RacePatcher(bosh.CBash_RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 
 class RoadImporter(bosh.RoadImporter,ListPatcher): pass
