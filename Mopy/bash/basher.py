@@ -8869,7 +8869,8 @@ class Installer_Wizard(InstallerLink):
         with balt.BusyCursor():
             installer = self.data[self.selected[0]]
             subs = []
-            oldRemaps = installer.remaps
+            oldRemaps = copy.copy(installer.remaps)
+            installer.remaps = {}
             gInstallers.refreshCurrent(installer)
             for index in range(gInstallers.gSubList.GetCount()):
                 subs.append(gInstallers.gSubList.GetString(index))
