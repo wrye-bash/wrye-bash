@@ -10052,7 +10052,7 @@ class CBash_FactionRelations:
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
                 if modName in gotFactions: continue
-                if modName == importFile:
+                if modName == importFile.GName:
                     for record in modFile.FACT:
                         fid = record.fid
                         fid_eid[fid] = record.eid
@@ -10731,8 +10731,7 @@ class UsesEffectsMixin(object):
         for effect in effects:
             if doCBash:
                 efname,magnitude,area,duration,range,actorvalue = effect[:6]
-                efname = efname[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
-                actorvalue = actorvalue[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all ActorValues are raw)
+                efname = struct.pack('I',efname)
             else:
                 efname,magnitude,area,duration,range,actorvalue = effect[:-1]
             range = recipientTypeNumber_Name.get(range,range)
@@ -12766,7 +12765,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
 
         with textPath.open('w',encoding='utf-8-sig') as out:
-            outWrite = out.wr
+            outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
                 eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]

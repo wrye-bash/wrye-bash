@@ -1231,12 +1231,12 @@ class MasterList(List):
         else:
             item.SetTextColour(colors['default.text'])
         #--Text BG
-        if bosh.modInfos.isBadFileName(masterName.s):
-            if bosh.modInfos.isSelected(masterName):
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
-            else:
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
-        elif masterInfo.hasActiveTimeConflict():
+        #if bosh.modInfos.isBadFileName(masterName.s):
+        #    if bosh.modInfos.isSelected(masterName):
+        #        item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+        #    else:
+        #        item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+        if masterInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
         elif masterInfo.isExOverLoaded():
             item.SetBackgroundColour(colors['mods.bkgd.exOverload'])
@@ -1846,8 +1846,8 @@ class ModList(List):
         #--Font color
         item = self.list.GetItem(itemDex)
         mouseText = u''
-        if fileName in bosh.modInfos.bad_names:
-            mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
+        #if fileName in bosh.modInfos.bad_names:
+        #    mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if fileName in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
         if fileInfo.isEsm():
@@ -1877,19 +1877,19 @@ class ModList(List):
         else:
             item.SetFont(fonts[0])
         #--Text BG
-        if fileName in bosh.modInfos.bad_names:
-            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
-        elif fileName in bosh.modInfos.missing_strings:
+        #if fileName in bosh.modInfos.bad_names:
+        #    item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+        if fileName in bosh.modInfos.missing_strings:
             if fileName in bosh.modInfos.ordered:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
-        elif fileInfo.hasBadMasterNames():
-            if bosh.modInfos.isSelected(fileName):
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
-            else:
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
-            mouseText += _(u"WARNING: Has master names that will not load.  ")
+        #elif fileInfo.hasBadMasterNames():
+        #    if bosh.modInfos.isSelected(fileName):
+        #        item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+        #    else:
+        #        item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+        #    mouseText += _(u"WARNING: Has master names that will not load.  ")
         elif fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             mouseText += _(u"WARNING: Has same load order as another mod.  ")
