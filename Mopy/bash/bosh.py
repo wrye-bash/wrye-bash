@@ -14545,7 +14545,8 @@ class CBash_PatchFile(ObModFile):
                     full = record.full
                     eid = record.eid
                     if (full and eid):
-                        mgefId = cast(eid, POINTER(c_ulong)).contents.value if record.recordVersion is None else record.mgefCode
+                        eidRaw = eid.encode('cp1252')
+                        mgefId = cast(eidRaw, POINTER(c_ulong)).contents.value if record.recordVersion is None else record.mgefCode
                         self.mgef_school[mgefId] = record.school
                         self.mgef_name[mgefId] = full
                         mgefId_hostile[mgefId] = record.IsHostile
