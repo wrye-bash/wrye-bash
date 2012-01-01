@@ -5485,8 +5485,9 @@ class ModInfos(FileInfos):
             #--Select masters
             if modSet == None: modSet = set(self.keys())
             #--Check for bad masternames:
-            if self.hasBadMasterNames(fileName):
-                return
+            #  Disabled for now
+            ##if self.hasBadMasterNames(fileName):
+            ##    return
             for master in self[fileName].header.masters:
                 if master in modSet:
                     self.select(master,False,modSet,children)
