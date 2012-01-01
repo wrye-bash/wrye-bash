@@ -6163,7 +6163,7 @@ class ObCollection:
     def LookupRecords(self, RecordIdentifier, GetExtendedConflicts=False):
         if not RecordIdentifier: return None
         if not isinstance(RecordIdentifier, basestring):
-            RecordIdentifier = MakeShortFid(self._CollectionID, _encode(RecordIdentifier))
+            RecordIdentifier = MakeShortFid(self._CollectionID, RecordIdentifier)
         if GetExtendedConflicts:
             records = [mod.LookupRecord(RecordIdentifier) for mod in reversed(self.AllMods)]
         else:
