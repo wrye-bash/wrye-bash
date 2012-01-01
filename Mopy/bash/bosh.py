@@ -13643,7 +13643,7 @@ class ModCleaner:
                                                 _(u'Please close the other program that is accessing %s.')
                                                 + u'\n\n' +
                                                 _(u'Try again?')
-                                                ) % (modPath.stail,modPath.stail),_(u'%s - Save Error') % modPath.stail):
+                                                ) % (modPath.stail,modPath.stail),modPath.stail+_(u' - Save Error')):
                             try:
                                 modFile.save(False)
                             except WindowsError, werr:
