@@ -5382,7 +5382,7 @@ class BashFrame(wx.Frame):
             popMods = 'ALL'
         #--Mods autogrouped?
         if bosh.modInfos.autoGrouped:
-            message = [u'',_('Auto-grouped files')]
+            message = [u'',_(u'Auto-grouped files')]
             agDict = bosh.modInfos.autoGrouped
             ordered = bosh.modInfos.getOrdered(agDict.keys())
             message.extend(ordered)
@@ -6374,7 +6374,7 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
-        #progress.Update(55,_("Initializing BSAInfos"))
+        #progress.Update(55,_(u"Initializing BSAInfos"))
         #bosh.BSAInfos = bosh.BSAInfos()
         #bosh.BSAInfos.refresh()
         #--Patch check
@@ -6921,7 +6921,7 @@ class PatchDialog(wx.Dialog):
                 for index, item in enumerate(patcher.items):
                     try:
                         patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: pass#deprint(_('item %s not in saved configs') % (item))
+                    except KeyError: pass#deprint(_(u'item %s not in saved configs') % (item))
             if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
@@ -7142,7 +7142,7 @@ class AliasesPatcher(Patcher,bosh.AliasesPatcher):
         text = fill(self.__class__.text,70)
         gText = staticText(gConfigPanel,text)
         #gExample = staticText(gConfigPanel,
-        #    _("Example Mod 1.esp >> Example Mod 1.2.esp"))
+        #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
         self.gAliases = wx.TextCtrl(gConfigPanel,wx.ID_ANY,u'',style=wx.TE_MULTILINE)
         self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
@@ -7182,7 +7182,7 @@ class CBash_AliasesPatcher(Patcher,bosh.CBash_AliasesPatcher):
         text = fill(self.text,70)
         gText = staticText(gConfigPanel,text)
         #gExample = staticText(gConfigPanel,
-        #    _("Example Mod 1.esp >> Example Mod 1.2.esp"))
+        #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
         self.gAliases = wx.TextCtrl(gConfigPanel,wx.ID_ANY,u'',style=wx.TE_MULTILINE)
         self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
@@ -8065,7 +8065,7 @@ class File_Duplicate(Link):
                 if hasBsa and hasVoices:
                     message = (_(u"This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.")
                                + u'\n\n' +
-                               _('Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.')
+                               _(u'Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.')
                                ) % (modName.sroot,modName.s,modName.s)
                 elif hasBsa:
                     message = (_(u'This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod.')
@@ -8213,7 +8213,7 @@ class File_Sort(Link):
     def Execute(self,event):
         message = (_(u'Reorder selected mods in alphabetical order?  The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.')
                    + u'\n\n' +
-                   _('Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
+                   _(u'Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
                    )
         if not balt.askContinue(self.window,message,'bash.sortMods.continue',_(u'Sort Mods')):
             return
@@ -8621,7 +8621,7 @@ class Installers_BsaRedirection(BoolLink):
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()
-            #balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
+            #balt.showOk(self,_(u"BSA Hashes reset: %d") % (resetCount,))
         bosh.oblivionIni.setBsaRedirection(settings[self.key])
 
 #------------------------------------------------------------------------------
@@ -10120,7 +10120,7 @@ class InstallerProject_Pack(InstallerLink):
                 isSolid = balt.askYes(self.gTank,_(u'Use solid compression for %s?') % archive.s,self.title,False)
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,
-                        _('Use what maximum size for each solid block?')
+                        _(u'Use what maximum size for each solid block?')
                         + u'\n' +
                         _(u"Enter '0' to use 7z's default size.")
                         ,u'MB',self.title,0,0,102400)
@@ -10443,7 +10443,7 @@ class Mods_LoadListData(balt.ListEditorData):
         #--Right length?
         if len(newName) == 0 or len(newName) > 64:
             balt.showError(self.parent,
-                _('Name must be between 1 and 64 characters long.'))
+                _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
         settings.setChanged('bash.loadLists.data')
@@ -11213,12 +11213,12 @@ class Settings_CheckForUpdates(Link):
             # Using an older version
             if currentVersion < maxBeta and maxBeta > maxMain:
                 # There's also a new Beta/RC available
-                msg = (_("You are using an older version of Wrye Bash (%s).  There is a newer stable release (%s) and a newer Beta/RC release (%s).")
+                msg = (_(u"You are using an older version of Wrye Bash (%s).  There is a newer stable release (%s) and a newer Beta/RC release (%s).")
                        + u'\n\n' +
-                       _('Would you like to visit TESNexus to download one of these versions?')
+                       _(u'Would you like to visit TESNexus to download one of these versions?')
                        ) % (currentStr, mainStr, betaStr)
             else:
-                msg = (_('You are using an older version of Wrye Bash (%s).  There is a newer stable release available (%s).')
+                msg = (_(u'You are using an older version of Wrye Bash (%s).  There is a newer stable release available (%s).')
                        + u'\n\n' +
                        _(u'Would you like to visit TESNexus to download the updated version?')
                        ) % (currentStr, mainStr)
@@ -11350,11 +11350,11 @@ class Settings_Language(Link):
     languageMap = {
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
         u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁體中文)',
-        u'de': _('German') + u' (Deutsch)',
-        u'pt_opt': _('Portuguese') + u' (português)',
-        u'italian': _('Italian') + u' (italiano)',
-        u'russian': _('Russian') + u' (русский язык)',
-        u'english': _('English') + u' (English)',
+        u'de': _(u'German') + u' (Deutsch)',
+        u'pt_opt': _(u'Portuguese') + u' (português)',
+        u'italian': _(u'Italian') + u' (italiano)',
+        u'russian': _(u'Russian') + u' (русский язык)',
+        u'english': _(u'English') + u' (English)',
         }
         
     def __init__(self,language):
@@ -11375,8 +11375,8 @@ class Settings_Language(Link):
         bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         if self.language == bassLang: return
         if balt.askYes(bashFrame,
-                       _('Wrye Bash needs to restart to change languages.  Do you want to restart?'),
-                       _('Restart Wrye Bash')):
+                       _(u'Wrye Bash needs to restart to change languages.  Do you want to restart?'),
+                       _(u'Restart Wrye Bash')):
             bashFrame.Restart(('--Language',self.language))
 
 #------------------------------------------------------------------------------
@@ -11895,7 +11895,7 @@ class Mod_BaloGroups_Edit(wx.Dialog):
 
     def DoRename(self,event):
         """Renames selected item."""
-        title = _("Rename Balo Group")
+        title = _(u"Rename Balo Group")
         index = (self.gList.GetSelections() or (0,))[0]
         if index < 0 or index >= len(self.groups): return bell()
         #--Ask for and then check new name
@@ -12013,7 +12013,7 @@ class Mod_BaloGroups:
 class Mod_AllowAllGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Allow Ghosting"))
+        menuItem = wx.MenuItem(menu,self.id,_(u"Allow Ghosting"))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -12683,7 +12683,7 @@ class Mod_Factions_Import(Link):
             actorFactions.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
             changed = actorFactions.writeToMod(fileInfo)
-            progress(1.0,_('Done.'))
+            progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
             balt.showOk(self.window,_(u'No relevant faction ranks to import.'),
@@ -13417,7 +13417,7 @@ class Mod_FullNames_Import(Link):
         else:
             with sio() as buff:
                 format = u'%s:   %s >> %s\n'
-                #buff.write(format % (_('Editor Id'),_('Name')))
+                #buff.write(format % (_(u'Editor Id'),_(u'Name')))
                 for eid in sorted(renamed.keys()):
                     full,newFull = renamed[eid]
                     try:
@@ -13573,7 +13573,7 @@ class Mod_Patch_Update(Link):
                 _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those problem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
                 [[_(u'Missing Master Errors'),_(u'These mods have missing masters; which will make your game unusable, and you will probably have to regenerate your patch after fixing them.  So just go fix them now.'),missing],
                 [_(u'Delinquent Master Errors'),_(u'These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them.  So just go fix them now.'),delinquent]],
-                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_('Continue Despite Errors')})
+                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_(u'Continue Despite Errors')})
             if warning.ShowModal() == wx.ID_CANCEL:
                 return
         try:
@@ -15383,7 +15383,7 @@ class Save_Move:
 
     def DoDefault(self,event):
         """Handle selection of Default."""
-        self.MoveFiles(_('Default'))
+        self.MoveFiles(_(u'Default'))
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -15672,7 +15672,7 @@ class Save_Stats(Link):
         with balt.Progress(_(u"Statistics")) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(StringIO.StringIO())
-            progress(0.9,_("Calculating statistics."))
+            progress(0.9,_(u"Calculating statistics."))
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
@@ -15735,7 +15735,7 @@ class Save_Unbloat(Link):
             for type,name in sorted(createdCounts):
                 message += u'  %s %s: %s\n' % (type,name,formatInteger(createdCounts[(type,name)]))
         if nullRefCount:
-            message += u'  '+_('Null Ref Objects:')+ u' %s\n' % formatInteger(nullRefCount)
+            message += u'  '+_(u'Null Ref Objects:')+ u' %s\n' % formatInteger(nullRefCount)
         message = (_(u'Remove savegame bloating?')
                    + u'\n'+message+u'\n' +
                    _(u'WARNING: This is a risky procedure that may corrupt your savegame!  Use only if necessary!')
@@ -16065,7 +16065,7 @@ class People_Karma(Link):
         for id,item in zip(idList,labels):
             subMenu.Append(id,item)
         wx.EVT_MENU_RANGE(bashFrame,idList.BASE,idList.MAX,self.DoList)
-        menu.AppendMenu(-1,u_('Karma'),subMenu)
+        menu.AppendMenu(-1,u_(u'Karma'),subMenu)
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -17752,7 +17752,7 @@ def InitModLinks():
         ModList.itemMenu.append(Mod_FlipMasters())
         ModList.itemMenu.append(Mod_SetVersion())
 #    if bosh.inisettings['showadvanced'] == 1:
-#        advmenu = MenuLink(_("Advanced Scripts"))
+#        advmenu = MenuLink(_(u"Advanced Scripts"))
 #        advmenu.links.append(Mod_DiffScripts())
         #advmenu.links.append(())
 
