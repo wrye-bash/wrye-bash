@@ -3762,7 +3762,7 @@ class OmodFile:
 #------------------------------------------------------------------------------
 class PluginsFullError(BoltError):
     """Usage Error: Attempt to add a mod to plugins when plugins is full."""
-    def __init__(self,message=_('Load list is full.')):
+    def __init__(self,message=_(u'Load list is full.')):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
@@ -5361,13 +5361,13 @@ class ModInfos(FileInfos):
                 u'=== ',
                 u'* ',
                 _(u'  * __Missing Master:__ '),
-                _('  * __Delinquent Master:__ '),
+                _(u'  * __Delinquent Master:__ '),
                 u'&bull; &bull;'
                 ) if wtxt else (
                 u'',
                 u'',
                 _(u'----> MISSING MASTER: '),
-                _('----> Delinquent MASTER: '),
+                _(u'----> Delinquent MASTER: '),
                 u'**')
             if fileInfo:
                 masters = set(fileInfo.header.masters)
@@ -6936,7 +6936,7 @@ class Installer(object):
                     date = apFile.mtime
                     done += size
                 except WindowsError:
-                    deprint(_('Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
+                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
                     continue
                 new_sizeCrcDate[rpFile] = (size,crc,date)
         old_sizeCrcDate.clear()
@@ -7815,7 +7815,7 @@ class InstallerConverter(object):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                progress(index,destArchive.s+u'\n'+_('Compressing files...')+u'\n'+maCompressing.group(1).strip())
+                progress(index,destArchive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
                 index += 1
         result = ins.close()
         if result:
@@ -9857,7 +9857,7 @@ class CBash_EditorIds:
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
                 script.scriptText = newText
-                changed.append((_("Script"),script.eid))
+                changed.append((_(u"Script"),script.eid))
         #--Quest Scripts
         for quest in sorted(modFile.QUST,key=attrgetter('eid')):
             questChanged = False
@@ -9870,7 +9870,7 @@ class CBash_EditorIds:
                         entry.scriptText = newScript
                         questChanged = True
             if questChanged:
-                changed.append((_("Quest"),quest.eid))
+                changed.append((_(u"Quest"),quest.eid))
         #--Done
         return changed
 
@@ -9887,7 +9887,7 @@ class CBash_EditorIds:
                 group = _coerce(group,unicode)[:4]
                 if group not in validTypes: continue
                 mod = GPath(_coerce(mod,unicode))
-                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
                 eid = _coerce(eid,unicode, AllowNone=True)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
@@ -10682,7 +10682,7 @@ class UsesEffectsMixin(object):
             if None in (name,magnitude,area,duration,range,actorvalue):
                 continue
             if doCBash:
-                effect = [MGEFCode(name),magnitude,area,duration,range,ActorValue(actorvalue)]
+                effect = [name,magnitude,area,duration,range,actorvalue]
             else:
                 effect = [name,magnitude,area,duration,range,actorvalue]
             semod = _coerce(semod, unicode, AllowNone=True)
@@ -10706,12 +10706,12 @@ class UsesEffectsMixin(object):
             sename = _coerce(sename, unicode, AllowNone=True)
             if None in (semod,seobj,seschool,sevisual,seflags,sename):
                 if doCBash:
-                    effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
+                    effect.extend([(None,None),None,(None,None),None,None])
                 else:
                     effect.append([])
             else:
                 if doCBash:
-                    effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, MGEFCode(sevisual),seflags, sename])
+                    effect.extend([(GPath(aliases.get(semod,semod)),seobj), seschool, sevisual,seflags, sename])
                 else:
                     effect.append([(GPath(aliases.get(semod,semod)),seobj), seschool, sevisual,seflags, sename])
             if doCBash:
@@ -10747,7 +10747,7 @@ class UsesEffectsMixin(object):
                 else:
                     semod,seobj,seschool,sevisual,seflags,sename = scripteffect[0][0], scripteffect[0][1], scripteffect[1], scripteffect[2], scripteffect[3], scripteffect[4]
                     seschool = schoolTypeNumber_Name.get(seschool,seschool)
-                    sevisual = sevisual[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes visual MGEFCode is raw)
+                    sevisual = struct.pack('I',sevisual)
                     if sevisual in (None, 0, ''):
                         sevisual = u'NONE'
                     output.append(scriptEffectFormat % (semod,seobj,seschool,sevisual,seflags,sename))
@@ -10936,7 +10936,7 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
                 mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
                 smod = _coerce(smod, unicode, AllowNone=True)
-                if smod is None: sid = FormID(None,None)
+                if smod is None: sid = (None,None)
                 else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
@@ -11891,7 +11891,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         eid,full,weight,value,uses,iconPath,modPath,modb,smod,sobj = fields[:10]
         fields = fields[:10]
         smod = _coerce(smod, unicode, AllowNone=True)
-        if smod is None: sid = FormID(None,None)
+        if smod is None: sid = (None,None)
         else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
         eid = _coerce(eid, unicode, AllowNone=True)
         full = _coerce(full, unicode, AllowNone=True)
@@ -12029,13 +12029,13 @@ class ScriptText:
         modFile.load(True)
         mapper = modFile.getLongMapper()
 
-        with balt.Progress(_("Export Scripts")) as progress:
+        with balt.Progress(_(u"Export Scripts")) as progress:
             records = modFile.SCPT.getActiveRecords()
             y = len(records)
             z = 0
             for record in records:
                 z += 1
-                progress((0.5/y*z),_("Reading scripts in %s.")%(file))
+                progress((0.5/y*z),_(u"Reading scripts in %s.")%(file))
                 eid_data[record.eid] = (record.scriptText, mapper(record.fid))
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -12076,7 +12076,7 @@ class ScriptText:
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         eid_data, aliases = self.eid_data, self.aliases
         textPath = GPath(textPath)
-        with balt.Progress(_("Import Scripts")) as progress:
+        with balt.Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
@@ -12157,13 +12157,13 @@ class CBash_ScriptText:
                 print error[0]
                 return
 
-            with balt.Progress(_("Export Scripts")) as progress:
+            with balt.Progress(_(u"Export Scripts")) as progress:
                 records = modFile.SCPT
                 y = len(records)
                 z = 0
                 for record in records:
                     z += 1
-                    progress((0.5/y*z),_("Reading scripts in %s.") % (file))
+                    progress((0.5/y*z),_(u"Reading scripts in %s.") % (file))
                     eid_data[record.eid] = (record.scriptText, record.fid)
                     record.UnloadRecord()
 
@@ -12741,7 +12741,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
                 mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
                 smod = _coerce(smod, unicode, AllowNone=True)
-                if smod is None: sid = FormID(None,None)
+                if smod is None: sid = (None,None)
                 else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
@@ -12809,7 +12809,7 @@ class ModDetails:
                 recType,size = header.recType,header.size
                 if recType == 'GRUP':
                     label = header.label
-                    progress(1.0*ins.tell()/modInfo.size,_("Scanning: ")+label)
+                    progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
                     records = group_records.setdefault(label,[])
                     if label in ('CELL','WRLD','DIAL'):
                         ins.seek(size-header.__class__.size,1)
@@ -14602,7 +14602,7 @@ class CBash_PatchFile(ObModFile):
 
                 #See if all the patchers were filtered out
                 if not (applyPatchers or scanPatchers): continue
-                subProgress(pstate,_('Patching...')+u'\n%s::%s' % (modFile.ModName,type))
+                subProgress(pstate,_(u'Patching...')+u'\n%s::%s' % (modFile.ModName,type))
                 pstate += 1
                 for record in getattr(modFile, type):
                     #If conflicts is > 0, it will include all conflicts, even the record that called it
@@ -14649,7 +14649,7 @@ class CBash_PatchFile(ObModFile):
         for type, patchers in type_patchers.iteritems():
             finishPatchers = [patcher.finishPatch for patcher in sorted(patchers,key=attrgetter('editOrder')) if hasattr(patcher,'finishPatch')]
             if finishPatchers:
-                subProgress(pstate,_('Final Patching...')+u'\n%s::%s' % (modFile.ModName,type))
+                subProgress(pstate,_(u'Final Patching...')+u'\n%s::%s' % (modFile.ModName,type))
                 pstate += 1
                 for patcher in finishPatchers:
                     patcher(self, subProgress)
@@ -22047,7 +22047,7 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Set Sound Attenuation Levels'))
+        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels'))
         log(u'* '+_(u'Sounds Modified: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -22624,7 +22624,7 @@ class GlobalsTweak(MultiTweakItem):
                 if record.value != value:
                     record.value = value
                     keep(record.fid)
-        log(u'* '+_('%s set to: %4.2f') % (self.label,value))
+        log(u'* '+_(u'%s set to: %4.2f') % (self.label,value))
 
 class CBash_GlobalsTweak(CBash_MultiTweakItem):
     """Sets a global to specified value"""
@@ -24367,7 +24367,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_(u'Allow'),1),
             (_(u'[Disallow]'),0),
             ),
-        CBash_GmstTweak(_('Combat: Repair'),
+        CBash_GmstTweak(_(u'Combat: Repair'),
             _(u"Allow repairing armor/weapons during combat."),
             (u'iAllowRepairDuringCombat',),
             (_(u'Allow'),1),
@@ -24521,7 +24521,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_(u'No Blood'),u'',u'',u'',u'',u'',u''),
             (_(u'Custom'),u'',u'',u'',u'',u'',u''),
             ),
-        CBash_GmstTweak(_('AI: Max Smile Distance'),
+        CBash_GmstTweak(_(u'AI: Max Smile Distance'),
             _(u"Maximum distance for NPCs to start smiling."),
             (u'fAIMaxSmileDistance',),
             (_(u'No Smiles'),0.0),
@@ -25147,7 +25147,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Spells"),
+        CBash_MultiTweakItem.__init__(self,_(u"Spells"),
             _(u'Label spells to sort by school and level.'),
             'SPEL',
             (_(u'Fire Ball'),  u'NOTAGS'),
