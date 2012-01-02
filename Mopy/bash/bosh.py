@@ -3762,7 +3762,7 @@ class OmodFile:
 #------------------------------------------------------------------------------
 class PluginsFullError(BoltError):
     """Usage Error: Attempt to add a mod to plugins when plugins is full."""
-    def __init__(self,message=_('Load list is full.')):
+    def __init__(self,message=_(u'Load list is full.')):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
@@ -5361,13 +5361,13 @@ class ModInfos(FileInfos):
                 u'=== ',
                 u'* ',
                 _(u'  * __Missing Master:__ '),
-                _('  * __Delinquent Master:__ '),
+                _(u'  * __Delinquent Master:__ '),
                 u'&bull; &bull;'
                 ) if wtxt else (
                 u'',
                 u'',
                 _(u'----> MISSING MASTER: '),
-                _('----> Delinquent MASTER: '),
+                _(u'----> Delinquent MASTER: '),
                 u'**')
             if fileInfo:
                 masters = set(fileInfo.header.masters)
@@ -6317,7 +6317,7 @@ class ConfigHelpers:
                             log(modGroup.notes)
                         if showConfig:
                             log.setHeader(u'=== '+_(u'CONFIGURATION: ') + modList )
-                            #    + _('\nLegend: x: Active, +: Merged, -: Inactive'))
+                            #    + _(u'\nLegend: x: Active, +: Merged, -: Inactive'))
                             for ruleType,ruleMod,comment in modGroup.config:
                                 if ruleType != u'o': continue
                                 if ruleMod in active: bullet = u'x'
@@ -6936,7 +6936,7 @@ class Installer(object):
                     date = apFile.mtime
                     done += size
                 except WindowsError:
-                    deprint(_('Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
+                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
                     continue
                 new_sizeCrcDate[rpFile] = (size,crc,date)
         old_sizeCrcDate.clear()
@@ -7815,7 +7815,7 @@ class InstallerConverter(object):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maCompressing:
-                progress(index,destArchive.s+u'\n'+_('Compressing files...')+u'\n'+maCompressing.group(1).strip())
+                progress(index,destArchive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
                 index += 1
         result = ins.close()
         if result:
@@ -9829,7 +9829,7 @@ class CBash_EditorIds:
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
                 script.scriptText = newText
-                changed.append((_("Script"),script.eid))
+                changed.append((_(u"Script"),script.eid))
         #--Quest Scripts
         for quest in sorted(modFile.QUST,key=attrgetter('eid')):
             questChanged = False
@@ -9842,7 +9842,7 @@ class CBash_EditorIds:
                         entry.scriptText = newScript
                         questChanged = True
             if questChanged:
-                changed.append((_("Quest"),quest.eid))
+                changed.append((_(u"Quest"),quest.eid))
         #--Done
         return changed
 
@@ -11911,13 +11911,13 @@ class ScriptText:
         modFile.load(True)
         mapper = modFile.getLongMapper()
 
-        with balt.Progress(_("Export Scripts")) as progress:
+        with balt.Progress(_(u"Export Scripts")) as progress:
             records = modFile.SCPT.getActiveRecords()
             y = len(records)
             z = 0
             for record in records:
                 z += 1
-                progress((0.5/y*z),_("Reading scripts in %s.")%(file))
+                progress((0.5/y*z),_(u"Reading scripts in %s.")%(file))
                 eid_data[record.eid] = (record.scriptText, mapper(record.fid))
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -11958,7 +11958,7 @@ class ScriptText:
         """Reads scripts from files in specified mods' directory in bashed patches folder."""
         eid_data, aliases = self.eid_data, self.aliases
         textPath = GPath(textPath)
-        with balt.Progress(_("Import Scripts")) as progress:
+        with balt.Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
@@ -12033,13 +12033,13 @@ class CBash_ScriptText:
             modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
             Current.load()
 
-            with balt.Progress(_("Export Scripts")) as progress:
+            with balt.Progress(_(u"Export Scripts")) as progress:
                 records = modFile.SCPT
                 y = len(records)
                 z = 0
                 for record in records:
                     z += 1
-                    progress((0.5/y*z),_("Reading scripts in %s.") % (file))
+                    progress((0.5/y*z),_(u"Reading scripts in %s.") % (file))
                     eid_data[record.eid] = (record.scriptText, record.fid)
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -12656,7 +12656,7 @@ class ModDetails:
                 recType,size = header.recType,header.size
                 if recType == 'GRUP':
                     label = header.label
-                    progress(1.0*ins.tell()/modInfo.size,_("Scanning: ")+label)
+                    progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
                     records = group_records.setdefault(label,[])
                     if label in ('CELL','WRLD','DIAL'):
                         ins.seek(size-header.__class__.size,1)
@@ -21973,7 +21973,7 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(_('=== Set Sound Attenuation Levels'))
+        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels'))
         log(u'* '+_(u'Sounds Modified: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -22550,7 +22550,7 @@ class GlobalsTweak(MultiTweakItem):
                 if record.value != value:
                     record.value = value
                     keep(record.fid)
-        log(u'* '+_('%s set to: %4.2f') % (self.label,value))
+        log(u'* '+_(u'%s set to: %4.2f') % (self.label,value))
 
 class CBash_GlobalsTweak(CBash_MultiTweakItem):
     """Sets a global to specified value"""
@@ -24293,7 +24293,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_(u'Allow'),1),
             (_(u'[Disallow]'),0),
             ),
-        CBash_GmstTweak(_('Combat: Repair'),
+        CBash_GmstTweak(_(u'Combat: Repair'),
             _(u"Allow repairing armor/weapons during combat."),
             (u'iAllowRepairDuringCombat',),
             (_(u'Allow'),1),
@@ -24447,7 +24447,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_(u'No Blood'),u'',u'',u'',u'',u'',u''),
             (_(u'Custom'),u'',u'',u'',u'',u'',u''),
             ),
-        CBash_GmstTweak(_('AI: Max Smile Distance'),
+        CBash_GmstTweak(_(u'AI: Max Smile Distance'),
             _(u"Maximum distance for NPCs to start smiling."),
             (u'fAIMaxSmileDistance',),
             (_(u'No Smiles'),0.0),
@@ -25073,7 +25073,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_("Spells"),
+        CBash_MultiTweakItem.__init__(self,_(u"Spells"),
             _(u'Label spells to sort by school and level.'),
             'SPEL',
             (_(u'Fire Ball'),  u'NOTAGS'),

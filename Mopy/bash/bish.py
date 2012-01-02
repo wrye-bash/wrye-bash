@@ -92,7 +92,7 @@ if ret != False: # False == success
         w = Tkinter.Text(frame)
         w.insert(Tkinter.END, _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.")
                  + u'\n\n'+
-                 _(u"To preven this message in the future, use the -g command line argument to specify the game"))
+                 _(u"To prevent this message in the future, use the -g command line argument to specify the game"))
         w.config(state=Tkinter.DISABLED)
         w.pack()
         root.mainloop()
