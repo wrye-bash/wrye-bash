@@ -139,7 +139,7 @@ bethDataFiles = set()
 allBethFiles = set()
 
 #--BAIN:
-## These are the allowed default data directories the BAIN can install to
+## These are the allowed default data directories that BAIN can install to
 dataDirs = set()
 ## These are additional special directories that BAIN can install to
 dataDirsPlus = set()
