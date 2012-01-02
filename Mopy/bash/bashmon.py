@@ -52,7 +52,7 @@ class Data:
         #--Init bosh stuff
         bosh.initBosh()
         bosh.initSettings(readOnly=True)
-        bosh.oblivionIni = bosh.OblivionIni()
+        bosh.oblivionIni = bosh.OblivionIni(u'Oblivion.ini')
         bosh.oblivionIni.mtime = 0
         bosh.modInfos = bosh.ModInfos()
         bosh.saveInfos = bosh.SaveInfos() #--Create, but don't fill
