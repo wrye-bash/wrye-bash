@@ -37,6 +37,7 @@ import time
 import traceback
 
 #--Local
+import bush
 import bosh
 import bolt
 from bosh import PCFaces
@@ -52,7 +53,7 @@ class Data:
         #--Init bosh stuff
         bosh.initBosh()
         bosh.initSettings(readOnly=True)
-        bosh.oblivionIni = bosh.OblivionIni()
+        bosh.oblivionIni = [bosh.OblivionIni(x) for x in bush.game.iniFiles][0]
         bosh.oblivionIni.mtime = 0
         bosh.modInfos = bosh.ModInfos()
         bosh.saveInfos = bosh.SaveInfos() #--Create, but don't fill
