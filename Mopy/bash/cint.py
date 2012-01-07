@@ -454,11 +454,11 @@ class ICASEMixin:
             return func(self.lower(), other.lower(), *args)
         except AttributeError: return False
 
-class ISTRING(str,ICASEMixin):
+class ISTRING(ICASEMixin,str):
     """Case insensitive strings class. Performs like str except comparisons are case insensitive."""
     pass
 
-class IUNICODE(unicode,ICASEMixin):
+class IUNICODE(ICASEMixin,unicode):
     """Case insensitive unicode class.  Performs like unicode except comparisons
        are case insensitive."""
     pass
