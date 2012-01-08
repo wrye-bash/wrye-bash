@@ -350,11 +350,11 @@ patchers = (
     'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
     'KFFZPatcher', 'ActorImporter', 'DeathItemPatcher', 'NPCAIPackagePatcher',
     'CoblExhaustion', 'UpdateReferences', 'CellImporter', 'ClothesTweaker',
-    'GlobalsTweaker', 'GmstTweaker', 'GraphicsPatcher', 'ImportFactions',
+    'GmstTweaker', 'GraphicsPatcher', 'ImportFactions',
     'ImportInventory', 'SpellsPatcher', 'TweakActors', 'ImportRelations',
     'ImportScripts', 'ImportScriptContents', 'ImportActorsSpells',
     'ListsMerger', 'MFactMarker', 'NamesPatcher', 'NamesTweaker',
-    'NpcFacePatcher', 'PowerExhaustion', 'RacePatcher', 'RoadImporter',
+    'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
     'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
     )
 
@@ -367,17 +367,16 @@ CBash_patchers = (
     'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
     'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
     'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
-    'CBash_ClothesTweaker', 'CBash_GlobalsTweaker', 'CBash_GmstTweaker',
+    'CBash_ClothesTweaker', 'CBash_GmstTweaker',
     'CBash_GraphicsPatcher', 'CBash_ImportFactions', 'CBash_ImportInventory',
     'CBash_SpellsPatcher', 'CBash_TweakActors', 'CBash_ImportRelations',
     'CBash_ImportScripts',
     ##    CBash_ImportScriptContents(),
     'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
     'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
-    'CBash_PowerExhaustion', 'CBash_RacePatcher', 'CBash_RoadImporter',
+    'CBash_RacePatcher', 'CBash_RoadImporter',
     'CBash_SoundPatcher', 'CBash_StatsPatcher', 'CBash_SEWorldEnforcer',
     'CBash_ContentsChecker',
-    ##    CBash_ForceMerger(),
     )
 
 #--Plugin format stuff
