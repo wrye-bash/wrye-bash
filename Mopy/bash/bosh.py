@@ -16637,8 +16637,8 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class NPCAIPackagePatcher(ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
-    name = _(u'Import Actors: AIPackages')
-    text = _(u"Import Actor AIPackage links from source mods.")
+    name = _(u'Import Actors: AI Packages')
+    text = _(u"Import Actor AI Package links from source mods.")
     tip = text
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
@@ -16816,8 +16816,8 @@ class NPCAIPackagePatcher(ImportPatcher):
 
 class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
-    name = _(u'Import Actors: AIPackages')
-    text = _(u"Import Actor AIPackage links from source mods.")
+    name = _(u'Import Actors: AI Packages')
+    text = _(u"Import Actor AI Package links from source mods.")
     tip = text
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.AIPackages',u'Actors.AIPackagesForceAdd'))
