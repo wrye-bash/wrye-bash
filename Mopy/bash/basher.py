@@ -7777,9 +7777,6 @@ class CBash_AssortedTweaker(bosh.CBash_AssortedTweaker,TweakPatcher): pass
 class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
 class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
 
-class GlobalsTweaker(bosh.GlobalsTweaker,TweakPatcher): pass
-class CBash_GlobalsTweaker(bosh.CBash_GlobalsTweaker,TweakPatcher): pass
-
 class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
 
@@ -7807,18 +7804,11 @@ class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
 class MFactMarker(bosh.MFactMarker,ListPatcher): pass
 class CBash_MFactMarker(bosh.CBash_MFactMarker,ListPatcher): pass
 
-class PowerExhaustion(bosh.PowerExhaustion,Patcher): pass
-class CBash_PowerExhaustion(bosh.CBash_PowerExhaustion,Patcher): pass
-
 class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
 class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass
 
 class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
-
-##class ForceMerger(bosh.ForceMerger,Patcher): pass
-##class CBash_ForceMerger(bosh.CBash_ForceMerger,ListPatcher): pass
-
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
@@ -7843,7 +7833,6 @@ otherPatcherDict = {
     UpdateReferences().__class__.__name__ : CBash_UpdateReferences(),
     CellImporter().__class__.__name__ : CBash_CellImporter(),
     ClothesTweaker().__class__.__name__ : CBash_ClothesTweaker(),
-    GlobalsTweaker().__class__.__name__ : CBash_GlobalsTweaker(),
     GmstTweaker().__class__.__name__ : CBash_GmstTweaker(),
     GraphicsPatcher().__class__.__name__ : CBash_GraphicsPatcher(),
     ImportFactions().__class__.__name__ : CBash_ImportFactions(),
@@ -7859,7 +7848,6 @@ otherPatcherDict = {
     NamesPatcher().__class__.__name__ : CBash_NamesPatcher(),
     NamesTweaker().__class__.__name__ : CBash_NamesTweaker(),
     NpcFacePatcher().__class__.__name__ : CBash_NpcFacePatcher(),
-    PowerExhaustion().__class__.__name__ : CBash_PowerExhaustion(),
     RacePatcher().__class__.__name__ : CBash_RacePatcher(),
     RoadImporter().__class__.__name__ : CBash_RoadImporter(),
     SoundPatcher().__class__.__name__ : CBash_SoundPatcher(),
@@ -7878,7 +7866,6 @@ otherPatcherDict = {
     CBash_UpdateReferences().__class__.__name__ : UpdateReferences(),
     CBash_CellImporter().__class__.__name__ : CellImporter(),
     CBash_ClothesTweaker().__class__.__name__ : ClothesTweaker(),
-    CBash_GlobalsTweaker().__class__.__name__ : GlobalsTweaker(),
     CBash_GmstTweaker().__class__.__name__ : GmstTweaker(),
     CBash_GraphicsPatcher().__class__.__name__ : GraphicsPatcher(),
     CBash_ImportFactions().__class__.__name__ : ImportFactions(),
@@ -7893,7 +7880,6 @@ otherPatcherDict = {
     CBash_NamesPatcher().__class__.__name__ : NamesPatcher(),
     CBash_NamesTweaker().__class__.__name__ : NamesTweaker(),
     CBash_NpcFacePatcher().__class__.__name__ : NpcFacePatcher(),
-    CBash_PowerExhaustion().__class__.__name__ : PowerExhaustion(),
     CBash_RacePatcher().__class__.__name__ : RacePatcher(),
     CBash_RoadImporter().__class__.__name__ : RoadImporter(),
     CBash_SoundPatcher().__class__.__name__ : SoundPatcher(),

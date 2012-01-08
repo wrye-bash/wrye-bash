@@ -22583,181 +22583,6 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
             log(u'  * '+_(u'%s set to: %4.2f') % (self.label,self.value))
 
 #------------------------------------------------------------------------------
-class GlobalsTweaker(MultiTweaker):
-    """Select values to set various globals to."""
-    scanOrder = 29
-    editOrder = 29
-    name = _(u'Globals')
-    text = _(u"Set globals to various values")
-    tweaks = sorted([
-        GlobalsTweak(_(u"Timescale"),
-            _(u"Timescale will be set to:"),
-            u'timescale',
-            (u'1',1),
-            (u'8',8),
-            (u'10',10),
-            (u'12',12),
-            (u'18',18),
-            (u'24',24),
-            (u'[30]',30),
-            (u'40',40),
-            (_(u'Custom'),0),
-            ),
-        GlobalsTweak(_(u"Thieves Guild: Quest Stealing Penalty"),
-            _(u"The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
-            u'tgpricesteal',
-            (u'100',100),
-            (u'150',150),
-            (u'[200]',200),
-            (u'300',300),
-            (u'400',400),
-            (_(u'Custom'),0),
-            ),
-        GlobalsTweak(_(u"Thieves Guild: Quest Killing Penalty"),
-            _(u"The penalty (in Septims) for killing while doing a Thieves Guild job:"),
-            u'tgpriceperkill',
-            (u'250',250),
-            (u'500',500),
-            (u'[1000]',1000),
-            (u'1500',1500),
-            (u'2000',2000),
-            (_(u'Custom'),0),
-            ),
-        GlobalsTweak(_(u"Thieves Guild: Quest Attacking Penalty"),
-            _(u"The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
-            u'tgpriceattack',
-            (u'100',100),
-            (u'250',250),
-            (u'[500]',500),
-            (u'750',750),
-            (u'1000',1000),
-            (_(u'Custom'),0),
-            ),
-        GlobalsTweak(_(u"Crime: Force Jail"),
-            _(u"The amount of Bounty at which a jail sentence is mandatory"),
-            u'crimeforcejail',
-            (u'1000',1000),
-            (u'2500',2500),
-            (u'[5000]',5000),
-            (u'7500',7500),
-            (u'10000',10000),
-            (_(u'Custom'),0),
-            ),
-        ],key=lambda a: a.label.lower())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('GLOB',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GLOB',) if self.isActive else ()
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive or 'GLOB' not in modFile.tops: return
-        mapper = modFile.getLongMapper()
-        patchRecords = self.patchFile.GLOB
-        id_records = patchRecords.id_records
-        for record in modFile.GLOB.getActiveRecords():
-            if record.flags1.deleted: continue
-            if mapper(record.fid) in id_records: continue
-            if record.eid is None: continue
-            for tweak in self.enabledTweaks:
-                if record.eid.lower() == tweak.key:
-                    record = record.getTypeCopy(mapper)
-                    patchRecords.setRecord(record)
-                    break
-
-    def buildPatch(self,log,progress):
-        """Applies individual clothes tweaks."""
-        if not self.isActive: return
-        keep = self.patchFile.getKeeper()
-        log.setHeader(u'= '+self.__class__.name)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(self.patchFile,keep,log)
-
-class CBash_GlobalsTweaker(CBash_MultiTweaker):
-    """Select values to set various globals to."""
-    scanOrder = 29
-    editOrder = 29
-    name = _(u'Globals')
-    text = _(u"Set globals to various values")
-    tweaks = sorted([
-        CBash_GlobalsTweak(_(u"Timescale"),
-            _(u"Timescale will be set to:"),
-            u'timescale',
-            (u'1',1),
-            (u'8',8),
-            (u'10',10),
-            (u'12',12),
-            (u'18',18),
-            (u'24',24),
-            (u'[30]',30),
-            (u'40',40),
-            (_(u'Custom'),0),
-            ),
-        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Stealing Penalty"),
-            _(u"The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
-            u'tgpricesteal',
-            (u'100',100),
-            (u'150',150),
-            (u'[200]',200),
-            (u'300',300),
-            (u'400',400),
-            (_(u'Custom'),0),
-            ),
-        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Killing Penalty"),
-            _(u"The penalty (in Septims) for killing while doing a Thieves Guild job:"),
-            u'tgpriceperkill',
-            (u'250',250),
-            (u'500',500),
-            (u'[1000]',1000),
-            (u'1500',1500),
-            (u'2000',2000),
-            (_(u'Custom'),0),
-            ),
-        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Attacking Penalty"),
-            _(u"The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
-            u'tgpriceattack',
-            (u'100',100),
-            (u'250',250),
-            (u'[500]',500),
-            (u'750',750),
-            (u'1000',1000),
-            (_(u'Custom'),0),
-            ),
-        CBash_GlobalsTweak(_(u"Crime: Force Jail"),
-            _(u"The amount of Bounty at which a jail sentence is mandatory"),
-            u'crimeforcejail',
-            (u'1000',1000),
-            (u'2500',2500),
-            (u'[5000]',5000),
-            (u'7500',7500),
-            (u'10000',10000),
-            (_(u'Custom'),0),
-            ),
-        ],key=lambda a: a.label.lower())
-
-    #--Config Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
-            tweak.count = 0
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
-
-#------------------------------------------------------------------------------
 class ClothesTweak(MultiTweakItem):
     flags = {
         u'hoods':   1<<1,
@@ -23212,6 +23037,59 @@ class GmstTweaker(MultiTweaker):
     text = _(u"Tweak game settings.")
     defaultConfig = {'isEnabled':True}
     tweaks = sorted([
+        GlobalsTweak(_(u"Timescale"),
+            _(u"Timescale will be set to:"),
+            u'timescale',
+            (u'1',1),
+            (u'8',8),
+            (u'10',10),
+            (u'12',12),
+            (u'18',18),
+            (u'24',24),
+            (u'[30]',30),
+            (u'40',40),
+            (_(u'Custom'),0),
+            ),
+        GlobalsTweak(_(u"Thieves Guild: Quest Stealing Penalty"),
+            _(u"The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
+            u'tgpricesteal',
+            (u'100',100),
+            (u'150',150),
+            (u'[200]',200),
+            (u'300',300),
+            (u'400',400),
+            (_(u'Custom'),0),
+            ),
+        GlobalsTweak(_(u"Thieves Guild: Quest Killing Penalty"),
+            _(u"The penalty (in Septims) for killing while doing a Thieves Guild job:"),
+            u'tgpriceperkill',
+            (u'250',250),
+            (u'500',500),
+            (u'[1000]',1000),
+            (u'1500',1500),
+            (u'2000',2000),
+            (_(u'Custom'),0),
+            ),
+        GlobalsTweak(_(u"Thieves Guild: Quest Attacking Penalty"),
+            _(u"The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
+            u'tgpriceattack',
+            (u'100',100),
+            (u'250',250),
+            (u'[500]',500),
+            (u'750',750),
+            (u'1000',1000),
+            (_(u'Custom'),0),
+            ),
+        GlobalsTweak(_(u"Crime: Force Jail"),
+            _(u"The amount of Bounty at which a jail sentence is mandatory"),
+            u'crimeforcejail',
+            (u'1000',1000),
+            (u'2500',2500),
+            (u'[5000]',5000),
+            (u'7500',7500),
+            (u'10000',10000),
+            (_(u'Custom'),0),
+            ),
         GmstTweak(_(u'Arrow: Litter Count'),
             _(u"Maximum number of spent arrows allowed in cell."),
             (u'iArrowMaxRefCount',),
@@ -23833,23 +23711,26 @@ class GmstTweaker(MultiTweaker):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('GMST',) if self.isActive else ()
+        return ('GMST','GLOB') if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('GMST',) if self.isActive else ()
+        return ('GMST','GLOB') if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        if not self.isActive or 'GMST' not in modFile.tops: return
+        if not self.isActive: return
         mapper = modFile.getLongMapper()
-        patchRecords = self.patchFile.GMST
-        id_records = patchRecords.id_records
-        for record in modFile.GMST.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
+        for blockType in ['GMST','GLOB']:
+            if blockType not in modFile.tops: continue
+            modBlock = getattr(modFile,blockType)
+            patchBlock = getattr(self.patchFile,blockType)
+            id_records = patchBlock.id_records
+            for record in modBlock.getActiveRecords():
+                if mapper(record.fid) not in id_records:
+                    record = record.getTypeCopy(mapper)
+                    patchBlock.setRecord(record)
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Will write to log."""
@@ -23865,6 +23746,59 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
     text = _(u"Tweak game settings.")
     defaultConfig = {'isEnabled':True}
     tweaks = sorted([
+        CBash_GlobalsTweak(_(u"Timescale"),
+            _(u"Timescale will be set to:"),
+            u'timescale',
+            (u'1',1),
+            (u'8',8),
+            (u'10',10),
+            (u'12',12),
+            (u'18',18),
+            (u'24',24),
+            (u'[30]',30),
+            (u'40',40),
+            (_(u'Custom'),0),
+            ),
+        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Stealing Penalty"),
+            _(u"The penalty (in Septims) for stealing while doing a Thieves Guild job:"),
+            u'tgpricesteal',
+            (u'100',100),
+            (u'150',150),
+            (u'[200]',200),
+            (u'300',300),
+            (u'400',400),
+            (_(u'Custom'),0),
+            ),
+        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Killing Penalty"),
+            _(u"The penalty (in Septims) for killing while doing a Thieves Guild job:"),
+            u'tgpriceperkill',
+            (u'250',250),
+            (u'500',500),
+            (u'[1000]',1000),
+            (u'1500',1500),
+            (u'2000',2000),
+            (_(u'Custom'),0),
+            ),
+        CBash_GlobalsTweak(_(u"Thieves Guild: Quest Attacking Penalty"),
+            _(u"The penalty (in Septims) for attacking while doing a Thieves Guild job:"),
+            u'tgpriceattack',
+            (u'100',100),
+            (u'250',250),
+            (u'[500]',500),
+            (u'750',750),
+            (u'1000',1000),
+            (_(u'Custom'),0),
+            ),
+        CBash_GlobalsTweak(_(u"Crime: Force Jail"),
+            _(u"The amount of Bounty at which a jail sentence is mandatory"),
+            u'crimeforcejail',
+            (u'1000',1000),
+            (u'2500',2500),
+            (u'[5000]',5000),
+            (u'7500',7500),
+            (u'10000',10000),
+            (_(u'Custom'),0),
+            ),
         CBash_GmstTweak(_(u'Arrow: Litter Count'),
             _(u"Maximum number of spent arrows allowed in cell."),
             (u'iArrowMaxRefCount',),
@@ -24489,8 +24423,10 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
-            tweak.eid_count = {}
-
+            if isinstance(tweak,CBash_GlobalsTweak):
+                tweak.count = 0
+            else:
+                tweak.eid_count = {}
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -26859,119 +26795,6 @@ class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class BiggerOrcsandNords(MultiTweakItem):
-    """Adjusts the Orc and Nord race records to be taller/heavier."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
-            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            u'BiggerOrcsandNords',
-            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
-            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.RACE
-        for record in modFile.RACE.getActiveRecords():
-            if not record.full: continue
-            if not u'orc' in record.full.lower() and not u'nord' in record.full.lower(): continue
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.RACE.records:
-            if not record.full: continue
-            if u'nord' in record.full.lower():
-                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
-                    setattr(record,attr,value)
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-                continue
-            elif u'orc' in record.full.lower():
-                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
-                    setattr(record,attr,value)
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'==='+_(u'Bigger Nords and Orcs'))
-        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_BiggerOrcsandNords(CBash_MultiTweakItem):
-    """Changes all Orcs and Nords to be bigger."""
-    scanOrder = 32
-    editOrder = 32
-    name = _(u"Bigger Nords and Orcs")
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
-            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            u'BiggerOrcsandNords',
-            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
-            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
-            )
-        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
-        self.mod_count = {}
-
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if not record.full: return
-        if u'nord' in record.full.lower():
-            newValues = self.choiceValues[self.chosen][0][0]
-        elif u'orc' in record.full.lower():
-            newValues = self.choiceValues[self.chosen][0][1]
-        else:
-            return
-
-        oldValues = tuple(map(record.__getattribute__, self.attrs))
-        if oldValues != newValues:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                map(override.__setattr__, self.attrs, newValues)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-                return
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-#------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _(u'Tweak Actors')
@@ -28293,156 +28116,363 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class PowerExhaustion(SpecialPatcher,Patcher):
-    """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
-    name = _(u'Power Exhaustion')
-    text = (_(u"Modify greater powers to work with Power Exhaustion mod.") +
-            u'\n\n' +
-            _(u"Will only run if Power Exhaustion mod is installed and active.")
-            )
+class RaceTweaker_BiggerOrcsandNords(MultiTweakItem):
+    """Adjusts the Orc and Nord race records to be taller/heavier."""
 
     #--Config Phase -----------------------------------------------------------
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath(u'Power Exhaustion.esp') in loadMods)
-        self.id_exhaustion = bush.id_exhaustion
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
 
+    #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('SPEL',) if self.isActive else ()
+        return ('RACE',)
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('SPEL',) if self.isActive else ()
+        return ('RACE',)
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        if not self.isActive: return
         mapper = modFile.getLongMapper()
-        patchRecords = self.patchFile.SPEL
-        for record in modFile.SPEL.getActiveRecords():
-            if not record.spellType == 2: continue
+        patchRecords = patchFile.RACE
+        for record in modFile.RACE.getActiveRecords():
+            if not record.full: continue
+            if not u'orc' in record.full.lower() and not u'nord' in record.full.lower(): continue
             record = record.getTypeCopy(mapper)
-            if record.fid in self.id_exhaustion or ('FOAT',5) in record.getEffects():
-                patchRecords.setRecord(record)
-                continue
+            patchRecords.setRecord(record)
 
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        count = {}
-        exhaustId = (GPath(u'Power Exhaustion.esp'),0xCE7)
-        keep = self.patchFile.getKeeper()
-        for record in self.patchFile.SPEL.records:
-            #--Skip this one?
-            if record.spellType != 2: continue
-            if record.fid not in self.id_exhaustion and ('FOAT',5) not in record.getEffects():
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.RACE.records:
+            if not record.full: continue
+            if u'nord' in record.full.lower():
+                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
+                    setattr(record,attr,value)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
                 continue
-            newEffects = []
-            duration = self.id_exhaustion.get(record.fid,0)
-            for effect in record.effects:
-                if effect.name == 'FOAT' and effect.actorValue == 5 and effect.magnitude == 1:
-                    duration = effect.duration
-                else:
-                    newEffects.append(effect)
-            if not duration: continue
-            record.effects = newEffects
-            #--Okay, do it
-            record.full = '+'+record.full
-            record.spellType = 3 #--Lesser power
-            effect = record.getDefault('effects')
-            effect.name = 'SEFF'
-            effect.duration = duration
-            scriptEffect = record.getDefault('effects.scriptEffect')
-            scriptEffect.full = u'Power Exhaustion'
-            scriptEffect.script = exhaustId
-            scriptEffect.school = 2
-            scriptEffect.visual = null4
-            scriptEffect.flags.hostile = False
-            effect.scriptEffect = scriptEffect
-            record.effects.append(effect)
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'= '+_(u'Power Exhaustion'))
-        log(u'* '+_(u'Powers Tweaked: %d') % sum(count.values()))
+            elif u'orc' in record.full.lower():
+                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
+                    setattr(record,attr,value)
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u'Bigger Nords and Orcs'))
+        count = self.count
+        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_PowerExhaustion(SpecialPatcher,CBash_Patcher):
-    """Modifies most Greater power to work with Wrye's Power Exhaustion mod."""
-    name = _(u'Power Exhaustion')
-    text = (_(u"Modify greater powers to work with Power Exhaustion mod.") +
-            u'\n\n' +
-            _(u"Will only run if Power Exhaustion mod is installed and active.")
-            )
+class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
+    """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        self.isActive = (GPath(u'Power Exhaustion.esp') in loadMods)
-        if not self.isActive: return
-        self.id_exhaustion = bush.id_exhaustion
-        self.mod_count = {}
-        self.exhaustId = FormID(GPath(u'Power Exhaustion.esp'),0xCE7)
-        self.FOAT = MGEFCode('FOAT')
-        self.SEFF = MGEFCode('SEFF')
-
-    def getTypes(self):
-        return ['SPEL']
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Merge Hairs from similar races"),
+            _(u'Merges hair lists from similar races (f.e. give RBP khajit hair to all the other varieties of khajits in Elsweyr)'),
+            u'MergeSimilarRaceHairLists',
+            (u'Merge hairs only from vanilla races', 1),
+            (u'Full hair merge between similar races', 0)
+            
+            )
+        
     #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsPower:
-            recordId = record.fid
-            id_exhaustion = self.id_exhaustion
-            FOAT = self.FOAT
-            Effects = record.effects_list
-            newEffects = []
-            duration = id_exhaustion.get(recordId,0)
-            for effect in Effects:
-                if effect[0] == FOAT and effect[5] == 5 and effect[1] == 1:
-                    duration = effect[3]
-                else:
-                    newEffects.append(effect)
-            if duration:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.effects_list = newEffects
-                    #--Okay, do it
-                    override.full = '+'+override.full
-                    override.IsLesserPower = True
-                    effect = override.create_effect()
-                    effect.name = self.SEFF
-                    effect.duration = duration
-                    effect.full = u'Power Exhaustion'
-                    effect.script = self.exhaustId
-                    effect.IsDestruction = True
-                    effect.visual = MGEFCode(None,None)
-                    effect.IsHostile = False
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('RACE',)
 
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('RACE',)
 
-    def buildPatchLog(self,log):
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.RACE
+        for record in modFile.RACE.getActiveRecords():
+            if not record.full: continue
+            patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        #process hair lists
+        changedHairs = {}
+        vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
+        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
+            for race in extra:
+                for r in vanilla:
+                    if r in race:
+                        if extra[r]['hairs'] != extra[race]['hairs']:
+                            changedHairs[race] = list(set(extra[r]['hairs']+extra[race]['hairs'])) #yuach nasty but quickly and easily removes duplicates.
+        else: # full back and forth merge!
+            for race in extra:
+                #nasty processing slog
+                rs = race.split('(')
+                rs = rs[0].split()
+                if len(rs) > 1 and rs[1] in ['elf','seducer']:
+                    rs[0] = rs[0]+' '+rs[1]
+                    del(rs[1])
+                for r in extra:
+                    if r == race: continue
+                    for s in rs:
+                        if s in r:
+                            if extra[r]['hairs'] != extra[race]['hairs']:
+                                changedHairs[race] = list(set(extra[r]['hairs']+extra[race]['hairs']))
+                                # list(set([]) disgusting thing again
+        keep = patchFile.getKeeper()
+        for record in patchFile.RACE.records:
+            if not record.full: continue
+            if not record.full.lower() in changedHairs: continue
+            record.hairs = changedHairs[record.full.lower()]
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+            
+    def log(self,log):
         """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Powers Tweaked: %d') % (sum(mod_count.values())))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+        log.setHeader(u'==='+_(u"Merge Hairs from similar races"))
+        count = self.count
+        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+            
+class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
+    """Merges similar race's eyes."""
 
-#------------------------------------------------------------------------------
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Merge Eyes from similar races"),
+            _(u'Merges eye lists from similar races (f.e. give RBP khajit eyes to all the other varieties of khajits in Elsweyr)'),
+            u'MergeSimilarRaceEyeLists',
+            (u'Merge eyes only from vanilla races', 1),
+            (u'Full eye merge between similar races', 0)
+            )
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('RACE',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('RACE',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.RACE
+        for record in modFile.RACE.getActiveRecords():
+            if not record.full: continue
+            patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        #process hair lists
+        changedEyes = {}
+        vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
+        if self.choiceValues[self.chosen][0] == 1: #merge eyes only from vanilla races to custom eyes.
+            for race in extra:
+                for r in vanilla:
+                    if r in race:
+                        if extra[r]['eyes'] != extra[race]['eyes']:
+                            changedEyes[race] = list(set(extra[r]['eyes']+extra[race]['eyes'])) #yuach nasty but quickly and easily removes duplicates.
+        else: # full back and forth merge!
+            for race in extra:
+                #nasty processing slog
+                rs = race.split('(')
+                rs = rs[0].split()
+                if len(rs) > 1 and rs[1] in ['elf','seducer']:
+                    rs[0] = rs[0]+' '+rs[1]
+                    del(rs[1])
+                for r in extra:
+                    if r == race: continue
+                    for s in rs:
+                        if s in r:
+                            if extra[r]['eyes'] != extra[race]['eyes']:
+                                changedEyes[race] = list(set(extra[r]['eyes']+extra[race]['eyes']))
+                                # list(set([]) disgusting thing again
+        keep = patchFile.getKeeper()
+        for record in patchFile.RACE.records:
+            if not record.full: continue
+            if not record.full.lower() in changedEyes: continue
+            record.eyes = changedEyes[record.full.lower()]
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+            
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u"Merge Eyes from similar races"))
+        count = self.count
+        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+            
+class RaceTweaker_PlayableEyes(MultiTweakItem):
+    """Sets all eyes to be playable."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Playable Eyes"),
+            _(u'Sets all eyes to be playable.'),
+            u'playableeyes',
+            (u'Get it done', 1),
+            )
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('EYES',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('EYES',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.EYES
+        for record in modFile.EYES.getActiveRecords():
+            if record.flags.playable: continue
+            patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.EYES.records:
+            if record.flags.playable: continue
+            record.flags.playable = True
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+            
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u"Playable Eyes"))
+        count = self.count
+        log(u'* '+_(u'%d Eyes tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class RaceTweaker_PlayableHairs(MultiTweakItem):
+    """Sets all hairs to be playable."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Playable Hairs"),
+            _(u'Sets all Hairs to be playable.'),
+            u'playablehairs',
+            (u'Get it done', 1),
+            )
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('HAIR',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('HAIR',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.HAIR
+        for record in modFile.HAIR.getActiveRecords():
+            if record.flags.playable: continue
+            patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.HAIR.records:
+            if record.flags.playable: continue
+            record.flags.playable = True
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+            
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u"Playable Hairs"))
+        count = self.count
+        log(u'* '+_(u'%d Hairs tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class RaceTweaker_SexlessHairs(MultiTweakItem):
+    """Sets all hairs to be playable by both males and females."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Sexless Hairs"),
+            _(u'Lets any sex of character use any hair.'),
+            u'sexlesshairs',
+            (u'Get it done', 1),
+            )
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('HAIR',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('HAIR',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.HAIR
+        for record in modFile.HAIR.getActiveRecords():
+            if record.flags.notMale or record.flags.notFemale:
+                patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.HAIR.records:
+            if record.flags.notMale or record.flags.notFemale:
+                record.flags.notMale = 0
+                record.flags.notFemale = 0
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+            
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u"Sexless Hairs"))
+        count = self.count
+        log(u'* '+_(u'%d Hairs tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+
 class RacePatcher(SpecialPatcher,DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
@@ -28461,7 +28491,12 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
     subLabel = _(u'Race Tweaks')
     tweaks = sorted([
-        BiggerOrcsandNords(),
+        RaceTweaker_BiggerOrcsandNords(),
+        RaceTweaker_MergeSimilarRaceHairs(),
+        RaceTweaker_MergeSimilarRaceEyes(),
+        RaceTweaker_PlayableEyes(),
+        RaceTweaker_PlayableHairs(),
+        RaceTweaker_SexlessHairs(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
@@ -28647,6 +28682,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     def buildPatch(self,log,progress):
         """Updates races as needed."""
         debug = False
+        extra = {}
         if not self.isActive: return
         patchFile = self.patchFile
         keep = patchFile.getKeeper()
@@ -28803,6 +28839,10 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             if raceChanged:
                 racesFiltered.append(race.eid)
                 keep(race.fid)
+            if race.full:
+                extra[race.full.lower()] = {'hairs':race.hairs,'eyes':race.eyes,'relations':race.relations}
+        for tweak in self.enabledTweaks:
+            tweak.buildPatch(progress,self.patchFile,extra)        
         #--Sort Eyes/Hair
         defaultEyes = {}
         defaultMaleHair = {}
@@ -28877,7 +28917,61 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             for srcMod in sorted(mod_npcsFixed):
                 log(u'* %s: %d' % (srcMod.s,len(mod_npcsFixed[srcMod])))
         for tweak in self.enabledTweaks:
-            tweak.buildPatch(log,progress,self.patchFile)
+            tweak.log(log)
+
+class CBash_RaceTweaker_BiggerOrcsandNords(CBash_MultiTweakItem):
+    """Changes all Orcs and Nords to be bigger."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Bigger Nords and Orcs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if u'nord' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][0]
+        elif u'orc' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][1]
+        else:
+            return
+
+        oldValues = tuple(map(record.__getattribute__, self.attrs))
+        if oldValues != newValues:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
             
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
@@ -29368,7 +29462,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
     defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
     subLabel = _(u'Race Tweaks')
     tweaks = sorted([
-        CBash_BiggerOrcsandNords(),
+        CBash_RaceTweaker_BiggerOrcsandNords(),
         ],key=lambda a: a.label.lower())
 
 
