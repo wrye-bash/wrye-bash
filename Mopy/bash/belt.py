@@ -32,7 +32,7 @@ import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, basher, bush
 import struct, string
 import win32api
-import cStringIO
+import StringIO
 import traceback
 #---------------------------------------------------
 
@@ -1560,7 +1560,7 @@ class WryeParser(ScriptParser.Parser):
     def kwdNote(self, note):
         self.notes.append(u'- %s\n' % note)
 
-    def kwdRequireVersions(self, game, se=u'None', ge=u'None', wbWant=u'0'):
+    def kwdRequireVersions(self, game, se=u'None', ge=u'None', wbWant=u'0.0'):
         if self.bAuto: return
 
         gameWant = self._TestVersion_Want(game)
@@ -1569,6 +1569,7 @@ class WryeParser(ScriptParser.Parser):
         if seWant == u'None': se = u'None'
         geWant = self._TestVersion_Want(ge)
         if geWant == u'None': ge = u'None'
+        if not wbWant: wbWant = u'0.0'
         wbHave = bosh.settings['bash.readme'][1]
 
         ret = self._TestVersion(gameWant, bosh.dirs['app'].join(bush.game.exe))
@@ -1592,7 +1593,11 @@ class WryeParser(ScriptParser.Parser):
         else:
             bGEOk = True
             geHave = u'None'
-        bWBOk = float(wbHave) >= float(wbWant)
+        try:
+            bWBOk = float(wbHave) >= float(wbWant)
+        except:
+            # Error converting to float, just assume it's OK
+            bWBOk = True
 
         if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
             self.page = PageVersions(self.parent, bGameOk, gameHave, game, bSEOk, seHave, se, bGEOk, geHave, ge, bWBOk, wbHave, wbWant)
