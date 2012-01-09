@@ -1920,11 +1920,11 @@ class ObBaseRecord(object):
 
     @property
     def FileName(self):
-        return _CGetFileNameByID(self._CollectionID, self._ModID) or u'Missing'
+        return _unicode(_CGetFileNameByID(self._CollectionID, self._ModID)) or u'Missing'
 
     @property
     def ModName(self):
-        return _CGetModNameByID(self._CollectionID, self._ModID) or u'Missing'
+        return _unicode(_CGetModNameByID(self._CollectionID, self._ModID)) or u'Missing'
 
     @property
     def GName(self):
@@ -5526,11 +5526,11 @@ class ObModFile(object):
 
     @property
     def FileName(self):
-        return _CGetFileNameByID(self._CollectionID, self._ModID) or u'Missing'
+        return _unicode(_CGetFileNameByID(self._CollectionID, self._ModID)) or u'Missing'
 
     @property
     def ModName(self):
-        return _CGetModNameByID(self._CollectionID, self._ModID) or u'Missing'
+        return _unicode(_CGetModNameByID(self._CollectionID, self._ModID)) or u'Missing'
 
     @property
     def GName(self):

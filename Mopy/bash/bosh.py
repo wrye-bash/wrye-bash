@@ -20294,8 +20294,8 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
         reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
         reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
-        reDiv = re.compile(ur'<div',re.I+re.M)
-        reFont = re.compile(ur'<font',re.I+re.M)
+        reDiv = re.compile(ur'<div',re.I|re.M)
+        reFont = re.compile(ur'<font',re.I|re.M)
         keep = patchFile.getKeeper()
         reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
         reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
@@ -20374,11 +20374,11 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         if record.text and not record.enchantment:
             text = record.text
 
-            reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
+            reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I|re.M)
             reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
             reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
-            reDiv = re.compile(ur'<div',re.I+re.M)
-            reFont = re.compile(ur'<font',re.I+re.M)
+            reDiv = re.compile(ur'<div',re.I|re.M)
+            reFont = re.compile(ur'<font',re.I|re.M)
             reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
             reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
             reBold = re.compile(ur'(__|\*\*|~~)')
