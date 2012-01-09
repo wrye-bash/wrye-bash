@@ -2599,31 +2599,38 @@ class StringTable(dict):
         else: format = 1
         try:
             with BinaryFile(path.s) as ins:
-                ins.seek(0,os.SEEK_END)
-                eof = ins.tell()
-                ins.seek(0)
+                insSeek = ins.seek
+                insTell = ins.tell
+                inUnpack = ins.unpack
+                insReadCString = ins.readCString
+                insRead = ins.read
+
+                insSeek(0,os.SEEK_END)
+                eof = insTell()
+                insSeek(0)
                 if eof < 8:
                     # Missing the numIds and dataSize bytes, assume empty file
                     return
 
-                numIds, = ins.unpack('I',4)
+                numIds,dataSize = insUnpack('=2I',4)
                 progress.setFull(max(numIds,1))
-                dataSize, = ins.unpack('I',4)
                 stringsStart = eof - dataSize
+                if stringsStart < 8 + (numIds*8):
+                    # 8 bytes numIds & dataSize, 8 bytes per Id entry
+                    return
 
                 for x in xrange(numIds):
                     progress(x)
-                    id, = ins.unpack('I',4)
-                    offset, = ins.unpack('I',4)
-                    pos = ins.tell()
-                    ins.seek(stringsStart+offset)
+                    id,offset = insUnpack('=2I',8)
+                    pos = insTell()
+                    insSeek(stringsStart+offset)
                     if format:
-                        strLen, = ins.unpack('I',4)
-                        value = ins.read(strLen)
+                        strLen, = insUnpack('I',4)
+                        value = insRead(strLen)
                     else:
-                        value = ins.readCString()
+                        value = insReadCString()
                     value = unicode(cstrip(value),'cp1252')
-                    ins.seek(pos)
+                    insSeek(pos)
                     self[id] = value
         except:
             return
