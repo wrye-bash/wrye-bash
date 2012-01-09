@@ -1400,8 +1400,8 @@ class Path(object):
         """Temporarily rename/move an object.  Use with the 'with' statement"""
         class temp(object):
             def __init__(self,oldPath,newPath):
-                self.newPath = newPath
-                self.oldPath = oldPath
+                self.newPath = GPath(newPath)
+                self.oldPath = GPath(oldPath)
 
             def __enter__(self): return self
             def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
