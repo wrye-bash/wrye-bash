@@ -14577,11 +14577,11 @@ class FnvModFile(object):
 
     @property
     def FileName(self):
-        return _uni(_CGetFileNameByID(self._ModID)) or 'Missing'
+        return _uni(_CGetFileNameByID(self._ModID)) or u'Missing'
 
     @property
     def ModName(self):
-        return _uni(_CGetModNameByID(self._ModID)) or 'Missing'
+        return _uni(_CGetModNameByID(self._ModID)) or u'Missing'
 
     @property
     def GName(self):
