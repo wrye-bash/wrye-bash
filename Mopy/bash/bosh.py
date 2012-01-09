@@ -7594,7 +7594,7 @@ class InstallerConverter(object):
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         tempPath = self.fullPath.s
         with self.fullPath.tempMoveTo(tempPath):
-            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath.s,self.tempDir.s)
+            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath,self.tempDir.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = sio(ins)
             #--Error checking
