@@ -27217,17 +27217,19 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
-        iconPath,modPath,modb_p = (u'Clutter\\IconBook9.dds',u'Clutter\\Books\\Octavo02.NIF',u'\x03>@A')
+        iconPath,modPath,modb_p = (u'Clutter\\IconBook9.dds',u'Clutter\\Books\\Octavo02.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.ingred_alchem:
-            book = getBook(objectId,'cobCatAlchemIngreds%s'%num,full,value,iconPath,modPath,modb_p)
+            book = getBook(objectId,u'cobCatAlchemIngreds%s'%num,full,value,iconPath,modPath,modb_p)
             with sio(book.text) as buff:
+                buff.seek(0,os.SEEK_END)
+                buffWrite = buff.write
                 for eid,full,effects in sorted(id_ingred.values(),key=lambda a: a[1].lower()):
-                    buff.write(full+u'\r\n')
+                    buffWrite(full+u'\r\n')
                     for mgef,actorValue in effects[:num]:
                         effectName = mgef_name[mgef]
                         if mgef in actorEffects: effectName += actorNames[actorValue]
-                        buff.write(u'  '+effectName+u'\r\n')
-                    buff.write(u'\r\n')
+                        buffWrite(u'  '+effectName+u'\r\n')
+                    buffWrite(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = {}
@@ -27238,23 +27240,25 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
                 if effectName not in effect_ingred: effect_ingred[effectName] = []
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
-        iconPath,modPath,modb_p = (u'Clutter\\IconBook7.dds',u'Clutter\\Books\\Octavo01.NIF',u'\x03>@A')
+        iconPath,modPath,modb_p = (u'Clutter\\IconBook7.dds',u'Clutter\\Books\\Octavo01.NIF','\x03>@A')
         for (num,objectId,full,value) in bush.effect_alchem:
-            book = getBook(objectId,'cobCatAlchemEffects%s'%num,full,value,iconPath,modPath,modb_p)
+            book = getBook(objectId,u'cobCatAlchemEffects%s'%num,full,value,iconPath,modPath,modb_p)
             with sio(book.text) as buff:
+                buff.seek(0,os.SEEK_END)
+                buffWrite = buff.write
                 for effectName in sorted(effect_ingred.keys()):
                     effects = [indexFull for indexFull in effect_ingred[effectName] if indexFull[0] < num]
                     if effects:
-                        buff.write(effectName+u'\r\n')
+                        buffWrite(effectName+u'\r\n')
                         for (index,full) in sorted(effects,key=lambda a: a[1].lower()):
                             exSpace = u' ' if index == 0 else u''
-                            buff.write(u' %s%s %s\r\n'%(index + 1,exSpace,full))
-                        buff.write(u'\r\n')
+                            buffWrite(u' %s%s %s\r\n'%(index + 1,exSpace,full))
+                        buffWrite(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Log
         log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Ingredients Cataloged: %d') % (len(id_ingred),))
-        log(u'* '+_(u'Effects Cataloged: %d') % (len(effect_ingred)))
+        log(u'* '+_(u'Ingredients Cataloged: %d') % len(id_ingred))
+        log(u'* '+_(u'Effects Cataloged: %d') % len(effect_ingred))
 
 class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     """Updates COBL alchemical catalogs."""
