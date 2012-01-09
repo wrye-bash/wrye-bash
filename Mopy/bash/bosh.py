@@ -29496,7 +29496,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_ListPatcher):
                 log(u'* '+eid)
         log(u'\n=== '+_(u'Eyes/Hair Sorted'))
         if not racesSorted:
-            log(u'. ~~%d~~'%_(u'None'))
+            log(u'. ~~%s~~'%_(u'None'))
         else:
             for eid in sorted(racesSorted):
                 log(u'* '+eid)
