@@ -14146,11 +14146,11 @@ class ObModFile(object):
 
     @property
     def FileName(self):
-        return _unicode(_CGetFileNameByID(self._ModID)) or u'Missing'
+        return _uni(_CGetFileNameByID(self._ModID)) or u'Missing'
 
     @property
     def ModName(self):
-        return _unicode(_CGetModNameByID(self._ModID)) or u'Missing'
+        return _uni(_CGetModNameByID(self._ModID)) or u'Missing'
 
     @property
     def GName(self):
@@ -14577,11 +14577,11 @@ class FnvModFile(object):
 
     @property
     def FileName(self):
-        return _unicode(_CGetFileNameByID(self._ModID)) or 'Missing'
+        return _uni(_CGetFileNameByID(self._ModID)) or 'Missing'
 
     @property
     def ModName(self):
-        return _unicode(_CGetModNameByID(self._ModID)) or 'Missing'
+        return _uni(_CGetModNameByID(self._ModID)) or 'Missing'
 
     @property
     def GName(self):
