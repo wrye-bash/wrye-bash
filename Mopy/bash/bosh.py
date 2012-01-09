@@ -1556,8 +1556,11 @@ class ModFile:
         """Returns a mapping function to map long fids to short fids."""
         masters = self.tes4.masters+[self.fileInfo.name]
         indices = dict([(name,index) for index,name in enumerate(masters)])
+        gLong = self.getLongMapper()
         def mapper(fid):
             if fid == None: return None
+            if isinstance(fid,long):
+                fid = gLong(fid)
             modName,object = fid
             mod = indices[modName]
             return (long(mod) << 24 ) | long(object)
@@ -7591,7 +7594,7 @@ class InstallerConverter(object):
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         tempPath = self.fullPath.s
         with self.fullPath.tempMoveTo(tempPath):
-            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath.s,self.tempDir.s)
+            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath,self.tempDir.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = sio(ins)
             #--Error checking
@@ -16735,8 +16738,8 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class NPCAIPackagePatcher(ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
-    name = _(u'Import Actors: AIPackages')
-    text = _(u"Import Actor AIPackage links from source mods.")
+    name = _(u'Import Actors: AI Packages')
+    text = _(u"Import Actor AI Package links from source mods.")
     tip = text
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
@@ -16914,8 +16917,8 @@ class NPCAIPackagePatcher(ImportPatcher):
 
 class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
-    name = _(u'Import Actors: AIPackages')
-    text = _(u"Import Actor AIPackage links from source mods.")
+    name = _(u'Import Actors: AI Packages')
+    text = _(u"Import Actor AI Package links from source mods.")
     tip = text
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.AIPackages',u'Actors.AIPackagesForceAdd'))
