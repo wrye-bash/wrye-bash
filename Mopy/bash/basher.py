@@ -3673,6 +3673,32 @@ class InstallersPanel(SashTankPanel):
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
+        if self.frameActivated and data.extractOmodsNeeded():
+            self.refreshing = True
+            try:
+                with balt.Progress(_(u'Extracting OMODs...'),u'\n'+u' '*60) as progress:
+                    dirInstallers = bosh.dirs['installers']
+                    dirInstallersJoin = dirInstallers.join
+                    omods = [dirInstallersJoin(x) for x in dirInstallers.list() if x.cext == u'.omod']
+                    progress.setFull(max(len(omods),1))
+                    for i,omod in enumerate(omods):
+                        progress(i,x.stail)
+                        outDir = dirInstallersJoin(omod.body)
+                        num = 0
+                        while outDir.exists():
+                            outDir = dirInstallersJoin(u'%s%s' % (omod.sbody,num))
+                            num += 1
+                        try:
+                            bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
+                            omod.remove()
+                        except:
+                            deprint(_(u"Error extracting OMOD '%s':") % omod.stail,traceback=True)
+                            # Ensures we don't infinitely refresh if moving the omod fails
+                            data.failedOmods.add(omod.body)
+                            outDir.rmtree(omod.sbody)
+                            omod.rename(dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body))
+            finally:
+                self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
             self.refreshing = True
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=True) as progress:
