@@ -3322,7 +3322,8 @@ class InstallersList(balt.Tank):
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if not x.isdir() and x.cext == u'.omod']
-        filenames = [x for x in filenames if x.isdir() or x.cext in bosh.readExts]
+        converters = [x for x in filenames if self.data.validConverterName(x)]
+        filenames = [x for x in filenames if x.isdir() or x.cext in bosh.readExts and x not in converters]
         if len(omodnames) > 0:
             failed = []
             completed = []
@@ -3386,7 +3387,7 @@ class InstallersList(balt.Tank):
                 self.data.refresh(what='I')
                 self.RefreshUI()
                 progress.Destroy()
-        if len(filenames) == 0:
+        if not filenames and not converters:
             return
         action = settings['bash.installers.onDropFiles.action']
         if action not in ['COPY','MOVE']:
@@ -3428,9 +3429,13 @@ class InstallersList(balt.Tank):
                 #--Copy the dropped files
                 for file in filenames:
                     file.copyTo(bosh.dirs['installers'].join(file.tail))
+                for file in converters:
+                    file.copyTo(bosh.dirs['converters'].join(file.tail))
             elif action == 'MOVE':
                 for file in filenames:
                     file.moveTo(bosh.dirs['installers'].join(file.tail))
+                for file in converters:
+                    file.copyTo(bosh.dirs['converters'].join(file.tail))
             else:
                 return
             modList.RefreshUI()
