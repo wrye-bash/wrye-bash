@@ -11972,11 +11972,11 @@ class ScriptText:
                     with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
                     try:
-                        modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                        modName,FormID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
                     except:
                         deprint(_(u"%s has malformed script header lines - was skipped") % name)
                         continue
-                    scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs reads\writes EOLs in \r\n format.
+                    scriptText = u''.join(lines[3:])
                     eid_data[eid] = (scriptText, FormID)
         if eid_data: return True
         return False
@@ -12091,8 +12091,8 @@ class CBash_ScriptText:
                     with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
                     if not lines: continue
-                    modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
-                    scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs writes it in \r\n format.
+                    modName,formID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
+                    scriptText = u''.join(lines[3:])
                     eid_data[IUNICODE(eid)] = (IUNICODE(scriptText), formID) #script text is case insensitive
         if eid_data: return True
         return False
@@ -28190,7 +28190,6 @@ class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
             u'MergeSimilarRaceHairLists',
             (u'Merge hairs only from vanilla races', 1),
             (u'Full hair merge between similar races', 0)
-            
             )
         
     #--Patch Phase ------------------------------------------------------------
@@ -28974,7 +28973,275 @@ class CBash_RaceTweaker_BiggerOrcsandNords(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
-            
+
+class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
+    """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Merge Hairs from similar races")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Merge Hairs from similar races"),
+            _(u'Merges hair lists from similar races (f.e. give RBP khajit hair to all the other varieties of khajits in Elsweyr)'),
+            u'MergeSimilarRaceHairLists',
+            (u'Merge hairs only from vanilla races', 1),
+            (u'Full hair merge between similar races', 0)
+            )
+        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if u'nord' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][0]
+        elif u'orc' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][1]
+        else:
+            return
+
+        oldValues = tuple(map(record.__getattribute__, self.attrs))
+        if oldValues != newValues:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+ 
+class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
+    """Changes all Orcs and Nords to be bigger."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Bigger Nords and Orcs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if u'nord' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][0]
+        elif u'orc' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][1]
+        else:
+            return
+
+        oldValues = tuple(map(record.__getattribute__, self.attrs))
+        if oldValues != newValues:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+ 
+class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
+    """Changes all Orcs and Nords to be bigger."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Bigger Nords and Orcs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if u'nord' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][0]
+        elif u'orc' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][1]
+        else:
+            return
+
+        oldValues = tuple(map(record.__getattribute__, self.attrs))
+        if oldValues != newValues:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+ 
+class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
+    """Changes all Orcs and Nords to be bigger."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Bigger Nords and Orcs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if u'nord' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][0]
+        elif u'orc' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][1]
+        else:
+            return
+
+        oldValues = tuple(map(record.__getattribute__, self.attrs))
+        if oldValues != newValues:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+class RaceTweaker_SexlessHairs(CBash_MultiTweakItem):
+    """Changes all Orcs and Nords to be bigger."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Bigger Nords and Orcs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+            u'BiggerOrcsandNords',
+            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
+            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
+            )
+        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if not record.full: return
+        if u'nord' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][0]
+        elif u'orc' in record.full.lower():
+            newValues = self.choiceValues[self.chosen][0][1]
+        else:
+            return
+
+        oldValues = tuple(map(record.__getattribute__, self.attrs))
+        if oldValues != newValues:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+         
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
     autoKey = set(('R.Relations',))
@@ -29102,6 +29369,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
+        
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
