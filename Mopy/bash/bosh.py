@@ -3583,8 +3583,7 @@ class OmodFile:
         reFileSize = re.compile(ur'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
-        tempOmod = self.path.temp
-        with self.path.tempMoveTo(tempOmod):
+        with self.path.unicodeSafe() as tempOmod:
             cmd7z = [exe7z, u'l', u'-r', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
@@ -3605,7 +3604,6 @@ class OmodFile:
         if progress is None: progress = bolt.Progress()
         # First, extract the files to a temp directory
         tempDir = dirs['mopy'].join(u'temp',self.path.temp.body)
-        tempOmod = self.path.temp
 
         # Get contents of archive
         sizes,total = self.getOmodContents()
@@ -3618,7 +3616,7 @@ class OmodFile:
 
         subprogress = bolt.SubProgress(progress, 0, 0.4)
         current = 0
-        with self.path.tempMoveTo(tempOmod):
+        with self.path.unicodeSafe() as tempOmod:
             with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
                     line = unicode(line,'utf8')
@@ -3662,8 +3660,7 @@ class OmodFile:
         pluginSize = sizes.get('plugins',0)
         dataSize = sizes.get('data',0)
         subprogress = bolt.SubProgress(progress, 0.5, 1)
-        tempOut = outDir.temp
-        with outDir.tempMoveTo(tempOut):
+        with outDir.unicodeSafe() as tempOut:
             if tempDir.join(u'plugins.crc').exists() and tempDir.join(u'plugins').exists():
                 pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
                 extract(tempDir.join(u'plugins.crc'),tempDir.join(u'plugins'),tempOut,pluginProgress)
@@ -7540,8 +7537,7 @@ class InstallerConverter(object):
     def load(self,fullLoad=False):
         """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
-        path = self.fullPath.temp
-        with self.fullPath.tempMoveTo(path):
+        with self.fullPath.unicodeSafe() as path:
             # Temp rename if it's name wont encode correctly
             command = ur'"%s" x "%s" BCF.dat -y -so' % (exe7z, path.s)
             try:
@@ -7592,8 +7588,7 @@ class InstallerConverter(object):
         self.clearTemp()
         progress = progress or bolt.Progress()
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
-        tempPath = self.fullPath.s
-        with self.fullPath.tempMoveTo(tempPath):
+        with self.fullPath.unicodeSafe() as tempPath:
             command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath,self.tempDir.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = sio(ins)
@@ -7927,8 +7922,7 @@ class InstallerArchive(Installer):
         reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)',re.U)
         file = size = crc = isdir = 0
         self.isSolid = False
-        tempArch = archive.temp
-        with archive.tempMoveTo(tempArch):
+        with archive.unicodeSafe() as tempArch:
             ins = listArchiveContents(tempArch.s)
             try:
                 cumCRC = 0
@@ -7963,8 +7957,7 @@ class InstallerArchive(Installer):
         with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
         apath = dirs['installers'].join(archive)
-        arch = apath.temp
-        with apath.tempMoveTo(arch):
+        with apath.unicodeSafe() as arch:
             args = u'"%s" -y -o%s @%s -scsUTF8' % (arch.s, self.tempDir.s, self.tempList.s)
             if recurse:
                 args += u' -r'
@@ -8088,8 +8081,7 @@ class InstallerArchive(Installer):
             file = u''
             isdir = False
             apath = dirs['installers'].join(archive)
-            tempArch = apath.temp
-            with apath.tempMoveTo(tempArch):
+            with apath.unicodeSafe() as tempArch:
                 ins = listArchiveContents(tempArch.s)
                 #--Parse
                 text = []
@@ -8224,8 +8216,7 @@ class InstallerProject(Installer):
             outFile += unicode(num)
             num += 1
         project = outDir.join(project)
-        projectDir = project.temp
-        with project.tempMoveTo(projectDir):
+        with project.unicodeSafe() as projectDir:
             if archive.cext in noSolidExts:
                 solid = u''
             else:
