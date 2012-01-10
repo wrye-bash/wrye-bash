@@ -7599,7 +7599,7 @@ class TweakPatcher(Patcher):
                          _(u'If you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
                          + u'\n' + tweak.key[i])
                 new = balt.askNumber(self.gConfigPanel,label,prompt=_(u'Value'),
-                    title=tweal.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                    title=tweak.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return
                 value.append(float(new)/10)
