@@ -371,7 +371,6 @@ CBash_patchers = (
     'CBash_GraphicsPatcher', 'CBash_ImportFactions', 'CBash_ImportInventory',
     'CBash_SpellsPatcher', 'CBash_TweakActors', 'CBash_ImportRelations',
     'CBash_ImportScripts',
-    ##    CBash_ImportScriptContents(),
     'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
     'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
     'CBash_RacePatcher', 'CBash_RoadImporter',
