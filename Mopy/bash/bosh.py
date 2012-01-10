@@ -8374,6 +8374,7 @@ class InstallersData(bolt.TankData, DataDict):
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile
+        self.failedOmods = set()
         self.abnorm_sizeCrc = {} #--Normative sizeCrc, according to order of active packages
         self.bcfPath_sizeCrcDate = {}
         self.hasChanged = False
@@ -8636,6 +8637,12 @@ class InstallersData(bolt.TankData, DataDict):
         self.data = newData
         self.crc_installer = dict((x.crc,x) for x in self.data.values() if isinstance(x, InstallerArchive))
         return changed
+
+    def extractOmodsNeeded(self):
+        """Returns true if .omod files are present, requiring extraction."""
+        for file in dirs['installers'].list():
+            if file.cext == u'.omod' and file not in self.failedOmods: return True
+        return False
 
     def refreshInstallersNeeded(self):
         """Returns true if refreshInstallers is necessary. (Point is to skip use
