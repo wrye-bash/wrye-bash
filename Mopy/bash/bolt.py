@@ -1403,10 +1403,24 @@ class Path(object):
                 self.newPath = GPath(newPath)
                 self.oldPath = GPath(oldPath)
 
-            def __enter__(self): return self
+            def __enter__(self): return self.newPath
             def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
         self.moveTo(destName)
         return temp(self,destName)
+
+    def unicodeSafe(self):
+        """Temporarily rename (only if necessary) the file to a unicode safe name.
+           Use with the 'with' statement."""
+        try:
+            self._s.encode('ascii')
+            class temp(object):
+                def __init__(self,path):
+                    self.path = path
+                def __enter__(self): return self.path
+                def __exit__(self,*args,**kwdargs): pass
+            return temp(self)
+        except UnicodeEncodeError:
+            return self.tempMoveTo(self.temp)
 
     def touch(self):
         """Like unix 'touch' command. Creates a file with current date/time."""
