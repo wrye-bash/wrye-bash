@@ -6767,7 +6767,8 @@ class Installer(object):
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
         'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps','skipRefresh')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms','underrides', 'hasWizard', 'espmMap','hasReadme')
+        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms',
+        'underrides','hasWizard','espmMap','hasReadme','hasBCF')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set((u'screenshots',))
@@ -7116,6 +7117,7 @@ class Installer(object):
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         #--Init to empty
         self.hasWizard = False
+        self.hasBCF = False
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False
         for attr in ('skipExtFiles','skipDirFiles','espms'):
@@ -7176,6 +7178,10 @@ class Installer(object):
                         self.hasWizard = full
                         skipDirFilesDiscard(file)
                         continue
+                    elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                        self.hasBCF = full
+                        skipDirFilesDiscard(file)
+                        continue
                     elif fileExt in docExts:
                         if reReadMeMatch(file):
                             self.hasReadme = full
@@ -7223,6 +7229,9 @@ class Installer(object):
                 continue
             elif fileLower == u'wizard.txt':
                 self.hasWizard = full
+                continue
+            elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                self.hasBCF = full
                 continue
             elif skipImages and fileExt in imageExts:
                 continue
@@ -7581,7 +7590,7 @@ class InstallerConverter(object):
         except:
             InstallerConverter.tempDir.rmtree(safety=u'Temp')
 
-    def apply(self,destArchive,crc_installer,progress=None):
+    def apply(self,destArchive,crc_installer,progress=None,embedded=0L):
         """Applies the BCF and packages the converted archive"""
         #--Prepare by fully loading the BCF and clearing temp
         self.load(True)
@@ -7604,13 +7613,23 @@ class InstallerConverter(object):
             raise StateError(self.fullPath.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Extract source archives
         lastStep = 0
-        nextStep = step = 0.4 / len(self.srcCRCs)
-        for srcCRC in self.srcCRCs:
+        if embedded:
+            if len(self.srcCRCs) != 1:
+                raise StateError(u'Embedded BCF require multiple source archives!')
+            realCRCs = self.srcCRCs
+            srcCRCs = [embedded]
+        else:
+            srcCRCs = realCRCs = self.srcCRCs
+        nextStep = step = 0.4 / len(srcCRCs)
+        for srcCRC,realCRC in zip(srcCRCs,realCRCs):
             srcInstaller = crc_installer[srcCRC]
             files = srcInstaller.sortFiles([x[0] for x in srcInstaller.fileSizeCrcs])
             if not files: continue
             progress(0,srcInstaller.archive+u'\n'+_(u'Extracting files...'))
+            tempCRC = srcInstaller.crc
+            srcInstaller.crc = realCRC
             self.unpack(srcInstaller,files,SubProgress(progress,lastStep,nextStep))
+            srcInstaller.crc = tempCRC
             lastStep = nextStep
             nextStep += step
         #--Move files around and pack them
@@ -8627,6 +8646,9 @@ class InstallersData(bolt.TankData, DataDict):
                     installer.type = -1
         self.data = newData
         self.crc_installer = dict((x.crc,x) for x in self.data.values() if isinstance(x, InstallerArchive))
+        #--Apply embedded BCFs
+        if settings['bash.installers.autoApplyEmbeddedBCFs']:
+            changed |= self.applyEmbeddedBCFs(progress=progress)
         return changed
 
     def extractOmodsNeeded(self):
@@ -8634,6 +8656,54 @@ class InstallersData(bolt.TankData, DataDict):
         for file in dirs['installers'].list():
             if file.cext == u'.omod' and file not in self.failedOmods: return True
         return False
+
+    def embeddedBCFsExist(self):
+        """Return true if any InstallerArchive's have an embedded BCF file in them"""
+        for file in self.data:
+            installer = self.data[file]
+            if installer.hasBCF and isinstance(installer,InstallerArchive):
+                return True
+        return False
+
+    def applyEmbeddedBCFs(self,installers=None,destArchives=None,progress=bolt.Progress()):
+        if not installers:
+            installers = (self.data[x] for x in self.data)
+            installers = [x for x in installers if x.hasBCF and isinstance(x,InstallerArchive)]
+        if not installers: return False
+        if not destArchives:
+            destArchives = [GPath(x.archive) for x in installers]
+        progress.setFull(max(len(installers),1))
+        for i,installer in enumerate(installers):
+            name = GPath(installer.archive)
+            progress(i,name.s)
+            #--Extract the embedded BCF and move it to the Converters folder
+            installer.unpackToTemp(name,[installer.hasBCF],progress)
+            bcfFile = GPath(installer.hasBCF)
+            bcfFile = dirs['converters'].join(u'temp-'+bcfFile.stail)
+            installer.tempDir.join(installer.hasBCF).moveTo(bcfFile)
+            installer.clearTemp()
+            #--Creat the converter, apply it
+            destArchive = destArchives[i]
+            converter = InstallerConverter(bcfFile.tail)
+            converter.apply(destArchive,self.crc_installer,bolt.SubProgress(progress,0.0,0.99),installer.crc)
+            #--Add the new archive to Bash
+            if destArchive not in self:
+                self[destArchive] = InstallerArchive(destArchive)
+            #--Apply settings to the new archive
+            iArchive = self[destArchive]
+            converter.applySettings(iArchive)
+            #--RefreshUI
+            pArchive = dirs['installers'].join(destArchive)
+            iArchive.refreshed = False
+            iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
+            if iArchive.hasBCF:
+                # If applying the BCF created a new archive with an embedded BCF,
+                # ignore the embedded BCF for now, so we don't end up in an infinite
+                # loop
+                iArchive.hasBCF = False
+            bcfFile.remove()
+        self.refresh(what='I')
+        return True
 
     def refreshInstallersNeeded(self):
         """Returns true if refreshInstallers is necessary. (Point is to skip use
@@ -8660,7 +8730,9 @@ class InstallersData(bolt.TankData, DataDict):
                         return True
                     installersAdd(item)
         #--Added/removed packages?
-        if settings['bash.installers.autoRefreshProjects']:
+        if settings['bash.installers.autoApplyEmbeddedBCFs'] and self.embeddedBCFsExist():
+            return True
+        elif settings['bash.installers.autoRefreshProjects']:
             return installers != set(x for x,y in self.data.iteritems() if not isinstance(y,InstallerMarker) and not (isinstance(y,InstallerProject) and y.skipRefresh))
         else:
             return installers != set(x for x,y in self.data.iteritems() if isinstance(y,InstallerArchive))
