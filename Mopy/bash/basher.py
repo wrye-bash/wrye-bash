@@ -878,8 +878,10 @@ class List(wx.Panel):
         """Create/name columns in ListCtrl."""
         cols = self.cols
         self.numCols = len(cols)
+        colDict = self.colDict = {}
         for colDex in xrange(self.numCols):
             colKey = cols[colDex]
+            colDict[colKey] = colDex
             colName = self.colNames.get(colKey,colKey)
             wxListAlign = wxListAligns[self.colAligns.get(colKey,0)]
             if colDex >= self.list.GetColumnCount():
@@ -1708,6 +1710,8 @@ class ModList(List):
         List.__init__(self,parent,wx.ID_ANY,ctrlStyle=(wx.LC_REPORT), dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
         #--Image List
         checkboxesIL = colorChecks.GetImageList()
+        self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
+        self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
@@ -1930,6 +1934,7 @@ class ModList(List):
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
         (col, reverse) = self.GetSortSettings(col,reverse)
+        oldcol = settings['bash.mods.sort']
         settings['bash.mods.sort'] = col
         selected = bosh.modInfos.ordered
         data = self.data
@@ -1971,6 +1976,12 @@ class ModList(List):
         if self.selectedFirst:
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
+        #set column sort image
+        self.list.ClearColumnImage(self.colDict[oldcol])
+        try: 
+            if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
+            else: self.list.SetColumnImage(self.colDict[col], self.sm_dn)
+        except: pass
 
     #--Events ---------------------------------------------
     def OnDoubleClick(self,event):
