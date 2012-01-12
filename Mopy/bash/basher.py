@@ -1977,8 +1977,9 @@ class ModList(List):
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
         #set column sort image
-        self.list.ClearColumnImage(self.colDict[oldcol])
         try: 
+            try: self.list.ClearColumnImage(self.colDict[oldcol])
+            except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
             if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
             else: self.list.SetColumnImage(self.colDict[col], self.sm_dn)
         except: pass
