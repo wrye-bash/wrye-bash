@@ -27700,7 +27700,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                 newLevList.items = items = set([entry.listId for entry in newLevList.entries])
                 if not isListOwner:
                     #--Relevs
-                    newLevList.relevs = (set(),items.copy())[isRelev]
+                    newLevList.relevs = items.copy if isRelev else set()
                     #--Delevs: all items in masters minus current items
                     newLevList.delevs = delevs = set()
                     if isDelev:
@@ -27733,7 +27733,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
             log(u'* '+self.getItemLabel(leveler))
         #--Save to patch file
         for label, type in ((_(u'Creature'),'LVLC'), (_(u'Actor'),'LVLN'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
-            if label not in self.type_list: continue
+            if label not in self.listTypes: continue
             log.setHeader(u'=== '+_(u'Merged %s Lists') % label)
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
@@ -27746,7 +27746,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                     log(u'  * ' + self.getItemLabel(mod))
         #--Discard empty sublists
         for label, type in ((_(u'Creature'),'LVLC'), (_(u'Actor'),'LVLN'), (_(u'Item'),'LVLI'), (_(u'Spell'),'LVSP')):
-            if label not in self.type_list: continue
+            if type not in self.listTypes: continue
             patchBlock = getattr(self.patchFile,type)
             levLists = self.type_list[type]
             #--Empty lists

@@ -1400,7 +1400,8 @@ class MreGmst(MreGmstBase):
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
-    copyAttrs = ('glob','model','modt_p','coed_fid','coed_unk',)
+    copyAttrs = ('chanceNone','glob','model','modt_p','coed_fid','coed_unk',)
+
     class MelLevListLvlo(MelStructs):
         def __init__(self):
             MelStructs.__init__(self,'LVLO','=3I','entries','level',(FID,'listId',None),('count',1))
