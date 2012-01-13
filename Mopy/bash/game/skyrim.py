@@ -1394,7 +1394,7 @@ class MreCobj(MelRecord):
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
-    Master = u'Skryim'
+    Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
