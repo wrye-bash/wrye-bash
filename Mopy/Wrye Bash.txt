@@ -23,7 +23,7 @@ In particular, see:
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Advanced|Wrye Bash Advanced FAQs]]: Overviews of using advanced Bash features.
 
 == Quick Tour
-<img src="bash/images/WryeBash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
+<img src="bash/images/wryebash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
 
 * At the top are the main tabs: [[#InstallersTab|Installers]], [[#ModsTab|Mods]], [[#INIEditsTab|INI Edits]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
@@ -167,7 +167,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
   * Most likely there is a problem with your setup. Alternatively there may be a bug with Bash.
   * You can usually figure out the problem by getting the **bug dump** and reviewing it. And if you can't puzzle it out, someone on the Elder Scrolls forums may be able to help.
-s* __Generating the Bugdump__
+* __Generating the Bugdump__
   * Easy method (usually works):
     * Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguments to dump all errors to "BashBugDump.log"
   * Manual method (if the Batch file doesn't work):
@@ -793,7 +793,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * Go to the Installers tab and activate "BSA Redirection" from the main context menu (right click on the main column header).
 
 == Mods Tab ===================================================================
-<img src="bash/images/WryeBash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
+<img src="bash/images/wryebash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
 
 === Mods List
 * __Sorting__
@@ -1287,7 +1287,7 @@ Balo provides a default "canonical" set of groups designed to reduce problems du
 * To tag a mod, include the line "Group: [Group Name]" in the description field of the mod. (E.g. "Group: Tweak+1".) The tag must be on a line by itself.
 
 == Bashed Patches =============================================================
-<img src="bash/images/WryeBash_05.png" width="686" height="492" style="border: 0;" alt="Bashed Patchers"></img>
+<img src="bash/images/wryebash_05.png" width="686" height="492" style="border: 0;" alt="Bashed Patchers"></img>
 A __Bashed Patch__ is a configurable, custom built patch. The patch can have multiple components, which you can choose and configure as you like. You can also have multiple patches (typically, you would have one patch per major set of load mods).
 
 === Patch Usage
@@ -2047,8 +2047,10 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * The drop down selection box chooses your target Ini file for applying the tweaks to.
   * __Remove__: Removes the target Ini from the drop down selection box.
   * __Edit__: Opens the target Ini file for editing.
-* __Valid Tweaks First:__ If checked, invalid tweaks will be sorted to the bottom.
+* __Sort by -&gt; Valid Tweaks First__: If checked, invalid tweaks will be sorted to the bottom.
+* __Allow Tweaks with New Lines__: If checked, tweak files that add new lines to the target will be considered valid.  Note that these tweaks will still have a grey background to distinguish their difference from tweak files containing only matching lines.
 * __Open:__ Opens the INI Tweaks directory.
+* __List Active INIs__: List all the applied INI tweaks you are using.
 
 === Tweak File Commands
 * __Apply:__ Applies the INI Tweak to Ovlivion.ini
@@ -2058,7 +2060,7 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Delete:__ Delete the tweak file.
 
 == Saves Tab ==================================================================
-<img src="bash/images/WryeBash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
+<img src="bash/images/wryebash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
 
 === Saves List
 * __Checkbox Colors__
@@ -2235,7 +2237,7 @@ These are the commands found on context menu for saves...
 * Repair Hair will check to see if your PC's hair has become lost, and if so, replace it with the default hair for that race/gender.
 
 == Face Import ================================================================
-<img src="bash/images/WryeBash_03.png" width="667" height="499" style="border: 0;" alt="Face Import from Esp"></img>
+<img src="bash/images/wryebash_03.png" width="667" height="499" style="border: 0;" alt="Face Import from Esp"></img>
 
 === Import to Save
 * __Procedure__
@@ -2278,7 +2280,7 @@ These are the commands found on context menu for saves...
   * ~~In short, Bash will only import eyes/hair if the eyes/hair come from an esm if the esp already has access (i.e., is dependent on) that esm.~~
 
 == Screenshots Tab ============================================================
-<img src="bash/images/WryeBash_06.png" width="686" height="493" style="border: 0;" alt="Screenshots Tab"></img>
+<img src="bash/images/wryebash_06.png" width="686" height="493" style="border: 0;" alt="Screenshots Tab"></img>
 This allows you to preview your screenshots.
 
 === Screenshots Commands
@@ -2297,7 +2299,7 @@ Right click on a screenshot to see these:
   * If file by new name already exists, then rename for that file will be skipped.
 
 == PM Archive Tab =============================================================
-<img src="bash/images/WryeBash_08.png" width="687" height="500" style="border: 0;" alt="Screenshots Tab"></img>
+<img src="bash/images/wryebash_08.png" width="687" height="500" style="border: 0;" alt="Screenshots Tab"></img>
 Archive, view, search PM's from the official forum. **Note:** This is fairly new and a bit experimental at this time (11/6/2007). It should be fairly safe, but I suggest that you keep a backup of any messages that you enter into this.
 
 === Import Archives
@@ -2466,7 +2468,7 @@ msgid "Argument is out"
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295.3 [X/XX/XXXX] [Lojack,bluesky404,PacificMorrowind]
+=== 295.3 [X/XX/2012] [Lojack,bluesky404,PacificMorrowind]
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
   * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
@@ -2499,7 +2501,14 @@ msgid "Argument is out"
 * Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
 * Other improvements:
   * New Simplified Chinese translation, provided by bluesky404.
-  * Minor [[#InstallersTab|BAIN]] tweaks: Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+  * [[#InstallersTab|BAIN]]:
+    * Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+    * New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
+  * [[#INIEditsTab|INI Edits]]:
+    * INI Tweaks can now add and remove new lines to target INI's.
+      * Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Obilvion, enabled by default for Skyrim).
+    * The syntax for denoting a line to be deleted is to prepend the line with ";-".
+    * BAIN Wizards can also create "deleted" INI Tweak lines, via the [[wizards.html#DisableINILine|[color=purple]DisableINILine[/color]]] command.
   * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
   * Better support for Mac Command button.
   * [[#INIEditsTab|INI Edits]]: 

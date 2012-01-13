@@ -1600,7 +1600,7 @@ class MreLeveledListBase(MelRecord):
           flags
     """
     _flags = bolt.Flags(0L,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
-    copAttrs = ()
+    copyAttrs = ()
     __slots__ = (MelRecord.__slots__ +
         ['mergeOverLast','mergeSources','items','delevs','relevs'])
 
@@ -1625,12 +1625,10 @@ class MreLeveledListBase(MelRecord):
             raise bolt.StateError(u'Fids not in long format')
         #--Relevel or not?
         if other.relevs:
-            self.chanceNone = other.chanceNone
             for attr in self.__class__.copyAttrs:
                 self.__setattr__(attr,other.__getattribute__(attr))
             self.flags = other.flags()
         else:
-            self.chanceNone = other.chanceNone or self.chanceNone
             for attr in self.__class__.copyAttrs:
                 self.__setattr__(attr,other.__getattribute__(attr) or
                                        self.__getattribute__(attr))
@@ -1652,10 +1650,7 @@ class MreLeveledListBase(MelRecord):
                 self.items |= newItems
                 self.entries.sort(key=attrgetter('listId','level','count'))
             #--Is merged list different from other? (And thus written to patch.)
-            if (self.chanceNone != other.chanceNone or
-                #self.flags != other.flags or
-                len(self.entries) != len(other.entries)
-                ):
+            if len(self.entries) != len(other.entries):
                 self.mergeOverLast = True
             else:
                 for attr in self.__class__.copyAttrs:

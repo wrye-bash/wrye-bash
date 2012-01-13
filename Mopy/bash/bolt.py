@@ -2628,10 +2628,10 @@ class StringTable(dict):
 
                 numIds,dataSize = insUnpack('=2I',4)
                 progress.setFull(max(numIds,1))
-                stringsStart = eof - dataSize
-                if stringsStart < 8 + (numIds*8):
-                    # 8 bytes numIds & dataSize, 8 bytes per Id entry
-                    return
+                stringsStart = 8 + (numIds*8)
+                if stringsStart != eof-dataSize:
+                    deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
+                            % (dataSize, eof-dataSize, stringsStart))
 
                 for x in xrange(numIds):
                     progress(x)

@@ -190,6 +190,22 @@ EditINI('TargetINI.ini', 'setGS', 'fPCBaseMagickaMult', 1)
   <pre>set ANVars.UseEW to 1
 setGS fPCBaseMagickaMult 1</pre>
 
+== DisableINILine
+Tells Wrye Bash to modify an INI file by disabling a specific line in it.  This is accomplished by prepending ";-" to that line.
+
+* __Usage__:
+  [codebox]RemoveINILine(file_name, section, setting)[/codebox]
+* __Arguments:__
+  * **file_name:** The name of the ini file you wish to edit, relative to the Data directory.
+  * **section:** The section of the ini where **setting** resides, or 'set' or 'setGS' (see [[#EditINI|[color=purple]EditINI[/color]]] Examples)
+  * **setting:** The setting to disable.
+
+* __Example:__
+  [codebox]DisableINILine('TargetINI.ini', 'General','bSetting')[/codebox]
+  .
+  <pre>[General]
+;-bSetting</pre>
+
 == Exec
 This will cause the Wizard to execute lines that are passed to it.  This is usefull for creating dynamically generated menus.
 

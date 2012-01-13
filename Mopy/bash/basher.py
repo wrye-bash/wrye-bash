@@ -407,6 +407,7 @@ settingDefaults = {
     'bash.installers.fastStart': True,
     'bash.installers.autoRefreshBethsoft': False,
     'bash.installers.autoRefreshProjects': True,
+    'bash.installers.autoApplyEmbeddedBCFs': True,
     'bash.installers.removeEmptyDirs':True,
     'bash.installers.skipScreenshots':False,
     'bash.installers.skipImages':False,
@@ -441,6 +442,7 @@ settingDefaults = {
     'bash.ini.colAligns': {},
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
+    'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
     'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Mod Status'],
     'bash.mods.esmsFirst': 1,
@@ -1425,7 +1427,7 @@ class INIList(List):
         tweaks.sort()
         for tweak in tweaks:
             if not self.data[tweak].status == 20: continue
-            tweaklist+= tweak + u'\n'
+            tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
@@ -1486,7 +1488,8 @@ class INIList(List):
             mousetext = _(u'Some settings are changed.')
         elif status == -10:
             # Bad tweak
-            icon = 20
+            if not settings['bash.ini.allowNewLines']: icon = 20
+            else: icon = 0
             mousetext = _(u'Tweak is invalid')
         self.mouseTexts[itemDex] = mousetext
         self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
@@ -1621,15 +1624,18 @@ class INITweakLineCtrl(wx.ListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            if line[4] == -10: color = colors['tweak.bkgd.invalid']
-            elif line[4] == 10: color = colors['tweak.bkgd.mismatched']
-            elif line[4] == 20: color = colors['tweak.bkgd.matched']
+            status = line[4]
+            if status == -10: color = colors['tweak.bkgd.invalid']
+            elif status == 10: color = colors['tweak.bkgd.mismatched']
+            elif status == 20: color = colors['tweak.bkgd.matched']
+            elif line[6]: color = colors['tweak.bkgd.mismatched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
-            if line[5] != -1:
-                self.iniContents.SetItemBackgroundColour(line[5],color)
-                updated.append(line[5])
+            lineNo = line[5]
+            if lineNo != -1:
+                self.iniContents.SetItemBackgroundColour(lineNo,color)
+                updated.append(lineNo)
         #--Delete extra lines
         for i in range(len(self.tweakLines),num):
             self.DeleteItem(len(self.tweakLines))
@@ -8486,6 +8492,20 @@ class Installers_AutoRefreshProjects(BoolLink):
                           )
 
 #------------------------------------------------------------------------------
+class Installers_AutoApplyEmbeddedBCFs(BoolLink):
+    """Toggle autoApplyEmbeddedBCFs setting and update."""
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _(u'Auto-Apply Embedded BCFs'),
+                          'bash.installers.autoApplyEmbeddedBCFs',
+                          _(u'If enabled, embedded BCFs will automatically be applied to archives.')
+                          )
+
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        gInstallers.OnShow()
+
+#------------------------------------------------------------------------------
 class Installers_AutoRefreshBethsoft(BoolLink):
     """Toggle refreshVanilla setting and update."""
     def __init__(self): BoolLink.__init__(self,
@@ -10184,6 +10204,43 @@ class InstallerConverter_Apply(InstallerLink):
             self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
+class InstallerConverter_ApplyEmbedded(InstallerLink):
+    def AppendToMenu(self,menu,window,data):
+        InstallerLink.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Embedded BCF'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        name = self.selected[0]
+        archive = self.data[name]
+
+        #--Ask for an output filename
+        destArchive = balt.askText(self.gTank,_(u'Output file:'),_(u'Apply BCF...'),name.stail)
+        destArchive = (destArchive if destArchive else u'').strip()
+        if not destArchive: return
+        destArchive = GPath(destArchive)
+
+        #--Error checking
+        if not destArchive.s:
+            balt.ShowWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            return
+        if destArchive.cext not in bosh.writeExts:
+            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defatulExt))
+            destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
+        if destArchive in self.data:
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,_(u'Apply BCF...'),False):
+                return
+
+        with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
+            self.data.applyEmbeddedBCFs([archive],[destArchive],progress)
+            iArchive = self.data[destArchive]
+            if iArchive.order == -1:
+                lastInstaller = self.data[self.selected[-1]]
+                self.data.moveArchives([destArchive],lastInstaller.order+1)
+            self.data.refresh(what='I')
+            self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     def AppendToMenu(self,menu,window,data):
@@ -10192,7 +10249,8 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
-        selectedCRCs = set(window.data[archive].crc for archive in window.GetSelected())
+        selected = window.GetSelected()
+        selectedCRCs = set(window.data[archive].crc for archive in selected)
         crcInstallers = set(window.data.crc_installer)
         srcCRCs = set(window.data.srcCRC_converters)
         #--There is no point in testing each converter unless
@@ -10206,18 +10264,21 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
 ##            for installerCRC in selectedCRCs:
 ##                for converter in window.data.srcCRC_converters[installerCRC]:
 ##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
+        #--If the archive is a single archive with an embedded BCF, add that
+        if len(selected) == 1 and window.data[selected[0]].hasBCF:
+            newMenu = InstallerConverter_ApplyEmbedded()
+            newMenu.AppendToMenu(subMenu,window,data)
         #--Disable the menu if there were no valid converters found
-        if not linkSet:
+        elif not linkSet:
             id = menu.FindItem(self.name)
             menu.Enable(id,False)
-        else:
-            #--Otherwise add each link in alphabetical order, and
-            #--indicate the number of additional, unselected archives
-            #--that the converter requires
-            for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
-                numAsterisks = len(converter.srcCRCs - selectedCRCs)
-                newMenu = InstallerConverter_Apply(converter,numAsterisks)
-                newMenu.AppendToMenu(subMenu,window,data)
+        #--Otherwise add each link in alphabetical order, and
+        #--indicate the number of additional, unselected archives
+        #--that the converter requires
+        for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
+            numAsterisks = len(converter.srcCRCs - selectedCRCs)
+            newMenu = InstallerConverter_Apply(converter,numAsterisks)
+            newMenu.AppendToMenu(subMenu,window,data)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_Create(InstallerLink):
@@ -10486,6 +10547,19 @@ class INI_SortValid(BoolLink):
         iniList.RefreshUI()
 
 #-------------------------------------------------------------------------------
+class INI_AllowNewLines(BoolLink):
+    """Consider INI Tweaks with new lines valid."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _(u'Allow Tweaks with New Lines'),
+                                          'bash.ini.allowNewLines',
+                                          _(u'Tweak files with new lines are considered valid..')
+                                          )
+
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        iniList.RefreshUI()
+
+#-------------------------------------------------------------------------------
 class INI_ListINIs(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
@@ -10538,11 +10612,12 @@ class INI_Apply(Link):
         menuItem = wx.MenuItem(menu,self.id,_(u'Apply'),_(u"Applies '%s' to '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
 
-        for i in data:
-            iniInfo = bosh.iniInfos[i]
-            if iniInfo.status < 0:
-                menuItem.Enable(False)
-                return
+        if not settings['bash.ini.allowNewLines']:
+            for i in data:
+                iniInfo = bosh.iniInfos[i]
+                if iniInfo.status < 0:
+                    menuItem.Enable(False) # temp disabled for testing
+                    return
 
     def Execute(self,event):
         """Handle applying INI Tweaks."""
@@ -17370,6 +17445,7 @@ def InitInstallerLinks():
         InstallersPanel.mainMenu.append(Installers_AutoWizard())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshProjects())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshBethsoft())
+    InstallersPanel.mainMenu.append(Installers_AutoApplyEmbeddedBCFs())
     InstallersPanel.mainMenu.append(Installers_BsaRedirection())
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
@@ -17468,6 +17544,7 @@ def InitINILinks():
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
     INIList.mainMenu.append(SeparatorLink())
+    INIList.mainMenu.append(INI_AllowNewLines())
     INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(INI_ListINIs())
 
