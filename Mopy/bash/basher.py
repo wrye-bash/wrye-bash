@@ -442,6 +442,7 @@ settingDefaults = {
     'bash.ini.colAligns': {},
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
+    'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
     'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Mod Status'],
     'bash.mods.esmsFirst': 1,
@@ -1428,7 +1429,7 @@ class INIList(List):
         tweaks.sort()
         for tweak in tweaks:
             if not self.data[tweak].status == 20: continue
-            tweaklist+= tweak + u'\n'
+            tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
@@ -1489,7 +1490,8 @@ class INIList(List):
             mousetext = _(u'Some settings are changed.')
         elif status == -10:
             # Bad tweak
-            icon = 20
+            if not settings['bash.ini.allowNewLines']: icon = 20
+            else: icon = 0
             mousetext = _(u'Tweak is invalid')
         self.mouseTexts[itemDex] = mousetext
         self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
@@ -1624,15 +1626,18 @@ class INITweakLineCtrl(wx.ListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            if line[4] == -10: color = colors['tweak.bkgd.invalid']
-            elif line[4] == 10: color = colors['tweak.bkgd.mismatched']
-            elif line[4] == 20: color = colors['tweak.bkgd.matched']
+            status = line[4]
+            if status == -10: color = colors['tweak.bkgd.invalid']
+            elif status == 10: color = colors['tweak.bkgd.mismatched']
+            elif status == 20: color = colors['tweak.bkgd.matched']
+            elif line[6]: color = colors['tweak.bkgd.mismatched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
-            if line[5] != -1:
-                self.iniContents.SetItemBackgroundColour(line[5],color)
-                updated.append(line[5])
+            lineNo = line[5]
+            if lineNo != -1:
+                self.iniContents.SetItemBackgroundColour(lineNo,color)
+                updated.append(lineNo)
         #--Delete extra lines
         for i in range(len(self.tweakLines),num):
             self.DeleteItem(len(self.tweakLines))
@@ -10649,6 +10654,19 @@ class INI_SortValid(BoolLink):
         iniList.RefreshUI()
 
 #-------------------------------------------------------------------------------
+class INI_AllowNewLines(BoolLink):
+    """Consider INI Tweaks with new lines valid."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _(u'Allow Tweaks with New Lines'),
+                                          'bash.ini.allowNewLines',
+                                          _(u'Tweak files with new lines are considered valid..')
+                                          )
+
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        iniList.RefreshUI()
+
+#-------------------------------------------------------------------------------
 class INI_ListINIs(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
@@ -10701,11 +10719,12 @@ class INI_Apply(Link):
         menuItem = wx.MenuItem(menu,self.id,_(u'Apply'),_(u"Applies '%s' to '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
 
-        for i in data:
-            iniInfo = bosh.iniInfos[i]
-            if iniInfo.status < 0:
-                menuItem.Enable(False)
-                return
+        if not settings['bash.ini.allowNewLines']:
+            for i in data:
+                iniInfo = bosh.iniInfos[i]
+                if iniInfo.status < 0:
+                    menuItem.Enable(False) # temp disabled for testing
+                    return
 
     def Execute(self,event):
         """Handle applying INI Tweaks."""
@@ -17654,6 +17673,7 @@ def InitINILinks():
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
     INIList.mainMenu.append(SeparatorLink())
+    INIList.mainMenu.append(INI_AllowNewLines())
     INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(INI_ListINIs())
 

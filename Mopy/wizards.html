@@ -1,4 +1,4 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
@@ -58,6 +58,7 @@
 <p class="list-2">&bull;&nbsp; <a href="#DataFileExists">DataFileExists</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#GetEspmStatus">GetEspmStatus</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#EditINI">EditINI</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DisableINILine">DisableINILine</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#Exec">Exec</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#str">str</a></p>
 <p class="list-2">&bull;&nbsp; <a href="#int">int</a></p>
@@ -458,9 +459,29 @@ bBorderRegionsEnabled=0</pre>
   <p class="list-2">&bull;&nbsp;  <i><b>Setting an item in a script-like ini:</b></i>  Notice the use of <i><b>set</b></i> and <i><b>setGS</b></i> as the sections.</p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'TargetINI.ini'</span>, <span style="color:brown;">'set'</span>, <span style="color:brown;">'ANVars.UseEW'</span>, <span style="color:cyan;">1</span>)</span>
 <span class="code-n" style="display: inline;"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'TargetINI.ini'</span>, <span style="color:brown;">'setGS'</span>, <span style="color:brown;">'fPCBaseMagickaMult'</span>, <span style="color:cyan;">1</span>)</span>
-</pre>  <p class="list-2">&nbsp;&nbsp; </p>
+</pre>
+  <p class="list-2">&nbsp;&nbsp; </p>
   <pre>set ANVars.UseEW to 1
 setGS fPCBaseMagickaMult 1</pre>
+  <p class="empty">&nbsp;</p>
+<h2><a id='DisableINILine'>DisableINILine</a></h2>
+<p>Tells Wrye Bash to modify an INI file by disabling a specific line in it.  This is accomplished by prepending ";-" to that line.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage</b>:</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>RemoveINILine</i>(<i>file_name</i>, <i>section</i>, <i>setting</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>file_name:</b></i> The name of the ini file you wish to edit, relative to the Data directory.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>section:</b></i> The section of the ini where <i><b>setting</b></i> resides, or 'set' or 'setGS' (see <a href="#EditINI"><span style="color:purple;">EditINI</span></a> Examples)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>setting:</b></i> The setting to disable.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Example:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DisableINILine"><span style="color:purple;">DisableINILine</span></a>(<span style="color:brown;">'TargetINI.ini'</span>, <span style="color:brown;">'General'</span>,<span style="color:brown;">'bSetting'</span>)</span>
+</pre>
+  <p class="list-2">&nbsp;&nbsp; </p>
+  <pre>[General]
+;-bSetting</pre>
   <p class="empty">&nbsp;</p>
 <h2><a id='Exec'>Exec</a></h2>
 <p>This will cause the Wizard to execute lines that are passed to it.  This is usefull for creating dynamically generated menus.
@@ -484,7 +505,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;">    <a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">'Why don\'t you like icecream?'</span></span>
 <span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
-</pre>  <p class="list-2">&bull;&nbsp;  Notice how the <b>\\\'</b> was interpreted as <b>\'</b> once the <span style="color:purple;">Exec</span> was converted into lines.  Remember to add two extra backslashes so the final statement has a backslash in it!</p>
+</pre>
+  <p class="list-2">&bull;&nbsp;  Notice how the <b>\\\'</b> was interpreted as <b>\'</b> once the <span style="color:purple;">Exec</span> was converted into lines.  Remember to add two extra backslashes so the final statement has a backslash in it!</p>
   <p class="empty">&nbsp;</p>
 <h2><a id='str'>str</a></h2>
 <p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
@@ -624,7 +646,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<span style="color:brown;">"C:\Program Files\Bethesda Softworks\Oblivion\Oblivion.exe"</span>) <i>would</i> <i>return</i>  <span style="color:brown;">"Oblivion.exe"</span></span>
 <span class="code-n" style="display: inline;"><a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<span style="color:brown;">"C:\Program Files\Bethesda Softworks\Oblivion"</span>) <i>would</i> <i>return</i> <i>an</i> <i>empty</i> <i>string</i></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h2><a id='GetFolder'>GetFolder</a></h2>
 <p>For a string that contains a path, returns the folder part of the string.
 </p>
@@ -639,7 +662,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<span style="color:brown;">"Data\mine.esp"</span>) <i>would</i> <i>return</i> <span style="color:brown;">"Data"</span></span>
 <span class="code-n" style="display: inline;"><a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<span style="color:brown;">"mine.esp"</span>) <i>would</i> <i>return</i> <i>an</i> <i>empty</i> <i>string</i></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h1><a id='Keywords'>Keywords</a></h1>
 <p class="empty">&nbsp;</p>
 <p>Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.  As of version 292: arguments must be separated by commas.
@@ -771,7 +795,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><a href="#Else"><span style="color:blue;">Else</span></a></span>
 <span class="code-n" style="display: inline;">   <i>lines</i></span>
 <span class="code-n" style="display: inline;"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span>
-</pre>  <p class="empty">&nbsp;</p>
+</pre>
+  <p class="empty">&nbsp;</p>
 <h3><a id='If'>If</a></h3>
 <p class="list-1">&bull;&nbsp;  A begins the control block.</p>
 <p class="list-1">&bull;&nbsp;  If <i><b>statement</b></i> evaluates to <i><b>True</b></i>, then the lines following it will be run, until the next <b>Elif</b>, <b>Else</b>, or <b>EndIf</b>.</p>
@@ -798,7 +823,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
 <span class="code-n" style="display: inline;">    <i>lines</i></span>
 <span class="code-n" style="display: inline;"><a href="#EndWhile"><span style="color:blue;">EndWhile</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h3><a id='While'>While</a></h3>
 <p class="list-1">&bull;&nbsp;  Begins the while loop.</p>
 <p class="list-1">&bull;&nbsp;  If <i><b>statement</b></i> evaluates to <i><b>True</b></i>, execution of the lines begins, otherwise execution skips to after the <b>EndWhile</b>.</p>
@@ -842,7 +868,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;">        <i>lines</i></span>
 <span class="code-n" style="display: inline;">    <a href="#EndFor"><span style="color:blue;">EndFor</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#EndFor"><span style="color:blue;">EndFor</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h3><a id='For'>For</a></h3>
 <p class="list-1">&bull;&nbsp;  Begins the for loop.</p>
 <p class="empty">&nbsp;</p>
@@ -876,7 +903,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;">    <i>lines</i></span>
 <span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>description:</b></i> The text that will be displayed at the top of the dialog.  </p>
   <p class="list-2">&bull;&nbsp;  <i><b>option n:</b></i> The text of the specific option. If the text begins with a "|", this is considered the default option and will be selected by default.</p>
@@ -948,7 +976,8 @@ setGS fPCBaseMagickaMult 1</pre>
 </p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span>
 <span class="code-n" style="display: inline;"><i>variable1</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>variable2</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>variable3</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span>
-</pre>  <p class="empty">&nbsp;</p>
+</pre>
+  <p class="empty">&nbsp;</p>
 <h3><a id='Assignment'>Assignment (=)</a></h3>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span>
 </pre>
@@ -959,7 +988,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>variable</i> <a href="#CompountAssignmentetc"><span style="color:black;">+=</span></a> <i>value</i></span>
 <span class="code-n" style="display: inline;"><i>variable</i> <a href="#CompountAssignmentetc"><span style="color:black;">-=</span></a> <i>value</i></span>
 <span class="code-n" style="display: inline;"><i>variable</i> <a href="#CompountAssignmentetc"><span style="color:black;">*=</span></a> <i>value</i></span>
-</pre>  <p class="empty">&nbsp;</p>
+</pre>
+  <p class="empty">&nbsp;</p>
 <h2><a id='MathOperators'>Math Operators</a></h2>
   <p class="empty">&nbsp;</p>
 <h3><a id='Addition'>Addition (+)</a></h3>
@@ -990,7 +1020,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Andampand"><span style="color:black;">&amp;</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#Andampand"><span style="color:blue;">and</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if both <i><b>left</b></i> and <i><b>right</b></i> are <i><b>True</b></i>.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -998,7 +1029,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Oror"><span style="color:black;">|</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#Oror"><span style="color:blue;">or</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if either <i><b>left</b></i> or <i><b>right</b></i> is <i><b>True</b></i>.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if neither <i><b>left</b></i> nor <i><b>right</b></i> is <i><b>True</b></i>.</p>
   <p class="empty">&nbsp;</p>
@@ -1006,7 +1038,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Notnot"><span style="color:black;">!</span></a><i>value</i></span>
 <span class="code-n" style="display: inline;"><a href="#Notnot"><span style="color:blue;">not</span></a> <i>value</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if value is <i><b>False</b></i>.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if value is <i><b>True</b></i>.</p>
   <p class="empty">&nbsp;</p>
@@ -1015,7 +1048,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Inin"><span style="color:blue;">in</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveInin"><span style="color:blue;">in:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is contained in right.  For example <b>'hi' in 'this'</b> would return <i><b>True</b></i>.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -1028,7 +1062,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Equal"><span style="color:black;">==</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseinsensitiveEqual"><span style="color:black;">==:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is equal to right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -1037,7 +1072,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#NotEqual"><span style="color:black;">!=</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseinsensitiveNotEqual"><span style="color:black;">!=:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left does not equal right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -1046,7 +1082,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#GreaterThanorEqualgt"><span style="color:black;">&gt;=</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveGreaterThanorEqualgt"><span style="color:black;">&gt;=:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is greater than or equal to right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -1055,7 +1092,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#GreaterThangt"><span style="color:black;">&gt;</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveGreaterThangt"><span style="color:black;">&gt;:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is greater than right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -1064,7 +1102,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#LessThanorEquallt"><span style="color:black;">&lt;=</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveLessThanorEquallt"><span style="color:black;">&lt;=:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is less than or equal to right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
   <p class="empty">&nbsp;</p>
@@ -1073,7 +1112,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#LessThanlt"><span style="color:black;">&lt;</span></a> <i>right</i></span>
 <span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveLessThanlt"><span style="color:black;">&lt;:</span></a> <i>right</i></span>
-</pre><p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
   <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is less than right.</p>
   <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise</p>
   <p class="empty">&nbsp;</p>
@@ -1088,7 +1128,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><a href="#CaseInsensitiveLessThanorEquallt"><span style="color:black;">&lt;=:</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#CaseInsensitiveLessThanlt"><span style="color:black;">&lt;:</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#CaseInsensitiveInin"><span style="color:blue;">in:</span></a></span>
-</pre>  <p class="empty">&nbsp;</p>
+</pre>
+  <p class="empty">&nbsp;</p>
 <h2><a id='DotOperator'>Dot Operator</a></h2>
 <p>Some functions can be accesed in an easier way, using the dot operator (.)  When accessed in this method, rather than specifying the first argument, the item to the left of the dot operator will be used.  The following functions can be called in this way:
 </p>
@@ -1099,7 +1140,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><a href="#lower"><span style="color:purple;">lower</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#find"><span style="color:purple;">find</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#rfind"><span style="color:purple;">rfind</span></a></span>
-</pre>  <p class="empty">&nbsp;</p>
+</pre>
+  <p class="empty">&nbsp;</p>
 <h2><a id='Indexing'>Indexing</a></h2>
 <p>Indexing is used to access specific parts of a sequence like item.  Currently, only strings and string variables can be indexed.  If you are familiar with Python's indexing syntax, then this will be familiar to you.
 </p>
@@ -1120,7 +1162,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<a href="#Subtraction"><span style="color:black;">-</span></a><span style="color:cyan;">1</span>]  <i>returns</i> <span style="color:brown;">"o"</span></span>
 <span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<span style="color:cyan;">1</span>:<span style="color:cyan;">3</span>] <i>returns</i> <span style="color:brown;">"el"</span></span>
 <span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<a href="#Subtraction"><span style="color:black;">-</span></a><span style="color:cyan;">2</span>:] <i>returns</i> <span style="color:brown;">"lo"</span></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h1><a id='BuiltinConstants'>Built-in Constants</a></h1>
 <p>There are only a few constants that come defined in BAIN wizards.
 </p>
@@ -1171,7 +1214,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;">    <span style="color:brown;">"Credits\\Authors"</span>, <span style="color:brown;">"Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud."</span>,<span style="color:brown;"> ""</span>, \</span>
 <span class="code-n" style="display: inline;">    <span style="color:brown;">"Language"</span>, <span style="color:brown;">"Language or Nationality this BAIN wizard was written in. \n\n English (USA)"</span>, <span style="color:brown;">"Wizard Images\\EnglishUSA.jpg"</span></span>
 <span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h2><a id='YesNoQuestion'>Yes/No Question?</a></h2>
 <p class="list-1">&bull;&nbsp;  Lets say that you want to ask the user a Yes or No question whether to install a feature of your mod.</p>
 <p class="list-1">&bull;&nbsp;  <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> in the following example could be replaced by many other <a href="#Keywords">Keywords</a>.</p>
@@ -1186,7 +1230,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><span style="color:green;">        ;No Plugin ;;Action/No Action</span></span>
 <span class="code-n" style="display: inline;">        <a href="#Break"><span style="color:blue;">Break</span></a></span>
 <span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h2><a id='CheckforaPlugin'>Check for a Plugin</a></h2>
 <p class="list-1">&bull;&nbsp;  Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.</p>
 <pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<span style="color:brown;">"ExamplePlugin.esp"</span>)</span>
@@ -1195,7 +1240,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><a href="#Else"><span style="color:blue;">Else</span></a><span style="color:green;"> ; ExamplePlugin.esp wasn't detected</span></span>
 <span class="code-n" style="display: inline;"><span style="color:green;">    ;No Plugin                     ;;;Action/No Action</span></span>
 <span class="code-n" style="display: inline;"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h2><a id='UseSVNfeaturessafely'>Use SVN features safely</a></h2>
 <p class="list-1">&bull;&nbsp;  You're spruicing up your wizard with some fancy new features that are only availible in the SVN.  How will you make sure that your wizard still works for people with the official release?</p>
 <p class="list-1">&bull;&nbsp;  Enclose the 'SVN only' code in a version check.</p>
@@ -1207,7 +1253,8 @@ setGS fPCBaseMagickaMult 1</pre>
 <span class="code-n" style="display: inline;"><span style="color:green;">    ; User is running &lt; 292, so EditINI is unavailable.</span></span>
 <span class="code-n" style="display: inline;">    <a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">"Don't forget to enable screenshots in Oblivion.ini"</span></span>
 <span class="code-n" style="display: inline;"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span>
-</pre><p class="empty">&nbsp;</p>
+</pre>
+<p class="empty">&nbsp;</p>
 <h2><a id='ModswithWizards'>Mods with Wizards</a></h2>
 <p class="list-1">&bull;&nbsp;  This is a list of some mods that have wizards included with them if you would like to look at them for reference.</p>
   <p class="list-2">&bull;&nbsp;  <a href="http://www.tesnexus.com/downloads/file.php?id=19628">Animated Window Lighting System and Chimneys - AWLS</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=31062">Bain Conversion Files</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=16513">Bananasplit Better Cities</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=36005">Fast and Easy Frans WIZBAIN Archive Maker -ENGLISH ONLY-</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=35856">Metallicow Cursor Mod</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=19370">Unique Landscapes Compilation</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=18305">Weather - All Natural</a></p>

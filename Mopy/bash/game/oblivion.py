@@ -93,6 +93,12 @@ class laa:
     exe = u'**DNE**'     # Executable to run
     launchesSE = False  # Whether the launcher will automatically launch the SE as well
 
+#--Some stuff dealing with INI files
+class ini:
+    #--True means new lines are allowed to be added via INI Tweaks
+    #  (by default)
+    allowNewLines = False
+
 #--Save Game format stuff
 class ess:
     # Save file capabilities
