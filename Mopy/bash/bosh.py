@@ -3595,12 +3595,12 @@ class OblivionIni(IniFile):
         srcPath = dirs['app'].join(u'%s_default.ini' % bush.game.name)
         srcPath.copyTo(self.path)
 
-    def saveSettings(self,settings):
+    def saveSettings(self,settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
         self.ensureExists()
-        IniFile.saveSettings(self,settings)
+        IniFile.saveSettings(self,settings,deleted_settings)
 
     def applyTweakFile(self,tweakPath):
         """Read Ini tweak file and apply its settings to oblivion.ini.
