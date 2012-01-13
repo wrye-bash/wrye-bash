@@ -13569,8 +13569,9 @@ class Mod_Patch_Update(Link):
             balt.showWarning(self.window,
                              (_(u'That which does not exist cannot be patched.')
                               + u'\n' +
-                              _(u'Load some mods and try again.'),
-                              _(u'Existential Error')))
+                              _(u'Load some mods and try again.')
+                              ),
+                              _(u'Existential Error'))
             return
         # Verify they want to build a previous Python patch in CBash mode, or vice versa
         if self.doCBash and not balt.askContinue(self.window,
