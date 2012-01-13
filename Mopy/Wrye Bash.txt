@@ -23,7 +23,7 @@ In particular, see:
 * [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Advanced|Wrye Bash Advanced FAQs]]: Overviews of using advanced Bash features.
 
 == Quick Tour
-<img src="bash/images/WryeBash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
+<img src="bash/images/wryebash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
 
 * At the top are the main tabs: [[#InstallersTab|Installers]], [[#ModsTab|Mods]], [[#INIEditsTab|INI Edits]] [[#SavesTab|Saves]] and [[#ScreenshotsTab|Screenshots]].
 * The __savegame list__ is the main feature of this Saves Tab. For each file, details are shown and general "health" of the savegame is indicated by the color of the savegame's checkbox. Purple is best -- totally safe to play. Red is worst -- meaning that one of the master mods files is missing.
@@ -793,7 +793,7 @@ If you're currently using the Textures BSA facility, you should switch to using 
 * Go to the Installers tab and activate "BSA Redirection" from the main context menu (right click on the main column header).
 
 == Mods Tab ===================================================================
-<img src="bash/images/WryeBash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
+<img src="bash/images/wryebash_01.png" width="829" height="500" style="border: 0;" alt="Mods Tab"></img>
 
 === Mods List
 * __Sorting__
@@ -1287,7 +1287,7 @@ Balo provides a default "canonical" set of groups designed to reduce problems du
 * To tag a mod, include the line "Group: [Group Name]" in the description field of the mod. (E.g. "Group: Tweak+1".) The tag must be on a line by itself.
 
 == Bashed Patches =============================================================
-<img src="bash/images/WryeBash_05.png" width="686" height="492" style="border: 0;" alt="Bashed Patchers"></img>
+<img src="bash/images/wryebash_05.png" width="686" height="492" style="border: 0;" alt="Bashed Patchers"></img>
 A __Bashed Patch__ is a configurable, custom built patch. The patch can have multiple components, which you can choose and configure as you like. You can also have multiple patches (typically, you would have one patch per major set of load mods).
 
 === Patch Usage
@@ -2060,7 +2060,7 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __Delete:__ Delete the tweak file.
 
 == Saves Tab ==================================================================
-<img src="bash/images/WryeBash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
+<img src="bash/images/wryebash_04.png" width="686" height="527" style="border: 0;" alt="Saves Tab" />
 
 === Saves List
 * __Checkbox Colors__
@@ -2237,7 +2237,7 @@ These are the commands found on context menu for saves...
 * Repair Hair will check to see if your PC's hair has become lost, and if so, replace it with the default hair for that race/gender.
 
 == Face Import ================================================================
-<img src="bash/images/WryeBash_03.png" width="667" height="499" style="border: 0;" alt="Face Import from Esp"></img>
+<img src="bash/images/wryebash_03.png" width="667" height="499" style="border: 0;" alt="Face Import from Esp"></img>
 
 === Import to Save
 * __Procedure__
@@ -2280,7 +2280,7 @@ These are the commands found on context menu for saves...
   * ~~In short, Bash will only import eyes/hair if the eyes/hair come from an esm if the esp already has access (i.e., is dependent on) that esm.~~
 
 == Screenshots Tab ============================================================
-<img src="bash/images/WryeBash_06.png" width="686" height="493" style="border: 0;" alt="Screenshots Tab"></img>
+<img src="bash/images/wryebash_06.png" width="686" height="493" style="border: 0;" alt="Screenshots Tab"></img>
 This allows you to preview your screenshots.
 
 === Screenshots Commands
@@ -2299,7 +2299,7 @@ Right click on a screenshot to see these:
   * If file by new name already exists, then rename for that file will be skipped.
 
 == PM Archive Tab =============================================================
-<img src="bash/images/WryeBash_08.png" width="687" height="500" style="border: 0;" alt="Screenshots Tab"></img>
+<img src="bash/images/wryebash_08.png" width="687" height="500" style="border: 0;" alt="Screenshots Tab"></img>
 Archive, view, search PM's from the official forum. **Note:** This is fairly new and a bit experimental at this time (11/6/2007). It should be fairly safe, but I suggest that you keep a backup of any messages that you enter into this.
 
 === Import Archives
