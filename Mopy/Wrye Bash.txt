@@ -167,7 +167,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * **If Bash refuses to start, or quits after quickly flashing up a window...**
   * Most likely there is a problem with your setup. Alternatively there may be a bug with Bash.
   * You can usually figure out the problem by getting the **bug dump** and reviewing it. And if you can't puzzle it out, someone on the Elder Scrolls forums may be able to help.
-s* __Generating the Bugdump__
+* __Generating the Bugdump__
   * Easy method (usually works):
     * Run "Wrye Bash Debug.bat".  This batch file will locate your Python install, then launch Wrye Bash with the appropriate arguments to dump all errors to "BashBugDump.log"
   * Manual method (if the Batch file doesn't work):
@@ -2047,8 +2047,10 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * The drop down selection box chooses your target Ini file for applying the tweaks to.
   * __Remove__: Removes the target Ini from the drop down selection box.
   * __Edit__: Opens the target Ini file for editing.
-* __Valid Tweaks First:__ If checked, invalid tweaks will be sorted to the bottom.
+* __Sort by -&gt; Valid Tweaks First__: If checked, invalid tweaks will be sorted to the bottom.
+* __Allow Tweaks with New Lines__: If checked, tweak files that add new lines to the target will be considered valid.  Note that these tweaks will still have a grey background to distinguish their difference from tweak files containing only matching lines.
 * __Open:__ Opens the INI Tweaks directory.
+* __List Active INIs__: List all the applied INI tweaks you are using.
 
 === Tweak File Commands
 * __Apply:__ Applies the INI Tweak to Ovlivion.ini
@@ -2466,10 +2468,10 @@ msgid "Argument is out"
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 296 [XX/X/2011]
+=== 296 [XX/X/2012]
 * CBash updated to version 0.6
 
-=== 295.3 [X/XX/XXXX] [Lojack,bluesky404,PacificMorrowind]
+=== 295.3 [X/XX/2012] [Lojack,bluesky404,PacificMorrowind]
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
   * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
@@ -2502,7 +2504,14 @@ msgid "Argument is out"
 * Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
 * Other improvements:
   * New Simplified Chinese translation, provided by bluesky404.
-  * Minor [[#InstallersTab|BAIN]] tweaks: Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+  * [[#InstallersTab|BAIN]]:
+    * Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+    * New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
+  * [[#INIEditsTab|INI Edits]]:
+    * INI Tweaks can now add and remove new lines to target INI's.
+      * Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Obilvion, enabled by default for Skyrim).
+    * The syntax for denoting a line to be deleted is to prepend the line with ";-".
+    * BAIN Wizards can also create "deleted" INI Tweak lines, via the [[wizards.html#DisableINILine|[color=purple]DisableINILine[/color]]] command.
   * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
   * Better support for Mac Command button.
   * [[#INIEditsTab|INI Edits]]: 

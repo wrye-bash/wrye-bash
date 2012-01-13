@@ -92,6 +92,12 @@ class laa:
     exe = u'**DNE**'
     launchesSE = False
 
+#--Some stuff dealing with INI files
+class ini:
+    #--True means new lines are allowed to be added via INI Tweaks
+    #  (by default)
+    allowNewLines = True
+
 #--Save Game format stuff
 class ess:
     # Save file capabilities
