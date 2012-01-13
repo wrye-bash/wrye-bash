@@ -12393,7 +12393,7 @@ class CBash_ScriptText:
                         lines = text.readlines()
                     if not lines: continue
                     modName,formID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
-                    scriptText = u''.join(lines[3:]).
+                    scriptText = u''.join(lines[3:])
                     eid_data[IUNICODE(eid)] = (IUNICODE(scriptText), formID) #script text is case insensitive
         if eid_data: return True
         return False
