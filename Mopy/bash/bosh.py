@@ -3281,6 +3281,13 @@ class IniFile(object):
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-'+line
                     tmpFile.write(line)
+                # Add remaining new entries
+                for section in ini_settings:
+                    if ini_settings[section]:
+                        tmpFile.write(u'\n')
+                        tmpFile.write(u'[%s]\n' % section)
+                        for setting in ini_settings[section]:
+                            tmpFile.write(ini_settings[section][setting])
         #--Done
         self.path.untemp()
 
