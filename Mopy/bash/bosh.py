@@ -12260,11 +12260,11 @@ class ScriptText:
                     with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
                     try:
-                        modName,FormID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
+                        modName,FormID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
                     except:
                         deprint(_(u"%s has malformed script header lines - was skipped") % name)
                         continue
-                    scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs reads\writes EOLs in \r\n format.
+                    scriptText = u''.join(lines[3:])
                     eid_data[eid] = (scriptText, FormID)
         if eid_data: return True
         return False
@@ -12392,8 +12392,8 @@ class CBash_ScriptText:
                     with root.join(name).open('r',encoding='utf-8-sig') as text:
                         lines = text.readlines()
                     if not lines: continue
-                    modName,formID,eid = lines[0][1:-1],lines[1][1:-1],lines[2][1:-1]
-                    scriptText = u''.join(lines[3:]).replace(u'\n',u'\r\n') #because the cs writes it in \r\n format.
+                    modName,formID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
+                    scriptText = u''.join(lines[3:]).
                     eid_data[IUNICODE(eid)] = (IUNICODE(scriptText), formID) #script text is case insensitive
         if eid_data: return True
         return False
