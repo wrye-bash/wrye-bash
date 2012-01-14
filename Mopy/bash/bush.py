@@ -81,8 +81,8 @@ def detectGames(workingDir=u''):
     del pkgutil
     del _game
     deprint(u'Detected the following supported games via Windows Registry:')
-    for name in foundGames:
-        deprint(u' %s:' % name, foundGames[name])
+    for foundName in foundGames:
+        deprint(u' %s:' % foundName, foundGames[foundName])
     #--Second: Detect what game is installed on directory up from Mopy
     path = Path.getcwd()
     if path.cs[-4:] == u'mopy':
@@ -95,12 +95,14 @@ def detectGames(workingDir=u''):
             path = Path.getcwd().join(path)
         installPaths.insert(0,path)
     deprint(u'Detecting games via relative path and the -o argument:')
+    name = None
     for path in installPaths:
-        name = path.tail.cs
-        if name in allGames:
+        _name = path.tail.cs
+        if _name in allGames:
             # We have a config for that game
-            deprint(u' %s:' % name, path)
-            foundGames[name] = path
+            deprint(u' %s:' % _name, path)
+            foundGames[_name] = path
+            name = _name
             break
         else:
             # Folder name wasn't found, try looking by exe name
@@ -135,7 +137,7 @@ def setGame(gameName,workingDir=u''):
         for i in allGames.keys():
             if i != gameName:
                 del allGames[i]
-        reload(game)
+        game.init()
         return False
     #--Specified game not found, or game was not specified,
     #  so use the game found via workingDir or the cwd
@@ -154,7 +156,7 @@ def setGame(gameName,workingDir=u''):
             for i in allGames.keys():
                 if i != name:
                     del allGames[i]
-            reload(game)
+            game.init()
             return False
     # No match found return the list of possible games
     # Unload all the modules

@@ -809,8 +809,6 @@ class RecordHeader(brec.BaseRecordHeader):
         else:
             return struct.pack('=4s5I',self.recType,self.size,self.flags1,
                                self.fid,self.flags2,self.extra)
-#--Set ModReader to use the correct record header
-brec.ModReader.recHeader = RecordHeader
 
 # Record Elements --------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -1458,17 +1456,6 @@ class MreMisc(MelRecord):
 
 #------------------------------------------------------------------------------
 
-#--Record Types
-brec.MreRecord.type_class = dict((x.classType,x) for x in (
-    MreAact, MreActi, MreAddn, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob,
-    MreGmst, MreLvli, MreLvln, MreLvsp, MreMisc,
-    MreHeader,
-    ))
-
-#--Simple records
-brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
-    set(('TES4')))
-
 #--Mergeable record types
 mergeClasses = (
     MreAact, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob, MreGmst, MreLvli,
@@ -1478,3 +1465,22 @@ mergeClasses = (
 #--Extra read/write classes
 readClasses = ()
 writeClasses = ()
+
+def init():
+    # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
+    # re-executing all lines within the module, it acts like another 'import'
+    # statement - in otherwords, nothing happens.  This means any lines that
+    # affect outside modules must do so withing this function, which will be
+    # called instead of 'reload'
+    brec.ModReader.recHeader = RecordHeader
+
+    #--Record Types
+    brec.MreRecord.type_class = dict((x.classType,x) for x in (
+        MreAact, MreActi, MreAddn, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob,
+        MreGmst, MreLvli, MreLvln, MreLvsp, MreMisc,
+        MreHeader,
+        ))
+
+    #--Simple records
+    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
+        set(('TES4')))
