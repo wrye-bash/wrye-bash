@@ -358,7 +358,7 @@ patchers = (
     'CoblExhaustion', 'UpdateReferences', 'CellImporter', 'ClothesTweaker',
     'GmstTweaker', 'GraphicsPatcher', 'ImportFactions',
     'ImportInventory', 'SpellsPatcher', 'TweakActors', 'ImportRelations',
-    'ImportScripts', 'ImportScriptContents', 'ImportActorsSpells',
+    'ImportScripts', 'ImportActorsSpells',
     'ListsMerger', 'MFactMarker', 'NamesPatcher', 'NamesTweaker',
     'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
     'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',

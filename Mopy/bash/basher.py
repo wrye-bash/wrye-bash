@@ -6423,18 +6423,11 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
-        #progress.Update(55,_(u"Initializing BSAInfos"))
-        #bosh.BSAInfos = bosh.BSAInfos()
-        #bosh.BSAInfos.refresh()
         #--Patch check
-        firstBashed = settings.get('bash.patch.firstBashed',False)
-        if not firstBashed and bush.game.esp.canBash:
-            for modInfo in bosh.modInfos.values():
-                if modInfo.header.author == u'BASHED PATCH': break
-            else:
+        if bush.game.esp.canBash:
+            if not bosh.modInfos.bashed_patches:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
                 bosh.PatchFile.generateNextBashedPatch()
-            settings['bash.patch.firstBashed'] = True
 
     def InitVersion(self):
         """Perform any version to version conversion. Called by OnInit()."""
