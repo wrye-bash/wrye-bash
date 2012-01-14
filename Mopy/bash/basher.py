@@ -7806,9 +7806,6 @@ class CBash_StatsPatcher(bosh.CBash_StatsPatcher,ListPatcher): pass
 class ImportScripts(bosh.ImportScripts,ListPatcher):pass
 class CBash_ImportScripts(bosh.CBash_ImportScripts,ListPatcher):pass
 
-class ImportScriptContents(bosh.ImportScriptContents,ListPatcher):pass
-##class CBash_ImportScriptContents(bosh.CBash_ImportScriptContents,ListPatcher):pass
-
 class SpellsPatcher(bosh.SpellsPatcher,ListPatcher):pass
 class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
 
@@ -7883,7 +7880,6 @@ otherPatcherDict = {
     TweakActors().__class__.__name__ : CBash_TweakActors(),
     ImportRelations().__class__.__name__ : CBash_ImportRelations(),
     ImportScripts().__class__.__name__ : CBash_ImportScripts(),
-    ImportScriptContents().__class__.__name__ : ImportScriptContents(), #No CBash equiv
     ImportActorsSpells().__class__.__name__ : CBash_ImportActorsSpells(),
     ListsMerger().__class__.__name__ : CBash_ListsMerger(),
     MFactMarker().__class__.__name__ : CBash_MFactMarker(),
