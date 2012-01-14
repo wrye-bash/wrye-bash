@@ -1632,45 +1632,45 @@ class MreLeveledListBase(MelRecord):
             for attr in self.__class__.copyAttrs:
                 self.__setattr__(attr,other.__getattribute__(attr) or
                                        self.__getattribute__(attr))
-            #--Remove items based on other.removes
-            if other.delevs or other.relevs:
-                removeItems = self.items & (other.delevs | other.relevs)
-                self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
-                self.items = (self.items | other.delevs) - other.relevs
-            hasOldItems = bool(self.items)
-            #--Add new items from other
-            newItems = set()
-            entriesAppend = self.entries.append
-            newItemsAdd = newItems.add
-            for entry in other.entries:
-                if entry.listId not in self.items:
-                    entriesAppend(entry)
-                    newItemsAdd(entry.listId)
-            if newItems:
-                self.items |= newItems
-                self.entries.sort(key=attrgetter('listId','level','count'))
-            #--Is merged list different from other? (And thus written to patch.)
-            if len(self.entries) != len(other.entries):
-                self.mergeOverLast = True
+        #--Remove items based on other.removes
+        if other.delevs or other.relevs:
+            removeItems = self.items & (other.delevs | other.relevs)
+            self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
+            self.items = (self.items | other.delevs) - other.relevs
+        hasOldItems = bool(self.items)
+        #--Add new items from other
+        newItems = set()
+        entriesAppend = self.entries.append
+        newItemsAdd = newItems.add
+        for entry in other.entries:
+            if entry.listId not in self.items:
+                entriesAppend(entry)
+                newItemsAdd(entry.listId)
+        if newItems:
+            self.items |= newItems
+            self.entries.sort(key=attrgetter('listId','level','count'))
+        #--Is merged list different from other? (And thus written to patch.)
+        if len(self.entries) != len(other.entries):
+            self.mergeOverLast = True
+        else:
+            for attr in self.__class__.copyAttrs:
+                if self.__getattribute__(attr) != other.__getattribute__(attr):
+                    self.mergeOverLast = True
+                    break
             else:
-                for attr in self.__class__.copyAttrs:
-                    if self.__getattribute__(attr) != other.__getattribute__(attr):
+                otherlist = other.entries
+                otherlist.sort(key=attrgetter('listId','level','count'))
+                for selfEntry,otherEntry in zip(self.entries,otherlist):
+                    if (selfEntry.listId != otherEntry.listId or
+                        selfEntry.level != otherEntry.level or
+                        selfEntry.count != otherEntry.count):
                         self.mergeOverLast = True
                         break
                 else:
-                    otherlist = other.entries
-                    otherlist.sort(key=attrgetter('listId','level','count'))
-                    for selfEntry,otherEntry in zip(self.entries,otherlist):
-                        if (selfEntry.listId != otherEntry.listId or
-                            selfEntry.level != otherEntry.level or
-                            selfEntry.count != otherEntry.count):
-                            self.mergeOverLast = True
-                            break
-                    else:
-                        self.mergeOverLast = False
-            if self.mergeOverLast:
-                self.mergeSources.append(otherMod)
-            else:
-                self.mergeSources = [otherMod]
-            #--Done
-            self.setChanged(self.mergeOverLast)
+                    self.mergeOverLast = False
+        if self.mergeOverLast:
+            self.mergeSources.append(otherMod)
+        else:
+            self.mergeSources = [otherMod]
+        #--Done
+        self.setChanged(self.mergeOverLast)
