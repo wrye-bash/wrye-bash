@@ -458,7 +458,6 @@ class RecordHeader(brec.BaseRecordHeader):
                 return struct.pack('=4s4I',self.recType,self.size,self.label,self.groupType,self.stamp)
         else:
             return struct.pack('=4s4I',self.recType,self.size,self.flags1,self.fid,self.flags2)
-brec.ModReader.recHeader = RecordHeader
 
 # Oblivion Record elements -----------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2613,21 +2612,6 @@ class MreWthr(MelRecord):
 
 #-------------------------------------------------------------------------------
 
-#--Record Types
-brec.MreRecord.type_class = dict((x.classType,x) for x in (
-    MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
-    MreCell, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact,
-    MreFlor, MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr,
-    MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreRefr,
-    MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreHeader,
-    MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp,
-    MreDial, MreInfo,
-    ))
-
-#--Simple records
-brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
-    set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
-
 #--Mergeable record types
 mergeClasses = (
     MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
@@ -2642,3 +2626,27 @@ mergeClasses = (
 #--Extra read classes: need info from magic effects
 readClasses = (MreMgef, MreScpt,)
 writeClasses = (MreMgef,)
+
+
+def init():
+    # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
+    # re-executing all lines within the module, it acts like another 'import'
+    # statement - in otherwords, nothing happens.  This means any lines that
+    # affect outside modules must do so withing this function, which will be
+    # called instead of 'reload'
+    brec.ModReader.recHeader = RecordHeader
+
+    #--Record Types
+    brec.MreRecord.type_class = dict((x.classType,x) for x in (
+        MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
+        MreCell, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact,
+        MreFlor, MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr,
+        MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,  MrePack, MreQust, MreRace, MreRefr,
+        MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree, MreHeader,
+        MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp,
+        MreDial, MreInfo,
+        ))
+
+    #--Simple records
+    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
+        set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
