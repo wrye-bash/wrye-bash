@@ -3719,7 +3719,7 @@ class InstallersPanel(SashTankPanel):
                             # Ensures we don't infinitely refresh if moving the omod fails
                             data.failedOmods.add(omod.body)
                             outDir.rmtree(omod.sbody)
-                            omod.rename(dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body))
+                            omod.moveTo(dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body))
             finally:
                 self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
