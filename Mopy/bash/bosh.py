@@ -14157,6 +14157,7 @@ class PatchFile(ModFile):
             filteredAppend = filtered.append
             loadSetIssuperset = loadSet.issuperset
             for record in block.getActiveRecords():
+                if record.flags1.deleted: continue #don't merge deleted items
                 fid = record.fid
                 if fid == badForm: continue
                 #--Include this record?
@@ -14426,6 +14427,10 @@ class CBash_PatchFile(ObModFile):
         mergeIds = self.mergeIds
         badForm = FormID(GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
         for record in getattr(modFile,group):
+            #don't merge deleted items
+            if record.IsDeleted and group not in ('REFRS','ACHRS','ACRES'): 
+                print group
+                continue
             fid = record.fid
             if not fid.ValidateFormID(self): continue
             if fid == badForm: continue
@@ -14444,8 +14449,16 @@ class CBash_PatchFile(ObModFile):
                         dump_record(record)
                         print
                         continue
-                override = record.CopyAsOverride(self, UseWinningParents=True)
+                if not record.IsDeleted:
+                    undelete = False
+                    override = record.CopyAsOverride(self, UseWinningParents=True)
+                else: 
+                    undelete = True
+                    override = record.Conflicts()[1].CopyAsOverride(self, UseWinningParents=True)
                 if override:
+                    if undelete:
+                        override.posZ = override.posZ - 1000
+                        override.IsInitiallyDisabled = True
                     mergeIds.add(override.fid)
 
     def buildPatch(self,progress):
