@@ -17735,21 +17735,13 @@ def InitModLinks():
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_ListMods())
     ModList.mainMenu.append(Mods_ListBashTags())
+    ModList.mainMenu.append(Mods_CleanDummyMasters())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
     if bosh.inisettings['EnableBalo']:
         ModList.mainMenu.append(Mods_AutoGroup())
         ModList.mainMenu.append(Mods_FullBalo())
     ModList.mainMenu.append(Mods_LockTimes())
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Mods_Deprint())
-    ModList.mainMenu.append(Mods_DumpTranslator())
-    ModList.mainMenu.append(Mods_Tes4ViewExpert())
-    ModList.mainMenu.append(Mods_CleanDummyMasters())
-    #--BOSS options
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
-    ModList.mainMenu.append(Mods_BOSSShowUpdate())
     ModList.mainMenu.append(Mods_ScanDirty())
 
     #--ModList: Item Links
@@ -18082,11 +18074,14 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_UnHideButtons())
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
-    SettingsMenu.append(Settings_UseAltName())
-    SettingsMenu.append(Settings_CheckForUpdates())
     SettingsMenu.append(Settings_Languages())
     SettingsMenu.append(Settings_PluginEncodings())
     SettingsMenu.append(Settings_Games())
+    SettingsMenu.append(SeparatorLink())
+    SettingsMenu.append(Settings_UseAltName())
+    SettingsMenu.append(Mods_Deprint())
+    SettingsMenu.append(Mods_DumpTranslator())
+    SettingsMenu.append(Settings_CheckForUpdates())
 
 def InitLinks():
     """Call other link initializers."""
