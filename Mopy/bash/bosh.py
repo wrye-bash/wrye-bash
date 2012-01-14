@@ -14394,7 +14394,7 @@ class CBash_PatchFile(ObModFile):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         self.races_vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
-        self.races_data = {}
+        self.races_data = {'EYES':[],'HAIR':[]}
         #--Mods
         loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
         if not loadMods:
@@ -28371,7 +28371,103 @@ class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class RaceTweaker_AllHairs(MultiTweakItem):
+    """Gives all races ALL hairs."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Races Have All Hairs"),
+            _(u'Gives all races every available hair.'),
+            u'hairyraces',
+            (u'get down tonight',1)
+            )
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('RACE',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('RACE',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.RACE
+        for record in modFile.RACE.getActiveRecords():
+            patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        hairs = extra['HAIR']
+        keep = patchFile.getKeeper()
+        for record in patchFile.RACE.records:
+            if record.hairs == hairs: continue
+            record.hairs = hairs
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
             
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u"Races Have All Hairs"))
+        count = self.count
+        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class RaceTweaker_AllEyes(MultiTweakItem):
+    """Gives all races ALL eyes."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Races Have All Eyes"),
+            _(u'Gives all races every available eye.'),
+            u'eyeyraces',
+            (u'what an lot of eyes you have dear',1)
+            )
+        
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('RACE',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('RACE',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.RACE
+        for record in modFile.RACE.getActiveRecords():
+            patchRecords.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,progress,patchFile,extra):
+        """Edits patch file as desired."""
+        count = self.count = {}
+        eyes = extra['EYES']
+        keep = patchFile.getKeeper()
+        for record in patchFile.RACE.records:
+            if record.eyes == eyes: continue
+            record.eyes = eyes
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+            
+    def log(self,log):
+        """Will write to log."""
+        log.setHeader(u'==='+_(u"Races Have All Eyes"))
+        count = self.count
+        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class RaceTweaker_PlayableEyes(MultiTweakItem):
     """Sets all eyes to be playable."""
 
@@ -28517,7 +28613,6 @@ class RaceTweaker_SexlessHairs(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-
 class RacePatcher(SpecialPatcher,DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
@@ -28535,6 +28630,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     forceAuto = True
     defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
     subLabel = _(u'Race Tweaks')
+    races_data = {'EYES':[],'HAIR':[]}
     tweaks = sorted([
         RaceTweaker_BiggerOrcsandNords(),
         RaceTweaker_MergeSimilarRaceHairs(),
@@ -28542,6 +28638,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         RaceTweaker_PlayableEyes(),
         RaceTweaker_PlayableHairs(),
         RaceTweaker_SexlessHairs(),
+        RaceTweaker_AllEyes(),
+        RaceTweaker_AllHairs(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
@@ -28690,6 +28788,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
         if not self.isActive: return
+        races_data = self.races_data
         eye_mesh = self.eye_mesh
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
@@ -28701,6 +28800,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             patchBlock = getattr(self.patchFile,type)
             id_records = patchBlock.id_records
             for record in getattr(modFile,type).getActiveRecords():
+                races_data[type].append(record.fid)
                 if record.fid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
         #--Npcs with unassigned eyes
@@ -28727,7 +28827,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     def buildPatch(self,log,progress):
         """Updates races as needed."""
         debug = False
-        extra = {}
+        extra = self.races_data
         if not self.isActive: return
         patchFile = self.patchFile
         keep = patchFile.getKeeper()
@@ -29002,6 +29102,88 @@ class CBash_RaceTweaker_BiggerOrcsandNords(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 map(override.__setattr__, self.attrs, newValues)
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+class CBash_RaceTweaker_AllHairs(CBash_MultiTweakItem):
+    """Gives all races ALL hairs."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Races Have All Hairs")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Races Have All Hairs"),
+            _(u'Gives all races every available hair.'),
+            u'hairyraces',
+            (u'get down tonight',1)
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.hairs != self.patchFile.races_data['HAIR']:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.hairs = self.patchFile.races_data['HAIR']
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+                return
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'=== '+self.__class__.name)
+        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
+    """Gives all races ALL eyes."""
+    scanOrder = 32
+    editOrder = 32
+    name = _(u"Races Have All Eyes")
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        CBash_MultiTweakItem.__init__(self,_(u"Races Have All Eyes"),
+            _(u'Gives all races every available eye.'),
+            u'eyeyraces',
+            (u'them races are a real eye full',1)
+            )
+        self.mod_count = {}
+
+    def getTypes(self):
+        return ['RACE']
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.eyes != self.patchFile.races_data['EYES']:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.eyes = self.patchFile.races_data['EYES']
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -29560,12 +29742,14 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 return
 
             if record._Type == 'HAIR':
+                self.patchFile.races_data['HAIR'].append(recordId)
                 if record.IsMale:
                     self.maleHairs.add(recordId)
                 else:
                     self.femaleHairs.add(recordId)
                 self.hairNames.update({recordId:record.full})
             else: #record._Type == 'EYES'
+                self.patchFile.races_data['EYES'].append(recordId)
                 self.eyeNames.update({recordId:record.full})
                 self.srcEyes.setdefault(modFile.GName,set()).add(recordId)
 
@@ -29793,6 +29977,8 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
         CBash_RaceTweaker_SexlessHairs(),
         CBash_RaceTweaker_MergeSimilarRaceHairs(),
         CBash_RaceTweaker_MergeSimilarRaceEyes(),
+        CBash_RaceTweaker_AllEyes(),
+        CBash_RaceTweaker_AllHairs(),
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
