@@ -4927,6 +4927,7 @@ class ModInfos(FileInfos):
         #--Selection state (ordered, merged, imported)
         self.plugins = Plugins() #--Plugins instance.
         self.ordered = tuple() #--Active mods arranged in load order.
+        self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
             if dirs['mods'].join(fname).exists():
@@ -5154,18 +5155,20 @@ class ModInfos(FileInfos):
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
+        self.bashed_patches.clear()
         for modName in self.keys():
-            mtime = modInfos[modName].mtime
+            modInfo = modInfos[modName]
+            mtime = modInfo.mtime
             mtime_mods.setdefault(mtime,[]).append(modName)
-        #--Selected mtimes
+            if modInfo.header.author == u"BASHED PATCH":
+                self.bashed_patches.add(modName)
+        #--Selected mtimes and Refresh overLoaded too..
         mtime_selected = self.mtime_selected
         mtime_selected.clear()
+        self.exGroup_mods.clear()
         for modName in self.ordered:
             mtime = modInfos[modName].mtime
             mtime_selected.setdefault(mtime,[]).append(modName)
-        #--Refresh overLoaded too..
-        self.exGroup_mods.clear()
-        for modName in self.ordered:
             maExGroup = reExGroup.match(modName.s)
             if maExGroup:
                 exGroup = maExGroup.group(1)
