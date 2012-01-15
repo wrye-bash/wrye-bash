@@ -703,7 +703,7 @@ gmstEids = [
     ]
 
 #--Tags supported by this game
-allTags = sorted((u'Relev',u'Delev',))
+allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate'))
 
 #--Patchers available when building a Bashed Patch
 patchers = (
