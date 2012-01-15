@@ -1330,64 +1330,65 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
 === Bash Tags
 * Several of Bash's features (e.g., automatic selection) of mods require that the source mods be tagged with Bash Tags. You can view and edit the tags that are currently assigned to any mod in the Bash Tags field at the bottom right of the Mods tab.
 * __{{A:Current Tags}}:__
-  * Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) ([[#|Import Actors]])
-  * Actors.AIData: Mod modifies Creature or NPC AI Data ([[#|Import Actors]]).
-  * Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
-  * Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed ([[#|Import Actors]]).
-  * Actors.Animations: Mod modifies Creature or NPC special Animations list(s) ([[#|Import Actors]]).
-  * Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat style(s) ([[#|Import Actors]]).
-  * Actors.DeathItem: Mod modifies Creature or NPC Death Item(s) ([[#|Import Actors]]).
-  * Actors.Skeleton: Mod modifies Creature or NPC Skeleton(s) ([[#|Import Actors]]).
-  * Actors.Spells: Mod modifies Creature or NPC Spell list ([[#|Import Spells]]).
-  * Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed([[#|Import Spells]]).
-  * Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
-  * Body-F: Mod modifies female body texture/mesh definition ([[#|Race Records]]).
-  * Body-M: Mod modifies male body texture/mesh definition ([[#|Race Records]]).
-  * Body-Size-F: Mod modifies female body weight/height definition ([[#|Race Records]]).
-  * Body-Size-M: Mod modifies male body weight/height definition ([[#|Race Records]]).
-  * C.Climate: Mod changes cell climate ([[#|Import Cells]]).
-  * C.Light: Mod changes cell lighting and/or fog ([[#|Import Cells]]).
-  * C.Music: Mod changes cell music type ([[#|Import Cells]]).
-  * C.Name: Mod changes cell names ([[#|Import Cells]]).
-  * C.Owner: Mod changes cell ownership ([[#|Import Cells]]).
-  * C.RecordFlags: Mod changes the off limits/dangerous flag ([[#|Import Cells]]).
-  * C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
-  * Creatures.Blood: Mod changes the creature blood subrecords ([[#|Import Actors]]).
-  * Deactivate: Mod should be imported through whatever imports are tagged and then deactivated.
-  * Delev: Mod deletes items from ([[#|Leveled Lists]]).
-  * Eyes: Mod contributes eyes ([[#|Race Records]]).
-  * Relations: Mod changes faction relationships ([[#|Import Relations]]).
-  * Factions: Import changes to factions of npcs and creatures. ([[#|Import Factions]]).
-  * Filter: Filter a mergeable mod to currently active mods ([[#|Merge Filtering]]).
-  * Graphics: Mod is a graphics replacer ([[#|Import Graphics]]).
-  * Hair: Mod contributes hair styles ([[#|Race Records]]).
-  * IIM: Trigger [[#|Item Interchange Mode]].
-  * Invent: Import changes to inventory. ([[#|Import Inventory]]).
-  * InventOnly: Deprecated. Equivalent to <code>Invent + IIM</code>.
-  * Merge: Obsolete. Ignored.
-  * Names: Mod is a renamer ([[#|Import Names]]).
-  * NoMerge: Mod should not be merged even though they're technically mergeable.
-  * NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
-  * NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
-  * NpcFacesForceFullImport: Mod modifies faces ([[#|Import NPC Faces]]).
-  * Npc.EyesOnly: Mod modifies npc eyes ([[#|Import NPC Faces]]).
-  * Npc.HairOnly: Mod modifies npc hair ([[#|Import NPC Faces]]).
-  * R.AddSpells: mod adds racial spells. ([[#|Race Records]]).
-  * R.Attributes-F mod changes race attributes for females ([[#|Race Records]]).
-  * R.Attributes-M: mod changes race attributes for males ([[#|Race Records]]).
-  * R.Description: mod changes race description(s) ([[#|Race Records]]).
-  * R.ChangeSpells: Mod overwrites race spells list(s) ([[#|Race Records]]).
-  * R.Mouth: Mod changes mouth/tongue ([[#|Race Records]]).
-  * R.Relations: Mod changes race relationships ([[#|Race Records]]).
-  * R.Skills: Mod changes race skill bonuses ([[#|Race Records]]).
-  * R.Teeth: Mod changes upper/lower teeth ([[#|Race Records]]).
-  * Relev: Mod relevels items in ([[#|Leveled Lists]]).
-  * Scripts: Mod modifies item, npc or object scripts ([[#|Import Scripts]]).
-  * Sound: Mod is a sound replacer ([[#|Import Sound]]).
-  * SpellStats: Mod modifies spell stats ([[#|Import Spell Stats]]).
-  * Stats: Mod modifies item stats ([[#|Import Stats]]).
-  * Voice-F: Mod modifies female voice definition ([[#|Race Records]]).
-  * Voice-M: Mod modifies male voice definition ([[#|Race Records]]).
+  . [Oblivion, Skyrim] TagName: Description
+  * <code>[X ]</code> Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) ([[#|Import Actors]])
+  * <code>[X ]</code>Actors.AIData: Mod modifies Creature or NPC AI Data ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.AIPackages: Mod modifies Creature or NPC AI Packages list ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.Animations: Mod modifies Creature or NPC special Animations list(s) ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat style(s) ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.DeathItem: Mod modifies Creature or NPC Death Item(s) ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.Skeleton: Mod modifies Creature or NPC Skeleton(s) ([[#|Import Actors]]).
+  * <code>[X ]</code>Actors.Spells: Mod modifies Creature or NPC Spell list ([[#|Import Spells]]).
+  * <code>[X ]</code>Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed([[#|Import Spells]]).
+  * <code>[X ]</code>Actors.Stats: Mod modifies Creature or NPC stats ([[#|Import Actors]]).
+  * <code>[X ]</code>Body-F: Mod modifies female body texture/mesh definition ([[#|Race Records]]).
+  * <code>[X ]</code>Body-M: Mod modifies male body texture/mesh definition ([[#|Race Records]]).
+  * <code>[X ]</code>Body-Size-F: Mod modifies female body weight/height definition ([[#|Race Records]]).
+  * <code>[X ]</code>Body-Size-M: Mod modifies male body weight/height definition ([[#|Race Records]]).
+  * <code>[X ]</code>C.Climate: Mod changes cell climate ([[#|Import Cells]]).
+  * <code>[X ]</code>C.Light: Mod changes cell lighting and/or fog ([[#|Import Cells]]).
+  * <code>[X ]</code>C.Music: Mod changes cell music type ([[#|Import Cells]]).
+  * <code>[X ]</code>C.Name: Mod changes cell names ([[#|Import Cells]]).
+  * <code>[X ]</code>C.Owner: Mod changes cell ownership ([[#|Import Cells]]).
+  * <code>[X ]</code>C.RecordFlags: Mod changes the off limits/dangerous flag ([[#|Import Cells]]).
+  * <code>[X ]</code>C.Water: Mod changes cell water type/level ([[#|Import Cells]]).
+  * <code>[X ]</code>Creatures.Blood: Mod changes the creature blood subrecords ([[#|Import Actors]]).
+  * <code>[XX]</code>Deactivate: Mod should be imported through whatever imports are tagged and then deactivated.
+  * <code>[XX]</code>Delev: Mod deletes items from ([[#|Leveled Lists]]).
+  * <code>[X ]</code>Eyes: Mod contributes eyes ([[#|Race Records]]).
+  * <code>[X ]</code>Relations: Mod changes faction relationships ([[#|Import Relations]]).
+  * <code>[X ]</code>Factions: Import changes to factions of npcs and creatures. ([[#|Import Factions]]).
+  * <code>[XX]</code>Filter: Filter a mergeable mod to currently active mods ([[#|Merge Filtering]]).
+  * <code>[X ]</code>Graphics: Mod is a graphics replacer ([[#|Import Graphics]]).
+  * <code>[X ]</code>Hair: Mod contributes hair styles ([[#|Race Records]]).
+  * <code>[X ]</code>IIM: Trigger [[#|Item Interchange Mode]].
+  * <code>[X ]</code>Invent: Import changes to inventory. ([[#|Import Inventory]]).
+  * <code>[X ]</code>InventOnly: Deprecated. Equivalent to <code>Invent + IIM</code>.
+  * <code>[&nbsp;&nbsp;]</code>Merge: Obsolete. Ignored.
+  * <code>[X ]</code>Names: Mod is a renamer ([[#|Import Names]]).
+  * <code>[XX]</code>NoMerge: Mod should not be merged even though they're technically mergeable.
+  * <code>[X ]</code>NPC.Class: Mod changes the designated Classes of NPCs ([[#|ImportActors]]).
+  * <code>[X ]</code>NpcFaces: Mod modifies faces ([[#|Import NPC Faces]]).
+  * <code>[X ]</code>NpcFacesForceFullImport: Mod modifies faces ([[#|Import NPC Faces]]).
+  * <code>[X ]</code>Npc.EyesOnly: Mod modifies npc eyes ([[#|Import NPC Faces]]).
+  * <code>[X ]</code>Npc.HairOnly: Mod modifies npc hair ([[#|Import NPC Faces]]).
+  * <code>[X ]</code>R.AddSpells: mod adds racial spells. ([[#|Race Records]]).
+  * <code>[X ]</code>R.Attributes-F mod changes race attributes for females ([[#|Race Records]]).
+  * <code>[X ]</code>R.Attributes-M: mod changes race attributes for males ([[#|Race Records]]).
+  * <code>[X ]</code>R.Description: mod changes race description(s) ([[#|Race Records]]).
+  * <code>[X ]</code>R.ChangeSpells: Mod overwrites race spells list(s) ([[#|Race Records]]).
+  * <code>[X ]</code>R.Mouth: Mod changes mouth/tongue ([[#|Race Records]]).
+  * <code>[X ]</code>R.Relations: Mod changes race relationships ([[#|Race Records]]).
+  * <code>[X ]</code>R.Skills: Mod changes race skill bonuses ([[#|Race Records]]).
+  * <code>[X ]</code>R.Teeth: Mod changes upper/lower teeth ([[#|Race Records]]).
+  * <code>[XX]</code>Relev: Mod relevels items in ([[#|Leveled Lists]]).
+  * <code>[X ]</code>Scripts: Mod modifies item, npc or object scripts ([[#|Import Scripts]]).
+  * <code>[X ]</code>Sound: Mod is a sound replacer ([[#|Import Sound]]).
+  * <code>[X ]</code>SpellStats: Mod modifies spell stats ([[#|Import Spell Stats]]).
+  * <code>[X ]</code>Stats: Mod modifies item stats ([[#|Import Stats]]).
+  * <code>[X ]</code>Voice-F: Mod modifies female voice definition ([[#|Race Records]]).
+  * <code>[X ]</code>Voice-M: Mod modifies male voice definition ([[#|Race Records]]).
 * __Manual Tagging__
   * You can manually set the tags that are applied to any mod by right clicking in the Bash Tags field and checking and unchecking tags as you like. Manual tags are shared for all users on a given computer.
   * If you have edited tags but want to revert to automatic tagging, just right click and choose "Automatic".
@@ -2468,7 +2469,7 @@ msgid "Argument is out"
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 295.3 [X/XX/2012] [Lojack,bluesky404,PacificMorrowind]
+=== 295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind]
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
   * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
@@ -2488,7 +2489,9 @@ msgid "Argument is out"
   * Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.
   * Merge support for AACT, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC added.
   * Basic ONAM support for TES4 records.
-  * Two Bashed Tags are supported: Delev and Relev.  These can be used to intelligently merge leveled lists.
+  * [[#BashTags|Bashed Tags]]:
+    * [[#LeveledLists|Delev and Relev]] - These can be used to intelligently merge leveled lists.
+    * [[#MergeFiltering|Filter]], NoMerge, and Deactivate - These can be used to modify behavior in regards merging and importing records.
   * Better merging of records with NULL Form ID's, for records that allow it (COBJ and GMST for example).
   * New [[#InstallersTab|BAIN]] option: [[#PackageHeaderCommands|Auto-name String Translation files]]:
     * Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.
@@ -2497,6 +2500,7 @@ msgid "Argument is out"
   * [[#ListMastersSave|List Masters]] command corrected to display the masters of a Save File, rather than the current Load Order.
   * Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
   * Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.
+  * Fixed an issue where the [[#ImportGraphics|Graphics]] tag was not properly importing the model file name on CREA records.
 * Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
 * Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
 * Other improvements:
