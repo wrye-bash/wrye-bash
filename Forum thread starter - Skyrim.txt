@@ -3,8 +3,8 @@
 [b]What does Wrye Bash do?[/b]
 [list]
 [*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
-[*][s]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"[/s] [color=orange](WIPz)[/color]
-[*][s]It allows you to exceed the 255 mod threshold by automatically merging mods for you[/s] [color=orange](WIPz)[/color]
+[*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"
+[*]It allows you to exceed the 255 mod threshold by automatically merging mods for you
 [/list]
 [b]FAQ[/b]:
 [spoiler][list=1][*]What the heck do all these acronyms mean?
@@ -22,7 +22,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
 [/list][/list][/spoiler]
 
-[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] [s]or [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url][/s] (upload in progress)
+[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] or [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url]
 
 [b]Documentation[/b]:
 [list]
@@ -96,30 +96,56 @@ Rinse and repeat when a new svn comes out.
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 [b]Changelog for Latest Version[/b]:
-=== 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind][list]
-[*] Skyrim support added:[list]
-  [*] Can read basic information from Skyrim mods (author and description)
-  [*] Can read basic save game information (player name, level, play time)
-  [*] Can modify your Load Order[list]
-    [*] Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.[/list]  [*] BAIN is supported, including the standard directories and SKSE plugins.[/list][*] UI Improvements:[list]
-  [*] Customizible Status Bar and Tabs:[list]
-    [*] Drag and drop reordering
-    [*] Hideable[/list][/list][*] Bugfixes:[list]
-  [*] Fixed a few INI Edits tab related startup crashes.
-  [*] More information should be displayed when Wrye Bash fails to startup.
-  [*] More information is displayed in debug mode when a Tab fails to initialize.
-  [*] Fixed a crash on startup bug when no plugins are found in the Data directory.[/list][*] BAIN Wizards:[list]
-  [*] New function 'CompareGameVersion' replaces the older 'CompareObVersion'.  The older function is retained for backwards compatibility only.
-  [*] New function 'CompareSEVersion' replaces the older 'CompareOBSEVersion'.  The older function is retained for backwards compatibility only.
-  [*] New function 'CompareGEVersion' replaces the older 'CompareGEVersion'.  The older function is retained for backwards compatibility only.[/list][*] Changes to the installation requirements:[list]
-  [*] You may still install Wrye Bash to "path.to.you.game\Mopy" as before, and it will function normally.
-  [*] You may also install Wrye Bash to any other location.  In that case, here is how it will decide what game to manage:[list]
-    [*] Read the Windows Registry to see what supported games you have installed.
-    [*] Also check one directory up relative to Wrye Bash to see if it contains a supported game.
-    [*] If only one supported game is detected:  Wrye Bash will manage that game.
-    [*] If multiple supported games are detected:[list]
-      [*] If the '-g' command line argument is used, Wrye Bash will manage the game specified by '-g'.
-      [*] If the '-o' command line argument is specified, Wrye Bash will manage the game in the location specified by '-o'.
-      [*] If Wrye Bash is installed as a sub-directory to a detected game, Wrye Bash will manage that game.
-      [*] Finally, Wrye Bash will display a prompt asking which game to manage.[/list][/list][/list][*] New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:
-    [xml]"Wrye Bash.exe" -g oblivion[/xml]    Will tell Wrye Bash to manage your Oblivion installation.[/list]
+=== 295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind][spoiler][list]
+[*] Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:[list]
+  [*] Special thanks to [b]bluesky404[/b] for a ton of work testing, debugging, and providing patches to help make this possible.
+  [*] By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does [i]not[/i] cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).[list]
+    [*] To modify this behavior, there is a new setting, accessible via the Setting Menu > Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other langauges that don't fall under the 'Western European' encoding.
+    [*] This is a global setting, so changing it will have an effect on [i]all[/i] plugins.
+    [*] Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
+    [*] Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.[/list]
+  [*] Some minor inconsistancies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
+  [*] Unicode file names are fully supported.
+  [*] Limitations:[list]
+    [*] Skryim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarentee that activated plugins with Unicode file names will actually be loaded.
+    [*] Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bashe's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
+    [*] The masterlist.txt and userlist.txt files for BOSS are expected to also be in UTF-8 format.  This is a requirement imposed by BOSS, so no change should be noticed there.[/list]
+  [*] Translation files format has changed.  Old translation files have been converted to the new format.[/list]
+[*] More refactoring for multi-game support.
+[*] New Skyrim features:[list]
+  [*] Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.
+  [*] Merge support for AACT, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC added.
+  [*] Basic ONAM support for TES4 records.
+  [*] Bashed Tags:[list]
+    [*] Delev and Relev - These can be used to intelligently merge leveled lists.
+    [*] Filter, NoMerge, and Deactivate - These can be used to modify behavior in regards merging and importing records.[/list]
+  [*] Better merging of records with NULL Form ID's, for records that allow it (COBJ and GMST for example).
+  [*] New BAIN option: Auto-name String Translation files:[list]
+    [*] Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.[/list][/list]
+[*] Bugfixes:[list]
+  [*] An uncommon Drag and Drop of Tabs related bug is fixed (relating to Mouse Capture).
+  [*] List Masters command corrected to display the masters of a Save File, rather than the current Load Order.
+  [*] Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
+  [*] Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.
+  [*] Fixed an issue where the Graphics tag was not properly importing the model file name on CREA records.[/list]
+[*] Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
+[*] Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
+[*] Other improvements:[list]
+  [*] New Simplified Chinese translation, provided by bluesky404.
+  [*] New Traditional Chinese translation, provided by bluesky404.
+  [*] BAIN:[list]
+    [*] Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+    [*] New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
+    [*] The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.[/list]
+  [*] INI Edits:[list]
+    [*] Double click to apply an INI Tweak
+    [*] Left Click on the checkbox to apply an INI Tweak
+    [*] INI Tweaks can now add and remove new lines to target INI's.[list]
+      [*] Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Obilvion, enabled by default for Skyrim).[/list]
+    [*] The syntax for denoting a line to be deleted is to prepend the line with ";-".
+    [*] BAIN Wizards can also create "deleted" INI Tweak lines, via the DisableINILine command.[/list]
+  [*] Better support for Mac Command button.
+  [*] Bashed Patch:[list]
+    [*] New Assorted Tweaker: No Description Loading Screens (requested by hellwing).[/list]
+  [*] Wrye Bash will ask to backup your settings on [b][i]every[/i][/b] update now, instead of just a major version update (like from 294 to 295).
+  [*] Quickly switching beteween games can be accomplished via the Settings Menu.[/list][/list][/spoiler]
