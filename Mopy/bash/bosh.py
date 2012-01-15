@@ -16097,7 +16097,7 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
             recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
         for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            recAttrs_class[recClass] = ('bodyParts','nift_p')
+            recAttrs_class[recClass] = ('bodyParts','nift_p','model')
         for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
             recAttrs_class[recClass] = ('iconPath','model')
             recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
