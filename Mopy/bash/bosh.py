@@ -3252,6 +3252,7 @@ class IniFile(object):
         section = sectionSettings = None
         with self.path.open('r') as iniFile:
             with self.path.temp.open('w') as tmpFile:
+                tmpFileWrite = tmpFile.write
                 for line in iniFile:
                     maDeleted = reDeleted.match(line)
                     stripped = reComment.sub(u'',line).strip()
@@ -3269,8 +3270,10 @@ class IniFile(object):
                             del ini_settings[section]
                         section = LString(maSection.group(1))
                         sectionSettings = ini_settings.get(section,{})
-                    elif maSetting:
-                        setting = LString(maSetting.group(1))
+                    elif maSetting or maDeleted:
+                        if maSetting: match = maSetting
+                        else: match = maDeleted
+                        setting = LString(match.group(1))
                         if sectionSettings and setting in sectionSettings:
                             value = sectionSettings[setting]
                             if isinstance(value,basestring) and value[-1] == u'\n':
@@ -3280,14 +3283,19 @@ class IniFile(object):
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-'+line
-                    tmpFile.write(line)
+                    tmpFileWrite(line)
                 # Add remaining new entries
+                if section:
+                    # This will occur for the last INI section in the ini file
+                    for setting in ini_settings[section]:
+                        tmpFileWrite(ini_settings[section][setting])
+                    del ini_settings[section]
                 for section in ini_settings:
                     if ini_settings[section]:
                         tmpFile.write(u'\n')
                         tmpFile.write(u'[%s]\n' % section)
                         for setting in ini_settings[section]:
-                            tmpFile.write(ini_settings[section][setting])
+                            tmpFileWrite(ini_settings[section][setting])
         #--Done
         self.path.untemp()
 
