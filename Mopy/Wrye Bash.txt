@@ -2472,7 +2472,7 @@ msgid "Argument is out"
 === 296 [XX/X/2012]
 * CBash updated to version 0.6
 
-=== 295.3 [X/XX/2012] [Lojack,bluesky404,PacificMorrowind]
+=== 295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind]
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
   * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
