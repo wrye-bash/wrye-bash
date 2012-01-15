@@ -6244,7 +6244,7 @@ class ConfigHelpers:
                                     if maBashTags.group(5) and maBashTags.group(6):
                                         modRemoveTags = maBashTags.group(6).split(u',')
                                         modRemoveTags = map(string.strip,modRemoveTags)
-                                        removeTags[GPath(mod)] = tuple(list(removeTags[GPath(mod)]) + list(modRemoveTags))
+                                        removeTags[GPath(mod)] = tuple(list(removeTags.get(GPath(mod),[])) + list(modRemoveTags))
                                     continue
                                 tags[GPath(mod)] = tuple(modTags)
                                 if maBashTags.group(6) and maBashTags.group(7):
