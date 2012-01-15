@@ -16300,7 +16300,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                                'femaleIconPath', 'flags')
         class_attrs['CLOT'] = class_attrs['ARMO']
 
-        class_attrs['CREA'] = ('bodyParts', 'nift_p')
+        class_attrs['CREA'] = ('bodyParts', 'nift_p') + model
         class_attrs['MGEF'] = icon + model + ('effectShader','enchantEffect','light')
         class_attrs['EFSH'] = ('fillTexturePath','particleTexturePath','flags','memSBlend','memBlendOp',
                                'memZFunc','fillRed','fillGreen','fillBlue','fillAIn','fillAFull',
