@@ -16171,7 +16171,7 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
             recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
         for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            recAttrs_class[recClass] = ('bodyParts','nift_p')
+            recAttrs_class[recClass] = ('bodyParts','nift_p','model')
         for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
             recAttrs_class[recClass] = ('iconPath','model')
             recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
@@ -16375,7 +16375,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                                'femaleIconPath', 'flags')
         class_attrs['CLOT'] = class_attrs['ARMO']
 
-        class_attrs['CREA'] = ('bodyParts', 'nift_p')
+        class_attrs['CREA'] = ('bodyParts', 'nift_p') + model
         class_attrs['MGEF'] = icon + model
         class_fidattrs['MGEF'] = ('effectShader','enchantEffect','light')
         class_attrs['EFSH'] = ('fillTexturePath','particleTexturePath','flags','memSBlend','memBlendOp',
