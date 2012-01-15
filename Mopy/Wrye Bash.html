@@ -1585,64 +1585,65 @@
 <h3><a id='BashTags'>Bash Tags</a></h3>
 <p class="list-1">&bull;&nbsp;  Several of Bash's features (e.g., automatic selection) of mods require that the source mods be tagged with Bash Tags. You can view and edit the tags that are currently assigned to any mod in the Bash Tags field at the bottom right of the Mods tab.</p>
 <p class="list-1">&bull;&nbsp;  <b><a id='CurrentTags'>Current Tags</a>:</b></p>
-  <p class="list-2">&bull;&nbsp;  Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) (<a href="#ImportActors">Import Actors</a>)</p>
-  <p class="list-2">&bull;&nbsp;  Actors.AIData: Mod modifies Creature or NPC AI Data (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.Animations: Mod modifies Creature or NPC special Animations list(s) (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat style(s) (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.DeathItem: Mod modifies Creature or NPC Death Item(s) (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.Skeleton: Mod modifies Creature or NPC Skeleton(s) (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.Spells: Mod modifies Creature or NPC Spell list (<a href="#ImportSpells">Import Spells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed(<a href="#ImportSpells">Import Spells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Body-F: Mod modifies female body texture/mesh definition (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Body-M: Mod modifies male body texture/mesh definition (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Body-Size-F: Mod modifies female body weight/height definition (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Body-Size-M: Mod modifies male body weight/height definition (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.Climate: Mod changes cell climate (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.Light: Mod changes cell lighting and/or fog (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.Music: Mod changes cell music type (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.Name: Mod changes cell names (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.Owner: Mod changes cell ownership (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.RecordFlags: Mod changes the off limits/dangerous flag (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  C.Water: Mod changes cell water type/level (<a href="#ImportCells">Import Cells</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Creatures.Blood: Mod changes the creature blood subrecords (<a href="#ImportActors">Import Actors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Deactivate: Mod should be imported through whatever imports are tagged and then deactivated.</p>
-  <p class="list-2">&bull;&nbsp;  Delev: Mod deletes items from (<a href="#LeveledLists">Leveled Lists</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Eyes: Mod contributes eyes (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Relations: Mod changes faction relationships (<a href="#ImportRelations">Import Relations</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Factions: Import changes to factions of npcs and creatures. (<a href="#ImportFactions">Import Factions</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Filter: Filter a mergeable mod to currently active mods (<a href="#MergeFiltering">Merge Filtering</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Graphics: Mod is a graphics replacer (<a href="#ImportGraphics">Import Graphics</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Hair: Mod contributes hair styles (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  IIM: Trigger <a href="#ItemInterchangeMode">Item Interchange Mode</a>.</p>
-  <p class="list-2">&bull;&nbsp;  Invent: Import changes to inventory. (<a href="#ImportInventory">Import Inventory</a>).</p>
-  <p class="list-2">&bull;&nbsp;  InventOnly: Deprecated. Equivalent to <code>Invent + IIM</code>.</p>
-  <p class="list-2">&bull;&nbsp;  Merge: Obsolete. Ignored.</p>
-  <p class="list-2">&bull;&nbsp;  Names: Mod is a renamer (<a href="#ImportNames">Import Names</a>).</p>
-  <p class="list-2">&bull;&nbsp;  NoMerge: Mod should not be merged even though they're technically mergeable.</p>
-  <p class="list-2">&bull;&nbsp;  NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).</p>
-  <p class="list-2">&bull;&nbsp;  NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
-  <p class="list-2">&bull;&nbsp;  NpcFacesForceFullImport: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Npc.EyesOnly: Mod modifies npc eyes (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Npc.HairOnly: Mod modifies npc hair (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.AddSpells: mod adds racial spells. (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Attributes-F mod changes race attributes for females (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Attributes-M: mod changes race attributes for males (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Description: mod changes race description(s) (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.ChangeSpells: Mod overwrites race spells list(s) (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Mouth: Mod changes mouth/tongue (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Relations: Mod changes race relationships (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Skills: Mod changes race skill bonuses (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  R.Teeth: Mod changes upper/lower teeth (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Sound: Mod is a sound replacer (<a href="#ImportSound">Import Sound</a>).</p>
-  <p class="list-2">&bull;&nbsp;  SpellStats: Mod modifies spell stats (<a href="#ImportSpellStats">Import Spell Stats</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Stats: Mod modifies item stats (<a href="#ImportStats">Import Stats</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Voice-F: Mod modifies female voice definition (<a href="#RaceRecords">Race Records</a>).</p>
-  <p class="list-2">&bull;&nbsp;  Voice-M: Mod modifies male voice definition (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&nbsp;&nbsp;  [Oblivion, Skyrim] TagName: Description</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code> Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) (<a href="#ImportActors">Import Actors</a>)</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.AIData: Mod modifies Creature or NPC AI Data (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.Animations: Mod modifies Creature or NPC special Animations list(s) (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.CombatStyle: Mod modifies the Creature/NPC assigned combat style(s) (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.DeathItem: Mod modifies Creature or NPC Death Item(s) (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.Skeleton: Mod modifies Creature or NPC Skeleton(s) (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.Spells: Mod modifies Creature or NPC Spell list (<a href="#ImportSpells">Import Spells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.SpellsForceAdd: Force the addition of spell(s) even if earlier in the lo they had been removed(<a href="#ImportSpells">Import Spells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.Stats: Mod modifies Creature or NPC stats (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Body-F: Mod modifies female body texture/mesh definition (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Body-M: Mod modifies male body texture/mesh definition (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Body-Size-F: Mod modifies female body weight/height definition (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Body-Size-M: Mod modifies male body weight/height definition (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.Climate: Mod changes cell climate (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.Light: Mod changes cell lighting and/or fog (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.Music: Mod changes cell music type (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.Name: Mod changes cell names (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.Owner: Mod changes cell ownership (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.RecordFlags: Mod changes the off limits/dangerous flag (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>C.Water: Mod changes cell water type/level (<a href="#ImportCells">Import Cells</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Creatures.Blood: Mod changes the creature blood subrecords (<a href="#ImportActors">Import Actors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[XX]</code>Deactivate: Mod should be imported through whatever imports are tagged and then deactivated.</p>
+  <p class="list-2">&bull;&nbsp;  <code>[XX]</code>Delev: Mod deletes items from (<a href="#LeveledLists">Leveled Lists</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Eyes: Mod contributes eyes (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Relations: Mod changes faction relationships (<a href="#ImportRelations">Import Relations</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Factions: Import changes to factions of npcs and creatures. (<a href="#ImportFactions">Import Factions</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[XX]</code>Filter: Filter a mergeable mod to currently active mods (<a href="#MergeFiltering">Merge Filtering</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Graphics: Mod is a graphics replacer (<a href="#ImportGraphics">Import Graphics</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Hair: Mod contributes hair styles (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>IIM: Trigger <a href="#ItemInterchangeMode">Item Interchange Mode</a>.</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Invent: Import changes to inventory. (<a href="#ImportInventory">Import Inventory</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>InventOnly: Deprecated. Equivalent to <code>Invent + IIM</code>.</p>
+  <p class="list-2">&bull;&nbsp;  <code>[&nbsp;&nbsp;]</code>Merge: Obsolete. Ignored.</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Names: Mod is a renamer (<a href="#ImportNames">Import Names</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[XX]</code>NoMerge: Mod should not be merged even though they're technically mergeable.</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>NPC.Class: Mod changes the designated Classes of NPCs (<a href="#ImportActors">ImportActors</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>NpcFaces: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>NpcFacesForceFullImport: Mod modifies faces (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Npc.EyesOnly: Mod modifies npc eyes (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Npc.HairOnly: Mod modifies npc hair (<a href="#ImportNPCFaces">Import NPC Faces</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.AddSpells: mod adds racial spells. (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Attributes-F mod changes race attributes for females (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Attributes-M: mod changes race attributes for males (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Description: mod changes race description(s) (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.ChangeSpells: Mod overwrites race spells list(s) (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Mouth: Mod changes mouth/tongue (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Relations: Mod changes race relationships (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Skills: Mod changes race skill bonuses (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>R.Teeth: Mod changes upper/lower teeth (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[XX]</code>Relev: Mod relevels items in (<a href="#LeveledLists">Leveled Lists</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Scripts: Mod modifies item, npc or object scripts (<a href="#ImportScripts">Import Scripts</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Sound: Mod is a sound replacer (<a href="#ImportSound">Import Sound</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>SpellStats: Mod modifies spell stats (<a href="#ImportSpellStats">Import Spell Stats</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Stats: Mod modifies item stats (<a href="#ImportStats">Import Stats</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Voice-F: Mod modifies female voice definition (<a href="#RaceRecords">Race Records</a>).</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Voice-M: Mod modifies male voice definition (<a href="#RaceRecords">Race Records</a>).</p>
 <p class="list-1">&bull;&nbsp;  <b>Manual Tagging</b></p>
   <p class="list-2">&bull;&nbsp;  You can manually set the tags that are applied to any mod by right clicking in the Bash Tags field and checking and unchecking tags as you like. Manual tags are shared for all users on a given computer.</p>
   <p class="list-2">&bull;&nbsp;  If you have edited tags but want to revert to automatic tagging, just right click and choose "Automatic".</p>
@@ -2780,7 +2781,9 @@ msgid "Argument is out"
   <p class="list-2">&bull;&nbsp;  Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.</p>
   <p class="list-2">&bull;&nbsp;  Merge support for AACT, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC added.</p>
   <p class="list-2">&bull;&nbsp;  Basic ONAM support for TES4 records.</p>
-  <p class="list-2">&bull;&nbsp;  Two Bashed Tags are supported: Delev and Relev.  These can be used to intelligently merge leveled lists.</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#BashTags">Bashed Tags</a>:</p>
+    <p class="list-3">&bull;&nbsp;  <a href="#LeveledLists">Delev and Relev</a> - These can be used to intelligently merge leveled lists.</p>
+    <p class="list-3">&bull;&nbsp;  <a href="#MergeFiltering">Filter</a>, NoMerge, and Deactivate - These can be used to modify behavior in regards merging and importing records.</p>
   <p class="list-2">&bull;&nbsp;  Better merging of records with NULL Form ID's, for records that allow it (COBJ and GMST for example).</p>
   <p class="list-2">&bull;&nbsp;  New <a href="#InstallersTab">BAIN</a> option: <a href="#PackageHeaderCommands">Auto-name String Translation files</a>:</p>
     <p class="list-3">&bull;&nbsp;  Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.</p>
@@ -2789,6 +2792,7 @@ msgid "Argument is out"
   <p class="list-2">&bull;&nbsp;  <a href="#ListMastersSave">List Masters</a> command corrected to display the masters of a Save File, rather than the current Load Order.</p>
   <p class="list-2">&bull;&nbsp;  Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.</p>
   <p class="list-2">&bull;&nbsp;  Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed an issue where the <a href="#ImportGraphics">Graphics</a> tag was not properly importing the model file name on CREA records.</p>
 <p class="list-1">&bull;&nbsp;  Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.</p>
 <p class="list-1">&bull;&nbsp;  Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).</p>
 <p class="list-1">&bull;&nbsp;  Other improvements:</p>
