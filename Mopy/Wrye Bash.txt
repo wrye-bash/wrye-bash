@@ -2508,19 +2508,19 @@ msgid "Argument is out"
 * Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
 * Other improvements:
   * New Simplified Chinese translation, provided by bluesky404.
+  * New Traditional Chinese translation, provided by bluesky404.
   * [[#InstallersTab|BAIN]]:
     * Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
     * New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
+    * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
   * [[#INIEditsTab|INI Edits]]:
+    * Double click to apply an INI Tweak
+    * Left Click on the checkbox to apply an INI Tweak
     * INI Tweaks can now add and remove new lines to target INI's.
       * Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Obilvion, enabled by default for Skyrim).
     * The syntax for denoting a line to be deleted is to prepend the line with ";-".
     * BAIN Wizards can also create "deleted" INI Tweak lines, via the [[wizards.html#DisableINILine|[color=purple]DisableINILine[/color]]] command.
-  * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
   * Better support for Mac Command button.
-  * [[#INIEditsTab|INI Edits]]: 
-    * Double click to apply an INI Tweak
-    * Left Click on the checkbox to apply an INI Tweak
   * [[#BashedPatches|Bashed Patch]]:
     * New [[#TweakAssorted|Assorted Tweaker]]: No Description Loading Screens (requested by hellwing).
   * Wrye Bash will ask to backup your settings on ~~every~~ update now, instead of just a major version update (like from 294 to 295).
