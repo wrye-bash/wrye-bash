@@ -1369,6 +1369,7 @@ class MreAmmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
+        MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','fIff','speed',(_flags,'flags',0L),'damage','weight'),
         )
