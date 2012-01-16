@@ -1447,10 +1447,13 @@ class MreMisc(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
+        MelString('ICON','icon'),
         MelModel(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','=If','value','weight'),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
