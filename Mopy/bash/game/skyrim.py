@@ -870,13 +870,13 @@ class MelVmad(MelBase):
                     value = ins.readString16(size,readId)
                 elif type == 3:
                     # int32
-                    value = ins.unpack('i',4,readId)
+                    value, = ins.unpack('i',4,readId)
                 elif type == 4:
                     # float
-                    value = ins.unpack('f',4,readId)
+                    value, = ins.unpack('f',4,readId)
                 elif type == 5:
                     # bool (int8)
-                    value = ins.unpack('b',1,readId)
+                    value, = ins.unpack('b',1,readId)
                 elif type == 11:
                     # array of object refs? (uint64s?)
                     count, = ins.unpack('I',4,readId)
@@ -888,15 +888,15 @@ class MelVmad(MelBase):
                 elif type == 13:
                     # array of int32's
                     count, = ins.unpack('I',4,readId)
-                    value = ins.unpack(`count`+'i',count*4,readId)
+                    value = list(ins.unpack(`count`+'i',count*4,readId))
                 elif type == 14:
                     # array of float's
                     count, = ins.unpack('I',4,readId)
-                    value = ins.unpack(`count`+'f',count*4,readId)
+                    value = list(ins.unpack(`count`+'f',count*4,readId))
                 elif type == 15:
                     # array of bools's (int8's)
                     count, = ins.unpack('I',4,readId)
-                    value = ins.unpack(`count`+'b',count*1,readId)
+                    value = list(ins.unpack(`count`+'b',count*1,readId))
                 else:
                     raise Exception(u'Unrecognized VM Data property type: %i' % type)
                 prop.value = value
