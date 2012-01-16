@@ -1,4 +1,4 @@
-﻿Continuing from the [topic=1256835]previous thread[/topic]...
+﻿Continuing from the [topic=]previous thread[/topic]...
 
 [b]What does Wrye Bash do?[/b]
 [list]
@@ -44,7 +44,7 @@ If you're using the Standalone version, the only thing you need to install manua
 
 If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:[spoiler][list]
   [*][url=http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi]Python 2.7.2[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
-  [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.0/wxPython2.8-win32-ansi-2.8.12.0-py27.exe]wxPython 2.8.12.0 ansi for Python 2.7[/url]
+  [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe]wxPython 2.8.12.1 unicode for Python 2.7[/url]
   [*][url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
   [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url]
   [*]Other setups _may_work_, but this is the only officially supported setup.
@@ -96,6 +96,17 @@ Rinse and repeat when a new svn comes out.
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 [b]Changelog for Latest Version[/b]:
+=== 295.4 [15/1/2012] [Lojack,PacificMorrowind][spoiler][list]
+[*] Bugfix release:[list]
+  [*] Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.
+  [*] Bashed Patch:[list]
+    [*] Small tweak to Leveled Lists patcher, allowing changes to the Flags of a list to be imported in rare occasions where they were not.
+    [*] Reverted the change to the Graphics patcher from 295.3, mods requiring the model file name to be imported should be using the 'Actors.Skeleton' Tag to accomplish this.[/list]
+  [*] Fixed INI Tweaks that un-deleted a tweak line.  Now instead of re-adding the tweak in as a new line, the original line will correctly be replaced.
+  [*] Fixed an issue with switching Save Game profiles, that was introduced due to the new INI Tweak changes.
+  [*] Fixed an issue where BAIN would sometimes install document files from inactive packages.
+  [*] Updated the Wrye Bash Installer with some typo fixes, and to correctly remove some files associated with newer versions of Wrye Bash when required.
+  [*] Fixed a bug causing Wrye Bash to never ask to backup your settings on an upgrade.[/list][/list][/spoiler]
 === 295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind][spoiler][list]
 [*] Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:[list]
   [*] Special thanks to [b]bluesky404[/b] for a ton of work testing, debugging, and providing patches to help make this possible.
