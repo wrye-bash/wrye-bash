@@ -1406,37 +1406,56 @@ class MreLeveledList(MreLeveledListBase):
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
             MelStructs.dumpData(self,record,out)
-        
+    __slots__ = MreLeveledListBase.__slots__
+
+#------------------------------------------------------------------------------
+class MreLvli(MreLeveledList):
+    classType = 'LVLI'
+    copyAttrs = ('chanceNone','glob',)
+
     melSet = MelSet(
-        # LVLI
         MelString('EDID','eid'),
         MelBounds(),
         MelStruct('LVLD','B','chanceNone'),
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
         MelNull('LLCT'),
-        MelLevListLvlo(),
+        MreLeveledList.MelLevListLvlo(),
         MelFid('LVLG','glob'),
-        # LVLN
-        MelString('MODL','model'),
-        MelBase('MODT','modt_p'),
-        MelStruct('COED','=IQ',(FID,'coed_fid'),'coed_unk')
         )
-    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
-    classType = 'LVLI'
-    __slots__ = MreLeveledList.__slots__
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
-    __slots__ = MreLeveledList.__slots__
+    copyAttrs = ('chanceNone','model','modt_p','coed_fid','coed_unk',)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelNull('LLCT'),
+        MreLeveledList.MelLevListLvlo(),
+        MelString('MODL','model'),
+        MelBase('MODT','modt_p'),
+        MelStruct('COED','=IQ',(FID,'coed_fid'),'coed_unk'),
+        )
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
-    __slots__ = MreLeveledList.__slots__
+    copyAttrs = ('chanceNone',)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelNull('LLCT'),
+        MreLeveledList.MelLevListLvlo(),
+        )
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
