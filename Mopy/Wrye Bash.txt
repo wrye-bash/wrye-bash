@@ -2472,6 +2472,15 @@ msgid "Argument is out"
 === 296 [XX/X/2012]
 * CBash updated to version 0.6
 
+=== 295.4 [XX/1/2012] [Lojack,PacificMorrowind]
+* Bugfix release:
+  * Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.
+  * [[#BashedPatches|Bashed Patch]]: Small tweak to Leveled Lists patcher, allowing changes to the Flags of a list to be imported in rare occasions where they were not.
+  * Fixed [[#INIEditsTab|INI Tweaks]] that un-deleted a tweak line.  Now instead of re-adding the tweak in as a new line, the original line will correctly be replaced.
+  * Fixed an issue with switching [[#SaveProfiles|Save Game profiles]], that was introduced due to the new INI Tweak changes.
+  * Fixed an issue where [[#InstallersTab|BAIN]] would sometimes install document files from inactive packages.
+  * Updated the Wrye Bash Installer with some typo fixes, and to correctly remove some files associated with newer versions of Wrye Bash when required.
+
 === 295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind]
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
