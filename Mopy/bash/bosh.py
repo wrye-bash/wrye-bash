@@ -3201,38 +3201,6 @@ class IniFile(object):
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
-    def saveNewSetting(self,section,key,value):
-        """Adds a new single setting to the file."""
-        #--Check if the setting already exists
-        settings = self.getSettings()
-        s = LString(section)
-        k = LString(key)
-        #--It's already there, so just use the standard method
-        if s in settings and k in settings[s]:
-            self.saveSetting(section,key,value)
-        else:
-            if s in settings:
-                #--It's not, but the section is
-                reComment = self.reComment
-                reSection = self.reSection
-                reSetting = self.reSetting
-                with self.path.open('r') as iniFile:
-                    with self.path.temp.open('w') as tmpFile:
-                        for line in iniFile:
-                            stripped = reComment.sub(u'',line).strip()
-                            maSection = reSection.match(stripped)
-                            if maSection:
-                                section = LString(maSection.group(1))
-                                if section == s:
-                                    #--Found the section
-                                    line += u'%s=%s\n' % (key,value)
-                            tmpFile.write(line)
-                self.path.untemp()
-            else:
-                #--It's not, and the section isn't, so we'll add it to the end
-                tmpFile.write(iniFile.read())
-                tmpFile.write(u'\n[%s]\n%s=%s' % (section, key, value))
-
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
@@ -3279,13 +3247,13 @@ class IniFile(object):
                             if isinstance(value,basestring) and value[-1] == u'\n':
                                 line = value
                             else:
-                                line = u'%s=%s\n' % (key,value)
+                                line = u'%s=%s\n' % (setting,value)
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-'+line
                     tmpFileWrite(line)
                 # Add remaining new entries
-                if section:
+                if section and section in ini_settings:
                     # This will occur for the last INI section in the ini file
                     for setting in ini_settings[section]:
                         tmpFileWrite(ini_settings[section][setting])
@@ -5905,12 +5873,9 @@ class SaveInfos(FileInfos):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
         self.localSave = localSave
-        #--Need 'saveNewSetting', because some games (Skyrim) don't
-        #  have that setting in the INI file initially, but it does
-        #  work.
-        oblivionIni.saveNewSetting(bush.game.saveProfilesKey[0],
-                                   bush.game.saveProfilesKey[1],
-                                   localSave)
+        oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
+                                bush.game.saveProfilesKey[1],
+                                localSave)
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,u'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
