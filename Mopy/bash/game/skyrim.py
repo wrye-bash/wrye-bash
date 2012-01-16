@@ -1317,7 +1317,7 @@ class MreArma(MelRecord):
         MelModel('female_model','MOD3'),
         MelModel('male_model_1st','MOD4'),
         MelModel('female_model_1st','MOD5'),
-        MelFidList('MODL','races'),
+        MelFids('MODL','races'),
         MelFid('SNDD','foodSound'),
         MelFid('NAM0','skin0'),
         MelFid('NAM1','skin1'),
@@ -1334,16 +1334,16 @@ class MreArmo(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelFid('EITM','enchantment'),
+        MelOptStruct('EITM','I',(FID,'enchantment')),
         MelModel('model1','MOD2'),
         MelModel('model3','MOD4'),
         MelBODT(),
-        MelFid('ETYP','equipType'),
-        MelFid('BIDS','bashImpact'),
-        MelFid('BAMT','material'),
-        MelFid('YNAM','pickupSound'),
-        MelFid('ZNAM','dropSound'),
-        MelFid('RNAM','race'),
+        MelOptStruct('ETYP','I',(FID,'equipType')),
+        MelOptStruct('BIDS','I',(FID,'bashImpact')),
+        MelOptStruct('BAMT','I',(FID,'material')),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelFid('RNAM','I',(FID,'race')),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
@@ -1398,45 +1398,66 @@ class MreGmst(MreGmstBase):
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
-    copyAttrs = ('chanceNone','glob','model','modt_p','coed_fid','coed_unk',)
 
-    class MelLevListLvlo(MelStructs):
+    class MelLevListLvlo(MelGroups):
         def __init__(self):
-            MelStructs.__init__(self,'LVLO','=3I','entries','level',(FID,'listId',None),('count',1))
+            MelGroups.__init__(self,'entries',
+                MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
+                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
+                )
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
-            MelStructs.dumpData(self,record,out)
-        
+            MelGroups.dumpData(self,record,out)
+
+    __slots__ = MreLeveledListBase.__slots__
+
+#------------------------------------------------------------------------------
+class MreLvli(MreLeveledList):
+    classType = 'LVLI'
+    copyAttrs = ('chanceNone','glob',)
+
     melSet = MelSet(
-        # LVLI
         MelString('EDID','eid'),
         MelBounds(),
         MelStruct('LVLD','B','chanceNone'),
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
         MelNull('LLCT'),
-        MelLevListLvlo(),
+        MreLeveledList.MelLevListLvlo(),
         MelFid('LVLG','glob'),
-        # LVLN
-        MelString('MODL','model'),
-        MelBase('MODT','modt_p'),
-        MelStruct('COED','=IQ',(FID,'coed_fid'),'coed_unk')
         )
-    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
-    classType = 'LVLI'
-    __slots__ = MreLeveledList.__slots__
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
-    __slots__ = MreLeveledList.__slots__
+    copyAttrs = ('chanceNone','model','modt_p',)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelNull('LLCT'),
+        MreLeveledList.MelLevListLvlo(),
+        MelString('MODL','model'),
+        MelBase('MODT','modt_p'),
+        )
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
-    __slots__ = MreLeveledList.__slots__
+    copyAttrs = ('chanceNone',)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelNull('LLCT'),
+        MreLeveledList.MelLevListLvlo(),
+        )
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
@@ -1447,10 +1468,13 @@ class MreMisc(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
+        MelString('ICON','icon'),
         MelModel(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','=If','value','weight'),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 

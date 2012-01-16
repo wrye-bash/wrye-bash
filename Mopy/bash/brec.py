@@ -1651,7 +1651,9 @@ class MreLeveledListBase(MelRecord):
             self.items |= newItems
             self.entries.sort(key=attrgetter('listId','level','count'))
         #--Is merged list different from other? (And thus written to patch.)
-        if len(self.entries) != len(other.entries):
+        if ((len(self.entries) != len(other.entries)) or
+            (self.flags != other.flags)
+            ):
             self.mergeOverLast = True
         else:
             for attr in self.__class__.copyAttrs:

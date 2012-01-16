@@ -1586,7 +1586,7 @@
 <p class="list-1">&bull;&nbsp;  Several of Bash's features (e.g., automatic selection) of mods require that the source mods be tagged with Bash Tags. You can view and edit the tags that are currently assigned to any mod in the Bash Tags field at the bottom right of the Mods tab.</p>
 <p class="list-1">&bull;&nbsp;  <b><a id='CurrentTags'>Current Tags</a>:</b></p>
   <p class="list-2">&nbsp;&nbsp;  [Oblivion, Skyrim] TagName: Description</p>
-  <p class="list-2">&bull;&nbsp;  <code>[X ]</code> Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) (<a href="#ImportActors">Import Actors</a>)</p>
+  <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.ACBS: Mod Modifies the Creature or NPC ACBS configuration (such as fatigue, etc.) (<a href="#ImportActors">Import Actors</a>)</p>
   <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.AIData: Mod modifies Creature or NPC AI Data (<a href="#ImportActors">Import Actors</a>).</p>
   <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.AIPackages: Mod modifies Creature or NPC AI Packages list (<a href="#ImportActors">Import Actors</a>).</p>
   <p class="list-2">&bull;&nbsp;  <code>[X ]</code>Actors.AIPackagesForceAdd: force the addition of packages even if earlier in the lo they had been removed (<a href="#ImportActors">Import Actors</a>).</p>
@@ -2757,6 +2757,17 @@ msgid "Argument is out"
 <h2><a id='Versions'>Versions</a></h2>
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='_2954XX12012LojackPacificMorrowind'>295.4 [XX/1/2012] [Lojack,PacificMorrowind]</a></h3>
+<p class="list-1">&bull;&nbsp;  Bugfix release:</p>
+  <p class="list-2">&bull;&nbsp;  Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.</p>
+  <p class="list-2">&bull;&nbsp;  <a href="#BashedPatches">Bashed Patch</a>:</p>
+    <p class="list-3">&bull;&nbsp;  Small tweak to Leveled Lists patcher, allowing changes to the Flags of a list to be imported in rare occasions where they were not.</p>
+    <p class="list-3">&bull;&nbsp;  Reverted the change to the Graphics patcher from 295.3, mods requiring the model file name to be imported should be using the <code>Actors.Skeleton</code> <a href="#BashTags">Tag</a> to accomplish this.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed <a href="#INIEditsTab">INI Tweaks</a> that un-deleted a tweak line.  Now instead of re-adding the tweak in as a new line, the original line will correctly be replaced.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed an issue with switching <a href="#SaveProfiles">Save Game profiles</a>, that was introduced due to the new INI Tweak changes.</p>
+  <p class="list-2">&bull;&nbsp;  Fixed an issue where <a href="#InstallersTab">BAIN</a> would sometimes install document files from inactive packages.</p>
+  <p class="list-2">&bull;&nbsp;  Updated the Wrye Bash Installer with some typo fixes, and to correctly remove some files associated with newer versions of Wrye Bash when required.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='_29531412012Lojackbluesky404PacificMorrowind'>295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind]</a></h3>
 <p class="list-1">&bull;&nbsp;  Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:</p>

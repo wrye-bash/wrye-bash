@@ -3201,38 +3201,6 @@ class IniFile(object):
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
-    def saveNewSetting(self,section,key,value):
-        """Adds a new single setting to the file."""
-        #--Check if the setting already exists
-        settings = self.getSettings()
-        s = LString(section)
-        k = LString(key)
-        #--It's already there, so just use the standard method
-        if s in settings and k in settings[s]:
-            self.saveSetting(section,key,value)
-        else:
-            if s in settings:
-                #--It's not, but the section is
-                reComment = self.reComment
-                reSection = self.reSection
-                reSetting = self.reSetting
-                with self.path.open('r') as iniFile:
-                    with self.path.temp.open('w') as tmpFile:
-                        for line in iniFile:
-                            stripped = reComment.sub(u'',line).strip()
-                            maSection = reSection.match(stripped)
-                            if maSection:
-                                section = LString(maSection.group(1))
-                                if section == s:
-                                    #--Found the section
-                                    line += u'%s=%s\n' % (key,value)
-                            tmpFile.write(line)
-                self.path.untemp()
-            else:
-                #--It's not, and the section isn't, so we'll add it to the end
-                tmpFile.write(iniFile.read())
-                tmpFile.write(u'\n[%s]\n%s=%s' % (section, key, value))
-
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
@@ -3252,6 +3220,7 @@ class IniFile(object):
         section = sectionSettings = None
         with self.path.open('r') as iniFile:
             with self.path.temp.open('w') as tmpFile:
+                tmpFileWrite = tmpFile.write
                 for line in iniFile:
                     maDeleted = reDeleted.match(line)
                     stripped = reComment.sub(u'',line).strip()
@@ -3269,25 +3238,32 @@ class IniFile(object):
                             del ini_settings[section]
                         section = LString(maSection.group(1))
                         sectionSettings = ini_settings.get(section,{})
-                    elif maSetting:
-                        setting = LString(maSetting.group(1))
+                    elif maSetting or maDeleted:
+                        if maSetting: match = maSetting
+                        else: match = maDeleted
+                        setting = LString(match.group(1))
                         if sectionSettings and setting in sectionSettings:
                             value = sectionSettings[setting]
                             if isinstance(value,basestring) and value[-1] == u'\n':
                                 line = value
                             else:
-                                line = u'%s=%s\n' % (key,value)
+                                line = u'%s=%s\n' % (setting,value)
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-'+line
-                    tmpFile.write(line)
+                    tmpFileWrite(line)
                 # Add remaining new entries
+                if section and section in ini_settings:
+                    # This will occur for the last INI section in the ini file
+                    for setting in ini_settings[section]:
+                        tmpFileWrite(ini_settings[section][setting])
+                    del ini_settings[section]
                 for section in ini_settings:
                     if ini_settings[section]:
                         tmpFile.write(u'\n')
                         tmpFile.write(u'[%s]\n' % section)
                         for setting in ini_settings[section]:
-                            tmpFile.write(ini_settings[section][setting])
+                            tmpFileWrite(ini_settings[section][setting])
         #--Done
         self.path.untemp()
 
@@ -5894,12 +5870,9 @@ class SaveInfos(FileInfos):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
         self.localSave = localSave
-        #--Need 'saveNewSetting', because some games (Skyrim) don't
-        #  have that setting in the INI file initially, but it does
-        #  work.
-        oblivionIni.saveNewSetting(bush.game.saveProfilesKey[0],
-                                   bush.game.saveProfilesKey[1],
-                                   localSave)
+        oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
+                                bush.game.saveProfilesKey[1],
+                                localSave)
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,u'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
@@ -7271,7 +7244,6 @@ class Installer(object):
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
-                    bSkip = True
                     fileLower = file.lower()
                     subList = espmMapSetdefault(sub,[])
                     subListAppend = subList.append
@@ -7288,12 +7260,11 @@ class Installer(object):
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in docExts:
-                        if reReadMeMatch(file):
-                            self.hasReadme = full
-                            skipDirFilesDiscard(file)
-                            if skipDocs:
-                                continue
-                            bSkip = False
+                        if not self.hasReadme:
+                            if reReadMeMatch(file):
+                                self.hasReadme = full
+                                skipDirFilesDiscard(file)
+                        continue
                     elif file in bethFiles:
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
@@ -7306,7 +7277,7 @@ class Installer(object):
                         #--Remap espms as defined by the user
                         if file in self.remaps: file = self.remaps[file]
                         if file not in subList: subListAppend(file)
-                    if bSkip: continue
+                    continue
                 fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
             subListAppend = subList.append
@@ -16171,7 +16142,7 @@ class GraphicsPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
             recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
         for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            recAttrs_class[recClass] = ('bodyParts','nift_p','model')
+            recAttrs_class[recClass] = ('bodyParts','nift_p')
         for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
             recAttrs_class[recClass] = ('iconPath','model')
             recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
@@ -16375,7 +16346,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                                'femaleIconPath', 'flags')
         class_attrs['CLOT'] = class_attrs['ARMO']
 
-        class_attrs['CREA'] = ('bodyParts', 'nift_p') + model
+        class_attrs['CREA'] = ('bodyParts', 'nift_p')
         class_attrs['MGEF'] = icon + model
         class_fidattrs['MGEF'] = ('effectShader','enchantEffect','light')
         class_attrs['EFSH'] = ('fillTexturePath','particleTexturePath','flags','memSBlend','memBlendOp',
