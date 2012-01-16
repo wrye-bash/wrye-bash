@@ -1486,7 +1486,8 @@ class ModFile:
                         selfTopsSkipAdd(label)
                         insSeek(size-header.__class__.size,1,type + '.' + label)
                 except:
-                    print u'Error in',self.fileInfo.name
+                    print u'Error in',self.fileInfo.name.s
+                    deprint(u' ',traceback=True)
                     break
         #--Done Reading
 

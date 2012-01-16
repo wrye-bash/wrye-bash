@@ -1343,7 +1343,7 @@ class MreArmo(MelRecord):
         MelOptStruct('BAMT','I',(FID,'material')),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelFid('RNAM','I',(FID,'race')),
+        MelOptStruct('RNAM','I',(FID,'race')),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
