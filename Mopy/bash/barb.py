@@ -59,7 +59,7 @@ class BaseBackupSettings:
         #end if
         self.parent = parent
         self.verDat = basher.settings['bash.version']
-        self.verApp = basher.settings['bash.readme'][1]
+        self.verApp = basher.GetBashVersion()[1]
         self.files = {}
         self.tmp = None
 
