@@ -7247,7 +7247,6 @@ class Installer(object):
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
-                    bSkip = True
                     fileLower = file.lower()
                     subList = espmMapSetdefault(sub,[])
                     subListAppend = subList.append
@@ -7264,12 +7263,11 @@ class Installer(object):
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in docExts:
-                        if reReadMeMatch(file):
-                            self.hasReadme = full
-                            skipDirFilesDiscard(file)
-                            if skipDocs:
-                                continue
-                            bSkip = False
+                        if not self.hasReadme:
+                            if reReadMeMatch(file):
+                                self.hasReadme = full
+                                skipDirFilesDiscard(file)
+                        continue
                     elif file in bethFiles:
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
@@ -7282,7 +7280,7 @@ class Installer(object):
                         #--Remap espms as defined by the user
                         if file in self.remaps: file = self.remaps[file]
                         if file not in subList: subListAppend(file)
-                    if bSkip: continue
+                    continue
                 fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
             subListAppend = subList.append
