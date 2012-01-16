@@ -1322,6 +1322,7 @@ class MreArma(MelRecord):
         MelFid('NAM0','skin0'),
         MelFid('NAM1','skin1'),
         MelFid('NAM2','skin2'),
+        MelFid('NAM3','skin3'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
