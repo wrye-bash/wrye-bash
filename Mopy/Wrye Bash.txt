@@ -2472,7 +2472,7 @@ msgid "Argument is out"
 === 296 [XX/X/2012]
 * CBash updated to version 0.6
 
-=== 295.4 [XX/1/2012] [Lojack,PacificMorrowind]
+=== 295.4 [15/1/2012] [Lojack,PacificMorrowind]
 * Bugfix release:
   * Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.
   * [[#BashedPatches|Bashed Patch]]:
