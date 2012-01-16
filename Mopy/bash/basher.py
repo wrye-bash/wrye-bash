@@ -16686,7 +16686,7 @@ class Oblivion_Button(App_Button):
     def Execute(self,event):
         App_Button.Execute(self,event)
         if settings.get('bash.autoQuit.on',False):
-            bashFrame.Close()
+            bashFrame.Close(True)
 
 #------------------------------------------------------------------------------
 class TESCS_Button(App_Button):
