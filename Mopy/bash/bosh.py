@@ -7061,6 +7061,7 @@ class Installer(object):
         self.refreshed = False
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
+        self.hasBCF = False
         self.espmMap = {}
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False
