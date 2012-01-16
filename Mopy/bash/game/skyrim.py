@@ -1398,14 +1398,17 @@ class MreGmst(MreGmstBase):
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
-    copyAttrs = ('chanceNone','glob','model','modt_p','coed_fid','coed_unk',)
 
-    class MelLevListLvlo(MelStructs):
+    class MelLevListLvlo(MelGroups):
         def __init__(self):
-            MelStructs.__init__(self,'LVLO','=3I','entries','level',(FID,'listId',None),('count',1))
+            MelGroups.__init__(self,'entries',
+                MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
+                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
+                )
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
-            MelStructs.dumpData(self,record,out)
+            MelGroups.dumpData(self,record,out)
+
     __slots__ = MreLeveledListBase.__slots__
 
 #------------------------------------------------------------------------------
@@ -1427,7 +1430,7 @@ class MreLvli(MreLeveledList):
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
-    copyAttrs = ('chanceNone','model','modt_p','coed_fid','coed_unk',)
+    copyAttrs = ('chanceNone','model','modt_p',)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -1438,7 +1441,6 @@ class MreLvln(MreLeveledList):
         MreLeveledList.MelLevListLvlo(),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
-        MelStruct('COED','=IQ',(FID,'coed_fid'),'coed_unk'),
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
