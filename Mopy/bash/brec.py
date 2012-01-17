@@ -1552,17 +1552,21 @@ class MreGmstBase(MelRecord):
     classType = 'GMST'
     class MelGmstValue(MelBase):
         def loadData(self,record,ins,type,size,readId):
-            format = _encode(record.eid[0]) #-- s|i|f
-            if format == 's':
+            format = _encode(record.eid[0]) #-- s|i|f|b
+            if format == u's':
                 record.value = ins.readLString(size,readId)
-            else:
-                record.value, = ins.unpack(format,size,readId)
+                return
+            elif format == u'b':
+                format = u'I'
+            record.value, = ins.unpack(format,size,readId)
         def dumpData(self,record,out):
             format = _encode(record.eid[0]) #-- s|i|f
-            if format == 's':
+            if format == u's':
                 out.packSub0(self.subType,record.value)
-            else:
-                out.packSub(self.subType,format,record.value)
+                return
+            elif format == u'b':
+                format = u'I'
+            out.packSub(self.subType,format,record.value)
     melSet = MelSet(
         MelString('EDID','eid'),
         MelGmstValue('DATA','value'),
