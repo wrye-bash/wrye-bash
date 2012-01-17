@@ -13967,6 +13967,7 @@ class PatchFile(ModFile):
         for type,block in modFile.tops.iteritems():
             for record in block.getActiveRecords():
                 if record.fid >> 24 >= lenMasters:
+                    if record.flags1.deleted: continue #if new records exist but are deleted just skip em.
                     if not verbose: return False
                     newblocks.append(type)
                     break
@@ -23425,7 +23426,7 @@ class GmstTweaker(MultiTweaker):
             (u'80',80),
             (_(u'Custom'),10),
             ),
-        GmstTweak(_(u'Crime Alarm Distance'),
+        GmstTweak(_(u'Crime: Alarm Distance'),
             _(u"Distance from player that NPCs(guards) will be alerted of a crime."),
             (u'iCrimeAlarmRecDistance',),
             (u'6000',6000),
@@ -24134,7 +24135,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (u'80',80),
             (_(u'Custom'),10),
             ),
-        CBash_GmstTweak(_(u'Crime Alarm Distance'),
+        CBash_GmstTweak(_(u'Crime: Alarm Distance'),
             _(u"Distance from player that NPCs(guards) will be alerted of a crime."),
             (u'iCrimeAlarmRecDistance',),
             (u'6000',6000),
