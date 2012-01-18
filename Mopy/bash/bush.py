@@ -33,18 +33,15 @@ import _winreg
 from bolt import GPath,Path,deprint
 
 # Setup -----------------------------------------------------------------------
-# Call this with the name of the game to setup bush.game for.
 game = None
 gamePath = None
 
 def detectGames(workingDir=u''):
-    """If gameName is specified:
-        - Try to find that game's intall path via windows registry
-        - Try to find that game at "workingDir"
-        - Try to find that game one directory up from the cwd
-       If gameName is not specified:
-        - Use the game found at "workingDir"
-        - Use the game found one directory up from the cwd."""
+    """Detect which supported games are intalled.
+       - First, read the windows registry, checking for the install keys for the
+         games.
+       - Next, check for a valid game at "workingDir"
+       - Finally, also look one directory up from the cwd."""
     #--First: Find all supported games via the registry
     import pkgutil
     import game as _game

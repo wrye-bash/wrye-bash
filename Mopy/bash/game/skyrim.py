@@ -997,7 +997,7 @@ class MelKeywords(MelFidList):
 class MelComponents(MelStructs):
     """Handle writing COCT subrecord for the CNTO subrecord"""
     def dumpData(self,record,out):
-        componenets = record.__getattribute__(self.attr)
+        components = record.__getattribute__(self.attr)
         if components:
             # Only write the COCT/CNTO subrecords if count > 0
             out.packSub('COCT','I',len(components))
