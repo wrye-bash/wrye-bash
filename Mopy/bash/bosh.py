@@ -73,12 +73,11 @@ exe7z = u'7zUnicode.exe'
 
 def formatInteger(value):
     """Convert integer to string formatted to locale."""
-    return _unicode(locale.format('%d',int(value),True))
+    return _unicode(locale.format('%d',int(value),True),locale.getpreferredencoding())
 
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
-    localtime = time.localtime(value)
-    return _unicode(time.strftime('%c',localtime))
+    return _unicode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
 
 def unformatDate(str,format):
     """Basically a wrapper around time.strptime. Exists to get around bug in
@@ -3231,12 +3230,13 @@ class IniFile(object):
                         if section and ini_settings.get(section,{}):
                             # There are 'new' entries still to be added
                             for setting in ini_settings[section]:
-                                newLine = ini_settings[section][setting]
-                                if newLine[-1:] == u'\n':
-                                    tmpFile.write(newLine)
+                                value = ini_settings[section][setting]
+                                if isinstance(value,basestring) and value[-1:] == u'\n':
+                                    tmpFileWrite(newLine)
                                 else:
-                                    tmpFile.write(u'%s\n' % newLine)
+                                    tmpFileWrite(u'%s=%s\n' % (setting,value))
                             del ini_settings[section]
+                            tmpFileWrite(u'\n')
                         section = LString(maSection.group(1))
                         sectionSettings = ini_settings.get(section,{})
                     elif maSetting or maDeleted:
@@ -3257,14 +3257,24 @@ class IniFile(object):
                 if section and section in ini_settings:
                     # This will occur for the last INI section in the ini file
                     for setting in ini_settings[section]:
-                        tmpFileWrite(ini_settings[section][setting])
+                        value = ini_settings[section][setting]
+                        if isinstance(value,basestring) and value[-1] == u'\n':
+                            tmpFileWrite(value)
+                        else:
+                            tmpFileWrite(u'%s=%s\n' % (setting,value))
+                    tmpFileWrite(u'\n')
                     del ini_settings[section]
                 for section in ini_settings:
                     if ini_settings[section]:
-                        tmpFile.write(u'\n')
-                        tmpFile.write(u'[%s]\n' % section)
+                        tmpFileWrite(u'\n')
+                        tmpFileWrite(u'[%s]\n' % section)
                         for setting in ini_settings[section]:
-                            tmpFileWrite(ini_settings[section][setting])
+                            value = ini_settings[section][setting]
+                            if isinstance(value,basestring) and value[-1] == u'\n':
+                                tmpFileWrite(newLine)
+                            else:
+                                tmpFileWrite(u'%s=%s\n' % (setting,value))
+                        tmpFileWrite(u'\n')
         #--Done
         self.path.untemp()
 
@@ -5862,6 +5872,8 @@ class SaveInfos(FileInfos):
             self.localSave = oblivionIni.getSetting(bush.game.saveProfilesKey[0],
                                                     bush.game.saveProfilesKey[1],
                                                     u'Saves\\')
+            # Hopefully will solve issues with unicode usernames
+            self.localSave = _unicode(self.localSave)
             self.iniMTime = oblivionIni.path.mtime
             return True
         else:
@@ -5873,7 +5885,7 @@ class SaveInfos(FileInfos):
         self.localSave = localSave
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
-                                localSave)
+                                _encode(localSave))
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,u'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
@@ -7058,6 +7070,7 @@ class Installer(object):
         self.refreshed = False
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
+        self.hasBCF = False
         self.espmMap = {}
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False

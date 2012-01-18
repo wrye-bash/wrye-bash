@@ -870,13 +870,13 @@ class MelVmad(MelBase):
                     value = ins.readString16(size,readId)
                 elif type == 3:
                     # int32
-                    value = ins.unpack('i',4,readId)
+                    value, = ins.unpack('i',4,readId)
                 elif type == 4:
                     # float
-                    value = ins.unpack('f',4,readId)
+                    value, = ins.unpack('f',4,readId)
                 elif type == 5:
                     # bool (int8)
-                    value = ins.unpack('b',1,readId)
+                    value, = ins.unpack('b',1,readId)
                 elif type == 11:
                     # array of object refs? (uint64s?)
                     count, = ins.unpack('I',4,readId)
@@ -888,15 +888,15 @@ class MelVmad(MelBase):
                 elif type == 13:
                     # array of int32's
                     count, = ins.unpack('I',4,readId)
-                    value = ins.unpack(`count`+'i',count*4,readId)
+                    value = list(ins.unpack(`count`+'i',count*4,readId))
                 elif type == 14:
                     # array of float's
                     count, = ins.unpack('I',4,readId)
-                    value = ins.unpack(`count`+'f',count*4,readId)
+                    value = list(ins.unpack(`count`+'f',count*4,readId))
                 elif type == 15:
                     # array of bools's (int8's)
                     count, = ins.unpack('I',4,readId)
-                    value = ins.unpack(`count`+'b',count*1,readId)
+                    value = list(ins.unpack(`count`+'b',count*1,readId))
                 else:
                     raise Exception(u'Unrecognized VM Data property type: %i' % type)
                 prop.value = value
@@ -987,10 +987,23 @@ class MelBounds(MelStruct):
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
     def dumpData(self,record,out):
-        out.packSub('KSIZ','I',len(record.__getattribute__(self.attr)))
-        MelFidList.dumpData(self,record,out)
+        keywords = record.__getattribute__(self.attr)
+        if keywords:
+            # Only write the KSIZ/KWDA subrecords if count > 0
+            out.packSub('KSIZ','I',len(keywords))
+            MelFidList.dumpData(self,record,out)
 
 #-------------------------------------------------------------------------------
+class MelComponents(MelStructs):
+    """Handle writing COCT subrecord for the CNTO subrecord"""
+    def dumpData(self,record,out):
+        componenets = record.__getattribute__(self.attr)
+        if components:
+            # Only write the COCT/CNTO subrecords if count > 0
+            out.packSub('COCT','I',len(components))
+            MelStructs.dumpData(self,record,out)
+
+#------------------------------------------------------------------------------
 class MelString16(MelString):
     """Represents a mod record string element."""
     def loadData(self,record,ins,type,size,readId):
@@ -1145,6 +1158,17 @@ class MelBODT(MelStruct):
                            ('armorType',0)
                            )
 
+    def loadData(self,record,ins,type,size,readId):
+        if size == 8:
+            # Version 20 of this subrecord type was only 8 bytes - omits 'armorType'
+            format = '=2I'
+            record.bodyFlags,record.otherFlags = ins.unpack('=2I',size,readId)
+            record.armorType = 0
+        elif size != 12:
+            raise ModSizeError(ins.inName,readId,12,size,True)
+        else:
+            MelStruct.loadData(self,record,ins,type,size,readId)
+
 #-------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model record."""
@@ -1276,18 +1300,20 @@ class MreActi(MelRecord):
         MelLString('FULL','full'),
         MelModel(),
         MelBase('DEST','dest_p'),
-        MelBase('DSTD','dstd_p'),
-        MelModel('depletedModel','DMDL'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelBase('PNAM','pnam_p'),
-        MelFid('VNAM','pickupSound'),
-        MelFid('SNAM','dropSound'),
-        MelFid('WNAM','water'),
+        MelOptStruct('VNAM','I',(FID,'pickupSound')),
+        MelOptStruct('SNAM','I',(FID,'dropSound')),
+        MelOptStruct('WNAM','I',(FID,'water')),
         MelNull('KSIZ'), # Handled by MelKeywords
         MelKeywords('KWDA','keywords'),
         MelLString('RNAM','rnam'),
         MelBase('FNAM','fnam_p'),
-        MelFid('KNAM','keyword'),
-        MelBase('DSTF','dstf_p'), #--Always 0, what is it for?
+        MelOptStruct('KNAM','I',(FID,'keyword')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1300,7 +1326,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelBase('DATA','data_p'),
-        MelBase('DNAM','dnam_p'),
+        MelBase('DNAM','flags'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1318,10 +1344,11 @@ class MreArma(MelRecord):
         MelModel('male_model_1st','MOD4'),
         MelModel('female_model_1st','MOD5'),
         MelFids('MODL','races'),
-        MelFid('SNDD','foodSound'),
-        MelFid('NAM0','skin0'),
-        MelFid('NAM1','skin1'),
-        MelFid('NAM2','skin2'),
+        MelOptStruct('SNDD','I',(FID,'foodSound')),
+        MelOptStruct('NAM0','I',(FID,'skin0')),
+        MelOptStruct('NAM1','I',(FID,'skin1')),
+        MelOptStruct('NAM2','I',(FID,'skin2')),
+        MelOptStruct('NAM3','I',(FID,'skin3')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1368,6 +1395,7 @@ class MreAmmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
+        MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','fIff','speed',(_flags,'flags',0L),'damage','weight'),
         )
@@ -1380,8 +1408,8 @@ class MreCobj(MelRecord):
     isKeyedByEid = True # NULL fids are acceptible
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('COCT','I','componentCount'),
-        MelStructs('CNTO','=2I','components',(FID,'item',None),'count'),
+        MelNull('COCT'), # Handled by MelComponents
+        MelComponents('CNTO','=2I','components',(FID,'item',None),'count'),
         MelConditions(),
         MelFid('CNAM','resultingItem'),
         MelStruct('NAM1','H','resultingQuantity'),
@@ -1423,7 +1451,7 @@ class MreLvli(MreLeveledList):
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
-        MelFid('LVLG','glob'),
+        MelOptStruct('LVLG','I',(FID,'glob')),
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
@@ -1473,8 +1501,8 @@ class MreMisc(MelRecord):
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','=If','value','weight'),
-        MelFid('YNAM','pickupSound'),
-        MelFid('ZNAM','dropSound'),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelFid('ZNAM','I',(FID,'dropSound')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
