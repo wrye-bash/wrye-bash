@@ -147,8 +147,10 @@ def exit():
     if basherImported:
         from basher import appRestart
         if appRestart:
-            exePath = GPath(sys.executable)
-            sys.argv = [exePath.stail] + sys.argv + [u'--restarting']
+            if not hasattr(sys,'frozen'):
+                exePath = GPath(sys.executable)
+                sys.argv = [exePath.stail] + sys.argv
+            sys.argv += [u'--restarting']
             def updateArgv(args):
                 if isinstance(args,(list,tuple)):
                     if len(args) > 0 and isinstance(args[0],(list,tuple)):
@@ -170,7 +172,10 @@ def exit():
             updateArgv(appRestart)
             try:
                 import subprocess
-                subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                if hasattr(sys,'frozen'):
+                    subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
+                else:
+                    subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
             except Exception, error:
                 print error
                 print u'Error Attempting to Restart Wrye Bash!'
