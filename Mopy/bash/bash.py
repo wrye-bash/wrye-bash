@@ -239,8 +239,8 @@ def main():
                 msgtext = _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.") 
                 msgtext += u'\n\n'
                 msgtext += _(u'To prevent this message in the future, use the -g command line argument to specify the game')
-            if hasattr(sys,'frozen'):
-                # Standalone is guaranteed to have wxPython, so use that
+            try:
+                # First try using wxPython
                 import wx
 
                 class AppReturnCode(object):
@@ -281,7 +281,8 @@ def main():
                 del _app
                 if retCode.get() is None: return
                 bush.setGame(retCode.get(),opts.oblivionPath)
-            else:
+            except:
+                # No good with wxPython, use Tkinter instead
                 # Python mode, use Tkinter here, since we don't know for sure if wx is present
                 import Tkinter
                 root = Tkinter.Tk()
@@ -407,7 +408,11 @@ def main():
             root.mainloop()
             return
         except StandardError, y:
-            print y
+            try:
+                print y
+                traceback.format_exc()
+            except:
+                pass
             raise e
 
     if not oneInstanceChecker(): return
