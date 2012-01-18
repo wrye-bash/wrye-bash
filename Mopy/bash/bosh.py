@@ -5875,6 +5875,8 @@ class SaveInfos(FileInfos):
             self.localSave = oblivionIni.getSetting(bush.game.saveProfilesKey[0],
                                                     bush.game.saveProfilesKey[1],
                                                     u'Saves\\')
+            # Hopefully will solve issues with unicode usernames
+            self.localSave = _unicode(self.localSave)
             self.iniMTime = oblivionIni.path.mtime
             return True
         else:
@@ -5886,7 +5888,7 @@ class SaveInfos(FileInfos):
         self.localSave = localSave
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
-                                localSave)
+                                _encode(localSave))
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,u'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
