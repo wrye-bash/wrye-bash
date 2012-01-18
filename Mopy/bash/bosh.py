@@ -3230,12 +3230,13 @@ class IniFile(object):
                         if section and ini_settings.get(section,{}):
                             # There are 'new' entries still to be added
                             for setting in ini_settings[section]:
-                                newLine = ini_settings[section][setting]
-                                if newLine[-1:] == u'\n':
-                                    tmpFile.write(newLine)
+                                value = ini_settings[section][setting]
+                                if isinstance(value,basestring) and value[-1:] == u'\n':
+                                    tmpFileWrite(newLine)
                                 else:
-                                    tmpFile.write(u'%s\n' % newLine)
+                                    tmpFileWrite(u'%s=%s\n' % (setting,value))
                             del ini_settings[section]
+                            tmpFileWrite(u'\n')
                         section = LString(maSection.group(1))
                         sectionSettings = ini_settings.get(section,{})
                     elif maSetting or maDeleted:
@@ -3256,14 +3257,24 @@ class IniFile(object):
                 if section and section in ini_settings:
                     # This will occur for the last INI section in the ini file
                     for setting in ini_settings[section]:
-                        tmpFileWrite(ini_settings[section][setting])
+                        value = ini_settings[section][setting]
+                        if isinstance(value,basestring) and value[-1] == u'\n':
+                            tmpFileWrite(value)
+                        else:
+                            tmpFileWrite(u'%s=%s\n' % (setting,value))
+                    tmpFileWrite(u'\n')
                     del ini_settings[section]
                 for section in ini_settings:
                     if ini_settings[section]:
-                        tmpFile.write(u'\n')
-                        tmpFile.write(u'[%s]\n' % section)
+                        tmpFileWrite(u'\n')
+                        tmpFileWrite(u'[%s]\n' % section)
                         for setting in ini_settings[section]:
-                            tmpFileWrite(ini_settings[section][setting])
+                            value = ini_settings[section][setting]
+                            if isinstance(value,basestring) and value[-1] == u'\n':
+                                tmpFileWrite(newLine)
+                            else:
+                                tmpFileWrite(u'%s=%s\n' % (setting,value))
+                        tmpFileWrite(u'\n')
         #--Done
         self.path.untemp()
 
