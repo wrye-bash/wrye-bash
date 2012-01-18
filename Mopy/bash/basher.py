@@ -17425,20 +17425,22 @@ def InitStatusBar():
     bosh.initLinks(bosh.dirs['mopy'].join(u'Apps'))
     for link in bosh.links:
         (target,workingdir,args,icon,description) = bosh.links[link]
-        path = GPath(target)
+        path = bosh.dirs['mopy'].join(u'Apps',link)
         if target.lower().find(ur'installer\{') != -1:
-            path = bosh.dirs['mopy'].join(u'Apps').join(link)
-        if path.exists():
+            target = path
+        else:
+            target = GPath(target)
+        if target.exists():
             icon,idex = icon.split(u',')
             if icon == u'':
-                if path.cext == u'.exe':
+                if target.cext == u'.exe':
                     # Use the icon embedded in the exe
-                    icon = path
+                    icon = target
                 else:
                     # Use the default icon for that file type
                     try:
                         import _winreg
-                        if path.isdir():
+                        if target.isdir():
                             # Special handling of the Folder icon
                             folderkey = _winreg.OpenKey(
                                 _winreg.HKEY_CLASSES_ROOT,
@@ -17453,7 +17455,7 @@ def InitStatusBar():
                         else:
                             icon_path = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
-                                path.cext)
+                                target.cext)
                             filedata = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
                                 u'%s\\DefaultIcon' % icon_path)
@@ -17466,7 +17468,7 @@ def InitStatusBar():
                                     icon = test
                                     break
                     except:
-                        deprint(_(u'Error finding icon for %s:') % path.s,traceback=True)
+                        deprint(_(u'Error finding icon for %s:') % target.s,traceback=True)
                         icon = u'not\\a\\path'
             icon = GPath(icon)
             # First try a custom icon
@@ -17482,10 +17484,9 @@ def InitStatusBar():
                     icon = [Image(GPath(bosh.dirs['images'].join(u'x.png'))) for x in (16,24,32)]
             BashStatusBar.buttons.append(
                 App_Button(
-                    (path,args),
+                    (path,()),
                     icon,
                     (description),
-                    workingDir=workingdir,
                     canHide=False
                     ))
     #--Final couple
