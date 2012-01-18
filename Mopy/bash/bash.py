@@ -252,7 +252,7 @@ def main():
 
                 class GameSelect(wx.Frame):
                     def __init__(self,gameNames,callback):
-                        wx.Frame.__init__(self,None,wx.ID_ANY,'Wrye Bash')
+                        wx.Frame.__init__(self,None,wx.ID_ANY,u'Wrye Bash')
                         self.callback = callback
                         self.panel = panel = wx.Panel(self,wx.ID_ANY)
                         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -262,7 +262,7 @@ def main():
                         for gameName in gameNames:
                             gameName = gameName[0].upper() + gameName[1:]
                             sizer.Add(wx.Button(panel,wx.ID_ANY,gameName),0,wx.GROW|wx.ALL^wx.TOP,5)
-                        button = wx.Button(panel,wx.ID_CANCEL)
+                        button = wx.Button(panel,wx.ID_CANCEL,_(u'Quit'))
                         button.SetDefault()
                         sizer.Add(button,0,wx.GROW|wx.ALL^wx.TOP,5)
                         self.Bind(wx.EVT_BUTTON,self.OnButton)
@@ -386,33 +386,68 @@ def main():
     except (ImportError, StandardError), e:
         # try really hard to be able to show the error in any GUI
         try:
-            import Tkinter
-            root = Tkinter.Tk()
-            frame = Tkinter.Frame(root)
-            frame.pack()
-
-            button = Tkinter.Button(frame, text=_(u"QUIT"), fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
-            button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
-
             o = StringIO.StringIO()
             traceback.print_exc(file=o)
             msg = o.getvalue()
             o.close()
-            w = Tkinter.Text(frame)
-            w.insert(Tkinter.END, _(u'Error! Unable to start Wrye Bash.')
-                                  + u'\n\n' +
-                                  _(u'Please ensure Wrye Bash is correctly installed.')
-                                  + u'\n\n\n%s' % (msg,))
-            w.config(state=Tkinter.DISABLED)
-            w.pack()
-            root.mainloop()
-            return
+            msg = (_(u'Error! Unable to start Wrye Bash.')
+                   + u'\n\n' +
+                   _(u'Please ensure Wrye Bash is correctly installed.')
+                   + u'\n\n\n%s') % msg
+
+            if hasattr(sys,'frozen'):
+                # WBSA we've disabled TKinter, since it's not required, use wx
+                # here instead
+                import wx
+
+                class ErrorMessage(wx.Frame):
+                    def __init__(self):
+                        wx.Frame.__init__(self,None,wx.ID_ANY,u'Wrye Bash')
+                        self.panel = panel = wx.Panel(self,wx.ID_ANY)
+                        sizer = wx.BoxSizer(wx.VERTICAL)
+                        sizer.Add(wx.TextCtrl(panel,wx.ID_ANY,msg,
+                                              style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_BESTWRAP),
+                                  1,wx.GROW|wx.ALL,5)
+                        button = wx.Button(panel,wx.ID_CANCEL,_(u'Quit'))
+                        button.SetDefault()
+                        sizer.Add(button,0,wx.GROW|wx.ALL^wx.TOP,5)
+                        self.Bind(wx.EVT_BUTTON,self.OnButton)
+                        panel.SetSizer(sizer)
+
+                    def OnButton(self,event):
+                        self.Close(True)
+                _app = wx.App(False)
+                frame = ErrorMessage()
+                frame.Show()
+                frame.Center()
+                _app.MainLoop()
+                del _app
+                return
+            else:
+                # Python mode, use Tkinter
+                import Tkinter
+                root = Tkinter.Tk()
+                frame = Tkinter.Frame(root)
+                frame.pack()
+
+                button = Tkinter.Button(frame, text=_(u"QUIT"), fg="red", command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+                button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
+
+                w = Tkinter.Text(frame)
+                w.insert(Tkinter.END, msg)
+                w.config(state=Tkinter.DISABLED)
+                w.pack()
+                root.mainloop()
+                return
         except StandardError, y:
+            print 'An error has occured with Wrye Bash, and could not be displayed.'
+            print 'The following is the error that occured while trying to display the first error:'
             try:
                 print y
                 traceback.format_exc()
             except:
-                pass
+                print '  An error occured while trying to display the second error.'
+            print 'The following is the error that could not be displayed:'
             raise e
 
     if not oneInstanceChecker(): return
