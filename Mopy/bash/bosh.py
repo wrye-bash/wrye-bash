@@ -73,12 +73,11 @@ exe7z = u'7zUnicode.exe'
 
 def formatInteger(value):
     """Convert integer to string formatted to locale."""
-    return _unicode(locale.format('%d',int(value),True))
+    return _unicode(locale.format('%d',int(value),True),locale.getpreferredencoding())
 
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
-    localtime = time.localtime(value)
-    return _unicode(time.strftime('%c',localtime))
+    return _unicode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
 
 def unformatDate(str,format):
     """Basically a wrapper around time.strptime. Exists to get around bug in
