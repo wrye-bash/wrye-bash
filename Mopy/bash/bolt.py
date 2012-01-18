@@ -887,7 +887,7 @@ class FileError(BoltError):
         if self.inName:
             if isinstance(self.inName, str):
                 return self.inName+u': '+self.message
-            return self.inName.s+u': '+self.message
+            return self.inName+u': '+self.message
         else:
             return u'Unknown File: '+self.message
 
