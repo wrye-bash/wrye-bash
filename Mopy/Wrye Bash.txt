@@ -2472,16 +2472,17 @@ msgid "Argument is out"
 === 296 [XX/X/2012]
 * CBash updated to version 0.6
 
-=== 295.5 [17/1/2012] [Lojack]
+=== 295.5 [17/1/2012] [Lojack,PacificMorrowind]
 * Bugfix release:
   * Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
   * [[#InstallersTab|BAIN]]: Fixed a problem associated with Embedded BCF's, causing BAIN to become unusable.
   * Wrye Bash Installer updated to included the necessary files of the [[http://www.microsoft.com/download/en/details.aspx?id=14431|MSVC 2005 SP1 Redistributable with ATL Security Update]].  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
-  * Changed how the 'Apps' folder launchers are used should, to work with Unicode better.
+  * Wrye Bash Uninstaller updated to remove some files it was missing.
+  * Changed how the 'Apps' folder launchers are used, to work with Unicode better.
   * Fixed a problem with restarting Wrye Bash.  Specifically, the Standalone version would shutdown instead of restart, when required.
   * Fixed a problem with formatting numbers for the user's location.
   * Better printing of error messages on startup, when using the Standalone version.
-  * Corrected a problem with INI Tweaks where adding new lines sometimes would not write the whole line.
+  * Corrected a problem with [[#INIEditsTab|INI Tweaks]] where adding new lines sometimes would not write the whole line.
   * Made an adjustment to [[#|Save Profiles]], that should help out when the Profile name has Unicode in it.
 
 === 295.4 [15/1/2012] [Lojack,PacificMorrowind]
