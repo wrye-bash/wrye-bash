@@ -100,6 +100,18 @@ Rinse and repeat when a new svn comes out.
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 [b]Changelog for Latest Version[/b]:
+=== 295.5 [17/1/2012] [Lojack,PacificMorrowind][spoiler][list]
+[*] Bugfix release:[list]
+  [*] Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
+  [*] BAIN: Fixed a problem associated with Embedded BCF's, causing BAIN to become unusable.
+  [*] Wrye Bash Installer updated to included the necessary files of the [url=http://www.microsoft.com/download/en/details.aspx?id=14431]MSVC 2005 SP1 Redistributable with ATL Security Update[/url].  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
+  [*] Wrye Bash Uninstaller updated to remove some files it was missing.
+  [*] Changed how the 'Apps' folder launchers are used, to work with Unicode better.
+  [*] Fixed a problem with restarting Wrye Bash.  Specifically, the Standalone version would shutdown instead of restart, when required.
+  [*] Fixed a problem with formatting numbers for the user's location.
+  [*] Better printing of error messages on startup, when using the Standalone version.
+  [*] Corrected a problem with INI Tweaks where adding new lines sometimes would not write the whole line.
+  [*] Made an adjustment to Save Profiles, that should help out when the Profile name has Unicode in it.[/list][/list][/spoiler]
 === 295.4 [15/1/2012] [Lojack,PacificMorrowind][spoiler][list]
 [*] Bugfix release:[list]
   [*] Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.
