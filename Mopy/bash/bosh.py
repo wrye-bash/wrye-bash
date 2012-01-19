@@ -21861,8 +21861,8 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                 'BOOK': u"Clutter\\iconbook%d.dds",
                 'BSGN': u"Clutter\\iconbook%d.dds",
                 'CLAS': u"Clutter\\iconbook%d.dds",
-                'CLOT': ((u"Clothes\\MiddleClass\01\M\Shirt.dds",u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
-                         (u"Clothes\\MiddleClass\01\M\Pants.dds",u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
+                'CLOT': ((u"Clothes\\MiddleClass\\01\M\Shirt.dds",u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
+                         (u"Clothes\\MiddleClass\\01\M\Pants.dds",u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
                          (u"Clothes\\MythicDawnrobe\hood.dds",),
                          (u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds",),
                          (u"Clothes\\MiddleClass\\01\\M\\Shoes.dds",u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"),
@@ -23694,7 +23694,7 @@ class GmstTweaker(MultiTweaker):
             (u'100',100),
             (_(u'Custom'),25),
             ),
-        GmstTweak(_(u'Leveled Creature Max level difference'),
+        GmstTweak(_(u'Leveled Creature Max Level Difference'),
             _(u"Maximum difference to player level for leveled creatures."),
             (u'iLevCreaLevelDifferenceMax',),
             (u'1',1),
@@ -23705,7 +23705,7 @@ class GmstTweaker(MultiTweaker):
             (_(u'Unlimited'),9999),
             (_(u'Custom'),8),
             ),
-        GmstTweak(_(u'Leveled Item Max level difference'),
+        GmstTweak(_(u'Leveled Item Max Level Difference'),
             _(u"Maximum difference to player level for leveled items."),
             (u'iLevItemLevelDifferenceMax',),
             (u'1',1),
@@ -24403,7 +24403,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (u'100',100),
             (_(u'Custom'),25),
             ),
-        CBash_GmstTweak(_(u'Leveled Creature Max level difference'),
+        CBash_GmstTweak(_(u'Leveled Creature Max Level Difference'),
             _(u"Maximum difference to player level for leveled creatures."),
             (u'iLevCreaLevelDifferenceMax',),
             (u'1',1),
@@ -24414,7 +24414,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             (_(u'Unlimited'),9999),
             (_(u'Custom'),8),
             ),
-        CBash_GmstTweak(_(u'Leveled Item Max level difference'),
+        CBash_GmstTweak(_(u'Leveled Item Max Level Difference'),
             _(u"Maximum difference to player level for leveled items."),
             (u'iLevItemLevelDifferenceMax',),
             (u'1',1),
@@ -28368,7 +28368,7 @@ class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
                     for s in rs:
                         if s in r:
                             if extra[r]['eyes'] != extra[race]['eyes']:
-                                changedEyes[race] = list(set(extra[r]['eyes']+extra[race]['eyes']))
+                                changedEyes[race] = list(set(changedEyes.setdefault(race,[])+extra[r]['eyes']+extra[race]['eyes']))
                                 # list(set([]) disgusting thing again
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -29341,7 +29341,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
                         if s in r:
                             if races_data[r]['eyes'] != races_data[race]['eyes']:
                                 # list(set([]) disgusting thing again
-                                changedEyes[race] = list(set(races_data[r]['eyes']+races_data[race]['eyes']))
+                                changedEyes[race] = list(set(changedEyes.setdefault(race,[])+races_data[r]['eyes']+races_data[race]['eyes']))
         pstate = 0                        
         for modFile in Current.LoadOrderMods:
             subProgress(pstate, _(u'Merging eyes...')+u'\n')
