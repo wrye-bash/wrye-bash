@@ -1502,7 +1502,7 @@ class MreMisc(MelRecord):
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','=If','value','weight'),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
-        MelFid('ZNAM','I',(FID,'dropSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
