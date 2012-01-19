@@ -10846,7 +10846,8 @@ class Mods_Deprint(Link):
     """Turn on deprint/delist."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Debug Mode'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Debug Mode'),kind=wx.ITEM_CHECK,
+            help=_(u"Turns on extra debug prints to help debug an error or just for advanced testing."))
         menu.AppendItem(menuItem)
         menuItem.Check(bolt.deprintOn)
 
@@ -10886,7 +10887,8 @@ class Mods_DumpTranslator(Link):
         if not hasattr(sys,'frozen'):
             # Can't dump the strings if the files don't exist.
             Link.AppendToMenu(self,menu,window,data)
-            menuItem = wx.MenuItem(menu,self.id,_(u'Dump Translator'))
+            menuItem = wx.MenuItem(menu,self.id,_(u'Dump Translator'),
+                help=_(u"Generate a new version of the translator file for your locale."))
             menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10923,7 +10925,8 @@ class Mods_ListMods(Link):
     """Copies list of mod files to clipboard."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Mods..."))
+        menuItem = wx.MenuItem(menu,self.id,_(u"List Mods..."),
+            help=_(u"Copies list of active mod files to clipboard."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10939,7 +10942,8 @@ class Mods_ListBashTags(Link):
     """Copies list of bash tags to clipboard."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Bash Tags..."))
+        menuItem = wx.MenuItem(menu,self.id,_(u"List Bash Tags..."),
+            help=_(u"Copies list of bash tags to clipboard."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10955,7 +10959,8 @@ class Mods_LockTimes(Link):
     """Turn on resetMTimes feature."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Times'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Times'),kind=wx.ITEM_CHECK,
+            help=_(u"Will reset mod timestamps to whatever Wrye Bash has saved for them whenever Wrye Bash refreshs data/starts up."))
         menu.AppendItem(menuItem)
         menuItem.Check(bosh.modInfos.lockTimes)
 
@@ -11116,7 +11121,8 @@ class Settings_ExportDllInfo(Link):
         if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,
-            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd)
+            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd,
+            _(u"Export list of allowed/disallowed plugin dlls to a txt file (for BAIN)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11151,7 +11157,8 @@ class Settings_ImportDllInfo(Link):
         if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,
-            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd)
+            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd,
+            help=_(u"Import list of allowed/disallowed plugin dlls from a txt file (for BAIN)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11196,7 +11203,8 @@ class Settings_Colors(Link):
     """Shows the color configuration dialog."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Colors...'),help=_(u"Configure the custom colors used in the UI."))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Colors...'),
+            help=_(u"Configure the custom colors used in the UI."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11389,7 +11397,8 @@ class Settings_IconSize(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,unicode(self.size),kind=wx.ITEM_RADIO)
+        menuItem = wx.MenuItem(menu,self.id,unicode(self.size),kind=wx.ITEM_RADIO,
+            help=_(u"Sets the status bar icons to %(size)s pixels") % ({'size':unicode(self.size)}))
         menu.AppendItem(menuItem)
         menuItem.Check(self.size == settings['bash.statusbar.iconSize'])
 
@@ -11402,7 +11411,8 @@ class Settings_StatusBar_ShowVersions(Link):
     """Show/Hide version numbers for buttons on the statusbar."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Show App Version'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Show App Version'),kind=wx.ITEM_CHECK,
+            help=_(u"Show/hide version numbers for buttons on the status bar."))
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.statusbar.showversion'])
 
@@ -11433,7 +11443,8 @@ class Settings_Languages(Link):
             if bolt.Path('english') not in languages:
                 Settings_Language('English').AppendToMenu(subMenu,window,data)
         else:
-            menuItem = wx.MenuItem(menu,self.id,_(u'Language'))
+            menuItem = wx.MenuItem(menu,self.id,_(u'Language'),
+                help=_("Wrye Bash was unable to detect any translation files."))
             menu.AppendItem(menuItem)
             menuItem.Enable(False)
 
@@ -11459,9 +11470,11 @@ class Settings_Language(Link):
         label = self.__class__.languageMap.get(self.language.lower(),self.language)
         bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         if self.language == bassLang:
-            menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO)
+            menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO,
+                help=_("Currently using %(languagename)s as the active language.") % ({'languagename':label}))
         else:
-            menuItem = wx.MenuItem(menu,self.id,label)
+            menuItem = wx.MenuItem(menu,self.id,label,
+                help=_("Restart Wrye Bash and use %(languagename)s as the active language.") % ({'languagename':label}))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11505,9 +11518,11 @@ class Settings_PluginEncoding(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if self.encoding == settings['bash.pluginEncoding']:
-            menuItem = wx.MenuItem(menu,self.id,self.name,kind=wx.ITEM_RADIO)
+            menuItem = wx.MenuItem(menu,self.id,self.name,kind=wx.ITEM_RADIO,
+                help=_("Select %(encodingname)s encoding for Wrye Bash to use.") % ({'encodingname':self.name}))
         else:
-            menuItem = wx.MenuItem(menu,self.id,self.name)
+            menuItem = wx.MenuItem(menu,self.id,self.name,
+                help=_("Select %(encodingname)s encoding for Wrye Bash to use.") % ({'encodingname':self.name}))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11532,7 +11547,8 @@ class Settings_Game(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.game,kind=wx.ITEM_RADIO)
+        menuItem = wx.MenuItem(menu,self.id,self.game,kind=wx.ITEM_RADIO,
+            help=_("Restart Wrye Bash to manage %(game)s.") % ({'game':self.game}))
         menu.AppendItem(menuItem)
         if self.game.lower() == bush.game.name.lower():
             menuItem.Check(True)
