@@ -9,6 +9,7 @@ import shutil
 import re
 import sys
 import optparse
+import binascii
 
 
 # ensure we are in the correct directory so relative paths will work properly
@@ -85,6 +86,21 @@ def rm(file):
 def mv(file, dest):
     if os.path.exists(file): shutil.move(file, dest)
 
+#--Check for presense of modified zipextimporter.py, required for WBSA
+def VerifyPy2Exe():
+    pythonPath = sys.executable
+    pythonRoot,pythonExe = os.path.split(pythonPath)
+    path = os.path.join(pythonRoot,u'Lib',u'site-packages',u'zipextimporter.py')
+    print os.getcwdu()
+    with open(os.path.join(scripts,u'zipextimporter.py'),'r') as ins:
+        # 'r' vice 'rb', so line endings don't interfere
+        crcGood = binascii.crc32(ins.read())
+        crcGood &= 0xFFFFFFFFL
+    with open(path,'r') as ins:
+        crcTest = binascii.crc32(ins.read())
+        crcTest &= 0xFFFFFFFFL
+    return crcGood == crcTest
+
 #--Create the standard manual installer version
 def BuildManualVersion(version, pipe=None):
     archive = os.path.join(dest, 'Wrye Bash %s - Python Source.7z' % version)
@@ -105,6 +121,9 @@ def CleanupStandaloneFiles():
 def CreateStandaloneExe(version, file_version, pipe=None):
     if not have_py2exe:
         print " Could not find python module 'py2exe', aborting StandAlone creation."
+        return False
+    if not VerifyPy2Exe():
+        print " You have not installed the replacedment zipextimporter.py file."
         return False
     wbsa = os.path.join(scripts, 'build', 'standalone')
     reshacker = os.path.join(wbsa, 'Reshacker.exe')
