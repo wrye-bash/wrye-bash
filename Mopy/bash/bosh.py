@@ -6202,7 +6202,6 @@ class ConfigHelpers:
                                             else:
                                                 removeTags[GPath(mod)] = tuple(modRemoveTags)
                                         if regex:
-                                            print 'adding regex tags:', modTags
                                             regexTags[regex] = tuple(modTags)
                                         else:
                                             tags[GPath(mod)] = tuple(modTags)
