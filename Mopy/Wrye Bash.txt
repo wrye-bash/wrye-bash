@@ -123,7 +123,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
     * Install all components. It's best to accept the default settings for each installer.
     * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of Python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see [[#|Python Components]].
   * __Download and Unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX - Python Source.7z]]) or Install via the Installer.__
-  * For the manual archive installation, unzip the files ~~into your game installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skryim\Mopy.
+  * For the manual archive installation, unzip the files ~~into your game installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skyrim\Mopy.
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 * __Manually installing the Standalone (default) version of Wrye Bash:__
   * __Download and unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX - Standalone Executable.7z]]) or Install via the Installer.__
@@ -145,7 +145,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
 * **Other solutions (not recommended):**
   * Always run as full admin: To do this, for the Standalone, right click on Wrye Bash.exe and select 'Run as Admin'.
   * Disable UAC: Do this via the Windows Control Panel.
-  * Both of these approaches significantly reduce the security of your computer, and so are not recommened.
+  * Both of these approaches significantly reduce the security of your computer, and so are not recommended.
 * For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help|Unofficial Help]] page at UESP.
 
 === Starting Wrye Bash
@@ -198,7 +198,7 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * The very first time you run Bash after installing ComTypes, you may get a popup with six lines similar to: <code># Generating comtypes.gen.stdole</code>
   * Close the popup and ignore it. It shouldn't appear again unless you reinstall ComTypes.
 * __UNCommon Problems__
-  * If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump (in spoiler and code tags please - code tags preseves the formatting, spoiler tags makes it take up less space). Preferably, you should post the dump in the **Relz/Help** topic (see [[#WryeBash|Discussion]] link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.
+  * If the problem is not listed above and thinking about it doesn't help, then go to the forums and post the whole bugdump (in spoiler and code tags please - code tags preserves the formatting, spoiler tags makes it take up less space). Preferably, you should post the dump in the **Relz/Help** topic (see [[#WryeBash|Discussion]] link at top of page) or you can start a new topic. Be sure to mention "Wrye Bash" in the text of the post.
 
 === Python Components
 * If you're having difficulty getting or installing Wrye Python or if you prefer to do things by hand, then here's some additional info on the python components it installs.
@@ -473,7 +473,7 @@ Here's a brief getting started guide. You may have to read sections further down
 * __Terminology: Package__
   * A "package" is a collection of esps, esms and/or resource files. Everything listed under the Installers tab is a package. Packages can be either archive files in (zip, 7z or rar format) or directories (aka Projects).
 * __Terminology: [[#BainConversionFiles|Bain Conversion File]]__
-  * A "Bain Conversion File" or "BCF" is a special archive that tells Bash how to convert a standard archive into a Bain-ready archive. It also contains any new files that weren't present in the original archive. BCF's allow mod users to easily share their custom Bain compilations.
+  * A "Bain Conversion File" or "BCF" is a special archive that tells Bash how to convert a standard archive into a Bain-ready archive. It also contains any new files that weren't present in the original archive. BCFs allow mod users to easily share their custom Bain compilations.
 * __Initialization__
   * When you first visit the Installers tab after starting Bash, Bain will need to go through an initialization process. If you've done this before, and no new packages are installed, and the machine is "warm", then it will take on the order of ten seconds.
   * However, if you have just added a bunch of packages, then Bain will take longer to initialize, since it will need to scan all new/modified packages.
@@ -571,7 +571,7 @@ Bain will skip over (never install) certain types of files in the package.
 * __Extension Skipping__
 . Bain will skip files with certain extensions - mostly executables (exe, dll/dlx (unless in the OBSE/plugins directory and then only with a large warning)) and subarchives (7z,zip, etc.). Again, these will be listed in the debug pane on the right. (But only if they're not already skipped because of the directory that they're in.)
 * __Other Skips__
-. There are a few options in package/header menus to skip certain file types; voices, distandLOD etc. If said option(s) are selected that(those) file type(s) will not be installed for that package/globally.
+. There are a few options in package/header menus to skip certain file types; voices, distantLOD etc. If said option(s) are selected that(those) file type(s) will not be installed for that package/globally.
 
 === OBSE Plugin Installation
 Due to the (theoretical but potentially significant) dangers of installing executable files the only type that can be installed are OBSE plugin dll/x files. 
@@ -1398,7 +1398,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
     * The description field.
     * BOSS (Better Oblivion Sorting Software) masterlist.txt file. This file includes bash tags for some of the mods it has listed. Note that you do ~~not~~ need to use BOSS in order to benefit from this. All that's required is that BOSS's masterlist.txt file be present in the Oblivion\Data folder (or for the newest BOSS version in Oblivion\BOSS). Also with the newest BOSS version reads the userlist.txt file; APPEND for bash tags is as it sounds, Bash adds them to the list of tags, REPLACE replaces the BOSS masterlist tagging suggestions with the userlist suggestions, neither does anything to the existing tags from the description.
     * Bash Patches\Leveled Lists.csv file. This file has a very small list and is largely surpassed by BOSS. (But is useful for people who don't have BOSS installed.)
-    * Bash Patches\taglist.txt (if the masterlit.txt doesn't exist); it is a stripped down (and at times outdated) version of the BOSS Masterlist
+    * Bash Patches\taglist.txt (if the masterlist.txt doesn't exist); it is a stripped down (and at times outdated) version of the BOSS Masterlist
   * Keep in mind that there is no guarantee that all mods will be correctly tagged. However, between the description field and BOSS, most important tags are covered.
 
 -------------------------------------------------------------------------------
@@ -1676,7 +1676,7 @@ __Tweakers__ tweak records in the currently active set of mods in specified ways
   * Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file.
 * __VadersApp's Oblivion Real Bodies Skeleton Tweaker__
   * Changes all (modded and vanilla) NPCs to use diverse skeletons for different look. Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies.
-* __Vanilla Beast Skelton Tweaker__
+* __Vanilla Beast Skeleton Tweaker__
   * Sets any NPCs using the vanilla non-beast skeleton path (skeleton.nif) to use the beast skeleton patch (skeletonbeast.nif). This avoids bugs when a mod changes the race of an NPC to a beast race without setting the skeleton path to the beast path, in which case the tail will appear to extend forever and weird stuff like that.
 
 === Tweak Assorted
@@ -2054,7 +2054,7 @@ The rest of the report is divided into mod groups, where "mod groups" are sets o
 * __List Active INIs__: List all the applied INI tweaks you are using.
 
 === Tweak File Commands
-* __Apply:__ Applies the INI Tweak to Ovlivion.ini
+* __Apply:__ Applies the INI Tweak to Oblivion.ini
 * __Create Tweak with current settings:__ Creates a new tweak file that tweaks the same settings as the selected file, but uses the current values of the target INI.
 * __List Errors:__ If the tweak is invalid, this will show you which entries in the tweak don't exist in Oblivion.ini
 * __Open:__ Open the tweak file for editing.
@@ -2461,7 +2461,7 @@ msgid "Argument is out"
 \\
 </pre>
   * In translating, I would suggest that you translate the strings that you see the most first.
-  * To test your translations, just save your changes to the text file, then select the language from the Settings->Language menu.  If your changes don't show up, it's possible there is an error in your translation file.  To check for this, generate a bugdump using your language file.  If you need help interpretting the output, just post it on the latest official thread.
+  * To test your translations, just save your changes to the text file, then select the language from the Settings->Language menu.  If your changes don't show up, it's possible there is an error in your translation file.  To check for this, generate a bugdump using your language file.  If you need help interpreting the output, just post it on the latest official thread.
   * Of course, it's probably a good idea to keep backup copies of your translator file in case you mess one up. If you revert to a backup copy, just throw the pkl version away for it to update. (Remember it won't autocompile unless the text file is newer than the .mo file.)
   * Spell checking: If you're using an office suite, you might want to turn on dictionaries for both English and your language -- Abot mentions that Open Office allows you to do this.
 
@@ -2475,7 +2475,7 @@ msgid "Argument is out"
 === 295.5 [17/1/2012] [Lojack,PacificMorrowind]
 * Bugfix release:
   * Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
-  * [[#InstallersTab|BAIN]]: Fixed a problem associated with Embedded BCF's, causing BAIN to become unusable.
+  * [[#InstallersTab|BAIN]]: Fixed a problem associated with Embedded BCFs, causing BAIN to become unusable.
   * Wrye Bash Installer updated to included the necessary files of the [[http://www.microsoft.com/download/en/details.aspx?id=14431|MSVC 2005 SP1 Redistributable with ATL Security Update]].  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
   * Wrye Bash Uninstaller updated to remove some files it was missing.
   * Changed how the 'Apps' folder launchers are used, to work with Unicode better.
@@ -2501,15 +2501,15 @@ msgid "Argument is out"
 * Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
   * Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
   * By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
-    * To modify this behavior, there is a new setting, accessible via the [[#Settings|Setting Menu]], Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other langauges that don't fall under the 'Western European' encoding.
+    * To modify this behavior, there is a new setting, accessible via the [[#Settings|Setting Menu]], Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other languages that don't fall under the 'Western European' encoding.
     * This is a global setting, so changing it will have an effect on ~~all~~ plugins.
     * Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
     * Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.
-  * Some minor inconsistancies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
+  * Some minor inconsistencies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
   * Unicode file names are fully supported.
   * Limitations:
-    * Skryim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarentee that activated plugins with Unicode file names will actually be loaded.
-    * Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bashe's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
+    * Skyrim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarantee that activated plugins with Unicode file names will actually be loaded.
+    * Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bash's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
     * The masterlist.txt and userlist.txt files for BOSS are expected to also be in UTF-8 format.  This is a requirement imposed by BOSS, so no change should be noticed there.
   * [[#Internationalization|Translation files]] format has changed.  Old translation files have been converted to the new format.
 * More refactoring for multi-game support.
@@ -2520,14 +2520,14 @@ msgid "Argument is out"
   * [[#BashTags|Bashed Tags]]:
     * [[#LeveledLists|Delev and Relev]] - These can be used to intelligently merge leveled lists.
     * [[#MergeFiltering|Filter]], NoMerge, and Deactivate - These can be used to modify behavior in regards merging and importing records.
-  * Better merging of records with NULL Form ID's, for records that allow it (COBJ and GMST for example).
+  * Better merging of records with NULL Form IDs, for records that allow it (COBJ and GMST for example).
   * New [[#InstallersTab|BAIN]] option: [[#PackageHeaderCommands|Auto-name String Translation files]]:
     * Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.
 * Bugfixes:
   * An uncommon Drag and Drop of Tabs related bug is fixed (relating to Mouse Capture).
   * [[#ListMastersSave|List Masters]] command corrected to display the masters of a Save File, rather than the current Load Order.
   * Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
-  * Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.
+  * Startup crash when Skyrim.esm was ghosted, and set to be inactive within Wrye Bash.
   * Fixed an issue where the [[#ImportGraphics|Graphics]] tag was not properly importing the model file name on CREA records.
 * Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
 * Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
@@ -2535,21 +2535,21 @@ msgid "Argument is out"
   * New Simplified Chinese translation, provided by bluesky404.
   * New Traditional Chinese translation, provided by bluesky404.
   * [[#InstallersTab|BAIN]]:
-    * Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
+    * Wizard.txt and readmes will no longer show up as 'Skipped' if it's in an odd directory.
     * New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
-    * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.
+    * The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with File IDs less than 4 digits now.
   * [[#INIEditsTab|INI Edits]]:
     * Double click to apply an INI Tweak
     * Left Click on the checkbox to apply an INI Tweak
-    * INI Tweaks can now add and remove new lines to target INI's.
-      * Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Obilvion, enabled by default for Skyrim).
+    * INI Tweaks can now add and remove new lines to target INIs.
+      * Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Oblivion, enabled by default for Skyrim).
     * The syntax for denoting a line to be deleted is to prepend the line with ";-".
     * BAIN Wizards can also create "deleted" INI Tweak lines, via the [[wizards.html#DisableINILine|[color=purple]DisableINILine[/color]]] command.
   * Better support for Mac Command button.
   * [[#BashedPatches|Bashed Patch]]:
     * New [[#TweakAssorted|Assorted Tweaker]]: No Description Loading Screens (requested by hellwing).
   * Wrye Bash will ask to backup your settings on ~~every~~ update now, instead of just a major version update (like from 294 to 295).
-  * Quickly switching beteween games can be accomplished via the [[#Settings|Settings Menu]].
+  * Quickly switching between games can be accomplished via the [[#Settings|Settings Menu]].
 
 === 295.2 [2/12/2011] [Lojack,bluesky404,Metallicow]
 * Bugfixes:
@@ -2577,15 +2577,15 @@ msgid "Argument is out"
   * Bashed Patches:
     * Can merge GMST, GLOB, AMMO, and COBJ records.
 
-=== 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]
+=== 295.1 [27/11/2011] [Lojack,Waruddar,myk002,PacificMorrowind]
 * Skyrim support added:
   * Can read basic information from Skyrim mods (author and description)
   * Can read basic save game information (player name, level, play time)
   * Can modify your Load Order
-    * Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.
+    * Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changing it's load order and activation status should have no effect on the game.
   * [[#InstallersTab|BAIN]] is supported, including the standard directories and SKSE plugins.
 * UI Improvements:
-  * Customizible Status Bar and Tabs:
+  * Customizable Status Bar and Tabs:
     * Drag and drop reordering
     * Hideable
 * Bugfixes:
@@ -2677,7 +2677,7 @@ msgid "Argument is out"
   * Fixed startup processing so you can in one startup both backup and restore settings.
   * Added -L/--Language as cmdline options to set Wrye Bash's language.
 * Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).
-* Ini Tab -> list active ini's command added.
+* Ini Tab -> List Active INIs command added.
 * [[#ModChecker|ModChecker]]:
   * Fixed default size to be wide enough to display all buttons.
   * Added option to toggle display of CRCs for mods in the mod list.
@@ -2692,7 +2692,7 @@ msgid "Argument is out"
 * Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 * [[#Custombuttons|Custom launcher buttons]] now support launching of msi created shortcuts.
 * Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
-* CBash no longer causes random occurances of googly eyes
+* CBash no longer causes random occurences of googly eyes
 
 === 294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]
 * Small fix to the Python race patcher for dremora records
@@ -2782,7 +2782,7 @@ msgid "Argument is out"
   * [[#PatchUsage|Revert to Saved]] option, to restore the settings last used to build the Bashed Patch.
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
-  * BOSS's dirty edit CRC's will be properly read from the masterlist now.
+  * BOSS's dirty edit CRCs will be properly read from the masterlist now.
   * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears outside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809|here]]
   * Fixed the launching of OBSE when a Steam install is detected.
 * Updated NSIS installer.
@@ -2873,7 +2873,7 @@ msgid "Argument is out"
   * New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   * Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
   * new ini option __bClearRO__ to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
-  * new ini option __sOblivionTexturesBSAName__ incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
+  * new ini option __sOblivionTexturesBSAName__ in case you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
 * [[#|Saves Tab]]:
   * Yes to All option for overwrite on Move/Copy Saves
   * 'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
@@ -2892,7 +2892,7 @@ msgid "Argument is out"
     * Shows the contents of the master INI
     * Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
     * New INI Tweak file command "Copy to new Tweak", for creating a tweak file with the same settings as the target INI.
-    * Bugfix for batch script ini's that would incorrectly replace some variables.
+    * Bugfix for batch script inis that would incorrectly replace some variables.
   * Various small UI improvements
   * regex for TesNexus searching updated to work with a few less common mod archive name formats.
   * Support for BOSS 1.7.
@@ -3280,7 +3280,7 @@ msgid "Argument is out"
   * fix for when wrong color was occasionally used
   * fixed various icons and launchers (reported by Metallicow)
   * minor fix for List Structure. It wasn't disabled properly when multiple installers were selected.
-  * fix for bug causing archives to fail to 'Unpack to Project' and to apply BCF's, also caused the archive to show up in the list of skipped files.
+  * fix for bug causing archives to fail to 'Unpack to Project' and to apply BCFs, also caused the archive to show up in the list of skipped files.
   * minor improvements to the BAIN wizards.
   * fix for UI not refreshing on installer renames
   * fix for renaming installer projects
