@@ -1740,7 +1740,7 @@ class Tank(wx.Panel):
     def DoItemMenu(self,event):
         """Show item menu."""
         selected = self.GetSelected()
-        if not selected or self.gList.HitTest(event.GetPosition())[0] == wx.NOT_FOUND:
+        if not selected:
             self.DoColumnMenu(event,0)
             return
         if not self.itemMenu: return
