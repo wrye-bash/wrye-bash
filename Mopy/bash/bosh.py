@@ -6145,6 +6145,8 @@ class ConfigHelpers:
         self.bossUserTime = 0
         self.bossMasterTags = {}
         self.bossRemoveTags = {}
+        self.bossregexTags = {}
+        self.bossregexRemoveTags = {}
         self.bossDirtyMods = {}
         #--Mod Rules
         self.name_ruleSet = {}
@@ -6153,13 +6155,14 @@ class ConfigHelpers:
         """Reloads tag info if file dates have changed."""
         #--Boss Master List or Taglist
         path,userpath,mtime,utime,tags,removeTags = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime, self.bossMasterTags,self.bossRemoveTags)
+        regexTags,regexRemoveTags = self.bossregexTags,self.bossregexRemoveTags
         reFcomSwitch = re.compile(ur'^[<>]',re.U)
         reComment = re.compile(ur'^\\.*',re.U)
         reMod = re.compile(ur'(^[_[(\w!].*?\.es[pm]$)',re.I|re.U)
-        reBashTags = re.compile(ur'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?',re.U)
+        reBashTags = re.compile(ur'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG:\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?',re.U)
         reDirty = re.compile(ur'.*?IF\s*\(\s*([a-fA-F0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$',re.U)
         reSay = re.compile(ur'\w*?SAY:.*?$',re.U)
-        reRegex = re.compile(ur'\w*?REGEX:.*?$',re.U)
+        reRegex = re.compile(ur'\s*REGEX:\s*(.*?)\s*$',re.U)
         if path.exists():
             if path.mtime != mtime:
                 tags.clear()
@@ -6167,41 +6170,55 @@ class ConfigHelpers:
                     # BOSS requires the masterlist to be in UTF-8 format, so will we
                     with path.open('r',encoding='utf-8-sig') as ins:
                         mod = None
+                        regex = None
                         for line in ins:
                             line = line.strip()
                             line = reFcomSwitch.sub(u'',line)
                             line = reComment.sub(u'',line)
                             if reSay.match(line): continue
-                            if reRegex.match(line):
-                                # We can't handle REGEX mod entries yet
+                            maRegex = reRegex.match(line)
+                            if maRegex:
                                 mod = None
-                                continue
-                            maMod = reMod.match(line)
-                            maBashTags = reBashTags.match(line)
-                            maDirty = reDirty.match(line)
-                            if maMod:
-                                mod = maMod.group(1)
-                            elif maBashTags and mod:
-                                modTags = maBashTags.group(3).split(u',')
-                                modTags = map(string.strip,modTags)
-                                if maBashTags.group(5) and maBashTags.group(6):
-                                    modRemoveTags = maBashTags.group(6).split(u',')
-                                    modRemoveTags = map(string.strip,modRemoveTags)
-                                    removeTags[GPath(mod)] = tuple(modRemoveTags)
-                                tags[GPath(mod)] = tuple(modTags)
-                            elif maDirty:
-                                # BOSS 1.7+ dirty mod listing
                                 try:
-                                    crc = long(maDirty.group(1),16)
-                                    ##mod = LString(maDirty.group(2))
-                                    action = maDirty.group(3)
-                                    if u'tes4edit' in action.lower():
-                                        cleanIt = True
-                                    else:
-                                        cleanIt = False
-                                    self.bossDirtyMods[crc] = (cleanIt, action)
+                                    regex = re.compile(maRegex.group(1),re.U|re.I)
                                 except:
-                                    deprint(_(u"An error occurred parsing BOSS's masterlist for dirty crc's:")+u'\n', traceback=True)
+                                    deprint(_(u"An error occured while trying to compile a REGEX from BOSS's masterlist:\n REGEX: %s\n") % maRegex.group(1),traceback=True)
+                                    regex = None
+                            else:
+                                maMod = reMod.match(line)
+                                if maMod:
+                                    mod = maMod.group(1)
+                                    regex = None
+                                else:
+                                    maBashTags = reBashTags.match(line)
+                                    if maBashTags and (mod or regex):
+                                        modTags = maBashTags.group(3).split(u',')
+                                        modTags = map(unicode.strip,modTags)
+                                        if maBashTags.group(5) and maBashTags.group(6):
+                                            modRemoveTags = maBashTags.group(6).split(u',')
+                                            modRemoveTags = map(unicode.strip,modRemoveTags)
+                                            if regex:
+                                                regexRemoveTags[regex] = tuple(modRemoveTags)
+                                            else:
+                                                removeTags[GPath(mod)] = tuple(modRemoveTags)
+                                        if regex:
+                                            print 'adding regex tags:', modTags
+                                            regexTags[regex] = tuple(modTags)
+                                        else:
+                                            tags[GPath(mod)] = tuple(modTags)
+                                    else:
+                                        maDirty = reDirty.match(line)
+                                        if maDirty:
+                                            try:
+                                                crc = long(maDirty.group(1),16)
+                                                action = maDirty.group(3)
+                                                if u'tes4edit' or u'tes5edit' in action.lower():
+                                                    cleanIt = True
+                                                else:
+                                                    cleanIt = False
+                                                self.bossDirtyMods[crc] = (cleanIt,action)
+                                            except:
+                                                deprint(_(u"An error occured parsing BOSS's masterlist for dirty crc's:")+u'\n', traceback=True)
                 except UnicodeDecodeError:
                     # try because the first time this runs, the wx.App isn't started yet
                     try:
@@ -6219,24 +6236,25 @@ class ConfigHelpers:
                         for line in ins:
                             line = line.strip()
                             maMod = reRule.match(line)
-                            maBashTags = reBashTags.match(line)
                             if maMod:
                                 mod = maMod.group(2)
-                            elif maBashTags and mod:
-                                modTags = maBashTags.group(3).split(u',')
-                                modTags = map(string.strip,modTags)
-                                if GPath(mod) in tags and maBashTags.group(1) != u'REPLACE: ':
-                                    tags[GPath(mod)] = tuple(list(tags[GPath(mod)]) + list(modTags))
-                                    if maBashTags.group(5) and maBashTags.group(6):
-                                        modRemoveTags = maBashTags.group(6).split(u',')
-                                        modRemoveTags = map(string.strip,modRemoveTags)
-                                        removeTags[GPath(mod)] = tuple(list(removeTags.get(GPath(mod),[])) + list(modRemoveTags))
-                                    continue
-                                tags[GPath(mod)] = tuple(modTags)
-                                if maBashTags.group(6) and maBashTags.group(7):
-                                    modRemoveTags = maBashTags.group(7).split(u',')
-                                    modRemoveTags = map(string.strip,modTags)
-                                    removeTags[GPath(mod)] = tuple(modRemoveTags)
+                            else:
+                                maBashTags = reBashTags.match(line)
+                                if maBashTags and mod:
+                                    modTags = maBashTags.group(3).split(u',')
+                                    modTags = map(unicode.strip,modTags)
+                                    if GPath(mod) in tags and maBashTags.group(1) != u'REPLACE: ':
+                                        tags[GPath(mod)] = tuple(list(tags[GPath(mod)]) + list(modTags))
+                                        if maBashTags.group(5) and maBashTags.group(6):
+                                            modRemoveTags = maBashTags.group(6).split(u',')
+                                            modRemoveTags = map(unicode.strip,modRemoveTags)
+                                            removeTags[GPath(mod)] = tuple(list(removeTags.get(GPath(mod),[])) + list(modRemoveTags))
+                                        continue
+                                    tags[GPath(mod)] = tuple(modTags)
+                                    if maBashTags.group(6) and maBashTags.group(7):
+                                        modRemoveTags = maBashTags.group(7).split(u',')
+                                        modRemoveTags = map(unicode.strip,modTags)
+                                        removeTags[GPath(mod)] = tuple(modRemoveTags)
                 except UnicodeDecodeError:
                     # try because the first time this runs, the wx.App isn't started yet
                     try:
@@ -6249,13 +6267,25 @@ class ConfigHelpers:
         """Retrieves bash tags for given file."""
         if modName in self.bossMasterTags:
             return set(self.bossMasterTags[modName])
-        else: return None
+        else:
+            modName = modName.s
+            tags = self.bossregexTags
+            for regex in tags:
+                if regex.match(modName):
+                    return set(tags[regex])
+            return None
 
     def getBashRemoveTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName in self.bossRemoveTags:
             return set(self.bossRemoveTags[modName])
-        else: return None
+        else:
+            modName = modName.s
+            tags = self.bossregexRemoveTags
+            for regex in tags:
+                if regex.match(modName):
+                    return set(tags[regex])
+            return None
 
     def getDirtyMessage(self, crc):
         return self.bossDirtyMods.get(long(crc), (False, u''))
