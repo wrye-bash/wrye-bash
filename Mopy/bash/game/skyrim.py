@@ -1402,6 +1402,71 @@ class MreAmmo(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreAnio(MelRecord):
+    """Anio record (Animated Object)"""
+    classType = 'ANIO'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelString('BNAM','unk'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAppa(MelRecord):
+    """Appa record (Alchemical Apparatus)"""
+    classType = 'APPA'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelStruct('QUAL','I','quality'),
+        MelLString('DESC','description'),
+        MelBase('DATA','data_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArto(MelRecord):
+    """Arto record (Art effect object)"""
+    classType = 'ARTO'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DNAM','I','flags'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAspc(MelRecord):
+    """Aspc record (Acoustic Space)"""
+    classType = 'ASPC'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelOptStruct('SNAM','I',(FID,'ambientSound')),
+        MelOptStruct('RDAT','I',(FID,'regionData')),
+        MelOptStruct('BNAM','I',(FID,'reverb')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Astp record (Association type)"""
+    classType = 'ASTP'
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MPRT','maleParent'),
+        MelString('FPRT','femaleParent'),
+        MelString('MCHT','maleChild'),
+        MelString('FCHT','femaleChild'),
+        MelStruct('DATA','I',(_flags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
@@ -1510,8 +1575,9 @@ class MreMisc(MelRecord):
 
 #--Mergeable record types
 mergeClasses = (
-    MreAact, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob, MreGmst, MreLvli,
-    MreLvln, MreLvsp, MreMisc,
+    MreAact, MreActi, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
+    MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln, MreLvsp,
+    MreMisc,
     )
 
 #--Extra read/write classes
@@ -1528,8 +1594,9 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob,
-        MreGmst, MreLvli, MreLvln, MreLvsp, MreMisc,
+        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
+        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
+        MreLvsp, MreMisc,
         MreHeader,
         ))
 
