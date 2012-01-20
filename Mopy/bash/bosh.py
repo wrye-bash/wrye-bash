@@ -20300,6 +20300,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         for record in patchFile.BOOK.records:
             if record.text and not record.enchantment:
                 text = record.text
+                text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
                 if reHead2.match(text):
                     inBold = False
                     text = reHead2.sub(ur'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
@@ -20362,7 +20363,7 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
 
         if record.text and not record.enchantment:
             text = record.text
-
+            text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
             reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
             reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
             reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
