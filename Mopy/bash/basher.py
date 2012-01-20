@@ -5228,8 +5228,13 @@ class BashStatusBar(wx.StatusBar):
         event.Skip()
 
     def OnDragEndForced(self,event):
-        self.dragging = wx.NOT_FOUND
-        self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
+            # The even for clicking the button sends a force capture loss
+            # message.  Ignore lost capture messages if we're the active
+            # window.  If we're not, that means something else forced the
+            # loss of mouse capture.
+            self.dragging = wx.NOT_FOUND
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
         event.Skip()
 
     def OnDragEnd(self,event):
