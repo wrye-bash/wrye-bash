@@ -252,6 +252,7 @@ settingDefaults = {
     'bash.framePos': (-1,-1),
     'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
+    'bash.frameMax': False, # True if maximized
     'bash.page':1,
     'bash.useAltName':True,
     'bash.pluginEncoding': 'cp1252',    # Western European
@@ -5318,6 +5319,7 @@ class BashFrame(wx.Frame):
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
+        self.Maximize(settings['bash.frameMax'])
         #--Application Icons
         self.SetIcons(bashRed)
         #--Status Bar
@@ -5597,9 +5599,10 @@ class BashFrame(wx.Frame):
         """Save application data."""
         self.CleanSettings()
         if docBrowser: docBrowser.DoSave()
-        if not self.IsIconized() or self.IsMaximized():
+        if not (self.IsIconized() or self.IsMaximized()):
             settings['bash.framePos'] = self.GetPositionTuple()
             settings['bash.frameSize'] = self.GetSizeTuple()
+        settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         for index in range(self.notebook.GetPageCount()):
             self.notebook.GetPage(index).OnCloseWindow()
