@@ -287,8 +287,11 @@ def main():
                 frame.Center()
                 _app.MainLoop()
                 del _app
-                if retCode.get() is None: return
-                bush.setGame(retCode.get(),opts.oblivionPath)
+                retCode = retCode.get()
+                if retCode is None: return
+                # Add the game to the command line, so restarting uses it
+                sys.argv = sys.argv + ['-g',retCode]
+                bush.setGame(retCode,opts.oblivionPath)
             except:
                 # No good with wxPython, use Tkinter instead
                 # Python mode, use Tkinter here, since we don't know for sure if wx is present
@@ -313,6 +316,7 @@ def main():
                         self.gameName = gameName
 
                     def onClick(self):
+                        sys.argv = sys.argv + ['-g',self.gameName]
                         bush.setGame(self.gameName,opts.oblivionPath)
                         root.destroy()
                 for gameName in ret:
