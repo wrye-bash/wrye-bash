@@ -5702,6 +5702,8 @@ DEL %%0"""
                 if updates: msg += u'\n'
             msg += u'\n'
             msg += _(u'If you choose not to install this update at this time, you can manually install the files in Mopy\\downloads.  However, Wrye Bash will not be aware of any updated Game Definition or Translation updates that were installed in this manner.')
+            msg += u'\n\n'
+            msg += _(u'Install these updates?')
             if balt.askYes(self.parent,msg,_(u'Install Updates')):
                 self.InstallUpdates()
             else:
