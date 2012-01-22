@@ -12017,6 +12017,13 @@ class UpdateDialog(wx.Dialog):
                                 break
         return selections
 
+class Settings_CheckForUpdates_DontAsk(BoolLink):
+    def __init__(self):
+        BoolLink.__init__(
+            self,_(u'Always update to the latest version.'),
+            'bash.update.dontAsk',
+            _(u'Always download and install the latest updates from SourceForge when detected.'))
+
 class Settings_CheckForUpdatesFrequency(Link):
     """Change how often Wrye Bash checks for updates automatically."""
     def __init__(self,freq='00-01-0000 00:00',text=_(u'Every Day')):
@@ -12043,32 +12050,33 @@ class Settings_ResetUpdateData(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Reset Update Information'),
                                _(u'This will reset information Wrye Bash stores about what updates have been installed.'))
+        try:
+            enable = bool(settings['bash.update.lang']|settings['bash.update.defs'])
+        except:
+            enable = True
         menu.AppendItem(menuItem)
+        menuItem.Enable(enable)
 
     def Execute(self,event):
-        msg = _(u'Do you wish to clear the following information about updates that Wrye Bash has installed?')
+        msg = _(u'Remove the following updates from install history?')
         msg += u'\n\n'
-        msg += u' * '+_(u'Your update preferences.')
         try:
             defs = settings['bash.update.defs']
             langs = settings['bash.update.lang']
-            msg2 = u'\n * '
             if defs or langs:
-                msg2 += _(u'The following updates:')+u'\n'
-                msg2 += u'\n'.join(u'   * '+x.s for x in sorted(defs))+u'\n'
-                msg2 += u'\n'.join(u'   * '+x.s for x in sorted(langs))+u'\n'
-                msg2 += u'\n'+_(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
+                msg += u'\n'.join(u' * '+x.s for x in sorted(defs))+u'\n'
+                msg += u'\n'.join(u' * '+x.s for x in sorted(langs))+u'\n'
+                msg += _(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
             else:
-                msg2 += _(u'What updates Wrye Bash has installed (None).')
-            msg += msg2
+                msg += u' * ' + _(u'None')
         except:
             deprint(u'An error occured while formatting a message about installed updates:',traceback=True)
-            msg += u'\n * '+_(u'What updates Wrye Bash has installed.')+u'\n\n'
+            msg += u'\n * '+_(u'Unable to determine installed updates.')+u'\n\n'
             msg += _(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
+        msg += u'\n\n' + _(u'Clear install history?')
         if balt.askYes(self.window,msg,_(u'Reset Update Information')):
             settings['bash.update.defs'] = settingDefaults['bash.update.defs']
             settings['bash.update.lang'] = settingDefaults['bash.update.lang']
-            settings['bash.update.dontAsk'] = settingDefaults['bash.update.dontAsk']
 
 class Settings_CheckForUpdates(Link):
     """Checks SourceForge for newer versions."""
@@ -19014,6 +19022,7 @@ def InitSettingsLinks():
                           (False,_(u'Never'))):
             updateMenu.links.append(Settings_CheckForUpdatesFrequency(freq,text))
         updateMenu.links.append(SeparatorLink())
+        updateMenu.links.append(Settings_CheckForUpdates_DontAsk())
         updateMenu.links.append(Settings_ResetUpdateData())
         SettingsMenu.append(updateMenu)
 
