@@ -262,6 +262,7 @@ settingDefaults = {
     'bash.update.last': 0,
     'bash.update.defs': set(),    # List of Game Definitions installed
     'bash.update.lang': set(),    # List of Language updates installed
+    'bash.update.dontAsk': False, # If True, Wrye Bash won't ask to download updates, just to install
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -5463,6 +5464,7 @@ DEL %%0"""
             self.parent.RequestUserAttention()
         if dialog.ShowModal() == wx.ID_CANCEL:
             dialog.Destroy()
+            wx.CallAfter(self.Start)
             return
         selections = dialog.GetSelections()
         installed = dialog.GetInstalled()
@@ -5687,7 +5689,7 @@ DEL %%0"""
                 wx.CallAfter(self.Start)
                 return
             # Ask if the user wants to install the updates
-            msg =  _(u'Wrye Bash is read to install the following updates:')
+            msg =  _(u'Wrye Bash is ready to install the following updates:')
             msg += u'\n\n'
             for updates in self.updates:
                 msg += u'\n'.join(u' * '+x.stail for x in updates)
@@ -11763,17 +11765,17 @@ class UpdateDialog(wx.Dialog):
     GROUP_SPACING = 5
     ITEM_SPACING = 2
 
-    def __init__(self,parent,title,updates,askKey=None):
+    def __init__(self,parent,title,updates):
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title)
         self.SetIcons(bashBlue)
-        self.askKey = askKey
         versions = sorted(updates.keys(),reverse=True)
         #--Controls
         controls = []
         sizer = balt.vSizer(
             (balt.staticText(self,balt.fill(
-                _(u"The following updates are available for Wrye Bash.  Please select which updates you would like to install, and click 'OK' to update Wrye Bash, or download the files manually and install them yourself.")
-                             )),0,wx.ALL,10),
+                _(u"The following updates are available for Wrye Bash.  Please select which updates you would like to install, and click 'OK' to update Wrye Bash, or download the files manually and install them yourself."),
+                70)
+                ),0,wx.ALL,10),
             )
         itemSizer = wx.FlexGridSizer(
             (sum(len(updates[x][y]) for y in ('programs','definitions','languages') for x in versions)),
@@ -11786,7 +11788,13 @@ class UpdateDialog(wx.Dialog):
                                 (itemSizer,2,wx.GROW|wx.ALL,5))
         sizer.Add(sbSizer,2,wx.GROW|wx.ALL,5)
         buttonSizer = self.CreateStdDialogButtonSizer(wx.OK|wx.CANCEL)
-        sizer.Add(buttonSizer,0,wx.ALIGN_RIGHT|wx.ALL^wx.TOP,5)
+        self.askCheck = balt.checkBox(self,_(u'Always update to the latest version'))
+        self.askCheck.SetValue(settings['bash.update.dontAsk'])
+        sizer.Add(hSizer(
+            (self.askCheck,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,5),
+            ((0,0),1,wx.GROW),
+            (buttonSizer,0,wx.ALIGN_RIGHT),
+            ),0,wx.GROW|wx.ALL^wx.TOP,5)
 
         self.allRadios = allRadios = []
         class radioWithChecks(wx.RadioButton):
@@ -11916,6 +11924,13 @@ class UpdateDialog(wx.Dialog):
         self.SetSizer(sizer)
         sizer.SetSizeHints(self)
 
+    def ShowModal(self):
+        if settings['bash.update.dontAsk']: return wx.ID_OK
+        ret = wx.Dialog.ShowModal(self)
+        if ret == wx.ID_OK:
+            settings['bash.update.dontAsk'] = self.askCheck.GetValue()
+        return ret
+
     def GetSelections(self):
         """Call after return from Modal to get what updates were selected"""
         selections = {}
@@ -11982,7 +11997,7 @@ class Settings_ResetUpdateData(Link):
     def Execute(self,event):
         msg = _(u'Do you wish to clear the following information about updates that Wrye Bash has installed?')
         msg += u'\n\n'
-        msg += u' * '+_(u'The last time you checked for updates.')
+        msg += u' * '+_(u'Your update preferences.')
         try:
             defs = settings['bash.update.defs']
             langs = settings['bash.update.lang']
@@ -12002,7 +12017,7 @@ class Settings_ResetUpdateData(Link):
         if balt.askYes(self.window,msg,_(u'Reset Update Information')):
             settings['bash.update.defs'] = settingDefaults['bash.update.defs']
             settings['bash.update.lang'] = settingDefaults['bash.update.lang']
-            settings['bash.update.last'] = settingDefaults['bash.update.last']
+            settings['bash.update.dontAsk'] = settingDefaults['bash.update.dontAsk']
 
 class Settings_CheckForUpdates(Link):
     """Checks SourceForge for newer versions."""
