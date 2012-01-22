@@ -5360,7 +5360,7 @@ RMDIR bash\game
 
 ECHO.
 ECHO Copying new files...
-XCOPY download\* "%%CD%%" /E /R /Y
+XCOPY download\*.* "%%CD%%" /E /R /Y
 
 ECHO.
 ECHO Update complete.  Wrye Bash will now restart.
@@ -5697,8 +5697,41 @@ DEL %%0"""
 
     def InstallUpdates(self):
         deprint(u'Updater: Installing updates.')
+        # Move files that can be moved
+        fromDir = bosh.dirs['mopy'].join(u'download')
+        fromDirJoin = fromDir.join
+        mopyDirJoin = bosh.dirs['mopy'].join
+        dataDirJoin = bosh.dirs['mods'].join
+        failedFiles = []
+        for item in fromDir.list():
+            if not item.isdir(): continue
+            if item == u'Mopy': destRootJoin = mopyDirJoin
+            elif item == u'Data': destRootJoin = dataDirJoin
+            else: continue
+            item = fromDirJoin(item)
+            for root,dirs,files in item.walk():
+                relRoot = root.relpath(item)
+                for file in files:
+                    try:
+                        root.join(file).moveTo(destRootJoin(relRoot,file))
+                    except:
+                        failedFiles.append(item.relpath(fromDir).join(root,file))
         if self.updates[2]:
-            # Program update: Need to shutdown Wrye Bash to apply
+            # Program update, so lang and def files the only ones installed now
+            settings['bash.update.defs'] = self.updates[0]
+            settings['bash.update.lang'] = self.updates[1]
+            deprint(u'Updater: Recorded updates as only updates installed (program update).')
+        else:
+            # Non-program update, so lang and def files are in addition to those already installed
+            settings['bash.update.defs'] |= self.updates[0]
+            settings['bash.update.lang'] |= self.updates[1]
+            settings.setChanged('bash.update.defs')
+            settings.setChanged('bash.update.defs')
+            deprint(u'Updater: Recorded updates added to those already installed (non-program update).')
+        if failedFiles:
+            # Some files couldn't be copied, because they were in use
+            # for example, CBash.dll, or Wrye Bash.exe
+            deprint(u'Updater: Not all update files could be applied.  The following files will be installed via apply_updates.bat:', failed)
             if settings['bash.standalone']:
                 commandLine = '"'+sys.argv[0]+'"'
             else:
@@ -5714,48 +5747,21 @@ DEL %%0"""
             with apply_updates.open('w') as out:
                 out.write(Updater.batchTemplate % commandLine)
             if not balt.askYes(self.parent,
-                _(u"Wrye Bash needs to restart in order to apply the updated files.  Would you like to restart now to accomplish this?  If you choose not to, you can manually apply the update by running 'apply_updates.bat'"),
+                _(u"The following updated files were unable to be applied, because they are currently in use.  Wrye Bash needs to restart to apply these files.  If you choose not to restart, be sure to run 'apply_updates.bat' before running Wrye Bash, to complete the update.  If you choose not to complete the update, Wrye Bash can be restored using the backup archive generated in 'Mopy\\backup'.")
+                + u'\n\n' +
+                u'\n'.join(u' * '+x.s for x in failedFiles),
                 _(u'Install Updates')):
                 deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat must be run in order to apply this update.')
                 return
             deprint(u'Updater: Restarting Wrye Bash to apply the update.')
-            # Program update, so updates are the only updates for this program version
-            settings['bash.update.defs'] = self.updates[0]
-            settings['bash.update.defs'] = self.updates[1]
+            # Restart, but run 'apply_updates.bat' first
             restart_args = (set((apply_updates.s,)),)
         else:
-            # Don't need to shutdown Wrye Bash to apply these updates
-            try:
-                fromDir = bosh.dirs['mopy'].join(u'download')
-                for item in fromDir.list():
-                    if item == u'Mopy':
-                        destRoot = bosh.dirs['mopy']
-                    elif item == u'Data':
-                        destRood = bosh.dirs['mods']
-                    else:
-                        raise Exception(u'Unable to determine destination folder: %s' % item.s)
-                    for root,dirs,files in fromDir.join(item).walk():
-                        relRoot = root.relpath(fromDir.join(item))
-                        for file in files:
-                            root.join(file).moveTo(destRoot.join(relRoot,file))
-                try: fromDir.rmtree(fromDir.stail)
-                except: pass
-            except Exception as e:
-                deprint(u'Updater: An error occurred while applying the update:', traceback=True)
-                balt.showError(self.parent,
-                    _(u'An error occurred while moving the updates files.  Please restore Wrye Bash from the backup file created in Mopy\\backup.')
-                    + u'\n\n%s' % e,
-                    _(u'Install Updates'))
-                return
-            deprint(u'Updater: Update successful.')
-            # No program update, so updates are in addition to those already applied
-            print 'defs before:', settings['bash.update.defs']
-            print 'updates:', self.updates[0]
-            print 'defs after:', settings['bash.update.defs']
-            settings['bash.update.defs'] |= self.updates[0]
-            settings['bash.update.lang'] |= self.updates[1]
-            settings.setChanged('bash.update.defs')
-            settings.setChanged('bash.update.lang')
+            # All files were copied successfully, now we just need to restart
+            # and remove the updates folder
+            try: fromDir.rmtree(fromDir.stail)
+            except: pass
+            deprint(u'Updater: Update successful.  Restart required')
             if not balt.askYes(self.parent,
                     _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect, would you like to do so now?'),
                     _(u'Update Complete')):

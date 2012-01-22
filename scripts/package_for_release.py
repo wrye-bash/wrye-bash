@@ -91,7 +91,6 @@ def VerifyPy2Exe():
     pythonPath = sys.executable
     pythonRoot,pythonExe = os.path.split(pythonPath)
     path = os.path.join(pythonRoot,u'Lib',u'site-packages',u'zipextimporter.py')
-    print os.getcwdu()
     with open(os.path.join(scripts,u'zipextimporter.py'),'r') as ins:
         # 'r' vice 'rb', so line endings don't interfere
         crcGood = binascii.crc32(ins.read())
