@@ -5313,7 +5313,7 @@ class BashStatusBar(wx.StatusBar):
 #------------------------------------------------------------------------------
 class Updater(object):
     """Class to handle checking, getting, and applying Wrye Bash updates."""
-    __slots__ = ('parent','pool','result','manual','updates')
+    __slots__ = ('parent','pool','result','manual','updates','status')
 
     # Template for batch file for installing program updates
     batchTemplate = """@ECHO OFF
@@ -5326,48 +5326,15 @@ SLEEP 10
 ECHO.
 ECHO Applying Wrye Bash update...
 
-ECHO.
-ECHO Removing old files...
-ECHO.  - Compiled Python files
-DEL *.pyc /Q
-ECHO.  - Log files
-DEL *.log /Q
-ECHO.  - Temporary files
-DEL *.tmp /Q
-DEL InstallersTemp\* /Q
-RMDIR InstallersTemp
-DEL InstallersTempList.txt
-ECHO.  - Backup files
-DEL *.bak /Q
-
-ECHO.  - Python Source files..
-DEL bash\*.* /Q
-
-DEL bash\chardet\*.* /Q
-RMDIR bash\chardet
-
-DEL bash\compiled\*.* /Q
-RMDIR bash\compiled
-
-DEL bash\db\*.* /Q
-RMDIR bash\db
-
-DEL bash\game\*.* /Q
-RMDIR bash\game
-
-:: bash\images leave intact (could have user files)
-:: bash\l1on leave intact (could have user files)
-
-ECHO.
-ECHO Copying new files...
-XCOPY download\*.* "%%CD%%" /E /R /Y
+XCOPY download\Mopy\*.* "%%CD%%" /E /R /Y
+RMDIR download /S /Q
 
 ECHO.
 ECHO Update complete.  Wrye Bash will now restart.
 
-PAUSE
+SLEEP 10
 
-%s
+START "Staring Wrye Bash" %s
 
 DEL %%0"""
 
@@ -5377,11 +5344,35 @@ DEL %%0"""
         self.result = None
         self.manual = False
         self.updates = (set(),set(),set())
+        self.status = None
+
+    def GetStatus(self):
+        """Returns a text to be used to display the current status"""
+        if self.status is None:
+            # Not doing anything
+            return None
+        elif self.status == 1:
+            # Contacting SourceForge
+            return _(u'Contacting SourceForge')
+        elif self.status == 2:
+            # Downloading Updates
+            return _(u'Downloading Updates')
+        elif self.status == 3:
+            return _(u'Extracting Updates')
+        elif self.status == 4:
+            return _(u'Creating Backup')
+        elif self.status == 5:
+            return _(u'Installing')
+        elif self.status == 0:
+            return _(u'Restart Required')
+        else:
+            return None
 
     def Start(self):
         """Initiates an update if necessary.  Otherwise, sets up a delayed
            call to initate the update at the appropriate time."""
         if self.pool: return
+        self.status = None
         freq = settings['bash.update.frequency']
         if freq is False: return
         elif freq is True:
@@ -5391,7 +5382,7 @@ DEL %%0"""
                             '%m-%d-%Y %H:%M'))
             secondsToUpdate = nextUpdate - settings['bash.update.last']
         secondsToUpdate = max(0,secondToUpdate)
-        deprint(u'Updater: Started.  Next update in %s seconds.' % secondsToUpdate)
+        deprint(u'Updater: Next update in %s seconds.' % secondsToUpdate,trace=False)
         if secondsToUpdate == 0:
             wx.CallLater(100,self.InitiateUpdate)
         else:
@@ -5402,10 +5393,11 @@ DEL %%0"""
            for results"""
         if self.pool: return
         self.manual = manual
+        self.status = 1
         if manual:
-            deprint('Updater: Manually initiating update check.')
+            deprint('Updater: Manually initiating update check.',trace=False)
         else:
-            deprint('Updater: Automatically initiating update check.')
+            deprint('Updater: Automatically initiating update check.',trace=False)
         self.pool = multiprocessing.Pool(processes=1)
         func = bweb.getAllUpdates
         args = (settings['bash.readme'][1],)
@@ -5422,12 +5414,13 @@ DEL %%0"""
             try:
                 updates = self.result.get()
             except Exception as e:
-                deprint(u'Updater: An error occured while checking for updates:', traceback=True)
+                deprint(u'Updater: An error occured while checking for updates:', traceback=True,trace=False)
                 if self.manual:
                     balt.showError(self.parent,
                         _(u'An error occurred while contacting SourceForge:')
                         + u'\n\n%s' % e,
                         title)
+                wx.CallAfter(self.Start)
                 return
             finally:
                 self.pool.terminate()
@@ -5438,12 +5431,13 @@ DEL %%0"""
             if updates:
                 self.HandleUpdates(updates)
             else:
-                deprint(u'Updater: No updates available.')
+                deprint(u'Updater: No updates available.',trace=False)
                 if self.manual:
                     balt.showOk(self.parent,
                         _(u'There are no updates available for Wrye Bash on SourceForge.  If you are using the SVN however, be sure to check for updates with your SVN client.'),
                         title)
-                    return
+                wx.CallAfter(self.Start)
+                return
         else:
             # Check again in 5 seconds
             wx.CallLater(5000,self.CheckUpdateStatus)
@@ -5472,7 +5466,7 @@ DEL %%0"""
             return
         selections = dialog.GetSelections()
         installed = dialog.GetInstalled()
-        deprint(u'Updater: User selected to mark the following as already installed:', installed)
+        deprint(u'Updater: User selected to mark the following as already installed:', installed,trace=False)
         for x in installed:
             x = GPath(x)
             if u'game definition' in x.cs:
@@ -5484,10 +5478,11 @@ DEL %%0"""
                 settings.setChanged('bash.update.lang')
         dialog.Destroy()
         if not selections:
-            deprint(u'Updater: User opted to not install any updates.  Update session complete.')
+            deprint(u'Updater: User opted to not install any updates.  Update session complete.',trace=False)
+            wx.CallAfter(self.Start)
             return
         else:
-            deprint(u'Updater: User selected the following updates to be installed:', selections)
+            deprint(u'Updater: User selected the following updates to be installed:', selections[selections.keys()[0]],trace=False)
         # Clear out old folders
         outDir = bosh.dirs['mopy'].join(u'download')
         error = False
@@ -5497,19 +5492,22 @@ DEL %%0"""
                 try: file.rmtree(file.s)
                 except: error = True
         if error:
-            deprint(u'Updater: An error occured while cleaning out the downloads folder, update aborted.')
+            deprint(u'Updater: An error occured while cleaning out the downloads folder, update aborted.',trace=False)
             balt.showError(self.parent,
                 _(u'Wrye Bash could not clean out the Mopy\\downloads folder of loose files.  Please ensure there are no open files in the Mopy\\downloads folder, and try again.'),
                 _(u'Download Updates'))
+            wx.CallAfter(self.Start)
             return
         # Initiate download
-        deprint(u'Updater: Initiating download.')
+        self.status = 2
+        deprint(u'Updater: Initiating download.',trace=False)
         version = selections.keys()[0]
         updates = selections[version]
         self.pool = multiprocessing.Pool(processes=1)
         func = bweb.downloadUpdates
         outDir = bosh.dirs['mopy'].join(u'download')
         outDir.makedirs()
+        # Setup callback functions
         args = (updates,outDir.s)
         self.result = self.pool.apply_async(func,args)
         # Check for results in 10 seconds
@@ -5522,11 +5520,12 @@ DEL %%0"""
             try:
                 fileNames = self.result.get()
             except Exception as e:
-                deprint(u'Updater: An error occured while downloading files:', traceback=True)
+                deprint(u'Updater: An error occured while downloading files:', traceback=True,trace=False)
                 balt.showError(self.parent,
                     _(u'An error occured while downloading files from SourceForge.')
                     + u'\n\n%s' % e,
                     title)
+                wx.CallAfter(self.Start)
                 return
             finally:
                 self.pool.terminate()
@@ -5541,13 +5540,14 @@ DEL %%0"""
                     try: file.rmtree(file.s)
                     except: error = True
             if error:
-                deprint(u'Updater: An error occured while re-verifying the downloads folder empty of loose files:', traceback=True)
+                deprint(u'Updater: An error occured while re-verifying the downloads folder empty of loose files:', traceback=True,trace=False)
                 balt.showError(self.parent,
                     _(u'Wrye Bash could not clean out the Mopy\\downloads folder of loose files.  Please ensure there are no open files in the Mopy\\downloads folder, and try again.'),
                     _(u'Download Updates'))
+                wx.CallAfter(self.Start)
                 return
             # Determine backup type
-            deprint(u'Updater: Extracting updates.')
+            deprint(u'Updater: Extracting updates.',trace=False)
             self.updates = (set(),set(),set())
             for file in fileNames:
                 file = GPath(file).relpath(outDir)
@@ -5559,6 +5559,7 @@ DEL %%0"""
                 else:
                     self.updates[2].add(file)   # Program (Semi-Full)
             # Initiate extraction
+            self.status = 3
             self.pool = multiprocessing.Pool(processes=1)
             func = bweb.extractUpdates
             exe7z = bosh.dirs['compiled'].join(u'7zUnicode.exe').s
@@ -5578,11 +5579,12 @@ DEL %%0"""
             try:
                 failed = self.result.get()
             except Exception as e:
-                deprint(u'Updater: An error occured while extracting files:', traceback=True)
+                deprint(u'Updater: An error occured while extracting files:', traceback=True,trace=False)
                 balt.showError(self.parent,
                     _(u'An error occured while extracting update files.')
                     + u'\n\n%s' % e,
                     title)
+                wx.CallAfter(self.Start)
                 return
             finally:
                 self.pool.terminate()
@@ -5594,17 +5596,18 @@ DEL %%0"""
                 for fileName,errors in failed:
                     msg += u' * '+fileName+u':\n'
                     msg += u'\n'.join(u'   '+x for x in errors)
-                deprint(u'Updater:',msg)
+                deprint(u'Updater:',msg,trace=False)
                 balt.showError(self.parent,msg,title)
-                deprint(u'Updater: Removing extracted update files from the downloads folder.')
+                deprint(u'Updater: Removing extracted update files from the downloads folder.',trace=False)
                 for file in download.list():
                     file = download.join(file)
                     if file.isdir():
                         try: file.rmtree(file.s)
                         except: pass
+                wx.CallAfter(self.Start)
                 return
             # Delete old files
-            deprint(u'Updater: Removing non-update files from the downloads folder.')
+            deprint(u'Updater: Removing non-update files from the downloads folder.',trace=False)
             for file in download.list():
                 file = download.join(file)
                 if not file.isdir():
@@ -5620,14 +5623,14 @@ DEL %%0"""
         """Backup all of Wrye Bash's files in case there's a problem
            with the update.  Ensure 7z.exe,7z.dll,and restore_<version>bat
            are all in the Mopy\backup directory."""
-        if self.pool: return False
-        deprint(u'Updater: Initiating Backup.')
+        deprint(u'Updater: Initiating Backup.',trace=False)
+        self.status = 4
         self.pool = multiprocessing.Pool(processes=1)
         func = bweb.createBackup
         exe7z = bosh.dirs['compiled'].join(u'7zUnicode.exe').s
         outDir = bosh.dirs['mopy'].join(u'backup')
         if not backupType:
-            deprint(u'Updater: Backup type: Semi-Full')
+            deprint(u'Updater: Backup type: Semi-Full',trace=False)
             # Semi-Full (Full Mopy)
             kind = u''
             #--This section needs to be updated whenever the file layout of Wrye
@@ -5639,7 +5642,7 @@ DEL %%0"""
                 excludes += ' -x!"*.pyc" -x!"Wrye Bash.exe" -x!"w9xpopen.exe"'
             includes = '"*"'
         else:
-            deprint(u'Updater: Backup type: Partial')
+            deprint(u'Updater: Backup type: Partial',trace=False)
             # Language & Game Defintions
             kind = u'_partial'
             includes = '"bash\\game\\*.py"'
@@ -5663,11 +5666,12 @@ DEL %%0"""
             try:
                 failed = self.result.get()
             except Exception as e:
-                deprint(u'Updater: An error occured while backing up:', traceback=True)
+                deprint(u'Updater: An error occured while backing up:', traceback=True,trace=False)
                 balt.showError(self.parent,
                     _(u'An error occurred while backing up the current Wrye Bash files.')
                     + u'\n\n%s' % e,
                     title)
+                wx.CallAfter(self.Start)
                 return
             finally:
                 self.pool.terminate()
@@ -5679,59 +5683,118 @@ DEL %%0"""
                     + u'\n\n' +
                     ' * %s' % failed,
                     title)
-                deprint(u'Updater: An error occurred while backing up:', traceback=Tue)
+                deprint(u'Updater: An error occurred while backing up:', traceback=True,trace=False)
+                wx.CallAfter(self.Start)
                 return
             # Ask if the user wants to install the updates
             msg =  _(u'Wrye Bash is read to install the following updates:')
             msg += u'\n\n'
             for updates in self.updates:
                 msg += u'\n'.join(u' * '+x.stail for x in updates)
-            msg += u'\n\n'
+                if updates: msg += u'\n'
+            msg += u'\n'
             msg += _(u'If you choose not to install this update at this time, you can manually install the files in Mopy\\downloads.  However, Wrye Bash will not be aware of any updated Game Definition or Translation updates that were installed in this manner.')
             if balt.askYes(self.parent,msg,_(u'Install Updates')):
                 self.InstallUpdates()
             else:
-                deprint(u'Updater: User opted to not install the prepared update.')
+                deprint(u'Updater: User opted to not install the prepared update.',trace=False)
+                # Don't restart the update checker, since there's a valid update
+                # waiting to be installed
         else:
             wx.CallLater(1000,self.CheckBackupStatus)
 
     def InstallUpdates(self):
-        deprint(u'Updater: Installing updates.')
         # Move files that can be moved
+        self.status = 5
         fromDir = bosh.dirs['mopy'].join(u'download')
         fromDirJoin = fromDir.join
-        mopyDirJoin = bosh.dirs['mopy'].join
+        mopyDir = bosh.dirs['mopy']
+        mopyDirJoin = mopyDir.join
         dataDirJoin = bosh.dirs['mods'].join
-        failedFiles = []
-        for item in fromDir.list():
-            if not item.isdir(): continue
-            if item == u'Mopy': destRootJoin = mopyDirJoin
-            elif item == u'Data': destRootJoin = dataDirJoin
-            else: continue
-            item = fromDirJoin(item)
-            for root,dirs,files in item.walk():
-                relRoot = root.relpath(item)
-                for file in files:
-                    try:
-                        root.join(file).moveTo(destRootJoin(relRoot,file))
-                    except:
-                        failedFiles.append(item.relpath(fromDir).join(root,file))
-        if self.updates[2]:
-            # Program update, so lang and def files the only ones installed now
-            settings['bash.update.defs'] = self.updates[0]
-            settings['bash.update.lang'] = self.updates[1]
-            deprint(u'Updater: Recorded updates as only updates installed (program update).')
-        else:
-            # Non-program update, so lang and def files are in addition to those already installed
-            settings['bash.update.defs'] |= self.updates[0]
-            settings['bash.update.lang'] |= self.updates[1]
-            settings.setChanged('bash.update.defs')
-            settings.setChanged('bash.update.defs')
-            deprint(u'Updater: Recorded updates added to those already installed (non-program update).')
+        # Clean out junk files before installing:
+        # - .tmp
+        # - .log
+        # Standalone:
+        # - .py
+        # - .pyc
+        # - .pyw
+        # - files without extension (compiled .py files)
+        removeExts = set((u'.tmp',u'.log',u'.pyc'))
+        if settings['bash.standalone']:
+            removeExts |= set((u'.py',u'.pyw',u''))
+        deprint(u'Updater: Cleaning installation of the following files:', removeExts,trace=False)
+        skipDirs = (mopyDirJoin(u'download'),mopyDirJoin(u'backup'))
+        with balt.Progress(_(u'Updating'),_(u'Cleaning old files...')+u'\n'+' '*60) as progress:
+            count = sum(len(z) for x,y,z in mopyDir.walk())
+            progress.setFull(count)
+            i = 0
+            for file in mopyDir.list():
+                fullFile = mopyDirJoin(file)
+                if fullFile.isdir():
+                    if file == u'download' or file ==u'backup':
+                        continue
+                    for root,dirs,files in fullFile.walk():
+                        for file in files:
+                            progress(i)
+                            if file.cext in removeExts:
+                                file = root.join(file)
+                                progress(i,_(u'Cleaning old files...')+u'\n'+file.relpath(mopyDir).s)
+                                deprint(u'Updater: Cleaning:', file.relpath(mopyDir).s,trace=False)
+                                try: file.remove()
+                                except: pass
+                            i += 1
+                elif file.cext in removeExts:
+                    progress(i,_(u'Cleaning old files...')+u'\n'+file.s)
+                    deprint(u'Updater: Cleaning:', file.s,trace=False)
+                    i += 1
+                    try: fullFile.remove()
+                    except: pass
+            # Now copy the new files in
+            progress(i,_(u'Installing new files...'))
+            deprint(u'Updater: Installing new files.',trace=False)
+            failedFiles = []
+            for item in fromDir.list():
+                item = fromDirJoin(item)
+                if not item.isdir(): continue
+                if item.tail == u'Mopy': destRootJoin = mopyDirJoin
+                elif item.tail == u'Data': destRootJoin = dataDirJoin
+                else: continue
+                for root,dirs,files in item.walk(False):
+                    relRoot = root.relpath(item)
+                    empty = not dirs
+                    for file in files:
+                        try:
+                            dest = destRootJoin(relRoot,file)
+                            destRel = root.join(file).relpath(fromDir)
+                            progress(i,_(u'Installing new files...')+u'\n'+destRel.s)
+                            i += 1
+                            deprint(u'Updater: Source file:', destRel.s,trace=False)
+                            deprint(u'Updater:        dest:', dest.s,trace=False)
+                            root.join(file).moveTo(dest)
+                        except:
+                            empty = False
+                            failedFiles.append(destRel)
+                    if empty:
+                        try: root.removedirs()
+                        except: pass
+            if self.updates[2]:
+                # Program update, so lang and def files the only ones installed now
+                settings['bash.update.defs'] = self.updates[0]
+                settings['bash.update.lang'] = self.updates[1]
+                deprint(u'Updater: Recorded updates as only updates installed (program update).',trace=False)
+            else:
+                # Non-program update, so lang and def files are in addition to those already installed
+                settings['bash.update.defs'] |= self.updates[0]
+                settings['bash.update.lang'] |= self.updates[1]
+                settings.setChanged('bash.update.defs')
+                settings.setChanged('bash.update.defs')
+                deprint(u'Updater: Recorded updates added to those already installed (non-program update).',trace=False)
+            # Updates are installed, restart is required
+            self.status = 0
         if failedFiles:
             # Some files couldn't be copied, because they were in use
             # for example, CBash.dll, or Wrye Bash.exe
-            deprint(u'Updater: Not all update files could be applied.  The following files will be installed via apply_updates.bat:', failed)
+            deprint(u'Updater: Not all update files could be applied.  The following files will be installed via apply_updates.bat:', failedFiles,trace=False)
             if settings['bash.standalone']:
                 commandLine = '"'+sys.argv[0]+'"'
             else:
@@ -5751,7 +5814,7 @@ DEL %%0"""
                 + u'\n\n' +
                 u'\n'.join(u' * '+x.s for x in failedFiles),
                 _(u'Install Updates')):
-                deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat must be run in order to apply this update.')
+                deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat must be run in order to apply this update.',trace=False)
                 return
             deprint(u'Updater: Restarting Wrye Bash to apply the update.')
             # Restart, but run 'apply_updates.bat' first
@@ -5761,13 +5824,13 @@ DEL %%0"""
             # and remove the updates folder
             try: fromDir.rmtree(fromDir.stail)
             except: pass
-            deprint(u'Updater: Update successful.  Restart required')
+            deprint(u'Updater: Update successful.  Restart required',trace=False)
             if not balt.askYes(self.parent,
                     _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect, would you like to do so now?'),
                     _(u'Update Complete')):
-                deprint(u'Updater: User opted to not restart Wrye Bash.  Update will take effect next time Wrye Bash is launched.')
+                deprint(u'Updater: User opted to not restart Wrye Bash.  Update will take effect next time Wrye Bash is launched.',trace=False)
                 return
-            deprint(u'Updater: Restarting Wrye Bash.')
+            deprint(u'Updater: Restarting Wrye Bash.',trace=False)
             restart_args = ()
         bashFrame.Restart(*restart_args)
 
@@ -6064,6 +6127,8 @@ class BashFrame(wx.Frame):
         except:
             deprint(u'An error occurred while trying to save settings:', traceback=True)
             pass
+        if self.updater.pool:
+            self.updater.pool.terminate()
         self.Destroy()
 
     def SaveSettings(self):
@@ -11943,11 +12008,9 @@ class Settings_CheckForUpdates(Link):
     """Checks SourceForge for newer versions."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        if bashFrame.updater.pool:
-            title = _(u'Checking for updates...')
-            help = _(u'Wrye Bash is currently checking for updates.')
-            enable = False
-        else:
+        enable = bashFrame.updater.status is None
+        title = bashFrame.updater.GetStatus()
+        if not title:
             try:
                 lastCheck = settings['bash.update.last']
                 last = time.localtime(lastCheck)
@@ -11991,9 +12054,7 @@ class Settings_CheckForUpdates(Link):
                 deprint(u'Error getting time of last update:',traceback=True)
                 when = _(u'Unknown')
             title = _(u'Now (Last Check: %s)...') % when
-            help=_(u'Checks SourceForge for newer versions of Wrye Bash.')
-            enable = True
-        menuItem = wx.MenuItem(menu,self.id,title,help)
+        menuItem = wx.MenuItem(menu,self.id,title)
         menu.AppendItem(menuItem)
         menuItem.Enable(enable)
 
