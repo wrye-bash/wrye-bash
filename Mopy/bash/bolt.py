@@ -1271,11 +1271,12 @@ class Path(object):
         """Like os.walk."""
         if relative:
             start = len(self._s)
-            return ((GPath(x[start:]),[GPath(u) for u in y],[GPath(u) for u in z])
-                for x,y,z in os.walk(self._s,topdown,onerror))
+            for root,dirs,files in os.walk(self._s,topdown,onerror):
+                yield (GPath(root[start:]),[GPath(x) for x in dirs],[GPath(x) for x in files])
         else:
-            return ((GPath(x),[GPath(u) for u in y],[GPath(u) for u in z])
-                for x,y,z in os.walk(self._s,topdown,onerror))
+            for root,dirs,files in os.walk(self._s,topdown,onerror):
+                yield (GPath(root),[GPath(x) for x in dirs],[GPath(x) for x in files])
+
     def split(self):
         """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
            would return ['C:','Program Files','Bethesda Softworks']"""
@@ -1356,7 +1357,7 @@ class Path(object):
             if self.exists(): os.removedirs(self._s)
         except WindowsError:
             self.clearRO()
-            os.remove(self._s)
+            os.removedirs(self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
@@ -2353,17 +2354,34 @@ def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
 
-    import inspect
-    stack = inspect.stack()
-    file,line,function = stack[1][1:4]
+    if keyargs.get('trace',True):
+        import inspect
+        stack = inspect.stack()
+        file,line,function = stack[1][1:4]
 
-    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,
-                            u' '.join([u'%s'%x for x in args]))
+        msg = u'%s %4d %s: ' % (GPath(file).tail.s,line,function)
+    else:
+        msg = u''
+    try:
+        msg += u' '.join([u'%s'%x for x in args])
+    except UnicodeError:
+        # If the args failed to convert to unicode for some reason
+        # we still want the message displayed any way we can
+        for x in args:
+            try:
+                msg += u' %s' % x
+            except UnicodeError:
+                msg += u' %s' % repr(x)
+
     if keyargs.get('traceback',False):
         o = StringIO.StringIO(msg)
         o.write(u'\n')
         traceback.print_exc(file=o)
-        msg = o.getvalue()
+        value = o.getvalue()
+        try:
+            msg += u'%s' % value
+        except UnicodeError:
+            msg += u'%s' % repr(value)
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output
