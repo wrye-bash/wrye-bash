@@ -437,6 +437,7 @@ def pack7z(dstFile, srcDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
+        line = unicode(line,'utf8')
         maCompressing = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
@@ -486,6 +487,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
+        line = unicode(line,'utf8')
         maExtracting = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
