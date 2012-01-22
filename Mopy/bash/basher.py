@@ -12636,6 +12636,28 @@ class MasterList_CleanMasters(Link):
                             _(u'Clean Masters'))
 
 #------------------------------------------------------------------------------
+class Mod_FullLoad(Link):
+    """Tests all record definitions against a specific mod"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Test Full Record Definitions...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data)==1)
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        with balt.Progress(_(u'Loading:')+u'\n%s'%fileName.stail) as progress:
+            print bosh.MreRecord.type_class
+            readClasses = bosh.MreRecord.type_class
+            print readClasses.values()
+            loadFactory = bosh.LoadFactory(False, *readClasses.values())
+            modFile = bosh.ModFile(bosh.modInfos[fileName],loadFactory)
+            try:
+                modFile.load(True,progress)
+            except:
+                deprint('execption:\n', traceback=True)
+
+#------------------------------------------------------------------------------
 class Mod_AddMaster(Link):
     """Adds master."""
     def AppendToMenu(self,menu,window,data):
@@ -17710,6 +17732,25 @@ class App_Settings(StatusBar_Button):
         SettingsMenu.PopupMenu(bashFrame.GetStatusBar(),bashFrame,None)
 
 #------------------------------------------------------------------------------
+class App_Restart(StatusBar_Button):
+    """Restart Wrye Bash"""
+    def GetBitmapButton(self,window,style=0):
+        if not self.id: self.id = wx.NewId()
+        if self.gButton is not None: self.gButton.Destroy()
+        self.gButton = bitmapButton(window,
+            wx.ArtProvider.GetBitmap(wx.ART_UNDO,wx.ART_TOOLBAR,
+                (settings['bash.statusbar.iconSize'],
+                 settings['bash.statusbar.iconSize'])),
+            style=style,
+            tip=u'Restart',
+            onClick = self.Execute,
+            onRClick = self.DoPopupMenu)
+        return self.gButton
+
+    def Execute(self,event):
+        bashFrame.Restart()
+
+#------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
@@ -18335,6 +18376,8 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
+    if bosh.inisettings['ShowDevTools']:
+        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))   
 
 def InitMasterLinks():
     """Initialize master list menus."""
@@ -18570,6 +18613,8 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_ScanDirty())
 
     #--ModList: Item Links
+    if bosh.inisettings['ShowDevTools']:
+        ModList.itemMenu.append(Mod_FullLoad())
     if True: #--File
         fileMenu = MenuLink(_(u"File"))
         if bush.game.esp.canBash:
