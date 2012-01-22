@@ -5321,21 +5321,20 @@ class Updater(object):
 PUSHD "%%~dp0"
 TITLE Updating Wrye Bash
 
-ECHO Waiting for Wrye Bash process to terminate...
-SLEEP 10
+ECHO Waiting for Wrye Bash process to terminate... > update.log
+:: Wait 5 seconds
+PING 127.0.0.1 -n 1 > NUL
 
-ECHO.
-ECHO Applying Wrye Bash update...
+ECHO. >> update.log
+ECHO Applying Wrye Bash update... >> update.log
 
-XCOPY download\Mopy\*.* "%%CD%%" /E /R /Y
-RMDIR download /S /Q
+XCOPY download\Mopy\*.* "%%CD%%" /E /R /Y >> update.log
+RMDIR download /S /Q >> update.log
 
-ECHO.
-ECHO Update complete.  Wrye Bash will now restart.
+ECHO. >> update.log
+ECHO Update complete.  Wrye Bash will now restart. >> update.log
 
-SLEEP 10
-
-START "Staring Wrye Bash" %s
+%sSTART "Staring Wrye Bash" %s
 
 DEL %%0"""
 
@@ -5403,8 +5402,8 @@ DEL %%0"""
         func = bweb.getAllUpdates
         args = (settings['bash.readme'][1],)
         self.result = self.pool.apply_async(func,args)
-        # Check for results in 5 seconds
-        wx.CallLater(5000,self.CheckUpdateStatus)
+        # Check for results in 1 second
+        wx.CallLater(1000,self.CheckUpdateStatus)
 
     def CheckUpdateStatus(self):
         """Check to see if any results are back from the update
@@ -5440,8 +5439,8 @@ DEL %%0"""
                 wx.CallAfter(self.Start)
                 return
         else:
-            # Check again in 5 seconds
-            wx.CallLater(5000,self.CheckUpdateStatus)
+            # Check again in 1 seconds
+            wx.CallLater(1000,self.CheckUpdateStatus)
 
     def FilterUpdates(self,updates):
         """Filter out updates that are already installed"""
@@ -5551,15 +5550,22 @@ DEL %%0"""
             # Determine backup type
             deprint(u'Updater: Extracting updates.',trace=False)
             self.updates = (set(),set(),set())
+            extract_last = []
+            extract_first = []
             for file in fileNames:
-                file = GPath(file).relpath(outDir)
-                if u'game definition' in file.cs:
-                    self.updates[0].add(file)   # Definition (Partial)
-                elif ('language' in file.cs or
-                     u'translation' in file.cs):
-                    self.updates[1].add(file)   # Language (Partial)
+                gFile = GPath(file).relpath(outDir)
+                if u'game definition' in gFile.cs:
+                    extract_last.insert(0,file)
+                    self.updates[0].add(gFile)   # Definition (Partial)
+                elif ('language' in gFile.cs or
+                     u'translation' in gFile.cs):
+                    extract_last.insert(0,file)
+                    self.updates[1].add(gFile)   # Language (Partial)
                 else:
-                    self.updates[2].add(file)   # Program (Semi-Full)
+                    extract_first.insert(0,file)
+                    self.updates[2].add(gFile)   # Program (Semi-Full)
+            fileNames = extract_first + extract_last
+            deprint(u'Updater: Extraction order:', fileNames,trace=False)
             # Initiate extraction
             self.status = 3
             self.pool = multiprocessing.Pool(processes=1)
@@ -5571,8 +5577,8 @@ DEL %%0"""
             # Check results every second
             wx.CallLater(1000,self.CheckExtractStatus)
         else:
-            # Check again in 10 seconds
-            wx.CallLater(10000,self.CheckDownloadStatus)
+            # Check again in 1 second
+            wx.CallLater(1000,self.CheckDownloadStatus)
 
     def CheckExtractStatus(self):
         if self.result.ready():
@@ -5691,7 +5697,7 @@ DEL %%0"""
             # Ask if the user wants to install the updates
             msg =  _(u'Wrye Bash is ready to install the following updates:')
             msg += u'\n\n'
-            for updates in self.updates:
+            for updates in reversed(self.updates):
                 msg += u'\n'.join(u' * '+x.stail for x in updates)
                 if updates: msg += u'\n'
             msg += u'\n'
@@ -5797,30 +5803,21 @@ DEL %%0"""
             # Some files couldn't be copied, because they were in use
             # for example, CBash.dll, or Wrye Bash.exe
             deprint(u'Updater: Not all update files could be applied.  The following files will be installed via apply_updates.bat:', failedFiles,trace=False)
-            if settings['bash.standalone']:
-                commandLine = '"'+sys.argv[0]+'"'
-            else:
-                commandLine = '"%s" "%s"' % (sys.executable,sys.argv[0])
-            if len(sys.argv) > 1:
-                for arg in sys.argv[1:]:
-                    if arg == '--restarting': continue
-                    if ' ' in arg:
-                        commandLine += ' "'+arg+'"'
-                    else:
-                        commandLine += ' '+arg
+            self.WriteBatchFile('')
             apply_updates = bosh.dirs['mopy'].join(u'apply_updates.bat')
-            with apply_updates.open('w') as out:
-                out.write(Updater.batchTemplate % commandLine)
+            restart_args = (set((apply_updates.s,)),)
             if not balt.askYes(self.parent,
-                _(u"The following updated files were unable to be applied, because they are currently in use.  Wrye Bash needs to restart to apply these files.  If you choose not to restart, be sure to run 'apply_updates.bat' before running Wrye Bash, to complete the update.  If you choose not to complete the update, Wrye Bash can be restored using the backup archive generated in 'Mopy\\backup'.")
+                _(u"The following updated files were unable to be applied, because they are currently in use.  Wrye Bash needs to restart to apply these files.  If you choose not to restart, be sure to run 'apply_updates.bat' before running Wrye Bash, to complete the update.  If you choose not to complete the update, it will be installed when you exit Wrye Bash.")
                 + u'\n\n' +
                 u'\n'.join(u' * '+x.s for x in failedFiles),
                 _(u'Install Updates')):
-                deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat must be run in order to apply this update.',trace=False)
+                deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat will be run at exit.',trace=False)
+                # Re-write apply_update.bat to not execute Wrye Bash after it's run
+                self.WriteBatchFile()
+                global appRestart
+                appRestart = restart_args[0]
                 return
             deprint(u'Updater: Restarting Wrye Bash to apply the update.')
-            # Restart, but run 'apply_updates.bat' first
-            restart_args = (set((apply_updates.s,)),)
         else:
             # All files were copied successfully, now we just need to restart
             # and remove the updates folder
@@ -5831,10 +5828,52 @@ DEL %%0"""
                     _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect, would you like to do so now?'),
                     _(u'Update Complete')):
                 deprint(u'Updater: User opted to not restart Wrye Bash.  Update will take effect next time Wrye Bash is launched.',trace=False)
+                self.WriteBatchFile()
                 return
             deprint(u'Updater: Restarting Wrye Bash.',trace=False)
             restart_args = ()
         bashFrame.Restart(*restart_args)
+
+    def WriteBatchFile(self,addArgs=None):
+        apply_updates = bosh.dirs['mopy'].join(u'apply_updates.bat')
+        if addArgs is None:
+            with apply_updates.open('w') as out:
+                out.write(Updater.batchTemplate % ('::',''))
+        else:
+            args = sys.argv[:]
+            def updateArgs(newArgs):
+                if isinstance(newArgs,(list,tuple)):
+                    if len(newArgs) > 0 and isinstance(newArgs[0],(list,tuple)):
+                        for arg in newArgs:
+                            updateArgs(arg)
+                    else:
+                        found = 0
+                        for i in xrange(len(args)):
+                            if not found and args[i] == newArgs[0]:
+                                found = 1
+                            elif found:
+                                if found < len(newArgs):
+                                    args[i] = newArgs[found]
+                                    found += 1
+                                else:
+                                    break
+                        else:
+                            args.extend(newArgs)
+            updateArgs(addArgs)
+
+            if settings['bash.standalone']:
+                commandLine = '"'+args[0]+'"'
+            else:
+                commandLine = '"%s" "%s"' % (sys.executable,args[0])
+            if len(args) > 1:
+                for arg in args[1:]:
+                    if arg == '--restarting': continue
+                    if ' ' in arg:
+                        commandLine += ' "'+arg+'"'
+                    else:
+                        commandLine += ' '+arg
+            with apply_updates.open('w') as out:
+                out.write(Updater.batchTemplate % ('',commandLine))
 
 #------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
@@ -5900,7 +5939,12 @@ class BashFrame(wx.Frame):
             args = argConvert(args)
 
         global appRestart
-        appRestart = args
+        if isinstance(appRestart,set):
+            # appRestart has already been setup to run apply_updates.bat on
+            # on shutdown.  Rewrite that file to also start Wrye Bash at the end
+            self.updater.WriteBatchFile(args)
+        else:
+            appRestart = args
         self.Close(True)
 
     def SetTitle(self,title=None):
