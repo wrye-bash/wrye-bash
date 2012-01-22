@@ -150,7 +150,7 @@ class SourceForge(object):
     reWryeBashVersion = re.compile(
         ur'Wrye Bash (\d[\d\.]*)\s*(.*?)',
         re.U|re.I)
-    baseUrl = 'https://sourceforge.net/projects/%s/'
+    baseUrl = 'http://sourceforge.net/projects/%s/'
 
     def __init__(self,wbVersion=None,project='oblivionworks'):
         self.wbVersion = wbVersion
