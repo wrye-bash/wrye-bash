@@ -147,32 +147,40 @@ def exit():
     if basherImported:
         from basher import appRestart
         if appRestart:
-            if not hasattr(sys,'frozen'):
-                exePath = GPath(sys.executable)
-                sys.argv = [exePath.stail] + sys.argv
-            sys.argv += [u'--restarting']
-            def updateArgv(args):
-                if isinstance(args,(list,tuple)):
-                    if len(args) > 0 and isinstance(args[0],(list,tuple)):
-                        for arg in args:
-                            updateArgv(arg)
-                    else:
-                        found = 0
-                        for i in xrange(len(sys.argv)):
-                            if not found and sys.argv[i] == args[0]:
-                                found = 1
-                            elif found:
-                                if found < len(args):
-                                    sys.argv[i] = args[found]
-                                    found += 1
-                                else:
-                                    break
+            if isinstance(appRestart,set):
+                # Special case for applying updates
+                special = True
+                sys.argv = list(appRestart)
+            else:
+                # Normal restart
+                special = False
+                if not hasattr(sys,'frozen'):
+                    exePath = GPath(sys.executable)
+                    sys.argv = [exePath.stail] + sys.argv
+                if u'--restarting' not in sys.argv:
+                    sys.argv += [u'--restarting']
+                def updateArgv(args):
+                    if isinstance(args,(list,tuple)):
+                        if len(args) > 0 and isinstance(args[0],(list,tuple)):
+                            for arg in args:
+                                updateArgv(arg)
                         else:
-                            sys.argv.extend(args)
-            updateArgv(appRestart)
+                            found = 0
+                            for i in xrange(len(sys.argv)):
+                                if not found and sys.argv[i] == args[0]:
+                                    found = 1
+                                elif found:
+                                    if found < len(args):
+                                        sys.argv[i] = args[found]
+                                        found += 1
+                                    else:
+                                        break
+                            else:
+                                sys.argv.extend(args)
+                updateArgv(appRestart)
             try:
                 import subprocess
-                if hasattr(sys,'frozen'):
+                if special or hasattr(sys,'frozen'):
                     subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
                 else:
                     subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker

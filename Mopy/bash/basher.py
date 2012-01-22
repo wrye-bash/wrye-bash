@@ -36,7 +36,6 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
-from __future__ import with_statement   # Python 2.5 with statement
 #--Localization
 #..Handled by bosh, so import that.
 import bush
@@ -44,6 +43,7 @@ import bosh
 import bolt
 import barb
 import bass
+import bweb
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
@@ -65,6 +65,7 @@ import textwrap
 import time
 import subprocess
 import locale
+import multiprocessing
 from types import *
 from operator import attrgetter,itemgetter
 
@@ -256,6 +257,11 @@ settingDefaults = {
     'bash.page':1,
     'bash.useAltName':True,
     'bash.pluginEncoding': 'cp1252',    # Western European
+    #--Auto-Update information
+    'bash.update.frequency': False, # Don't check for updates
+    'bash.update.last': 0,
+    'bash.update.defs': set(),    # List of Game Definitions installed
+    'bash.update.lang': set(),    # List of Language updates installed
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -5305,6 +5311,461 @@ class BashStatusBar(wx.StatusBar):
         self.SetStatusText(u'',1)
 
 #------------------------------------------------------------------------------
+class Updater(object):
+    """Class to handle checking, getting, and applying Wrye Bash updates."""
+    __slots__ = ('parent','pool','result','manual','updates')
+
+    # Template for batch file for installing program updates
+    batchTemplate = """@ECHO OFF
+PUSHD "%%~dp0"
+TITLE Updating Wrye Bash
+
+ECHO Waiting for Wrye Bash process to terminate...
+SLEEP 10
+
+ECHO.
+ECHO Applying Wrye Bash update...
+
+ECHO.
+ECHO Removing old files...
+ECHO.  - Compiled Python files
+DEL *.pyc /Q
+ECHO.  - Log files
+DEL *.log /Q
+ECHO.  - Temporary files
+DEL *.tmp /Q
+DEL InstallersTemp\* /Q
+RMDIR InstallersTemp
+DEL InstallersTempList.txt
+ECHO.  - Backup files
+DEL *.bak /Q
+
+ECHO.  - Python Source files..
+DEL bash\*.* /Q
+
+DEL bash\chardet\*.* /Q
+RMDIR bash\chardet
+
+DEL bash\compiled\*.* /Q
+RMDIR bash\compiled
+
+DEL bash\db\*.* /Q
+RMDIR bash\db
+
+DEL bash\game\*.* /Q
+RMDIR bash\game
+
+:: bash\images leave intact (could have user files)
+:: bash\l1on leave intact (could have user files)
+
+ECHO.
+ECHO Copying new files...
+XCOPY download\* "%%CD%%" /E /R /Y
+
+ECHO.
+ECHO Update complete.  Wrye Bash will now restart.
+
+PAUSE
+
+%s
+
+DEL %%0"""
+
+    def __init__(self,parent):
+        self.parent = parent
+        self.pool = None
+        self.result = None
+        self.manual = False
+        self.updates = (set(),set(),set())
+
+    def Start(self):
+        """Initiates an update if necessary.  Otherwise, sets up a delayed
+           call to initate the update at the appropriate time."""
+        if self.pool: return
+        freq = settings['bash.update.frequency']
+        if freq is False: return
+        elif freq is True:
+            secondsToUpdate = 0
+        else:
+            nextUpdate = time.mktime(time.strptime(freq,
+                            '%m-%d-%Y %H:%M'))
+            secondsToUpdate = nextUpdate - settings['bash.update.last']
+        secondsToUpdate = max(0,secondToUpdate)
+        deprint(u'Updater: Started.  Next update in %s seconds.' % secondsToUpdate)
+        if secondsToUpdate == 0:
+            wx.CallLater(100,self.InitiateUpdate)
+        else:
+            wx.CallLater(secondsToUpdate*1000,self.InitiateUpdate)
+
+    def InitiateUpdate(self,manual=False):
+        """Startup the update checking process, set a timer to check
+           for results"""
+        if self.pool: return
+        self.manual = manual
+        if manual:
+            deprint('Updater: Manually initiating update check.')
+        else:
+            deprint('Updater: Automatically initiating update check.')
+        self.pool = multiprocessing.Pool(processes=1)
+        func = bweb.getAllUpdates
+        args = (settings['bash.readme'][1],)
+        self.result = self.pool.apply_async(func,args)
+        # Check for results in 5 seconds
+        wx.CallLater(5000,self.CheckUpdateStatus)
+
+    def CheckUpdateStatus(self):
+        """Check to see if any results are back from the update
+           process"""
+        if self.result.ready():
+            # Results are back
+            title = _(u'Check for Updates')
+            try:
+                updates = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while checking for updates:', traceback=True)
+                if self.manual:
+                    balt.showError(self.parent,
+                        _(u'An error occurred while contacting SourceForge:')
+                        + u'\n\n%s' % e,
+                        title)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            settings['bash.update.last'] = time.time()
+            self.FilterUpdates(updates)
+            if updates:
+                self.HandleUpdates(updates)
+            else:
+                deprint(u'Updater: No updates available.')
+                if self.manual:
+                    balt.showOk(self.parent,
+                        _(u'There are no updates available for Wrye Bash on SourceForge.  If you are using the SVN however, be sure to check for updates with your SVN client.'),
+                        title)
+                    return
+        else:
+            # Check again in 5 seconds
+            wx.CallLater(5000,self.CheckUpdateStatus)
+
+    def FilterUpdates(self,updates):
+        """Filter out updates that are already installed"""
+        currentVersion = settings['bash.readme'][1]
+        installedDefs = settings['bash.update.defs']
+        installedLangs = settings['bash.update.lang']
+        for version in updates:
+            if version != currentVersion: continue
+            verUpdates = updates[version]
+            verUpdates['definitions'] = [x for x in verUpdates['definitions'] if GPath(x[0]) not in installedDefs]
+            verUpdates['languages'] = [x for x in verUpdates['languages'] if GPath(x[0]) not in installedLangs]
+            if not verUpdates['definitions'] and not verUpdates['languages'] and not verUpdates['programs']:
+                del updates[version]
+            break
+
+    def HandleUpdates(self,updates):
+        active = self.parent.IsActive()
+        dialog = UpdateDialog(self.parent,_(u'Check for Updates'),updates)
+        if not active:
+            self.parent.RequestUserAttention()
+        if dialog.ShowModal() == wx.ID_CANCEL:
+            dialog.Destroy()
+            return
+        selections = dialog.GetSelections()
+        installed = dialog.GetInstalled()
+        deprint(u'Updater: User selected to mark the following as already installed:', installed)
+        for x in installed:
+            x = GPath(x)
+            if u'game definition' in x.cs:
+                settings['bash.update.defs'].add(x)
+                settings.setChanged('bash.update.defs')
+            elif (u'translation' in x.cs or
+                  u'language' in x.cs):
+                settings['bash.update.lang'].add(x)
+                settings.setChanged('bash.update.lang')
+        dialog.Destroy()
+        if not selections:
+            deprint(u'Updater: User opted to not install any updates.  Update session complete.')
+            return
+        else:
+            deprint(u'Updater: User selected the following updates to be installed:', selections)
+        # Clear out old folders
+        outDir = bosh.dirs['mopy'].join(u'download')
+        error = False
+        for file in outDir.list():
+            file = outDir.join(file)
+            if file.isdir():
+                try: file.rmtree(file.s)
+                except: error = True
+        if error:
+            deprint(u'Updater: An error occured while cleaning out the downloads folder, update aborted.')
+            balt.showError(self.parent,
+                _(u'Wrye Bash could not clean out the Mopy\\downloads folder of loose files.  Please ensure there are no open files in the Mopy\\downloads folder, and try again.'),
+                _(u'Download Updates'))
+            return
+        # Initiate download
+        deprint(u'Updater: Initiating download.')
+        version = selections.keys()[0]
+        updates = selections[version]
+        self.pool = multiprocessing.Pool(processes=1)
+        func = bweb.downloadUpdates
+        outDir = bosh.dirs['mopy'].join(u'download')
+        outDir.makedirs()
+        args = (updates,outDir.s)
+        self.result = self.pool.apply_async(func,args)
+        # Check for results in 10 seconds
+        wx.CallLater(10000,self.CheckDownloadStatus)
+
+    def CheckDownloadStatus(self):
+        if self.result.ready():
+            # Results are back
+            title = _(u'Download Updates')
+            try:
+                fileNames = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while downloading files:', traceback=True)
+                balt.showError(self.parent,
+                    _(u'An error occured while downloading files from SourceForge.')
+                    + u'\n\n%s' % e,
+                    title)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            # Re-verify downlods folder is empty, in case the user extracted some files
+            outDir = bosh.dirs['mopy'].join(u'download')
+            error = False
+            for file in outDir.list():
+                file = outDir.join(file)
+                if file.isdir():
+                    try: file.rmtree(file.s)
+                    except: error = True
+            if error:
+                deprint(u'Updater: An error occured while re-verifying the downloads folder empty of loose files:', traceback=True)
+                balt.showError(self.parent,
+                    _(u'Wrye Bash could not clean out the Mopy\\downloads folder of loose files.  Please ensure there are no open files in the Mopy\\downloads folder, and try again.'),
+                    _(u'Download Updates'))
+                return
+            # Determine backup type
+            deprint(u'Updater: Extracting updates.')
+            self.updates = (set(),set(),set())
+            for file in fileNames:
+                file = GPath(file).relpath(outDir)
+                if u'game definition' in file.cs:
+                    self.updates[0].add(file)   # Definition (Partial)
+                elif ('language' in file.cs or
+                     u'translation' in file.cs):
+                    self.updates[1].add(file)   # Language (Partial)
+                else:
+                    self.updates[2].add(file)   # Program (Semi-Full)
+            # Initiate extraction
+            self.pool = multiprocessing.Pool(processes=1)
+            func = bweb.extractUpdates
+            exe7z = bosh.dirs['compiled'].join(u'7zUnicode.exe').s
+            cmd7zTemplate = '"%s" x "%s" -y -r -o"%s"'
+            args = (fileNames,exe7z,cmd7zTemplate,outDir.s)
+            self.result = self.pool.apply_async(func,args)
+            # Check results every second
+            wx.CallLater(1000,self.CheckExtractStatus)
+        else:
+            # Check again in 10 seconds
+            wx.CallLater(10000,self.CheckDownloadStatus)
+
+    def CheckExtractStatus(self):
+        if self.result.ready():
+            # Extraction is complete
+            title = _(u'Install Updates')
+            try:
+                failed = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while extracting files:', traceback=True)
+                balt.showError(self.parent,
+                    _(u'An error occured while extracting update files.')
+                    + u'\n\n%s' % e,
+                    title)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            download = bosh.dirs['mopy'].join(u'download')
+            if failed:
+                msg = _(u'Errors occurred while extracting update files.') + u'\n\n'
+                for fileName,errors in failed:
+                    msg += u' * '+fileName+u':\n'
+                    msg += u'\n'.join(u'   '+x for x in errors)
+                deprint(u'Updater:',msg)
+                balt.showError(self.parent,msg,title)
+                deprint(u'Updater: Removing extracted update files from the downloads folder.')
+                for file in download.list():
+                    file = download.join(file)
+                    if file.isdir():
+                        try: file.rmtree(file.s)
+                        except: pass
+                return
+            # Delete old files
+            deprint(u'Updater: Removing non-update files from the downloads folder.')
+            for file in download.list():
+                file = download.join(file)
+                if not file.isdir():
+                    try: file.remove()
+                    except: pass
+            # Backup old Wrye Bash install
+            self.InitiateBackup(not bool(self.updates[2]))
+        else:
+            # Check again in a second
+            wx.CallLater(1000,self.CheckExtractStatus)
+
+    def InitiateBackup(self,backupType):
+        """Backup all of Wrye Bash's files in case there's a problem
+           with the update.  Ensure 7z.exe,7z.dll,and restore_<version>bat
+           are all in the Mopy\backup directory."""
+        if self.pool: return False
+        deprint(u'Updater: Initiating Backup.')
+        self.pool = multiprocessing.Pool(processes=1)
+        func = bweb.createBackup
+        exe7z = bosh.dirs['compiled'].join(u'7zUnicode.exe').s
+        outDir = bosh.dirs['mopy'].join(u'backup')
+        if not backupType:
+            deprint(u'Updater: Backup type: Semi-Full')
+            # Semi-Full (Full Mopy)
+            kind = u''
+            #--This section needs to be updated whenever the file layout of Wrye
+            #  Bash changes
+            excludes = '-x!".svn" -x!"*.tmp" -x!"*.log" -x!"*.mo" -x!"*.bak" -x!"backup" -x!"download"'
+            if settings['bash.standalone']:
+                excludes += ' -x!"*.py*" -x!"Wrye Bash Debug.bat"'
+            else:
+                excludes += ' -x!"*.pyc" -x!"Wrye Bash.exe" -x!"w9xpopen.exe"'
+            includes = '"*"'
+        else:
+            deprint(u'Updater: Backup type: Partial')
+            # Language & Game Defintions
+            kind = u'_partial'
+            includes = '"bash\\game\\*.py"'
+            dir = bosh.dirs['mopy'].join(u'bash',u'game')
+            excludes = '-x!"__init__.*"'
+            for file in dir.list():
+                file = dir.join(file)
+                if not file.isdir() and file.cext == u'':
+                    excludes += ' -x!"%s"' % file.stail
+        backup = outDir.join(u'Wrye_Bash_%s%s_backup.7z' % (settings['bash.readme'][1],kind)).s
+        cmd7zTemplate = '"%s" a -y -r '+excludes+' "%s" '+includes
+        args = (backup,exe7z,cmd7zTemplate)
+        self.result = self.pool.apply_async(func,args)
+        # Check results every second
+        wx.CallLater(1000,self.CheckBackupStatus)
+
+    def CheckBackupStatus(self):
+        if self.result.ready():
+            # Backup complete
+            title = _(u'Install Update')
+            try:
+                failed = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while backing up:', traceback=True)
+                balt.showError(self.parent,
+                    _(u'An error occurred while backing up the current Wrye Bash files.')
+                    + u'\n\n%s' % e,
+                    title)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            if failed:
+                balt.showError(self.parent,
+                    _(u'An error occurred while backing up the current Wrye Bash files.')
+                    + u'\n\n' +
+                    ' * %s' % failed,
+                    title)
+                deprint(u'Updater: An error occurred while backing up:', traceback=Tue)
+                return
+            # Ask if the user wants to install the updates
+            msg =  _(u'Wrye Bash is read to install the following updates:')
+            msg += u'\n\n'
+            for updates in self.updates:
+                msg += u'\n'.join(u' * '+x.stail for x in updates)
+            msg += u'\n\n'
+            msg += _(u'If you choose not to install this update at this time, you can manually install the files in Mopy\\downloads.  However, Wrye Bash will not be aware of any updated Game Definition or Translation updates that were installed in this manner.')
+            if balt.askYes(self.parent,msg,_(u'Install Updates')):
+                self.InstallUpdates()
+            else:
+                deprint(u'Updater: User opted to not install the prepared update.')
+        else:
+            wx.CallLater(1000,self.CheckBackupStatus)
+
+    def InstallUpdates(self):
+        deprint(u'Updater: Installing updates.')
+        if self.updates[2]:
+            # Program update: Need to shutdown Wrye Bash to apply
+            if settings['bash.standalone']:
+                commandLine = '"'+sys.argv[0]+'"'
+            else:
+                commandLine = '"%s" "%s"' % (sys.executable,sys.argv[0])
+            if len(sys.argv) > 1:
+                for arg in sys.argv[1:]:
+                    if arg == '--restarting': continue
+                    if ' ' in arg:
+                        commandLine += ' "'+arg+'"'
+                    else:
+                        commandLine += ' '+arg
+            apply_updates = bosh.dirs['mopy'].join(u'apply_updates.bat')
+            with apply_updates.open('w') as out:
+                out.write(Updater.batchTemplate % commandLine)
+            if not balt.askYes(self.parent,
+                _(u"Wrye Bash needs to restart in order to apply the updated files.  Would you like to restart now to accomplish this?  If you choose not to, you can manually apply the update by running 'apply_updates.bat'"),
+                _(u'Install Updates')):
+                deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat must be run in order to apply this update.')
+                return
+            deprint(u'Updater: Restarting Wrye Bash to apply the update.')
+            # Program update, so updates are the only updates for this program version
+            settings['bash.update.defs'] = self.updates[0]
+            settings['bash.update.defs'] = self.updates[1]
+            restart_args = (set((apply_updates.s,)),)
+        else:
+            # Don't need to shutdown Wrye Bash to apply these updates
+            try:
+                fromDir = bosh.dirs['mopy'].join(u'download')
+                for item in fromDir.list():
+                    if item == u'Mopy':
+                        destRoot = bosh.dirs['mopy']
+                    elif item == u'Data':
+                        destRood = bosh.dirs['mods']
+                    else:
+                        raise Exception(u'Unable to determine destination folder: %s' % item.s)
+                    for root,dirs,files in fromDir.join(item).walk():
+                        relRoot = root.relpath(fromDir.join(item))
+                        for file in files:
+                            root.join(file).moveTo(destRoot.join(relRoot,file))
+                try: fromDir.rmtree(fromDir.stail)
+                except: pass
+            except Exception as e:
+                deprint(u'Updater: An error occurred while applying the update:', traceback=True)
+                balt.showError(self.parent,
+                    _(u'An error occurred while moving the updates files.  Please restore Wrye Bash from the backup file created in Mopy\\backup.')
+                    + u'\n\n%s' % e,
+                    _(u'Install Updates'))
+                return
+            deprint(u'Updater: Update successful.')
+            # No program update, so updates are in addition to those already applied
+            print 'defs before:', settings['bash.update.defs']
+            print 'updates:', self.updates[0]
+            print 'defs after:', settings['bash.update.defs']
+            settings['bash.update.defs'] |= self.updates[0]
+            settings['bash.update.lang'] |= self.updates[1]
+            settings.setChanged('bash.update.defs')
+            settings.setChanged('bash.update.lang')
+            if not balt.askYes(self.parent,
+                    _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect, would you like to do so now?'),
+                    _(u'Update Complete')):
+                deprint(u'Updater: User opted to not restart Wrye Bash.  Update will take effect next time Wrye Bash is launched.')
+                return
+            deprint(u'Updater: Restarting Wrye Bash.')
+            restart_args = ()
+        bashFrame.Restart(*restart_args)
+
+#------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
     """Main application frame."""
     def __init__(self, parent=None,pos=wx.DefaultPosition,size=(400,500),
@@ -5330,6 +5791,7 @@ class BashFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.Bind(wx.EVT_ACTIVATE, self.RefreshData)
         #--Data
+        self.updater = Updater(self)
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
@@ -5360,6 +5822,9 @@ class BashFrame(wx.Frame):
             args = [[argconvert(x) for x in arg] if isinstance(arg,(list,tuple))
                     else argConvert(arg)
                     for arg in args]
+        elif isinstance(args,set):
+            # Special case for restarting for an update: args passed in as set()
+            pass
         else:
             args = argConvert(args)
 
@@ -6405,6 +6870,7 @@ class BashApp(wx.App):
         self.SetTopWindow(frame)
         frame.Show()
         balt.ensureDisplayed(frame)
+        frame.updater.Start()
 
     def InitResources(self):
         """Init application resources."""
@@ -11221,51 +11687,314 @@ class Settings_Colors(Link):
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class Settings_CheckForUpdates(Link):
-    """Checks TESNexus for newer versions."""
-    WBFileId = 22368
+class UpdateDialog(wx.Dialog):
+    CHECK_INDENT = 20
+    GROUP_SPACING = 5
+    ITEM_SPACING = 2
+
+    def __init__(self,parent,title,updates,askKey=None):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title)
+        self.SetIcons(bashBlue)
+        self.askKey = askKey
+        versions = sorted(updates.keys(),reverse=True)
+        #--Controls
+        controls = []
+        sizer = balt.vSizer(
+            (balt.staticText(self,balt.fill(
+                _(u"The following updates are available for Wrye Bash.  Please select which updates you would like to install, and click 'OK' to update Wrye Bash, or download the files manually and install them yourself.")
+                             )),0,wx.ALL,10),
+            )
+        itemSizer = wx.FlexGridSizer(
+            (sum(len(updates[x][y]) for y in ('programs','definitions','languages') for x in versions)),
+            3,self.ITEM_SPACING,self.ITEM_SPACING)
+        itemSizer.AddGrowableCol(0)
+        itemSizer.AddGrowableCol(1)
+        itemSizer.AddGrowableCol(2)
+
+        sbSizer = balt.vsbSizer((self,wx.ID_ANY,_(u'Updates')),
+                                (itemSizer,2,wx.GROW|wx.ALL,5))
+        sizer.Add(sbSizer,2,wx.GROW|wx.ALL,5)
+        buttonSizer = self.CreateStdDialogButtonSizer(wx.OK|wx.CANCEL)
+        sizer.Add(buttonSizer,0,wx.ALIGN_RIGHT|wx.ALL^wx.TOP,5)
+
+        self.allRadios = allRadios = []
+        class radioWithChecks(wx.RadioButton):
+            """Radio button that enables/disabled associated checkbuttons"""
+            def __init__(self,checks,*args,**kwdargs):
+                wx.RadioButton.__init__(self,*args,**kwdargs)
+                self.checks = checks
+                self.Bind(wx.EVT_RADIOBUTTON,self.OnRadio)
+
+            def OnRadio(self,event):
+                for radio,version in allRadios:
+                    radio._OnRadio()
+                event.Skip()
+
+            def _OnRadio(self):
+                parent = self.GetParent()
+                for id in self.checks:
+                    check = parent.FindWindowById(id[0])
+                    if check: check.Enable(self.GetValue())
+        class specialCheck(wx.CheckBox):
+            """Check box that enables/disables associated checkbutton"""
+            def __init__(self,check,*args,**kwdargs):
+                wx.CheckBox.__init__(self,*args,**kwdargs)
+                self.check = check
+                self.oldValue = False
+                self.Bind(wx.EVT_CHECKBOX,self.OnCheck)
+
+            def OnCheck(self,event):
+                enabled = not self.GetValue()
+                self.check.Enable(enabled)
+                if not enabled:
+                    self.oldValue = self.check.GetValue()
+                    self.check.SetValue(False)
+                else:
+                    self.check.SetValue(self.oldValue)
+                event.Skip()
+
+        first = True
+        for version in versions:
+            version_updates = updates[version]
+            name = version_updates['name']
+            url = version_updates['url']
+            programs = version_updates['programs']
+            definitions = version_updates['definitions']
+            languages = version_updates['languages']
+
+            if ((not bool(programs) and version != settings['bash.readme'][1]) or
+                (not programs and not definitions and not languages)):
+                continue
+            ids = []
+            radio = radioWithChecks(ids,self,wx.ID_ANY,name)
+            radio.SetValue(first)
+            if url:
+                link = wx.HyperlinkCtrl(self,wx.ID_ANY,_(u'Download Page'),url)
+                link.SetToolTip(balt.tooltip(u'https://sourceforge.net/projects/oblivionworks/'))
+            else:
+                link = (0,0)
+            border = 0 if first else self.GROUP_SPACING-self.ITEM_SPACING
+            itemSizer.Add(radio,0,wx.TOP,border)
+            itemSizer.Add((0,0))
+            itemSizer.Add(link,0,wx.ALIGN_RIGHT,0)
+
+            for program in programs:
+                check = balt.checkBox(self,program[0])
+                check.Enable(False)
+                subSizer = hSizer((check,0,wx.LEFT,self.CHECK_INDENT-self.ITEM_SPACING))
+                if program[2]:
+                    link = wx.HyperlinkCtrl(self,wx.ID_ANY,_(u'Manual Download'),program[2])
+                    link.SetToolTip(balt.tooltip(u'https://sourceforge.net/projects/oblivionworks/'))
+                    subSizer.Add((0,0),1,wx.GROW,0)
+                    subSizer.Add(link,0,wx.ALIGN_RIGHT,0)
+                else:
+                    link = (0,0)
+
+                itemSizer.Add(check,0,wx.LEFT,self.CHECK_INDENT)
+                itemSizer.Add((0,0))
+                itemSizer.Add(link,0,wx.ALIGN_RIGHT)
+
+                installerName = program[0].lower()
+                if 'standalone' in installerName:
+                    check.SetLabel(u'Standalone Executable')
+                    if settings['bash.standalone']:
+                        ids.append((check.GetId(),program))
+                        check.Enable(first)
+                        check.SetValue(True)
+                elif 'python' in installerName:
+                    check.SetLabel(u'Python Source')
+                    if not settings['bash.standalone']:
+                        ids.append((check.GetId(),program))
+                        check.Enable(first)
+                        check.SetValue(True)
+                elif 'installer' in installerName:
+                    check.SetLabel(u'Installer')
+
+            for items,text,key in ((definitions,_(u'Game Definitions:'),'bash.update.defs'),
+                                   (languages,_(u'Language Pack:'),'bash.update.lang')):
+                firstUpdate = True
+                for update in items:
+                    date_rev = update[1]
+                    date_rev = ' '+date_rev[1]+'-'+date_rev[2]+'-'+date_rev[0]+date_rev[3]
+                    check = balt.checkBox(self,text+date_rev)
+                    if version == settings['bash.readme'][1] and GPath(update[0]) in settings[key]:
+                        # It's an update for the user's current version, and it's already
+                        # been applied
+                        check.Enable(False)
+                        check.SetValue(False)
+                    else:
+                        check.Enable(first)
+                        check.SetValue(firstUpdate)
+                        ids.append((check.GetId(),update))
+                    if GPath(update[0]) not in settings[key]:
+                        button = specialCheck(check,self,wx.ID_ANY,_(u'Mark as Installed'))
+                        button.Enable(first)
+                        ids.append((button.GetId(),None))
+                    else:
+                        button = (0,0)
+                    firstUpdate = False
+                    link = wx.HyperlinkCtrl(self,wx.ID_ANY,_(u'Manual Download'),update[2])
+                    link.SetToolTip(balt.tooltip(u'https://sourceforge.net/projects/oblivionworks/'))
+                    itemSizer.Add(check,0,wx.LEFT,self.CHECK_INDENT)
+                    itemSizer.Add(button)
+                    itemSizer.Add(link,0,wx.ALIGN_RIGHT)
+            radio.checks = ids
+            radio.Enable(bool(ids))
+            allRadios.append((radio,version))
+            first = False
+        self.SetSizer(sizer)
+        sizer.SetSizeHints(self)
+
+    def GetSelections(self):
+        """Call after return from Modal to get what updates were selected"""
+        selections = {}
+        for radio,version in self.allRadios:
+            if radio.GetValue():
+                # Found the active one
+                for id in radio.checks:
+                    check = self.FindWindowById(id[0])
+                    if not check: continue
+                    if not check.Enabled: continue
+                    if not check.GetValue(): continue
+                    update = id[1]
+                    if update:
+                        selections.setdefault(version,[]).append(update)
+        return selections
+
+    def GetInstalled(self):
+        """Call after return from Modal to get what updats the user says are
+           already installed."""
+        selections = []
+        for radio,version in self.allRadios:
+            if radio.GetValue():
+                for id in radio.checks:
+                    check = self.FindWindowById(id[0])
+                    if not check: continue
+                    if not check.GetValue(): continue
+                    update = id[1]
+                    if update is None:
+                        updateCheckId = check.check.GetId()
+                        for updateId in radio.checks:
+                            if updateId[0] == updateCheckId:
+                                selections.append(updateId[1][0])
+                                break
+        return selections
+
+class Settings_CheckForUpdatesFrequency(Link):
+    """Change how often Wrye Bash checks for updates automatically."""
+    def __init__(self,freq='00-01-0000 00:00',text=_(u'Every Day')):
+        Link.__init__(self)
+        self.freq = freq
+        self.text = text
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Check for updates...'),
-            help=_(u'Checks TESNexus for newer versions of Wrye Bash.'))
+        menuItem = wx.MenuItem(menu,self.id,self.text,kind=wx.ITEM_RADIO)
+        menu.AppendItem(menuItem)
+        if settings['bash.update.frequency'] == self.freq:
+            menuItem.Check(True)
+
+    def Execute(self,event):
+        settings['bash.update.frequency'] = self.freq
+        # Reset the updater
+        bashFrame.updater.Start()
+        event.Skip()
+
+class Settings_ResetUpdateData(Link):
+    """Clears information about updates"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Reset Update Information'),
+                               _(u'This will reset information Wrye Bash stores about what updates have been installed.'))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
-        WBFileId = Settings_CheckForUpdates.WBFileId
-        currentVersion = tuple([int(x) for x in settings['bash.readme'][1].split(u'.')])
-        import multiprocessing
-        import bweb
-        pool = multiprocessing.Pool(processes=1)
-        f = bweb.getTESNexusFiles
-        args = (WBFileId, None)
-        result = pool.apply_async(f, args)
-        prevTime = time.time()
+        msg = _(u'Do you wish to clear the following information about updates that Wrye Bash has installed?')
+        msg += u'\n\n'
+        msg += u' * '+_(u'The last time you checked for updates.')
         try:
-            with balt.Progress(_(u'Check for updates...'),
-                               _(u'Contacting TESNexus...'),
-                               abort=True) as progress:
-                progress.setFull(10)
-                while not result.ready():
-                    currTime = time.time()
-                    elapsedTime = currTime - prevTime
-                    while elapsedTime > 9.99:
-                        elapsedTime -= 9.99
-                        prevTime = currTime - elapsedTime
-                    progress(elapsedTime)
-                    result.wait(0.05)
-                try:
-                    versions = result.get()
-                except Exception, e:
-                    balt.showError(self.window,
-                        _(u'An error occurred while contacting TESNexus')
-                        + u':\n\n%s' % e)
-                    return
-        except CancelError:
-            return
-        finally:
-            pool.terminate()
-        main = versions.get('main files',[])
+            defs = settings['bash.update.defs']
+            langs = settings['bash.update.lang']
+            msg2 = u'\n * '
+            if defs or langs:
+                msg2 += _(u'The following updates:')+u'\n'
+                msg2 += u'\n'.join(u'   * '+x.s for x in sorted(defs))+u'\n'
+                msg2 += u'\n'.join(u'   * '+x.s for x in sorted(langs))+u'\n'
+                msg2 += u'\n'+_(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
+            else:
+                msg2 += _(u'What updates Wrye Bash has installed (None).')
+            msg += msg2
+        except:
+            deprint(u'An error occured while formatting a message about installed updates:',traceback=True)
+            msg += u'\n * '+_(u'What updates Wrye Bash has installed.')+u'\n\n'
+            msg += _(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
+        if balt.askYes(self.window,msg,_(u'Reset Update Information')):
+            settings['bash.update.defs'] = settingDefaults['bash.update.defs']
+            settings['bash.update.lang'] = settingDefaults['bash.update.lang']
+            settings['bash.update.last'] = settingDefaults['bash.update.last']
+
+class Settings_CheckForUpdates(Link):
+    """Checks SourceForge for newer versions."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if bashFrame.updater.pool:
+            title = _(u'Checking for updates...')
+            help = _(u'Wrye Bash is currently checking for updates.')
+            enable = False
+        else:
+            try:
+                lastCheck = settings['bash.update.last']
+                last = time.localtime(lastCheck)
+                if lastCheck == 0:
+                    when = _(u'Unknown')
+                else:
+                    now = time.localtime()
+                    deltaYear = now.tm_year - last.tm_year
+                    deltaDays = now.tm_yday - last.tm_yday
+                    when = None
+                    if deltaYear == 1:
+                        deltaDays += 365
+                    if deltaDays == 0:
+                        deltaHours = now.tm_hour - last.tm_hour
+                        if deltaHours == 0:
+                            deltaMinutes = now.tm_min - last.tm_min
+                            if deltaMinutes == 0:
+                                deltaSeconds = now.tm_sec - last.tm_sec
+                                if deltaSeconds == 1:
+                                    when = _(u'%(seconds)s second ago')
+                                else:
+                                    when = _(u'%(seconds)s seconds ago')
+                                when = when % ({'seconds':deltaSeconds})
+                            else:
+                                if deltaMinutes == 1:
+                                    when = _(u'%(minutes)s minute ago')
+                                else:
+                                    when = _(u'%(minutes)s minutes ago')
+                                when = when % ({'minutes':deltaMinutes})
+                        else:
+                            if deltaHours == 1:
+                                when = _(u'%(hours)s hour ago')
+                            else:
+                                when = _(u'%(hours)s hours ago')
+                            when = when % ({'hours':deltaHours})
+                    elif deltaDays == 1:
+                        when = _(u'Yesterday, %(time)s') % ({'time':bosh.formatDate(lastCheck)})
+                    else:
+                        when = bosh.formatDate(lastCheck)
+            except:
+                deprint(u'Error getting time of last update:',traceback=True)
+                when = _(u'Unknown')
+            title = _(u'Now (Last Check: %s)...') % when
+            help=_(u'Checks SourceForge for newer versions of Wrye Bash.')
+            enable = True
+        menuItem = wx.MenuItem(menu,self.id,title,help)
+        menu.AppendItem(menuItem)
+        menuItem.Enable(enable)
+
+    def Execute(self,event):
+        bashFrame.updater.InitiateUpdate(True)
+        return
+
         if main:
             maxMain = max([x[1] for x in main])
         else:
@@ -18095,7 +18824,20 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Mods_Deprint())
     SettingsMenu.append(Mods_DumpTranslator())
-    SettingsMenu.append(Settings_CheckForUpdates())
+    #--Check for updates
+    if True:
+        updateMenu = MenuLink(_(u'Check for Updates'))
+        updateMenu.links.append(Settings_CheckForUpdates())
+        updateMenu.links.append(SeparatorLink())
+        for freq,text in (('01-00-0000 00:00',_(u'Every Month')),
+                          ('00-07-0000 00:00',_(u'Every Week')),
+                          ('00-01-0000 00:00',_(u'Every Day')),
+                          (True,_(u'Everytime Wrye Bash Starts.')),
+                          (False,_(u'Never'))):
+            updateMenu.links.append(Settings_CheckForUpdatesFrequency(freq,text))
+        updateMenu.links.append(SeparatorLink())
+        updateMenu.links.append(Settings_ResetUpdateData())
+        SettingsMenu.append(updateMenu)
 
 def InitLinks():
     """Call other link initializers."""
