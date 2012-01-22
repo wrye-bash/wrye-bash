@@ -151,6 +151,7 @@ def exit():
                 # Special case for applying updates
                 special = True
                 sys.argv = list(appRestart)
+                exePath = GPath(u'')
             else:
                 # Normal restart
                 special = False
@@ -180,7 +181,9 @@ def exit():
                 updateArgv(appRestart)
             try:
                 import subprocess
-                if special or hasattr(sys,'frozen'):
+                if special:
+                    subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
+                elif hasattr(sys,'frozen'):
                     subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
                 else:
                     subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
