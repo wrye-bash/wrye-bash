@@ -5807,9 +5807,11 @@ DEL %%0"""
             apply_updates = bosh.dirs['mopy'].join(u'apply_updates.bat')
             restart_args = (set((apply_updates.s,)),)
             if not balt.askYes(self.parent,
-                _(u"The following updated files were unable to be applied, because they are currently in use.  Wrye Bash needs to restart to apply these files.  If you choose not to restart, be sure to run 'apply_updates.bat' before running Wrye Bash, to complete the update.  If you choose not to complete the update, it will be installed when you exit Wrye Bash.")
+                _(u"The following updated files were unable to be applied, because they are currently in use.  Wrye Bash needs to restart to install these files.  If you choose not to restart, they will be installed when you quit.")
                 + u'\n\n' +
-                u'\n'.join(u' * '+x.s for x in failedFiles),
+                u'\n'.join(u' * '+x.s for x in failedFiles)
+                + u'\n\n' +
+                _(u'Restart now?'),
                 _(u'Install Updates')):
                 deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat will be run at exit.',trace=False)
                 # Re-write apply_update.bat to not execute Wrye Bash after it's run
@@ -5825,7 +5827,9 @@ DEL %%0"""
             except: pass
             deprint(u'Updater: Update successful.  Restart required',trace=False)
             if not balt.askYes(self.parent,
-                    _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect, would you like to do so now?'),
+                    _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect.')
+                    + u'\n\n' +
+                    _(u'Restart now?'),
                     _(u'Update Complete')):
                 deprint(u'Updater: User opted to not restart Wrye Bash.  Update will take effect next time Wrye Bash is launched.',trace=False)
                 self.WriteBatchFile()

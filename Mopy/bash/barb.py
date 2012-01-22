@@ -372,6 +372,7 @@ class RestoreSettings(BaseBackupSettings):
     def PromptConfirm(self,msg=None):
         # returns False if user cancels
         msg = msg or _(u'Do you want to restore your Bash settings from a backup?')
+        msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your settings are restored.')
         return askYes(self.parent,msg,_(u'Restore Bash Settings?'))
 
     def PromptMismatch(self):
@@ -404,7 +405,6 @@ class RestoreSettings(BaseBackupSettings):
 
     def WarnRestart(self):
         if self.quit: return
-        basher.appRestart = True
         showWarning(self.parent,
             _(u'Your Bash settings have been successfully restored.')+u'\n' +
             _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n' +
@@ -412,6 +412,7 @@ class RestoreSettings(BaseBackupSettings):
             _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
             _(u'Click OK to restart now.'),
             _(u'Bash Settings Restored'))
+        basher.bashFrame.Restart()
 
 #------------------------------------------------------------------------------
 def pack7z(dstFile, srcDir, progress=None):
