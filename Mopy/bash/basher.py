@@ -11957,6 +11957,7 @@ class UpdateDialog(wx.Dialog):
                         ids.append((check.GetId(),update))
                     if GPath(update[0]) not in settings[key]:
                         button = specialCheck(check,self,wx.ID_ANY,_(u'Mark as Installed'))
+                        button.SetToolTip(tooltip(u'Check this if you have already installed this update manually, to make Wrye Bash ignore this update in the future.'))
                         button.Enable(first)
                         ids.append((button.GetId(),None))
                     else:
