@@ -1144,10 +1144,11 @@ class MelSet:
             try:
                 element.dumpData(record,out)
             except:
+                bolt.deprint('error dumping data:',traceback=True)
                 print u'Dumping:',getattr(record,'eid',u'<<NO EID>>'),record.fid,element
                 for attr in record.__slots__:
                     if hasattr(record,attr):
-                        print u"> %s: %s" % (attr,getattr(record,attr))
+                        print u"> %s: %s" % (attr,repr(getattr(record,attr)))
                 raise
 
     def mapFids(self,record,mapper,save=False):
