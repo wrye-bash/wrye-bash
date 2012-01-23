@@ -997,7 +997,7 @@ class MelKeywords(MelFidList):
 class MelComponents(MelStructs):
     """Handle writing COCT subrecord for the CNTO subrecord"""
     def dumpData(self,record,out):
-        componenets = record.__getattribute__(self.attr)
+        components = record.__getattribute__(self.attr)
         if components:
             # Only write the COCT/CNTO subrecords if count > 0
             out.packSub('COCT','I',len(components))
@@ -1159,11 +1159,18 @@ class MelBODT(MelStruct):
                            )
 
     def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
         if size == 8:
             # Version 20 of this subrecord type was only 8 bytes - omits 'armorType'
-            format = '=2I'
-            record.bodyFlags,record.otherFlags = ins.unpack('=2I',size,readId)
-            record.armorType = 0
+            unpacked = ins.unpack('=2I',size,readId) + (0,)
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if action: value = action(value)
+                setter(attr,value)
+            if self._debug:
+                print u' ',zip(self.attrs,unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ',unpacked
         elif size != 12:
             raise ModSizeError(ins.inName,readId,12,size,True)
         else:
@@ -1402,6 +1409,71 @@ class MreAmmo(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreAnio(MelRecord):
+    """Anio record (Animated Object)"""
+    classType = 'ANIO'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelString('BNAM','unk'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAppa(MelRecord):
+    """Appa record (Alchemical Apparatus)"""
+    classType = 'APPA'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelStruct('QUAL','I','quality'),
+        MelLString('DESC','description'),
+        MelBase('DATA','data_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArto(MelRecord):
+    """Arto record (Art effect object)"""
+    classType = 'ARTO'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DNAM','I','flags'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAspc(MelRecord):
+    """Aspc record (Acoustic Space)"""
+    classType = 'ASPC'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelOptStruct('SNAM','I',(FID,'ambientSound')),
+        MelOptStruct('RDAT','I',(FID,'regionData')),
+        MelOptStruct('BNAM','I',(FID,'reverb')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Astp record (Association type)"""
+    classType = 'ASTP'
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MPRT','maleParent'),
+        MelString('FPRT','femaleParent'),
+        MelString('MCHT','maleChild'),
+        MelString('FCHT','femaleChild'),
+        MelStruct('DATA','I',(_flags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
@@ -1502,7 +1574,7 @@ class MreMisc(MelRecord):
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','=If','value','weight'),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
-        MelFid('ZNAM','I',(FID,'dropSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1510,8 +1582,9 @@ class MreMisc(MelRecord):
 
 #--Mergeable record types
 mergeClasses = (
-    MreAact, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob, MreGmst, MreLvli,
-    MreLvln, MreLvsp, MreMisc,
+    MreAact, MreActi, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
+    MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln, MreLvsp,
+    MreMisc,
     )
 
 #--Extra read/write classes
@@ -1528,8 +1601,9 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreArma, MreArmo, MreCobj, MreGlob,
-        MreGmst, MreLvli, MreLvln, MreLvsp, MreMisc,
+        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
+        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
+        MreLvsp, MreMisc,
         MreHeader,
         ))
 

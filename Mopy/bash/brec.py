@@ -1118,23 +1118,23 @@ class MelSet:
         insSubHeader = ins.unpackSubHeader
 ##        fullLoad = self.full0.loadData
         while not insAtEnd(endPos,recType):
-            (type,size) = insSubHeader(recType)
+            (Type,size) = insSubHeader(recType)
             if _debug: print type,size
-            readId = recType + '.' + type
+            readId = recType + '.' + Type
             try:
-                if type not in loaders:
+                if Type not in loaders:
                     raise ModError(ins.inName,u'Unexpected subrecord: '+repr(readId))
                 #--Hack to handle the fact that there can be two types of FULL in spell/ench/ingr records.
-                elif doFullTest and type == 'FULL':
-                    self.full0.loadData(record,ins,type,size,readId)
+                elif doFullTest and Type == 'FULL':
+                    self.full0.loadData(record,ins,Type,size,readId)
                 else:
-                    loaders[type].loadData(record,ins,type,size,readId)
-                doFullTest = doFullTest and (type != 'EFID')
+                    loaders[Type].loadData(record,ins,Type,size,readId)
+                doFullTest = doFullTest and (Type != 'EFID')
             except Exception, error:
                 print error
                 eid = getattr(record,'eid',u'<<NO EID>>')
                 if not eid: eid = u'<<NO EID>>'
-                print u'Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d' % (repr(record.recType),record.fid,repr(eid),repr(type),size)
+                print u'Error loading %s record and/or subrecord: %08X\n  eid = %s\n  subrecord = %s\n  subrecord size = %d\n  file pos = %d' % (repr(record.recType),record.fid,repr(eid),repr(Type),size,ins.tell())
                 raise
         if _debug: print u'<<<<',getattr(record,'eid',u'[NO EID]')
 
@@ -1144,10 +1144,11 @@ class MelSet:
             try:
                 element.dumpData(record,out)
             except:
+                bolt.deprint('error dumping data:',traceback=True)
                 print u'Dumping:',getattr(record,'eid',u'<<NO EID>>'),record.fid,element
                 for attr in record.__slots__:
                     if hasattr(record,attr):
-                        print u"> %s: %s" % (attr,getattr(record,attr))
+                        print u"> %s: %s" % (attr,repr(getattr(record,attr)))
                 raise
 
     def mapFids(self,record,mapper,save=False):

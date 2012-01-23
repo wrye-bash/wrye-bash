@@ -885,7 +885,7 @@ class FileError(BoltError):
 
     def __str__(self):
         if self.inName:
-            if isinstance(self.inName, str):
+            if isinstance(self.inName, basestring):
                 return self.inName+u': '+self.message
             return self.inName.s+u': '+self.message
         else:
