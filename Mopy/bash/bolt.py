@@ -1629,7 +1629,11 @@ class DataDict:
             return self.data[key]
         else:
             if isinstance(key, Path):
-                return self.data[Path(bush.game.masterFiles[0])]
+                try:
+                    import bush
+                    return self.data[Path(bush.game.masterFiles[0])]
+                except:
+                    return self.data[Path(u'Oblivion.esm')]
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
