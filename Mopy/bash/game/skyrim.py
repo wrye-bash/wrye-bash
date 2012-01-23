@@ -1159,11 +1159,18 @@ class MelBODT(MelStruct):
                            )
 
     def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
         if size == 8:
             # Version 20 of this subrecord type was only 8 bytes - omits 'armorType'
-            format = '=2I'
-            record.bodyFlags,record.otherFlags = ins.unpack('=2I',size,readId)
-            record.armorType = 0
+            unpacked = ins.unpack('=2I',size,readId) + (0,)
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if action: value = action(value)
+                setter(attr,value)
+            if self._debug:
+                print u' ',zip(self.attrs,unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ',unpacked
         elif size != 12:
             raise ModSizeError(ins.inName,readId,12,size,True)
         else:
