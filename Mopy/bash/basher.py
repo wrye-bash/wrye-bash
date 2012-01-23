@@ -5381,7 +5381,7 @@ DEL %%0"""
             nextUpdate = time.mktime(time.strptime(freq,
                             '%m-%d-%Y %H:%M'))
             secondsToUpdate = nextUpdate - settings['bash.update.last']
-        secondsToUpdate = max(0,secondToUpdate)
+        secondsToUpdate = max(0,secondsToUpdate)
         deprint(u'Updater: Next update in %s seconds.' % secondsToUpdate,trace=False)
         if secondsToUpdate == 0:
             wx.CallLater(100,self.InitiateUpdate)
