@@ -4495,8 +4495,8 @@ class INIInfo(FileInfo):
         path = self.getPath()
         infos = self.getFileInfos()
         ini = infos.ini
-        tweak,deleted = ini.getTweakFileSettings(path)
-        if len(tweak) == 0:
+        tweak,tweak_deleted = ini.getTweakFileSettings(path)
+        if not tweak:
             self._status = -10
             return -10
         match = False
@@ -4506,11 +4506,13 @@ class INIInfo(FileInfo):
             if key not in settings:
                 self._status = -10
                 return -10
-            for item in tweak[key]:
-                if item not in settings[key]:
+            settingsKey = settings[key]
+            tweakKey = tweak[key]
+            for item in tweakKey:
+                if item not in settingsKey:
                     self._status = -10
                     return -10
-                if tweak[key][item] != settings[key][item]:
+                if tweakKey[item] != settingsKey[item]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another
                         # ini tweak that is applied, and from the same installer
@@ -4523,7 +4525,7 @@ class INIInfo(FileInfo):
                                 # It's from the same installer
                                 other_settings,other_deletes = ini.getTweakFileSettings(infos[info].getPath())
                                 value = other_settings.get(key,{}).get(item)
-                                if value == settings[key][item]:
+                                if value == settingsKey[item]:
                                     # The other tweak has the setting we're worried about
                                     mismatch = 1
                                     break
@@ -7165,9 +7167,7 @@ class Installer(object):
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
         self.initDefault()
-        setter = object.__setattr__
-        for value,attr in zip(values,self.persistent):
-            setter(self,attr,value)
+        map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc == None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
         if hasattr(self,'fileSizeCrcs'):
@@ -27585,7 +27585,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                     #--Delevs: all items in masters minus current items
                     newLevList.delevs = delevs = set()
                     if isDelev:
-                        id_masterItems = self.masterItems.get(newLevList.fid)
+                        id_masterItems = self.masterItems.get(listId)
                         if id_masterItems:
                             for masterName in modFile.tes4.masters:
                                 if masterName in id_masterItems:
@@ -30692,14 +30692,18 @@ def initLinks(appDir):
     links = {}
     try:
         import win32com.client
+        sh = win32com.client.Dispatch('WScript.Shell')
+        shCreateShortCut = sh.CreateShortCut
+        appDirJoin = appDir.join
         for file in appDir.list():
-            if appDir.join(file).isfile() and file.cext == u'.lnk':
-                sh = win32com.client.Dispatch('WScript.Shell')
-                shortcut = sh.CreateShortCut(appDir.join(file).s)
+            file = appDirJoin(file)
+            if file.isfile() and file.cext == u'.lnk':
+                fileS = file.s
+                shortcut = shCreateShortCut(fileS)
                 description = shortcut.Description
                 if not description:
-                    description = _(u'Launch')+u' '+file.sbody
-                links[file.s] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,description)
+                    description = u' '.join((_(u'Launch'),file.sbody))
+                links[fileS] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,description)
     except:
         deprint(_(u"Error initializing links:"),traceback=True)
 
