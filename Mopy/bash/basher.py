@@ -260,9 +260,10 @@ settingDefaults = {
     #--Auto-Update information
     'bash.update.frequency': False, # Don't check for updates
     'bash.update.last': 0,
-    'bash.update.defs': set(),    # List of Game Definitions installed
-    'bash.update.lang': set(),    # List of Language updates installed
-    'bash.update.dontAsk': False, # If True, Wrye Bash won't ask to download updates, just to install
+    'bash.update.defs': set(),      # List of Game Definitions installed
+    'bash.update.lang': set(),      # List of Language updates installed
+    'bash.update.dontAsk': False,   # If True, Wrye Bash won't ask to download updates, just to install
+    'bash.update.backupSFX': True,  # Make the backup file an SFX archive
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -5653,15 +5654,25 @@ DEL %%0"""
             deprint(u'Updater: Backup type: Partial',trace=False)
             # Language & Game Defintions
             kind = u'_partial'
-            includes = '"bash\\game\\*.py"'
+            includes = '"bash\\game\\*.py" "bash\\l10n\\*.txt"'
             dir = bosh.dirs['mopy'].join(u'bash',u'game')
             excludes = '-x!"__init__.*"'
             for file in dir.list():
                 file = dir.join(file)
                 if not file.isdir() and file.cext == u'':
                     excludes += ' -x!"%s"' % file.stail
-        backup = outDir.join(u'Wrye_Bash_%s%s_backup.7z' % (settings['bash.readme'][1],kind)).s
-        cmd7zTemplate = '"%s" a -y -r '+excludes+' "%s" '+includes
+        args7z = 'a -y -r'
+        if settings['bash.update.backupSFX']:
+            backupExt = u'.exe'
+            args7z += ' -sfx'
+        else:
+            backupExt = u'.7z'
+        backup  = u'Wrye_Bash_%s%s_backup_%s%s' % (
+            settings['bash.readme'][1],kind,
+            time.strftime(u'%d-%m-%Y-%H%M',time.localtime()),
+            backupExt)
+        backup = outDir.join(backup).s
+        cmd7zTemplate = '"%s" '+args7z+' '+excludes+' "%s" '+includes
         args = (backup,exe7z,cmd7zTemplate)
         self.result = self.pool.apply_async(func,args)
         # Check results every second
@@ -12023,6 +12034,13 @@ class Settings_CheckForUpdates_DontAsk(BoolLink):
             self,_(u'Always update to the latest version.'),
             'bash.update.dontAsk',
             _(u'Always download and install the latest updates from SourceForge when detected.'))
+
+class Settings_CheckForUpdates_BackupSFX(BoolLink):
+    def __init__(self):
+        BoolLink.__init__(
+            self,_(u'Create Self Extracting Backups'),
+            'bash.update.backupSFX',
+            _(u'Create self extracting archives when backups are made.'))
 
 class Settings_CheckForUpdatesFrequency(Link):
     """Change how often Wrye Bash checks for updates automatically."""
@@ -19023,6 +19041,7 @@ def InitSettingsLinks():
             updateMenu.links.append(Settings_CheckForUpdatesFrequency(freq,text))
         updateMenu.links.append(SeparatorLink())
         updateMenu.links.append(Settings_CheckForUpdates_DontAsk())
+        updateMenu.links.append(Settings_CheckForUpdates_BackupSFX())
         updateMenu.links.append(Settings_ResetUpdateData())
         SettingsMenu.append(updateMenu)
 

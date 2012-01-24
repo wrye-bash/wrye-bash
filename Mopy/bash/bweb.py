@@ -334,12 +334,12 @@ def createBackup(outFile,exe7z,cmd7zTemplate):
     errorLines = []
     for line in ins:
         if reError.match(line):
-            errorLines.append(line)
+            errorLines.append(line.strip())
         elif reCompressing.match(line):
             allErrorLines.extend(errorLines)
             errorLines = []
         elif errorLines:
-            errorLines.append(line)
+            errorLines.append(line.strip())
     allErrorLines.extend(errorLines)
     ins.close()
     return allErrorLines
