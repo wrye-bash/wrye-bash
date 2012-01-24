@@ -17162,7 +17162,7 @@ class Master_Disable(Link):
 #------------------------------------------------------------------------------
 class StatusBar_Button(Link):
     """Launch an application."""
-    def __init__(self,uid=None,canHide=True):
+    def __init__(self,uid=None,canHide=True,tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons
                and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
@@ -17170,13 +17170,9 @@ class StatusBar_Button(Link):
         self.mainMenu = Links()
         self.canHide = canHide
         self.gButton = None
-        self._uid = uid
-
-    @property
-    def uid(self):
-        if self._uid is None:
-            return (self.__class__.__name__,getattr(self,'tip',None))
-        return self._uid
+        self._tip = tip
+        if uid is None: uid = (self.__class__.__name__,tip)
+        self.uid = uid
 
     def createButton(self, *args, **kwdargs):
         if len(args) < 11 and 'onRClick' not in kwdargs:
@@ -17243,7 +17239,7 @@ class App_Button(StatusBar_Button):
         exePathArgs (list):  [exePathArgs,altExePathArgs,...]
         images: [16x16,24x24,32x32] images
         """
-        StatusBar_Button.__init__(self,uid,canHide)
+        StatusBar_Button.__init__(self,uid,canHide,tip)
         if isinstance(exePathArgs, list):
             use = exePathArgs[0]
             for item in exePathArgs:
@@ -17263,7 +17259,6 @@ class App_Button(StatusBar_Button):
             self.exePath = exePathArgs
             self.exeArgs = tuple()
         self.images = images
-        self._tip = tip
         if workingDir:
             self.workingDir = GPath(workingDir)
         else:
