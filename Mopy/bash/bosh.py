@@ -2052,7 +2052,7 @@ class SaveHeader:
             with path.open('rb') as ins:
                 bush.game.ess.load(ins,self)
             self.pcName = _unicode(cstrip(self.pcName))
-            self.pcLocation = _unicode(cstrip(self.pcLocation))
+            self.pcLocation = _unicode(cstrip(self.pcLocation),bolt.pluginEncoding,avoidEncodings=('utf8','utf-8'))
             self.masters = [GPath(_unicode(x)) for x in self.masters]
         #--Errors
         except:
