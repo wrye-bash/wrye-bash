@@ -17929,8 +17929,9 @@ def InitImages():
 
 def InitStatusBar():
     """Initialize status bar links."""
+    dirImages = bosh.dirs['images']
     def imageList(template):
-        return [Image(GPath(bosh.dirs['images'].join(template % x))) for x in (16,24,32)]
+        return [Image(dirImages.join(template % x)) for x in (16,24,32)]
     #--Bash Status/LinkBar
     global obseButton
     obseButton = Obse_Button(uid=u'OBSE')
@@ -17943,16 +17944,16 @@ def InitStatusBar():
         Oblivion_Button(
             bosh.dirs['app'].join(bush.game.exe),
             imageList(u'%s%%s.png' % bush.game.name.lower()),
-            _(u"Launch") + u' ' + bush.game.name,
-            _(u"Launch") + u' ' + bush.game.name + u' %(version)s',
+            u' '.join((_(u"Launch"),bush.game.name)),
+            u' '.join((_(u"Launch"),bush.game.name,u'%(version)s')),
             u'',
-            uid = u'Oblivion'))
+            uid=u'Oblivion'))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
             bosh.dirs['app'].join(bush.game.cs.exe),
             imageList(bush.game.cs.imageName),
-            _(u"Launch") + u' ' + bush.game.cs.shortName,
-            _(u"Launch") + u' ' + bush.game.cs.shortName + u' %(version)s',
+            u' '.join((_(u"Launch"),bush.game.cs.shortName)),
+            u' '.join((_(u"Launch"),bush.game.cs.shortName,u'%(version)s')),
             bush.game.cs.seArgs,
             uid=u'TESCS'))
     BashStatusBar.buttons.append( #OBMM
@@ -18370,10 +18371,13 @@ def InitStatusBar():
             imageList(u'winsnap%s.png'),
             _(u"Launch WinSnap")))
     #--Custom Apps
-    bosh.initLinks(bosh.dirs['mopy'].join(u'Apps'))
+    dirApps = bosh.dirs['mopy'].join(u'Apps')
+    bosh.initLinks(dirApps)
+    folderIcon = None
+    badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
     for link in bosh.links:
         (target,workingdir,args,icon,description) = bosh.links[link]
-        path = bosh.dirs['mopy'].join(u'Apps',link)
+        path = dirApps.join(link)
         if target.lower().find(ur'installer\{') != -1:
             target = path
         else:
@@ -18389,17 +18393,21 @@ def InitStatusBar():
                     try:
                         import _winreg
                         if target.isdir():
-                            # Special handling of the Folder icon
-                            folderkey = _winreg.OpenKey(
-                                _winreg.HKEY_CLASSES_ROOT,
-                                u'Folder')
-                            iconkey = _winreg.OpenKey(
-                                folderkey,
-                                u'DefaultIcon')
-                            filedata = _winreg.EnumValue(
-                                iconkey,0)
-                            filedata = filedata[1]
-                            filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
+                            if folderIcon is None:
+                                # Special handling of the Folder icon
+                                folderkey = _winreg.OpenKey(
+                                    _winreg.HKEY_CLASSES_ROOT,
+                                    u'Folder')
+                                iconkey = _winreg.OpenKey(
+                                    folderkey,
+                                    u'DefaultIcon')
+                                filedata = _winreg.EnumValue(
+                                    iconkey,0)
+                                filedata = filedata[1]
+                                filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
+                                folderIcon = fileData
+                            else:
+                                fileData = folderIcon
                         else:
                             icon_path = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
@@ -18420,16 +18428,18 @@ def InitStatusBar():
                         icon = u'not\\a\\path'
             icon = GPath(icon)
             # First try a custom icon
-            customIcons = [bosh.dirs['mopy'].join(u'Apps',path.body+u'%i'%x+u'.png') for x in (16,24,32)]
+            fileName = u'%s%%i.png' % path.sbody
+            customIcons = [dirApps.join(fileName % x) for x in (16,24,32)]
             if customIcons[0].exists():
                 icon = customIcons
             # Next try the shortcut specified icon
             else:
                 if icon.exists():
-                    icon = [Image(icon.s+u';'+idex,wx.BITMAP_TYPE_ICO,x) for x in (16,24,32)]
+                    fileName = u';'.join((icon.s,idex))
+                    icon = [Image(fileName,wx.BITMAP_TYPE_ICO,x) for x in (16,24,32)]
             # Last, use the 'x' icon
                 else:
-                    icon = [Image(GPath(bosh.dirs['images'].join(u'x.png'))) for x in (16,24,32)]
+                    icon = badIcons
             BashStatusBar.buttons.append(
                 App_Button(
                     (path,()),
