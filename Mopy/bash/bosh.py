@@ -14229,7 +14229,6 @@ class PatchFile(ModFile):
             filteredAppend = filtered.append
             loadSetIssuperset = loadSet.issuperset
             for record in block.getActiveRecords():
-                if record.flags1.deleted: continue #don't merge deleted items
                 fid = record.fid
                 if fid == badForm: continue
                 #--Include this record?
@@ -14521,12 +14520,12 @@ class CBash_PatchFile(ObModFile):
                         dump_record(record)
                         print
                         continue
-                if not record.IsDeleted:
-                    undelete = False
-                    override = record.CopyAsOverride(self, UseWinningParents=True)
-                else: 
+                if record.IsDeleted and group in ('REFRS','ACHRS','ACRES'):
                     undelete = True
                     override = record.Conflicts()[1].CopyAsOverride(self, UseWinningParents=True)
+                else: 
+                    undelete = False
+                    override = record.CopyAsOverride(self, UseWinningParents=True)
                 if override:
                     if undelete:
                         override.posZ = override.posZ - 1000
@@ -30858,6 +30857,7 @@ def initDefaultSettings():
     inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')
     inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
+    inisettings['EnsurePatchExists'] = True
     inisettings['OblivionTexturesBSAName'] = GPath(u'Oblivion - Textures - Compressed.bsa')
     inisettings['ShowDevTools'] = False
     inisettings['Tes4GeckoJavaArg'] = u'-Xmx1024m'
