@@ -6890,7 +6890,8 @@ class Installer(object):
     persistent = ('archive','order','group','modified','size','crc',
         'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
         'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps','skipRefresh')
+        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps',
+        'skipRefresh','fileRootIdex')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms',
         'underrides','hasWizard','espmMap','hasReadme','hasBCF')
@@ -7099,6 +7100,7 @@ class Installer(object):
         self.isActive = False
         self.espmNots = set() #--Lowercase esp/m file names that user has decided not to install.
         self.remaps = {}
+        self.fileRootIdex = 0
         #--Volatiles (unpickled values)
         #--Volatiles: directory specific
         self.refreshed = False
@@ -7271,14 +7273,15 @@ class Installer(object):
         #--Bad archive?
         if type not in (1,2): return dest_src
         #--Scan over fileSizeCrcs
+        rootIdex = self.fileRootIdex
         for full,size,crc in self.fileSizeCrcs:
-            file = full
+            file = full[rootIdex:]
             fileLower = file.lower()
             if fileLower.startswith((u'--',u'omod conversion data',u'fomod',u'wizard images')):
                 continue
             sub = u''
             if type == 2: #--Complex archive
-                sub = full.split(u'\\',1)
+                sub = file.split(u'\\',1)
                 if len(sub) == 1:
                     file, = sub
                     sub = u''
@@ -7290,6 +7293,7 @@ class Installer(object):
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
+                    skip = True
                     fileLower = file.lower()
                     subList = espmMapSetdefault(sub,[])
                     subListAppend = subList.append
@@ -7305,12 +7309,12 @@ class Installer(object):
                         self.hasBCF = full
                         skipDirFilesDiscard(file)
                         continue
-                    elif fileExt in docExts:
+                    elif fileExt in docExts and sub == u'':
                         if not self.hasReadme:
                             if reReadMeMatch(file):
                                 self.hasReadme = full
                                 skipDirFilesDiscard(file)
-                        continue
+                                skip = False
                     elif file in bethFiles:
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
@@ -7323,7 +7327,8 @@ class Installer(object):
                         #--Remap espms as defined by the user
                         if file in self.remaps: file = self.remaps[file]
                         if file not in subList: subListAppend(file)
-                    continue
+                    if skip:
+                        continue
                 fileLower = file.lower()
             subList = espmMapSetdefault(sub,[])
             subListAppend = subList.append
@@ -7507,6 +7512,7 @@ class Installer(object):
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
+        #--Sort file names
         def fscSortKey(fsc):
             dirFile = fsc[0].lower().rsplit(u'\\',1)
             if len(dirFile) == 1: dirFile.insert(0,u'')
@@ -7514,16 +7520,65 @@ class Installer(object):
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
-        #--Type, subNames
-        reDataFile = self.reDataFile
+        #--Find correct staring point to treat as BAIN package
         dataDirs = self.dataDirsPlus
+        layout = {}
+        for file,size,crc in fileSizeCrcs:
+            fileLower = file.lower()
+            frags = file.split(u'\\')
+            nfrags = len(frags)
+            if nfrags == 1:
+                # Files in the root of the package, start there
+                rootIdex = 0
+                break
+            else:
+                dirName = frags[0]
+                if dirName not in layout and layout:
+                    # A second directory in the archive root, start
+                    # in the root
+                    rootIdex = 0
+                    break
+                root = layout.setdefault(dirName,{'dirs':{},'files':False})
+                for frag in frags[1:-1]:
+                    root = root['dirs'].setdefault(frag,{'dirs':{},'files':False})
+                root['files'] = True
+        else:
+            rootStr = layout.keys()[0]
+            root = layout[rootStr]
+            rootStr = u''.join((rootStr,u'\\'))
+            while True:
+                if root['files']:
+                    # There are files in this folder, call it the starting point
+                    break
+                rootDirs = root['dirs']
+                rootDirKeys = rootDirs.keys()
+                if len(rootDirKeys) == 1:
+                    # Only one subfolder, see if it's either 'Data', or an accepted
+                    # Data sub-folder
+                    rootDirKey = rootDirKeys[0]
+                    rootDirKeyLower = rootDirKey.lower()
+                    if rootDirKeyLower in dataDirs or rootDirKeyLower == u'data':
+                        # Found suitable starting point
+                        break
+                    # Keep looking deeper
+                    root = rootDirs[rootDirKey]
+                    rootStr = u''.join((rootStr,rootDirKey,u'\\'))
+                else:
+                    # Multiple folders, stop here even if it's no good
+                    break
+            rootIdex = len(rootStr)
+        self.fileRootIdex = rootIdex
+        # fileRootIdex now points to the start in the file strings
+        # to ignore
+        reDataFile = self.reDataFile
+        #--Type, subNames
         type = 0
         subNameSet = set()
         subNameSetAdd = subNameSet.add
         subNameSetAdd(u'')
         reDataFileSearch = reDataFile.search
         for file,size,crc in fileSizeCrcs:
-            fileLower = file.lower()
+            file = file[rootIdex:]
             if type != 1:
                 frags = file.split(u'\\')
                 nfrags = len(frags)
