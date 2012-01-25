@@ -7523,11 +7523,11 @@ class Installer(object):
         #--Find correct staring point to treat as BAIN package
         dataDirs = self.dataDirsPlus
         layout = {}
+        layoutSetdefault = layout.setdefault
         for file,size,crc in fileSizeCrcs:
             fileLower = file.lower()
-            frags = file.split(u'\\')
-            nfrags = len(frags)
-            if nfrags == 1:
+            frags = fileLower.split(u'\\')
+            if len(frags) == 1:
                 # Files in the root of the package, start there
                 rootIdex = 0
                 break
@@ -7538,35 +7538,37 @@ class Installer(object):
                     # in the root
                     rootIdex = 0
                     break
-                root = layout.setdefault(dirName,{'dirs':{},'files':False})
+                root = layoutSetdefault(dirName,{'dirs':{},'files':False})
                 for frag in frags[1:-1]:
                     root = root['dirs'].setdefault(frag,{'dirs':{},'files':False})
                 root['files'] = True
         else:
-            rootStr = layout.keys()[0]
-            root = layout[rootStr]
-            rootStr = u''.join((rootStr,u'\\'))
-            while True:
-                if root['files']:
-                    # There are files in this folder, call it the starting point
-                    break
-                rootDirs = root['dirs']
-                rootDirKeys = rootDirs.keys()
-                if len(rootDirKeys) == 1:
-                    # Only one subfolder, see if it's either 'Data', or an accepted
-                    # Data sub-folder
-                    rootDirKey = rootDirKeys[0]
-                    rootDirKeyLower = rootDirKey.lower()
-                    if rootDirKeyLower in dataDirs or rootDirKeyLower == u'data':
-                        # Found suitable starting point
+            if not layout:
+                rootIdex = 0
+            else:
+                rootStr = layout.keys()[0]
+                root = layout[rootStr]
+                rootStr = u''.join((rootStr,u'\\'))
+                while True:
+                    if root['files']:
+                        # There are files in this folder, call it the starting point
                         break
-                    # Keep looking deeper
-                    root = rootDirs[rootDirKey]
-                    rootStr = u''.join((rootStr,rootDirKey,u'\\'))
-                else:
-                    # Multiple folders, stop here even if it's no good
-                    break
-            rootIdex = len(rootStr)
+                    rootDirs = root['dirs']
+                    rootDirKeys = rootDirs.keys()
+                    if len(rootDirKeys) == 1:
+                        # Only one subfolder, see if it's either 'Data', or an accepted
+                        # Data sub-folder
+                        rootDirKey = rootDirKeys[0]
+                        if rootDirKey in dataDirs or rootDirKey == u'data':
+                            # Found suitable starting point
+                            break
+                        # Keep looking deeper
+                        root = rootDirs[rootDirKey]
+                        rootStr = u''.join((rootStr,rootDirKey,u'\\'))
+                    else:
+                        # Multiple folders, stop here even if it's no good
+                        break
+                rootIdex = len(rootStr)
         self.fileRootIdex = rootIdex
         # fileRootIdex now points to the start in the file strings
         # to ignore
