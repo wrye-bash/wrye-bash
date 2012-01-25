@@ -401,6 +401,28 @@
   <p class="list-2">&bull;&nbsp;  Second, see following section for common problems and their solution.</p>
   <p class="empty">&nbsp;</p>
 <h3><a id='CommonProblems'>Common Problems</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>MemoryError</b></p>
+  <p class="list-2">&nbsp;&nbsp;  This one will be an error that ends something like this:</p>
+  . <pre>Traceback (most recent call last):
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 5349, in OnCloseWindow
+    self.SaveSettings()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 5361, in SaveSettings
+    self.notebook.GetPage(index).OnCloseWindow()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 2554, in OnCloseWindow
+    bosh.modInfos.table.save()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bolt.py", line 2158, in save
+    self.hasChanged = not dictFile.save()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bosh.py", line 315, in save
+    saved = bolt.PickleDict.save(self)
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bolt.py", line 1910, in save
+    cPickle.dump(data,out,-1)
+MemoryError</pre>
+  <p class="list-2">&nbsp;&nbsp;  The line numbers are unimportant.  This is Wrye Bash running out of memory while trying to save its settings.  Usually this will occur when a user has a very large BAIN setup, and it will happen after rebuilding the Bashed Patch.  Saving Wrye Bash's settings involves some memory overhead, so usually happens while saving settings.</p>
+  <p class="list-2">&bull;&nbsp;  If you start seeing this error, it means you have enough information in BAIN to push Wrye Bash to the 2GB limit of memory for 32-bit applications.  Either:</p>
+    <p class="list-3">&bull;&nbsp;  Avoid rebuilding the Bashed Patch after using BAIN.  Instead, restart Wrye Bash, then rebuild the Bashed Patch.</p>
+    <p class="list-3">&bull;&nbsp;  If running the Python source, try enabling the LAA flag on python.exe and pythonw.exe.  For 64-bit OS users, this may allow Wrye Bash up to almost 4GB of memory before crashing.</p>
+    <p class="list-3">&bull;&nbsp;  If running the Standalone executable, try enabling the LAA flag on Wrye Bash.exe.</p>
+    <p class="list-3">&bull;&nbsp;  If you do not need access to CBash, you can setup your Python environment using 64-bit Python.</p>
 <p class="list-1">&bull;&nbsp;  <b>Can't find bash.py</b></p>
   <p class="list-2">&bull;&nbsp;  Make sure that you chdir to the Mopy directory first.</p>
 <p class="list-1">&bull;&nbsp;  <b>Can't Find User Directory</b></p>
