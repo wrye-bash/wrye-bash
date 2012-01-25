@@ -6122,7 +6122,7 @@ class BashFrame(wx.Frame):
             m = [_(u'Missing String Localization files:'),_(u'This will cause CTDs if activated.')]
             m.extend(sorted(bosh.modInfos.missing_strings))
             message.append(m)
-            del bosh.modInfos.new_missing_strings[:]
+            bosh.modInfos.new_missing_strings.clear()
         if message:
             dialog = ListBoxes(self,_(u'Warning: Corrupt/Unrecognized Files'),
                      _(u'Some files have corrupted headers or TES4 header versions:'),
