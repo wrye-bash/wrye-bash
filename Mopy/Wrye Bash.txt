@@ -181,6 +181,28 @@ Wrye Bash is released under Version 2 of the GNU General Public License. See enc
   * Second, see following section for common problems and their solution.
 
 === Common Problems
+* __MemoryError__
+  . This one will be an error that ends something like this:
+  . <pre>Traceback (most recent call last):
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 5349, in OnCloseWindow
+    self.SaveSettings()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 5361, in SaveSettings
+    self.notebook.GetPage(index).OnCloseWindow()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 2554, in OnCloseWindow
+    bosh.modInfos.table.save()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bolt.py", line 2158, in save
+    self.hasChanged = not dictFile.save()
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bosh.py", line 315, in save
+    saved = bolt.PickleDict.save(self)
+File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bolt.py", line 1910, in save
+    cPickle.dump(data,out,-1)
+MemoryError</pre>
+  . The line numbers are unimportant.  This is Wrye Bash running out of memory while trying to save its settings.  Usually this will occur when a user has a very large BAIN setup, and it will happen after rebuilding the Bashed Patch.  Saving Wrye Bash's settings involves some memory overhead, so usually happens while saving settings.
+  * If you start seeing this error, it means you have enough information in BAIN to push Wrye Bash to the 2GB limit of memory for 32-bit applications.  Either:
+    * Avoid rebuilding the Bashed Patch after using BAIN.  Instead, restart Wrye Bash, then rebuild the Bashed Patch.
+    * If running the Python source, try enabling the LAA flag on python.exe and pythonw.exe.  For 64-bit OS users, this may allow Wrye Bash up to almost 4GB of memory before crashing.
+    * If running the Standalone executable, try enabling the LAA flag on Wrye Bash.exe.
+    * If you do not need access to CBash, you can setup your Python environment using 64-bit Python.
 * __Can't find bash.py__
   * Make sure that you chdir to the Mopy directory first.
 * __Can't Find User Directory__
