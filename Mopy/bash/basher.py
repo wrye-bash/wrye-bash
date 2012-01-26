@@ -2406,7 +2406,7 @@ class ModDetails(SashPanel):
         #--Separator
         isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'bashTags',None) is None
         menuItem = wx.MenuItem(menu,ID_TAGS.AUTO,_(u'Automatic'),kind=wx.ITEM_CHECK,
-            help=_("Use the tags from the description and masterlist/userlist."))
+            help=_(u"Use the tags from the description and masterlist/userlist."))
         menu.AppendItem(menuItem)
         menuItem.Check(isAuto)
         menuItem = wx.MenuItem(menu,ID_TAGS.COPY,_(u'Copy to Description'))
@@ -2414,7 +2414,7 @@ class ModDetails(SashPanel):
         menuItem.Enable(not isAuto and self.modTags != self.modInfo.getBashTagsDesc())
         menu.AppendSeparator()
         for id,tag in zip(ID_TAGS,self.allTags):
-            menu.AppendCheckItem(id,tag,help=_("Add %(tag)s to %(modname)s") % ({'tag':tag,'modname':self.modInfo.name}))
+            menu.AppendCheckItem(id,tag,help=_(u"Add %(tag)s to %(modname)s") % ({'tag':tag,'modname':self.modInfo.name}))
             menu.Check(id,tag in self.modTags)
         self.gTags.PopupMenu(menu)
         menu.Destroy()
@@ -8892,7 +8892,7 @@ class File_Snapshot(Link):
         Link.AppendToMenu(self,menu,window,data)
         self.title = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
         menuItem = wx.MenuItem(menu,self.id,self.title,
-            help=_("Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots)."))
+            help=_(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -8932,7 +8932,7 @@ class File_RevertToSnapshot(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Revert to Snapshot...'),
-            help=_("Revert to a previously created snapshot from the Bash/Snapshots dir."))
+            help=_(u"Revert to a previously created snapshot from the Bash/Snapshots dir."))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
 
@@ -8971,7 +8971,7 @@ class File_Backup(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Backup'),
-            help=_("Create a backup of the slected file(s)."))
+            help=_(u"Create a backup of the slected file(s)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -9563,7 +9563,7 @@ class Installer_EditWizard(InstallerLink):
         else:
             title = _(u'Edit Wizard...')
         menuItem = wx.MenuItem(menu, self.id, title,
-            help=_("Edit the wizard.txt associated with this project."))
+            help=_(u"Edit the wizard.txt associated with this project."))
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             menuItem.Enable(bool(self.data[self.selected[0]].hasWizard))
@@ -9600,10 +9600,10 @@ class Installer_Wizard(InstallerLink):
         Link.AppendToMenu(self, menu, window, data)
         if not self.bAuto:
             menuItem = wx.MenuItem(menu, self.id, _(u'Wizard'),
-                help=_("Run the install wizard."))
+                help=_(u"Run the install wizard."))
         else:
             menuItem = wx.MenuItem(menu, self.id, _(u'Auto Wizard'),
-                help=_("Run the install wizard."))
+                help=_(u"Run the install wizard."))
         menu.AppendItem(menuItem)
         if self.isSingle():
             installer = self.data[self.selected[0]]
@@ -9747,7 +9747,7 @@ class Installer_OpenReadme(InstallerLink):
     def AppendToMenu(self, menu, window, data):
         Link.AppendToMenu(self, menu, window, data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Open Readme'),
-            help=_("Opens the installer's readme."))
+            help=_(u"Opens the installer's readme."))
         menu.AppendItem(menuItem)
         if self.isSingle():
             installer = self.data[self.selected[0]]
@@ -9775,7 +9775,7 @@ class Installer_Anneal(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Anneal'),
-            help=_("Anneal all packages."))
+            help=_(u"Anneal all packages."))
         menu.AppendItem(menuItem)
         selected = self.filterInstallables()
         menuItem.Enable(len(selected))
@@ -9797,7 +9797,7 @@ class Installer_Duplicate(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         self.title = _(u'Duplicate...')
         menuItem = wx.MenuItem(menu,self.id,self.title,
-            help=_("Duplicate selected %(installername)s.") % ({'installername':self.selected[0]}))
+            help=_(u"Duplicate selected %(installername)s.") % ({'installername':self.selected[0]}))
         menu.AppendItem(menuItem)
         menuItem.Enable(self.isSingle() and not self.isSingleMarker())
 
@@ -9841,7 +9841,7 @@ class Installer_Hide(InstallerLink):
         Link.AppendToMenu(self,menu,window,data)
         self.title = _(u'Hide...')
         menuItem = wx.MenuItem(menu,self.id,self.title,
-            help=_("Hide selected installer(s)."))
+            help=_(u"Hide selected installer(s)."))
         menu.AppendItem(menuItem)
         for item in window.GetSelected():
             if isinstance(window.data[item],bosh.InstallerMarker):
@@ -9874,7 +9874,7 @@ class Installer_Rename(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'),
-            help=_("Rename selected installer(s)."))
+            help=_(u"Rename selected installer(s)."))
         menu.AppendItem(menuItem)
         self.InstallerType = None
         ##Only enable if all selected items are of the same type
@@ -9907,7 +9907,7 @@ class Installer_HasExtraData(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Has Extra Directories'),kind=wx.ITEM_CHECK,
-            help=_("Allow installation of files in non-standard directories."))
+            help=_(u"Allow installation of files in non-standard directories."))
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
@@ -9932,7 +9932,7 @@ class Installer_OverrideSkips(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Override Skips'),kind=wx.ITEM_CHECK,
-            help=_("Override global file type skipping for %(installername)s.") % ({'installername':self.selected[0]}))
+            help=_(u"Override global file type skipping for %(installername)s.") % ({'installername':self.selected[0]}))
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
@@ -9956,7 +9956,7 @@ class Installer_SkipRefresh(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u"Don't Refresh"),kind=wx.ITEM_CHECK,
-            help=_("Don't automatically refresh project."))
+            help=_(u"Don't automatically refresh project."))
         menu.AppendItem(menuItem)
         if self.isSingleProject():
             installer = self.data[self.selected[0]]
