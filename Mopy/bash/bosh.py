@@ -6955,7 +6955,7 @@ class Installer(object):
         norm_ghost = (rootIsMods and Installer.getGhosted()) or {}
         ghost_norm = dict((y,x) for x,y in norm_ghost.iteritems())
         rootName = apRoot.stail
-        progress = progress or bolt.Progress()
+        progress = progress if progress else bolt.Progress()
         new_sizeCrcDate = {}
         if settings['bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
@@ -6963,7 +6963,7 @@ class Installer(object):
             bethFiles = bush.game.bethDataFiles
         skipExts = Installer.skipExts
         asRoot = apRoot.s
-        relPos = len(apRoot.s)+1
+        relPos = len(asRoot)+1
         pending = set()
         #--Scan for changed files
         progress(0,rootName+u': '+_(u'Pre-Scanning...'))
@@ -7054,7 +7054,7 @@ class Installer(object):
             # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
             # to prematurely disappear
             progress.setFull(max(totalSize+len(pending),1))
-            for index,rpFile in enumerate(sorted(pending)):
+            for rpFile in sorted(pending):
                 progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
                 try:
                     apFile = apRootJoin(normGet(rpFile,rpFile))
@@ -7181,7 +7181,7 @@ class Installer(object):
     def __copy__(self,iClass=None):
         """Create a copy of self -- works for subclasses too (assuming subclasses
         don't add new data members). iClass argument is to support Installers.updateDictFile"""
-        iClass = iClass or self.__class__
+        iClass = iClass if iClass else self.__class__
         clone = iClass(GPath(self.archive))
         copier = copy.copy
         getter = object.__getattribute__
@@ -7232,6 +7232,7 @@ class Installer(object):
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
+        languageLower = language.lower()
         skipObse = not settings['bash.installers.allowOBSEPlugins']
         obseDir = bush.game.se.shortName.lower()+u'\\'
         skipSd = bush.game.sd.shortName and skipObse
@@ -7246,9 +7247,10 @@ class Installer(object):
         self.hasBCF = False
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False
-        for attr in ('skipExtFiles','skipDirFiles','espms'):
+        for attr in {'skipExtFiles','skipDirFiles','espms'}:
             object.__getattribute__(self,attr).clear()
         data_sizeCrc = {}
+        remaps = self.remaps
         skipExtFiles = self.skipExtFiles
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
@@ -7271,7 +7273,7 @@ class Installer(object):
         splitExt = os.path.splitext
         dest_src = {}
         #--Bad archive?
-        if type not in (1,2): return dest_src
+        if type not in {1,2}: return dest_src
         #--Scan over fileSizeCrcs
         rootIdex = self.fileRootIdex
         for full,size,crc in self.fileSizeCrcs:
@@ -7343,14 +7345,14 @@ class Installer(object):
                 continue #--Silent skip
             elif skipDistantLOD and fileStartsWith(u'distantlod'):
                 continue
-            elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\landscape\lod'):
+            elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\\landscape\\lod'):
                 continue
-            elif fileStartsWith(ur'textures\landscapelod\generated'):
-                if skipLandscapeLODNormals and fileEndsWith(ur'_fn.dds'):
+            elif fileStartsWith(u'textures\\landscapelod\\generated'):
+                if skipLandscapeLODNormals and fileEndsWith(u'_fn.dds'):
                     continue
-                elif skipLandscapeLODTextures and not fileEndsWith(ur'_fn.dds'):
+                elif skipLandscapeLODTextures and not fileEndsWith(u'_fn.dds'):
                     continue
-            elif skipVoices and fileStartsWith(ur'sound\voice'):
+            elif skipVoices and fileStartsWith(u'sound\\voice'):
                 continue
             elif skipScreenshots and fileStartsWith(u'screenshots'):
                 continue
@@ -7371,7 +7373,7 @@ class Installer(object):
                 continue
             elif skipObse and fileStartsWith(obseDir):
                 continue
-            elif fileExt in (u'.dll',u'.dlx'):
+            elif fileExt in {u'.dll',u'.dlx'}:
                 if skipObse: continue
                 if not fileStartsWith(obseDir):
                     continue
@@ -7380,14 +7382,12 @@ class Installer(object):
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    message = (_(u'This installer (%s) has an %s plugin DLL.')
-                               + u'\n' +
-                               _(u'The file is %s')
-                               + u'\n' +
-                               _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.')
-                               + u'\n' +
-                               _(u'Are you sure you want to install this?')
-                               ) % (archiveRoot, bush.game.se.shortName, full)
+                    message = u'\n'.join((
+                        _(u'This installer (%s) has an %s plugin DLL.'),
+                        _(u'The file is %s'),
+                        _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
+                        _(u'Are you sure you want to install this?'),
+                        )) % (archiveRoot, bush.game.se.shortName, full)
                     if fileLower in goodDlls:
                         message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
@@ -7401,19 +7401,17 @@ class Installer(object):
             elif fileExt == u'.asi':
                 if skipSd: continue
                 if not fileStartsWith(sdDir): continue
-                if fileLower in badDlls and [archiveRoo,size,crc] in badDlls[fileLower]: continue
+                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
                 if not checkOBSE:
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    message = (_(u'This intaller (%s) has an %s plugin ASI.')
-                               + u'\n' +
-                               _(u'The file is %s')
-                               + u'\n' +
-                               _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.')
-                               + u'\n' +
-                               _(u'Are you sure you want to install this?')
-                               ) % (archiveRoot, bush.game.sd.longName, full)
+                    message = u'\n'.join((
+                        _(u'This intaller (%s) has an %s plugin ASI.'),
+                        _(u'The file is %s'),
+                        _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
+                        _(u'Are you sure you want to install this?'),
+                        )) % (archiveRoot, bush.game.sd.longName, full)
                     if fileLower in goodDlls:
                         message += _(u' You have previously chosen to install an asi by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
@@ -7440,7 +7438,7 @@ class Installer(object):
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
-                if file in self.remaps: file = self.remaps[file]
+                file = remaps.get(file,file)
                 if file not in subList: subListAppend(file)
                 pFile = GPath(file)
                 espmsAdd(pFile)
@@ -7452,14 +7450,14 @@ class Installer(object):
             #--Remap docs, strings
             dest = file
             if rootLower in docDirs:
-                dest = u'Docs\\'+file[len(rootLower)+1:]
+                dest = u'\\'.join((u'Docs',file[len(rootLower)+1:]))
             elif (renameStrings and fileStartsWith(u'strings\\') and
-                  fileExt in (u'.strings',u'.dlstrings',u'.ilstrings')):
+                  fileExt in {u'.strings',u'.dlstrings',u'.ilstrings'}):
                 langSep = fileLower.rfind(u'_')
                 extSep = fileLower.rfind(u'.')
                 lang = fileLower[langSep+1:extSep]
-                if lang != language.lower():
-                    dest = file[:langSep]+u'_'+language+file[extSep:]
+                if lang != languageLower:
+                    dest = u''.join((file[:langSep],u'_',language,file[extSep:]))
                     # Check to ensure not overriding an already provided
                     # language file for that language
                     key = GPath(dest)
@@ -7469,25 +7467,24 @@ class Installer(object):
                 pass
             elif not rootLower:
                 maReadMe = reReadMeMatch(file)
-                if fileLower in (u'masterlist.txt',u'dlclist.txt'):
+                if fileLower in {u'masterlist.txt',u'dlclist.txt'}:
                     pass
                 elif maReadMe:
                     if not (maReadMe.group(1) or maReadMe.group(3)):
-                        dest = u'Docs\\'+archiveRoot+fileExt
+                        dest = u''.join((u'Docs\\',archiveRoot,fileExt))
                     else:
-                        dest = u'Docs\\'+file
+                        dest = u''.join((u'Docs\\',file))
                     self.readMe = dest
                 elif fileLower == u'package.txt':
-                    dest = self.packageDoc = u'Docs\\'+archiveRoot+u'.package.txt'
+                    dest = self.packageDoc = u''.join((u'Docs\\',archiveRoot,u'.package.txt'))
                 elif fileLower == u'package.jpg':
-                    dest = self.packagePic = u'Docs\\'+archiveRoot+u'.package.jpg'
+                    dest = self.packagePic = u''.join((u'Docs\\',archiveRoot,u'.package.jpg'))
                 elif fileExt in docExts:
-                    dest = u'Docs\\'+file
+                    dest = u''.join((u'Docs\\',file))
                 elif fileExt in imageExts:
-                    dest = u'Docs\\'+file
+                    dest = u''.join((u'Docs\\',file))
             if fileExt in commonlyEditedExts:
-                try: trackedInfosTrack(dest)
-                except: deprint(u'An error occurred while creating the path:', repr(dest), traceback=True)
+                trackedInfosTrack(dest)
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
@@ -7599,7 +7596,7 @@ class Installer(object):
         self.type = type
         #--SubNames, SubActives
         if type == 2:
-            self.subNames = sorted(subNameSet,key=string.lower)
+            self.subNames = sorted(subNameSet,key=unicode.lower)
             actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
                 self.subActives = [True,True]
