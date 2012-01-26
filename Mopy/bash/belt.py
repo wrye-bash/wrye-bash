@@ -24,7 +24,6 @@
 #===================================================
 # Specific parser for Wrye Bash
 #===================================================
-from __future__ import with_statement # Python 2.5 'with' statement compatability
 import ScriptParser         # generic parser class
 from ScriptParser import error
 import wx
