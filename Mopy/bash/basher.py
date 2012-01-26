@@ -1127,8 +1127,8 @@ class List(wx.Panel):
     #--Event: Left Down
     def OnLeftDown(self,event):
         #self.hitTest = self.list.HitTest((event.GetX(),event.GetY()))
-        self.pos[0] = event.GetX()
-        deprint(event.GetX())
+        #self.pos[0] = event.GetX()
+        #deprint(event.GetX())
         event.Skip()
 
     def OnScroll(self,event):
