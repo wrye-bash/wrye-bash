@@ -6184,7 +6184,7 @@ class ConfigHelpers:
                                 try:
                                     regex = re.compile(maRegex.group(1),re.U|re.I)
                                 except:
-                                    deprint(_(u"An error occured while trying to compile a REGEX from BOSS's masterlist:\n REGEX: %s\n") % maRegex.group(1),traceback=True)
+                                    deprint(u"An error occured while trying to compile a REGEX from BOSS's masterlist:\n REGEX: %s\n" % maRegex.group(1),traceback=True)
                                     regex = None
                             else:
                                 maMod = reMod.match(line)
