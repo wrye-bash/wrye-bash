@@ -13464,22 +13464,24 @@ class Mod_CreateBlank(Link):
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
-        data = self.data
+        data = self.window.GetSelected()
         fileInfos = self.window.data
-        fileInfo = fileInfos[fileName]
         count = 0
         newName = GPath(u'New Mod.esp')
         while newName in fileInfos:
             count += 1
             newName = GPath(u'New Mod %d.esp' % count)
-        newInfo = bosh.ModInfo(fileInfo.dir,newName)
-        newTime = max(data[x].mtime for x in data)
-        newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
+        newInfo = fileInfos.factory(fileInfos.dir,newName)
+        if data:
+            newTime = max(fileInfos[x].mtime for x in data)
+        else:
+            newTime = max(fileInfos[x].mtime for x in fileInfos.data)
+        newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
         newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
         newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
         newFile.safeSave()
-        mod_group = bosh.modInfos.table.getColumn('group')
-        mod_group[newName] = mod_group.get(fileName,u'')
+        mod_group = fileInfos.table.getColumn('group')
+        mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
         self.window.RefreshUI(detail=newName)
 
