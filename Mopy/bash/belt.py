@@ -975,6 +975,11 @@ class WryeParser(ScriptParser.Parser):
                 i -= numLines
                 self.ExecCount -= 1
 
+        for i in self.sublist:
+            self.sublist[i] = False
+        for i in self.espmlist:
+            self.espmlist[i] = False
+
         self.cLine = 0
         self.reversing = self.choiceIdex-1
         self.choiceIdex = -1
