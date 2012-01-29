@@ -3271,7 +3271,7 @@ class IniFile(object):
                         for setting in ini_settings[section]:
                             value = ini_settings[section][setting]
                             if isinstance(value,basestring) and value[-1] == u'\n':
-                                tmpFileWrite(newLine)
+                                tmpFileWrite(value)
                             else:
                                 tmpFileWrite(u'%s=%s\n' % (setting,value))
                         tmpFileWrite(u'\n')
