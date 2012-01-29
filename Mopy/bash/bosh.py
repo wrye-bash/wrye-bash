@@ -7544,28 +7544,31 @@ class Installer(object):
                 rootIdex = 0
             else:
                 rootStr = layout.keys()[0]
-                root = layout[rootStr]
-                rootStr = u''.join((rootStr,u'\\'))
-                while True:
-                    if root['files']:
-                        # There are files in this folder, call it the starting point
-                        break
-                    rootDirs = root['dirs']
-                    rootDirKeys = rootDirs.keys()
-                    if len(rootDirKeys) == 1:
-                        # Only one subfolder, see if it's either 'Data', or an accepted
-                        # Data sub-folder
-                        rootDirKey = rootDirKeys[0]
-                        if rootDirKey in dataDirs or rootDirKey == u'data':
-                            # Found suitable starting point
+                if rootStr in dataDirs:
+                    rootIdex = 0
+                else:
+                    root = layout[rootStr]
+                    rootStr = u''.join((rootStr,u'\\'))
+                    while True:
+                        if root['files']:
+                            # There are files in this folder, call it the starting point
                             break
-                        # Keep looking deeper
-                        root = rootDirs[rootDirKey]
-                        rootStr = u''.join((rootStr,rootDirKey,u'\\'))
-                    else:
-                        # Multiple folders, stop here even if it's no good
-                        break
-                rootIdex = len(rootStr)
+                        rootDirs = root['dirs']
+                        rootDirKeys = rootDirs.keys()
+                        if len(rootDirKeys) == 1:
+                            # Only one subfolder, see if it's either 'Data', or an accepted
+                            # Data sub-folder
+                            rootDirKey = rootDirKeys[0]
+                            if rootDirKey in dataDirs or rootDirKey == u'data':
+                                # Found suitable starting point
+                                break
+                            # Keep looking deeper
+                            root = rootDirs[rootDirKey]
+                            rootStr = u''.join((rootStr,rootDirKey,u'\\'))
+                        else:
+                            # Multiple folders, stop here even if it's no good
+                            break
+                    rootIdex = len(rootStr)
         self.fileRootIdex = rootIdex
         # fileRootIdex now points to the start in the file strings
         # to ignore
