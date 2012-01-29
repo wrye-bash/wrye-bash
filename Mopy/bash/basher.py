@@ -17129,7 +17129,7 @@ class People_Karma(Link):
         for id,item in zip(idList,labels):
             subMenu.Append(id,item)
         wx.EVT_MENU_RANGE(bashFrame,idList.BASE,idList.MAX,self.DoList)
-        menu.AppendMenu(-1,u_(u'Karma'),subMenu)
+        menu.AppendMenu(-1,_(u'Karma'),subMenu)
 
     def DoList(self,event):
         """Handle selection of label."""
