@@ -11773,20 +11773,20 @@ class Settings_ExportDllInfo(Link):
             u'*.txt')
         if not textPath: return
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\n')
+            out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\r\n')
             if settings['bash.installers.goodDlls']:
                 for dll in settings['bash.installers.goodDlls']:
-                    out.write(u'dll:'+dll+u':\n')
+                    out.write(u'dll:'+dll+u':\r\n')
                     for index, version in enumerate(settings['bash.installers.goodDlls'][dll]):
-                        out.write(u'version %02d: %s\n' % (index, version))
-            else: out.write(u'None')
-            out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\n')
+                        out.write(u'version %02d: %s\r\n' % (index, version))
+            else: out.write(u'None\r\n')
+            out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\r\n')
             if settings['bash.installers.badDlls']:
                 for dll in settings['bash.installers.badDlls']:
-                    out.write(u'dll:'+dll+u':\n')
+                    out.write(u'dll:'+dll+u':\r\n')
                     for index, version in enumerate(settings['bash.installers.badDlls'][dll]):
-                        out.write(u'version %02d: %s\n' % (index, version))
-            else: out.write(u'None\n')
+                        out.write(u'version %02d: %s\r\n' % (index, version))
+            else: out.write(u'None\r\n')
 
 #------------------------------------------------------------------------------
 class Settings_ImportDllInfo(Link):
@@ -11818,16 +11818,17 @@ class Settings_ImportDllInfo(Link):
             with textPath.open('r',encoding='utf-8-sig') as ins:
                 Dlls = {'goodDlls':{},'badDlls':{}}
                 for line in ins:
+                    line = line.strip()
                     if line.startswith(u'goodDlls'):
                         current = Dlls['goodDlls']
                     if line.startswith(u'badDlls'):
                         current = Dlls['badDlls']
                     elif line.startswith(u'dll:'):
-                        dll = line[4:-2]
+                        dll = line[4:-1]
                         current.setdefault(dll,[])
                     elif line.startswith(u'version'):
-                        ver = line[13:-2].strip(u"'").split(u',')
-                        current[dll].append([ver[0].strip(u"'"),int(ver[1]),long(ver[2])])
+                        ver = line[13:-1].strip(u"'").split(u',')
+                        current[dll].append([ver[0].strip(u"'"),long(ver[1]),long(ver[2])])
             if not replace:
                 settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
                 settings['bash.installers.badDlls'].update(Dlls['badDlls'])
@@ -11835,6 +11836,9 @@ class Settings_ImportDllInfo(Link):
                 settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
         except UnicodeError:
             balt.showError(self.window,_(u'Wrye Bash could not load %s, because it is not saved in UTF-8 format.  Please resave it in UTF-8 format and try again.') % textPath.s)
+        except Exception as e:
+            deprint(u'Error reading', textPath.s, traceback=True)
+            balt.showError(self.window,_(u'Wrye Bash could not load %s, because there was an error in the format of the file.') % textPath.s)
 
 #------------------------------------------------------------------------------
 class Settings_Colors(Link):
