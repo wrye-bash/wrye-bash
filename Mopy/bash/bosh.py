@@ -3701,7 +3701,6 @@ class OmodFile:
         sizes,total = self.getOmodContents()
 
         # Extract the files
-        cmd7z = [exe7z,u'e',u'-r',tempOmod.s,u'-o%s' % tempDir.s]
         reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
         reError = re.compile(ur'Error:',re.U)
         progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
@@ -3709,6 +3708,7 @@ class OmodFile:
         subprogress = bolt.SubProgress(progress, 0, 0.4)
         current = 0
         with self.path.unicodeSafe() as tempOmod:
+            cmd7z = [exe7z,u'e',u'-r',tempOmod.s,u'-o%s' % tempDir.s]
             with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
                     line = unicode(line,'utf8')
