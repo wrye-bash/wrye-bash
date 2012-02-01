@@ -1548,10 +1548,13 @@ class INIList(List):
         if self.sortValid:
             self.items.sort(key=lambda a: self.data[a].status < 0)
 
-    def OnDoubleClick(self,event):
-        """Handle doubclick event."""
+    def OnLeftDown(self,event):
+        """Handle click on icon events"""
+        event.Skip()
         (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
         if hitItem < 0: return
+        tweak = bosh.iniInfos[self.items[hitItem]]
+        if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.GetParent().GetParent().GetParent()
         choice = iniPanel.GetChoice().tail
@@ -1564,37 +1567,11 @@ class INIList(List):
                 return
         dir = self.data.dir
         #--No point applying a tweak that's already applied
-        if bosh.iniInfos[self.items[hitItem]].status == 20: return
         file = dir.join(self.items[hitItem])
         iniList.data.ini.applyTweakFile(file)
         iniList.RefreshUI('VALID')
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
-
-    def OnLeftDown(self,event):
-        """Left Down: Apply edit if not applied."""
-        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
-        if hitItem >= 0 and hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            #-- If we're applying to Oblivion.ini, show the warning
-            iniPanel = self.GetParent().GetParent().GetParent()
-            choice = iniPanel.GetChoice().tail
-            if choice in bush.game.iniFiles:
-                message = (_(u"Apply an ini tweak to %s?") % choice
-                           + u'\n\n' +
-                           _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
-                           )
-                if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
-                    return
-            dir = self.data.dir
-            #--No point applying a tweak that's already applied
-            if bosh.iniInfos[self.items[hitItem]].status != 20:
-                file = dir.join(self.items[hitItem])
-                iniList.data.ini.applyTweakFile(file)
-                iniList.RefreshUI('VALID')
-                iniPanel.iniContents.RefreshUI()
-                iniPanel.tweakContents.RefreshUI(self.data[0])
-        #--Pass Event onward
-        event.Skip()
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
@@ -11388,7 +11365,8 @@ class INI_CreateNew(Link):
         tweak = data[0]
         menuItem = wx.MenuItem(menu,self.id,_(u'Create Tweak with current settings...'),_(u"Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+        if len(data) != 1 or bosh.iniInfos[data[0]].status < 0:
+            menuItem.Enable(False)
 
     def Execute(self,event):
         """Handle creating a new INI tweak."""
@@ -11400,11 +11378,16 @@ class INI_CreateNew(Link):
         # Now edit it with the values from the target INI
         iniList.data.refresh()
         oldTarget = iniList.data.ini
-        # Set new target as the tweak we're creating
-        iniList.data.setBaseIni(bosh.BestIniFile(path))
-        iniList.data.ini.applyTweakFile(oldTarget.path)
-        # Restore the old target and refresh
-        iniList.data.ini = oldTarget
+        target = bosh.BestIniFile(path)
+        settings,deleted = target.getSettings()
+        new_settings,deleted = oldTarget.getSettings()
+        deleted = {}
+        for section in settings:
+            if section in new_settings:
+                for setting in settings[section]:
+                    if setting in new_settings[section]:
+                        settings[section][setting] = new_settings[section][setting]
+        target.saveSettings(settings)
         iniList.RefreshUI(detail=path)
         self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
 
