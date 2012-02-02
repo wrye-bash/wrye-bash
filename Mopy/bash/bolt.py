@@ -21,9 +21,7 @@
 #
 # =============================================================================
 
-# Imports ----------------------------------------------------------------------
-#-- Use the 'with' statement for Python 2.5
-from __future__ import with_statement
+# Imports ---------------------------------------------------------------------
 #--Standard
 import cPickle
 import StringIO
@@ -905,9 +903,12 @@ class LString(object):
     __slots__ = ('_s','_cs')
 
     def __init__(self,s):
-        if isinstance(s,LString): s = s._s
-        self._s = s
-        self._cs = s.lower()
+        if isinstance(s,LString):
+            self._s = s._s
+            self._cs = s._cs
+        else:
+            self._s = s
+            self._cs = s.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
@@ -2637,7 +2638,7 @@ class StringTable(dict):
             with BinaryFile(path.s) as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
-                inUnpack = ins.unpack
+                insUnpack = ins.unpack
                 insReadCString = ins.readCString
                 insRead = ins.read
 
@@ -2648,7 +2649,7 @@ class StringTable(dict):
                     # Missing the numIds and dataSize bytes, assume empty file
                     return
 
-                numIds,dataSize = insUnpack('=2I',4)
+                numIds,dataSize = insUnpack('=2I',8)
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
@@ -2669,6 +2670,7 @@ class StringTable(dict):
                     insSeek(pos)
                     self[id] = value
         except:
+            deprint(u'Error loading string file:', traceback=True)
             return
 
 # WryeText --------------------------------------------------------------------
