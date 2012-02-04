@@ -7590,10 +7590,10 @@ class Installer(object):
                     type = 1
                     break
                 #--Type 2?
-                elif nfrags > 2 and frags[1].lower() in dataDirs:
+                elif nfrags > 2 and not frags[0].startswith(u'--') and frags[1].lower() in dataDirs:
                     subNameSetAdd(frags[0])
                     type = 2
-                elif nfrags == 2 and reDataFileSearch(frags[1]):
+                elif nfrags == 2 and not frags[0].startswith(u'--') and reDataFileSearch(frags[1]):
                     subNameSetAdd(frags[0])
                     type = 2
         self.type = type
