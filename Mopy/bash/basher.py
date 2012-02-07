@@ -1552,7 +1552,7 @@ class INIList(List):
         """Handle click on icon events"""
         event.Skip()
         (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
-        if hitItem < 0: return
+        if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
         tweak = bosh.iniInfos[self.items[hitItem]]
         if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
