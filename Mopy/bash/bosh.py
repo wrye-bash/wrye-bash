@@ -3598,18 +3598,22 @@ class OblivionIni(IniFile):
     #--BSA Redirection --------------------------------------------------------
     def getBsaRedirection(self):
         """Returns True if BSA redirection is active."""
+        section,key = bush.game.ini.bsaRedirection
+        if not section or not key: return False
         self.ensureExists()
-        sArchives = self.getSetting(u'Archive',u'sArchiveList',u'')
+        sArchives = self.getSetting(section,key,u'')
         return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
 
     def setBsaRedirection(self,doRedirect=True):
         """Activates or deactivates BSA redirection."""
+        section,key = bush.game.ini.bsaRedirection
+        if not section or not key: return
         aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime >  aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
         if doRedirect == self.getBsaRedirection(): return
-        sArchives = self.getSetting(u'Archive',u'sArchiveList','')
+        sArchives = self.getSetting(section,key,u'')
         #--Strip existint redirectors out
         archives = [x.strip() for x in sArchives.split(u',') if x.strip().lower() not in self.bsaRedirectors]
         #--Add redirector back in?
