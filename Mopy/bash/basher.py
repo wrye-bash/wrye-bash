@@ -9255,6 +9255,12 @@ class Installers_BsaRedirection(BoolLink):
                           'bash.bsaRedirection',
                           )
 
+    def AppendToMenu(self,menu,window,data):
+        section,key = bush.game.ini.bsaRedirection
+        if not section or not key:
+            return
+        BoolLink.AppendToMenu(self,menu,window,data)
+
     def Execute(self,event):
         """Handle selection."""
         BoolLink.Execute(self,event)
