@@ -3245,7 +3245,7 @@ class IniFile(object):
                         setting = LString(match.group(1))
                         if sectionSettings and setting in sectionSettings:
                             value = sectionSettings[setting]
-                            if isinstance(value,basestring) and value[-1] == u'\n':
+                            if isinstance(value,basestring) and value[-1:] == u'\n':
                                 line = value
                             else:
                                 line = u'%s=%s\n' % (setting,value)
@@ -3258,7 +3258,7 @@ class IniFile(object):
                     # This will occur for the last INI section in the ini file
                     for setting in ini_settings[section]:
                         value = ini_settings[section][setting]
-                        if isinstance(value,basestring) and value[-1] == u'\n':
+                        if isinstance(value,basestring) and value[-1:] == u'\n':
                             tmpFileWrite(value)
                         else:
                             tmpFileWrite(u'%s=%s\n' % (setting,value))
@@ -3270,7 +3270,7 @@ class IniFile(object):
                         tmpFileWrite(u'[%s]\n' % section)
                         for setting in ini_settings[section]:
                             value = ini_settings[section][setting]
-                            if isinstance(value,basestring) and value[-1] == u'\n':
+                            if isinstance(value,basestring) and value[-1:] == u'\n':
                                 tmpFileWrite(value)
                             else:
                                 tmpFileWrite(u'%s=%s\n' % (setting,value))
@@ -3503,7 +3503,7 @@ class OBSEIniFile(IniFile):
                         # Un-delete/modify it
                         value = ini_settings[section][setting]
                         del ini_settings[section][setting]
-                        if isinstance(value,basestring) and value[-1] == u'\n':
+                        if isinstance(value,basestring) and value[-1:] == u'\n':
                             line = value
                         else:
                             line = format % (setting,value)
