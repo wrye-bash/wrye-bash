@@ -99,6 +99,9 @@ class ini:
     #  (by default)
     allowNewLines = False
 
+    #--INI Entry to enable BSA Redirection
+    bsaRedirection = (u'Archive',u'sArchiveList')
+
 #--Save Game format stuff
 class ess:
     # Save file capabilities
