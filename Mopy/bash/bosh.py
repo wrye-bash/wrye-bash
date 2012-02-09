@@ -30476,7 +30476,6 @@ try:
         from win32com.shell import shell, shellcon
         def getShellPath(shellKey):
             path = shell.SHGetFolderPath (0, shellKey, None, 0)
-            path = path.encode(locale.getpreferredencoding())
             return GPath(path)
 except ImportError:
         shell = shellcon = None
@@ -30496,7 +30495,6 @@ except ImportError:
             except WindowsError:
                 raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             regKey.Close()
-            path = path.encode(locale.getpreferredencoding())
             path = reEnv.sub(subEnv,path)
             return GPath(path)
 
