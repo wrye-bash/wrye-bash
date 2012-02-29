@@ -216,6 +216,7 @@ bethDataFiles = set((
     #--Vanilla
     u'skyrim.esm',
     u'update.esm',
+    u'update.bsa',
     u'skyrim - animations.bsa',
     u'skyrim - interface.bsa',
     u'skyrim - meshes.bsa',
@@ -232,6 +233,7 @@ allBethFiles = set((
     #--Vanilla
     u'skyrim.esm',
     u'update.esm',
+    u'update.bsa',
     u'skyrim - animations.bsa',
     u'skyrim - interface.bsa',
     u'skyrim - meshes.bsa',
@@ -249,6 +251,7 @@ allBethFiles = set((
     u'strings\\update_english.ilstrings',
     u'strings\\update_english.strings',
     u'video\\bgs_logo.bik',
+    #--TODO: Add in files from the Creation Kit
     ))
 
 #--BAIN: Directories that are OK to install to
