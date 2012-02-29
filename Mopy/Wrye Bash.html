@@ -328,11 +328,39 @@
 <p class="list-1">&bull;&nbsp;  If you have a question/comment about Wrye Bash, it's best to post it on the current RELZ topic on the Bethesda Game Studios (BGS) forums.</p>
 <p class="empty">&nbsp;</p>
 <h2><a id='License'>License</a></h2>
-<p>Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed <a href="license.txt">license.txt</a> file for license details.
+<p>Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed <a href="license.txt">license.txt</a> file for license details, or visit the <a href="http://www.gnu.org/copyleft/gpl.html">GNU Website</a> for information on all of their licenses.
 </p>
 <p class="empty">&nbsp;</p>
+<h3><a id='PackagedPrograms'>Packaged Programs</a></h3>
+<p>Additionally, Wrye Bash comes packaged with the following programs:
+</p>
+<p class="list-1">&bull;&nbsp;  Mozilla's chardet library.</p>
+  <p class="list-2">&bull;&nbsp;  Website: <a href="http://pypi.python.org/pypi/chardet">Python.org</a></p>
+  <p class="list-2">&bull;&nbsp;  License: <a href="http://www.gnu.org/licenses/lgpl.html">LGPL 2.1</a></p>
+  <p class="list-2">&bull;&nbsp;  Usage: Wrye Bash uses this library to help in detecting character encodings use when reading and writing encoded Unicode strings.</p>
+  <p class="list-2">&bull;&nbsp;  Modifications: Minor modifications to bring chardet in line with Python 2.7 - removed the EUCTWProber, from the MBCSGroupProber class.</p>
+<p class="list-1">&bull;&nbsp;  BOSS API (Better Oblivion Sorting Software API)</p>
+  <p class="list-2">&bull;&nbsp;  Website: <a href="http://code.google.com/p/better-oblivion-sorting-software/">Googlecode</a></p>
+  <p class="list-2">&bull;&nbsp;  License: API - <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>, Documentation - <a href="http://www.gnu.org/licenses/fdl.html">GNU FDL 1.3</a>.</p>
+  <p class="list-2">&bull;&nbsp;  Usage: Wrye Bash uses this libarary to modify Load Order, and retrieve Bash Tag suggestions and Dirty mod information from BOSS's plugin databases.</p>
+<p class="list-1">&bull;&nbsp;  CBash</p>
+  <p class="list-2">&bull;&nbsp;  Website: <a href="http://sourceforge.net/projects/cbash/">SourceForge</a></p>
+  <p class="list-2">&bull;&nbsp;  License: Triple-license <a href="http://www.mozilla.org/MPL/">MPL 1.1</a>/<a href="http://www.gnu.org/copyleft/gpl.html">GPL 2.0</a>/<a href="http://www.gnu.org/licenses/lgpl.html">LGPL 2.1</a></p>
+  <p class="list-2">&bull;&nbsp;  Modifications:</p>
+    <p class="list-3">&bull;&nbsp;  cint.py - some changes made that have not yet been merged into the CBash SVN repository.  These are committed to the Wrye Bash SVN repository.</p>
+    <p class="list-3">&bull;&nbsp;  C/C++ Source Code: Version 0.5.1 - 0.5.3 of CBash are built off modified source code, which can be found in the Wrye Bash SVN repository, <a href="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/CBash/">here</a>.</p>
+<p class="list-1">&bull;&nbsp;  7zip:</p>
+  <p class="list-2">&bull;&nbsp;  Website: <a href="http://www.7-zip.org/">7zip.org</a></p>
+  <p class="list-2">&bull;&nbsp;  License: <a href="http://www.gnu.org/licenses/lgpl.html">LGPL</a></p>
+  <p class="list-2">&bull;&nbsp;  Usage: Wrye Bash uses 7z to pack and unpack archives.</p>
+<p class="list-1">&bull;&nbsp;  LZMA SDK:</p>
+  <p class="list-2">&bull;&nbsp;  Website: <a href="http://www.7-zip.org/sdk.html">7zip.org</a></p>
+  <p class="list-2">&bull;&nbsp;  License: Plublic Domain</p>
+  <p class="list-2">&bull;&nbsp;  Usage: Wrye Bash uses lzma.exe from the SDK to unpack OBMM compressed data streams.</p>
+  <p class="empty">&nbsp;</p>
+  <p class="empty">&nbsp;</p>
 </td></tr></table>
-<p class="empty">&nbsp;</p>
+  <p class="empty">&nbsp;</p>
 <h2><a id='Installation'>Installation</a></h2>
 <h3><a id='GetandInstall'>Get and Install</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Download and run Wrye Bash XXX - Installer (<a href="http://tesnexus.com/downloads/file.php?id=22368">TESNexus</a> | <a href="http://www.skyrimnexus.com/downloads/file.php?id=1840">Skyrim Nexus</a>)</b></p>
@@ -1926,12 +1954,8 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='Globals'>Globals</a></h3>
-<p class="list-1">&bull;&nbsp;  Tweaks the values of globals to whatever is selected. Item ending with a "[xxx]" will allow you to choose a different value. Right click on the item and choose the preferred value from the list. Note: Any globals will only be added to the patch if there is an active mod file (including oblivion.esm) that includes one named the same (although case insensitive).</p>
-<p class="list-1">&bull;&nbsp;  <b>Crime: Force Jail:</b> The bounty value you must have to have a jail term be non-optional (i.e. can't pay the fine).</p>
-<p class="list-1">&bull;&nbsp;  <b>Thieves Guild: Quest Attacking Penalty:</b> Sets the penalty cost for attacking while completing a Thieves Guild Quest</p>
-<p class="list-1">&bull;&nbsp;  <b>Thieves Guild: Quest Killing Penalty:</b> Sets the penalty cost for killing while completing a Thieves Guild Quest</p>
-<p class="list-1">&bull;&nbsp;  <b>Thieves Guild: Quest Stealing Penalty:</b> Sets the penalty cost for stealing while completing a Thieves Guild Quest</p>
-<p class="list-1">&bull;&nbsp;  <b>Timescale:</b> Oblivion's timescale.</p>
+<p>Merged with Tweak Settings in 296.
+</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='TweakActors'>Tweak Actors</a></h3>
 <p class="list-1">&bull;&nbsp;  Changes to NPC or Creature record subrecords; such as skeleton.</p>
@@ -1940,7 +1964,7 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>As Intended: Imps</b></p>
   <p class="list-2">&bull;&nbsp;  Adds the Bethesda Imp Resistances spells to imps (found by the UOP team, based off of a mod made by Tejon). May choose to apply to all imps, only full size imps, or only implings.</p>
 <p class="list-1">&bull;&nbsp;  <b>Bigger Nords and Orcs</b></p>
-  <p class="list-2">&bull;&nbsp;  Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly. Three choices available - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.</p>
+  <p class="list-2">&bull;&nbsp;  Moved to Race Record's Race tweaks section.</p>
 <p class="list-1">&bull;&nbsp;  <b>Irresponsible Creatures</b></p>
   <p class="list-2">&bull;&nbsp;  Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes.</p>
 <p class="list-1">&bull;&nbsp;  <b>Mayu's Animation Overhaul Skeleton Tweaker</b></p>
@@ -2093,16 +2117,18 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Cost Multiplier: Recharge:</b> The cost multiplier factor for recharging.</p>
 <p class="list-1">&bull;&nbsp;  <b>Cost Multiplier: Repair:</b> The cost multiplier factor for repairing.</p>
 <p class="list-1">&bull;&nbsp;  <b>Cost Multiplier: Spellmaking:</b> The cost multiplier factor for spellmaking.</p>
-<p class="list-1">&bull;&nbsp;  <b>Crime Alarm Distance:</b> The distance from the player that NPCs will be alerted to crimes</p>
+<p class="list-1">&bull;&nbsp;  <b>Crime: Alarm Distance:</b> The distance from the player that NPCs will be alerted to crimes</p>
+<p class="list-1">&bull;&nbsp;  <b>Crime: Force Jail:</b> The bounty level at which the player cannot pay the fine but has to go to jail.</p>
 <p class="list-1">&bull;&nbsp;  <b>Crime: X Fine:</b> The fine for X crime.</p>
+<p class="list-1">&bull;&nbsp;  <b>Drag: Max Moveable Weight:</b> The max weight that can be dragged.</p>
 <p class="list-1">&bull;&nbsp;  <b>Essential NPC Unconsciousness:</b> Time for which an essential NPC stays unconscious after being knocked out.</p>
 <p class="list-1">&bull;&nbsp;  <b>Fatigue from Running/Encumbrance:</b> Fatigue cost multiplier for running or encumbrance</p>
 <p class="list-1">&bull;&nbsp;  <b>Greeting Distance:</b> Distance at which NPCs will great the player.</p>
 <p class="list-1">&bull;&nbsp;  <b>Horse Turning Speed:</b> Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.</p>
 <p class="list-1">&bull;&nbsp;  <b>Inventory Quantity Prompt:</b> Number of items in a stack at which point Oblivion prompts for a quantity.</p>
 <p class="list-1">&bull;&nbsp;  <b>Jump Higher:</b> Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness. (Empty towns or empty countryside, depending on whether you jump into or out of the town.)</p>
-<p class="list-1">&bull;&nbsp;  <b>Leveled Creature Max level difference:</b> Maximum difference to player level for leveled creature.</p>
-<p class="list-1">&bull;&nbsp;  <b>Leveled Item Max level difference:</b> Maximum difference to player level for leveled items.</p>
+<p class="list-1">&bull;&nbsp;  <b>Leveled Creature Max Level Difference:</b> Maximum difference to player level for leveled creature.</p>
+<p class="list-1">&bull;&nbsp;  <b>Leveled Item Max Devel Difference:</b> Maximum difference to player level for leveled items.</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Bolt Speed:</b> Speed at which at which magic bolts (projectiles) travel.</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Chameleon Refraction:</b> Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on. (Transparency won't be very obvious until PC/NPC is at higher levels of Chameleon.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Magic: Max NPC Summons:</b> Sets the number of summons a NPC may have active at one time.</p>
@@ -2117,12 +2143,18 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <p class="list-1">&bull;&nbsp;  <b>Msg: No Fast Travel:</b> sets the message when attempting to fast travel when it is prohibited to blank or either "." or "Hmm..." or a custom value entered by user.</p>
 <p class="list-1">&bull;&nbsp;  <b>Msg: Not Enough Charge:</b> sets the message on attempting to use an enchanted item with insufficient charge to blank or either "." or "Hmm..." or a custom value entered by user.</p>
 <p class="list-1">&bull;&nbsp;  <b>Msg: Quick Load:</b> sets the message on quick loading to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>Msg: Quick Save:</b> sets the message on quick saving to blank or either "." or "Hmm..." or a custom value entered by user.</p>
+<p class="list-1">&bull;&nbsp;  <b>NPC Blood:</b> Sets a few gmsts to use either user specified blood textures or no blood.</p>
+<p class="list-1">&bull;&nbsp;  <b>Thieves Guild: Quest Attacking Penalty:</b> Sets the penalty cost for attacking while completing a Thieves Guild Quest</p>
+<p class="list-1">&bull;&nbsp;  <b>Thieves Guild: Quest Killing Penalty:</b> Sets the penalty cost for killing while completing a Thieves Guild Quest</p>
+<p class="list-1">&bull;&nbsp;  <b>Thieves Guild: Quest Stealing Penalty:</b> Sets the penalty cost for stealing while completing a Thieves Guild Quest</p>
+<p class="list-1">&bull;&nbsp;  <b>Timescale:</b> Oblivion's timescale.</p>
 <p class="list-1">&bull;&nbsp;  <b>Training Max:</b> Sets the training limit per level allowed by trainers.</p>
 <p class="list-1">&bull;&nbsp;  <b>UOP Vampire Aging and Face Fix.esp:</b> Duplicate of UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging &amp; Face Fix.esp' to save an esp slot.</p>
 <p class="list-1">&bull;&nbsp;  <b>Warning: Exterior Distance to Hostiles:</b> For Exteriors: sets the minimum distance a hostile actor has to be from the player to allow the player to sleep/fast travel/etc.</p>
 <p class="list-1">&bull;&nbsp;  <b>Warning: Interior Distance to Hostiles:</b> For Interiors: sets the minimum distance a hostile actor has to be from the player to allow the player to sleep/fast travel/etc.</p>
 <p class="list-1">-&nbsp; ------------------------------------------------------------------------------</p>
-<p><b>Special</b> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#PowerExhaustion">Power Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
+<p><b>Special</b> patch components don't fit into the categories above. Two of them (<a href="#AlchemicalCatalogs">Alchemical Catalogs</a> and <a href="#COBLExhaustion">COBL Exhaustion</a>) are for use with specific mods. The remaining component, <a href="#LeveledLists">Leveled Lists</a>, is for general use.
 </p>
 <p class="empty">&nbsp;</p>
 <h3><a id='CoblCatalogs'>Cobl Catalogs</a></h3>
@@ -2172,13 +2204,13 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
 <h3><a id='PowerExhaustion'>Power Exhaustion</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b></p>
 <p class="list-1">&bull;&nbsp;  Wrye's deprecated <a href="http://www.Wryemusings.com/Power%20Exhaustion.html">Power Exhaustion</a> mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.</p>
-<p class="list-1">&bull;&nbsp;  Replaced by Cobl Exhaustion</p>
+<p class="list-1">&bull;&nbsp;  Replaced by Cobl Exhaustion and (finally) removed in Wrye Bash 296.</p>
 <p class="empty">&nbsp;</p>
 <p><a id="ImportRaceInfo"></a>
 </p>
 <h3><a id='RaceRecords'>Race Records</a></h3>
 <p class="list-1">&bull;&nbsp;  <b>Overview</b></p>
-<p class="list-1">&nbsp;&nbsp;  This patcher component will extract the eyes and hair from the loaded source mods and, if necessary, merge that data over changes from later loading mods that change the same races. (Note that if the source mods are <i><b>not</b></i> in the load list, they will not be used.)</p>
+<p class="list-1">&nbsp;&nbsp;  This patcher component will extract the eyes, hair body parts etc. from the loaded source mods and, if necessary, merge that data over changes from later loading mods that change the same races. (Note that if the source mods are <i><b>not</b></i> in the load list, they will not be used.) It also has a section of race tweaks which the user can select as desired.</p>
 <p class="list-1">&bull;&nbsp;  <b>Configuration</b></p>
   <p class="list-2">&bull;&nbsp;  Source mods <i>must</i> contain one or more of the following bash <a href="#BashTags">tags</a>.</p>
     <p class="list-3">&bull;&nbsp;  Body-F: If specifying female body textures.</p>
@@ -2214,7 +2246,16 @@ Bob's Mod with a very, very long name.esp >> Bob's Mod.esp</pre>
     <p class="list-3">&bull;&nbsp;  Unfortunately, one of the most popular race mods, Beautiful People, <i>does</i> replace the standard eye mesh resource. To resolve this, the Beautiful People installation will need to be patched. (Sorry, but I don't know if such a patch is available yet.)</p>
 <p class="list-1">&bull;&nbsp;  <b>Notes</b></p>
 <p class="list-1">&nbsp;&nbsp;  Even if none of the source mods are selected, this patcher component will sort hairs and eyes as well as attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them.</p>
-<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Race Tweaks:</b></p>
+  <p class="list-2">&bull;&nbsp;  <b>Bigger Nords and Orcs:</b> Adjusts the Orc and Nord race records (including mod added races named Orc/Nord) to be taller/heavier - to be more lore friendly. Three choices available - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Merge Eyes From Similar Races:</b> Merges eye lists from similar races ie RBP Khajiit eyes to Elsweyr Khajiits etc.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Merge Hairs From Similar Races:</b> Merges hair lists from similar races ie RBP Khajiit hair to Elsweyr Khajiits etc.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Playable Eyes:</b> Sets all eyes to be playable.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Playable Hairs:</b> Sets all hairs to be playable.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Races have All Eyes:</b> Gives all races all eyes - although Googly Eye scanning/removal takes place after this so the final patch will not have all eyes for all races.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Races Have All Hairs:</b> Gives all races all hairs.</p>
+  <p class="list-2">&bull;&nbsp;  <b>Sexless Hairs:</b> Sets all hairs to be useable by both male and female characters.</p>
+  <p class="empty">&nbsp;</p>
 <h3><a id='SEWorldTests'>SEWorld Tests</a></h3>
 <p class="list-1">&bull;&nbsp;  Suspends Cyrodiil quests while in Shivering Isles.</p>
 <p class="list-1">&bull;&nbsp;  <b>Overview:</b></p>
@@ -2780,8 +2821,28 @@ msgid "Argument is out"
 <p><i><b>All versions by Wrye unless otherwise noted.</b></i>
 </p>
   <p class="empty">&nbsp;</p>
-<h3><a id='_296XXX2012'>296 [XX/X/2012]</a></h3>
+<h3><a id='_296XXX2012LojackPacificMorrowindWaruddar'>296 [XX/X/2012] [Lojack,PacificMorrowind,Waruddar]</a></h3>
 <p class="list-1">&bull;&nbsp;  CBash updated to version 0.6</p>
+<p class="list-1">&bull;&nbsp;  Bashed Patch:</p>
+  <p class="list-2">&bull;&nbsp;  Races Patcher refactored a bit: now has racial tweaks you can select and source mods that you can select.</p>
+    <p class="list-3">&bull;&nbsp;  new race tweakers:</p>
+      <p class="list-4">&bull;&nbsp;  Bigger Nords & Orcs (moved from tweak actors)</p>
+      <p class="list-4">&bull;&nbsp;  Merge Eyes from similar races</p>
+      <p class="list-4">&bull;&nbsp;  Merge Hairs from similar races</p>
+      <p class="list-4">&bull;&nbsp;  Playable Eyes</p>
+      <p class="list-4">&bull;&nbsp;  Playable Hairs</p>
+      <p class="list-4">&bull;&nbsp;  Races have All Eyes</p>
+      <p class="list-4">&bull;&nbsp;  Races have All Hairs</p>
+      <p class="list-4">&bull;&nbsp;  Sexless Hairs</p>
+  <p class="list-2">&bull;&nbsp;  Globals Patcher has been merge into Tweak Settings.   </p>
+  <p class="list-2">&bull;&nbsp;  Python Mode Only: new but deleted records won't affect mergeability.</p>
+  <p class="list-2">&bull;&nbsp;  In CBash mode instead of mergeing deleted REFR, ACRE, ACHR records they will be merged as and undeleted (disabled and moved -1000 units on the z axis). (doesn't affect Python mode since Python mode doesn't merge cells)</p>
+  <p class="list-2">&bull;&nbsp;  Tweak Settings Patcher:</p>
+    <p class="list-3">&bull;&nbsp;  A few tweak names tweaked to better match other tweak names.</p>
+<p class="list-1">&bull;&nbsp;  ini option to ensure bashed patch exists at program start added (by default on).</p>
+<p class="list-1">&bull;&nbsp;  Duplicate files for multiple files fixed.</p>
+<p class="list-1">&bull;&nbsp;  Minimum Column width enforced.</p>
+<p class="list-1">&bull;&nbsp;  Status bar help tips added to many menu items.</p>
 <p class="empty">&nbsp;</p>
 <h3><a id='_29551712012LojackPacificMorrowind'>295.5 [17/1/2012] [Lojack,PacificMorrowind]</a></h3>
 <p class="list-1">&bull;&nbsp;  Bugfix release:</p>
