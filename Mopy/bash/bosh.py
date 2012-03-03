@@ -3887,19 +3887,23 @@ class Plugins:
 
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
-        if (self.mtimePlugins != self.pathPlugins.mtime or
+        if self.pathPlugins.exists() and (
+            self.mtimePlugins != self.pathPlugins.mtime or
             self.sizePlugins != self.pathPlugins.size):
             return True
         if boss.LoadOrderMethod != bapi.BOSS_API_LOMETHOD_TEXTFILE:
             return False
-        return (self.mtimeOrder != self.pathOrder.mtime or
+        return self.pathOrder.exists() and (
+                self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
 
     def refresh(self):
         """Usesd to update internal times/sizes for tracking"""
-        self.mtimePlugins = self.pathPlugins.mtime
-        self.sizePlugins = self.pathPlugins.size
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if self.pathPlugins.exists():
+            self.mtimePlugins = self.pathPlugins.mtime
+            self.sizePlugins = self.pathPlugins.size
+        if (boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and
+            self.pathOrder.exists()):
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
 
