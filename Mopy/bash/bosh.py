@@ -3895,6 +3895,14 @@ class Plugins:
         return (self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
 
+    def refresh(self):
+        """Usesd to update internal times/sizes for tracking"""
+        self.mtimePlugins = self.pathPlugins.mtime
+        self.sizePlugins = self.pathPlugins.size
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            self.mtimeOrder = self.pathOrder.mtime
+            self.sizeOrder = self.pathOrder.size
+
 #------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
@@ -4838,9 +4846,22 @@ class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
     @property
     def ordered(self):
+        """Return active plugins, ordered"""
         if self.plugins.hasChanged():
-            self._ordered = boss.ActivePlugins
+            self._ordered = boss.GetOrdered(boss.ActivePlugins)
+            self._allmods = boss.LoadOrder
+            self.plugins.refresh()
         return self._ordered
+
+    @property
+    def LoadOrder(self):
+        """Return all plugins, ordered"""
+        if self.plugins.hasChanged():
+            self._ordered = boss.GetOrdered(boss.ActivePlugins)
+            self._allmods = boss.LoadOrder
+            self.plugins.refresh()
+        return self._allmods
+        
 
     def __init__(self):
         """Initialize."""
@@ -5353,7 +5374,7 @@ class ModInfos(FileInfos):
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
         modNames = set(modNames)
-        present = modNames - set(boss.LoadOrder)
+        present = modNames - set(self.LoadOrder)
         missing = modNames - present
         try:
             boss.SetActivePlugins(modNames)
@@ -5553,7 +5574,7 @@ class ModInfos(FileInfos):
 
     def swapOrder(self,leftName,rightName):
         """Swaps the Load Order of two mods"""
-        order = boss.LoadOrder
+        order = self.LoadOrder
         if leftName not in order or rightName not in order: return
         order = list(order) # Since modifying bossDb.LoadOrder can't be done in this way
         #--Swap
@@ -6130,12 +6151,12 @@ class ConfigHelpers:
         self.bossVersion = dirs['boss'].join(u'BOSS.exe')
         self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
         self.bossUserPath = dirs['boss'].join(u'userlist.txt')
-        self.bossMasterTime = 0
-        self.bossUserTime = 0
+        self.bossMasterTime = None
+        self.bossUserTime = None
         #--Mod Rules
         self.name_ruleSet = {}
         #--Refresh
-        self.refresh()
+        self.refresh(True)
 
     @staticmethod
     def bossLOMismatchCallback():
@@ -6144,7 +6165,7 @@ class ConfigHelpers:
         # In other words, use what's in loadorder.txt to write plugins.txt
         boss.LoadOrder = boss.LoadOrder
 
-    def refresh(self):
+    def refresh(self,firstTime=False):
         """Reloads tag info if file dates have changed."""
         path,userpath,mtime,utime = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime)
         #--Masterlist is present, use it
@@ -6153,19 +6174,21 @@ class ConfigHelpers:
                 (userpath.exists() and userpath.mtime != utime)):
                 try:
                     boss.Load(path.s,userpath.s)
+                    self.bossMasterTime = path.mtime
+                    self.bossUserTime = path.mtime
+                    return
                 except bapi.BossError:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
-            return
+            if not firstTime: return
         #--No masterlist, use the taglist
-        else:
-            taglist = dirs['mods'].join(u'Bash Patches',u'taglist.txt')
-            if not taglist.exists():
-                raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
-            try:
-                boss.Load(taglist.s)
-            except bapi.BossError:
-                deprint(u'An error occure while parsing taglist.txt with the BOSS API.', traceback=True)
-                raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
+        taglist = dirs['mods'].join(u'Bash Patches',u'taglist.txt')
+        if not taglist.exists():
+            raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+        try:
+            boss.Load(taglist.s)
+        except bapi.BossError:
+            deprint(u'An error occure while parsing taglist.txt with the BOSS API.', traceback=True)
+            raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
