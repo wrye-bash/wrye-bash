@@ -6106,18 +6106,18 @@ class BashFrame(wx.Frame):
         #--OBMM Warning?
         if settings['bosh.modInfos.obmmWarn'] == 1:
             settings['bosh.modInfos.obmmWarn'] = 2
-            message = (_(u'Turn Lock Times Off?')
+            message = (_(u'Turn Lock Load Order Off?')
                        + u'\n\n' +
-                       _(u'Lock Times a feature which resets load order to a previously memorized state.  While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM.')
+                       _(u'Lock Load Order is a feature which resets load order to a previously memorized state.  While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM.')
                        )
-            lockTimes = not balt.askYes(self,message,_(u'Lock Times'))
+            lockTimes = not balt.askYes(self,message,_(u'Lock Load Order'))
             bosh.modInfos.lockTimes = settings['bosh.modInfos.resetMTimes'] = lockTimes
             if lockTimes:
                 bosh.modInfos.resetMTimes()
             else:
                 bosh.modInfos.mtimes.clear()
-            message = _(u"Lock Times is now %s.  To change it in the future, right click on the main list header on the Mods tab and select 'Lock Times'.")
-            balt.showOk(self,message % ((_(u'off'),_(u'on'))[lockTimes],),_(u'Lock Times'))
+            message = _(u"Lock Load Order is now %s.  To change it in the future, right click on the main list header on the Mods tab and select 'Lock Load Order'.")
+            balt.showOk(self,message % ((_(u'off'),_(u'on'))[lockTimes],),_(u'Lock Load Order'))
         #--Missing docs directory?
         testFile = GPath(bosh.dirs['app']).join(u'Data',u'Docs',u'wtxt_teal.css')
         if not self.incompleteInstallError and not testFile.exists():
@@ -11600,16 +11600,16 @@ class Mods_Tes4ViewExpert(BoolLink):
 
 #------------------------------------------------------------------------------
 class Mods_BOSSDisableLockTimes(BoolLink):
-    """Toggle Lock Times disabling when launching BOSS through Bash."""
+    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     def __init__(self): BoolLink.__init__(self,
-                                          _(u'BOSS Disable Lock Times'),
+                                          _(u'BOSS Disable Lock Load Order'),
                                           'BOSS.ClearLockTimes',
-                                          _(u"If selected, will temporarily disable Bash's Lock Times when running BOSS through Bash.")
+                                          _(u"If selected, will temporarily disable Bash's Lock Load Order when running BOSS through Bash.")
                                           )
 
 #------------------------------------------------------------------------------
 class Mods_BOSSShowUpdate(BoolLink):
-    """Toggle Lock Times disabling when launching BOSS through Bash."""
+    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     def __init__(self):
         BoolLink.__init__(self,
             _(u'Always Update BOSS Masterlist prior to running BOSS.'),
