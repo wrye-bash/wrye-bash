@@ -3803,7 +3803,6 @@ class InstallersPanel(SashTankPanel):
         self.gList.RefreshUI()
         if bosh.modInfos.refresh(doAutoGroup=True):
             del bosh.modInfos.mtimesReset[:]
-            del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
         if iniList is not None:
