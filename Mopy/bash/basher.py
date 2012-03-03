@@ -1242,7 +1242,10 @@ class MasterList(List):
                 value = u'%02X' % (self.fileOrderItems.index(itemId),)
             elif col == 'Current Order':
                 #print itemId
-                value = u'%02X' % (self.loadOrderNames.index(masterName),)
+                if masterName in bosh.modInfos.LoadOrder:
+                    value = u'%02X' % (self.loadOrderNames.index(masterName),)
+                else:
+                    value = u''
             #--Insert/Set Value
             if mode and (colDex == 0):
                 self.list.InsertStringItem(itemDex, value)
@@ -1731,47 +1734,17 @@ class ModList(List):
             if GPath(thisFile) in bosh.modInfos.autoSorted:
                 balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
                 return
-        # Watch out for errors in range
-        if newPos > indexes[0]:   inc = 1
-        elif newPos < indexes[0]: inc = -1
-        else: return
-        howMany = indexes[-1]-indexes[0]
-        # Make sure we don't go out of bounds
-        target = indexes[0]
-        thisFile = self.items[target]
-        while True:
-            if target < 0: break
-            if target + howMany >= len(self.items) - inc: break
-            if target == newPos: break
-            swapFile = self.items[target]
-            if thisFile.cext != swapFile.cext: break
-            target += inc
-        if inc == 1 and target + howMany <= indexes[-1]: return
-        if inc == -1 and target >= indexes[0]: return
-        # Adjust for going up/down
-        if inc > 0:
-            target += howMany
-        else:
-            indexes.reverse()
-        # Gather time codes
-        i = indexes[0]
-        times = []
-        while i != target + inc:
-            info = bosh.modInfos[self.items[i]]
-            times.append(info.mtime)
-            i += inc
-        # Rearrange them for the new load order
-        times.reverse()
-        newThisTimes = times[:howMany+1]
-        newSwapTimes = times[howMany+1:]
-        times = newSwapTimes + newThisTimes
-        # Apply new times
-        i = indexes[0]
-        while i != target + inc:
-            info = bosh.modInfos[self.items[i]]
-            info.setmtime(times.pop())
-            i += inc
-        # Refresh
+        start = indexes[0]
+        stop = indexes[-1] + 1
+        oldOrder = bosh.modInfos.LoadOrder
+        # List of names to move
+        toMove = oldOrder[start:stop]
+        # oldOrder will only have non-moving plugins now
+        del oldOrder[start:stop]
+        # create new order
+        newOrder = oldOrder[:newPos] + toMove + oldOrder[newPos:]
+        #--Save and Refresh
+        bosh.boss.LoadOrder = newOrder
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
 
