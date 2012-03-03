@@ -17566,29 +17566,17 @@ class App_BOSS(App_Button):
             cwd = bolt.Path.getcwd()
             exePath.head.setcwd()
             with balt.Progress(_(u"Executing BOSS")) as progress:
-                version = bosh.configHelpers.bossVersion
-                if settings.get('bash.mods.autoGhost') and not version:
-                    progress(0.05,_(u"Processing... deghosting mods"))
-                    for fileName in bosh.modInfos:
-                        bosh.modInfos[fileName].setGhost(False)
-                if version >= 1:
-                    if version <= 2 and (settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85)):
-                        # Disable for BOSS 1.8+ (specified in the BOSS.ini now)
-                        exeArgs += (u'-u',) # Update - BOSS version 1.6+
-                    if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
-                        exeArgs += (u'-r 2',) # Revert level 2 - BOSS version 1.6+
-                    elif wx.GetKeyState(82):
-                        exeArgs += (u'-r 1',) # Revert level 1 - BOSS version 1.6+
-                    if wx.GetKeyState(83):
-                        exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
-                    if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
-                        exeArgs += (u'-c',)
-                if version in [1, 393217]:
-                    if wx.GetKeyState(86):
-                        exeArgs += (u'-V-',) # Disable version parsing - syntax BOSS version 1.6 - 1.6.1
-                elif version >= 393218:
-                    if wx.GetKeyState(86) or wx.GetKeyState(78):
-                        exeArgs += (u'-n',) # Disable version parsing - syntax BOSS version 1.6.2+
+                if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+                    exeArgs += (u'-r 2',) # Revert level 2 - BOSS version 1.6+
+                elif wx.GetKeyState(82):
+                    exeArgs += (u'-r 1',) # Revert level 1 - BOSS version 1.6+
+                if wx.GetKeyState(83):
+                    exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
+                if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
+                    exeArgs += (u'-c',)
+                if bosh.dirs['boss'].join('BOSS.exe').version >= (2,0,0,0):
+                    # After version 2.0, need to pass in the -g argument
+                    exeArgs += (u'-g %s' % bush.game.name,)
                 progress(0.05,_(u"Processing... launching BOSS."))
                 try:
                     subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo, close_fds=bolt.close_fds)
