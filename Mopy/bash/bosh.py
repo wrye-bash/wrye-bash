@@ -4838,7 +4838,9 @@ class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
     @property
     def ordered(self):
-        return boss.ActivePlugins
+        if self.plugins.hasChanged():
+            self._ordered = boss.ActivePlugins
+        return self._ordered
 
     def __init__(self):
         """Initialize."""
@@ -6084,26 +6086,26 @@ class ConfigHelpers:
             dirs['boss'] = dirs['app'].join(u'BOSS')
         else:
             dirs['boss'] = GPath(u'C:\\**DNE**')
-            # Detect globally installed (into Program Files) BOSS
-            try:
-                import _winreg
-                for khey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
-                    for wow6432 in (u'',u'Wow6432Node\\'):
-                        try:
-                            key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
-                            value = _winreg.QueryValueEx(key,u'Installed Path')
-                        except:
-                            continue
-                        if value[1] != _winreg.REG_SZ: continue
-                        installedPath = GPath(value[0])
-                        if not installedPath.exists(): continue
-                        dirs['boss'] = installedPath
-                        break
-                    else:
+        # Detect globally installed (into Program Files) BOSS
+        try:
+            import _winreg
+            for khey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+                for wow6432 in (u'',u'Wow6432Node\\'):
+                    try:
+                        key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
+                        value = _winreg.QueryValueEx(key,u'Installed Path')
+                    except:
                         continue
+                    if value[1] != _winreg.REG_SZ: continue
+                    installedPath = GPath(value[0])
+                    if not installedPath.exists(): continue
+                    dirs['boss'] = installedPath
                     break
-            except ImportError:
-                pass
+                else:
+                    continue
+                break
+        except ImportError:
+            pass
 
         # Load up the API from the BOSS directory first
         try:
@@ -6144,14 +6146,26 @@ class ConfigHelpers:
 
     def refresh(self):
         """Reloads tag info if file dates have changed."""
-        #--Boss Master List or Taglist
         path,userpath,mtime,utime = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime)
-        if ((path.exists() and path.mtime != mtime) or
-            (userpath.exists() and userpath.mtime != utime)):
+        #--Masterlist is present, use it
+        if path.exists():
+            if (path.mtime != mtime or
+                (userpath.exists() and userpath.mtime != utime)):
+                try:
+                    boss.Load(path.s,userpath.s)
+                except bapi.BossError:
+                    deprint(u'An error occured while using the BOSS API:',traceback=True)
+            return
+        #--No masterlist, use the taglist
+        else:
+            taglist = dirs['mods'].join(u'Bash Patches',u'taglist.txt')
+            if not taglist.exists():
+                raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
             try:
-                boss.Load(path.s,userpath.s)
+                boss.Load(taglist.s)
             except bapi.BossError:
-                deprint(u'An error occured while using the BOSS API:',traceback=True)
+                deprint(u'An error occure while parsing taglist.txt with the BOSS API.', traceback=True)
+                raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""

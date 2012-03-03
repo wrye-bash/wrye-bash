@@ -168,11 +168,11 @@ def Init(path):
                  'ERROR_PLUGINS_FULL',
                  'ERROR_GAME_NOT_FOUND',
                  'ERROR_REGEX_EVAL_FAIL',
-                 'RETURN_MAX',
                  ]:
         name = 'BOSS_API_'+name
         errors[name] = c_uint.in_dll(BAPI,name).value
         ErrorCallbacks[errors[name]] = None
+    BOSS_API_RETURN_MAX = c_uint.in_dll(BAPI,'BOSS_API_RETURN_MAX').value
     globals().update(errors)
 
     # =========================================================================
@@ -372,18 +372,21 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Database Loading
         # ---------------------------------------------------------------------
-        def Load(self, masterlist, userlist=u''):
+        def Load(self, masterlist, userlist=None):
             # Load masterlist/userlist
-            _CLoad(self._DB, _enc(masterlist), _enc(userlist))
-            # Read BashTagMap
+            _CLoad(self._DB, _enc(masterlist), _enc(userlist) if userlist else None)
+            self._GetBashTags()
+
+        def EvalConditionals(self):
+            _CEvalConditionals(self._DB)
+            self._GetBashTags()
+
+        def _GetBashTags(self):
             num = c_size_t()
             bashTags = BashTag_p()
             _CGetBashTagMap(self._DB, byref(bashTags), byref(num))
             self.tags = {bashTags[i].id:_uni(bashTags[i].name)
                          for i in xrange(num.value)}
-
-        def EvalConditionals(self):
-            _CEvalConditionals(self._DB)
 
         # ---------------------------------------------------------------------
         # Load Order management
