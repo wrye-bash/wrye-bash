@@ -1819,7 +1819,7 @@ class ModList(List):
             elif col == 'Installer':
                 value = bosh.modInfos.table.getItem(fileName,'installer',u'')
             elif col == 'Modified':
-                value = formatDate(fileInfo.mtime)
+                value = formatDate(fileInfo.getPath().mtime)
             elif col == 'Size':
                 value = formatInteger(fileInfo.size/1024)+u' KB'
             elif col == 'Author' and fileInfo.header:
@@ -1827,7 +1827,7 @@ class ModList(List):
             elif col == 'Load Order':
                 ordered = bosh.modInfos.ordered
                 if fileName in ordered:
-                    value = u'%02X' % list(ordered).index(fileName)
+                    value = u'%02X' % ordered.index(fileName)
                 else:
                     value = u''
             elif col == 'CRC':
@@ -1846,9 +1846,10 @@ class ModList(List):
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
-            (fileName in bosh.modInfos.ordered and 1) or
-            (fileName in bosh.modInfos.merged and 2) or
-            (fileName in bosh.modInfos.imported and 3))
+            1 if fileName in bosh.modInfos.ordered
+            else 2 if fileName in bosh.modInfos.merged
+            else 3 if fileName in bosh.modInfos.imported
+            else 0)
         self.list.SetItemImage(itemDex,self.checkboxes.Get(status,checkMark))
         #--Font color
         item = self.list.GetItem(itemDex)
@@ -1956,7 +1957,7 @@ class ModList(List):
         elif col == 'Load Order':
             self.items = bosh.modInfos.getOrdered(self.items,False)
         elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
+            self.items.sort(key=lambda a: data[a].getPath().mtime)
         elif col == 'Size':
             self.items.sort(key=lambda a: data[a].size)
         elif col == 'Status':
@@ -2022,13 +2023,7 @@ class ModList(List):
                         if swapItem < 0 or len(self.items) - 1 < swapItem: break
                         swapFile = self.items[swapItem]
                         if thisFile.cext != swapFile.cext: break
-                        thisInfo, swapInfo = bosh.modInfos[thisFile], bosh.modInfos[swapFile]
-                        thisTime, swapTime = thisInfo.mtime, swapInfo.mtime
-                        if thisTime == swapTime:
-                            thisTime = bosh.modInfos.getFreeTime(thisTime,thisTime,reverse=isReversed)
-                            #swapTime = bosh.modInfos.getFreeTime(swapTime,swapTime,reverse=isReversed)
-                        thisInfo.setmtime(swapTime)
-                        swapInfo.setmtime(thisTime)
+                        bosh.modInfos.swapOrder(thisFile,swapFile)
                         bosh.modInfos.refreshInfoLists()
                         self.RefreshUI(refreshSaves=False)
                     self.RefreshUI([],refreshSaves=True)
@@ -6056,37 +6051,39 @@ class BashFrame(wx.Frame):
         self.notebook.GetPage(self.notebook.GetSelection()).OnShow()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
-        if bosh.modInfos.plugins.selectedBad:
-            message = [u'',_(u'Missing files have been removed from load list:')]
-            message.extend(sorted(bosh.modInfos.plugins.selectedBad))
-            dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-                     _(u'Missing files have been removed from load list:'),
-                     [message],liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
-            del bosh.modInfos.plugins.selectedBad[:]
-            bosh.modInfos.plugins.save()
+        ## Not applicable now with BOSS API - perhaps find a way to simulate this warning
+        #if bosh.modInfos.plugins.selectedBad:
+        #    message = [u'',_(u'Missing files have been removed from load list:')]
+        #    message.extend(sorted(bosh.modInfos.plugins.selectedBad))
+        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
+        #             _(u'Missing files have been removed from load list:'),
+        #             [message],liststyle='list',Cancel=False)
+        #    dialog.ShowModal()
+        #    dialog.Destroy()
+        #    del bosh.modInfos.plugins.selectedBad[:]
+        #    bosh.modInfos.plugins.save()
         #--Was load list too long? or bad filenames?
-        if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
-            message = []
-            ## Disable this message for now, until we're done testing if
-            ## we can get the game to load these files
-            #if bosh.modInfos.activeBad:
-            #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
-            #    msg.extend(bosh.modInfos.bad_names)
-            #    bosh.modInfos.activeBad = set()
-            #    message.append(msg)
-            if bosh.modInfos.plugins.selectedExtra:
-                msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
-                msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
-                message.append(msg)
-            dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-                     _(u'Files have been removed from load list:'),
-                     message,liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
-            del bosh.modInfos.plugins.selectedExtra[:]
-            bosh.modInfos.plugins.save()
+        ## Net to recode this with the BOSS API as well
+        #if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
+        #    message = []
+        #    ## Disable this message for now, until we're done testing if
+        #    ## we can get the game to load these files
+        #    #if bosh.modInfos.activeBad:
+        #    #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
+        #    #    msg.extend(bosh.modInfos.bad_names)
+        #    #    bosh.modInfos.activeBad = set()
+        #    #    message.append(msg)
+        #    if bosh.modInfos.plugins.selectedExtra:
+        #        msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
+        #        msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
+        #        message.append(msg)
+        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
+        #             _(u'Files have been removed from load list:'),
+        #             message,liststyle='list',Cancel=False)
+        #    dialog.ShowModal()
+        #    dialog.Destroy()
+        #    del bosh.modInfos.plugins.selectedExtra[:]
+        #    bosh.modInfos.plugins.save()
         #--Any new corrupted files?
         message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
@@ -7007,8 +7004,6 @@ class BashApp(wx.App):
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
         progress.Update(5,_(u'Initializing ModInfos'))
-        bosh.configHelpers = bosh.ConfigHelpers()
-        bosh.configHelpers.refresh()
         bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
@@ -11586,15 +11581,15 @@ class Mods_LockTimes(Link):
     """Turn on resetMTimes feature."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Times'),kind=wx.ITEM_CHECK,
-            help=_(u"Will reset mod timestamps to whatever Wrye Bash has saved for them whenever Wrye Bash refreshs data/starts up."))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Load Order'),kind=wx.ITEM_CHECK,
+            help=_(u"Will reset mod Load Order to whatever Wrye Bash has saved for them whenever Wrye Bash refreshs data/starts up."))
         menu.AppendItem(menuItem)
-        menuItem.Check(bosh.modInfos.lockTimes)
+        menuItem.Check(bosh.modInfos.lockLO)
 
     def Execute(self,event):
-        lockTimes = not bosh.modInfos.lockTimes
-        if not lockTimes: bosh.modInfos.mtimes.clear()
-        settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockTimes = lockTimes
+        lockLO = not bosh.modInfos.lockLO
+        if not lockLO: bosh.modInfos.mtimes.clear()
+        settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
         modList.RefreshUI()
 
@@ -18072,15 +18067,9 @@ def InitStatusBar():
             imageList(u'tes4lodgen%s.png'),
             _(u"Launch Tes4LODGen"),
             uid=u'TES4LODGen'))
-    configHelpers = bosh.ConfigHelpers()
-    configHelpers.refresh()
-    version = configHelpers.bossVersion
-    if version in (2,3): version = 2
-    elif version > 3: version = 1
-    elif version < 0: version = 0
-    BashStatusBar.buttons.append( #BOSS --
+    BashStatusBar.buttons.append( #BOSS
         App_BOSS(
-            (bosh.dirs['app'].join(u'Data',u'BOSS.bat'),bosh.dirs['app'].join(u'Data',u'BOSS.exe'),bosh.dirs['app'].join(u'BOSS',u'BOSS.exe'))[version],
+            (bosh.dirs['boss'].join(u'BOSS.exe')),
             imageList(u'boss%s.png'),
             _(u"Launch BOSS"),
             uid=u'BOSS'))

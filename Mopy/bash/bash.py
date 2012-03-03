@@ -409,6 +409,7 @@ def main():
                    + u'\n\n' +
                    _(u'Please ensure Wrye Bash is correctly installed.')
                    + u'\n\n\n%s') % msg
+            print msg
 
             if hasattr(sys,'frozen'):
                 # WBSA we've disabled TKinter, since it's not required, use wx

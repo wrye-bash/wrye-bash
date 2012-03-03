@@ -65,6 +65,8 @@ from cint import *
 from brec import *
 from brec import _coerce # Since it wont get imported by the import * (it begins with _)
 from chardet.universaldetector import UniversalDetector
+import bapi
+
 startupinfo = bolt.startupinfo
 
 #--Unicode
@@ -110,6 +112,7 @@ screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
+boss = None #--BossDb singleton
 links = None
 
 def listArchiveContents(fileName):
@@ -3863,107 +3866,34 @@ class PluginsFullError(BoltError):
 
 #------------------------------------------------------------------------------
 class Plugins:
-    """Plugins.txt file. Owned by modInfos. Almost nothing else should access it directly."""
+    """Plugins.txt and loadorder.txt file. Owned by modInfos.  Almost nothing
+       else should access it directly.  Since migrating to the BOSS API, this
+       class now only really is used to detect if a refresh from the BOSS API
+       is required."""
     def __init__(self):
         """Initialize."""
         if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
             self.dir = dirs['app']
         else:
             self.dir = dirs['userApp']
-        self.path = self.dir.join(u'Plugins.txt')
-        self.mtime = 0
-        self.size = 0
-        self.selected = []
-        self.selectedBad = [] #--In plugins.txt, but don't exist!
-        self.selectedExtra = [] #--Where mod number would be greater than 255.
+        self.pathPlugins = self.dir.join(u'plugins.txt')
+        self.pathOrder = self.dir.join(u'loadorder.txt')
+        self.mtimePlugins = 0
+        self.sizePlugins = 0
+        self.mtimeOrder = 0
+        self.sizeOrder = 0
         #--Create dirs/files if necessary
         self.dir.makedirs()
-        if not self.path.exists():
-            self.save()
-
-    def load(self):
-        """Read data from plugins.txt file.
-        NOTE: modInfos must exist and be up to date."""
-        #--Read file
-        self.mtime = self.path.mtime
-        self.size = self.path.size
-        with self.path.open('r') as ins:
-            #--Load Files
-            modNames = set()
-            modsDir = dirs['mods']
-            del self.selected[:]
-            del self.selectedBad[:]
-            for line in ins:
-                # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
-                # It wont accept filenames in any other encoding
-                try:
-                    modName = reComment.sub('',line).strip()
-                    if not modName: continue
-                    test = _unicode(modName)
-                except UnicodeError: continue
-                if GPath(test) not in modInfos:
-                    # The automatic encoding detector could have returned
-                    # an encoding it actually wasn't.  Luckily, we
-                    # have a way to doulbe check: modInfos.data
-                    for encoding in bolt.encodingOrder:
-                        try:
-                            test2 = unicode(modName,encoding)
-                            if GPath(test2) not in modInfos:
-                                continue
-                            modName = test2
-                            break
-                        except UnicodeError:
-                            pass
-                    else:
-                        modName = test
-                else:
-                    modName = test
-                modName = GPath(modName)
-                if modName in modNames: #--In case it's listed twice.
-                    pass
-                elif len(self.selected) == 255:
-                    self.selectedExtra.append(modName)
-                elif modName in modInfos:
-                    self.selected.append(modName)
-                else:
-                    self.selectedBad.append(modName)
-                modNames.add(modName)
-            #--Done
-
-    def save(self):
-        """Write data to Plugins.txt file."""
-        self.selected.sort()
-        with self.path.open('wb') as out:
-            outWrite = out.write
-            outWrite('# This file is used to tell %s which data files to load.\r\n\r\n' % bush.game.name)
-            for modName in self.selected:
-                # Ok, this seems to work for Oblivon, but not Skyrim
-                # Skyrim seems to refuse to have any non-cp1252 named file in
-                # plugins.txt.  Even activating through the SkyrimLauncher
-                # doesn't work.
-                try:
-                    outWrite(_encode(modName.s))
-                    outWrite('\r\n')
-                except:
-                    pass
-        self.mtime = self.path.mtime
-        self.size = self.path.size
 
     def hasChanged(self):
-        """True if plugins.txt file has changed."""
-        return ((self.mtime != self.path.mtime) or
-            (self.size != self.path.size) )
-
-    def refresh(self,forceRefresh):
-        """Load only if plugins.txt has changed."""
-        hasChanged = forceRefresh or self.hasChanged()
-        if hasChanged: self.load()
-        return hasChanged
-
-    def remove(self,fileName):
-        """Remove specified mod from file list."""
-        while fileName in self.selected:
-            self.selected.remove(fileName)
+        """True if plugins.txt or loadorder.txt file has changed."""
+        if (self.mtimePlugins != self.pathPlugins.mtime or
+            self.sizePlugins != self.pathPlugins.size):
+            return True
+        if boss.LoadOrderMethod != bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            return False
+        return (self.mtimeOrder != self.pathOrder.mtime or
+                self.sizeOrder != self.pathOrder.size)
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -4399,8 +4329,7 @@ class ModInfo(FileInfo):
         """Returns a dirty message from BOSS."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
             return (False,u'')
-        crc = self.cachedCrc()
-        return configHelpers.getDirtyMessage(crc)
+        return configHelpers.getDirtyMessage(self.name)
 
     #--Header Editing ---------------------------------------------------------
     def getHeader(self):
@@ -4907,19 +4836,21 @@ class INIInfos(FileInfos):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
+    @property
+    def ordered(self):
+        return boss.ActivePlugins
 
     def __init__(self):
         """Initialize."""
         FileInfos.__init__(self,dirs['mods'],ModInfo)
-        #--MTime resettin
-        self.lockTimes = settings['bosh.modInfos.resetMTimes']
+        #--MTime resetting
+        self.lockLO = settings['bosh.modInfos.resetMTimes'] # Lock Load Order (previously Lock Times
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.autoGrouped = {} #--Files that have been autogrouped.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         #--Selection state (ordered, merged, imported)
-        self.plugins = Plugins() #--Plugins instance.
-        self.ordered = tuple() #--Active mods arranged in load order.
+        self.plugins = Plugins()
         self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
@@ -4968,14 +4899,16 @@ class ModInfos(FileInfos):
     #--Refresh-----------------------------------------------------------------
     def canSetTimes(self):
         """Returns a boolean indicating if mtime setting is allowed."""
-        self.lockTimes = settings['bosh.modInfos.resetMTimes']
+        self.lockLO = settings['bosh.modInfos.resetMTimes']
         self.fullBalo = settings.get('bash.balo.full',False)
         obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn',0)
-        if self.lockTimes and obmmWarn == 0 and dirs['app'].join(u'obmm').exists():
+        if self.lockLO and obmmWarn == 0 and dirs['app'].join(u'obmm').exists():
             settings['bosh.modInfos.obmmWarn'] = 1
-        if not self.lockTimes: return False
+        if not self.lockLO: return False
         if settings['bosh.modInfos.obmmWarn'] == 1: return False
         if settings.dictFile.readOnly: return False
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            return False
         #--Else
         return True
 
@@ -4988,7 +4921,7 @@ class ModInfos(FileInfos):
         if hasChanged:
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
-        hasChanged += self.plugins.refresh(hasChanged)
+        hasChanged = hasChanged or self.plugins.hasChanged()
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
@@ -5068,7 +5001,7 @@ class ModInfos(FileInfos):
         allowGhosting = self.table.getColumn('allowGhosting')
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
-            active = set(self.ordered)
+            active = boss.ActivePlugins
             for mod in self.data:
                 modInfo = self.data[mod]
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
@@ -5143,8 +5076,6 @@ class ModInfos(FileInfos):
 
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected, exGroup_mods, imported, exported."""
-        #--Ordered
-        self.ordered = self.getOrdered(self.plugins.selected)
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -5397,11 +5328,7 @@ class ModInfos(FileInfos):
 
     def getOrdered(self,modNames,asTuple=True):
         """Sort list of mod names into their load order."""
-        data = self.data
-        modNames = list(modNames) #--Don't do an in-place sort.
-        modNames.sort()
-        modNames.sort(key=lambda a: (a in data) and data[a].mtime) #--Sort on modified
-        modNames.sort(key=lambda a: a.cs[-1]) #--Sort on esm/esp
+        modNames = boss.GetOrdered(modNames)
         if asTuple: return tuple(modNames)
         else: return modNames
 
@@ -5423,24 +5350,23 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
-        del self.plugins.selected[:]
-        missing,extra = [],[]
-        modSet = set(self.keys())
-        for modName in modNames:
-            if modName not in self:
-                missing.append(modName)
-                continue
-            try:
-                self.select(modName,False,modSet)
-            except PluginsFullError:
-                extra.append(modName)
+        modNames = set(modNames)
+        present = modNames - set(boss.LoadOrder)
+        missing = modNames - present
+        try:
+            boss.SetActivePlugins(modNames)
+        except bapi.BossError as e:
+            if e.value != bapi.BOSS_API_ERROR_PLUGINS_FULL:
+                raise
+            extra = set(modNames) - set(boss.ActivePlugins)
+        else:
+            extra = set()
         #--Save
         self.refreshInfoLists()
-        self.plugins.save()
         self.autoGhost()
         #--Done/Error Message
         if missing or extra:
-            message = ''
+            message = u''
             if missing:
                 message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
                 message += u'\n* '.join(x.s for x in missing)
@@ -5589,40 +5515,60 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self.hasBadMasterNames(fileName):
             ##    return
-            for master in self[fileName].header.masters:
-                if master in modSet:
-                    self.select(master,False,modSet,children)
-            #--Select in plugins
-            if fileName not in plugins.selected:
-                if len(plugins.selected) >= 255:
+            try:
+                for master in self[fileName].header.masters:
+                    if master in modSet:
+                        self.select(master,False,modSet,children)
+            except bapi.BossError as e:
+                if e.value == BOSS_API_ERROR_PLUGINS_FULL:
                     raise PluginsFullError
-                plugins.selected.append(fileName)
+                raise
+            #--Select in plugins
+            if fileName not in boss.ActivePlugins:
+                boss.ActivePlugins.append(fileName)
         finally:
             if doSave:
-                plugins.save()
                 self.refreshInfoLists()
                 self.autoGhost()
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
         #--Unselect self
-        plugins = self.plugins
-        plugins.remove(fileName)
+        toRemove = set((fileName,))
         #--Unselect children
-        for selFile in plugins.selected[:]:
-            #--Already unselected or missing?
-            if not self.isSelected(selFile) or selFile not in self.data:
+        for selFile in boss.ActivePlugins:
+            #--Missing?
+            if selFile not in self.data:
                 continue
             #--One of selFile's masters?
-            for master in self[selFile].header.masters:
-                if master == fileName:
-                    self.unselect(selFile,False)
-                    break
+            if fileName in self[selFile].header.masters:
+                toRemove.add(selFile)
         #--Save
         if doSave:
+            boss.DeactivatePlugins(toRemove)
             self.refreshInfoLists()
-            plugins.save()
             self.autoGhost()
+
+    def swapOrder(self,leftName,rightName):
+        """Swaps the Load Order of two mods"""
+        order = boss.LoadOrder
+        if leftName not in order or rightName not in order: return
+        order = list(order) # Since modifying bossDb.LoadOrder can't be done in this way
+        #--Swap
+        leftIdex = order.index(leftName)
+        rightIdex = order.index(rightName)
+        order[leftIdex] = rightName
+        order[rightIdex] = leftName
+        #--Save
+        boss.LoadOrder = order
+        if boss.LoadOrderMethod != bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            # Update the modInfos timestamps
+            leftInfo = self.data[leftName]
+            leftInfo.refresh()
+            leftInfo.setmtime(leftInfo.mtime)
+            rightInfo = self.data[rightName]
+            rightInfo.refresh()
+            rightInfo.setmtime(rightInfo.mtime)
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -5658,30 +5604,40 @@ class ModInfos(FileInfos):
 
     def hasTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        mtime = self[modName].mtime
-        mods = self.mtime_mods.get(mtime,[])
-        return len(mods) > 1
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            return False
+        else:
+            mtime = self[modName].mtime
+            mods = self.mtime_mods.get(mtime,[])
+            return len(mods) > 1
 
     def hasActiveTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if not self.isSelected(modName): return False
-        mtime = self[modName].mtime
-        mods = self.mtime_selected.get(mtime,tuple())
-        return len(mods) > 1
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            return False
+        elif not self.isSelected(modName): return False
+        else:
+            mtime = self[modName].mtime
+            mods = self.mtime_selected.get(mtime,tuple())
+            return len(mods) > 1
 
     def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
-        haskey = self.mtime_mods.has_key
-        if reverse:
-            endTime = startTime - 1000
-            step = -1
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            # Doesn't matter - LO isn't determined by mtime
+            return time.time()
         else:
-            endTime = startTime + 1000
-            step = 1
-        for testTime in range(startTime, endTime, step): #1000 is an arbitrary limit
-            if not haskey(testTime):
-                return testTime
-        return defaultTime
+            haskey = self.mtime_mods.has_key
+            if reverse:
+                endTime = startTime - 1000
+                step = -1
+            else:
+                endTime = startTime + 1000
+                step = 1
+            for testTime in xrange(startTime, endTime, step): #1000 is an arbitrary limit
+                if not haskey(testTime):
+                    return testTime
+            return defaultTime
 
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
@@ -6116,184 +6072,99 @@ class ConfigHelpers:
     def __init__(self):
         """Initialialize."""
         #--Boss Master List or if that doesn't exist use the taglist
-        #version notes:
-        # 1.8   = 3
-        # 1.7   = 2
-        #>1.6.2 = 393218+
-        # 1.6.1 = 393217
-        # 1.6   = 1
-        #<1.6   = 0
+        # version notes:
+        #  Support for < 1.8 is dropped.  Support is for
+        #  1.8+, additionally, the BOSS API v2.0 is bundled with
+        #  Wrye Bash.  If a higher version of the BOSS API is detected
+        #  as installed, and it's compatibly with Wrye Bash's bapi.py,
+        #  Wrye Bash will use the higher version.
+
+        # Detect locally installed (into game folder) BOSS
         if dirs['app'].join(u'BOSS',u'BOSS.exe').exists():
-            self.bossVersion = 2
-            version = dirs['app'].join(u'BOSS',u'BOSS.exe').version
-            if version >= (1,8,0,0):
-                self.bossVersion = 3
-            self.bossMasterPath = dirs['app'].join(u'BOSS',u'masterlist.txt')
-            self.bossUserPath = dirs['app'].join(u'BOSS',u'userlist.txt')
+            dirs['boss'] = dirs['app'].join(u'BOSS')
         else:
+            dirs['boss'] = GPath(u'C:\\**DNE**')
+            # Detect globally installed (into Program Files) BOSS
             try:
-                import win32api
-                self.bossVersion = win32api.GetFileVersionInfo(dirs['mods'].join(u'BOSS.exe').s, u'\\')[u'FileVersionLS']
-            except: #any version prior to 1.6.1 will fail and hence set to None and then try to set based on masterlist path.
-                self.bossVersion = None
-            self.bossMasterPath = dirs['mods'].join(u'BOSS',u'masterlist.txt')
-            if self.bossVersion == None:
-                if not self.bossMasterPath.exists():
-                    self.bossMasterPath = dirs['mods'].join(u'masterlist.txt')
-                    self.bossVersion = 0
-                    if not self.bossMasterPath.exists():
-                        self.bossVersion = 1 # in case the BOSS masterlist hasn't yet been created but BOSS.exe exists.
-                        self.bossMasterPath = dirs['patches'].join(u'taglist.txt')
-                else: self.bossVersion = 1
-            elif self.bossVersion in [393217,393218]: self.bossVersion = 1
-            self.bossUserPath = dirs['mods'].join(u'BOSS',u'userlist.txt')
+                import _winreg
+                for khey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+                    for wow6432 in (u'',u'Wow6432Node\\'):
+                        try:
+                            key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
+                            value = _winreg.QueryValueEx(key,u'Installed Path')
+                        except:
+                            continue
+                        if value[1] != _winreg.REG_SZ: continue
+                        installedPath = GPath(value[0])
+                        if not installedPath.exists(): continue
+                        dirs['boss'] = installedPath
+                        break
+                    else:
+                        continue
+                    break
+            except ImportError:
+                pass
+
+        # Load up the API from the BOSS directory first
+        try:
+            bapi.Init(dirs['boss'].join(u'API').s)
+        except bapi.BossVersionError:
+            print u"The BOSS API found in BOSS's installation directory (%s) is not compatible with Wrye Bash's usage." % dirs['boss'].s
+        # Load up the API from the compiled directory if that failed
+        if not bapi.BAPI:
+            print u"The BOSS API in BOSS's installation directory (%s) either does not exist, or could not be loaded." % dirs['boss'].s
+            print u'Loading the BOSS API shipped with Wrye Bash.'
+            bapi.Init(dirs['compiled'].s)
+            # That didn't work either - Wrye Bash isn't installed correctly
+        if not bapi.BAPI:
+            raise bolt.BoltError(u'A compatible BOSS API could not be loaded.')
+
+        global boss
+        boss = bapi.BossDb(GPath(dirs['mods'].s).s,bush.game.name)
+        deprint(u'Using BOSS API version:', bapi.version)
+        bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
+                              ConfigHelpers.bossLOMismatchCallback)
+
+        self.bossVersion = dirs['boss'].join(u'BOSS.exe')
+        self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
+        self.bossUserPath = dirs['boss'].join(u'userlist.txt')
         self.bossMasterTime = 0
         self.bossUserTime = 0
-        self.bossMasterTags = {}
-        self.bossRemoveTags = {}
-        self.bossregexTags = {}
-        self.bossregexRemoveTags = {}
-        self.bossDirtyMods = {}
         #--Mod Rules
         self.name_ruleSet = {}
+        #--Refresh
+        self.refresh()
+
+    @staticmethod
+    def bossLOMismatchCallback():
+        """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
+        # Force a rewrite of both plugins.txt and loadorder.txt
+        # In other words, use what's in loadorder.txt to write plugins.txt
+        boss.LoadOrder = boss.LoadOrder
 
     def refresh(self):
         """Reloads tag info if file dates have changed."""
         #--Boss Master List or Taglist
-        path,userpath,mtime,utime,tags,removeTags = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime, self.bossMasterTags,self.bossRemoveTags)
-        regexTags,regexRemoveTags = self.bossregexTags,self.bossregexRemoveTags
-        reFcomSwitch = re.compile(ur'^[<>]',re.U)
-        reComment = re.compile(ur'^\\.*',re.U)
-        reMod = re.compile(ur'(^[_[(\w!].*?\.es[pm]$)',re.I|re.U)
-        reBashTags = re.compile(ur'(APPEND:\s|REPLACE:\s)?(%\s+{{BASH:|TAG:\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?',re.U)
-        reDirty = re.compile(ur'.*?IF\s*\(\s*([a-fA-F0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$',re.U)
-        reSay = re.compile(ur'\w*?SAY:.*?$',re.U)
-        reRegex = re.compile(ur'\s*REGEX:\s*(.*?)\s*$',re.U)
-        if path.exists():
-            if path.mtime != mtime:
-                tags.clear()
-                try:
-                    # BOSS requires the masterlist to be in UTF-8 format, so will we
-                    with path.open('r',encoding='utf-8-sig') as ins:
-                        mod = None
-                        regex = None
-                        for line in ins:
-                            line = line.strip()
-                            line = reFcomSwitch.sub(u'',line)
-                            line = reComment.sub(u'',line)
-                            if reSay.match(line): continue
-                            maRegex = reRegex.match(line)
-                            if maRegex:
-                                mod = None
-                                try:
-                                    regex = re.compile(maRegex.group(1),re.U|re.I)
-                                except:
-                                    deprint(u"An error occured while trying to compile a REGEX from BOSS's masterlist:\n REGEX: %s\n" % maRegex.group(1),traceback=True)
-                                    regex = None
-                            else:
-                                maMod = reMod.match(line)
-                                if maMod:
-                                    mod = maMod.group(1)
-                                    regex = None
-                                else:
-                                    maBashTags = reBashTags.match(line)
-                                    if maBashTags and (mod or regex):
-                                        modTags = maBashTags.group(3).split(u',')
-                                        modTags = map(unicode.strip,modTags)
-                                        if maBashTags.group(5) and maBashTags.group(6):
-                                            modRemoveTags = maBashTags.group(6).split(u',')
-                                            modRemoveTags = map(unicode.strip,modRemoveTags)
-                                            if regex:
-                                                regexRemoveTags[regex] = tuple(modRemoveTags)
-                                            else:
-                                                removeTags[GPath(mod)] = tuple(modRemoveTags)
-                                        if regex:
-                                            regexTags[regex] = tuple(modTags)
-                                        else:
-                                            tags[GPath(mod)] = tuple(modTags)
-                                    else:
-                                        maDirty = reDirty.match(line)
-                                        if maDirty:
-                                            try:
-                                                crc = long(maDirty.group(1),16)
-                                                action = maDirty.group(3)
-                                                if u'tes4edit' or u'tes5edit' in action.lower():
-                                                    cleanIt = True
-                                                else:
-                                                    cleanIt = False
-                                                self.bossDirtyMods[crc] = (cleanIt,action)
-                                            except:
-                                                deprint(_(u"An error occured parsing BOSS's masterlist for dirty crc's:")+u'\n', traceback=True)
-                except UnicodeDecodeError:
-                    # try because the first time this runs, the wx.App isn't started yet
-                    try:
-                        balt.showError(None,_(u"Wrye Bash could not parse BOSS's masterlist because it was not saved in UTF-8 format.  Please either update the masterlist with BOSS, or open it and save it in UTF-8 format"))
-                    except:
-                        pass
-                self.bossMasterTime = path.mtime
-        if userpath.exists():
-            if userpath.mtime != utime:
-                try:
-                    # BOSS requires the userlist to be in UTF-8 format, so will we
-                    with userpath.open('r',encoding='utf-8-sig') as ins:
-                        mod = None
-                        reRule = re.compile(ur'(ADD:\s|FOR:\s|OVERIDE:\s)([_[(\w!].*?\.es[pm]$)',re.U)
-                        for line in ins:
-                            line = line.strip()
-                            maMod = reRule.match(line)
-                            if maMod:
-                                mod = maMod.group(2)
-                            else:
-                                maBashTags = reBashTags.match(line)
-                                if maBashTags and mod:
-                                    modTags = maBashTags.group(3).split(u',')
-                                    modTags = map(unicode.strip,modTags)
-                                    if GPath(mod) in tags and maBashTags.group(1) != u'REPLACE: ':
-                                        tags[GPath(mod)] = tuple(list(tags[GPath(mod)]) + list(modTags))
-                                        if maBashTags.group(5) and maBashTags.group(6):
-                                            modRemoveTags = maBashTags.group(6).split(u',')
-                                            modRemoveTags = map(unicode.strip,modRemoveTags)
-                                            removeTags[GPath(mod)] = tuple(list(removeTags.get(GPath(mod),[])) + list(modRemoveTags))
-                                        continue
-                                    tags[GPath(mod)] = tuple(modTags)
-                                    if maBashTags.group(6) and maBashTags.group(7):
-                                        modRemoveTags = maBashTags.group(7).split(u',')
-                                        modRemoveTags = map(unicode.strip,modTags)
-                                        removeTags[GPath(mod)] = tuple(modRemoveTags)
-                except UnicodeDecodeError:
-                    # try because the first time this runs, the wx.App isn't started yet
-                    try:
-                        balt.showError(None,_(u"Wrye Bash could not parse your BOSS userlist because it was not saved in UTF-8 format.  Please open your userlist and save it in UTF-8 format."))
-                    except:
-                        pass
-                self.bossUserTime = userpath.mtime
+        path,userpath,mtime,utime = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime)
+        if ((path.exists() and path.mtime != mtime) or
+            (userpath.exists() and userpath.mtime != utime)):
+            try:
+                boss.Load(path.s,userpath.s)
+            except bapi.BossError:
+                deprint(u'An error occured while using the BOSS API:',traceback=True)
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
-        if modName in self.bossMasterTags:
-            return set(self.bossMasterTags[modName])
-        else:
-            modName = modName.s
-            tags = self.bossregexTags
-            for regex in tags:
-                if regex.match(modName):
-                    return set(tags[regex])
-            return None
+        return boss.GetModBashTags(modName)[0]
 
     def getBashRemoveTags(self,modName):
         """Retrieves bash tags for given file."""
-        if modName in self.bossRemoveTags:
-            return set(self.bossRemoveTags[modName])
-        else:
-            modName = modName.s
-            tags = self.bossregexRemoveTags
-            for regex in tags:
-                if regex.match(modName):
-                    return set(tags[regex])
-            return None
+        return boss.GetModBashTags(modName)[1]
 
-    def getDirtyMessage(self, crc):
-        return self.bossDirtyMods.get(long(crc), (False, u''))
+    def getDirtyMessage(self,modName):
+        message,clean = boss.GetDirtyMessage(modName)
+        cleanIt = clean == bapi.BOSS_API_CLEAN_YES
+        return (cleanIt,message)
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):
@@ -30743,6 +30614,10 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     # create bash user folders, keep these in order
     for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData'):
         dirs[key].makedirs()
+
+    # Setup BOSS API
+    global configHelpers
+    configHelpers = ConfigHelpers()
 
 def initLinks(appDir):
     #-- Other tools
