@@ -553,11 +553,6 @@ def Init(path):
                 self._DB.SetPluginActive(item,True)
                 self.ReSync()
 
-            ## ActivePlugins.index('test.esp')
-            def index(self,item):
-                self.ReSync()
-                return list.index(self,item)
-
             ## ActivePlugins.count('test.esp')
             def count(self,item):
                 return 1 if x in self else 0

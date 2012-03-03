@@ -4848,8 +4848,9 @@ class ModInfos(FileInfos):
     def ordered(self):
         """Return active plugins, ordered"""
         if self.plugins.hasChanged():
-            self._ordered = boss.GetOrdered(boss.ActivePlugins)
-            self._allmods = boss.LoadOrder
+            self._allmods = boss.GetLoadOrder()
+            self._ordered = boss.ActivePlugins
+            self._ordered = [x for x in self._allmods if x in self._ordered]
             self.plugins.refresh()
         return self._ordered
 
@@ -4857,8 +4858,9 @@ class ModInfos(FileInfos):
     def LoadOrder(self):
         """Return all plugins, ordered"""
         if self.plugins.hasChanged():
-            self._ordered = boss.GetOrdered(boss.ActivePlugins)
-            self._allmods = boss.LoadOrder
+            self._allmods = boss.GetLoadOrder()
+            self._ordered = boss.ActivePlugins
+            self._ordered = [x for x in self._allmods if x in self._ordered]
             self.plugins.refresh()
         return self._allmods
         
@@ -5024,7 +5026,7 @@ class ModInfos(FileInfos):
         allowGhosting = self.table.getColumn('allowGhosting')
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
-            active = boss.ActivePlugins
+            active = self.ordered
             for mod in self.data:
                 modInfo = self.data[mod]
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
@@ -5351,7 +5353,7 @@ class ModInfos(FileInfos):
 
     def getOrdered(self,modNames,asTuple=True):
         """Sort list of mod names into their load order."""
-        modNames = boss.GetOrdered(modNames)
+        modNames = [x for x in self.LoadOrder if x in modNames]
         if asTuple: return tuple(modNames)
         else: return modNames
 
