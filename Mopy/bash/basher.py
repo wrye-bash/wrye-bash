@@ -14564,7 +14564,6 @@ class Mod_Patch_Update(Link):
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
-                        bosh.modInfos.plugins.save()
                         self.window.RefreshUI(detail=fileName)
 
         previousMods = set()
