@@ -4885,7 +4885,9 @@ class ModInfos(FileInfos):
     def swapOrder(self, leftName, rightName):
         """Swaps the Load Order of two mods"""
         order = self.LoadOrder
+        # Dummy checks
         if leftName not in order or rightName not in order: return
+        if self.masterName in {leftName,rightName}: return
         #--Swap
         leftIdex = order.index(leftName)
         rightIdex = order.index(rightName)
