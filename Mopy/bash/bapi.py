@@ -568,7 +568,9 @@ def Init(path):
             return ret
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
-            _CSetActivePlugins(self._DB, byref(plugins), len(plugins))
+            num = len(plugins)
+            plugins = list_of_strings(plugins)
+            _CSetActivePlugins(self._DB, plugins, num)
         ActivePlugins = property(_GetActivePlugins,SetActivePlugins)
 
         def SetPluginActive(self,plugin,active=True):

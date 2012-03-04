@@ -11605,23 +11605,6 @@ class Mods_BOSSDisableLockTimes(BoolLink):
                                           _(u"If selected, will temporarily disable Bash's Lock Load Order when running BOSS through Bash.")
                                           )
 
-#------------------------------------------------------------------------------
-class Mods_BOSSShowUpdate(BoolLink):
-    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
-    def __init__(self):
-        BoolLink.__init__(self,
-            _(u'Always Update BOSS Masterlist prior to running BOSS.'),
-            'BOSS.AlwaysUpdate',
-            _(u"If selected, will tell BOSS to update the masterlist before sorting the mods.")
-            )
-
-    def AppendToMenu(self,menu,window,data):
-        if bosh.configHelpers.bossVersion >= 3:
-            # BOSS 1.8+ don't supply this option, as it's on by default,
-            # and configurable through the BOSS ini
-            return
-        BoolLink.AppendToMenu(self,menu,window,data)
-
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Settings_BackupSettings(Link):
@@ -17520,7 +17503,6 @@ class App_BOSS(App_Button):
     def __init__(self, *args, **kwdargs):
         App_Button.__init__(self, *args, **kwdargs)
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
-        self.mainMenu.append(Mods_BOSSShowUpdate())
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
