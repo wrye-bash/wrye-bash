@@ -4851,8 +4851,8 @@ class ModInfos(FileInfos):
     #--------------------------------------------------------------------------
     # Load Order stuff
     #--------------------------------------------------------------------------
-    def refreshBapi(self,force=False):
-        if self.plugins.hasChanged() or force:
+    def refreshBapi(self,forceActiveReload=False,forceOrderReload=False):
+        if self.plugins.hasChanged():
             #--Get the lists
             self._plugins = boss.GetLoadOrder()
             self._plugins.sort(key=lambda a: not self[a].isEsm())
@@ -4861,6 +4861,16 @@ class ModInfos(FileInfos):
             self._active = [x for x in self._plugins if x in self._active]
             #--Update Plugins() with new timestamps/sizes
             self.plugins.refresh()
+        elif forceActiveReload:
+            if forceOrderReload or boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+                self._plugins = boss.GetLoadOrder()
+                self._plugins.sort(key=lambda a: not self[a].isEsm())
+            self._active = boss.GetActivePlugins()
+            self._active = [x for x in self._plugins if x in self._active]
+        elif forceOrderReload:
+            self._plugins = boss.GetLoadOrder()
+            self._plugins.sort(key=lambda a: not self[a].isEsm())
+            self._active = [x for x in self._plugins if x in self._active]
 
     @property
     def ordered(self):
@@ -4894,7 +4904,9 @@ class ModInfos(FileInfos):
             rightmtime = rightInfo.mtime
             leftInfo.setmtime(rightmtime)
             rightInfo.setmtime(leftmtime)
-            self.refreshBapi()
+            # Only need to refresh bapi if active load order changed
+            refresh = leftName in self.ordered or rightName in self.ordered
+            self.refreshBapi(False,refresh)
 
     def __init__(self):
         """Initialize."""

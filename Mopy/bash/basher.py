@@ -13929,7 +13929,7 @@ class Mod_FlipSelf(Link):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
-            bosh.modInfos.refreshBapi(True)
+            bosh.modInfos.refreshBapi(False,True)
             self.window.RefreshUI(detail=fileInfo.name)
 
 
