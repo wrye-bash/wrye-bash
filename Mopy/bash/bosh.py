@@ -4852,7 +4852,7 @@ class ModInfos(FileInfos):
     # Load Order stuff
     #--------------------------------------------------------------------------
     def refreshBapi(self,forceActiveReload=False,forceOrderReload=False):
-        if self.plugins.hasChanged():
+        if self.plugins.hasChanged() or not hasattr(self,'_plugins') or not hasattr(self,'_active'):
             #--Get the lists
             self._plugins = boss.GetLoadOrder()
             self._plugins.sort(key=lambda a: not self[a].isEsm())
@@ -4990,6 +4990,7 @@ class ModInfos(FileInfos):
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
         hasChanged = hasChanged or self.plugins.hasChanged()
+        self.refreshBapi(False,hasChanged)
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
