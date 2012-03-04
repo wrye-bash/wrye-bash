@@ -1737,6 +1737,10 @@ class ModList(List):
         start = indexes[0]
         stop = indexes[-1] + 1
         oldOrder = bosh.modInfos.LoadOrder
+        # Dummy checks: can't move the game's master file anywhere else but position 0
+        if newPos <= 0: return
+        master = bosh.modInfos.masterName
+        if master in oldOrder[start:stop]: return
         # List of names to move
         toMove = oldOrder[start:stop]
         # oldOrder will only have non-moving plugins now
