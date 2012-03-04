@@ -196,6 +196,7 @@ def Init(path):
 
     class BossError(Exception):
         def __init__(self,value):
+            self.code = value
             msg = 'UNKNOWN(%i)' % value
             for code in errors:
                 if errors[code] == value:
@@ -560,7 +561,14 @@ def Init(path):
         def GetActivePlugins(self):
             plugins = c_uint8_p_p()
             num = c_size_t()
-            _CGetActivePlugins(self._DB, byref(plugins), byref(num))
+            try:
+                _CGetActivePlugins(self._DB, byref(plugins), byref(num))
+            except BossError as e:
+                if e.code == BOSS_API_ERROR_FILE_NOT_FOUND:
+                    self.SetActivePlugins([])
+                    _CGetActivePlugins(self._DB, byref(plugins), byref(num))
+                else:
+                    raise
             return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
         def _GetActivePlugins(self):
             ret = BossDb.ActivePluginsList(self.GetActivePlugins())
