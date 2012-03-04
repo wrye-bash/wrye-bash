@@ -1943,10 +1943,6 @@ class ModList(List):
             raise BashError(u'Unrecognized sort key: '+col)
         #--Ascending
         if reverse: self.items.reverse()
-        #--ESMs First?
-        settings['bash.mods.esmsFirst'] = self.esmsFirst
-        if self.esmsFirst or col == 'Load Order':
-            self.items.sort(key = lambda x: x.cext)
         #--Selected First?
         settings['bash.mods.selectedFirst'] = self.selectedFirst
         if self.selectedFirst:
@@ -1995,7 +1991,7 @@ class ModList(List):
                         swapItem = self.items.index(thisFile) + moveMod
                         if swapItem < 0 or len(self.items) - 1 < swapItem: break
                         swapFile = self.items[swapItem]
-                        if thisFile.cext != swapFile.cext: break
+                        if bosh.modInfos[thisFile].isEsm() != bosh.modInfos[swapFile].isEsm(): break
                         bosh.modInfos.swapOrder(thisFile,swapFile)
                         bosh.modInfos.refreshInfoLists()
                         self.RefreshUI(refreshSaves=False)
@@ -8758,6 +8754,8 @@ class File_ListMasters(Link):
 class File_Redate(Link):
     """Move the selected files to start at a specified date."""
     def AppendToMenu(self,menu,window,data):
+        if bosh.boss.LoadOrderMethod == bosh.bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Redate...'),
                 help=_(u"Move the selected files to start at a specified date."))
@@ -13931,6 +13929,7 @@ class Mod_FlipSelf(Link):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
+            bosh.modInfos.refreshBapi(True)
             self.window.RefreshUI(detail=fileInfo.name)
 
 
