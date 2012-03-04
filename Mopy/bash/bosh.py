@@ -4848,26 +4848,53 @@ class INIInfos(FileInfos):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
+    #--------------------------------------------------------------------------
+    # Load Order stuff
+    #--------------------------------------------------------------------------
+    def refreshBapi(self,force=False):
+        if self.plugins.hasChanged() or force:
+            #--Get the lists
+            self._plugins = boss.GetLoadOrder()
+            self._plugins.sort(key=lambda a: not self[a].isEsm())
+            self._active = boss.GetActivePlugins()
+            #--Sort actives, since they might not be in order
+            self._active = [x for x in self._plugins if x in self._active]
+            #--Update Plugins() with new timestamps/sizes
+            self.plugins.refresh()
+
     @property
     def ordered(self):
-        """Return active plugins, ordered"""
-        if self.plugins.hasChanged():
-            self._allmods = boss.GetLoadOrder()
-            self._ordered = boss.ActivePlugins
-            self._ordered = [x for x in self._allmods if x in self._ordered]
-            self.plugins.refresh()
-        return self._ordered
+        self.refreshBapi()
+        return self._active
 
     @property
     def LoadOrder(self):
-        """Return all plugins, ordered"""
-        if self.plugins.hasChanged():
-            self._allmods = boss.GetLoadOrder()
-            self._ordered = boss.ActivePlugins
-            self._ordered = [x for x in self._allmods if x in self._ordered]
-            self.plugins.refresh()
-        return self._allmods
-        
+        self.refreshBapi()
+        return self._plugins
+
+    def swapOrder(self, leftName, rightName):
+        """Swaps the Load Order of two mods"""
+        order = self.LoadOrder
+        if leftName not in order or rightName not in order: return
+        #--Swap
+        leftIdex = order.index(leftName)
+        rightIdex = order.index(rightName)
+        order[leftIdex] = rightName
+        order[rightIdex] = leftName
+        #--Save
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            # Whole text file will have to be rewriten anyway
+            boss.LoadOrder = order
+            self.plugins.refresh() #--mark the txt files as read
+        else:
+            # Just swap them myself for now.  It's quicker than using the BAPI
+            leftInfo = self.data[leftName]
+            rightInfo = self.data[rightName]
+            leftmtime = leftInfo.mtime
+            rightmtime = rightInfo.mtime
+            leftInfo.setmtime(rightmtime)
+            rightInfo.setmtime(leftmtime)
+            self.refreshBapi()
 
     def __init__(self):
         """Initialize."""
@@ -5360,7 +5387,7 @@ class ModInfos(FileInfos):
         modNames = list(modNames)
         modNames.sort()
         modNames.sort(key=lambda a: (a in self.LoadOrder) and self.LoadOrder.index(a))
-        modNames.sort(key=lambda a: a.cs[-1]) #--Sort on esm/esp
+        #modNames.sort(key=lambda a: self[a].isEsm()) #--Sort on esm/esp
         #modNames = [x for x in self.LoadOrder if x in modNames]
         if asTuple: return tuple(modNames)
         else: return modNames
@@ -5581,27 +5608,6 @@ class ModInfos(FileInfos):
             boss.DeactivatePlugins(toRemove)
             self.refreshInfoLists()
             self.autoGhost()
-
-    def swapOrder(self,leftName,rightName):
-        """Swaps the Load Order of two mods"""
-        order = self.LoadOrder
-        if leftName not in order or rightName not in order: return
-        order = list(order) # Since modifying bossDb.LoadOrder can't be done in this way
-        #--Swap
-        leftIdex = order.index(leftName)
-        rightIdex = order.index(rightName)
-        order[leftIdex] = rightName
-        order[rightIdex] = leftName
-        #--Save
-        boss.LoadOrder = order
-        if boss.LoadOrderMethod != bapi.BOSS_API_LOMETHOD_TEXTFILE:
-            # Update the modInfos timestamps
-            leftInfo = self.data[leftName]
-            leftInfo.refresh()
-            leftInfo.setmtime(leftInfo.mtime)
-            rightInfo = self.data[rightName]
-            rightInfo.refresh()
-            rightInfo.setmtime(rightInfo.mtime)
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -6163,6 +6169,8 @@ class ConfigHelpers:
         self.bossUserPath = dirs['boss'].join(u'userlist.txt')
         self.bossMasterTime = None
         self.bossUserTime = None
+        #--Bash Tags
+        self.tagCache = {}
         #--Mod Rules
         self.name_ruleSet = {}
         #--Refresh
@@ -6182,6 +6190,7 @@ class ConfigHelpers:
         if path.exists():
             if (path.mtime != mtime or
                 (userpath.exists() and userpath.mtime != utime)):
+                self.tagCache = {}
                 try:
                     boss.Load(path.s,userpath.s)
                     self.bossMasterTime = path.mtime
@@ -6195,6 +6204,7 @@ class ConfigHelpers:
         if not taglist.exists():
             raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
+            self.tagCache = {}
             boss.Load(taglist.s)
         except bapi.BossError:
             deprint(u'An error occure while parsing taglist.txt with the BOSS API.', traceback=True)
@@ -6202,11 +6212,21 @@ class ConfigHelpers:
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
-        return boss.GetModBashTags(modName)[0]
+        if modName not in self.tagCache:
+            tags = boss.GetModBashTags(modName)
+            self.tagCache[modName] = tags
+            return tags[0]
+        else:
+            return self.tagCache[modName][0]
 
     def getBashRemoveTags(self,modName):
         """Retrieves bash tags for given file."""
-        return boss.GetModBashTags(modName)[1]
+        if modName not in self.tagCache:
+            tags = boss.GetModBashTags(modName)
+            self.tagCache[modName] = tags
+            return tags[1]
+        else:
+            return self.tagCache[modName][1]
 
     def getDirtyMessage(self,modName):
         message,clean = boss.GetDirtyMessage(modName)
