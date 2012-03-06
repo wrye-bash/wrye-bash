@@ -5008,7 +5008,15 @@ class ModInfos(FileInfos):
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
         hasChanged = hasChanged or self.plugins.hasChanged()
-        self.refreshBapi(False,hasChanged)
+        try:
+            self.refreshBapi(False,hasChanged)
+        except KeyError as e:
+            print 'Error in refreshBapi  - KeyError:', e
+            print 'results of GetLoadOrder:', boss.GetLoadOrder()
+            print 'keys of self.data:', self.data
+            print 'full contents of self.data:', self.data
+            print 'any corrupted mods:', self.corrupted
+            print 'contents of the Data dir:', dirs['mods'].list()
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
