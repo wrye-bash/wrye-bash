@@ -15930,12 +15930,11 @@ class Saves_Profiles:
     def swapPlugins(self,arcSaves,newSaves):
         """Saves current plugins into arcSaves directory and loads plugins
         from newSaves directory (if present)."""
-        arcPath,newPath = (bosh.dirs['saveBase'].join(saves,u'plugins.txt')
+        arcPath,newPath = (bosh.dirs['saveBase'].join(saves)
             for saves in (arcSaves,newSaves))
         #--Archive old Saves
-        bosh.modInfos.plugins.path.copyTo(arcPath)
-        if newPath.exists():
-            newPath.copyTo(bosh.modInfos.plugins.path)
+        bosh.modInfos.plugins.copyTo(arcPath)
+        bosh.modInfos.plugins.copyFrom(newPath)
 
     def swapOblivionVersion(self,newSaves):
         """Swaps Oblivion version to memorized version."""
