@@ -15532,11 +15532,11 @@ class UpdateReferences(ListPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return tuple(x.classType for x in self.classes) if self.isActive else ()
+        return tuple(self.classes) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return tuple(x.classType for x in self.classes) if self.isActive else ()
+        return tuple(self.classes) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
