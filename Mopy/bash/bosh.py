@@ -3885,6 +3885,22 @@ class Plugins:
         #--Create dirs/files if necessary
         self.dir.makedirs()
 
+    def copyTo(self,toDir):
+        """Save plugins.txt and loadorder.txt to a different directory (for backup)"""
+        if self.pathPlugins.exists():
+            self.pathPlugins.copyTo(toDir.join(u'plugins.txt'))
+        if self.pathOrder.exists():
+            self.pathOrder.copyTo(toDir.join(u'loadorder.txt'))
+
+    def copyFrom(self,fromDir):
+        """Move a different plugins.txt and loadorder.txt here for use."""
+        move = fromDir.join(u'plugins.txt')
+        if move.exists():
+            move.copyTo(self.pathPlugins)
+        move = fromDir.join(u'loadorder.txt')
+        if move.exists():
+            move.copyTo(self.pathOrder)
+
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
         if self.pathPlugins.exists() and (
