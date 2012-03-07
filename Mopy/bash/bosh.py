@@ -13636,31 +13636,35 @@ class ModCleaner:
                     path = modInfo.getPath()
                     #--Scan
                     with ModReader(modInfo.name,path.open('rb')) as ins:
-                        while not ins.atEnd():
-                            subprogress(ins.tell())
-                            header = ins.unpackRecHeader()
-                            type,size = header.recType,header.size
-                            #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                            if type == 'GRUP':
-                                if header.groupType != 0: #--Ignore sub-groups
-                                    pass
-                                elif header.label not in ('CELL','WRLD'):
-                                    ins.read(size-header.__class__.size)
-                            else:
-                                if doUDR and header.flags1 & 0x20 and type in ('ACHR','ACRE','REFR'):
-                                    udr.add(header.fid)
-                                if doFog and type == 'CELL':
-                                    nextRecord = ins.tell() + size
-                                    while ins.tell() < nextRecord:
-                                        (nextType,nextSize) = ins.unpackSubHeader()
-                                        if type != 'XCLL':
-                                            ins.read(nextSize)
-                                        else:
-                                            color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
-                                            if not (near or far or clip):
-                                                fog.add(header.fid)
+                        try:
+                            while not ins.atEnd():
+                                subprogress(ins.tell())
+                                header = ins.unpackRecHeader()
+                                type,size = header.recType,header.size
+                                #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                                if type == 'GRUP':
+                                    if header.groupType != 0: #--Ignore sub-groups
+                                        pass
+                                    elif header.label not in ('CELL','WRLD'):
+                                        ins.read(size-header.__class__.size)
                                 else:
-                                    ins.read(size)
+                                    if doUDR and header.flags1 & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                        udr.add(header.fid)
+                                    if doFog and type == 'CELL':
+                                        nextRecord = ins.tell() + size
+                                        while ins.tell() < nextRecord:
+                                            (nextType,nextSize) = ins.unpackSubHeader()
+                                            if type != 'XCLL':
+                                                ins.read(nextSize)
+                                            else:
+                                                color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
+                                                if not (near or far or clip):
+                                                    fog.add(header.fid)
+                                    else:
+                                        ins.read(size)
+                        except:
+                            deprint(u'Error scanning %s:' % modInfo.name.s,traceback=True)
+                            udr = itm = fog = None
                     #--Done
                 ret.append((udr,itm,fog))
             return ret
