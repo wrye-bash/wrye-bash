@@ -13051,15 +13051,12 @@ class Mod_CreateBOSSReport(Link):
         else:
             spoiler = False
         # Scan for ITM and UDR's
-        if settings['bash.CBashEnabled']:
-            modInfos = [bosh.modInfos[x] for x in self.data]
-            try:
-                with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
-                    udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
-            except bolt.CancelError:
-                return
-        else:
-            udr_itm_fog = []
+        modInfos = [bosh.modInfos[x] for x in self.data]
+        try:
+            with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
+                udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+        except bolt.CancelError:
+            return
         # Create the report
         for i,fileName in enumerate(self.data):
             if fileName == u'Oblivion.esm': continue
@@ -13095,7 +13092,10 @@ class Mod_CreateBOSSReport(Link):
             if udr_itm_fog:
                 udrs,itms,fogs = udr_itm_fog[i]
                 if udrs or itms:
-                    text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+                    if settings['bash.CBashEnabled']:
+                        text += (u'\nUDR: %i, ITM: %i%s '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+                    else:
+                        text += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
             text += u'\n\n'
         if spoiler: text += u'[/spoiler]'
 
@@ -15721,24 +15721,23 @@ class Mod_ScanDirty(Link):
         log.setHeader(u'= '+_(u'Scan Mods'))
         log(_(u'This is a report of records that were detected as either Identical To Master (ITM) or a deleted reference (UDR).')
             + u'\n')
-        def strFid(fid):
-            # Change a FID to something better for displaying
-            if settings['bash.CBashEnabled']:
-                modName = fid[0].stail
-                id = fid[1]
-            else:
+        # Change a FID to something more usefull for displaying
+        if settings['bash.CBashEnabled']:
+            def strFid(fid):
+                return u'%s: %06X' % (fid[0],fid[1])
+            def sortedFidList(fids):
+                return sorted(fids, key=itemgetter(0,1))
+        else:
+            def strFid(fid):
                 modId = 0xFF000000 & fid
                 modName = modInfo.masterNames[modId]
                 id = 0x00FFFFFF & fid
-            return u'%s: %06X' % (modName, id)
-        def sortedFidList(fids):
-            # Sort list of FIDs fist by mod, then id
-            if settings['bash.CBashEnabled']:
-                return sorted(fids, key=itemgetter(0,1))
-            else:
+                return u'%s: %06X' % (modName,id)
+            def sortedFidList(fids):
                 return sorted(fids)
         dirty = []
         clean = []
+        error = []
         for i,modInfo in enumerate(modInfos):
             udr,itm,fog = ret[i]
             if modInfo.name == GPath(u'Unofficial Oblivion Patch.esp'):
@@ -15759,15 +15758,22 @@ class Mod_ScanDirty(Link):
                     dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itm))
                 for fid in sortedFidList(itm):
                     dirty[pos] += u'    * %s\n' % strFid(fid)
+            elif udr is None or itm is None:
+                error.append(u'* __'+modInfo.name.s+u'__')
             else:
                 clean.append(u'* __'+modInfo.name.s+u'__')
         #-- Show log
         if dirty:
             log(_(u'Detected %d dirty mods:') % len(dirty))
             for mod in dirty: log(mod)
+            log(u'\n')
         if clean:
             log(_(u'Detected %d clean mods:') % len(clean))
             for mod in clean: log(mod)
+            log(u'\n')
+        if error:
+            log(_(u'The following %d mods had errors while scanning:') % len(error))
+            for mod in error: log(mod)
         balt.showWryeLog(self.window,log.out.getvalue(),
             _(u'Dirty Edit Scan Results'),asDialog=False,icons=bashBlue)
         log.out.close()
