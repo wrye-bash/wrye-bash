@@ -13485,6 +13485,7 @@ class ModCleaner:
     ITM     = 0x02  # Identical to master records
     FOG     = 0x04  # Nvidia Fog Fix
     ALL = UDR|ITM|FOG
+    DEFAULT = UDR|ITM
 
     def __init__(self,modInfo):
         self.modInfo = modInfo
@@ -13505,7 +13506,7 @@ class ModCleaner:
         return (udr,itm,fog)
 
     @staticmethod
-    def scan_Many(modInfos,what=ALL,progress=bolt.Progress()):
+    def scan_Many(modInfos,what=DEFAULT,progress=bolt.Progress()):
         """Scan multiple mods for dirty edits"""
         if len(modInfos) == 0: return []
         if not settings['bash.CBashEnabled']:
@@ -13662,6 +13663,8 @@ class ModCleaner:
                                                     fog.add(header.fid)
                                     else:
                                         ins.read(size)
+                        except bolt.CancelError:
+                            raise
                         except:
                             deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name.s,ins.tell()),traceback=True)
                             udr = itm = fog = None
