@@ -782,7 +782,7 @@ class RecordHeader(brec.BaseRecordHeader):
         type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
         #--Bad type?
         if type not in esp.recordTypes:
-            raise brec.ModError(ins.inName,u'Bad header type: '+type)
+            raise brec.ModError(ins.inName,u'Bad header type: '+repr(type))
         #--Record
         if type != 'GRUP':
             pass
@@ -794,7 +794,7 @@ class RecordHeader(brec.BaseRecordHeader):
             elif str0 in esp.topIgTypes:
                 uint0 = esp.topIgTypes[str0]
             else:
-                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+str0)
+                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
         #--Other groups
         return RecordHeader(type,size,uint0,uint1,uint2,uint3)
 
@@ -855,18 +855,27 @@ class MelVmad(MelBase):
     def loadData(self,record,ins,type,size,readId):
         vmad = MelVmad.Vmad()
         # Header
-        vmad.version,vmad.unk,scriptCount = ins.unpack('=3H',6,readId)
+        version,vmad.unk,scriptCount = ins.unpack('=3H',6,readId)
+        vmad.version = version
         # Scripts
         for x in xrange(scriptCount):
             script = MelVmad.Script()
             scriptName = ins.readString16(size,readId)
-            script.unk,propertyCount = ins.unpack('=BH',3,readId)
+            if version >= 4:
+                script.unk,propertyCount = ins.unpack('=BH',3,readId)
+            else:
+                propertyCount, = ins.unpack('H',2,readId)
+                script.unk = 0
             # Properties
             props = script.properties
             for y in xrange(propertyCount):
                 prop = MelVmad.Property()
                 propName = ins.readString16(size,readId)
-                type,prop.unk = ins.unpack('=2B',2,readId)
+                if version >= 4:
+                    type,prop.unk = ins.unpack('=2B',2,readId)
+                else:
+                    type, = ins.unpack('B',1,readId)
+                    prop.unk = 0
                 prop.type = type
                 if type == 1:
                     # Object reference? (uint64?)
