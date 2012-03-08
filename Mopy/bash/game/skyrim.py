@@ -757,7 +757,7 @@ class esp:
     topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
 
     #-> this needs updating for Skyrim
-    recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO,NAVM,PHZD'.split(','))
+    recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO,NAVM,PHZD,PGRE'.split(','))
 
 #--Mod I/O
 class RecordHeader(brec.BaseRecordHeader):
