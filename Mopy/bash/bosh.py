@@ -13649,7 +13649,11 @@ class ModCleaner:
                                     elif header.label not in ('CELL','WRLD'):
                                         ins.read(size-header.__class__.size)
                                 else:
-                                    if doUDR and header.flags1 & 0x20 and type in ('ACHR','ACRE','REFR','NAVM'):
+                                    if doUDR and header.flags1 & 0x20 and type in (
+                                        'ACRE',               #--Oblivion only
+                                        'ACHR','REFR',        #--Both
+                                        'NAVM','PHZD','PGRE', #--Skyrim only
+                                        ):
                                         udr.add(header.fid)
                                     if doFog and type == 'CELL':
                                         nextRecord = ins.tell() + size
