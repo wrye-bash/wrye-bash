@@ -435,7 +435,7 @@ class RecordHeader(brec.BaseRecordHeader):
         type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
         #--Bad?
         if type not in esp.recordTypes:
-            raise brec.ModError(ins.inName,u'Bad header type: '+type)
+            raise brec.ModError(ins.inName,u'Bad header type: '+repr(type))
         #--Record
         if type != 'GRUP':
             pass
@@ -447,7 +447,7 @@ class RecordHeader(brec.BaseRecordHeader):
             elif str0 in esp.topIgTypes:
                 uint0 = esp.topIgTypes[str0]
             else:
-                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+str0)
+                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
         return RecordHeader(type,size,uint0,uint1,uint2)
 
     def pack(self):
