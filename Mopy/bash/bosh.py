@@ -6201,11 +6201,11 @@ class ConfigHelpers:
         try:
             bapi.Init(dirs['boss'].join(u'API').s)
         except bapi.BossVersionError:
-            print u"The BOSS API found in BOSS's installation directory (%s) is not compatible with Wrye Bash's usage." % dirs['boss'].s
+            deprint(u"The BOSS API found in BOSS's installation directory (%s) is not compatible with Wrye Bash's usage." % dirs['boss'].s)
         # Load up the API from the compiled directory if that failed
         if not bapi.BAPI:
-            print u"The BOSS API in BOSS's installation directory (%s) either does not exist, or could not be loaded." % dirs['boss'].s
-            print u'Loading the BOSS API shipped with Wrye Bash.'
+            deprint(u"The BOSS API in BOSS's installation directory (%s) either does not exist, or could not be loaded." % dirs['boss'].s)
+            deprint(u'Loading the BOSS API shipped with Wrye Bash.')
             bapi.Init(dirs['compiled'].s)
             # That didn't work either - Wrye Bash isn't installed correctly
         if not bapi.BAPI:
