@@ -4180,10 +4180,24 @@ class FileInfo:
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
-        if isGhost == self.isGhost:
-            return isGhost
         normal = self.dir.join(self.name)
         ghost = normal+u'.ghost'
+        # Refresh current status - it may have changed due to things like
+        # the BOSS API automatically unghosting plugins when activating them.
+        # The BOSS API only un-ghosts automatically, so if both the normal
+        # and ghosted version exist, treat the normal as the real one.
+        if normal.exists():
+            if self.isGhost:
+                self.isGhost = False
+                self.name = normal
+        elif ghost.exists():
+            if not self.isGhost:
+                self.isGhost = True
+                self.name = ghost
+        # Current status == what we want it?
+        if isGhost == self.isGhost:
+            return isGhost
+        # Current status != what we want, so change it
         try:
             if not normal.editable() or not ghost.editable(): return self.isGhost
             if isGhost: normal.moveTo(ghost)
