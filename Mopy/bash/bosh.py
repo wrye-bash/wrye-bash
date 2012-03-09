@@ -7517,6 +7517,7 @@ class Installer(object):
         layout = {}
         layoutSetdefault = layout.setdefault
         for file,size,crc in fileSizeCrcs:
+            if file.startswith(u'--'): continue
             fileLower = file.lower()
             frags = fileLower.split(u'\\')
             if len(frags) == 1:
