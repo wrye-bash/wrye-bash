@@ -13502,6 +13502,43 @@ class ModCleaner:
     ALL = UDR|ITM|FOG
     DEFAULT = UDR|ITM
 
+    class UdrInfo(object):
+        # UDR info
+        # (UDR fid, UDR Type, UDR Parent Fid, UDR Parent Type, UDR Parent Parent Fid, UDR Parent Block, UDR Paren SubBlock)
+        def __init__(self,fid,Type=None,parentFid=None,parentEid=u'',
+                     parentType=None,parentParentFid=None,parentParentEid=u'',
+                     parentBlock=None,parentSubBlock=None):
+            if isinstance(fid,ObBaseRecord):
+                # CBash - passed in the record instance
+                record = fid
+                parent = record.Parent
+                self.fid = record.fid
+                self.type = record._Type
+                self.parentFid = parent.fid
+                self.parentEid = parent.eid
+                if parent.IsInterior:
+                    self.parentType = 0
+                    self.parentParentFid = None
+                    self.parentParentEid = u''
+                else:
+                    self.parentType = 1
+                    self.parentParentFid = parent.Parent.fid
+                    self.parentParentEid = parent.Parent.eid
+                self.parentBlock,self.parentSubBlock = parent.bsb
+            else:
+                self.fid = fid
+                self.type = Type
+                self.parentFid = parentFid
+                self.parentEid = parentEid
+                self.parentType = parentType
+                self.parentBlock = parentBlock
+                self.parentSubBlock = parentSubBlock
+                self.parentParentFid = parentParentFid
+                self.parentParentEid = parentParentEid
+
+        def __cmp__(self,other):
+            return cmp(self.fid,other.fid)
+
     def __init__(self,modInfo):
         self.modInfo = modInfo
         self.itm = set()    # Fids for Identical To Master records
@@ -13620,7 +13657,7 @@ class ModCleaner:
                                 for record in udrRecords:
                                     subprogress2.plus()
                                     if record.IsDeleted:
-                                        udr.add(record.fid)
+                                        udr.add(ModCleaner.UdrInfo(record))
                                 #--Scan fog
                                 for record in fogRecords:
                                     subprogress2.plus()
@@ -13651,6 +13688,12 @@ class ModCleaner:
                     #--File stream
                     path = modInfo.getPath()
                     #--Scan
+                    parentType = None
+                    parentFid = None
+                    parentParentFid = None
+                    # Location (Interior = #, Exteror = Y,X)
+                    parentBlock = None
+                    parentSubBlock = None
                     with ModReader(modInfo.name,path.open('rb')) as ins:
                         try:
                             while not ins.atEnd():
@@ -13659,17 +13702,45 @@ class ModCleaner:
                                 type,size = header.recType,header.size
                                 #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
                                 if type == 'GRUP':
-                                    if header.groupType != 0: #--Ignore sub-groups
-                                        pass
-                                    elif header.label not in ('CELL','WRLD'):
+                                    groupType = header.groupType
+                                    if groupType == 0 and header.label not in {'CELL','WRLD'}:
+                                        # Skip Tops except for WRLD and CELL groups
                                         ins.read(size-header.__class__.size)
+                                    elif groupType == 1:
+                                        # World Children
+                                        parentParentFid = header.label
+                                        parentType = 1 # Exterior Cell
+                                        parentFid = parentBlock = parentSubBlock = None
+                                    elif groupType == 2:
+                                        # Interior Cell Block
+                                        parentBlock = header.label
+                                        parentType = 0 # Interior Cell
+                                        parentParentFid = parentFid = parentSubBlock = None
+                                    elif groupType == 3:
+                                        # Interior Cell Sub-Block
+                                        parentSubBlock = header.label
+                                    elif groupType == 4:
+                                        # Exterior Cell Block (Y,X)
+                                        y,x = struct.unpack('=2h',struct.pack('I',header.label))
+                                        parentBlock = (x,y)
+                                    elif groupType == 5:
+                                        # Exterior Cell Sub-Block (Y,X)
+                                        y,x = struct.unpack('=2h',struct.pack('I',header.label))
+                                        parentSubBlock = (x,y)
+                                    elif groupType in {6,8,9,10}:
+                                        # Cell Children, Cell Persisten Children,
+                                        # Cell Temporary Children, Cell VWD Children
+                                        parentFid = header.label
+                                    else: # 7 - Topic Children
+                                        pass
                                 else:
                                     if doUDR and header.flags1 & 0x20 and type in (
                                         'ACRE',               #--Oblivion only
                                         'ACHR','REFR',        #--Both
                                         'NAVM','PHZD','PGRE', #--Skyrim only
                                         ):
-                                        udr.add(header.fid)
+                                        # (UDR fid, UDR Type, UDR Parent Fid, UDR Parend Eid,UDR Parent Type, UDR Parent Parent Fid, UDR Parent Parent Eid, UDR Parent Block, UDR Paren SubBlock)
+                                        udr.add(ModCleaner.UdrInfo(header.fid,type,parentFid,u'',parentType,parentParentFid,u'',parentBlock,parentSubBlock))
                                     if doFog and type == 'CELL':
                                         nextRecord = ins.tell() + size
                                         while ins.tell() < nextRecord:
@@ -13736,7 +13807,8 @@ class ModCleaner:
                             subprogress2 = SubProgress(subprogress1,j,j+1)
                             subprogress2.setFull(max(total,1))
                             if doUDR:
-                                for fid in cleaner.udr:
+                                for udr in cleaner.udr:
+                                    fid = udr.fid
                                     subprogress2.plus()
                                     record = modFile.LookupRecord(fid)
                                     if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
@@ -13795,7 +13867,11 @@ class ModCleaner:
                                 elif header.label not in ('CELL','WRLD'):
                                     copy(size-header.__class__.size)
                             else:
-                                if doUDR and header.flags1 & 0x20 and type in ('ACHR','ACRE','REFR'):
+                                if doUDR and header.flags1 & 0x20 and type in {
+                                    'ACRE',               #--Oblivion only
+                                    'ACHR','REFR',        #--Both
+                                    'NAVM','PGRE','PHZD', #--Skyrim only
+                                    }:
                                     header.flags1 = (header.flags1 & ~0x20) | 0x1000
                                     out.seek(-header.__class__.size,1)
                                     out.write(header.pack())

@@ -15725,40 +15725,52 @@ class Mod_ScanDirty(Link):
         if settings['bash.CBashEnabled']:
             def strFid(fid):
                 return u'%s: %06X' % (fid[0],fid[1])
-            def sortedFidList(fids):
-                return sorted(fids, key=itemgetter(0,1))
         else:
             def strFid(fid):
                 modId = 0xFF000000 & fid
                 modName = modInfo.masterNames[modId]
                 id = 0x00FFFFFF & fid
                 return u'%s: %06X' % (modName,id)
-            def sortedFidList(fids):
-                return sorted(fids)
         dirty = []
         clean = []
         error = []
         for i,modInfo in enumerate(modInfos):
-            udr,itm,fog = ret[i]
+            udrs,itms,fog = ret[i]
             if modInfo.name == GPath(u'Unofficial Oblivion Patch.esp'):
                 # Record for non-SI users, shows up as ITM if SI is installed (OK)
                 if settings['bash.CBashEnabled']:
-                    itm.discard(FormID(GPath(u'Oblivion.esm'),0x00AA3C))
+                    itms.discard(FormID(GPath(u'Oblivion.esm'),0x00AA3C))
                 else:
-                    itm.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-            if modInfo.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itm = set()
-            if udr or itm:
+                    itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
+            if modInfo.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
+            if udrs or itms:
                 pos = len(dirty)
                 dirty.append(u'* __'+modInfo.name.s+u'__:\n')
-                dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udr))
-                for fid in sortedFidList(udr): # Sorted by master, then id
-                    dirty[pos] += u'    * %s\n' % strFid(fid)
+                dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
+                for udr in sorted(udrs):
+                    if udr.parentEid:
+                        parentStr = u"%s '%s'" % (strFid(udr.parentFid),udr.parentEid)
+                    else:
+                        parentStr = strFid(udr.parentFid)
+                    if udr.parentType == 0:
+                        # Interior CELL
+                        item = u'%s -  %s attached to Interior CELL (%s) at Block %i, Sub-Block %i' % (
+                            strFid(udr.fid),udr.type,parentStr,udr.parentBlock,udr.parentSubBlock)
+                    else:
+                        # Exterior CELL
+                        if udr.parentParentEid:
+                            parentParentStr = u"%s '%s'" % (strFid(udr.parentParentFid),udr.parentParentEid)
+                        else:
+                            parentParentStr = strFid(udr.parentParentFid)
+                        item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s) at Block %s, Sub-Block %s' % (
+                            strFid(udr.fid),udr.type,parentStr,parentParentStr,udr.parentBlock,udr.parentSubBlock)
+                    dirty[pos] += u'    * %s\n' % item
                 if not settings['bash.CBashEnabled']: continue
                 if itm:
                     dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itm))
-                for fid in sortedFidList(itm):
+                for fid in sorted(itms):
                     dirty[pos] += u'    * %s\n' % strFid(fid)
-            elif udr is None or itm is None:
+            elif udrs is None or itms is None:
                 error.append(u'* __'+modInfo.name.s+u'__')
             else:
                 clean.append(u'* __'+modInfo.name.s+u'__')
