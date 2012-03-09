@@ -1444,11 +1444,19 @@ class Path(object):
             shutil.move(self.temp._s, self._s)
     def editable(self):
         """Safely check whether a file is editable."""
+        delete = not os.path.exists(self._s)
         try:
             with open(self._s,'ab') as f:
                 return True
         except:
             return False
+        finally:
+            # If the file didn't exist before, remove the created version
+            if delete:
+                try:
+                    os.remove(self._s)
+                except:
+                    pass
 
     #--Hash/Compare
     def __hash__(self):
