@@ -13507,7 +13507,7 @@ class ModCleaner:
         # (UDR fid, UDR Type, UDR Parent Fid, UDR Parent Type, UDR Parent Parent Fid, UDR Parent Block, UDR Paren SubBlock)
         def __init__(self,fid,Type=None,parentFid=None,parentEid=u'',
                      parentType=None,parentParentFid=None,parentParentEid=u'',
-                     parentBlock=None,parentSubBlock=None):
+                     pos=None):
             if isinstance(fid,ObBaseRecord):
                 # CBash - passed in the record instance
                 record = fid
@@ -13520,19 +13520,19 @@ class ModCleaner:
                     self.parentType = 0
                     self.parentParentFid = None
                     self.parentParentEid = u''
+                    self.pos = None
                 else:
                     self.parentType = 1
                     self.parentParentFid = parent.Parent.fid
                     self.parentParentEid = parent.Parent.eid
-                self.parentBlock,self.parentSubBlock = parent.bsb
+                    self.pos = (record.posX,record.posY)
             else:
                 self.fid = fid
                 self.type = Type
                 self.parentFid = parentFid
                 self.parentEid = parentEid
                 self.parentType = parentType
-                self.parentBlock = parentBlock
-                self.parentSubBlock = parentSubBlock
+                self.pos = pos
                 self.parentParentFid = parentParentFid
                 self.parentParentEid = parentParentEid
 
@@ -13545,10 +13545,10 @@ class ModCleaner:
         self.udr = set()    # Fids for Deleted Reference records
         self.fog = set()    # Fids for Cells needing the Nvidia Fog Fix
 
-    def scan(self,what=ALL,progress=bolt.Progress()):
+    def scan(self,what=ALL,progress=bolt.Progress(),detailed=False):
         """Scan this mod for dirty edits.
            return (UDR,ITM,FogFix)"""
-        udr,itm,fog = ModCleaner.scan_Many([self.modInfo],what,progress)[0]
+        udr,itm,fog = ModCleaner.scan_Many([self.modInfo],what,progress,detailed)[0]
         if what & ModCleaner.UDR:
             self.udr = udr
         if what & ModCleaner.ITM:
@@ -13558,11 +13558,11 @@ class ModCleaner:
         return (udr,itm,fog)
 
     @staticmethod
-    def scan_Many(modInfos,what=DEFAULT,progress=bolt.Progress()):
+    def scan_Many(modInfos,what=DEFAULT,progress=bolt.Progress(),detailed=False):
         """Scan multiple mods for dirty edits"""
         if len(modInfos) == 0: return []
         if not settings['bash.CBashEnabled']:
-            return ModCleaner._scan_Python(modInfos,what,progress)
+            return ModCleaner._scan_Python(modInfos,what,progress,detailed)
         else:
             return ModCleaner._scan_CBash(modInfos,what,progress)
 
@@ -13670,7 +13670,7 @@ class ModCleaner:
             return [(set(),set(),set()) for x in range(len(modInfos))]
 
     @staticmethod
-    def _scan_Python(modInfos,what,progress):
+    def _scan_Python(modInfos,what,progress,detailed=False):
         if what & (ModCleaner.UDR|ModCleaner.FOG):
             # Python can't do ITM scanning
             doUDR = what & ModCleaner.UDR
@@ -13679,87 +13679,131 @@ class ModCleaner:
             ret = []
             for i,modInfo in enumerate(modInfos):
                 progress(i,_(u'Scanning...') + u'\n' + modInfo.name.s)
-                udr = set()
                 itm = set()
                 fog = set()
+                #--UDR stuff
+                udr = {}
+                parents_to_scan = {}
                 if len(modInfo.masterNames) > 0:
                     subprogress = SubProgress(progress,i,i+1)
-                    subprogress.setFull(max(modInfo.size,1))
+                    if detailed:
+                        subprogress.setFull(max(modInfo.size*2,1))
+                    else:
+                        subprogress.setFull(max(modInfo.size,1))
                     #--File stream
                     path = modInfo.getPath()
                     #--Scan
                     parentType = None
                     parentFid = None
                     parentParentFid = None
-                    # Location (Interior = #, Exteror = Y,X)
+                    # Location (Interior = #, Exteror = (X,Y)
                     parentBlock = None
                     parentSubBlock = None
                     with ModReader(modInfo.name,path.open('rb')) as ins:
                         try:
-                            while not ins.atEnd():
-                                subprogress(ins.tell())
-                                header = ins.unpackRecHeader()
+                            insAtEnd = ins.atEnd
+                            insTell = ins.tell
+                            insUnpackRecHeader = ins.unpackRecHeader
+                            insUnpackSubHeader = ins.unpackSubHeader
+                            insRead = ins.read
+                            insUnpack = ins.unpack
+                            headerSize = ins.recHeader.size
+                            structUnpack = struct.unpack
+                            structPack = struct.pack
+                            while not insAtEnd():
+                                subprogress(insTell())
+                                header = insUnpackRecHeader()
                                 type,size = header.recType,header.size
                                 #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
                                 if type == 'GRUP':
                                     groupType = header.groupType
                                     if groupType == 0 and header.label not in {'CELL','WRLD'}:
                                         # Skip Tops except for WRLD and CELL groups
-                                        ins.read(size-header.__class__.size)
-                                    elif groupType == 1:
-                                        # World Children
-                                        parentParentFid = header.label
-                                        parentType = 1 # Exterior Cell
-                                        parentFid = parentBlock = parentSubBlock = None
-                                    elif groupType == 2:
-                                        # Interior Cell Block
-                                        parentBlock = header.label
-                                        parentType = 0 # Interior Cell
-                                        parentParentFid = parentFid = parentSubBlock = None
-                                    elif groupType == 3:
-                                        # Interior Cell Sub-Block
-                                        parentSubBlock = header.label
-                                    elif groupType == 4:
-                                        # Exterior Cell Block (Y,X)
-                                        y,x = struct.unpack('=2h',struct.pack('I',header.label))
-                                        parentBlock = (x,y)
-                                    elif groupType == 5:
-                                        # Exterior Cell Sub-Block (Y,X)
-                                        y,x = struct.unpack('=2h',struct.pack('I',header.label))
-                                        parentSubBlock = (x,y)
-                                    elif groupType in {6,8,9,10}:
-                                        # Cell Children, Cell Persisten Children,
-                                        # Cell Temporary Children, Cell VWD Children
-                                        parentFid = header.label
-                                    else: # 7 - Topic Children
-                                        pass
+                                        insRead(size-headerSize)
+                                    elif detailed:
+                                        if groupType == 1:
+                                            # World Children
+                                            parentParentFid = header.label
+                                            parentType = 1 # Exterior Cell
+                                            parentFid = None
+                                        elif groupType == 2:
+                                            # Interior Cell Block
+                                            parentType = 0 # Interior Cell
+                                            parentParentFid = parentFid = None
+                                        elif groupType in {6,8,9,10}:
+                                            # Cell Children, Cell Persisten Children,
+                                            # Cell Temporary Children, Cell VWD Children
+                                            parentFid = header.label
+                                        else: # 3,4,5,7 - Topic Children
+                                            pass
                                 else:
                                     if doUDR and header.flags1 & 0x20 and type in (
                                         'ACRE',               #--Oblivion only
                                         'ACHR','REFR',        #--Both
                                         'NAVM','PHZD','PGRE', #--Skyrim only
                                         ):
-                                        # (UDR fid, UDR Type, UDR Parent Fid, UDR Parend Eid,UDR Parent Type, UDR Parent Parent Fid, UDR Parent Parent Eid, UDR Parent Block, UDR Paren SubBlock)
-                                        udr.add(ModCleaner.UdrInfo(header.fid,type,parentFid,u'',parentType,parentParentFid,u'',parentBlock,parentSubBlock))
+                                        if not detailed:
+                                            udr[header.fid] = ModCleaner.UdrInfo(header.fid)
+                                        else:
+                                            fid = header.fid
+                                            udr[fid] = ModCleaner.UdrInfo(fid,type,parentFid,u'',parentType,parentParentFid,u'',None)
+                                            parents_to_scan.setdefault(parentFid,set())
+                                            parents_to_scan[parentFid].add(fid)
+                                            if parentParentFid:
+                                                parents_to_scan.setdefault(parentParentFid,set())
+                                                parents_to_scan[parentParentFid].add(fid)
                                     if doFog and type == 'CELL':
-                                        nextRecord = ins.tell() + size
-                                        while ins.tell() < nextRecord:
-                                            (nextType,nextSize) = ins.unpackSubHeader()
-                                            if type != 'XCLL':
-                                                ins.read(nextSize)
+                                        nextRecord = insTell() + size
+                                        while insTell() < nextRecord:
+                                            (nextType,nextSize) = insUnpackSubHeader()
+                                            if nextType != 'XCLL':
+                                                insRead(nextSize)
                                             else:
-                                                color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',nextSize,'CELL.XCLL')
+                                                color,near,far,rotXY,rotZ,fade,clip = insUnpack('=12s2f2l2f',nextSize,'CELL.XCLL')
                                                 if not (near or far or clip):
                                                     fog.add(header.fid)
                                     else:
-                                        ins.read(size)
+                                        insRead(size)
+                            if parents_to_scan:
+                                # Detailed info - need to re-scan for CELL and WRLD infomation
+                                ins.seek(0)
+                                baseSize = modInfo.size
+                                while not insAtEnd():
+                                    subprogress(baseSize+insTell())
+                                    header = insUnpackRecHeader()
+                                    type,size = header.recType,header.size
+                                    if type == 'GRUP':
+                                        if header.groupType == 0 and header.label not in {'CELL','WRLD'}:
+                                            insRead(size-headerSize)
+                                    else:
+                                        fid = header.fid
+                                        if fid in parents_to_scan:
+                                            record = MreRecord(header,ins,True)
+                                            record.loadSubrecords()
+                                            eid = u''
+                                            x,y = (0,0)
+                                            for subrec in record.subrecords:
+                                                if subrec.subType == 'EDID':
+                                                    eid = _unicode(subrec.data)
+                                                elif subrec.subType == 'XCLC':
+                                                    pos = structUnpack('=2i',subrec.data[:8])
+                                            for udrFid in parents_to_scan[fid]:
+                                                if type == 'CELL':
+                                                    udr[udrFid].parentEid = eid
+                                                    if udr[udrFid].parentType == 1:
+                                                        # Exterior Cell, calculate position
+                                                        udr[udrFid].pos = pos
+                                                elif type == 'WRLD':
+                                                    udr[udrFid].parentParentEid = eid
+                                        else:
+                                            insRead(size)
                         except bolt.CancelError:
                             raise
                         except:
                             deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name.s,ins.tell()),traceback=True)
                             udr = itm = fog = None
                     #--Done
-                ret.append((udr,itm,fog))
+                ret.append((udr.values() if udr is not None else None,itm,fog))
             return ret
         else:
             return [(set(),set(),set()) for x in xrange(len(modInfos))]
