@@ -15714,7 +15714,7 @@ class Mod_ScanDirty(Link):
         modInfos = [bosh.modInfos[x] for x in self.data]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
-                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress,detailed=True)
         except bolt.CancelError:
             return
         log = bolt.LogFile(StringIO.StringIO())
@@ -15754,16 +15754,20 @@ class Mod_ScanDirty(Link):
                         parentStr = strFid(udr.parentFid)
                     if udr.parentType == 0:
                         # Interior CELL
-                        item = u'%s -  %s attached to Interior CELL (%s) at Block %i, Sub-Block %i' % (
-                            strFid(udr.fid),udr.type,parentStr,udr.parentBlock,udr.parentSubBlock)
+                        item = u'%s -  %s attached to Interior CELL (%s)' % (
+                            strFid(udr.fid),udr.type,parentStr)
                     else:
                         # Exterior CELL
                         if udr.parentParentEid:
                             parentParentStr = u"%s '%s'" % (strFid(udr.parentParentFid),udr.parentParentEid)
                         else:
                             parentParentStr = strFid(udr.parentParentFid)
-                        item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s) at Block %s, Sub-Block %s' % (
-                            strFid(udr.fid),udr.type,parentStr,parentParentStr,udr.parentBlock,udr.parentSubBlock)
+                        if udr.pos is None:
+                            atPos = u''
+                        else:
+                            atPos = u' at %s' % udr.pos
+                        item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s)%s' % (
+                            strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
                 if not settings['bash.CBashEnabled']: continue
                 if itm:
