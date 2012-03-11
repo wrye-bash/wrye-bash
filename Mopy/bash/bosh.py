@@ -5469,7 +5469,7 @@ class ModInfos(FileInfos):
         try:
             boss.SetActivePlugins(modNames)
         except bapi.BossError as e:
-            if e.value != bapi.BOSS_API_ERROR_PLUGINS_FULL:
+            if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
                 raise
             extra = set(modNames) - set(boss.ActivePlugins)
         else:
@@ -5633,7 +5633,7 @@ class ModInfos(FileInfos):
                     if master in modSet:
                         self.select(master,False,modSet,children)
             except bapi.BossError as e:
-                if e.value == BOSS_API_ERROR_PLUGINS_FULL:
+                if e.code == BOSS_API_ERROR_PLUGINS_FULL:
                     raise PluginsFullError
                 raise
             #--Select in plugins
