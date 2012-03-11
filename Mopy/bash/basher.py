@@ -10873,6 +10873,13 @@ class InstallerConverter_Apply(InstallerLink):
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
+            if not self.converter.hasBCF:
+                deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
+                balt.showWarning(self.gTank,
+                    _(u'%s: An error occured while applying an Auto-BCF.' %
+                      (destArchive.s))
+                # hasBCF will be set to False if there is an error while rearranging files
+                return
             #--Add the new archive to Bash
             if destArchive not in self.data:
                 self.data[destArchive] = bosh.InstallerArchive(destArchive)

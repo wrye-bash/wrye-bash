@@ -7808,10 +7808,14 @@ class InstallerConverter(object):
             lastStep = nextStep
             nextStep += step
         #--Move files around and pack them
-        self.arrangeFiles(SubProgress(progress,lastStep,0.7))
-        self.pack(self.tempDir.join(u'BCF-Temp'), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
-        #--Lastly, apply the settings.
-        #--That is done by the calling code, since it requires an InstallerArchive object to work on
+        try:
+            self.arrangeFiles(SubProgress(progress,lastStep,0.7))
+        except bolt.StateError:
+            self.hasBCF = False
+        else:
+            self.pack(self.tempDir.join(u'BCF-Temp'), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
+            #--Lastly, apply the settings.
+            #--That is done by the calling code, since it requires an InstallerArchive object to work on
 
     def applySettings(self,destInstaller):
         """Applies the saved settings to an Installer"""
