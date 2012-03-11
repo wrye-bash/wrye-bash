@@ -10877,7 +10877,7 @@ class InstallerConverter_Apply(InstallerLink):
                 deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
                 balt.showWarning(self.gTank,
                     _(u'%s: An error occured while applying an Auto-BCF.' %
-                      (destArchive.s))
+                      (destArchive.s)))
                 # hasBCF will be set to False if there is an error while rearranging files
                 return
             #--Add the new archive to Bash
