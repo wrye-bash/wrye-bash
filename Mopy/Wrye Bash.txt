@@ -167,6 +167,7 @@ Additionally, Wrye Bash comes packaged with the following programs:
 === Windows Vista/7 and later
 * On Windows Vista and later, the UAC (User Account Control) protects the Program Files directory (usually C:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 * **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to C:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
+  * If your game is a Steam game, you will have to change the Steam install location to accomplish this.  Read [[https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129|Moving a Steam Install]] for more information on how to do this.
 * **Alternate Solution:**
   * Change the file permissions on your game directory, granting 'Full' privileges to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.
 * **Other solutions (not recommended):**
