@@ -5441,7 +5441,7 @@ class ModInfos(FileInfos):
         try:
             modNames.sort()
         except:
-            deprint(u'Error sorting modnames:',traceback=True)
+            deprint(u'Error sorting modnames:',modNames,traceback=True)
             raise
         modNames.sort(key=lambda a: (a in self.LoadOrder) and self.LoadOrder.index(a))
         #modNames.sort(key=lambda a: self[a].isEsm()) #--Sort on esm/esp
