@@ -6221,9 +6221,14 @@ class ConfigHelpers:
         bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
                               ConfigHelpers.bossLOMismatchCallback)
 
-        self.bossVersion = dirs['boss'].join(u'BOSS.exe')
-        self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
-        self.bossUserPath = dirs['boss'].join(u'userlist.txt')
+        self.bossVersion = dirs['boss'].join(u'BOSS.exe').version
+        if self.bossVersion >= (2,0,0,0):
+            # BOSS 2.0+ stores the masterlist/userlist in a subdirectory
+            self.bossMasterPath = dirs['boss'].join(bush.game.name,u'masterlist.txt')
+            self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
+        else:
+            self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
+            self.bossUserPath = dirs['boss'].join(u'userlist.txt')
         self.bossMasterTime = None
         self.bossUserTime = None
         #--Bash Tags
