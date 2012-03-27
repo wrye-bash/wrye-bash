@@ -5438,7 +5438,11 @@ class ModInfos(FileInfos):
     def getOrdered(self,modNames,asTuple=True):
         """Sort list of mod names into their load order."""
         modNames = list(modNames)
-        modNames.sort()
+        try:
+            modNames.sort()
+        except:
+            deprint(u'Error sorting modnames:',traceback=True)
+            raise
         modNames.sort(key=lambda a: (a in self.LoadOrder) and self.LoadOrder.index(a))
         #modNames.sort(key=lambda a: self[a].isEsm()) #--Sort on esm/esp
         #modNames = [x for x in self.LoadOrder if x in modNames]
