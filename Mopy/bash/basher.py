@@ -3423,7 +3423,8 @@ class InstallersList(balt.Tank):
             else:
                 return
             modList.RefreshUI()
-            iniList.RefreshUI()
+            if iniList:
+                iniList.RefreshUI()
         gInstallers.frameActivated = True
         gInstallers.OnShow()
 
