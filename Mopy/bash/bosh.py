@@ -6204,6 +6204,8 @@ class ConfigHelpers:
         # Load up the API from the BOSS directory first
         try:
             bapi.Init(dirs['boss'].join(u'API').s)
+            if bapi.BAPI:
+                deprint(u'Loaded the BOSS API from:',dirs['boss'].join(u'API').s)
         except bapi.BossVersionError:
             deprint(u"The BOSS API found in BOSS's installation directory (%s) is not compatible with Wrye Bash's usage." % dirs['boss'].s)
         # Load up the API from the compiled directory if that failed
@@ -6228,7 +6230,7 @@ class ConfigHelpers:
             self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
         else:
             self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
-            self.bossUserPath = dirs['boss'].join(u'userlist.txt')
+            bLself.bossUserPath = dirs['boss'].join(u'userlist.txt')
         self.bossMasterTime = None
         self.bossUserTime = None
         #--Bash Tags
