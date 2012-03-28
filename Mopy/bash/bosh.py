@@ -6183,7 +6183,7 @@ class ConfigHelpers:
         # Detect globally installed (into Program Files) BOSS
         try:
             import _winreg
-            for khey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+            for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
                 for wow6432 in (u'',u'Wow6432Node\\'):
                     try:
                         key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
