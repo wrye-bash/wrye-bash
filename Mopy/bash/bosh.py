@@ -6230,7 +6230,7 @@ class ConfigHelpers:
             self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
         else:
             self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
-            bLself.bossUserPath = dirs['boss'].join(u'userlist.txt')
+            self.bossUserPath = dirs['boss'].join(u'userlist.txt')
         self.bossMasterTime = None
         self.bossUserTime = None
         #--Bash Tags
