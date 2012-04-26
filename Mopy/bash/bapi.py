@@ -376,6 +376,7 @@ def Init(path):
         def Load(self, masterlist, userlist=None):
             # Load masterlist/userlist
             _CLoad(self._DB, _enc(masterlist), _enc(userlist) if userlist else None)
+            _CEvalConditionals(self._DB)
             self._GetBashTags()
 
         def EvalConditionals(self):
