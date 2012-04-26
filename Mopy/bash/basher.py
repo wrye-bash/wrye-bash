@@ -15735,7 +15735,7 @@ class Mod_ScanDirty(Link):
                 return u'%s: %06X' % (fid[0],fid[1])
         else:
             def strFid(fid):
-                modId = 0xFF000000 & fid
+                modId = (0xFF000000 & fid) >> 24
                 modName = modInfo.masterNames[modId]
                 id = 0x00FFFFFF & fid
                 return u'%s: %06X' % (modName,id)
@@ -15773,7 +15773,7 @@ class Mod_ScanDirty(Link):
                         if udr.pos is None:
                             atPos = u''
                         else:
-                            atPos = u' at %s' % udr.pos
+                            atPos = u' at %s' % (udr.pos,)
                         item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s)%s' % (
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
