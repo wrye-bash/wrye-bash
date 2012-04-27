@@ -15779,7 +15779,7 @@ class Mod_ScanDirty(Link):
                     dirty[pos] += u'    * %s\n' % item
                 if not settings['bash.CBashEnabled']: continue
                 if itms:
-                    dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itm))
+                    dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itms))
                 for fid in sorted(itms):
                     dirty[pos] += u'    * %s\n' % strFid(fid)
             elif udrs is None or itms is None:
