@@ -15778,7 +15778,7 @@ class Mod_ScanDirty(Link):
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
                 if not settings['bash.CBashEnabled']: continue
-                if itm:
+                if itms:
                     dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itm))
                 for fid in sorted(itms):
                     dirty[pos] += u'    * %s\n' % strFid(fid)
