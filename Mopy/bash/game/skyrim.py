@@ -47,7 +47,7 @@ patchURL = u'' # Update via steam
 patchTip = u'Update via Steam'
 
 #--URL to the Nexus site for this game
-nexusUrl = u'http://www.skyrimnexus.com/'
+nexusUrl = u'http://skyrim.nexusmods.com/'
 
 #--Creation Kit Set information
 class cs:
