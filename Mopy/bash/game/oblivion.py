@@ -49,7 +49,7 @@ patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
 patchTip = u'http://www.elderscrolls.com/'
 
 #--URL to the Nexus site for this game
-nexusUrl = u'http://www.tesnexus.com/'
+nexusUrl = u'http://oblivion.nexusmods.com/'
 
 #--Construction Set information
 class cs:
@@ -84,8 +84,8 @@ class ge:
     exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
            (u'Data',u'obse',u'plugins',u'obgev2.dll'),
            ]
-    url = u'http://www.tesnexus.com/downloads/file.php?id=30054'
-    urlTip = u'http://www.tesnexus.com/'
+    url = u'http://oblivion.nexusmods.com/downloads/file.php?id=30054'
+    urlTip = u'http://oblivion.nexusmods.com/'
 
 #--4gb Launcher
 class laa:
