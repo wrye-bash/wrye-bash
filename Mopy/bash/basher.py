@@ -14570,7 +14570,7 @@ class Mod_Patch_Update(Link):
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
-                            bosh.modInfos.unselect(mod,False)
+                            bosh.modInfos.unselect(mod,True)
                         bosh.modInfos.refreshInfoLists()
                         self.window.RefreshUI(detail=fileName)
 
