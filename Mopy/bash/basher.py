@@ -1749,6 +1749,7 @@ class ModList(List):
         newOrder = oldOrder[:newPos] + toMove + oldOrder[newPos:]
         #--Save and Refresh
         bosh.boss.LoadOrder = newOrder
+        bosh.modInfos.refreshBapi(False, True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
 
