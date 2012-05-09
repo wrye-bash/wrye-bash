@@ -4987,6 +4987,7 @@ class ModInfos(FileInfos):
             u'1.1b':       247388894, # Arthmoor has this size.
             u'GOTY non-SI':247388812, # GOTY version
             u'1.0.7.5':    108369128, # Nehrim
+            u'1.5.0.8':    115531891, # Nehrim Update
             u'SI':         277504985} # Shivering Isles 1.2
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
