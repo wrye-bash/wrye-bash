@@ -257,6 +257,7 @@ allBethFiles = set((
 #--BAIN: Directories that are OK to install to
 dataDirs = set((
     u'bash patches',
+    u'dialogueviews',
     u'interface',
     u'meshes',
     u'strings',
