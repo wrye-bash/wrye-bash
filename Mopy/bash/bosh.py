@@ -18948,7 +18948,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         attrs = []
         if u'NpcFacesForceFullImport' in bashTags:
             face = dict((attr,getattr(record,attr)) for attr in self.faceData)
-            if ValidateDict(face):
+            if ValidateDict(face, self.patchFile):
                 self.id_face[record.fid] = face
             else:
                 #Ignore the record. Another option would be to just ignore the invalid formIDs
