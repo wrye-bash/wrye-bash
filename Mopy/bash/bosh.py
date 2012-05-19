@@ -5638,7 +5638,7 @@ class ModInfos(FileInfos):
                     if master in modSet:
                         self.select(master,False,modSet,children)
             except bapi.BossError as e:
-                if e.code == BOSS_API_ERROR_PLUGINS_FULL:
+                if e.code == bapi.BOSS_API_ERROR_PLUGINS_FULL:
                     raise PluginsFullError
                 raise
             #--Select in plugins
@@ -12051,7 +12051,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         uses = _coerce(uses, int)
         value = _coerce(value, int)
         weight = _coerce(weight, float)
-        effects = readEffectsFromText(fields)
+        effects = readEffectsFromText(self,fields)
         return [eid, full, weight, value, uses, iconPath, modPath, modb, sid, effects]
 
     def readFromText(self,textPath):
@@ -28349,7 +28349,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
 
         record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':
-            print PrintFormID(mFactLong)
+            print PrintFormID(self.mFactLong)
             print patchFile.Current.Debug_DumpModFiles()
             print record
             raise StateError(u"Cobl Morph Factions: Unable to lookup morphable faction record in Cobl Main.esm!")

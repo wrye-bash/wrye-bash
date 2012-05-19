@@ -1940,7 +1940,7 @@ class Tank_Duplicate(Link):
         if not destPath: return
         destDir,destName = destPath.headTail
         if (destDir == srcDir) and (destName == srcName):
-            balt.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
+            self.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
             return
         self.data.copy(srcName,destName,destDir)
         if destDir == srcDir:
