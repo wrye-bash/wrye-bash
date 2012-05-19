@@ -715,7 +715,7 @@ def getIds(fileName=None):
             sizeCheck, = struct.unpack('I',ins.read(4))
             decomp = zlib.decompress(ins.read(size-4))
             if len(decomp) != sizeCheck:
-                raise ModError(self.inName,
+                raise bosh.ModError(self.inName,
                     u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
             reader = bosh.ModReader(fileName,stringBuffer(decomp))
             return (reader,sizeCheck)
@@ -1592,7 +1592,7 @@ class Archive:
 
     def extract(self):
         """Extracts specified files from archive."""
-        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (exe7z,self.path.s)
+        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.exe7z,self.path.s)
         command = Encode(command,'mbcs')
         out = Popen(command, stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
