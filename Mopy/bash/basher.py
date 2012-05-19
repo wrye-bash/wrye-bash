@@ -5904,7 +5904,7 @@ class BashFrame(wx.Frame):
 
         newargs = []
         if isinstance(args,(list,tuple)):
-            args = [[argconvert(x) for x in arg] if isinstance(arg,(list,tuple))
+            args = [[argConvert(x) for x in arg] if isinstance(arg,(list,tuple))
                     else argConvert(arg)
                     for arg in args]
         elif isinstance(args,set):
@@ -6436,7 +6436,7 @@ class ColorDialog(wx.Dialog):
                         color = colors[key]
                     file.write(key+u': '+color+u'\n')
         except Exception,e:
-            balt.showError(self,_(u'An error occurred writing to ')+outPahth.stail+u':\n\n%s'%e)
+            balt.showError(self,_(u'An error occurred writing to ')+outPath.stail+u':\n\n%s'%e)
 
     def OnImport(self,event):
         event.Skip()
@@ -12821,14 +12821,14 @@ class Mod_BaloGroups_Edit(wx.Dialog):
         if not newName: return None
         maValid = re.match(u'([a-zA-Z][ _a-zA-Z]+)',newName,flags=re.U)
         if not maValid or maValid.group(1) != newName:
-            showWarning(self,
+            balt.showWarning(self,
                 _(u"Group name must be letters, spaces, underscores only!"),title)
             return None
         elif newName in self.GetItems():
-            showWarning(self,_(u"group %s already exists.") % newName,title)
+            balt.showWarning(self,_(u"group %s already exists.") % newName,title)
             return None
         elif len(newName) >= 40:
-            showWarning(self,_(u"Group names must be less than forty characters."),title)
+            balt.showWarning(self,_(u"Group names must be less than forty characters."),title)
             return None
         else:
             return newName
@@ -18397,9 +18397,9 @@ def InitStatusBar():
                                     iconkey,0)
                                 filedata = filedata[1]
                                 filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
-                                folderIcon = fileData
+                                folderIcon = filedata
                             else:
-                                fileData = folderIcon
+                                filedata = folderIcon
                         else:
                             icon_path = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,

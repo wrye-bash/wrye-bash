@@ -626,7 +626,7 @@ class Parser(object):
                 while len(stack) > 0 and stack[-1].type != OPEN_PARENS:
                     rpn.append(stack.pop())
                 if len(stack) == 0:
-                    error(_u('Unmatched parenthesis.'))
+                    error(_(u'Unmatched parenthesis.'))
                 numArgs = stack[-1].numArgs
                 stack.pop()
                 if len(stack) > 0 and stack[-1].type == FUNCTION:

@@ -75,7 +75,7 @@ def netString(x):
     if lenx < 128:
         return struct.pack('b',lenx)+x
     elif lenx > 0x7FFF: #--Actually, probably fails earlier.
-        raise UncodedError
+        raise bolt.UncodedError
     else:
         lenx = 0x80 | lenx & 0x7F | (lenx & 0xFF80) << 1
         return struct.pack('H',lenx)+x
@@ -373,7 +373,7 @@ class ModWriter:
                 outWrite(data)
             else:
                 outWrite(structPack('=4sHI','XXXX',4,lenData))
-                outWrite(pack('=4sH',type,0))
+                outWrite(structPack('=4sH',type,0))
                 outWrite(data)
         except Exception as e:
             print e
@@ -1168,7 +1168,7 @@ class MelSet:
 
     def updateMasters(self,record,masters):
         """Updates set of master names according to masters actually used."""
-        if not record.longFids: raise StateError("Fids not in long format")
+        if not record.longFids: raise bolt.StateError("Fids not in long format")
         def updater(fid):
             masters.add(fid)
         updater(record.fid)
@@ -1222,11 +1222,11 @@ class MreSubrecord:
 
     def dumpData(self,out):
         """Dumps state into out. Called by getSize()."""
-        raise AbstractError
+        raise bolt.AbstractError
 
     def dump(self,out):
-        if self.changed: raise StateError(u'Data changed: '+self.subType)
-        if not self.data: raise StateError(u'Data undefined: '+self.subType)
+        if self.changed: raise bolt.StateError(u'Data changed: '+self.subType)
+        if not self.data: raise bolt.StateError(u'Data undefined: '+self.subType)
         out.packSub(self.subType,self.data)
 
 #------------------------------------------------------------------------------

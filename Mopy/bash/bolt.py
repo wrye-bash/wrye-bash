@@ -1650,7 +1650,7 @@ class DataDict:
     def __len__(self):
         return len(self.data)
     def setdefault(self,key,default):
-        return self.data.setdefault(key,value)
+        return self.data.setdefault(key,default)
     def keys(self):
         return self.data.keys()
     def values(self):
@@ -2258,7 +2258,7 @@ class Table(DataDict):
         self.hasChanged = True
     def setdefault(self,key,default):
         if key not in self.data: self.hasChanged = True
-        return self.data.setdefault(key,value)
+        return self.data.setdefault(key,default)
     def pop(self,key,default=None):
         self.hasChanged = True
         return self.data.pop(key,default)
