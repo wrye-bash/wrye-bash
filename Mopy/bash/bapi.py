@@ -557,7 +557,7 @@ def Init(path):
 
             ## ActivePlugins.count('test.esp')
             def count(self,item):
-                return 1 if x in self else 0
+                return 1 if item in self else 0
 
         def GetActivePlugins(self):
             plugins = c_uint8_p_p()
