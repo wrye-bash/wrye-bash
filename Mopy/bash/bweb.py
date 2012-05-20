@@ -76,7 +76,7 @@ class Nexus:
         versions = {}
         if groups:
             for group in groups:
-                inType[group.lower()] = False
+                inGroup[group.lower()] = False
                 versions[group.lower()] = []
             onlySpecificGroups = True
         else:
