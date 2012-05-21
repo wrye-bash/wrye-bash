@@ -8528,15 +8528,15 @@ class InstallerProject(Installer):
     def listSource(self,archive):
         """Returns package structure as text."""
         def walkPath(dir, depth):
-         for file in os.listdir(dir):
-             path = os.path.join(dir, file)
-             if os.path.isdir(path):
-                 log(u' ' * depth + file + u'\\')
-                 depth += 2
-                 walkPath(path, depth)
-                 depth -= 2
-             else:
-                 log(u' ' * depth + file)
+            for file in os.listdir(dir):
+                path = os.path.join(dir, file)
+            if os.path.isdir(path):
+                log(u' ' * depth + file + u'\\')
+                depth += 2
+                walkPath(path, depth)
+                depth -= 2
+            else:
+                log(u' ' * depth + file)
         #--Setup
         with sio() as out:
             log = bolt.LogFile(out)
@@ -9715,7 +9715,7 @@ class ActorLevels:
                         record.setChanged()
                         changed += 1
         #else:
-           # print mod_id_levels
+            #print mod_id_levels
         #--Done
         if changed: modFile.safeSave()
         return changed
@@ -11816,7 +11816,7 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
                         #--(weight, value, health, strength)
                         zip((_unicode,sfloat,int,int,int,_unicode,_unicode),fields[4:10]))
                 elif type == 'BOOK':
-                   books[longid] = (eid,) + tuple(func(field) for func,field in
+                    books[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, echantPoints)
                         zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
                 elif type == 'CLOT':
@@ -11832,7 +11832,7 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
                         #--(weight, value)
                         zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'LIGH':
-                   lights[longid] = (eid,) + tuple(func(field) for func,field in
+                    lights[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, duration)
                         zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
                 elif type == 'MISC':
@@ -11840,7 +11840,7 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
                         #--(weight, value)
                         zip((_unicode,sfloat,int,_unicode),fields[4:8]))
                 elif type == 'SGST':
-                   sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
+                    sigilstones[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, uses)
                         zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
                 elif type == 'SLGM':
@@ -12980,8 +12980,8 @@ class ModGroups:
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) >= 2 and reModExt.search(fields[0]):
-                   mod,group = fields[:2]
-                   mod_group[GPath(mod)] = group
+                    mod,group = fields[:2]
+                    mod_group[GPath(mod)] = group
 
     def writeToText(self,textPath):
         """Exports eids to specified text file."""
@@ -15905,7 +15905,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         if not self.isActive: return
 
         for type in self.getTypes():
-             group_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
 
     def getTypes(self):
         return ['MOD','FACT','RACE','MGEF','SCPT','LTEX','ENCH',
@@ -16086,7 +16086,7 @@ class CellImporter(ImportPatcher):
                     if tempCellData[fid+('flags',)][flag] != cellBlock.cell.flags.__getattr__(flag):
                         cellData[fid+('flags',)][flag] = tempCellData[fid+('flags',)][flag]
         cellData = self.cellData
-       # cellData['Maps'] = {}
+        # cellData['Maps'] = {}
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
                                         MreRecord.type_class['WRLD'])
         progress.setFull(len(self.sourceMods))
@@ -16115,9 +16115,9 @@ class CellImporter(ImportPatcher):
                 for worldBlock in srcFile.WRLD.worldBlocks:
                     for cellBlock in worldBlock.cellBlocks:
                         importCellBlockData(cellBlock)
-                   # if 'C.Maps' in bashTags:
-                   #     if worldBlock.world.mapPath:
-                   #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
+                    # if 'C.Maps' in bashTags:
+                    #     if worldBlock.world.mapPath:
+                    #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
                 if not master in modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -19557,7 +19557,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
             self.csvFid_attr_value.update(nId_attr_value)
 
         for group in self.getTypes():
-             group_patchers.setdefault(group,[]).append(self)
+            group_patchers.setdefault(group,[]).append(self)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -20685,8 +20685,8 @@ class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
 
     def getTypes(self):
         return ['CELLS'] #or 'CELL', but we want this patcher to run in the same
-                         #group as the CellImporter, so we'll have to skip
-                         #worldspaces.  It shouldn't be a problem in those CELLs.
+                        #group as the CellImporter, so we'll have to skip
+                        #worldspaces.  It shouldn't be a problem in those CELLs.
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -27563,7 +27563,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-             group_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
@@ -28279,7 +28279,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
-             group_patchers.setdefault(type,[]).append(self)
+            group_patchers.setdefault(type,[]).append(self)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)

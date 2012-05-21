@@ -986,7 +986,7 @@ class List(wx.Panel):
                 checks = dialog.FindWindowById(id)
                 if checks:
                     for i,mod in enumerate(items):
-                         if checks.IsChecked(i):
+                        if checks.IsChecked(i):
                             self.data.delete(mod)
                 self.RefreshUI()
 
@@ -1299,7 +1299,7 @@ class MasterList(List):
         elif col == 'Group':
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',u''))
         elif col == 'Installer':
-             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
+            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
         elif col == 'Modified':
             self.items.sort(key=lambda a: data[a].mtime)
         elif col in ['Save Order','Num']:
@@ -8628,7 +8628,7 @@ class File_Delete(Link):
             checks = dialog.FindWindowById(id)
             if checks:
                 for i,mod in enumerate(self.data):
-                     if checks.IsChecked(i):
+                    if checks.IsChecked(i):
                         self.window.data.delete(mod)
             self.window.RefreshUI()
         dialog.Destroy()
@@ -9773,13 +9773,13 @@ class Installer_Duplicate(InstallerLink):
         #--Error checking
         newName = GPath(result).tail
         if not newName.s:
-            balt.ShowWarning(self.gTank,_(u"%s is not a valid name.") % result)
+            balt.showWarning(self.gTank,_(u"%s is not a valid name.") % result)
             return
         if newName in self.data:
-            balt.ShowWarning(self.gTank,_(u"%s already exists.") % newName.s)
+            balt.showWarning(self.gTank,_(u"%s already exists.") % newName.s)
             return
         if self.data.dir.join(curName).isfile() and curName.cext != newName.cext:
-            balt.ShowWarning(self.gTank,
+            balt.showWarning(self.gTank,
                 _(u"%s does not have correct extension (%s).") % (newName.s,curName.ext))
             return
         #--Duplicate
@@ -10522,10 +10522,10 @@ class InstallerArchive_Unpack(InstallerLink):
             #--Error checking
             project = GPath(result).tail
             if not project.s or project.cext in bosh.readExts:
-                balt.ShowWarning(self.gTank,_(u"%s is not a valid project name.") % result)
+                balt.showWarning(self.gTank,_(u"%s is not a valid project name.") % result)
                 return
             if self.data.dir.join(project).isfile():
-                balt.ShowWarning(self.gTank,_(u"%s is a file.") % project.s)
+                balt.showWarning(self.gTank,_(u"%s is a file.") % project.s)
                 return
             if project in self.data:
                 if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.title,False):
@@ -10731,10 +10731,10 @@ class InstallerProject_Pack(InstallerLink):
         #--Error checking
         archive = GPath(result).tail
         if not archive.s:
-            balt.ShowWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
             return
         if self.data.dir.join(archive).isdir():
-            balt.ShowWarning(self.gTank,_(u'%s is a directory.') % archive.s)
+            balt.showWarning(self.gTank,_(u'%s is a directory.') % archive.s)
             return
         if archive.cext not in bosh.writeExts:
             balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
@@ -10796,10 +10796,10 @@ class InstallerProject_ReleasePack(InstallerLink):
         #--Error checking
         archive = GPath(result).tail
         if not archive.s:
-            balt.ShowWarning(self.gTank,_(u"%s is not a valid archive name.") % result)
+            balt.showWarning(self.gTank,_(u"%s is not a valid archive name.") % result)
             return
         if self.data.dir.join(archive).isdir():
-            balt.ShowWarning(self.gTank,_(u"%s is a directory.") % archive.s)
+            balt.showWarning(self.gTank,_(u"%s is a directory.") % archive.s)
             return
         if archive.cext not in bosh.writeExts:
             balt.showWarning(self.gTank,_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
@@ -10917,10 +10917,10 @@ class InstallerConverter_ApplyEmbedded(InstallerLink):
 
         #--Error checking
         if not destArchive.s:
-            balt.ShowWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
             return
         if destArchive.cext not in bosh.writeExts:
-            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defatulExt))
+            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
             destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
         if destArchive in self.data:
             if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,_(u'Apply BCF...'),False):
@@ -11068,7 +11068,7 @@ class InstallerConverter_Create(InstallerLink):
         finally:
             progress.Destroy()
             if log:
-               balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
+                balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
 
 #------------------------------------------------------------------------------
 class InstallerConverter_MainMenu(balt.MenuLink):
@@ -12205,7 +12205,7 @@ class Settings_CheckForUpdates(Link):
                        ) % (currentStr, mainStr)
         if msg:
             if balt.askYes(self.window,msg,title):
-                os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+unicode(WBFileId))
+                os.startfile(u'http://oblivion.nexusmods.com/mods/22368')
 
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
@@ -17899,7 +17899,7 @@ def InitImages():
     images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_32_blue.png')),wx.BITMAP_TYPE_PNG)
     #--Bash Patch Dialogue
     images['monkey.16'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey16.jpg')),wx.BITMAP_TYPE_JPEG)
-  #  images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),wx.BITMAP_TYPE_JPEG)
+    #images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),wx.BITMAP_TYPE_JPEG)
     #--DocBrowser
     images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),wx.BITMAP_TYPE_PNG)
     images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),wx.BITMAP_TYPE_PNG)

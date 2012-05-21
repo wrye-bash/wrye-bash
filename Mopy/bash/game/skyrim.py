@@ -30,6 +30,13 @@ from .. import bolt
 from ..bolt import _encode
 from ..brec import *
 
+# Util Constants ---------------------------------------------------------------
+#--Null strings (for default empty byte arrays)
+null1 = '\x00'
+null2 = null1*2
+null3 = null1*3
+null4 = null1*4
+
 #--Name of the game
 name = u'Skyrim'
 altName = u'Wrye Smash'
@@ -723,6 +730,11 @@ listTypes = ('LVLI','LVLN','LVSP',)
 #--CBash patchers available when building a Bashed Patch
 CBash_patchers = tuple()
 
+# Mod Record Elements ----------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Constants
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
 #--Plugin format stuff
 class esp:
     #--Wrye Bash capabilities
@@ -1298,8 +1310,8 @@ class MreHeader(MreHeaderBase):
         MelUnicode('SNAM','description',u'',512),
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'),
-        MelBase('INTV','ingv_p'),
         MelFidList('ONAM','overrides'),
+        MelBase('INTV','ingv_p'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
@@ -1329,14 +1341,14 @@ class MreActi(MelRecord):
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelBase('PNAM','pnam_p'),
-        MelOptStruct('VNAM','I',(FID,'pickupSound')),
         MelOptStruct('SNAM','I',(FID,'dropSound')),
+        MelOptStruct('VNAM','I',(FID,'pickupSound')),
         MelOptStruct('WNAM','I',(FID,'water')),
-        MelNull('KSIZ'), # Handled by MelKeywords
-        MelKeywords('KWDA','keywords'),
         MelLString('RNAM','rnam'),
         MelBase('FNAM','fnam_p'),
         MelOptStruct('KNAM','I',(FID,'keyword')),
+        MelNull('KSIZ'), # Handled by MelKeywords
+        MelKeywords('KWDA','keywords'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1420,7 +1432,7 @@ class MreAmmo(MelRecord):
         MelLString('DESC','description'),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','fIff','speed',(_flags,'flags',0L),'damage','weight'),
+        MelStruct('DATA','fIff','projectileformID',(_flags,'flags',0L),'damage','value'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1483,8 +1495,8 @@ class MreAstp(MelRecord):
         MelString('EDID','eid'),
         MelString('MPRT','maleParent'),
         MelString('FPRT','femaleParent'),
-        MelString('MCHT','maleChild'),
         MelString('FCHT','femaleChild'),
+        MelString('MCHT','maleChild'),
         MelStruct('DATA','I',(_flags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -1498,10 +1510,11 @@ class MreCobj(MelRecord):
         MelString('EDID','eid'),
         MelNull('COCT'), # Handled by MelComponents
         MelComponents('CNTO','=2I','components',(FID,'item',None),'count'),
+        #Needs COED record handler here
         MelConditions(),
         MelFid('CNAM','resultingItem'),
-        MelStruct('NAM1','H','resultingQuantity'),
         MelFid('BNAM','craftingStation'),
+        MelStruct('NAM1','H','resultingQuantity'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1557,6 +1570,7 @@ class MreLvln(MreLeveledList):
         MreLeveledList.MelLevListLvlo(),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
+        #Needs COED record handler here
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 

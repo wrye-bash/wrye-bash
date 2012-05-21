@@ -25,6 +25,7 @@
 
 import optparse
 import sys
+
 def parse():
     parser = optparse.OptionParser()
     parser.add_option('-g', '--game',

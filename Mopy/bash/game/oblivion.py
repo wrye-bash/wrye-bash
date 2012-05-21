@@ -31,6 +31,13 @@ from .. import bush
 from ..brec import *
 from ..bolt import Flags, DataDict
 
+# Util Constants ---------------------------------------------------------------
+#--Null strings (for default empty byte arrays)
+null1 = '\x00'
+null2 = null1*2
+null3 = null1*3
+null4 = null1*4
+
 #--Name of the game
 name = u'Oblivion'
 #--Alternate display name to use instead of "Wrye Bash for ***"
@@ -346,13 +353,13 @@ gmstEids = ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal',
 
 #--Tags supported by this game
 allTags = sorted((u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags',
-                  u'C.Owner', u'C.Water',u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter', u'Graphics', u'Hair',
+                  u'C.Owner', u'C.Water', u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter', u'Graphics', u'Hair',
                   u'IIM', u'Invent', u'Names', u'NoMerge', u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents', u'Sound',
                   u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F',
                   u'R.Attributes-M', u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads', u'Actors.Anims',
                   u'Actors.AIData', u'Actors.DeathItem', u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
-                  u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',u'Actors.SpellsForceAdd',
-                  u'NPC.Race',u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly',u'Npc.EyesOnly')) ##, 'ForceMerge'
+                  u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells', u'Actors.SpellsForceAdd',
+                  u'NPC.Race', u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly', u'Npc.EyesOnly')) ##, 'ForceMerge'
 
 #--Patchers available when building a Bashed Patch
 patchers = (
@@ -462,6 +469,11 @@ class RecordHeader(brec.BaseRecordHeader):
         else:
             return struct.pack('=4s4I',self.recType,self.size,self.flags1,self.fid,self.flags2)
 
+# Mod Record Elements ----------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Constants
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
 # Oblivion Record elements -----------------------------------------------------
 #------------------------------------------------------------------------------
 class MelConditions(MelStructs):
@@ -500,7 +512,7 @@ class MelConditions(MelStructs):
         (target.operFlag,target.unused1,target.compValue,ifunc) = unpacked1
         #--Get parameters
         if ifunc not in bush.allConditions:
-            raise BoltError(u'Unknown condition function: %d' % ifunc)
+            raise bolt.BoltError(u'Unknown condition function: %d' % ifunc)
         form1 = 'iI'[ifunc in bush.fid1Conditions]
         form2 = 'iI'[ifunc in bush.fid2Conditions]
         form12 = form1+form2
