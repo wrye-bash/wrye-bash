@@ -23,6 +23,13 @@
 
 """This a template to use for making new game types for bash.game"""
 
+# Util Constants ---------------------------------------------------------------
+#--Null strings (for default empty byte arrays)
+null1 = '\x00'
+null2 = null1*2
+null3 = null1*3
+null4 = null1*4
+
 #--Name of the game
 ## Example: 'Oblivion'
 name = ''
@@ -143,6 +150,11 @@ allBethFiles = set()
 dataDirs = set()
 ## These are additional special directories that BAIN can install to
 dataDirsPlus = set()
+
+# Mod Record Elements ----------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Constants
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 #--Plugin format stuff
 class esp:

@@ -9220,7 +9220,7 @@ class FnvWRLDRecord(FnvBaseRecord):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(49, FnvCELLRecord, "WCEL")
- ##"WCEL" is an artificial type CBash uses to distinguish World Cells
+##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvCELLRecord(RecordID) if RecordID else None
@@ -13881,7 +13881,7 @@ class ObWRLDRecord(ObBaseRecord):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(24, ObCELLRecord, "WCEL")
- ##"WCEL" is an artificial type CBash uses to distinguish World Cells
+##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
         RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObCELLRecord(RecordID) if RecordID else None

@@ -447,7 +447,7 @@ def Init(path):
             _CGetLoadOrder(self._DB, byref(plugins), byref(num))
             return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
         def _GetLoadOrder(self):
-            ret = BossDb.LoadOrderList(self.GetLoadOrder())
+            ret = self.LoadOrderList(self.GetLoadOrder())
             ret.SetBossDb(self)
             return ret
         def SetLoadOrder(self, plugins):
@@ -572,7 +572,7 @@ def Init(path):
                     raise
             return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
         def _GetActivePlugins(self):
-            ret = BossDb.ActivePluginsList(self.GetActivePlugins())
+            ret = self.ActivePluginsList(self.GetActivePlugins())
             ret.SetBossDb(self)
             return ret
         def SetActivePlugins(self,plugins):
