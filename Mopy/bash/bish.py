@@ -102,14 +102,11 @@ if ret != False: # False == success
     else:
         bush.setGame(ret[0])
 import bosh
-from bolt import _, GPath, Path, mainfunc
+from bolt import GPath, Path, mainfunc
 
 indent = 0
 longest = 0
-if bolt.bUseUnicode:
-    stringBuffer = StringIO.StringIO
-else:
-    stringBuffer = cStringIO.StringIO
+stringBuffer = StringIO.StringIO
 
 # Basics ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -268,7 +265,7 @@ def convertFace(fileName,eid,fromEid,toEid):
     modFile = bosh.ModFile(modInfo,loadFactory)
     modFile.load(True)
     npc = modFile.NPC_.getRecordByEid(eid)
-    bosh.copyattrs(face,npc,('fggs_p','fgga_p','fgts_p'))
+    bolt.copyattrs(face,npc,('fggs_p','fgga_p','fgts_p'))
     npc.setChanged()
     modFile.safeSave()
 
@@ -417,7 +414,7 @@ def bookExport(fileName=None):
         for line in ins:
             maHeader = reHeader.match(line)
             if maHeader:
-                if eid and buffer: imported[eid] = bosh.winNewLines(buffer.getvalue())
+                if eid and buffer: imported[eid] = bolt.winNewLines(buffer.getvalue())
                 eid = maHeader.group(1)
                 buffer = stringBuffer()
                 addTags = True
@@ -442,7 +439,7 @@ def bookExport(fileName=None):
                     blanks = ''
         ins.close()
         if eid and buffer:
-            imported[eid] = bosh.winNewLines(buffer.getvalue())
+            imported[eid] = bolt.winNewLines(buffer.getvalue())
     #--Books from mod
     changed = False
     for book in modFile.BOOK.records:
@@ -706,7 +703,7 @@ def getIds(fileName=None):
     """Gets fids and returns as a set. Primarily for analysis of Oblivion.esm.
     NOTE: Does a low level read and hence can read fids of ALL records in all
     groups. Including CELLs WRLDs, etc."""
-    def getRecordReader(ins,flags,size):
+    def getRecordReader(self,ins,flags,size):
         """Decompress record data as needed."""
         if not bosh.MreRecord.flags1(flags).compressed:
             return (ins,ins.tell()+size)

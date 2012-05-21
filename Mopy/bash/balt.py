@@ -1615,7 +1615,7 @@ class Tank(wx.Panel):
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
 
-    def SetColumnReverse(colummn,reverse):
+    def SetColumnReverse(self,column,reverse):
         pass
     def SetSort(self,sort):
         pass

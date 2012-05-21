@@ -1311,7 +1311,6 @@ class MreRecord(object):
     def getDecompressed(self):
         """Return self.data, first decompressing it if necessary."""
         if not self.flags1.compressed: return self.data
-        import zlib
         size, = struct.unpack('I',self.data[:4])
         decomp = zlib.decompress(self.data[4:])
         if len(decomp) != size:

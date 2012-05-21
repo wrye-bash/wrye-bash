@@ -950,7 +950,7 @@ class sio(StringIO.StringIO):
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
-Path = None
+#Path = None
 def GPath(name):
     """Returns common path object for specified name/path."""
     if name is None: return None
@@ -1253,7 +1253,7 @@ class Path(object):
                     crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
                     progress(insTell())
         except IOError, ierr:
-           # if werr.winerror != 123: raise
+            #if werr.winerror != 123: raise
             deprint(u'Unable to get crc of %s - probably a unicode error' % self._s)
         return crc & 0xFFFFFFFF
 
@@ -2082,8 +2082,8 @@ class BinaryFile(StructFile):
             kwdargs['mode'] = mode
         else:
             new_args = list(args)
-            if args[1] == 'r': new_args[1] == 'rb'
-            elif args[1] == 'w': new_args[1] == 'wb'
+            if args[1] == 'r': new_args[1] = 'rb'
+            elif args[1] == 'w': new_args[1] = 'wb'
             elif args[1] == 'rb' or args[1] == 'wb':
                 pass
             else: new_args[1] = 'rb'
