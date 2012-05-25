@@ -5644,6 +5644,7 @@ class ModInfos(FileInfos):
             #--Select in plugins
             if fileName not in boss.ActivePlugins:
                 boss.ActivePlugins.append(fileName)
+                self.refreshFile(fileName)
         finally:
             if doSave:
                 self.refreshInfoLists()
@@ -5747,8 +5748,9 @@ class ModInfos(FileInfos):
 
     def delete(self,fileName,doRefresh=True):
         """Deletes member file."""
-        self.unselect(fileName)
-        FileInfos.delete(self,fileName,doRefresh)
+        if fileName.s != u'Oblivion.esm' and fileName.s != u'Nehrim.esm' and fileName.s != u'Skyrim.esm' and fileName.s != u'Update.esm':
+            self.unselect(fileName)
+            FileInfos.delete(self,fileName,doRefresh)
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
