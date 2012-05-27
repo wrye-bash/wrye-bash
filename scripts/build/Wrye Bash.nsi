@@ -596,7 +596,7 @@ NoComTypes:
                         Pop $Check_Python
                         ${NSD_SetState} $Check_Python ${BST_CHECKED}
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 65% 8u  "Python webpage" ;http://www.python.org/download/releases/2.7.2/
+                    ${NSD_CreateLink} 60% $0u 65% 8u  "Python webpage" ;http://www.python.org/download/releases/2.7.3/
                         Pop $Link_Python
                         ${NSD_OnClick} $Link_Python onClick_Link
                     IntOp $0 $0 + 11
@@ -626,7 +626,7 @@ NoComTypes:
                         Pop $Check_pywin32
                         ${NSD_SetState} $Check_pywin32 ${BST_CHECKED}
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;http://sourceforge.net/projects/pywin32/files/pywin32/Build216/
+                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;https://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/
                         Pop $Link_pywin32
                         ${NSD_OnClick} $Link_pywin32 onClick_Link
                     IntOp $0 $0 + 11
@@ -668,11 +668,11 @@ NoComTypes:
                 SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_Python $0
                 ${NSD_SetText} $Check_Python "$0 - Downloading..."
-                NSISdl::download http://python.org/ftp/python/2.7.2/python-2.7.2.msi "$TEMP\PythonInstallers\python-2.7.2.msi"
+                NSISdl::download http://python.org/ftp/python/2.7.3/python-2.7.3.msi "$TEMP\PythonInstallers\python-2.7.3.msi"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Python "$0 - Installing..."
-                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.2.msi"'
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.3.msi"'
                     ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_Python "$0 - Download Failed!"
@@ -716,7 +716,7 @@ NoComTypes:
                 SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_pywin32 $0
                 ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build216/pywin32-216.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild216%2F&ts=1307976171&use_mirror=cdnetworks-us-1 "$TEMP\PythonInstallers\pywin32.exe"
+                NSISdl::download http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild%20217%2Fpywin32-217.win32-py2.7.exe&ts=1338158012&use_mirror=softlayer "$TEMP\PythonInstallers\pywin32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
@@ -1323,9 +1323,9 @@ NoComTypes:
         ${ElseIf} $0 == $Link_wx
             ExecShell "open" "http://www.wxpython.org/download.php#stable"
         ${ElseIf} $0 == $Link_Python
-            ExecShell "open" "http://www.python.org/download/releases/2.6.6/"
+            ExecShell "open" "http://www.python.org/download/releases/2.7.3/"
         ${ElseIf} $0 == $Link_pywin32
-            ExecShell "open" "http://sourceforge.net/projects/pywin32/files/pywin32/Build216/"
+            ExecShell "open" "https://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/"
         ${ElseIf} $0 == $Link_vcredist
             ExecShell "open" "http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2"
         ${EndIf}
@@ -1496,8 +1496,8 @@ NoComTypes:
         WriteRegStr HKLM "Software\Wrye Bash" "Installer Path" "$EXEPATH"
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayName" "Wrye Bash"
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "UninstallString" '"$COMMONFILES\Wrye Bash\uninstall.exe"'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "URLInfoAbout" 'http://www.tesnexus.com/downloads/file.php?id=22368'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/index.php?/topic/1145445-relz-wrye-bash-thead-55/'
+        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "URLInfoAbout" 'http://oblivion.nexusmods.com/mods/22368'
+        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/topic/1376871-rel-wrye-bash/'
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "Publisher" 'Wrye & Wrye Bash Development Team'
         WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayVersion" '${WB_FILEVERSION}'
         WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoModify" 1
