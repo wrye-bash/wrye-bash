@@ -22,14 +22,14 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
 [/list][/list][/spoiler]
 
-[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] or [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
+[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] or [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
 
 [b]Documentation[/b]:
 [list]
   [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash.html]Official Readme[/url] (also included in the download as "Wrye Bash.html" in the Mopy folder)
   [*]Waruddar's [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/patch_option_reference.html]Patch Option Reference[/url] (also included in the download as "patch_option_reference.html" in the Mopy folder)
-  [*]alt3rn1ty's [url=http://www.tesnexus.com/downloads/file.php?id=35230]Wrye Bash Pictorial Guide[/url]
-  [*]Metallicow's BAIN [url=http://www.tesnexus.com/downloads/file.php?id=38857]Demo Wizard[/url]
+  [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]
+  [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url]
   [*][url=http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash]UESP Wrye Bash unofficial wiki[/url]
   [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]简体中文[/url]
 [/list]
@@ -45,10 +45,10 @@ First, if you're using Windows XP, Wrye Bash needs the [url=http://www.microsoft
 If you're using the Standalone version, the only other thing you need to install manually is the [url=http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2]MSVC++ 2008 Redistributable[/url].
 
 If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:[spoiler][list]
-  [*][url=http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi]Python 2.7.2[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
+  [*][url=http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi]Python 2.7.3[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
   [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe]wxPython 2.8.12.1 unicode for Python 2.7[/url]
   [*][url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
-  [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url]
+  [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url]
   [*]Other setups _may_work_, but this is the only officially supported setup.
   [*]Python 3.x: [b][u]NOT Supported[/u][/b]
 [/list]Note that the 32-bit versions are required even if you are on a 64-bit operating system[/spoiler]
@@ -71,10 +71,10 @@ Use >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Program
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg]Screenshot 2[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg]Screenshot 3[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg]Screenshot 4[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5.jpg]Screenshot 5[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5s.jpg]Screenshot 5[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg]Screenshot 6[/url]
 [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg]Screenshot 7[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8.jpg]Screenshot 8[/url]
+[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8s.jpg]Screenshot 8[/url]
 
 Rinse and repeat when a new svn comes out.
 
@@ -90,7 +90,7 @@ Rinse and repeat when a new svn comes out.
  [*]Your Load Order (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Mods...'
  [*]Your Bashed Tags (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Bash Tags...'
  [*]Your Bashed Patch config (in spoiler tags).  Get this by right clicking on the Bashed Patch and selecting 'List Patch Config...'[/list][/s][/list][/spoiler]
-[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url], [url=http://tesnexus.com/downloads/file.php?id=22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
+[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url], [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
 
 [b]Related Projects[/b]:[list]
 [*]The Official [topic=1286667]Wrye Bash for Oblivion thread[/topic].
