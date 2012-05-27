@@ -17571,6 +17571,8 @@ class App_BOSS(App_Button):
                         bosh.modInfos.mtimes.clear()
                         # And refresh to get the new times so WB will keep the order that BOSS specifies
                         bosh.modInfos.refresh(doInfos=False)
+                        # Refresh UI, so WB is made aware of the changes to loadorder.txt
+                        modList.RefreshUI('ALL')
                 except Exception, error:
                     balt.showError(bashFrame,
                                    (_(u"Used Path: %s") % exePath.s + u'\n' +
