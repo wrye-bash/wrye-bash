@@ -91,7 +91,7 @@ class ge:
     exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
            (u'Data',u'obse',u'plugins',u'obgev2.dll'),
            ]
-    url = u'http://oblivion.nexusmods.com/downloads/file.php?id=30054'
+    url = u'http://oblivion.nexusmods.com/mods/30054'
     urlTip = u'http://oblivion.nexusmods.com/'
 
 #--4gb Launcher
