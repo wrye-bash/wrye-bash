@@ -2341,6 +2341,7 @@ class ModDetails(SashPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
+        bosh.modInfos.refreshBapi(False, True)
         modList.RefreshUI()
 
     def DoCancel(self,event):
