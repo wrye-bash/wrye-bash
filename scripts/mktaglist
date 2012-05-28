@@ -1,0 +1,41 @@
+#!/usr/bin/awk -f
+#
+# usage: ./mktaglist <masterlist >taglist
+#
+# this is more accurate than the algorithm in bish (it gets lines that bish
+# misses), and it keeps all lines in their original order, but I need to
+# confirm with PM that we can parse the FCOM-conditional lines properly
+
+function printHeader(revision, dateStr)
+{
+    printf "\\ Taglist for Wrye Bash; derived from BOSS Masterlist revision %d %s.\n\n", revision, dateStr
+}
+
+# if we have grabbed any data for this mod, output it
+function flushMod()
+{
+    if ("" != note || "" != tags)
+    {
+        print modname
+        if ("" != note) { print note; note = "" }
+        if ("" != tags) { print tags; tags = "" }
+    }
+}
+
+# print header when we encounter the note for Oblivion.esm
+/^\?/ { if ("Oblivion.esm" == modname) printHeader($4, $5 " " $6 " " $7) }
+
+# grab mod tags, and trim off any extra text after the tags on this line
+/^[><]?%/ { gsub(/\}\}.*/,"}}"); tags = $0; next }
+
+# grab notes that label this mod as dirty (may be multiple lines)
+/^([><]?\?| *IF).*Needs TES4Edit cleaning/ { if ("" != note) { note = note "\n" } note = note $0; next }
+
+# ignore stuff we're not interested in
+/^[><]?[\\?:"$^* ]|^[ \t]*$/ { next }
+
+# everything else is a mod name
+{ flushMod(); modname = $0 }
+
+# just in case the last line has a bash tag or a note
+END { flushMod() }

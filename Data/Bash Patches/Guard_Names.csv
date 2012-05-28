@@ -1,0 +1,727 @@
+Type,Mod Name,ObjectIndex,Editor Id,Name
+NPC_,Oblivion.esm,0x18ABFC,AdventurerOrcBattlemage01,Ugrag gro-Bahg
+NPC_,Oblivion.esm,0x18ABFB,AdventurerOrcSpellsword01,Ruglak Bermgur
+NPC_,Oblivion.esm,0x01F1A8,AdventurerOrcWarrior01,Burzun Orgar
+NPC_,Oblivion.esm,0x18ABFD,AdventurerOrcWarrior02,Mullug gro-Kahl
+NPC_,Oblivion.esm,0x18ABFE,AdventurerOrcWarrior03,Homdraz gum-Grog
+NPC_,Oblivion.esm,0x18ABFF,AdventurerOrcWarrior04,Ragnorok Gorogarz
+NPC_,Oblivion.esm,0x00BFD7,AnvilGuardCastlePatrolDay01,Private Happius
+NPC_,Oblivion.esm,0x00BFD9,AnvilGuardCastlePatrolNight01,Private James
+NPC_,Oblivion.esm,0x00A2A7,AnvilGuardCastlePostDay01,Private Zanzibar
+NPC_,Oblivion.esm,0x00A2AA,AnvilGuardCastlePostDay02,Private Milo
+NPC_,Oblivion.esm,0x00BFDB,AnvilGuardCastlePostDay03,Private Ildarn
+NPC_,Oblivion.esm,0x00A2AB,AnvilGuardCastlePostNight01,Private Classious
+NPC_,Oblivion.esm,0x00A2AE,AnvilGuardCastlePostNight02,Private Barnibus
+NPC_,Oblivion.esm,0x00BFDC,AnvilGuardCastlePostNight03,Private Nicholias
+NPC_,Oblivion.esm,0x00BFDF,AnvilGuardCityPatrolDay01,Private Jordanius
+NPC_,Oblivion.esm,0x00BFED,AnvilGuardCityPatrolDay02,Private Lazerus
+NPC_,Oblivion.esm,0x00BFE9,AnvilGuardCityPatrolNight01,Private Xavier
+NPC_,Oblivion.esm,0x00BFEE,AnvilGuardCityPatrolNight02,Private Derik
+NPC_,Oblivion.esm,0x00BFF7,AnvilGuardCityPostDay01,Private Flodius
+NPC_,Oblivion.esm,0x00BFFB,AnvilGuardCityPostDay02,Private Angilus
+NPC_,Oblivion.esm,0x04EFFB,AnvilGuardCityPostDay03,Private Handel
+NPC_,Oblivion.esm,0x00BFF8,AnvilGuardCityPostNight01,Private Walmus
+NPC_,Oblivion.esm,0x00BFFC,AnvilGuardCityPostNight02,Private Porterius
+NPC_,Oblivion.esm,0x04EFFC,AnvilGuardCityPostNight03,Private Gellan
+NPC_,Oblivion.esm,0x00A0AE,AnvilGuardCityPostStablesDay,Private Remus
+NPC_,Oblivion.esm,0x00A0AF,AnvilGuardCityPostStablesNight,Private Cedric
+NPC_,Oblivion.esm,0x00C0F3,AnvilGuardEscortCountess,Corporal Boris
+NPC_,Oblivion.esm,0x00BE50,AnvilGuardJailorDay,Jailor Petri
+NPC_,Oblivion.esm,0x00BE55,AnvilGuardJailorNight,Jailor Filtch
+NPC_,Oblivion.esm,0x14683D,ArenaICYellowTeamChampion,Agramexa
+NPC_,Oblivion.esm,0x02A2B3,ArenaRank0C,BitesHisNails
+NPC_,Oblivion.esm,0x029231,ArenaRank1A,Ysill The Bruiser
+NPC_,Oblivion.esm,0x029233,ArenaRank1B,Magia Pettila
+NPC_,Oblivion.esm,0x029938,ArenaRank4A,Rugla Sword Bash
+NPC_,Oblivion.esm,0x029945,ArenaRank5A,FleaKiller
+NPC_,Oblivion.esm,0x029946,ArenaRank5B,She-Who-Kills-Others
+NPC_,Oblivion.esm,0x029947,ArenaRank5C,S'simi LongHorns
+NPC_,Oblivion.esm,0x02996B,ArenaRank6D,Werma Strongwilled
+NPC_,Oblivion.esm,0x03B302,BCDeadGuy01,Derrian
+NPC_,Oblivion.esm,0x0CA18E,BlackRockPirate04,Captain Sesani
+NPC_,Oblivion.esm,0x01EC4B,BleakMineGuardCaptain,Captain Ysmarill
+NPC_,Oblivion.esm,0x0982FA,BravilGuardCastlePatrolDay01,Private Cescious
+NPC_,Oblivion.esm,0x0982FB,BravilGuardCastlePatrolNight01,Private Marrus
+NPC_,Oblivion.esm,0x00A137,BravilGuardCastlePostDay01,Private Yolan
+NPC_,Oblivion.esm,0x00A13A,BravilGuardCastlePostDay02,Private Thomas
+NPC_,Oblivion.esm,0x04EFFD,BravilGuardCastlePostDay03,Private Harvil
+NPC_,Oblivion.esm,0x00A13F,BravilGuardCastlePostNight01,Private Septus
+NPC_,Oblivion.esm,0x00A140,BravilGuardCastlePostNight02,Private Genus
+NPC_,Oblivion.esm,0x04EFFE,BravilGuardCastlePostNight03,Private Harper
+NPC_,Oblivion.esm,0x00A143,BravilGuardCityPatrolDay01,Private Olan
+NPC_,Oblivion.esm,0x00A15B,BravilGuardCityPatrolNight01,Private Leroy
+NPC_,Oblivion.esm,0x00A168,BravilGuardCityPostDay01,Private Jenkins
+NPC_,Oblivion.esm,0x00A152,BravilGuardCityPostDay02,Private Isold
+NPC_,Oblivion.esm,0x00A156,BravilGuardCityPostDay03,Private Atlas
+NPC_,Oblivion.esm,0x00A169,BravilGuardCityPostNight01,Private Kevinus
+NPC_,Oblivion.esm,0x00A15D,BravilGuardCityPostNight02,Private Tabor
+NPC_,Oblivion.esm,0x00A15E,BravilGuardCityPostNight03,Private Emiril
+NPC_,Oblivion.esm,0x00A0B0,BravilGuardCityPostStablesDay,Private Hobbs
+NPC_,Oblivion.esm,0x00A0B1,BravilGuardCityPostStablesNight,Private Titus
+NPC_,Oblivion.esm,0x00A188,BravilGuardEscortCount,Corporal Gangril
+NPC_,Oblivion.esm,0x00A17D,BravilGuardJailorDay,Jailor Horus
+NPC_,Oblivion.esm,0x00A17E,BravilGuardJailorNight,Jailor Varitorcius
+NPC_,Oblivion.esm,0x0362E8,BrumaGuardCastlePostDay01,Private Kingsly
+NPC_,Oblivion.esm,0x0362E9,BrumaGuardCastlePostDay02,Private Jared
+NPC_,Oblivion.esm,0x0362EA,BrumaGuardCastlePostNight01,Private Dentiri
+NPC_,Oblivion.esm,0x0362EB,BrumaGuardCastlePostNight02,Private Ulembar
+NPC_,Oblivion.esm,0x0362B7,BrumaGuardCityPatrolDay01,Private Hepaditus
+NPC_,Oblivion.esm,0x0362BD,BrumaGuardCityPatrolDay02,Private Larius
+NPC_,Oblivion.esm,0x0362C9,BrumaGuardCityPatrolNight01,Private Hillton
+NPC_,Oblivion.esm,0x0362CA,BrumaGuardCityPatrolNight02,Private Feralor
+NPC_,Oblivion.esm,0x0362A7,BrumaGuardCityPostDay01,Private Cletus
+NPC_,Oblivion.esm,0x0362AD,BrumaGuardCityPostDay02,Private Gelben
+NPC_,Oblivion.esm,0x0C87B2,BrumaGuardCityPostDay03,Private Horatius
+NPC_,Oblivion.esm,0x0C87B4,BrumaGuardCityPostDay04,Private William
+NPC_,Oblivion.esm,0x0362B0,BrumaGuardCityPostNight01,Private Emanus
+NPC_,Oblivion.esm,0x0362B1,BrumaGuardCityPostNight02,Private Polari
+NPC_,Oblivion.esm,0x0C87B3,BrumaGuardCityPostNight03,Private Eurilicus
+NPC_,Oblivion.esm,0x0C87B5,BrumaGuardCityPostNight04,Private Teleponos
+NPC_,Oblivion.esm,0x00A0B2,BrumaGuardCityPostStablesDay,Private Luarence
+NPC_,Oblivion.esm,0x00A0B3,BrumaGuardCityPostStablesNight,Private Marimaus
+NPC_,Oblivion.esm,0x0362EE,BrumaGuardEscortCountess,Corporal Jamal
+NPC_,Oblivion.esm,0x0362ED,BrumaGuardJailorDay,Jailor Greeban
+NPC_,Oblivion.esm,0x0362EC,BrumaGuardJailorNight,Jailor Cleptus
+NPC_,Oblivion.esm,0x001734,BWCWatersEdge1,Blackwood Guard Decius
+NPC_,Oblivion.esm,0x098176,BWCWatersEdge2,Blackwood Guard PointEars
+NPC_,Oblivion.esm,0x098177,BWCWatersEdge3,Blackwood Guard Itjitash
+NPC_,Oblivion.esm,0x0055D2,CheydinhalGuardCastlePatrolDay01,Private Numerius
+NPC_,Oblivion.esm,0x0055D3,CheydinhalGuardCastlePatrolNight01,Private Horatius
+NPC_,Oblivion.esm,0x0055C2,CheydinhalGuardCastlePostDay01,Private Plocamus
+NPC_,Oblivion.esm,0x0055C3,CheydinhalGuardCastlePostDay02,Private Valentinus
+NPC_,Oblivion.esm,0x0055C4,CheydinhalGuardCastlePostNight01,Private Docilus
+NPC_,Oblivion.esm,0x0055C5,CheydinhalGuardCastlePostNight02,Private Scipio
+NPC_,Oblivion.esm,0x0055C6,CheydinhalGuardCityPatrolDay01,Private Paesentius
+NPC_,Oblivion.esm,0x0055C7,CheydinhalGuardCityPatrolDay02,Private Placidius
+NPC_,Oblivion.esm,0x0055C8,CheydinhalGuardCityPatrolNight01,Private Spurius
+NPC_,Oblivion.esm,0x0055C9,CheydinhalGuardCityPatrolNight02,Private Servius
+NPC_,Oblivion.esm,0x0055CA,CheydinhalGuardCityPostDay01,Private Decimus
+NPC_,Oblivion.esm,0x0055CB,CheydinhalGuardCityPostDay02,Private Amulius
+NPC_,Oblivion.esm,0x04EF69,CheydinhalGuardCityPostDay03,Private Oppius
+NPC_,Oblivion.esm,0x04EFF9,CheydinhalGuardCityPostDay04,Private Herius
+NPC_,Oblivion.esm,0x0055CC,CheydinhalGuardCityPostNight01,Private Gabinius
+NPC_,Oblivion.esm,0x0055CD,CheydinhalGuardCityPostNight02,Private Acilianus
+NPC_,Oblivion.esm,0x04EF6F,CheydinhalGuardCityPostNight03,Private Norton
+NPC_,Oblivion.esm,0x04EFFA,CheydinhalGuardCityPostNight04,Private Oranius
+NPC_,Oblivion.esm,0x00A0B4,CheydinhalGuardCityPostStablesDay,Cheydinhal Stable Guard
+NPC_,Oblivion.esm,0x00A0B5,CheydinhalGuardCityPostStablesNight,Cheydinhal Stable Guard
+NPC_,Oblivion.esm,0x0055D4,CheydinhalGuardCountEscort,Corporal Mitch
+NPC_,Oblivion.esm,0x0055D5,CheydinhalGuardJailorDay,Jailor Auxientius
+NPC_,Oblivion.esm,0x0055D6,CheydinhalGuardJailorNight,Jailor Spurius
+NPC_,Oblivion.esm,0x0234A9,ChorrolGuardCountess,Corporal Amulius
+NPC_,Oblivion.esm,0x0234A6,ChorrolGuardGreatHallDay01,Private Suedius
+NPC_,Oblivion.esm,0x0234A5,ChorrolGuardGreatHallNight01,Private Marullinus
+NPC_,Oblivion.esm,0x028C7F,ChorrolGuardJailorDay,Jailor Comes
+NPC_,Oblivion.esm,0x028C80,ChorrolGuardJailorNight,Jailor Sulpicius
+NPC_,Oblivion.esm,0x0233EC,ChorrolGuardPatrolDay01,Private Crotilo
+NPC_,Oblivion.esm,0x0231AA,ChorrolGuardPatrolDay02,Private Lampronius
+NPC_,Oblivion.esm,0x023189,ChorrolGuardPatrolDay03,Private Tertius
+NPC_,Oblivion.esm,0x022584,ChorrolGuardPatrolNight01,Private Abito
+NPC_,Oblivion.esm,0x022583,ChorrolGuardPatrolNight02,Private Senilis
+NPC_,Oblivion.esm,0x02253D,ChorrolGuardPatrolNight03,Private Calogerus
+NPC_,Oblivion.esm,0x02ACC3,ChorrolGuardPostDay01,Private Pudens
+NPC_,Oblivion.esm,0x022586,ChorrolGuardPostDay02,Private Homenand
+NPC_,Oblivion.esm,0x022587,ChorrolGuardPostDay03,Private Macro
+NPC_,Oblivion.esm,0x0222BB,ChorrolGuardPostNight01,Private Placidius
+NPC_,Oblivion.esm,0x0222C0,ChorrolGuardPostNight02,Private Spurius
+NPC_,Oblivion.esm,0x02ACC4,ChorrolGuardPostNight03,Private Pisentius
+NPC_,Oblivion.esm,0x00A0B6,ChorrolGuardPostStablesDay,Private Christianus
+NPC_,Oblivion.esm,0x00A0B7,ChorrolGuardPostStablesNight,Private Constans
+NPC_,Oblivion.esm,0x088D28,ChorrolGuardPrivateQuarters01,Private Hostilius
+NPC_,Oblivion.esm,0x088D29,ChorrolGuardPrivateQuarters02,Private Amulius
+NPC_,Oblivion.esm,0x088D2A,ChorrolGuardPrivateQuarters03,Private Primulus
+NPC_,Oblivion.esm,0x0738DC,ClarabellaPirate1,Narcissa Unglar
+NPC_,Oblivion.esm,0x0738DD,ClarabellaPirate2,Jobak Olong-Bahr
+NPC_,Oblivion.esm,0x0738DE,ClarabellaPirate3,Cut-Throat
+NPC_,Oblivion.esm,0x0BE330,Courier1,Courier Vinetta
+NPC_,Oblivion.esm,0x0BE33D,Courier2,Courier Malissa
+NPC_,Oblivion.esm,0x0BE340,Courier3,Courier Josephine
+NPC_,Oblivion.esm,0x0BE341,Courier4,Courier Rillian
+NPC_,Oblivion.esm,0x098254,DAAzuraVampire01,Mazgung gro-Bash
+NPC_,Oblivion.esm,0x098255,DAAzuraVAmpire02,Hesielsi
+NPC_,Oblivion.esm,0x098256,DAAzuraVampire03,Samika Lost Song
+NPC_,Oblivion.esm,0x098257,DAAzuraVampire04,Felsie Sadsorrow
+NPC_,Oblivion.esm,0x098258,DAAzuraVampire05,Azgura
+NPC_,Oblivion.esm,0x01EC02,DAMeridiaNecromancer1,Mage Ralen
+NPC_,Oblivion.esm,0x01EC03,DAMeridiaNecromancer2,Mage Vibius
+NPC_,Oblivion.esm,0x01EC04,DAMeridiaNecromancer3,Mage Lenimace
+NPC_,Oblivion.esm,0x01EC05,DAMeridiaNecromancer4,Mage Vibdas
+NPC_,Oblivion.esm,0x01EC06,DAMeridiaNecromancer5,Mage Sequina
+NPC_,Oblivion.esm,0x02AE7B,DarkPirate1,Macedon Lugino
+NPC_,Oblivion.esm,0x02AE7C,DarkPirate2,Ruben Herlt
+NPC_,Oblivion.esm,0x02AE7D,DarkPirate3,Cosmus Calidius
+NPC_,Oblivion.esm,0x0493AE,DarkPirate4,Kaeso Maverik
+NPC_,Oblivion.esm,0x049880,DarkPirate5,Fights-With-Spikes
+NPC_,Oblivion.esm,0x049882,DarkPirate6,Casca Fundanus
+NPC_,Oblivion.esm,0x02E5D8,DarkPrisonGuard01,Private Granius
+NPC_,Oblivion.esm,0x02E5D9,DarkPrisonGuard02,Private Montinor
+NPC_,Oblivion.esm,0x045F7F,DarkPrisonGuard03,Private Grog
+NPC_,Oblivion.esm,0x02E5DB,DarkPrisonGuard04,Private Glen
+NPC_,Oblivion.esm,0x02E5DC,DarkPrisonGuard05,Private Nornamir
+NPC_,Oblivion.esm,0x045F7E,DarkPrisonGuardTaunt,Private Dexippus
+NPC_,Oblivion.esm,0x098064,E3KvatchSoldierALERT02,Private Tuccius
+NPC_,Oblivion.esm,0x09808A,E3KvatchSoldierArcher02,Private Rollo
+NPC_,Oblivion.esm,0x097FAF,E3KvatchStartSoldier,Private Ivmarus
+NPC_,Oblivion.esm,0x0947AA,FGGuardPorterAnvil,Porter Barren
+NPC_,Oblivion.esm,0x0947AB,FGGuardPorterBravil,Porter Ramond
+NPC_,Oblivion.esm,0x0947AC,FGGuardPorterBruma,Porter Johannes
+NPC_,Oblivion.esm,0x0947AD,FGGuardPorterCheydinhal,Porter Rentus
+NPC_,Oblivion.esm,0x0947A9,FGGuardPorterChorrol,Porter Eric
+NPC_,Oblivion.esm,0x0947AE,FGGuardPorterLeyawiin,Porter Yuran
+NPC_,Oblivion.esm,0x0947AF,FGGuardPorterSkingrad,Porter Gurgan
+NPC_,Oblivion.esm,0x0738DB,FirstMateFilch,First Mate Filch
+CREA,Oblivion.esm,0x00CF22,HorseBayClaudeMaric,Flash
+CREA,Oblivion.esm,0x0BE331,HorseBlackCourier1,Jones
+CREA,Oblivion.esm,0x0BE547,HorseBlackCourier2,Symbol
+CREA,Oblivion.esm,0x0BE54F,HorseBlackCourier3,Divinie
+CREA,Oblivion.esm,0x0BE556,HorseBlackCourier4,Mueller
+CREA,Oblivion.esm,0x04DE8E,HorsePCBayBravil,Margret
+CREA,Oblivion.esm,0x04E28B,HorsePCBaySkingrad,Thunder
+CREA,Oblivion.esm,0x04DE8F,HorsePCBlackCheydinhal,Shadow
+CREA,Oblivion.esm,0x04DE90,HorsePCChestnutChorrol,Walnut
+CREA,Oblivion.esm,0x04DE91,HorsePCPaintBruma,Pastel
+CREA,Oblivion.esm,0x05322D,HorsePCPaintLeyawiin,Inkers
+CREA,Oblivion.esm,0x04DE8D,HorsePCWhiteAnvil,Cloud
+NPC_,Oblivion.esm,0x0546F2,ICArboretumPatrolDay01,Guardian Jacobs
+NPC_,Oblivion.esm,0x0546FA,ICArboretumPatrolDay02,Watchman Satorus
+NPC_,Oblivion.esm,0x0546FD,ICArboretumPatrolNight01,Watchman Gargery
+NPC_,Oblivion.esm,0x054702,ICArboretumPatrolNight02,Watchman Hest
+NPC_,Oblivion.esm,0x0752F2,ICArboretumPostDay01,Warder Harper
+NPC_,Oblivion.esm,0x0752F4,ICArboretumPostDay02,Watchman Johan
+NPC_,Oblivion.esm,0x0752F6,ICArboretumPostDay03,Warder Harris
+NPC_,Oblivion.esm,0x0752F9,ICArboretumPostDay04,Watchman Thespus
+NPC_,Oblivion.esm,0x0752F3,ICArboretumPostNight01,Watchman Keegan
+NPC_,Oblivion.esm,0x0752F5,ICArboretumPostNight02,Warder Norrius
+NPC_,Oblivion.esm,0x0752F7,ICArboretumPostNight03,Watchman Biggs
+NPC_,Oblivion.esm,0x0752F8,ICArboretumPostNight04,Watchman Laritas
+NPC_,Oblivion.esm,0x09263A,ICArcaneUGuardDay01,Legion Battlemage Nefarsius
+NPC_,Oblivion.esm,0x092642,ICArcaneUGuardDay02,Legion Battlemage Ligolin
+NPC_,Oblivion.esm,0x09263B,ICArcaneUGuardNight01,Legion Battlemage Geminius
+NPC_,Oblivion.esm,0x092643,ICArcaneUGuardNight02,Legion Battlemage Stormenius
+NPC_,Oblivion.esm,0x0752F1,ICArenaPatrolDay01,Guardian Julius
+NPC_,Oblivion.esm,0x0837F2,ICArenaPatrolNight01,Watchman Janus
+NPC_,Oblivion.esm,0x0752EE,ICArenaPostDay01,Watchman Bartimus
+NPC_,Oblivion.esm,0x0837F1,ICArenaPostDay02,Watchman Aquilla
+NPC_,Oblivion.esm,0x0837F3,ICArenaPostDay03,Warder Optimus
+NPC_,Oblivion.esm,0x0752EF,ICArenaPostNight01,Warder Magnus
+NPC_,Oblivion.esm,0x0752F0,ICArenaPostNight02,Watchman Copernicus
+NPC_,Oblivion.esm,0x0837F4,ICArenaPostNight03,Watchman Rex
+NPC_,Oblivion.esm,0x016341,ICElvenGuardPatrolDay01,Watchman Ferox
+NPC_,Oblivion.esm,0x016343,ICElvenGuardPatrolDay02,Watchman Agustus
+NPC_,Oblivion.esm,0x016345,ICElvenGuardPatrolDay03,Watchman Ignacius
+NPC_,Oblivion.esm,0x016347,ICElvenGuardPatrolDay04,Watchman Rose
+NPC_,Oblivion.esm,0x016349,ICElvenGuardPatrolDay05,Watchman Winnows
+NPC_,Oblivion.esm,0x016342,ICElvenGuardPatrolNight01,Guardian Nathanial
+NPC_,Oblivion.esm,0x016344,ICElvenGuardPatrolNight02,Watchman Claudius
+NPC_,Oblivion.esm,0x016346,ICElvenGuardPatrolNight03,Watchman Smith
+NPC_,Oblivion.esm,0x016348,ICElvenGuardPatrolNight04,Watchman Adrexus
+NPC_,Oblivion.esm,0x01634A,ICElvenGuardPatrolNight05,Watchman Mann
+NPC_,Oblivion.esm,0x01633B,ICElvenGuardPostDay01,Warder Marcus
+NPC_,Oblivion.esm,0x01633C,ICElvenGuardPostDay02,Watchman Sigrario
+NPC_,Oblivion.esm,0x01633D,ICElvenGuardPostDay03,Watchman Rustinius
+NPC_,Oblivion.esm,0x01633E,ICElvenGuardPostNight01,Watchman Tertius
+NPC_,Oblivion.esm,0x01633F,ICElvenGuardPostNight02,Warder Piscius
+NPC_,Oblivion.esm,0x016340,ICElvenGuardPostNight03,Watchman Gallus
+NPC_,Oblivion.esm,0x01C321,ICMarketGuardPatrolDay01,Guardian Vibius
+NPC_,Oblivion.esm,0x01C32B,ICMarketGuardPatrolNight01,Watchman Marsyayus
+NPC_,Oblivion.esm,0x01C347,ICMarketGuardPostDay01,Watchman Lustus
+NPC_,Oblivion.esm,0x01C349,ICMarketGuardPostDay02,Watchman Vestimus
+NPC_,Oblivion.esm,0x01C34A,ICMarketGuardPostDay03,Warder Publius
+NPC_,Oblivion.esm,0x01C336,ICMarketGuardPostDay04,Watchman Secundus
+NPC_,Oblivion.esm,0x01C31F,ICMarketGuardPostDay05,Warder Gnaeus
+NPC_,Oblivion.esm,0x01C348,ICMarketGuardPostNight01,Watchman Vibidius
+NPC_,Oblivion.esm,0x01C34B,ICMarketGuardPostNight02,Warder Caius
+NPC_,Oblivion.esm,0x01C34C,ICMarketGuardPostNight03,Watchman Drusus
+NPC_,Oblivion.esm,0x01C343,ICMarketGuardPostNight04,Warder Appius
+NPC_,Oblivion.esm,0x01C32A,ICMarketGuardPostNight05,Watchman Drusus
+NPC_,Oblivion.esm,0x06E629,ICPalaceGuardCryptPatrol,Palatian Tiberius
+NPC_,Oblivion.esm,0x06E632,ICPalaceGuardCryptPost,Palatian Octavius
+NPC_,Oblivion.esm,0x04A2BF,ICPalaceGuardGreenWay01,Palatian Veranius
+NPC_,Oblivion.esm,0x0C7619,ICPalaceGuardGreenWay02,Palatian Duccius
+NPC_,Oblivion.esm,0x115DF7,ICPalaceGuardPatrolDay01,Palatian Vesuvius
+NPC_,Oblivion.esm,0x115DF8,ICPalaceGuardPatrolNight01,Palatian Primus
+NPC_,Oblivion.esm,0x10D759,ICPalaceGuardPostDay01,Palatian Nipius
+NPC_,Oblivion.esm,0x115DF6,ICPalaceGuardPostDay02,Palatian Norbanus
+NPC_,Oblivion.esm,0x115DFB,ICPalaceGuardPostDay03,Palatian Petillius
+NPC_,Oblivion.esm,0x115DFD,ICPalaceGuardPostDay04,Palatian Camillus
+NPC_,Oblivion.esm,0x115DF9,ICPalaceGuardPostNight01,Palatian Doudecimus
+NPC_,Oblivion.esm,0x115DFA,ICPalaceGuardPostNight02,Palatian Flavonius
+NPC_,Oblivion.esm,0x115DFC,ICPalaceGuardPostNight03,Palatian Aebutius
+NPC_,Oblivion.esm,0x115DFE,ICPalaceGuardPostNight04,Palatian Umbrenius
+NPC_,Oblivion.esm,0x092B02,ICPrisonGuardDay01,Watchman Galus
+NPC_,Oblivion.esm,0x092B03,ICPrisonGuardDay02,Watchman Bruttius
+NPC_,Oblivion.esm,0x092B04,ICPrisonGuardDay03,Watchman Palpellius
+NPC_,Oblivion.esm,0x092B05,ICPrisonGuardDay04,Watchman Inventius
+NPC_,Oblivion.esm,0x092B06,ICPrisonGuardNight01,Watchman Licinius
+NPC_,Oblivion.esm,0x092B07,ICPrisonGuardNight02,Watchman Decius
+NPC_,Oblivion.esm,0x18D1F2,ICPrisonJailorDay,Jailor Manius
+NPC_,Oblivion.esm,0x18D1F4,ICPrisonJailorNight,Jailor Sepurcius
+NPC_,Oblivion.esm,0x071F37,ICTalosGuardClaudiusHouse,Watchman Sentius
+NPC_,Oblivion.esm,0x01632B,ICTalosGuardPatrolDay01,Watchman Sulpicius
+NPC_,Oblivion.esm,0x01632C,ICTalosGuardPatrolDay02,Watchman Gellius
+NPC_,Oblivion.esm,0x01632F,ICTalosGuardPatrolNight01,Guardian Trogus
+NPC_,Oblivion.esm,0x016330,ICTalosGuardPatrolNight02,Watchman Brocchus
+NPC_,Oblivion.esm,0x016333,ICTalosGuardPostDay01,Watchman Castonius
+NPC_,Oblivion.esm,0x016334,ICTalosGuardPostDay02,Watchman Hortensius
+NPC_,Oblivion.esm,0x016335,ICTalosGuardPostDay03,Warder Albanius
+NPC_,Oblivion.esm,0x01632E,ICTalosGuardPostDay04,Watchman Tettidius
+NPC_,Oblivion.esm,0x01632D,ICTalosGuardPostDay05,Warder Norbanus
+NPC_,Oblivion.esm,0x016336,ICTalosGuardPostNight01,Warder Pollius
+NPC_,Oblivion.esm,0x016337,ICTalosGuardPostNight02,Watchman Grattius
+NPC_,Oblivion.esm,0x016338,ICTalosGuardPostNight03,Watchman Ulpius
+NPC_,Oblivion.esm,0x016332,ICTalosGuardPostNight04,Warder Grumio
+NPC_,Oblivion.esm,0x016331,ICTalosGuardPostNight05,Watchman Clodianus
+NPC_,Oblivion.esm,0x032AEC,ICTempleGuardPatrolDay01,Watchman Fabius
+NPC_,Oblivion.esm,0x032AED,ICTempleGuardPatrolDay02,Guardian Zoilus
+NPC_,Oblivion.esm,0x032AF1,ICTempleGuardPatrolNight01,Watchman Donatianus
+NPC_,Oblivion.esm,0x032AF2,ICTempleGuardPatrolNight02,Watchman Blandius
+NPC_,Oblivion.esm,0x032AF6,ICTempleGuardPostDay01,Warder Postumus
+NPC_,Oblivion.esm,0x032AF7,ICTempleGuardPostDay02,Warder Spurius
+NPC_,Oblivion.esm,0x032AF8,ICTempleGuardPostDay03,Watchman Equitius
+NPC_,Oblivion.esm,0x032AEE,ICTempleGuardPostDay04,Watchman Kaeso
+NPC_,Oblivion.esm,0x032AF0,ICTempleGuardPostDay05,Watchman Drusus
+NPC_,Oblivion.esm,0x032AF9,ICTempleGuardPostNight01,Watchman Octavius
+NPC_,Oblivion.esm,0x032AFA,ICTempleGuardPostNight02,Watchman Sebastianus
+NPC_,Oblivion.esm,0x032AFB,ICTempleGuardPostNight03,Watchman Sandilianus
+NPC_,Oblivion.esm,0x032AF3,ICTempleGuardPostNight04,Watchman Egnatius
+NPC_,Oblivion.esm,0x032AF5,ICTempleGuardPostNight05,Watchman Maecilius
+NPC_,Oblivion.esm,0x009C5A,ICWaterfrontGuardDay01,Watchman Tremellius
+NPC_,Oblivion.esm,0x01C456,ICWaterfrontGuardDay02,Warder Metilius
+NPC_,Oblivion.esm,0x01C455,ICWaterfrontGuardNight01,Warder Opsius
+NPC_,Oblivion.esm,0x01C457,ICWaterfrontGuardNight02,Watchman Sempronius
+NPC_,Oblivion.esm,0x18B11A,ImperialLegionForester,Forester Corban
+NPC_,Oblivion.esm,0x18BA84,ImperialLegionForester2,Forester Torbit
+NPC_,Oblivion.esm,0x061444,ImperialLegionForester3,Forester Hanus
+NPC_,Oblivion.esm,0x06B592,ImperialLegionForester4,Forester Kirk
+NPC_,Oblivion.esm,0x0700CA,ImperialLegionRiderAleswell,Roadsman Urian
+NPC_,Oblivion.esm,0x0700C0,ImperialLegionRiderAnvil,Roadsman Pathius
+NPC_,Oblivion.esm,0x18BA88,ImperialLegionRiderChey,Roadsman Fenton
+NPC_,Oblivion.esm,0x18BA86,ImperialLegionRiderChorrol,Roadsman Worran
+NPC_,Oblivion.esm,0x0700C2,ImperialLegionRiderCrossroads,Roadsman Legrion
+NPC_,Oblivion.esm,0x0700C5,ImperialLegionRiderFalls,Roadsman Burns
+NPC_,Oblivion.esm,0x0700C1,ImperialLegionRiderGottshaw,Roadsman Merrius
+NPC_,Oblivion.esm,0x18BA89,ImperialLegionRiderLey,Roadsman Quigly
+NPC_,Oblivion.esm,0x0700CB,ImperialLegionRiderNikel,Roadsman Plebian
+NPC_,Oblivion.esm,0x0700C3,ImperialLegionRiderRidge,Roadsman Gavin
+NPC_,Oblivion.esm,0x0700CD,ImperialLegionRiderRock,Roadsman Tanerus
+NPC_,Oblivion.esm,0x0700C8,ImperialLegionRiderRoxey,Roadsman Marvin
+NPC_,Oblivion.esm,0x0700C7,ImperialLegionRiderSardavar,Roadsman Nameran
+NPC_,Oblivion.esm,0x0700C4,ImperialLegionRiderSlope,Roadsman Nicholas
+NPC_,Oblivion.esm,0x0700CC,ImperialLegionRiderVirtue,Roadsman Ryan
+NPC_,Oblivion.esm,0x0700C6,ImperialLegionRiderWell,Roadsman Cromwell
+NPC_,Oblivion.esm,0x0700C9,ImperialLegionRiderWellspring,Roadsman Phillip
+NPC_,Oblivion.esm,0x18B118,ImperialLegionSoldier,Roadsman Somadin
+NPC_,Oblivion.esm,0x18D7D8,ImperialLegionSoldierInnDrunkDrag,Roadsman Beetle
+NPC_,Oblivion.esm,0x058A8C,ImperialLegionSoldierInnGottshaw,Roadsman Ferder
+NPC_,Oblivion.esm,0x18BA85,ImperialLegionSoldierInnImpBridge,Roadsman Rick
+NPC_,Oblivion.esm,0x18BA87,ImperialLegionSoldierInnRoxey,Roadsman Gent
+NPC_,Oblivion.esm,0x058AF5,ImperialLegionSoldierInnWawnet,Roadsman Harold
+NPC_,Oblivion.esm,0x18D4CF,ImperialLegionSoldierOBGATE,Roadsman Ross
+NPC_,Oblivion.esm,0x03554B,LeyawiinGuardCastlePostDay01,Private Vedrix
+NPC_,Oblivion.esm,0x034E71,LeyawiinGuardCastlePostDay02,Private Brocchus
+NPC_,Oblivion.esm,0x03533E,LeyawiinGuardCastlePostNight01,Private Tritarius
+NPC_,Oblivion.esm,0x03554D,LeyawiinGuardCastlePostNight02,Private Firminus
+NPC_,Oblivion.esm,0x01C164,LeyawiinGuardCastleSanguine,Private Papirius
+NPC_,Oblivion.esm,0x035572,LeyawiinGuardCityPatrolDay01,Watchman Popidius
+NPC_,Oblivion.esm,0x035552,LeyawiinGuardCityPatrolDay03,Watchman Corvus
+NPC_,Oblivion.esm,0x03557A,LeyawiinGuardCityPatrolNight01,Watchman Dexsius
+NPC_,Oblivion.esm,0x035564,LeyawiinGuardCityPatrolNight03,Watchman Lex
+NPC_,Oblivion.esm,0x0353D5,LeyawiinGuardCityPostDay01,Watchman Volusennaus
+NPC_,Oblivion.esm,0x03554E,LeyawiinGuardCityPostDay02,Watchman Seius
+NPC_,Oblivion.esm,0x035562,LeyawiinGuardCityPostDay03,Watchman Elerius
+NPC_,Oblivion.esm,0x0353D6,LeyawiinGuardCityPostNight01,Watchman Bombadil
+NPC_,Oblivion.esm,0x03554F,LeyawiinGuardCityPostNight02,Watchman Nemnogenus
+NPC_,Oblivion.esm,0x035569,LeyawiinGuardCityPostNight03,Watchman Ahala
+NPC_,Oblivion.esm,0x00A0B9,LeyawiinGuardCityPostStablesNight,Watchman Zeno
+NPC_,Oblivion.esm,0x00A0B8,LeyawiinGuardCityStablesPostDay,Watchman Ennecus
+NPC_,Oblivion.esm,0x18AD8C,LeyawiinGuardDEAD,Watchman Livius
+NPC_,Oblivion.esm,0x03597B,LeyawiinGuardEscortCount,Corporal Mercurinus
+NPC_,Oblivion.esm,0x03597A,LeyawiinGuardEscortCountess,Corporal Pelagius
+NPC_,Oblivion.esm,0x035F8F,LeyawiinGuardJailorDay,Jailor Cilmnos
+NPC_,Oblivion.esm,0x035F8E,LeyawiinGuardJailorNight,Jailor Walden
+NPC_,Oblivion.esm,0x03B3D4,MaelonaGuard,Maelona
+NPC_,Oblivion.esm,0x032941,MG16NecromancerFemale2,Mage Alexa
+NPC_,Oblivion.esm,0x033B8B,MG16NecromancerFemale3,Mage Nargatice
+NPC_,Oblivion.esm,0x032940,MG16NecromancerMale1,Mage Heevan
+NPC_,Oblivion.esm,0x032943,MG16NecromancerMale2,Mage Torsus
+NPC_,Oblivion.esm,0x033B8D,MG16NecromancerMale3,Mage Marce
+NPC_,Oblivion.esm,0x026EB3,MQ10BrumaGuard01,Private Castorius
+NPC_,Oblivion.esm,0x04630B,MQ10BrumaGuard02,Private Crispus
+NPC_,Oblivion.esm,0x046315,MQ10BrumaGuard03,Private Fadius
+NPC_,Oblivion.esm,0x046318,MQ10BrumaGuard04,Private Nigel
+NPC_,Oblivion.esm,0x046319,MQ10BrumaGuard05,Private Sidius
+NPC_,Oblivion.esm,0x04892E,MQ16DeadPalaceGuard,Palatian Romulus
+NPC_,Oblivion.esm,0x038A62,MQ16ImperialArcher01,Private Marsallas
+NPC_,Oblivion.esm,0x001145,MQ16ImperialArcher02,Private Caprarius
+NPC_,Oblivion.esm,0x04892F,MQ16ImperialCaptain01,Captain Grogarius
+NPC_,Oblivion.esm,0x038A61,MQ16ImperialSoldier01,Roadsman Postumus
+NPC_,Oblivion.esm,0x001144,MQ16ImperialSoldier02,Roadsman Marcipor
+NPC_,Oblivion.esm,0x0146EA,MQ16Messenger,Roadsman Timothy
+NPC_,Oblivion.esm,0x0C89E0,MQ16PalaceGuard,Palatian Tremane
+CREA,Oblivion.esm,0x0C01AD,MQHorseJauffre,Bently
+CREA,Oblivion.esm,0x0C01AC,MQHorseMartin,Marrin
+CREA,Oblivion.esm,0x05DCC9,MQHorsePaint0WeynonPlayer,Buster
+NPC_,Oblivion.esm,0x02C0B6,SkingradCastleGuardJailorDay,Jailor Macrinus
+NPC_,Oblivion.esm,0x02C0B7,SkingradCastleGuardJailorNight,Jailor Stertinius
+NPC_,Oblivion.esm,0x02C0C1,SkingradCastleGuardPatrolDay01,Private Oppius
+NPC_,Oblivion.esm,0x00C03D,SkingradCastleGuardPatrolDay02,Private Viducius
+NPC_,Oblivion.esm,0x02C0BB,SkingradCastleGuardPatrolNight01,Private Volusenus
+NPC_,Oblivion.esm,0x00C03E,SkingradCastleGuardPatrolNight02,Private Theodotus
+NPC_,Oblivion.esm,0x028FBB,SkingradCastleGuardPostDay01,Private Soterides
+NPC_,Oblivion.esm,0x029372,SkingradCastleGuardPostDay02,Private Vipstanus
+NPC_,Oblivion.esm,0x029373,SkingradCastleGuardPostNight01,Private Puble
+NPC_,Oblivion.esm,0x029379,SkingradCastleGuardPostNight02,Private Caristan
+NPC_,Oblivion.esm,0x029397,SkingradGuardPatrolDay01,Private Quartus
+NPC_,Oblivion.esm,0x0293AA,SkingradGuardPatrolNight01,Private Paetas
+NPC_,Oblivion.esm,0x02937E,SkingradGuardPostDay01,Private Antius
+NPC_,Oblivion.esm,0x029389,SkingradGuardPostDay02,Private Artemidorus
+NPC_,Oblivion.esm,0x029398,SkingradGuardPostDay03,Private Fundanus
+NPC_,Oblivion.esm,0x029396,SkingradGuardPostDay04,Private Celatus
+NPC_,Oblivion.esm,0x02938E,SkingradGuardPostNight01,Private Sepurcius
+NPC_,Oblivion.esm,0x029394,SkingradGuardPostNight02,Private Servilius
+NPC_,Oblivion.esm,0x0293AB,SkingradGuardPostNight03,Private Gratidius
+NPC_,Oblivion.esm,0x0293A9,SkingradGuardPostNight04,Private Thalamus
+NPC_,Oblivion.esm,0x00A0BA,SkingradGuardPostStablesDay,Private Mentronus
+NPC_,Oblivion.esm,0x00A0BB,SkingradGuardPostStablesNight,Private Reagan
+NPC_,Oblivion.esm,0x0666FF,TG11PalaceGuard00,Palatian Spurius
+NPC_,Oblivion.esm,0x0666E7,TG11PalaceGuard01,Palatian Gaius
+NPC_,Oblivion.esm,0x0666E9,TG11PalaceGuard02,Palatian Rufus
+NPC_,Oblivion.esm,0x0666EB,TG11PalaceGuard03,Palatian Merex
+NPC_,Oblivion.esm,0x0666EC,TG11PalaceGuard04,Palatian Decimus
+NPC_,Oblivion.esm,0x06653F,TG11PalaceGuard05,Palatian Sidonius
+NPC_,Oblivion.esm,0x06653D,TG11PalaceGuard06,Palatian Apollonus
+NPC_,Oblivion.esm,0x181D1E,TG11PalaceGuardTopFloor,Corporal Appius
+,,,,
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x00F0F8,AnvilGuardCastlePostDay02fem,Private Elisa
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x00F0F7,AnvilGuardCastlePostNight03Fem,Private Mariella
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x00F0FB,AnvilGuardCityPatrolDay02Fem,Private Bruna
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x00FACA,AnvilGuardCityPostDay02Fem,Private Cyrene
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x00FFB3,AnvilGuardCityPostNight01Fem,Private Eldora
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EE8,BravilGuardCastlePatrolDay01Fem,Private Beljean
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EEA,BravilGuardCastlePostDay02Fem,Private Elicia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EEC,BravilGuardCityPostDay02Fem,Private Augusta
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EEF,BravilGuardCityPostNight03Fem,Private Gusty
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EEE,BravilGuardCityPostStablesNightFem,Private Lucia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EF1,BrumaGuardCastlePostDay02Fem,Private Nivia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EF3,BrumaGuardCityPatrolNight01Fem,Private Elpis
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EF5,BrumaGuardCityPostDay04Fem,Private Rufina
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x010EF7,BrumaGuardCityPostStablesNightFem,Private Drusa
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113EF,CheydinhalGuardCastlePostDay02Fem,Private Lavina
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113F1,CheydinhalGuardCityPatrolDay01Fem,Private Urbana
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113F3,CheydinhalGuardCityPostDay01Fem,Private Francia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113F5,CheydinhalGuardCityPostNight03Fem,Private Teodora
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113F7,ChorrolGuardCountessFem,Corporal Luciana
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113F9,ChorrolGuardPatrolDay02Fem,Private Gilda
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113FB,ChorrolGuardPatrolNight01Fem,Private Linders
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113FD,ChorrolGuardPostDay02Fem,Private Clara
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0113FF,ChorrolGuardPostNight02Fem,Private Athanasia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011401,ChorrolGuardPrivateQuarters02Fem,Private Alysia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x00D858,ICArboretumPatrolDay01test,Watchman Luciana
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E09,ICArboretumPatrolNight01Fem,Watchman Fausta
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E01,ICArboretumPostDay02Fem,Watchman Finola
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E07,ICArboretumPostNight03Fem,Warder Valentine
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E11,ICArenaPostDay01Fem,Warder Duff
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E13,ICArenaPostNight02Fem,Watchman Marva
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E21,ICElvenGuardPatrolDay02Fem,Guardian Emilia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E23,ICElvenGuardPostDay02Fem,Warder Lucia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E37,ICElvenGuardPostNight03Fem,Watchman Marine
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E39,ICMarketGuardPatrolNight01Fem,Watchman Livia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E49,ICMarketGuardPostDay02Fem,Watchman Nessa
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E47,ICMarketGuardPostDay04Fem,Warder Faithe
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E4B,ICMarketGuardPostNight03Fem,Watchman Twila
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E57,ICPalaceGuardGreenWay02Fem,Palatian Corie
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E5B,ICPalaceGuardPostDay02Fem,Palatian Lauren
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E59,ICPalaceGuardPostNight03Fem,Palatian Emene
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E6B,ICPrisonGuardDay02Fem,Watchman Doria
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E6D,ICPrisonGuardNight01Fem,Watchman Stace
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E73,ICTalosGuardPatrolDay02Fem,Guardian Lane
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E75,ICTalosGuardPostDay01Fem,Warder Glory
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E81,ICTalosGuardPostNight02Fem,Watchman Susana
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E83,ICTalosGuardPostNight05Fem,Warder Leona
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E97,ICTempleGuardPatrolNight02Fem,Guardian Coral
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E99,ICTempleGuardPostDay04Fem,Warder Justine
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011E9B,ICTempleGuardPostNight02Fem,Watchman Venane
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x011EA3,ICWaterfrontGuardDay02Fem,Watchman Eustacia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x003993,ImperialLegionForester5,Forester Sicane
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A28B,ImperialLegionRiderAleswellB,Roadsman Flavia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0052D4,ImperialLegionRiderAnvilB,Roadsman Cardea
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A290,ImperialLegionRiderCheyB,Roadsman Livia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03B18A,ImperialLegionRiderChorrolB,Roadsman Diana
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03B194,ImperialLegionRiderCrossroadsB,Roadsman Fave
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A29F,ImperialLegionRiderFallsB,Roadsman Adraria
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0052BE,ImperialLegionRiderGottshawB,Roadsman Romana
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A796,ImperialLegionRiderLeyB,Roadsman Leonora
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A286,ImperialLegionRiderNikelB,Roadsman Antonia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0052B7,ImperialLegionRiderRidgeB,Roadsman Lina
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03AC9D,ImperialLegionRiderRockB,Roadsman Scrub
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0052C6,ImperialLegionRiderRoxeyB,Roadsman Clemena
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x004D3B,ImperialLegionRiderSardavarB,Roadsman Bettina
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x004D3F,ImperialLegionRiderSlopeB,Roadsman Alvina
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A298,ImperialLegionRiderVirtueB,Roadsman Donatella
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A78C,ImperialLegionRiderWellB,Roadsman Calgara
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x0052D1,ImperialLegionRiderWellspringB,Roadsman Nighteye
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012391,ImperialLegionRiderWeye,Roadsman Brooke
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x03A27D,ImperialLegionRiderWeyeB,Roadsman Grubb
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x003994,ImperialLegionSoldier2,Roadsman Kendall
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x003996,ImperialLegionSoldier2fem,Roadsman Tanith
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01287D,LeyawiinGuardCastlePostNight01Fem,Private Bits
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01287F,LeyawiinGuardCityPatrolDay03Fem,Watchman Emma
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012881,LeyawiinGuardCityPostDay02Fem,Watchman Lydia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012883,LeyawiinGuardCityPostStablesNightFem,Watchman Nuts
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012891,SkingradCastleGuardPatrolDay01Fem,Private Hayley
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012891,SkingradCastleGuardPatrolDay01Fem,Private Ophelia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012885,SkingradCastleGuardPatrolNight02Fem,Private Ursula
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012885,SkingradCastleGuardPatrolNight02Fem,Private Kit
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012887,SkingradCastleGuardPostDay02Fem,Private Ash
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012887,SkingradCastleGuardPostDay02Fem,Private Alexis
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012889,SkingradGuardPatrolDay01Fem,Private North
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x012889,SkingradGuardPatrolDay01Fem,Private Silvia
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01288B,SkingradGuardPostDay03Fem,Private Hides
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01288B,SkingradGuardPostDay03Fem,Private Raine
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01288D,SkingradGuardPostNight02Fem,Private Smith
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01288D,SkingradGuardPostNight02Fem,Private Pagina
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01288F,SkingradGuardPostNight04Fem,Private Courts
+NPC_,Oscuro's_Oblivion_Overhaul.esm,0x01288F,SkingradGuardPostNight04Fem,Private Janora
+,,,,
+NPC_,xulChorrolHinterland.esp,0x013046,CJMChorrolGuardHinterPatrolDayW1,Constable Hawkins
+NPC_,xulChorrolHinterland.esp,0x01F885,CJMChorrolGuardHinterPatrolDayW3,Constable Duff
+NPC_,xulChorrolHinterland.esp,0x020786,CJMChorrolGuardHinterPatrolNightW1,Constable Willis
+NPC_,xulChorrolHinterland.esp,0x020288,CJMChorrolGuardHinterPatrolNightW3,Constable Hence
+NPC_,xulChorrolHinterland.esp,0x01CC20,CJMChorrolGuardPostDayW2,Constable Reed
+NPC_,xulChorrolHinterland.esp,0x001358,CJMChorrolGuardPostDayW3,Constable Travis
+NPC_,xulChorrolHinterland.esp,0x00A7C4,CJMChorrolGuardPostDayW4,Constable Merrisson
+NPC_,xulChorrolHinterland.esp,0x013041,CJMChorrolGuardPostDayW5,Constable Steel
+NPC_,xulChorrolHinterland.esp,0x01D113,CJMChorrolGuardPostNightW2,Constable Harrison
+NPC_,xulChorrolHinterland.esp,0x00138D,CJMChorrolGuardPostNightW3,Constable Rose
+NPC_,xulChorrolHinterland.esp,0x00BC2A,CJMChorrolGuardPostNightW4,Constable Pithcary
+NPC_,xulChorrolHinterland.esp,0x01266E,CJMChorrolGuardPostNightW5,Constable Jones
+,,,,
+NPC_,road+bridges.esp,0x01705F,NRB4ImperialLegionRiderHalfwayInn1,Roadsman Warren
+NPC_,road+bridges.esp,0x01DDA8,NRB4ImperialLegionRiderHalfwayInn2,Roadsman Brunus
+NPC_,road+bridges.esp,0x01705A,NRB4ImperialLegionSoldierDownstairs,Roadsman Lucas
+,,,,
+CREA,road+bridges.esp,0x000878,NRB4ImpLegionHorseHalfwayInn,Marceror
+NPC_,road+bridges.esp,0x000884,NRB4ImperialLegionRiderHalfwayInn1,Roadsman Warren
+NPC_,road+bridges.esp,0x000885,NRB4ImperialLegionRiderHalfwayInn2,Roadsman Brunus
+NPC_,road+bridges.esp,0x0128F2,NRB4ImperialLegionRiderICAU,Roadsman Tellurius
+NPC_,road+bridges.esp,0x000886,NRB4ImperialLegionRiderNibenBridge,Roadsman Sanjius
+NPC_,road+bridges.esp,0x00D023,NRB4ImperialLegionRiderNibenBridge2,Roadsman Trovius
+NPC_,road+bridges.esp,0x000883,NRB4ImperialLegionSoldierDownstairs,Roadsman Lucas
+NPC_,road+bridges.esp,0x014625,NRB4ImperialLegionSoldierRoadTowers,Roadsman Waldo
+NPC_,road+bridges.esp,0x014628,NRB4ImperialLegionSoldierRoadTowersIndoors,Roadsman Caesar
+,,,,
+NPC_,Mart's Monster Mod.esm,0x000CF6,ArcherAnvil,Private Gergus
+NPC_,Mart's Monster Mod.esm,0x001BBA,ArcherBravil,Private Ildoni
+NPC_,Mart's Monster Mod.esm,0x007462,ArcherBruma,Private Synniu
+NPC_,Mart's Monster Mod.esm,0x006A67,ArcherCheydinhal,Private Pilpen
+NPC_,Mart's Monster Mod.esm,0x008350,ArcherChorrol,Private Cocius
+NPC_,Mart's Monster Mod.esm,0x00886D,ArcherLeyawiin,Private Seguri
+NPC_,Mart's Monster Mod.esm,0x0039C2,ArcherSkingrad,Private Surudu
+NPC_,Mart's Monster Mod.esm,0x0019AB,ImperialLegionForester1MMM,Forester Leonde
+NPC_,Mart's Monster Mod.esm,0x0019A8,ImperialLegionForester2MMM,Forester Raxleon
+NPC_,Mart's Monster Mod.esm,0x0019A9,ImperialLegionForester3MMM,Forester Haspha
+NPC_,Mart's Monster Mod.esm,0x0019AA,ImperialLegionForester4MMM,Forester Clagiu
+NPC_,Mart's Monster Mod.esm,0x0079B5,ImperialLegionRanger,Ranger Jonuni
+NPC_,Mart's Monster Mod.esm,0x0079B6,ImperialLegionRanger2,Ranger Tappin
+NPC_,Mart's Monster Mod.esm,0x0079B7,ImperialLegionRanger3,Ranger Daripp
+NPC_,Mart's Monster Mod.esm,0x0079B8,ImperialLegionRanger4,Ranger Caccia
+NPC_,Mart's Monster Mod.esm,0x01BFFD,ImperialRoadWatchman1,Watchman Sabinuni
+NPC_,Mart's Monster Mod.esm,0x01CEB2,ImperialRoadWatchman2,Watchman Leondeiu
+NPC_,Mart's Monster Mod.esm,0x01CEB3,ImperialRoadWatchman3,Watchwoman Adrari
+NPC_,Mart's Monster Mod.esm,0x01CEB4,ImperialRoadWatchman4,Watchwoman Caniaia
+NPC_,Mart's Monster Mod.esm,0x0020B8,ImperialRoadWatchman5,Watchman Arenar
+NPC_,Mart's Monster Mod.esm,0x0020B9,ImperialRoadWatchman6,Watchwoman Ruccia
+,,,,
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009477,ImperialLegionForester10,Forester Jermaine
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009478,ImperialLegionForester11,Forester Tilbert
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009479,ImperialLegionForester12,Forester Kurt
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x00947A,ImperialLegionForester13,Forester Hogan
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x00947B,ImperialLegionForester14,Forester Cena
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x00947C,ImperialLegionForester15,Forester Sparr
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009472,ImperialLegionForester5,Forester Tyrulius
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009473,ImperialLegionForester6,Forester Odysseus
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009474,ImperialLegionForester7,Forester Agamemnon
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009475,ImperialLegionForester8,Forester Menelaus
+NPC_,Mart's Monster Mod - Additional Enemy NPC Vars.esp,0x009476,ImperialLegionForester9,Forester Achilles
+,,,,
+NPC_,Kvatch Rebuilt.esm,0x06058E,KRGuardArenaDay,Private Servius
+NPC_,Kvatch Rebuilt.esm,0x060591,KRGuardBridgeDay,Private Decimus
+NPC_,Kvatch Rebuilt.esm,0x060592,KRGuardCastleExt1Day,Private Amulius
+NPC_,Kvatch Rebuilt.esm,0x060595,KRGuardCastleExt1Night,Private Oppius
+NPC_,Kvatch Rebuilt.esm,0x060596,KRGuardCastleInt1Day,Private Herius
+NPC_,Kvatch Rebuilt.esm,0x060597,KRGuardCastleInt1Night,Private Gabinius
+NPC_,Kvatch Rebuilt.esm,0x060599,KRGuardCastleInt2Day,Private Acilianus
+NPC_,Kvatch Rebuilt.esm,0x060598,KRGuardCastleInt2Night,Private Norton
+NPC_,Kvatch Rebuilt.esm,0x06059E,KRGuardCastlePatrolDay,Private Oranius
+NPC_,Kvatch Rebuilt.esm,0x06059F,KRGuardCastlePatrolNight,Private Abito
+NPC_,Kvatch Rebuilt.esm,0x06058A,KRGuardChapelDay,Private Senilis
+NPC_,Kvatch Rebuilt.esm,0x06058B,KRGuardChapelNight,Private Calogerus
+NPC_,Kvatch Rebuilt.esm,0x060584,KRGuardGateExt1Day,Private Pudens
+NPC_,Kvatch Rebuilt.esm,0x060586,KRGuardGateExt1Night,Private Homenand
+NPC_,Kvatch Rebuilt.esm,0x060588,KRGuardGateIntDay,Private Macro
+NPC_,Kvatch Rebuilt.esm,0x060589,KRGuardGateIntNight,Private Placidius
+NPC_,Kvatch Rebuilt.esm,0x06058C,KRGuardGuildsDay,Private Spurius
+NPC_,Kvatch Rebuilt.esm,0x05D5D9,KRGuardJailorDay,Jailor Greeban
+NPC_,Kvatch Rebuilt.esm,0x05D5DA,KRGuardJailorNight,Jailor Cleptus
+NPC_,Kvatch Rebuilt.esm,0x060E43,KRGuardKeepGatehouseMaholeDay,Private Numerius
+NPC_,Kvatch Rebuilt.esm,0x060E41,KRGuardKeepGatehouseStepsDay,Private Horatius
+NPC_,Kvatch Rebuilt.esm,0x060E42,KRGuardKeepGatehouseStepsNight,Private Plocamus
+NPC_,Kvatch Rebuilt.esm,0x06058F,KRGuardNorthTowerDay,Private Valentinus
+NPC_,Kvatch Rebuilt.esm,0x060590,KRGuardNorthTowerNight,Private Docilus
+NPC_,Kvatch Rebuilt.esm,0x06059D,KRGuardPatrol1Day,Private Scipio
+NPC_,Kvatch Rebuilt.esm,0x06059A,KRGuardPatrol1Night,Private Paesentius
+NPC_,Kvatch Rebuilt.esm,0x06059C,KRGuardPatrol2Day,Private Placidius
+NPC_,Kvatch Rebuilt.esm,0x06059B,KRGuardPatrol2Night,Private Spurius
+,,,,
+NPC_,DLCBattlehornCastle.esp,0x00D42D,DLCBattlehornCaptainReplacement,Castellan Anetheron
+NPC_,DLCBattlehornCastle.esp,0x00CA2B,DLCBattlehornKnight1,Man-At-Arms Placidius
+NPC_,DLCBattlehornCastle.esp,0x00CA3E,DLCBattlehornKnight2,Man-At-Arms Sporticus
+NPC_,DLCBattlehornCastle.esp,0x00CA43,DLCBattlehornKnight3,Man-At-Arms Yakub
+NPC_,DLCBattlehornCastle.esp,0x00CA44,DLCBattlehornKnight4,Man-At-Arms Aesth
+,,,,
+NPC_,Francesco's Optional Leveled Guards.esp,0x02670C,FranGuardWatchman01A,Watchman Turdius
+NPC_,Francesco's Optional Leveled Guards.esp,0x025847,FranGuardWatchman01B,Watchman Jobian
+NPC_,Francesco's Optional Leveled Guards.esp,0x02670D,FranGuardWatchman01C,Watchman Klepto
+NPC_,Francesco's Optional Leveled Guards.esp,0x02670E,FranGuardWatchman01D,Watchman Igor
+NPC_,Francesco's Optional Leveled Guards.esp,0x027FDB,FranGuardWatchman01E,Watchman Jackson
+NPC_,Francesco's Optional Leveled Guards.esp,0x026710,FranGuardWatchman02A,Watchman Francesco
+NPC_,Francesco's Optional Leveled Guards.esp,0x025846,FranGuardWatchman02B,Watchman Galenius
+NPC_,Francesco's Optional Leveled Guards.esp,0x026711,FranGuardWatchman02C,Watchman Indurius
+NPC_,Francesco's Optional Leveled Guards.esp,0x026712,FranGuardWatchman02D,Watchman Malfurion
+NPC_,Francesco's Optional Leveled Guards.esp,0x026713,FranGuardWatchman02E,Watchman Illidan
+NPC_,Francesco's Optional Leveled Guards.esp,0x027FD9,FranGuardWatchman03A,Watchman Clark
+NPC_,Francesco's Optional Leveled Guards.esp,0x027FD8,FranGuardWatchman03B,Watchman Leonidas
+NPC_,Francesco's Optional Leveled Guards.esp,0x027FD7,FranGuardWatchman03C,Watchman Tertius
+NPC_,Francesco's Optional Leveled Guards.esp,0x027FD6,FranGuardWatchman03D,Watchman Erasmus
+NPC_,Francesco's Optional Leveled Guards.esp,0x027FD5,FranGuardWatchman03E,Watchman Michelangelo
+,,,,
+NPC_,The Arsenal.esp,0x00F8B9,aaTANPCGuard,Guard Arborius
+,,,,
+NPC_,za_bankmod.esp,0x0143B1,NORbankguard,Bank Guard Othrelos
+NPC_,za_bankmod.esp,0x00583F,ZAICBankGuardPostDay02,Vault Guard Dermont
+NPC_,za_bankmod.esp,0x000E24,ZAICBankGuardPostNight01,Vault Guard Dupont
+,,,,
+NPC_,MannimarcoComplete.esp,0x021568,00000BGCamp010,Guard Hercules
+NPC_,MannimarcoComplete.esp,0x02156A,00000BGCamp011,Guard Adamus
+NPC_,MannimarcoComplete.esp,0x02156E,00000BGCamp012,Guard Hysterius
+NPC_,MannimarcoComplete.esp,0x02156F,00000BGCamp013,Guard Mysterius
+NPC_,MannimarcoComplete.esp,0x020E76,00000BGCamp1,Guard Olos
+NPC_,MannimarcoComplete.esp,0x021556,00000BGCamp2,Guard Dongos
+NPC_,MannimarcoComplete.esp,0x021557,00000BGCamp3,Guard Kliopes
+NPC_,MannimarcoComplete.esp,0x021558,00000BGCamp4,Guard Cizzeros
+NPC_,MannimarcoComplete.esp,0x021559,00000BGCamp5,Guard Czarus
+NPC_,MannimarcoComplete.esp,0x021560,00000BGCamp6,Guard Dermont
+NPC_,MannimarcoComplete.esp,0x021562,00000BGCamp7,Guard Hugonius
+NPC_,MannimarcoComplete.esp,0x021564,00000BGCamp8,Guard Vicotorius
+NPC_,MannimarcoComplete.esp,0x021565,00000BGCamp9,Guard Mudes
+NPC_,MannimarcoComplete.esp,0x020727,00000BGForester1,Forester Hades
+NPC_,MannimarcoComplete.esp,0x020729,00000BGForester2,Forester Charon
+NPC_,MannimarcoComplete.esp,0x02072A,00000BGForester3,Forester Hermes
+NPC_,MannimarcoComplete.esp,0x02155E,00000BGForester4,Forester Julius
+NPC_,MannimarcoComplete.esp,0x02156C,00000BGForester5,Forester Laxius
+NPC_,MannimarcoComplete.esp,0x01C571,00000BGGuard1,Guard Adamantius
+NPC_,MannimarcoComplete.esp,0x01DC48,00000BGGuard2,Guard Ferron
+NPC_,MannimarcoComplete.esp,0x01E325,00000BGGuard3,Guard Arget
+NPC_,MannimarcoComplete.esp,0x01E326,00000BGGuard4,Guard Aurius
+NPC_,MannimarcoComplete.esp,0x022A23,00000BGGuardEnf,Enforcer Gelborne
+NPC_,MannimarcoComplete.esp,0x022A24,00000BGGuardJailor1,Jailor Doug
+NPC_,MannimarcoComplete.esp,0x021C69,00000BGOldSoldier,Veteran Numer
+NPC_,MannimarcoComplete.esp,0x01F97B,00000BGRoadGaurd,Roadsman Utherius
+NPC_,MannimarcoComplete.esp,0x08486A,0000BattleMagePatroDine,Legion Battlemage Hubert
+NPC_,MannimarcoComplete.esp,0x08485D,0000BattleMagePatrolMain1,Legion Battlemage Hugo
+NPC_,MannimarcoComplete.esp,0x08486C,0000BattleMagePatrolMain1Night,Legion Battlemage Scale
+NPC_,MannimarcoComplete.esp,0x084868,0000BattleMagePatrolMain2,Legion Battlemage Ruler
+NPC_,MannimarcoComplete.esp,0x08486E,0000BattleMagePatrolMain2Night,Legion Battlemage Royal
+NPC_,MannimarcoComplete.esp,0x08B878,0000BattleMagePatroOutside1,Legion Battlemage Tim
+NPC_,MannimarcoComplete.esp,0x08B87A,0000BattleMagePatroOutside1Night,Legion Battlemage Martin
+NPC_,MannimarcoComplete.esp,0x08B879,0000BattleMagePatroOutside2,Legion Battlemage Luther
+NPC_,MannimarcoComplete.esp,0x08B87B,0000BattleMagePatroOutside2Night,Legion Battlemage Pook
+NPC_,MannimarcoComplete.esp,0x084871,0000BattleMagePatroPass,Legion Battlemage King
+NPC_,MannimarcoComplete.esp,0x084872,0000BattleMagePatroPassNight,Legion Battlemage Spookius
+NPC_,MannimarcoComplete.esp,0x084875,0000BattleMagePatroThrone1,Legion Battlemage Gordo
+NPC_,MannimarcoComplete.esp,0x084877,0000BattleMagePatroThrone1Night,Legion Battlemage Germe
+NPC_,MannimarcoComplete.esp,0x084879,0000BattleMagePatroThrone2,Legion Battlemage Thrist
+NPC_,MannimarcoComplete.esp,0x08487B,0000BattleMagePatroThrone2Night,Legion Battlemage Babius
+NPC_,MannimarcoComplete.esp,0x08487D,0000BattleMagePatroThrone3,Legion Battlemage Clothas
+NPC_,MannimarcoComplete.esp,0x08487F,0000BattleMagePatroThrone3Night,Legion Battlemage Vitamius
+NPC_,MannimarcoComplete.esp,0x04E982,000ImperialLegionSoldierM1,Private Polysach
+NPC_,MannimarcoComplete.esp,0x04E984,000ImperialLegionSoldierM2,Private Glucius
+NPC_,MannimarcoComplete.esp,0x0067AE,1MageSoldierBarrack1,Battlemage Frank
+NPC_,MannimarcoComplete.esp,0x0067B0,1MageSoldierBarrack2,Battlemage Flovius
+NPC_,MannimarcoComplete.esp,0x0067B2,1MageSoldierBarrack3,Battlemage Sausag
+NPC_,MannimarcoComplete.esp,0x0067B4,1MageSoldierBarrack4,Battlemage Gugh
+NPC_,MannimarcoComplete.esp,0x0051F1,1MageSoldierCadlew1,Battlemage Stagg
+NPC_,MannimarcoComplete.esp,0x0051F2,1MageSoldierCadlew2,Battlemage Uranus
+NPC_,MannimarcoComplete.esp,0x0051F3,1MageSoldierCadlew3,Battlemage Chande
+,,,,
+NPC_,Malevolent.esp,0x012F98,ZZMALBrumaCityGuardDummy1,Private Ludicrous
+NPC_,Malevolent.esp,0x012F9C,ZZMALBrumaCityGuardDummy2,Private Phillius
+NPC_,Malevolent.esp,0x012F9D,ZZMALBrumaCityGuardDummy3,Private Gutanius
+NPC_,Malevolent.esp,0x012F9E,ZZMALBrumaCityGuardDummy4,Private Gypsum
+NPC_,Malevolent.esp,0x001D3B,ZZMALBrumaCityGuardDummy5,Private Arsenos
+NPC_,Malevolent.esp,0x004554,ZZMALSoldier01,Private Roy
+NPC_,Malevolent.esp,0x004556,ZZMALSoldier02,Private Ryan
+NPC_,Malevolent.esp,0x0012A0,ZZMALSoldier02Ambush,Private Cadbury
+NPC_,Malevolent.esp,0x004557,ZZMALSoldier03,Private Samson
+NPC_,Malevolent.esp,0x004558,ZZMALSoldier04,Private Gelroy
+NPC_,Malevolent.esp,0x004559,ZZMALSoldier05,Private Leonard
+NPC_,Malevolent.esp,0x00455A,ZZMALSoldier06,Private Vince
+NPC_,Malevolent.esp,0x00455B,ZZMALSoldier07,Private Tremulus
+NPC_,Malevolent.esp,0x00455C,ZZMALSoldier08,Private Isaac
+NPC_,Malevolent.esp,0x00455D,ZZMALSoldier09Lieutenant,Lieutenant Klaus
+NPC_,Malevolent.esp,0x004574,ZZMALSoldier10,Private Bertrand
+NPC_,Malevolent.esp,0x0012A1,ZZMALSoldier10Ambush,Private Lionel
+NPC_,Malevolent.esp,0x004578,ZZMALSoldier11,Private Herb
+NPC_,Malevolent.esp,0x00457A,ZZMALSoldier12,Private Lucius
+NPC_,Malevolent.esp,0x00457F,ZZMALSoldier13BlackSmith,Legion BlackSmith Edgar
+NPC_,Malevolent.esp,0x004582,ZZMALSoldier14Patrol,Private Flaccidius
+NPC_,Malevolent.esp,0x004583,ZZMALSoldier15Patrol,Private Jones
+NPC_,Malevolent.esp,0x004584,ZZMALSoldier16Sleep,Private Septim
+NPC_,Malevolent.esp,0x004585,ZZMALSoldier17Sleep,Private Spartacus
+NPC_,Malevolent.esp,0x004586,ZZMALSoldier18Sleep,Private Dermont
+NPC_,Malevolent.esp,0x004F6A,ZZMALSoldier19Ghost,Private Sadamus
+NPC_,Malevolent.esp,0x00547E,ZZMALSoldier20Sapper,Legion Sapper Dyno
+NPC_,Malevolent.esp,0x00BF31,ZZMALSoldier21,Private Vellum
+NPC_,Malevolent.esp,0x00BF32,ZZMALSoldier22,Private Gythe
+NPC_,Malevolent.esp,0x00BF33,ZZMALSoldier23Chaplain,Chaplain Honorius
+NPC_,Malevolent.esp,0x00BF34,ZZMALSoldier24Chaplain,Chaplain Sextius
+NPC_,Malevolent.esp,0x012508,ZZMALSoldier25,Private Earce
+NPC_,Malevolent.esp,0x012509,ZZMALSoldier26,Private Brosnan
+NPC_,Malevolent.esp,0x01250C,ZZMALSoldier27,Private Ungarius
+NPC_,Malevolent.esp,0x012F5B,ZZMALSoldier28,Private Payne
+NPC_,Malevolent.esp,0x012F5C,ZZMALSoldier29,Private Max
+NPC_,Malevolent.esp,0x012F5D,ZZMALSoldier30,Private Yule
+NPC_,Malevolent.esp,0x012F5E,ZZMALSoldier31,Private Mac
+NPC_,Malevolent.esp,0x012F5F,ZZMALSoldier32,Private Ronald
+NPC_,Malevolent.esp,0x012F60,ZZMALSoldier33,Private Solo
+NPC_,Malevolent.esp,0x012F61,ZZMALSoldier34,Private Cudalus
+NPC_,Malevolent.esp,0x012F62,ZZMALSoldier35,Private Brigg
+NPC_,Malevolent.esp,0x0150C3,ZZMALSoldier36,Private Malthael
+NPC_,Malevolent.esp,0x0150C4,ZZMALSoldier37,Private Nutt
+NPC_,Malevolent.esp,0x0150C5,ZZMALSoldier38,Private Xanthipus
+NPC_,Malevolent.esp,0x0150C6,ZZMALSoldier39,Private Drogilla
+NPC_,Malevolent.esp,0x0150C7,ZZMALSoldier40,Private Amphora
+NPC_,Malevolent.esp,0x0150C8,ZZMALSoldier41,Private Jarsel
+NPC_,Malevolent.esp,0x000D39,ZZMALSoldierUnique,Private Frabjus
+,,,,
+NPC_,Blood&Mud.esp,0x01B0C7,BravilGuardCityNoGuard,Private Polyphemus
+NPC_,Blood&Mud.esp,0x01B0BA,BravilGuardTorroFriend,Private David
+NPC_,Blood&Mud.esp,0x0284EC,BravXCastGuardEscortPlayer,Private Magnus
+NPC_,Blood&Mud.esp,0x0283DC,BravXCastleGuardf1,Private Uther
+NPC_,Blood&Mud.esp,0x0283FE,BravXCastleGuardM1,Private Jenkins
+NPC_,Blood&Mud.esp,0x028402,BravXCastleGuardM2,Private Wortham
+NPC_,Blood&Mud.esp,0x028580,BravXCastleGuardM3,Private Groger
+NPC_,Blood&Mud.esp,0x02858C,BravXCastleGuardM4,Private Fyrthius
+,,,,
+NPC_,The Mystery of the Dulan cult.esp,0x00E807,0dulanforester01,Forester Jupiter
+,,,,
+NPC_,Faregyl.esp,0x00D55C,FaregylImperialLegionSoldier1,Roadsman Julius
+NPC_,Faregyl.esp,0x00D55D,FaregylImperialLegionSoldier2,Roadsman Maximus
+,,,,
+NPC_,Feldscar.esp,0x00B4A1,FeldscarBattlemage,Legion Battlemage Logan
+NPC_,Feldscar.esp,0x00B4A8,FeldscarBattlemageDead,Legion Battlemage Logan
+NPC_,Feldscar.esp,0x0206E7,FeldscarImperialLegionForester,Forester Mark
+NPC_,Feldscar.esp,0x0206E8,FeldscarImperialLegionForester4,Forester Robin
+NPC_,Feldscar.esp,0x0206E9,FeldscarImperialLegionSoldier,Roadsman Ichor
+,,,,
+NPC_,Vergayun.esp,0x0049DB,VergayunInnLegionSoldier,Roadsman Praetor

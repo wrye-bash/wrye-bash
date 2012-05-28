@@ -1,0 +1,105 @@
+
+
+Title: Wrye Bash Installer Tab Presenter API Specification
+Author: Myk Taylor (myk002)
+Status: working draft (partially implemented)
+
+
+===========
+  Context
+===========
+  The Presenter API is used exclusively by the View module.  It is entirely
+concerned with taking in user actions and emitting ViewCommands containing
+atomic updates to the UI that will be applied by the View.  Please see the files
+under the presenter/ directory for the full specifications of the enums and
+classes listed below.
+
+
+=======
+  API
+=======
+Enum DetailsTabIds
+FlagEnum FilterIds
+Enum CommandIds
+
+class SetGlobalSettings
+class InitPackageContents
+class SetStatusOk
+class SetStatusDirty
+
+Enum PackageOperationIds
+class PackageOperationInfo
+class SetStatusIO
+
+FlagEnum FontStyleIds
+Enum ForegroundColorIds
+Enum HighlightColorIds
+Enum IconIds
+class SetStyleMaps
+class Style
+Enum NodeTreeIds
+class UpdateNode
+class AddNode
+
+class RemoveNode
+class ClearTree
+class SetFilterStats
+class SetGeneralTabInfo
+
+class AnnealOperationIds
+class SetDirtyTabInfo
+
+class SetConflictsTabInfo
+class SetFileListTabInfo
+
+class ErrorCodes
+class DisplayError
+
+Enum ConfirmationQuestionIds
+class AskConfirmation
+
+
+class BaitPresenter:
+  viewCommandQueue
+    Contains ViewCommand objects for the View to process
+
+  __init__(self, model, presenterIoGateway, viewCommandQueue)
+    records parameters, but does not start any threads or load any data
+
+  start(self)
+    Loads saved state, starts threads and subcomponents (including model)
+
+  shutdown(self)
+    Saves any dirty state, shuts down threads and subcomponents
+
+  pause(self)
+    Suggests that bait suspend operations; may not take effect immediately
+
+  resume(self)
+    Resumes from a pause
+
+  set_filter_state(self, filterId, value)
+    Sets whether a filter toggle is on or off
+
+  set_packages_tree_selections(self, nodeIds)
+  set_files_tree_selections(self, nodeIds)
+    Sets which nodes are currently hilighted in the tree widgets
+
+  set_details_tab_selection(self, detailsTabId)
+    Sets which details tab is currently visible
+
+  set_group_node_expanded(self, nodeId, value)
+  set_dir_node_expanded(self, nodeId, value)
+    Sets the expansion state of branch nodes in the tree widgets
+
+  set_search_string(self, text)
+    Sets the current search string
+
+  # not yet implemented
+  set_option(self, optionId, state)
+    Communicates choices the user makes in the settings menus
+
+  move_package(self, nodeId, newParentNodeId, newPredecessorNodeId)
+    Communicates reorderings the user makes in the package tree
+
+  ...other actions

@@ -1,0 +1,345 @@
+= Wrye Bash Patch Option Reference (by Waruddar) ====================================================================#
+<table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
+<a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2Fpatch_option_reference.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+
+=== Contents
+{{CONTENTS=3}}
+{{CONTENTS=3}}
+</td><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c;">
+= Introduction
+This document explains what all the bashed patch options mean and gives some guidence on when to select them.  Please note, when I say that it should be checked, that only applies if there are items on the right side as well (except for one patch option which is detailed below).  Also, when I say mods, I mean just that, mods.  Don't check any of the csv files unless you know that they're what you want.
+
+== Alias Mod Names
+* Should you check it? Not normally.
+* What does it do? If a mod has been renamed, it allows patch options that use the original mod name to know that it needs to use the new mod name instead.
+* When does the user need it? If for instance, you rename Oscuros_Oblivion_Overhaul.esp to OOO.esp (for whatever reason), you'll need this option so that Bash knows that OOO.esp is really Oscuros_Oblivion_Overhaul.esp.
+
+== Merge Patches
+* Should you check it? Yes. Unless you need it, it won't help you, but it also doesn't hurt to have it active.
+* What does it do? It copies mods into the Bashed Patch so that they don't have to be active.
+* When does the user need it? If you're running out of space in your load order (Oblivion can only handle 254 mods at a time) this can merge some mods into the Bashed Patch so that you have more space. Some mods have to be merged to work properly (filter mods, Item Interchange), but this should be noted in the mod's readme.
+* When does a modder need it? If you're creating a filter or item interchange type mod. See the readme for details.
+
+== Replace Form IDs
+* Should you check it? No. This is an advanced option. If you need it, you'll know it (or be instructed to use it).
+* What does it do? It replaces a set of formIDs with another set of formIDs defined by a csv file.
+* When does the user need it? If you want to replace all usage of one item for another. For instance, P1DCandles replaces all static, non-movable candles with candles that can be picked up, moved around, stolen, etc. It only works for Oblivion.esm though. This option allows P1DCandles to work for all mods (assuming you have the original mod installed).
+* When does a modder need it? If you're systematically replacing a formID with another, this will do the work for you. It also works across all mods the user has.
+
+== Import Actors
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to NPCs and Creatures and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Actor aggression, confidence, energy level, responsibility, services, training skill, or training level you need to tag the mod with 'Actors.AIData'.
+  * Actor skills (armorer, athletics, etc), health, attributes (strength, speed, etc) you need to tag the mod with 'Actors.Stats'.
+  * Actor base spell, fatigue, barter gold, level, calc min, calc max, IsBiped, sex, IsEssential, IsWeaponAndShield, IsRespawn, IsSwims, IsFlies, IsWalks, IsAutoCalc, IsPCLevelOffset, IsNoLowLevel, IsNoBloodSpray, IsNoBloodDecal, IsNoHead, IsNoRightArm, IsNoLeftArm, IsNoCombatInWater, IsNoShadow IsNoRumors, IsSummonable, IsNoPersuasion, IsCanCorpseCheck you need to tag the mod with 'Actors.ACBS'.
+  * NPC class you need to tag the mod with 'NPC.Class'.
+  * NPC race you need to tag the mod with 'NPC.Race'.
+  * Actor combat style you need to tag the mod with 'Actors.CombatStyle'.
+  * Creature blood spray path, blood decal path you need to tag the mod with 'Creatures.Blood'.
+  * Actor model path, bound radius, modt you need to tag the mod with 'Actors.Skeleton'.
+
+== Import Actors: AIPackages
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to NPCs and Creatures AI Packages and want those changes to be preserved even if another mod changes the same NPC / Creature. This merges the AI Packages so that they are all present from all tagged mods.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Actor AI Packages you need to tag the mod with 'Actors.AIPackages'. If you're re-adding an AI Package that was previously removed, you need to tag the mod with 'Actors.AIPackagesForceAdd' as well.
+
+== Import Actors: Animations
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to NPCs and Creatures animations and want those changes to be preserved even if another mod changes the same NPC / Creature. This merges the animations so that they are all present from all tagged mods.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Actor animations you need to tag the mod with 'Actors.Anims'.
+
+== Import Actors: Death Items
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to NPCs and Creatures death items (items that are added to the NPC / Creature only when it dies) and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Actor Death Items you need to tag the mod with 'Actors.DeathItem'.
+
+== Import Actors: Spells
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to NPCs and Creatures and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you add or remove an actor's spell and it is important that the change is kept you need to tag the mod with 'Actors.Spells'. If you're re-adding a spell that was previously removed, you need to tag the mod with 'Actors.SpellsForceAdd' as well.
+
+== Import Cells
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to cells (the areas your character can enter) and want those changes to be preserved even if another mod changes the same cell. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Cell climate, or IsBehaveLikeExterior you need to tag the mod with 'C.Climate'.
+  * Cell music type you need to tag the mod with 'C.Music'.
+  * Cell name you need to tag the mod with 'C.Name'.
+  * Cell owner, rank, global variable, or IsPublicPlace you need to tag the mod with 'C.Owner'.
+  * Cell water, water height, IsHasWater you need to tag the mod with 'C.Water'.
+  * Cell ambient, directional, or fog lighting you need to tag the mod with 'C.Light'.
+  * Cell flags not mentioned above you need to tag the mod with 'C.RecordFlags'. Use with care, it also overrides the above flags.
+
+== Import Factions
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to the factions that an NPC / Creature belongs to and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Adding a faction, removing a faction, or changing the actor's rank in a faction you need to tag the mod with 'Factions'.
+
+== Import Graphics
+* Should you check it? Depends. This is an aesthetic choice. Choose whichever mod graphics you prefer.
+* What does it do? Some mods make changes to the graphics of the game. This ensures that the graphics from the mod(s) you like are preserved even if another mod changes the same graphics.
+* When does the user need it? If you use a mod that changes the graphics of the game, and you want those graphics to always be used even if another mod changes the graphics to something else.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Graphics':
+  * Birthsign icon path
+  * Loading Screen icon path
+  * Class icon path
+  * Land texture icon path
+  * Region icon path
+  * Activator model path, bound radius, or modt
+  * Door model path, bound radius, or modt
+  * Flora model path, bound radius, or modt
+  * Furniture model path, bound radius, or modt
+  * Grass model path, bound radius, or modt
+  * Static model path, bound radius, or modt
+  * Potion/Poison icon path, model path, bound radius, or modt
+  * Ammo icon path, model path, bound radius, or modt
+  * Alchemical Apparatus icon path, model path, bound radius, or modt
+  * Book icon path, model path, bound radius, or modt
+  * Ingredient icon path, model path, bound radius, or modt
+  * Key icon path, model path, bound radius, or modt
+  * Light icon path, model path, bound radius, or modt
+  * Misc icon path, model path, bound radius, or modt
+  * Sigil Stone icon path, model path, bound radius, or modt
+  * Soul Gem icon path, model path, bound radius, or modt
+  * Weapon icon path, model path, bound radius, or modt
+  * Tree icon path, model path, bound radius, or modt
+  * Armor or Clothing male body (model path, bound radius, or modt), male world, male icon path, female body, female world, female icon path, or flags (IsHead, IsHair, etc)
+  * Creature body parts or nift
+  * Magic Effect icon path, model path, bound radius, modt, effect shader, enchant effect or light
+  * Almost anything in an Effect Shader
+
+== Import Inventory
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to the items that an NPC / Creature / Container start with and want those changes to be preserved even if another mod changes the same NPC / Creature / Container. This merges all these changes.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you add, remove, or change the count of an item in an NPC / Creature / Container and it is important that the change is kept you need to tag the mod with 'Invent'.
+
+== Import NPC Faces
+* Should you check it? Depends. This is an aesthetic choice. Choose whichever mod has the NPC faces that you prefer.
+* What does it do? Some mods make changes to NPC faces. This ensures that the NPC faces from the mod(s) you like are preserved even if another mod changes the same NPC faces.
+* When does the user need it? If you use a mod that changes the NPC faces of the game, and you want those NPC faces to always be used even if another mod changes the NPC faces to something else.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * NPC Face-Gen Symmetric, Face-Gen Asymmetric, Face-Gen Texture Symmetry, eyes, hair, hair length, hair color, fnam you need to tag the mod with 'NpcFaces'. You may tag it with 'NpcFacesForceFullImport' if you want all of the previous attributes to be kept even if they haven't been changed.
+
+== Import Names
+* Should you check it? Depends. This is an aesthetic choice. Choose whichever file has the names that you prefer.
+* What does it do? Some mods make changes to the various names in the game. This ensures that the names from the mod(s) you like are preserved even if another mod changes the same name.
+* When does the user need it? If you use a mod that changes the names of things in the game, and you want those names to always be used even if another mod changes the names to something else.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Names':
+  * Class name
+  * Faction name
+  * Hair name
+  * Eyes name
+  * Race name
+  * Magic Effect name
+  * Enchantment name
+  * Spell name
+  * Birthsign name
+  * Activator name
+  * Alchemical Apparatus name
+  * Armor name
+  * Book name
+  * Clothing name
+  * Container name
+  * Door name
+  * Ingredient name
+  * Light name
+  * Misc name
+  * Flora name
+  * Furniture name
+  * Weapon name
+  * Ammo name
+  * NPC name
+  * Creature name
+  * Soul Gem name
+  * Key name
+  * Potion/Poison name
+  * Sigil Stone name
+  * World name
+  * Cell name
+  * Dialogue name
+  * Quest name
+
+== Import Relations
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to the way that a faction interacts with another faction and want those changes to be preserved even if another mod changes the same faction. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you add, or change the relation that a faction has with another and it is important that the change is kept you need to tag the mod with 'Relations'.
+
+== Import Roads
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to the layout of the world, and this requires that the roads match the new layout even if another mod changes the same world. This ensures that the road is kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you change the road record of a world, and want that road kept even if the world is possibly changed by a later mod, you need to tag the mod with 'Roads'.
+
+== Import Script Contents
+* Should you check it? No.
+* What does it do? It copies the actual script into the bashed patch.
+* When does the user need it? Never.
+* When does a modder need it? Never. It has a good chance of breaking the patch unless you know exactly what you're doing. It is disabled in CBash mode for safety.
+
+== Import Scripts
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to the script associated with an object and want those changes to be preserved even if another mod changes the same object. This ensures that those changes are kept.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Scripts':
+  * Activator script
+  * Potion/Poison script
+  * Alchemical Apparatus script
+  * Armor script
+  * Book script
+  * Clothing script
+  * Container script
+  * Creature script
+  * Door script
+  * Flora script
+  * Furniture script
+  * Ingredient script
+  * Key script
+  * Light script
+  * Leveled Creature script
+  * Misc script
+  * NPC script
+  * Quest script
+  * Sigil Stone script
+  * Soul Gem script
+  * Weapon script
+
+== Import Sounds
+* Should you check it? Depends. This is an aesthetic choice. Choose whichever mod has the sounds that you prefer.
+* What does it do? Some mods make changes to the various sounds in the game. This ensures that the sounds from the mod(s) you like are preserved even if another mod changes the same sound.
+* When does the user need it? If you use a mod that changes the sounds of things in the game, and you want those sounds to always be used even if another mod changes the sounds to something else.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Sound':
+  * Activator sound
+  * Container open, close sounds
+  * Creature foot weight, inherits sounds from, other sounds
+  * Door open, close, loop sounds
+  * Light sound
+  * Magic Effect casting, bolt, hit, area sounds
+  * Weather sounds
+
+== Import Spell Stats
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise (such as if you're using a spell overhaul, you'll probably want to only check that overhaul).
+* What does it do? Some mods change spells in order to fix bugs or to rebalance them. This ensures that these changes are kept even if another mod doesn't use the same changes.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other. Some mods may instruct you on which items should be checked.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'SpellStats':
+  * Spell name, cost, level type, spell type
+
+== Import Stats
+* Should you check it? Yes. All mods should probably be checked unless you are told otherwise (such as if you're using an item overhaul, you'll probably want to only check that overhaul).
+* What does it do? Some mods change items in order to fix bugs or to rebalance them. This ensures that these changes are kept even if another mod doesn't use the same changes.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other. Some mods may instruct you on which items should be checked.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Stats':
+  * Potion/Poison weight, value
+  * Ammo weight value, damage, speed, enchantment points
+  * Alchemical Apparatus weight, value, quality
+  * Armor weight, value, health, strength
+  * Book weight, value, enchantment points
+  * Clothing weight, value, enchantment points
+  * Ingredient weight, value
+  * Key weight, value
+  * Light weight, value, duration
+  * Misc weight, value
+  * Sigil Stone weight, value, uses
+  * Weapon weight, value, health, damage, speed, reach, enchantment points
+
+== Globals
+* Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.
+* What does it do? Sets various global values for you.
+* When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.
+
+== Tweak Actors
+* Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.
+* What does it do? Makes various changes to actors for you.
+* When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.
+
+== Tweak Assorted
+* Should you check it? Depends. The following options are recommended for all users: Bow Reach Fix, DarNified Books if you use DarN's UI, and Nvidia Fog Fix (even if you don't have an Nvidia graphics card). Each option is entirely up to you and you may use or not use whatever option you want.
+* What does it do? Makes various misc changes for you.
+* When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.
+
+== Tweak Clothes
+* Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.
+* What does it do? Makes various changes to clothing for you.
+* When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.
+
+== Tweak Names
+* Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.
+* What does it do? Mostly modifies names to make them sort "better" in game. Lore Friendly Names is the exception and simply replaces one word for another for consistency.
+* When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.
+
+== Tweak Settings
+* Should you check it? Depends. The following options are recommended for all users: UOP Vampire Aging and Face Fix.esp. Each option is entirely up to you and you may use or not use whatever option you want.
+* What does it do? Sets various game setting values for you.
+* When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.
+
+== Cobl Catalogs
+* Should you check it? If you use COBL, yes. Otherwise, no.
+* What does it do? It updates the in game COBL catalogs to include all ingredients and effects added by your mods.
+* When does the user need it? If you use COBL and want the in game catalogs to be accurate.
+
+== Cobl Exhaustion
+* Should you check it? If you use COBL and use its Exhaustion feature, yes. Otherwise, no.
+* What does it do? It updates greater powers added by other mods that are listed in the selected csv files so that they're compatible with COBL's Exhaustion feature.
+* When does the user need it? If you use COBL and its Exhaustion feature.
+
+== Contents Checker
+* Should you check it? Yes.
+* What does it do? It checks for some errors in your active mods.
+* When does the user need it? Always. Unless you know for certain that your actives mods are safe (because you ran this option previously and haven't changed your mods).
+
+== Leveled Lists
+* Should you check it? Yes.
+* What does it do? It merges changes to leveled lists so that mods play nicely with each other.
+* When does the user need it? Always. Advanced users may want it disabled, or may want to take it off automatic.
+
+== Morph Factions
+* Should you check it? If you use COBL and Wrye Morph, yes. Otherwise, no.
+* What does it do? It updates factions so that they are more likely to work with Wrye Morph.
+* When does the user need it? If you use COBL and Wrye Morph. Then again, you should only be using Wrye Morph if you're an advanced user, so you probably aren't reading this.
+
+== Power Exhaustion
+* Should you check it? No. It is only available for backwards compatibility.
+* What does it do? It updates greater powers added by other mods so that they're compatible with Wrye's deprecated Power Exhaustion mod.
+* When does the user need it? Never. Update to COBL Exhaustion already.
+
+== Race Records
+* Should you check it? Yes. Unlike all other options, even if there are no mods on the right, it should still be selected. All mods should probably be checked unless you are told otherwise.
+* What does it do? Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors as described in the patch window.
+* When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other. Some mods may instruct you on which items should be checked.
+* When does a modder need it? If you make changes to one of the following and it is important that the change is kept:
+  * Race hairs you need to tag the mod with 'Hair'.
+  * Race male height, weight, tail (model path, bound radius, modt), upper body texture path, lower body texture path, hand texture path, foot texture path, tail texture path you need to tag the mod with 'Body-M'.
+  * Race female height, weight, tail (model path, bound radius, modt), upper body texture path, lower body texture path, hand texture path, foot texture path, tail texture path you need to tag the mod with 'Body-F'.
+  * Race male voice you need to tag the mod with 'Voice-M'.
+  * Race female voice you need to tag the mod with 'Voice-F'.
+  * Race teeth lower (model path, bound radius, modt, icon path), or teeth upper (model path, bound radius, modt, icon path) you need to tag the mod with 'R.Teeth'.
+  * Race mouth (model path, bound radius, modt, icon path), or tongue (model path, bound radius, modt, icon path) you need to tag the mod with 'R.Mouth'.
+  * Race male ears (model path, bound radius, modt, icon path), or female ears (model path, bound radius, modt, icon path) you need to tag the mod with 'R.Ears'.
+  * Race head (model path, bound radius, modt, icon path), Face-Gen Symmetric, Face-Gen Asymmetric, Face-Gen Texture Symmetry, or snam you need to tag the mod with 'R.Head'.
+  * Race male attributes (strength, speed, etc) you need to tag the mod with 'R.Attributes-M'.
+  * Race female attributes (strength, speed, etc) you need to tag the mod with 'R.Attributes-F'.
+  * Race skills, skill modifiers you need to tag the mod with 'R.Skills'.
+  * Race description you need to tag the mod with 'R.Description'.
+  * Race factions (add/remove/change relation modifier) you need to tag the mod with 'R.Relations'.
+  * Race spells (adding) you need to tag the mod with 'R.AddSpells'.
+  * Race spells (removing or removing some and adding others) you need to tag the mod with 'R.ChangeSpells'. Don't use 'R.AddSpells' and 'R.ChangeSpells' at the same time.
+  * Race eyes (adding,removing) you need to tag the mod with 'Eyes'.
+
+== SEWorld Tests
+* Should you check it? Yes (assuming you aren't using a really old patch).
+* What does it do? It fixes any quests that aren't suspended while your character is in the Shivering Isles.
+* When does the user need it? Always (assuming you aren't using a really old patch). If you don't have the Shivering Isles expansion, this won't do you any good, but it also won't hurt you. So it's safer to just leave it enabled.
+</td></tr></table>

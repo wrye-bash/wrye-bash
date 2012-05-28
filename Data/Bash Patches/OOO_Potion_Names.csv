@@ -1,0 +1,18 @@
+Type,Mod Name,ObjectIndex,Editor Id,Name
+ALCH,Oblivion.esm,0x0B1200,DrinkAle,Ale
+ALCH,Oblivion.esm,0x0B1202,DrinkBeer,Beer
+ALCH,Oblivion.esm,0x0B1201,DrinkMead,Mead
+ALCH,Oblivion.esm,0x037F7F,DrinkWine0Cheap,Cheap Wine
+ALCH,Oblivion.esm,0x037F80,DrinkWine1SurilieGood,Surilie Brothers Wine
+ALCH,Oblivion.esm,0x037F81,DrinkWine2TamikaGood,Tamika's West Weald Wine
+ALCH,Oblivion.esm,0x037F82,DrinkWine3SurilieBetter,Surilie Brothers Vintage 415
+ALCH,Oblivion.esm,0x037F83,DrinkWine4TamikaBetter,Tamika Vintage 415
+ALCH,Oblivion.esm,0x037F84,DrinkWine5SurilieBest,Surilie Brothers Vintage 399
+ALCH,Oblivion.esm,0x037F7E,DrinkWine6TamikaBest,Tamika Vintage 399
+ALCH,Oblivion.esm,0x0B1241,FGC03NewheimBeer,Newheim's Special Brew
+ALCH,Oblivion.esm,0x0B97EA,HouseServantMead,Rosethorn Mead
+ALCH,Oblivion.esm,0x098309,HumanBlood,Human Blood
+ALCH,Oblivion.esm,0x04E937,MS39NirnrootPotionA,Elixir of Exploration (Basic)
+ALCH,Oblivion.esm,0x04E938,MS39NirnrootPotionB,Elixir of Exploration (Moderate)
+ALCH,Oblivion.esm,0x04E939,MS39NirnrootPotionC,Elixir of Exploration (Strong)
+ALCH,Oblivion.esm,0x04E93A,MS39NirnrootPotionD,Elixir of Exploration (Superior)

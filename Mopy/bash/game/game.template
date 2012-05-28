@@ -1,0 +1,188 @@
+# -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2011 Wrye Bash Team
+#
+# =============================================================================
+
+"""This a template to use for making new game types for bash.game"""
+
+# Util Constants ---------------------------------------------------------------
+#--Null strings (for default empty byte arrays)
+null1 = '\x00'
+null2 = null1*2
+null3 = null1*3
+null4 = null1*4
+
+#--Name of the game
+## Example: 'Oblivion'
+name = ''
+
+#--Alternat display name of Wrye Bash when managing this game
+## Example: 'Wrye Smash'
+altName = ''
+
+#--Exe to look for to see if this is the right game
+## Example: 'TESV.exe'
+exe = ''
+
+#--Registry keys to read to find the install location
+## These are relative to:
+##  HKLM\Software
+##  HKLM\Software\Wow6432Node
+##  HKCU\Software
+##  HKCU\Software\Wow6432Node
+regInstallKeys = [
+    ]
+
+#--Patch information
+## URL to download patches for the main game.
+patchURL = ''
+## Tooltip to display over the URL when displayed
+patchTip = ''
+
+#--Construction Set information
+class cs:
+    shortName = ''                  # Abbreviated name
+    longName = ''                   # Full name
+    exe = '*DNE*'                   # Executable to run
+    seArgs = ''                     # Argument to pass to the SE to load the CS
+    imageName = ''                  # Image name template for the status bar
+
+#--Script Extender information
+class se:
+    shortName = ''       # Abbreviated name.  If this is empty, it signals that no SE is available
+    longname = ''        # Full name
+    exe = ''             # Exe to run
+    steamExe = ''        # Exe to run if a steam install
+    url = ''             # URL to download from
+    urlTip = ''          # Tooltip for mouse over the URL
+
+#--Graphics Extender information
+class ge:
+    shortName = ''
+    longName = ''
+    ## exe is treated specially here.  If it is a string, then it should
+    ## be the path relative to the root directory of the game
+    ## if it is list, each list element should be an iterable to pass to Path.join
+    ## relative to the root directory of the game.  In this case, each filename
+    ## will be tested in reverse order.  This was required for Oblivion, as the newer
+    ## OBGE has a different filename than the older OBGE
+    exe = ''
+    url = ''
+    urlTip = ''
+
+#--4gb Launcher
+class laa:
+    name = ''           # Display name of the launcher
+    exe = '*DNE*'       # Executable to run
+    launchesSE = False  # Whether the launcher will automatically launch the SE
+
+#--Save Game format stuff
+class ess:
+    # Save file capabilities
+    canReadBasic = False        # Can read the info needed for the Save Tab display
+    canEditMasters = False      # Can adjust save file masters
+    canEditMore = False         # Advanced editing
+
+    @staticmethod
+    def load(ins,header):
+        """Extract basic info from save file.close
+           At a minimum, this should set the following
+           attrubutes in 'header':
+            pcName
+            pcLevel
+            pcLocation
+            gameDate
+            gameDays
+            gameTicks (seconds*1000)
+            image (ssWidth,ssHeight,ssData)
+            masters
+        """
+        raise Exception('Not implemented')
+
+    @staticmethod
+    def writeMasters(ins,out,header):
+        """Rewrites masters of existing save file."""
+        raise Exception('Not implemented')
+
+#--INI files that should show up in the INI Edits tab
+## Example: ['Oblivion.ini']
+iniFiles = [
+    ]
+
+#-- INI setting used to setup Save Profiles
+## (section,key)
+saveProfilesKey = ('General','SLocalSavePath')
+
+#--The main plugins Wrye Bash should look for
+## Example: ['Skyrim.esm']
+masterFiles = [
+    ]
+
+#--Game ESM/ESP/BSA files
+## These are all of the data files that belong to the game
+bethDataFiles = set()
+
+#--Every file in the Data directory from Bethsoft
+## These are every single file in the Data directory that
+## belong to the game
+allBethFiles = set()
+
+#--BAIN:
+## These are the allowed default data directories that BAIN can install to
+dataDirs = set()
+## These are additional special directories that BAIN can install to
+dataDirsPlus = set()
+
+# Mod Record Elements ----------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Constants
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
+#--Plugin format stuff
+class esp:
+    #--Wrye Bash capabilities
+    canBash = False         # Can create Bashed Patches
+    canEditHeader = False   # Can edit basic info in the TES4 record
+
+    #--Valid ESM/ESP header versions
+    ## These are the valid 'version' numbers for the game file headers
+    validHeaderVersions = tuple()
+
+    #--Class to use to read the TES4 record
+    ## This is the class name in bosh.py to use for the TES4 record when reading
+    ## Example: 'MreTes4'
+    tes4ClassName = ''
+
+    #--Information about the basic record header
+    class header:
+        format = ''         # Format passed to struct.unpack to unpack the header
+        size = 0            # Size of the record header
+        attrs = tuple()     # List of attributes to set = the return of struct.unpack
+        defaults = tuple()  # Default values for each of the above attributes
+
+    #--Top types in order of the main ESM
+    topTypes = []
+
+    #--Dict mapping 'ignored' top types to un-ignored top types
+    topIgTopTYpes = dict()
+
+    #--Record Types: all recognized record types (not just the top types)
+    recordTypes = set(topTypes + 'GRUP,TES4'.split(','))

@@ -1,0 +1,412 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>Wrye Bash Patch Option Reference (by Waruddar)</title>
+    <style type="text/css">
+    h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+    h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+    h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+    a:link { text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    p.empty {}
+    p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+    p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+    p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+    p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+    p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+    p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+    .code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
+    pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+    code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
+    td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
+    body { background-color: #ffffcc; }
+    </style>
+    </head>
+    <body>
+    <h1><a id='WryeBashPatchOptionReferencebyWaruddar'>Wrye Bash Patch Option Reference (by Waruddar)</a></h1>
+<table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
+<p><a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2Fpatch_option_reference.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Contents'>Contents</a></h3>
+<p class="list-1">&bull;&nbsp; <a href="#Introduction">Introduction</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#AliasModNames">Alias Mod Names</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#MergePatches">Merge Patches</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ReplaceFormIDs">Replace Form IDs</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportActors">Import Actors</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportActorsAIPackages">Import Actors: AIPackages</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportActorsAnimations">Import Actors: Animations</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportActorsDeathItems">Import Actors: Death Items</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportActorsSpells">Import Actors: Spells</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportCells">Import Cells</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportFactions">Import Factions</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportGraphics">Import Graphics</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportInventory">Import Inventory</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportNPCFaces">Import NPC Faces</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportNames">Import Names</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportRelations">Import Relations</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportRoads">Import Roads</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportScriptContents">Import Script Contents</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportScripts">Import Scripts</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportSounds">Import Sounds</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportSpellStats">Import Spell Stats</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ImportStats">Import Stats</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Globals">Globals</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#TweakActors">Tweak Actors</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#TweakAssorted">Tweak Assorted</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#TweakClothes">Tweak Clothes</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#TweakNames">Tweak Names</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#TweakSettings">Tweak Settings</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CoblCatalogs">Cobl Catalogs</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CoblExhaustion">Cobl Exhaustion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ContentsChecker">Contents Checker</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#LeveledLists">Leveled Lists</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#MorphFactions">Morph Factions</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#PowerExhaustion">Power Exhaustion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#RaceRecords">Race Records</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SEWorldTests">SEWorld Tests</a></p>
+</td><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c;">
+<h1><a id='Introduction'>Introduction</a></h1>
+<p>This document explains what all the bashed patch options mean and gives some guidence on when to select them.  Please note, when I say that it should be checked, that only applies if there are items on the right side as well (except for one patch option which is detailed below).  Also, when I say mods, I mean just that, mods.  Don't check any of the csv files unless you know that they're what you want.
+</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='AliasModNames'>Alias Mod Names</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Not normally.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? If a mod has been renamed, it allows patch options that use the original mod name to know that it needs to use the new mod name instead.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If for instance, you rename Oscuros_Oblivion_Overhaul.esp to OOO.esp (for whatever reason), you'll need this option so that Bash knows that OOO.esp is really Oscuros_Oblivion_Overhaul.esp.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='MergePatches'>Merge Patches</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. Unless you need it, it won't help you, but it also doesn't hurt to have it active.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It copies mods into the Bashed Patch so that they don't have to be active.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you're running out of space in your load order (Oblivion can only handle 254 mods at a time) this can merge some mods into the Bashed Patch so that you have more space. Some mods have to be merged to work properly (filter mods, Item Interchange), but this should be noted in the mod's readme.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you're creating a filter or item interchange type mod. See the readme for details.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ReplaceFormIDs'>Replace Form IDs</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? No. This is an advanced option. If you need it, you'll know it (or be instructed to use it).</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It replaces a set of formIDs with another set of formIDs defined by a csv file.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to replace all usage of one item for another. For instance, P1DCandles replaces all static, non-movable candles with candles that can be picked up, moved around, stolen, etc. It only works for Oblivion.esm though. This option allows P1DCandles to work for all mods (assuming you have the original mod installed).</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you're systematically replacing a formID with another, this will do the work for you. It also works across all mods the user has.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ImportActors'>Import Actors</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to NPCs and Creatures and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Actor aggression, confidence, energy level, responsibility, services, training skill, or training level you need to tag the mod with 'Actors.AIData'.</p>
+  <p class="list-2">&bull;&nbsp;  Actor skills (armorer, athletics, etc), health, attributes (strength, speed, etc) you need to tag the mod with 'Actors.Stats'.</p>
+  <p class="list-2">&bull;&nbsp;  Actor base spell, fatigue, barter gold, level, calc min, calc max, IsBiped, sex, IsEssential, IsWeaponAndShield, IsRespawn, IsSwims, IsFlies, IsWalks, IsAutoCalc, IsPCLevelOffset, IsNoLowLevel, IsNoBloodSpray, IsNoBloodDecal, IsNoHead, IsNoRightArm, IsNoLeftArm, IsNoCombatInWater, IsNoShadow IsNoRumors, IsSummonable, IsNoPersuasion, IsCanCorpseCheck you need to tag the mod with 'Actors.ACBS'.</p>
+  <p class="list-2">&bull;&nbsp;  NPC class you need to tag the mod with 'NPC.Class'.</p>
+  <p class="list-2">&bull;&nbsp;  NPC race you need to tag the mod with 'NPC.Race'.</p>
+  <p class="list-2">&bull;&nbsp;  Actor combat style you need to tag the mod with 'Actors.CombatStyle'.</p>
+  <p class="list-2">&bull;&nbsp;  Creature blood spray path, blood decal path you need to tag the mod with 'Creatures.Blood'.</p>
+  <p class="list-2">&bull;&nbsp;  Actor model path, bound radius, modt you need to tag the mod with 'Actors.Skeleton'.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportActorsAIPackages'>Import Actors: AIPackages</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to NPCs and Creatures AI Packages and want those changes to be preserved even if another mod changes the same NPC / Creature. This merges the AI Packages so that they are all present from all tagged mods.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Actor AI Packages you need to tag the mod with 'Actors.AIPackages'. If you're re-adding an AI Package that was previously removed, you need to tag the mod with 'Actors.AIPackagesForceAdd' as well.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportActorsAnimations'>Import Actors: Animations</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to NPCs and Creatures animations and want those changes to be preserved even if another mod changes the same NPC / Creature. This merges the animations so that they are all present from all tagged mods.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Actor animations you need to tag the mod with 'Actors.Anims'.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportActorsDeathItems'>Import Actors: Death Items</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to NPCs and Creatures death items (items that are added to the NPC / Creature only when it dies) and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Actor Death Items you need to tag the mod with 'Actors.DeathItem'.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportActorsSpells'>Import Actors: Spells</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to NPCs and Creatures and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you add or remove an actor's spell and it is important that the change is kept you need to tag the mod with 'Actors.Spells'. If you're re-adding a spell that was previously removed, you need to tag the mod with 'Actors.SpellsForceAdd' as well.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ImportCells'>Import Cells</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to cells (the areas your character can enter) and want those changes to be preserved even if another mod changes the same cell. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Cell climate, or IsBehaveLikeExterior you need to tag the mod with 'C.Climate'.</p>
+  <p class="list-2">&bull;&nbsp;  Cell music type you need to tag the mod with 'C.Music'.</p>
+  <p class="list-2">&bull;&nbsp;  Cell name you need to tag the mod with 'C.Name'.</p>
+  <p class="list-2">&bull;&nbsp;  Cell owner, rank, global variable, or IsPublicPlace you need to tag the mod with 'C.Owner'.</p>
+  <p class="list-2">&bull;&nbsp;  Cell water, water height, IsHasWater you need to tag the mod with 'C.Water'.</p>
+  <p class="list-2">&bull;&nbsp;  Cell ambient, directional, or fog lighting you need to tag the mod with 'C.Light'.</p>
+  <p class="list-2">&bull;&nbsp;  Cell flags not mentioned above you need to tag the mod with 'C.RecordFlags'. Use with care, it also overrides the above flags.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportFactions'>Import Factions</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the factions that an NPC / Creature belongs to and want those changes to be preserved even if another mod changes the same NPC / Creature. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Adding a faction, removing a faction, or changing the actor's rank in a faction you need to tag the mod with 'Factions'.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportGraphics'>Import Graphics</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. This is an aesthetic choice. Choose whichever mod graphics you prefer.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the graphics of the game. This ensures that the graphics from the mod(s) you like are preserved even if another mod changes the same graphics.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use a mod that changes the graphics of the game, and you want those graphics to always be used even if another mod changes the graphics to something else.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Graphics':</p>
+  <p class="list-2">&bull;&nbsp;  Birthsign icon path</p>
+  <p class="list-2">&bull;&nbsp;  Loading Screen icon path</p>
+  <p class="list-2">&bull;&nbsp;  Class icon path</p>
+  <p class="list-2">&bull;&nbsp;  Land texture icon path</p>
+  <p class="list-2">&bull;&nbsp;  Region icon path</p>
+  <p class="list-2">&bull;&nbsp;  Activator model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Door model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Flora model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Furniture model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Grass model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Static model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Potion/Poison icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Ammo icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Alchemical Apparatus icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Book icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Ingredient icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Key icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Light icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Misc icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Sigil Stone icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Soul Gem icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Weapon icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Tree icon path, model path, bound radius, or modt</p>
+  <p class="list-2">&bull;&nbsp;  Armor or Clothing male body (model path, bound radius, or modt), male world, male icon path, female body, female world, female icon path, or flags (IsHead, IsHair, etc)</p>
+  <p class="list-2">&bull;&nbsp;  Creature body parts or nift</p>
+  <p class="list-2">&bull;&nbsp;  Magic Effect icon path, model path, bound radius, modt, effect shader, enchant effect or light</p>
+  <p class="list-2">&bull;&nbsp;  Almost anything in an Effect Shader</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportInventory'>Import Inventory</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the items that an NPC / Creature / Container start with and want those changes to be preserved even if another mod changes the same NPC / Creature / Container. This merges all these changes.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you add, remove, or change the count of an item in an NPC / Creature / Container and it is important that the change is kept you need to tag the mod with 'Invent'.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ImportNPCFaces'>Import NPC Faces</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. This is an aesthetic choice. Choose whichever mod has the NPC faces that you prefer.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to NPC faces. This ensures that the NPC faces from the mod(s) you like are preserved even if another mod changes the same NPC faces.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use a mod that changes the NPC faces of the game, and you want those NPC faces to always be used even if another mod changes the NPC faces to something else.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  NPC Face-Gen Symmetric, Face-Gen Asymmetric, Face-Gen Texture Symmetry, eyes, hair, hair length, hair color, fnam you need to tag the mod with 'NpcFaces'. You may tag it with 'NpcFacesForceFullImport' if you want all of the previous attributes to be kept even if they haven't been changed.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportNames'>Import Names</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. This is an aesthetic choice. Choose whichever file has the names that you prefer.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the various names in the game. This ensures that the names from the mod(s) you like are preserved even if another mod changes the same name.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use a mod that changes the names of things in the game, and you want those names to always be used even if another mod changes the names to something else.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Names':</p>
+  <p class="list-2">&bull;&nbsp;  Class name</p>
+  <p class="list-2">&bull;&nbsp;  Faction name</p>
+  <p class="list-2">&bull;&nbsp;  Hair name</p>
+  <p class="list-2">&bull;&nbsp;  Eyes name</p>
+  <p class="list-2">&bull;&nbsp;  Race name</p>
+  <p class="list-2">&bull;&nbsp;  Magic Effect name</p>
+  <p class="list-2">&bull;&nbsp;  Enchantment name</p>
+  <p class="list-2">&bull;&nbsp;  Spell name</p>
+  <p class="list-2">&bull;&nbsp;  Birthsign name</p>
+  <p class="list-2">&bull;&nbsp;  Activator name</p>
+  <p class="list-2">&bull;&nbsp;  Alchemical Apparatus name</p>
+  <p class="list-2">&bull;&nbsp;  Armor name</p>
+  <p class="list-2">&bull;&nbsp;  Book name</p>
+  <p class="list-2">&bull;&nbsp;  Clothing name</p>
+  <p class="list-2">&bull;&nbsp;  Container name</p>
+  <p class="list-2">&bull;&nbsp;  Door name</p>
+  <p class="list-2">&bull;&nbsp;  Ingredient name</p>
+  <p class="list-2">&bull;&nbsp;  Light name</p>
+  <p class="list-2">&bull;&nbsp;  Misc name</p>
+  <p class="list-2">&bull;&nbsp;  Flora name</p>
+  <p class="list-2">&bull;&nbsp;  Furniture name</p>
+  <p class="list-2">&bull;&nbsp;  Weapon name</p>
+  <p class="list-2">&bull;&nbsp;  Ammo name</p>
+  <p class="list-2">&bull;&nbsp;  NPC name</p>
+  <p class="list-2">&bull;&nbsp;  Creature name</p>
+  <p class="list-2">&bull;&nbsp;  Soul Gem name</p>
+  <p class="list-2">&bull;&nbsp;  Key name</p>
+  <p class="list-2">&bull;&nbsp;  Potion/Poison name</p>
+  <p class="list-2">&bull;&nbsp;  Sigil Stone name</p>
+  <p class="list-2">&bull;&nbsp;  World name</p>
+  <p class="list-2">&bull;&nbsp;  Cell name</p>
+  <p class="list-2">&bull;&nbsp;  Dialogue name</p>
+  <p class="list-2">&bull;&nbsp;  Quest name</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportRelations'>Import Relations</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the way that a faction interacts with another faction and want those changes to be preserved even if another mod changes the same faction. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you add, or change the relation that a faction has with another and it is important that the change is kept you need to tag the mod with 'Relations'.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ImportRoads'>Import Roads</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the layout of the world, and this requires that the roads match the new layout even if another mod changes the same world. This ensures that the road is kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you change the road record of a world, and want that road kept even if the world is possibly changed by a later mod, you need to tag the mod with 'Roads'.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ImportScriptContents'>Import Script Contents</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? No.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It copies the actual script into the bashed patch.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Never.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? Never. It has a good chance of breaking the patch unless you know exactly what you're doing. It is disabled in CBash mode for safety.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ImportScripts'>Import Scripts</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the script associated with an object and want those changes to be preserved even if another mod changes the same object. This ensures that those changes are kept.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Scripts':</p>
+  <p class="list-2">&bull;&nbsp;  Activator script</p>
+  <p class="list-2">&bull;&nbsp;  Potion/Poison script</p>
+  <p class="list-2">&bull;&nbsp;  Alchemical Apparatus script</p>
+  <p class="list-2">&bull;&nbsp;  Armor script</p>
+  <p class="list-2">&bull;&nbsp;  Book script</p>
+  <p class="list-2">&bull;&nbsp;  Clothing script</p>
+  <p class="list-2">&bull;&nbsp;  Container script</p>
+  <p class="list-2">&bull;&nbsp;  Creature script</p>
+  <p class="list-2">&bull;&nbsp;  Door script</p>
+  <p class="list-2">&bull;&nbsp;  Flora script</p>
+  <p class="list-2">&bull;&nbsp;  Furniture script</p>
+  <p class="list-2">&bull;&nbsp;  Ingredient script</p>
+  <p class="list-2">&bull;&nbsp;  Key script</p>
+  <p class="list-2">&bull;&nbsp;  Light script</p>
+  <p class="list-2">&bull;&nbsp;  Leveled Creature script</p>
+  <p class="list-2">&bull;&nbsp;  Misc script</p>
+  <p class="list-2">&bull;&nbsp;  NPC script</p>
+  <p class="list-2">&bull;&nbsp;  Quest script</p>
+  <p class="list-2">&bull;&nbsp;  Sigil Stone script</p>
+  <p class="list-2">&bull;&nbsp;  Soul Gem script</p>
+  <p class="list-2">&bull;&nbsp;  Weapon script</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportSounds'>Import Sounds</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. This is an aesthetic choice. Choose whichever mod has the sounds that you prefer.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to the various sounds in the game. This ensures that the sounds from the mod(s) you like are preserved even if another mod changes the same sound.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use a mod that changes the sounds of things in the game, and you want those sounds to always be used even if another mod changes the sounds to something else.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Sound':</p>
+  <p class="list-2">&bull;&nbsp;  Activator sound</p>
+  <p class="list-2">&bull;&nbsp;  Container open, close sounds</p>
+  <p class="list-2">&bull;&nbsp;  Creature foot weight, inherits sounds from, other sounds</p>
+  <p class="list-2">&bull;&nbsp;  Door open, close, loop sounds</p>
+  <p class="list-2">&bull;&nbsp;  Light sound</p>
+  <p class="list-2">&bull;&nbsp;  Magic Effect casting, bolt, hit, area sounds</p>
+  <p class="list-2">&bull;&nbsp;  Weather sounds</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportSpellStats'>Import Spell Stats</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise (such as if you're using a spell overhaul, you'll probably want to only check that overhaul).</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods change spells in order to fix bugs or to rebalance them. This ensures that these changes are kept even if another mod doesn't use the same changes.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other. Some mods may instruct you on which items should be checked.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'SpellStats':</p>
+  <p class="list-2">&bull;&nbsp;  Spell name, cost, level type, spell type</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ImportStats'>Import Stats</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. All mods should probably be checked unless you are told otherwise (such as if you're using an item overhaul, you'll probably want to only check that overhaul).</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods change items in order to fix bugs or to rebalance them. This ensures that these changes are kept even if another mod doesn't use the same changes.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other. Some mods may instruct you on which items should be checked.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept you need to tag the mod with 'Stats':</p>
+  <p class="list-2">&bull;&nbsp;  Potion/Poison weight, value</p>
+  <p class="list-2">&bull;&nbsp;  Ammo weight value, damage, speed, enchantment points</p>
+  <p class="list-2">&bull;&nbsp;  Alchemical Apparatus weight, value, quality</p>
+  <p class="list-2">&bull;&nbsp;  Armor weight, value, health, strength</p>
+  <p class="list-2">&bull;&nbsp;  Book weight, value, enchantment points</p>
+  <p class="list-2">&bull;&nbsp;  Clothing weight, value, enchantment points</p>
+  <p class="list-2">&bull;&nbsp;  Ingredient weight, value</p>
+  <p class="list-2">&bull;&nbsp;  Key weight, value</p>
+  <p class="list-2">&bull;&nbsp;  Light weight, value, duration</p>
+  <p class="list-2">&bull;&nbsp;  Misc weight, value</p>
+  <p class="list-2">&bull;&nbsp;  Sigil Stone weight, value, uses</p>
+  <p class="list-2">&bull;&nbsp;  Weapon weight, value, health, damage, speed, reach, enchantment points</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='Globals'>Globals</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Sets various global values for you.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='TweakActors'>Tweak Actors</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Makes various changes to actors for you.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='TweakAssorted'>Tweak Assorted</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. The following options are recommended for all users: Bow Reach Fix, DarNified Books if you use DarN's UI, and Nvidia Fog Fix (even if you don't have an Nvidia graphics card). Each option is entirely up to you and you may use or not use whatever option you want.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Makes various misc changes for you.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='TweakClothes'>Tweak Clothes</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Makes various changes to clothing for you.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='TweakNames'>Tweak Names</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. Each option is entirely up to you and you may use or not use whatever option you want.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Mostly modifies names to make them sort "better" in game. Lore Friendly Names is the exception and simply replaces one word for another for consistency.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='TweakSettings'>Tweak Settings</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Depends. The following options are recommended for all users: UOP Vampire Aging and Face Fix.esp. Each option is entirely up to you and you may use or not use whatever option you want.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Sets various game setting values for you.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you want to try one of the listed options. Each option is documented in Bash.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='CoblCatalogs'>Cobl Catalogs</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? If you use COBL, yes. Otherwise, no.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It updates the in game COBL catalogs to include all ingredients and effects added by your mods.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use COBL and want the in game catalogs to be accurate.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='CoblExhaustion'>Cobl Exhaustion</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? If you use COBL and use its Exhaustion feature, yes. Otherwise, no.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It updates greater powers added by other mods that are listed in the selected csv files so that they're compatible with COBL's Exhaustion feature.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use COBL and its Exhaustion feature.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ContentsChecker'>Contents Checker</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It checks for some errors in your active mods.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Always. Unless you know for certain that your actives mods are safe (because you ran this option previously and haven't changed your mods).</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='LeveledLists'>Leveled Lists</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It merges changes to leveled lists so that mods play nicely with each other.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Always. Advanced users may want it disabled, or may want to take it off automatic.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='MorphFactions'>Morph Factions</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? If you use COBL and Wrye Morph, yes. Otherwise, no.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It updates factions so that they are more likely to work with Wrye Morph.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? If you use COBL and Wrye Morph. Then again, you should only be using Wrye Morph if you're an advanced user, so you probably aren't reading this.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='PowerExhaustion'>Power Exhaustion</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? No. It is only available for backwards compatibility.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It updates greater powers added by other mods so that they're compatible with Wrye's deprecated Power Exhaustion mod.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Never. Update to COBL Exhaustion already.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='RaceRecords'>Race Records</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes. Unlike all other options, even if there are no mods on the right, it should still be selected. All mods should probably be checked unless you are told otherwise.</p>
+<p class="list-1">&bull;&nbsp;  What does it do? Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors as described in the patch window.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Normally always. Advanced users may prefer to keep changes from one mod and not the other. Some mods may instruct you on which items should be checked.</p>
+<p class="list-1">&bull;&nbsp;  When does a modder need it? If you make changes to one of the following and it is important that the change is kept:</p>
+  <p class="list-2">&bull;&nbsp;  Race hairs you need to tag the mod with 'Hair'.</p>
+  <p class="list-2">&bull;&nbsp;  Race male height, weight, tail (model path, bound radius, modt), upper body texture path, lower body texture path, hand texture path, foot texture path, tail texture path you need to tag the mod with 'Body-M'.</p>
+  <p class="list-2">&bull;&nbsp;  Race female height, weight, tail (model path, bound radius, modt), upper body texture path, lower body texture path, hand texture path, foot texture path, tail texture path you need to tag the mod with 'Body-F'.</p>
+  <p class="list-2">&bull;&nbsp;  Race male voice you need to tag the mod with 'Voice-M'.</p>
+  <p class="list-2">&bull;&nbsp;  Race female voice you need to tag the mod with 'Voice-F'.</p>
+  <p class="list-2">&bull;&nbsp;  Race teeth lower (model path, bound radius, modt, icon path), or teeth upper (model path, bound radius, modt, icon path) you need to tag the mod with 'R.Teeth'.</p>
+  <p class="list-2">&bull;&nbsp;  Race mouth (model path, bound radius, modt, icon path), or tongue (model path, bound radius, modt, icon path) you need to tag the mod with 'R.Mouth'.</p>
+  <p class="list-2">&bull;&nbsp;  Race male ears (model path, bound radius, modt, icon path), or female ears (model path, bound radius, modt, icon path) you need to tag the mod with 'R.Ears'.</p>
+  <p class="list-2">&bull;&nbsp;  Race head (model path, bound radius, modt, icon path), Face-Gen Symmetric, Face-Gen Asymmetric, Face-Gen Texture Symmetry, or snam you need to tag the mod with 'R.Head'.</p>
+  <p class="list-2">&bull;&nbsp;  Race male attributes (strength, speed, etc) you need to tag the mod with 'R.Attributes-M'.</p>
+  <p class="list-2">&bull;&nbsp;  Race female attributes (strength, speed, etc) you need to tag the mod with 'R.Attributes-F'.</p>
+  <p class="list-2">&bull;&nbsp;  Race skills, skill modifiers you need to tag the mod with 'R.Skills'.</p>
+  <p class="list-2">&bull;&nbsp;  Race description you need to tag the mod with 'R.Description'.</p>
+  <p class="list-2">&bull;&nbsp;  Race factions (add/remove/change relation modifier) you need to tag the mod with 'R.Relations'.</p>
+  <p class="list-2">&bull;&nbsp;  Race spells (adding) you need to tag the mod with 'R.AddSpells'.</p>
+  <p class="list-2">&bull;&nbsp;  Race spells (removing or removing some and adding others) you need to tag the mod with 'R.ChangeSpells'. Don't use 'R.AddSpells' and 'R.ChangeSpells' at the same time.</p>
+  <p class="list-2">&bull;&nbsp;  Race eyes (adding,removing) you need to tag the mod with 'Eyes'.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='SEWorldTests'>SEWorld Tests</a></h2>
+<p class="list-1">&bull;&nbsp;  Should you check it? Yes (assuming you aren't using a really old patch).</p>
+<p class="list-1">&bull;&nbsp;  What does it do? It fixes any quests that aren't suspended while your character is in the Shivering Isles.</p>
+<p class="list-1">&bull;&nbsp;  When does the user need it? Always (assuming you aren't using a really old patch). If you don't have the Shivering Isles expansion, this won't do you any good, but it also won't hurt you. So it's safer to just leave it enabled.</p>
+</td></tr></table>
+</body>
+</html>

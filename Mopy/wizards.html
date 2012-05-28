@@ -1,0 +1,1542 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>BAIN Wizards</title>
+    <style type="text/css">
+    h1 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #c6c63c; font-family: "Arial", serif; font-size: 12pt; page-break-before: auto; page-break-after: auto }
+    h2 { margin-top: 0in; margin-bottom: 0in; border-top: 1px solid #000000; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding: 0.02in 0in; background: #e6e64c; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    h3 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-size: 10pt; font-style: normal; page-break-before: auto; page-break-after: auto }
+    h4 { margin-top: 0in; margin-bottom: 0in; font-family: "Arial", serif; font-style: italic; page-break-before: auto; page-break-after: auto }
+    a:link { text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    p { margin-top: 0.01in; margin-bottom: 0.01in; font-family: "Arial", serif; font-size: 10pt; page-break-before: auto; page-break-after: auto }
+    p.empty {}
+    p.list-1 { margin-left: 0.15in; text-indent: -0.15in }
+    p.list-2 { margin-left: 0.3in; text-indent: -0.15in }
+    p.list-3 { margin-left: 0.45in; text-indent: -0.15in }
+    p.list-4 { margin-left: 0.6in; text-indent: -0.15in }
+    p.list-5 { margin-left: 0.75in; text-indent: -0.15in }
+    p.list-6 { margin-left: 1.00in; text-indent: -0.15in }
+    .code-n { background-color: #FDF5E6; font-family: "Lucide Console", monospace; font-size: 10pt; white-space: pre; }
+    pre { border: 1px solid; overflow: auto; width: 750px; word-wrap: break-word; background: #FDF5E6; padding: 0.5em; margin-top: 0in; margin-bottom: 0in; margin-left: 0.25in}
+    code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; }
+    td.code { background-color: #FDF5E6; font-family: "Lucida Console", monospace; font-size: 10pt; border: 1px solid #000000; padding:5px; width:50%;}
+    body { background-color: #ffffcc; }
+    </style>
+    </head>
+    <body>
+    <h1><a id='BAINWizards'>BAIN Wizards</a></h1>
+<table><tr valign="top"><td></td></tr><tr valign="top"><td style='border: 1px solid #000000; padding: 5px; background: #e6e64c; width: 20%;'>
+<p><a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2Fwizards.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Contents'>Contents</a></h3>
+<p class="list-1">&bull;&nbsp; <a href="#Introduction">Introduction</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Dialogs">Dialogs</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectOne">SelectOne</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectMany">SelectMany</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Versions">Versions</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Cancel">Cancel</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Error">Error</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Finish">Finish</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Thelanguage">The language</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Variables">Variables</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Constants">Constants</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Expressions">Expressions</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Strings">Strings</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Comments">Comments (;)</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#Functions">Functions</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareObVersion">CompareObVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareGameVersion">CompareGameVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareOBSEVersion">CompareOBSEVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareSEVersion">CompareSEVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareOBGEVersion">CompareOBGEVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareGEVersion">CompareGEVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CompareWBVersion">CompareWBVersion</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DataFileExists">DataFileExists</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#GetEspmStatus">GetEspmStatus</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#EditINI">EditINI</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DisableINILine">DisableINILine</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Exec">Exec</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#str">str</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#int">int</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#float">float</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#len">len</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#endswith">endswith</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#startswith">startswith</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#lower">lower</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#find">find</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#rfind">rfind</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#GetFilename">GetFilename</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#GetFolder">GetFolder</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#Keywords">Keywords</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SelectSubPackage">SelectSubPackage</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DeSelectSubPackage">DeSelectSubPackage</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SelectEspm">SelectEspm</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DeSelectEspm">DeSelectEspm</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SelectAll">SelectAll</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DeSelectAll">DeSelectAll</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SelectAllEspms">SelectAllEspms</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DeSelectAllEspms">DeSelectAllEspms</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#RenameEspm">RenameEspm</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ResetEspmName">ResetEspmName</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ResetAllEspmNames">ResetAllEspmNames</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Note">Note</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#IfElifElseEndIf">If-Elif-Else-EndIf</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#If">If</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Elif">Elif</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Else">Else</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EndIf">EndIf</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#WhileContinueBreakEndWhile">While-Continue-Break-EndWhile</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#While">While</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Continue">Continue</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Break">Break</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EndWhile">EndWhile</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ForContinueBreakEndFor">For-Continue-Break-EndFor</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#For">For</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Continue1">Continue</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Break1">Break</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EndFor">EndFor</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SelectOne1">SelectOne</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Case">Case</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Default">Default</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Break2">Break</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EndSelect">EndSelect</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#SelectMany1">SelectMany</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Return">Return</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Cancel1">Cancel</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#RequireVersions">RequireVersions</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#Operators">Operators</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#AssignmentOperators">Assignment Operators</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Assignment">Assignment (=)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CompoundAssignmentetc">Compound Assignment (+=, -=, etc)</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#MathOperators">Math Operators</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Addition">Addition (+)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Subtraction">Subtraction (-)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Multiplication">Multiplication (*)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Division">Division (/)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Exponentiation">Exponentiation (^)</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#BooleanOperators">Boolean Operators</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Andampand">And (&amp;, and)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Oror">Or (|, or)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Notnot">Not (!, not)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Inin">In (in)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveInin">Case Insensitive In (in:)</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ComparisonOperators">Comparison Operators</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Equal">Equal (==)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseinsensitiveEqual">Case insensitive Equal (==:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#NotEqual">Not Equal (!=)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseinsensitiveNotEqual">Case insensitive Not Equal (!=:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GreaterThanorEqualgt">Greater Than or Equal (&gt;=)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveGreaterThanorEqualgt">Case Insensitive Greater Than or Equal (&gt;=:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GreaterThangt">Greater Than (&gt;)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveGreaterThangt">Case Insensitive Greater Than (&gt;:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#LessThanorEquallt">Less Than or Equal (&lt;=)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveLessThanorEquallt">Case Insensitive Less Than or Equal (&lt;=:)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#LessThanlt">Less Than (&lt;)</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CaseInsensitiveLessThanlt">Case Insensitive Less Than (&lt;:)</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CaseInsensitiveOperators">Case Insensitive Operators</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#DotOperator">Dot Operator</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#Indexing">Indexing</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#BuiltinConstants">Built-in Constants</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#True">True</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#False">False</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#EscapeSequences">Escape Sequences</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#CommonScriptingProblems">Common Scripting Problems</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#ExamplesforBeginners">Examples for Beginners</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#BAINwizardScriptHighlighterforNotePad">BAIN wizard Script Highlighter for NotePad++</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#BAINWizardSyntaxforEmEditor">BAIN Wizard Syntax for EmEditor</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CreateaPackageOverviewReadme">Create a Package Overview Readme</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#YesNoQuestion">Yes/No Question?</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#CheckforaPlugin">Check for a Plugin</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#UseSVNfeaturessafely">Use SVN features safely</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#ModswithWizards">Mods with Wizards</a></p>
+<p class="list-1">&bull;&nbsp; <a href="#WizardtoOBMMScriptComparison">Wizard to OBMM Script Comparison</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#FunctionalitywithdirectcorrelationtoOBMMScript">Functionality with direct correlation to OBMM Script</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Ifltfunctiongtspan">If <span style="color:blue;">&lt;function&gt;</span> [...]</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Else1">Else</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EndIf1">EndIf</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfDialogYesNoltMessagegtspanTitlespan">If DialogYesNo <span style="color:blue;">&lt;Message&gt;</span> <span style="color:brown;">[Title]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfDataFileExistsltFileNamegtspan">If DataFileExists <span style="color:blue;">&lt;FileName&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfScriptExtenderPresent">If ScriptExtenderPresent</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfScriptExtenderNewerThanltversiongtspan">If ScriptExtenderNewerThan <span style="color:blue;">&lt;version&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfGraphicsExtenderPresent">If GraphicsExtenderPresent</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfGraphicsExtenderNewerThan">If GraphicsExtenderNewerThan</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfOblivionNewerThanltversiongtspan">If OblivionNewerThan <span style="color:blue;">&lt;version&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfEqualltarg1gtspanltarg2gtspan">If Equal <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectltTitlegtspanltOption1gtspanOption2span">Select <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:purple;">[Option2]</span> [...]</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectManyltTitlegtspanltOption1gtspanOption2span">SelectMany <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:purple;">[Option2]</span> [...]</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Caseltoptiongt">Case &lt;option&gt;</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Default1">Default</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Break3">Break</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EndSelect1">EndSelect</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ForCountltVariablegtspanltStartgtspanltEndgtspanStepspan">For Count <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;Start&gt;</span> <span style="color:blue;">&lt;End&gt;</span> <span style="color:orange;">[Step]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Return1">Return</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#InstallPluginltPlugingtspan">InstallPlugin <span style="color:blue;">&lt;Plugin&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CopyPluginltCopyFromgtspanltCopyTogtspan">CopyPlugin <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EditINIltsectiongtspanltkeygtspanltvaluegtspan">EditINI <span style="color:blue;">&lt;section&gt;</span> <span style="color:purple;">&lt;key&gt;</span> <span style="color:green;">&lt;value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#FatalError">FatalError</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetVarltVariablegtspanltValuegtspan">SetVar <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;Value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#StringLengthltVariablegtspanltStringgtspan">StringLength <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#iSetltVariablegtspanltexpressiongtspan">iSet <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;expression&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ExecLinesltlinesgtspan">ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SubStringltVariablegtspanltStringgtspanltstartfromgtspanlengthspan">SubString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></p>
+<p class="list-2">&bull;&nbsp; <a href="#FunctionsinOBMMthatdonothaveadirectequivalentbutasimilareffectcanbeachievedinWizards">Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#MessageltMessagegtspanTitlespan">Message <span style="color:blue;">&lt;Message&gt;</span> <span style="color:brown;">[Title]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DisplayImageltImageFilePathgtspanTitlespan">DisplayImage <span style="color:blue;">&lt;Image File Path&gt;</span> <span style="color:brown;">[Title]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DisplayTextltTextFilePathgtspanTitlespan">DisplayText <span style="color:blue;">&lt;Text File Path&gt;</span> <span style="color:brown;">[Title]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ConflictWithltModNamegtspanCommentspanLevelspan">ConflictWith <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DependsOnltModNamegtspanCommentspanLevelspan">DependsOn <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DontInstallDataFileltFileNamegtspan">DontInstallDataFile <span style="color:blue;">&lt;FileName&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#InstallDataFileltFileNamegtspan">InstallDataFile <span style="color:blue;">&lt;FileName&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DontInstallDataFolderltFolderNamegtspanRecurseSubfoldersspan">DontInstallDataFolder <span style="color:blue;">&lt;FolderName&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#InstallDataFolderltFolderNamegtspanRecurseSubfoldersspan">InstallDataFolder <span style="color:blue;">&lt;FolderName&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CopyDataFileltCopyFromgtspanltCopyTogtspan">CopyDataFile <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CopyDataFolderltCopyFromgtspanltCopyTogtspanRecurseSubfoldersspan">CopyDataFolder <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ForEachDataFolderltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan">For Each DataFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ForEachDataFileltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan">For Each DataFile <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ForEachPluginFolderltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan">For Each PluginFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ForEachPluginltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan">For Each Plugin <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></p>
+<p class="list-2">&bull;&nbsp; <a href="#FunctionsinOBMMthatdonothaveanequivalentinWizards">Functions in OBMM that do not have an equivalent in Wizards</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectVarltVariablegtspan">SelectVar <span style="color:green;">&lt;Variable&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SelectStringltVariablegtspan">SelectString <span style="color:green;">&lt;Variable&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Gotoltlabelgtspan">Goto <span style="color:blue;">&lt;label&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#Labelltlabelgtspan">Label <span style="color:blue;">&lt;label&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#LoadBeforeltPlugin1gtspanltPlugin2gtspan">LoadBefore <span style="color:blue;">&lt;Plugin1&gt;</span> <span style="color:purple;">&lt;Plugin2&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#LoadAfterltPlugin1gtspanltPlugin2gtspan">LoadAfter <span style="color:blue;">&lt;Plugin1&gt;</span> <span style="color:purple;">&lt;Plugin2&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#UncheckESPltplugingtspan">UncheckESP <span style="color:blue;">&lt;plugin&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetDeactivationWarningltplugingtspanltwarninggtspan">SetDeactivationWarning <span style="color:blue;">&lt;plugin&gt;</span> <span style="color:purple;">&lt;warning&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ConflictsWithltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan">ConflictsWith <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ConflictsWithRegexltModNamegtspanCommentspanLevelspan">ConflictsWithRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ConflictsWithRegexltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan">ConflictsWithRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DependsOnltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan">DependsOn <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DependsOnRegexltModNamegtspanCommentspanLevelspan">DependsOnRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#DependsOnRegexltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan">DependsOnRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#RegisterBSAltFileNamegtspan">RegisterBSA <span style="color:blue;">&lt;FileName&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#UnregisterBSAltFileNamegtspan">UnregisterBSA <span style="color:blue;">&lt;FileName&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EditShaderltShaderPackagegtspanltShaderNamegtspanltBinaryObjectPathgtspan">EditShader <span style="color:blue;">&lt;ShaderPackage&gt;</span> <span style="color:purple;">&lt;ShaderName&gt;</span> <span style="color:green;">&lt;BinaryObjectPath&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetGMSTltfilegtspanltEditorIDgtspanltnewvaluegtspan">SetGMST <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;Editor ID&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetGloballtfilegtspanltEditorIDgtspanltnewvaluegtspan">SetGlobal <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;Editor ID&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetPluginByteltfilegtspanltoffsetgtspanltnewvaluegtspan">SetPluginByte <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetPluginByteltfilegtspanltoffsetgtspanltnewvaluegtspan1">SetPluginByte <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetPluginShortltfilegtspanltoffsetgtspanltnewvaluegtspan">SetPluginShort <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetPluginLongltfilegtspanltoffsetgtspanltnewvaluegtspan">SetPluginLong <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#SetPluginFloatltfilegtspanltoffsetgtspanltnewvaluegtspan">SetPluginFloat <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GetFolderNameltVariablegtspanltpathgtspan">GetFolderName <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GetFileNameltVariablegtspanltpathgtspan">GetFileName <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#GetFileNameWithoutExtensionltVariablegtspanltpathgtspan">GetFileNameWithoutExtension <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#CombinePathsltVariablegtspanltpath1gtspanltpath2gtspan">CombinePaths <span style="color:gree;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path1&gt;</span> <span style="color:blue;">&lt;path2&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#RemoveStringltVariablegtspanltStringgtspanltstartfromgtspanlengthspan">RemoveString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#InputStringltVariablegtspanTitlespanInitialspan">InputString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:brown;">[Title]</span> <span style="color:purple;">[Initial]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ReadINIltVariablegtspanltsectiongtspanltvaluegtspan">ReadINI <span style="color:green;">&lt;Variable&gt;</span> <span style="color:blue;">&lt;section&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#ReadRenderInfoltVariablegtspanltvaluegtspan">ReadRenderInfo <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EditXMLLineltfilegtspanltlinenumbergtspanltnewlinegtspan">EditXMLLine <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;line number&gt;</span> <span style="color:green;">&lt;new line&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#EditXMLReplaceltfilegtspanlttexttofindgtspanlttexttoreplacegtspan">EditXMLReplace <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;text to find&gt;</span> <span style="color:green;">&lt;text to replace&gt;</span></a></p>
+<p class="list-2">&bull;&nbsp; <a href="#FunctionsinWizardsthatdonothaveanequivalentinOBMM">Functions in Wizards that do not have an equivalent in OBMM</a></p>
+<p class="list-2">&bull;&nbsp; <a href="#FunctionsthathavenomeaninginWryeBash">Functions that have no meaning in Wrye Bash</a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfVersionGreaterThanltversiongtspan">If VersionGreaterThan <span style="color:blue;">&lt;version&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#IfVersionLessThanltversiongtspan">If VersionLessThan <span style="color:blue;">&lt;version&gt;</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#PatchDataFileltNewFilegtspanltFileToPatchgtspanCreatespan">PatchDataFile <span style="color:blue;">&lt;NewFile&gt;</span> <span style="color:purple;">&lt;FileToPatch&gt;</span> <span style="color:brown;">[Create]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#PatchPluginltNewFilegtspanltFileToPatchgtspanCreatespan">PatchPlugin <span style="color:blue;">&lt;NewFile&gt;</span> <span style="color:purple;">&lt;FileToPatch&gt;</span> <span style="color:brown;">[Create]</span></a></p>
+<p class="list-3">&bull;&nbsp; <a href="#AllowRunOnLines">AllowRunOnLines</a></p>
+</td><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c;">
+<h1><a id='Introduction'>Introduction</a></h1>
+<p class="empty">&nbsp;</p>
+<p>Starting with Wrye Bash version 278, wizards were added to make it easier to install BAIN packages.  Wizards allow modders to include a simple configuration script with their packages.  All that needs to be done is create a script file name <b>wizard.txt</b> and include it in the package.  When run, the wizard will step through a series of dialogs to determine which sub-packages, esps, and esms should be selected.  Afterwards, you can install the package using those selections.
+</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='Dialogs'>Dialogs</a></h2>
+<p>These are the dialogs that are may be shown while running a wizard.  The different ways you might encounter them are listed below.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='SelectOne'>SelectOne</a></h3>
+<p>This <a href="bash/images/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='SelectMany'>SelectMany</a></h3>
+<p>This <a href="bash/images/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#SelectMany1"><span style="color:blue;">SelectMany</span></a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Versions'>Versions</a></h3>
+<p>This <a href="bash/images/versions.png">dialog</a> will show up if the wizard specified minimum version requirements, and your system doesn't meet those requirements.  It will be shown if a <a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> check fails.  If you want to run the wizard anyway, you can override the warning by clicking the "Install Anyway." option, however this is not recommended.  If you are running the wizard as an Auto-Wizard, this page will still be shown, but the "Install Anyway." option will already be checked for you.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Cancel'>Cancel</a></h3>
+<p>This <a href="bash/images/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#Cancel1"><span style="color:blue;">Cancel</span></a> keyword.  If a reason is given, it will be displayed
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Error'>Error</a></h3>
+<p>This <a href="bash/images/error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Finish'>Finish</a></h3>
+<p>This <a href="bash/images/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#Return"><span style="color:blue;">Return</span></a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
+</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='Thelanguage'>The language</a></h2>
+<p>BAIN wizards use a language similar to OBMM script, so modders familiar with OBMM should be able to quickly write BAIN versions of their scripts.
+</p>
+<p class="empty">&nbsp;</p>
+<p>Wizards are case sensitive, so ensure you get the case right.  The only exception to this is filenames.
+</p>
+<p class="empty">&nbsp;</p>
+<p>Each line of the wizard contains one statement.  If you want to continue the line onto the next one, just add a <b>backslash ( \ )</b> to the end of the line.  This will cause BAIN to read the next line as is it were part of the first.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Variables'>Variables</a></h3>
+<p>You can use variables by assigning a value using an <a href="#Operators">assignment operator</a>.  Just make sure you assign a value before using a variable, or it can cause undefined behavior.  In the best case, the variable will just be treated as a string with the same value as its name, but this is not guaranteed.
+</p>
+<p class="empty">&nbsp;</p>
+<p>Variable names can contain any alpha-numeric characters (a-z,A-Z,0-9) and underscores ( _ ), but cannot start with a digit.  You also cannot create a variable with the same name (case sensitive) as a <a href="#Keywords">keyword</a>, <a href="#Functions">function</a>, or <a href="#Constants">constant</a>.  Variables can be used to hold any of the following types of data:
+</p>
+<p class="list-1">&bull;&nbsp;  <i><b>Integers</b></i></p>
+  <p class="list-2">&bull;&nbsp;  3</p>
+  <p class="list-2">&bull;&nbsp;  -1</p>
+  <p class="list-2">&bull;&nbsp;  0</p>
+<p class="list-1">&bull;&nbsp;  <i><b>Decimals</b></i></p>
+  <p class="list-2">&bull;&nbsp;  0.123</p>
+  <p class="list-2">&bull;&nbsp;  -3.5</p>
+  <p class="list-2">&bull;&nbsp;  7.0</p>
+<p class="list-1">&bull;&nbsp;  <i><b><a href="#Strings">Strings</a></b></i></p>
+  <p class="list-2">&bull;&nbsp;  "Hello"</p>
+  <p class="list-2">&bull;&nbsp;  'World!'</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Constants'>Constants</a></h3>
+<p>Constants are a sub-type of variables.  They follow the same rules, only they cannot be changed.  You cannot create constants yourself, but there are a few pre-defined constants in BAIN.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Expressions'>Expressions</a></h3>
+<p>BAIN will evaluate expressions following the correct order of operations.  For example the expression:
+</p>
+  <p class="empty">&nbsp;</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><span style="color:cyan;">3</span> <a href="#Addition"><span style="color:black;">+</span></a> <span style="color:cyan;">6</span> <a href="#Multiplication"><span style="color:black;">*</span></a> <span style="color:cyan;">2</span></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<p>Will evaluate to <b>15</b> as expected, not <b>18</b>.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Strings'>Strings</a></h3>
+<p>Strings can be denoted by enclosing the text in either single quotes ( ' ), or double quotes ( " ).  If you need to include a special character in the string, use an escape sequence.  Strings can be added and multiplied using the addition and multiplication <a href="#Operators">operator</a>.  You can also test if one string is contained within another using the <a href="#Operators">in operator</a>.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Comments'>Comments (;)</a></h3>
+<p>Comments are extra text ignored by the wizard engine, to explain what is going on in the code to other people who might read the wizard file.  To start a comment, use a semi-colon; the comment will include everthing following the semi-colon until the end of the line.
+</p>
+  <p class="empty">&nbsp;</p>
+<h1><a id='Functions'>Functions</a></h1>
+  <p class="empty">&nbsp;</p>
+<p>Functions are called just like in any other language, using the function name followed by arguments inclosed in parenthesis.  Arguments must be seperatred by a comma.  For example:
+</p>
+  <p class="empty">&nbsp;</p>
+<span style="color:purple;">DummyFunction</span>(<i>arg1</i>, <span style="color:brown;">"Hello"</span>)
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareObVersion'>CompareObVersion</a></h2>
+<p>Used to test the installed version of Oblivion against one you specify.
+</p>
+  <p class="empty">&nbsp;</p>
+<p><b>Deprecated:</b> Retained for backwards compatibility only.  Use <a href="#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a> instead.
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareGameVersion'>CompareGameVersion</a></h2>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a>(<i>version_string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>version_string:</b></i> a string formatted to hold a file version number, like "1.2.3.93".  For example the current Oblivion version would be represented as "1.2.0.416"</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed Oblivion version is less than the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed Oblivion version is the same as the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed Oblivion version is higher than the version specified in <i><b>version_string</b></i>.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareOBSEVersion'>CompareOBSEVersion</a></h2>
+<p>Used to test the installed version of <a href="http://obse.silverlock.org/">OBSE</a> against one you specify.
+</p>
+  <p class="empty">&nbsp;</p>
+<p><b>Deprecated:</b> Retained for backwards compatibility only.  Use <a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a> instead.
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareSEVersion'>CompareSEVersion</a></h2>
+<p>Used to test the installed version of the game's Script Extender against one you specify.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a>(<i>version_string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>version_string:</b></i> a string formatted to hold a file version number, like "1.2.3.93".  For example OBSE v18 would be represented as "0.0.18.6"</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed SE version is less than the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed SE version is the same as the version specified in <i><b>version_string</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed SE version is higher than the version specified in <i><b>version_string</b></i>, or there is no SE available for this game.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareOBGEVersion'>CompareOBGEVersion</a></h2>
+  <p class="empty">&nbsp;</p>
+<p><b>Deprecated:</b> Retained for backwards compatibility only.  Use <a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a> instead.
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareGEVersion'>CompareGEVersion</a></h2>
+<p>Used to test the installed version of the game's Graphics Extender against one you specify.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a>(<i>version_string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>version_string:</b></i> a string formatted to hold a file version number, like "1.2.3.93".  For example OBGEv2 version 3 would be represented as "3.0.0.0", while the old OBGE would be "0.1.1.0"</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed GE version is less than the version specified in <i><b>version_string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed GE version is the same as the version specified in <i><b>version_string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed GE version is higher than the version specified in <i><b>version_string</b></i>, or there is no GE available for this game.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CompareWBVersion'>CompareWBVersion</a></h2>
+<p>Used to test the current version of Wrye Bash agains one you specify.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a>(<i>version_number</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>version_number:</b></i> a number representing the Wrye Bash version you want to check.  For example Wrye Bash version 284 could be intered as either <b>284</b> or <b>"284"</b>.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> Installed Wrye Bash version is less than the version specified in <i><b>version_number</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0:</b></i> Installed Wrye Bash version is the same as the version specified in <i><b>version_number</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>1:</b></i> Installed Wrye Bash version is higher than the version specified in <i><b>version_number</b></i>.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='DataFileExists'>DataFileExists</a></h2>
+<p>Tests for the existance of a file in the Data directory.  If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<i>file_name</i> [, ..., <i>file_name_n</i>])</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>file_name:</b></i> a string or variable holding a string, specifying the path relative to the Data directory to test.  For example using <b>"testesp.esp"</b> would test for <b>"...path to oblivion...\Data\testesp.esp"</b></p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True:</b></i> All of the files exist.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False:</b></i> One or more of the files do not exist.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='GetEspmStatus'>GetEspmStatus</a></h2>
+<p>Tests the current status of an esp or espm in the Data directory.  This function takes esp/m ghosting into account when testing the status.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>(<i>file_name</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>file_name:</b></i> a string or variable holding a string, specifying the path relative to the Data directory for the esp or esm to test.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1:</b></i> The esp/m does not exist</p>
+  <p class="list-2">&bull;&nbsp;  <i><b> 0:</b></i> The esp/m is not active, imported, or merged (<img src="bash/images/checkbox_green_off.png" width="16" height="16" style = 'border : 0' alt="Inactive"></img>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b> 1:</b></i> The esp/m is not active, but has portions imported into the Bashed Patch (<img src="bash/images/checkbox_green_imp.png" width="16" height="16" style = 'border : 0' alt="Imported"></img>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b> 2:</b></i> The esp/m is active (<img src="bash/images/checkbox_green_on.png" width="16" height="16" style = 'border : 0' alt="Active"></img>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b> 3:</b></i> The esp/m is merged into the Bashed Patch (<img src="bash/images/checkbox_green_inc.png" width="16" height="16" style = 'border : 0' alt="Merged"></img>)</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='EditINI'>EditINI</a></h2>
+<p>Tells Wrye Bash to create an ini tweak file with some tweaks in it.  If the file that you tell Wrye Bash to apply the tweak to is from the current installer or Oblivion.ini, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<i>file_name</i>, <i>section</i>, <i>setting</i>, <i>value</i> [,<i>comment</i>])</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>file_name:</b></i> The name of the ini file you wish to edit, relative to the Data directory.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>section:</b></i> The section in the ini where <i><b>setting</b></i> resides, or 'set' or 'setGS' (see examples below)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>setting:</b></i> The setting you wish to change.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>value:</b></i> The value to set the setting to.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>comment:</b></i> Optional comment to include with this tweak.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>Setting an item in Oblivion.ini:</b></i></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'Oblivion.ini'</span>, <span style="color:brown;">'General'</span>, <span style="color:brown;">'bBorderRegionsEnabled'</span>, <span style="color:cyan;">0</span>)</span>
+</pre>
+  <p class="list-2">&nbsp;&nbsp; </p>
+  <pre>[General]
+bBorderRegionsEnabled=0</pre>
+  <p class="empty">&nbsp;</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>Setting an item in a script-like ini:</b></i>  Notice the use of <i><b>set</b></i> and <i><b>setGS</b></i> as the sections.</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'TargetINI.ini'</span>, <span style="color:brown;">'set'</span>, <span style="color:brown;">'ANVars.UseEW'</span>, <span style="color:cyan;">1</span>)</span>
+<span class="code-n" style="display: inline;"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'TargetINI.ini'</span>, <span style="color:brown;">'setGS'</span>, <span style="color:brown;">'fPCBaseMagickaMult'</span>, <span style="color:cyan;">1</span>)</span>
+</pre>
+  <p class="list-2">&nbsp;&nbsp; </p>
+  <pre>set ANVars.UseEW to 1
+setGS fPCBaseMagickaMult 1</pre>
+  <p class="empty">&nbsp;</p>
+<h2><a id='DisableINILine'>DisableINILine</a></h2>
+<p>Tells Wrye Bash to modify an INI file by disabling a specific line in it.  This is accomplished by prepending ";-" to that line.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage</b>:</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>RemoveINILine</i>(<i>file_name</i>, <i>section</i>, <i>setting</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>file_name:</b></i> The name of the ini file you wish to edit, relative to the Data directory.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>section:</b></i> The section of the ini where <i><b>setting</b></i> resides, or 'set' or 'setGS' (see <a href="#EditINI"><span style="color:purple;">EditINI</span></a> Examples)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>setting:</b></i> The setting to disable.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Example:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DisableINILine"><span style="color:purple;">DisableINILine</span></a>(<span style="color:brown;">'TargetINI.ini'</span>, <span style="color:brown;">'General'</span>,<span style="color:brown;">'bSetting'</span>)</span>
+</pre>
+  <p class="list-2">&nbsp;&nbsp; </p>
+  <pre>[General]
+;-bSetting</pre>
+  <p class="empty">&nbsp;</p>
+<h2><a id='Exec'>Exec</a></h2>
+<p>This will cause the Wizard to execute lines that are passed to it.  This is usefull for creating dynamically generated menus.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Exec"><span style="color:purple;">Exec</span></a>(<i>lines</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguements:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>lines:</b></i> A string containing lines to execute, seperated by newline characters, or a variable containing such a string.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Example:</b></p>
+  <p class="list-2">&nbsp;&nbsp;  Would be the same as:</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">'Do you like icecream?'</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">'|Yes'</span>, <span style="color:brown;">'Select this if you like icecream!'</span>, <span style="color:brown;">'icecream.jpg'</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">'No'</span>, <span style="color:brown;">'Select this if you do not like icecream'</span>, <span style="color:brown;">'ihateicecream.jpg'</span></span>
+<span class="code-n" style="display: inline;"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'Yes'</span></span>
+<span class="code-n" style="display: inline;">    <a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">'You like icecream!'</span></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'No'</span></span>
+<span class="code-n" style="display: inline;">    <a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">'Why don\'t you like icecream?'</span></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
+</pre>
+  <p class="list-2">&bull;&nbsp;  Notice how the <b>\\\'</b> was interpreted as <b>\'</b> once the <span style="color:purple;">Exec</span> was converted into lines.  Remember to add two extra backslashes so the final statement has a backslash in it!</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='str'>str</a></h2>
+<p>Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#str"><span style="color:purple;">str</span></a>(<i>value</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>value:</b></i> any value.  An integer, decimal, variable, constant, or another string.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  String representation of <i><b>value</b></i>.  For example, <b>str(5)</b> would return <b>"5"</b>.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='int'>int</a></h2>
+<p>Used to convert a value to an integer, for example converting a value held in a string to a integer value.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#int"><span style="color:purple;">int</span></a>(<i>value</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>value:</b></i> any value.  An integer, decimal, variable, constant, or string.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  Integer value of <i><b>value</b></i>, if possible.  For example <b>int('65')</b> would return <b>65</b>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0</b></i> if integer conversion is not possible.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='float'>float</a></h2>
+<p>Used to convert a value to decimal, for example converting a value held in a string to a decimal value.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#float"><span style="color:purple;">float</span></a>(<i>value</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>value:</b></i> any value.  An integer, decimal, variable, constant, or string.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  Decimal value of <i><b>value</b></i>, if possible.  For example, <b>float('2.4')</b> would return <b>2.4</b>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0.0</b></i> if decimal conversion is not possible.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='len'>len</a></h2>
+<p>Used to find the length of a string.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#len"><span style="color:purple;">len</span></a>(<i>string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string, variable, or constant.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  Length of the string if possible.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>0</b></i> if length calculation was not possible.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='endswith'>endswith</a></h2>
+<p>Test what a string ends with.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#endswith"><span style="color:purple;">endswith</span></a>(<i>string</i>, <i>ending_1</i> [, ..., <i>ending_n</i>])</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string, variable or constant.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>ending_1</b></i> through <i><b>ending_n:</b></i> a string, variable or constant.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if the string ends in <i>any</i> of the endings specified.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if the string does not end in <i>any</i> of the endings specified.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='startswith'>startswith</a></h2>
+<p>Test what a string starts with.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#startswith"><span style="color:purple;">startswith</span></a>(<i>string</i>, <i>prefix_1</i> [, ..., <i>prefix_n</i>])</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string, variable or constant.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>prefix_1</b></i> through <i><b>ending_n:</b></i> a string, variable or constant.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if the string begins with <i>any</i> of the prefixes specified.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if the string does not begin with <i>any</i> of the prefixes specified.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='lower'>lower</a></h2>
+<p>Convert a string to lower case.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#lower"><span style="color:purple;">lower</span></a>(<i>string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string</b></i> converted to lower case, or</p>
+  <p class="list-2">&bull;&nbsp;  The original <i><b>string</b></i> if an error occured.  For example if you tried to call <b>lower</b> on a non-string type.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='find'>find</a></h2>
+<p>Return index of first occurrance of a substring
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#find"><span style="color:purple;">find</span></a>(<i>string</i>, <i>substring</i> [, <i>start</i>, <i>stop</i>])</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable to search in.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>substring:</b></i> a string or variable to search for.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start:</b></i> Index at which to start searching in <i><b>string.</b></i> (Optional.  If not specified, searching will start at the beggining of <i><b>string</b></i>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>stop:</b></i> Index at which to stop searching. (Optional.  If not specified, searching will stop at the end of <i><b>string</b></i>)</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The index of the first occurance of <i><b>substring</b></i> in <i><b>string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1</b></i> if <i><b>substring</b></i> could not be found</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='rfind'>rfind</a></h2>
+<p>Return index of last occurrance of a substring
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#rfind"><span style="color:purple;">rfind</span></a>(<i>string</i>, <i>substring</i> [, <i>start</i>, <i>stop</i>])</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string:</b></i> a string or variable to search in.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>substring:</b></i> a string or variable to search for.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start:</b></i> Index to start searching in <i><b>string.</b></i> (Optional.  If not specified, searching will start at the beggining of <i><b>string</b></i>)</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>stop:</b></i> Index to start searching. (Optional.  If not specified, searching will stop at the end of <i><b>string</b></i>)</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The index of the last occurance of <i><b>substring</b></i> in <i><b>string</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>-1</b></i> if <i><b>substring</b></i> could not be found</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='GetFilename'>GetFilename</a></h2>
+<p>For a string that contains a path, returns the filename in that string.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<i>path_string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>path_string:</b></i> a string or variable of the path to work with.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The filename, or an empty string if there is not a file or if <i><b>path_string</b></i> is not a path.</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<span style="color:brown;">"C:\Program Files\Bethesda Softworks\Oblivion\Oblivion.exe"</span>) <i>would</i> <i>return</i>  <span style="color:brown;">"Oblivion.exe"</span></span>
+<span class="code-n" style="display: inline;"><a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<span style="color:brown;">"C:\Program Files\Bethesda Softworks\Oblivion"</span>) <i>would</i> <i>return</i> <i>an</i> <i>empty</i> <i>string</i></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='GetFolder'>GetFolder</a></h2>
+<p>For a string that contains a path, returns the folder part of the string.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<i>path_string</i>)</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>path_string:</b></i> a string or variable of the path to work with.</p>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  The folder, or an empty string if there is not one, or if <i><b>path_string</b></i> is not a path.</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<span style="color:brown;">"Data\mine.esp"</span>) <i>would</i> <i>return</i> <span style="color:brown;">"Data"</span></span>
+<span class="code-n" style="display: inline;"><a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<span style="color:brown;">"mine.esp"</span>) <i>would</i> <i>return</i> <i>an</i> <i>empty</i> <i>string</i></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h1><a id='Keywords'>Keywords</a></h1>
+<p class="empty">&nbsp;</p>
+<p>Keywords are special identifiers that are used for controlling the flow of your wizard, or perform special tasks.  To use a keyword, place it on the beginning of a line, followed by any arguments to the keyword.  As of version 292: arguments must be separated by commas.
+</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='SelectSubPackage'>SelectSubPackage</a></h2>
+<p>Cause the specified sub-package to be selected for installation.  This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> <i>name</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>name:</b></i> string or variable holding the name of the sub-package to select.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='DeSelectSubPackage'>DeSelectSubPackage</a></h2>
+<p>Cause the specified sub-package to be de-selected from installation.  This is equivilant to un-checking the sub-package in the BAIN window.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DeSelectSubPackage"><span style="color:blue;">DeSelectSubPackage</span></a> <i>name</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>name:</b></i> string or variable holding the name of the sub-package to de-select.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='SelectEspm'>SelectEspm</a></h2>
+<p>Cause the specified esp or esm to be selected for installation.  This is equivilant to checking the esp or esm from the BAIN window.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectEspm"><span style="color:blue;">SelectEspm</span></a> <i>name</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>name:</b></i> string or variable holding the name of the esp or esm to select.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='DeSelectEspm'>DeSelectEspm</a></h2>
+<p>Cause the specified esp or esm to be deselected from installation.  This is equivilant to un-checking the esp or esm from the BAIN window.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DeSelectEspm"><span style="color:blue;">DeSelectEspm</span></a> <i>name</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>name:</b></i> string or variable holding the name of the esp or esm to de-select.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='SelectAll'>SelectAll</a></h2>
+<p>Cause all sub-packages, esps, and esms to be selected for installation.  This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectAll"><span style="color:blue;">SelectAll</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='DeSelectAll'>DeSelectAll</a></h2>
+<p>Cause all sub-packages, esps, and esms to be de-selected from installation.  This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DeSelectAll"><span style="color:blue;">DeSelectAll</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='SelectAllEspms'>SelectAllEspms</a></h2>
+<p>Cause all esps and esms to be selected for installation.  This is equivilant to checking all esps and esms in the BAIN window
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectAllEspms"><span style="color:blue;">SelectAllEspms</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='DeSelectAllEspms'>DeSelectAllEspms</a></h2>
+<p>Cause all esps and esms to be de-selected from installation.  This is equivilant to un-checking all esps and esms in the BAIN window.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#DeSelectAllEspms"><span style="color:blue;">DeSelectAllEspms</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='RenameEspm'>RenameEspm</a></h2>
+<p>Change the installed name of an esp or esm.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#RenameEspm"><span style="color:blue;">RenameEspm</span></a> <i>original_name</i>, <i>new_name</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>original_name:</b></i> the name of the esp or esm, as it appears in the BAIN package.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>new_name:</b></i> the new name you want to have the esp or esm installed as.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ResetEspmName'>ResetEspmName</a></h2>
+<p>Resets the name of an esp or esm back to its default name.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#ResetEspmName"><span style="color:blue;">ResetEspmName</span></a> <i>original_name</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>original_name:</b></i> the name of the esp or esm, as it appears in the BAIN package.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ResetAllEspmNames'>ResetAllEspmNames</a></h2>
+<p>Resets the names of all the esps and esms back to their default names.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#ResetAllEspmNames"><span style="color:blue;">ResetAllEspmNames</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='Note'>Note</a></h2>
+<p>Add a note to the user to be displayed at the end of the wizard, on the <a href="bash/images/finish.png">finish page</a>.  The '- ' will be added automatically.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Note"><span style="color:blue;">Note</span></a> <i>note</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>note:</b></i> string, string variable, or expression that evalutates to a string, to be displayed on the <a href="bash/images/finish.png">finish page</a>.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='IfElifElseEndIf'>If-Elif-Else-EndIf</a></h2>
+<p>A basic <b>If</b> control block.
+</p>
+  <p class="empty">&nbsp;</p>
+<p><b>Usage:</b>
+</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i></span>
+<span class="code-n" style="display: inline;">   <i>lines</i></span>
+<span class="code-n" style="display: inline;"><a href="#Elif"><span style="color:blue;">Elif</span></a> <i>statement</i></span>
+<span class="code-n" style="display: inline;">   <i>lines</i></span>
+<span class="code-n" style="display: inline;"><a href="#Elif"><span style="color:blue;">Elif</span></a> <i>statement</i></span>
+<span class="code-n" style="display: inline;">   <i>lines</i></span>
+<span class="code-n" style="display: inline;"><a href="#Else"><span style="color:blue;">Else</span></a></span>
+<span class="code-n" style="display: inline;">   <i>lines</i></span>
+<span class="code-n" style="display: inline;"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<h3><a id='If'>If</a></h3>
+<p class="list-1">&bull;&nbsp;  A begins the control block.</p>
+<p class="list-1">&bull;&nbsp;  If <i><b>statement</b></i> evaluates to <i><b>True</b></i>, then the lines following it will be run, until the next <b>Elif</b>, <b>Else</b>, or <b>EndIf</b>.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Elif'>Elif</a></h3>
+<p class="list-1">&bull;&nbsp;  If <i><b>statement</b></i> evaluates to <i><b>True</b></i>, and the initial <b>If</b> and none of the previous <b>Elif</b>'s were <i><b>True</b></i>, then the lines following this <b>Elif</b> will be run, until the next <b>Elif</b>, <b>Else</b>, or <b>EndIf</b>.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Else'>Else</a></h3>
+<p class="list-1">&bull;&nbsp;  If the initail <b>If</b> and none of the previous <b>Elif</b>'s were <i><b>True</b></i>, then the lines following will be run until an <b>EndIf</b> is met.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='EndIf'>EndIf</a></h3>
+<p class="list-1">&bull;&nbsp;  Signals the end of the <b>If</b> control block.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='WhileContinueBreakEndWhile'>While-Continue-Break-EndWhile</a></h2>
+<p>A <b>While</b> loop.
+</p>
+<p class="empty">&nbsp;</p>
+<p><b>Usage:</b>
+</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#While"><span style="color:blue;">While</span></a> <i>statement</i></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Continue"><span style="color:blue;">Continue</span></a></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;"><a href="#EndWhile"><span style="color:blue;">EndWhile</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h3><a id='While'>While</a></h3>
+<p class="list-1">&bull;&nbsp;  Begins the while loop.</p>
+<p class="list-1">&bull;&nbsp;  If <i><b>statement</b></i> evaluates to <i><b>True</b></i>, execution of the lines begins, otherwise execution skips to after the <b>EndWhile</b>.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Continue'>Continue</a></h3>
+<p class="list-1">&bull;&nbsp;  Signals the while loop to begin over again at the <b>While</b> statement.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Break'>Break</a></h3>
+<p class="list-1">&bull;&nbsp;  Signals the while loop to end execution, skipping to after the <b>EndWhile</b>.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='EndWhile'>EndWhile</a></h3>
+<p class="list-1">&bull;&nbsp;  Ends the while loop.  <i><b>statement</b></i> is re-evaluated, and if <i><b>True</b></i>, execution begins again at the start of the <b>While</b> block.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='ForContinueBreakEndFor'>For-Continue-Break-EndFor</a></h2>
+<p>A <b>For</b> loop.  There are three possible For loops:
+</p>
+<p class="list-1">&bull;&nbsp;  <b>For</b> <i><b>varname</b></i> from <i><b>start_value</b></i> to <i><b>end_value</b></i> [by <i><b>increment_value</b></i>]</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>varname:</b></i> variable that will hold values.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start_value:</b></i> Initial value of <i><b>varname</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>end_value:</b></i> value of <i><b>varname</b></i> that will end the for loop.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>increment_value:</b></i> Optional (defaults to <i>1</i> or <i>-1</i> as applicable).  This the value that will be added to <i><b>varname</b></i> at the end of each run of the loop.</p>
+<p class="list-1">&bull;&nbsp;  <b>For</b> <i><b>varname</b></i> in Subpackages</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>varname:</b></i> variable that will hold the SubPackage names.</p>
+  <p class="list-2">&bull;&nbsp;  This loop will iterate over the names of the SubPackages in the current installer.</p>
+<p class="list-1">&bull;&nbsp;  <b>For</b> <i><b>varname</b></i> in <i><b>subpackage_name</b></i></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>varname:</b></i> variable that will hold the file names.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>subpackage_name:</b></i> SubPackage to list the files of.</p>
+  <p class="list-2">&bull;&nbsp;  This loop will iterate over each of the files contained in the SubPackage <i><b>subpackage_name</b></i>.  File names will be relative to the Data directory, before any remapping that would normally be done by BAIN.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#For"><span style="color:blue;">For</span></a> <i>arguments</i></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Continue"><span style="color:blue;">Continue</span></a></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;"><a href="#EndFor"><span style="color:blue;">EndFor</span></a></span>
+<span class="code-n" style="display: inline;"></span>
+<span class="code-n" style="display: inline;"><a href="#For"><span style="color:blue;">For</span></a> <i>sub</i> <a href="#Inin"><span style="color:blue;">in</span></a> <a href="#ForContinueBreakEndFor"><span style="color:cyan;">SubPackages</span></a></span>
+<span class="code-n" style="display: inline;">    <a href="#For"><span style="color:blue;">For</span></a> <i>file</i> <a href="#Inin"><span style="color:blue;">in</span></a> <i>sub</i></span>
+<span class="code-n" style="display: inline;">        <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#EndFor"><span style="color:blue;">EndFor</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#EndFor"><span style="color:blue;">EndFor</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h3><a id='For'>For</a></h3>
+<p class="list-1">&bull;&nbsp;  Begins the for loop.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Continue1'>Continue</a></h3>
+<p class="list-1">&bull;&nbsp;  Signals the for loop to begin another iteration.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='Break1'>Break</a></h3>
+<p class="list-1">&bull;&nbsp;  Signals the for loop to end execution, skipping to after the <b>EndFor</b>.</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='EndFor'>EndFor</a></h3>
+<p class="list-1">&bull;&nbsp;  Ends the for loop.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='SelectOne1'>SelectOne</a></h2>
+<p>Shows a <a href="bash/images/selectone.jpg">dialog</a> where the user can select one option from a list of options.  After the user presses the "Next" button, this begins a <b>Select</b> control block.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">'description'</span>, \</span>
+<span class="code-n" style="display: inline;">        <span style="color:brown;">'option 1'</span>, <span style="color:brown;">'description 1'</span>, <span style="color:brown;">'image 1'</span>, \</span>
+<span class="code-n" style="display: inline;">        <span style="color:brown;">'option 2'</span>, <span style="color:brown;">'description 2'</span>, <span style="color:brown;">'image 2'</span>, \</span>
+<span class="code-n" style="display: inline;">        ...,  \</span>
+<span class="code-n" style="display: inline;">        <span style="color:brown;">'option n'</span>, <span style="color:brown;">'description n'</span>, <span style="color:brown;">'image n'</span></span>
+<span class="code-n" style="display: inline;"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'option 1'</span></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'option 2'</span></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;"> </span>
+<span class="code-n" style="display: inline;"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">'option n'</span></span>
+<span class="code-n" style="display: inline;">    <i>lines</i></span>
+<span class="code-n" style="display: inline;">    <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>description:</b></i> The text that will be displayed at the top of the dialog.  </p>
+  <p class="list-2">&bull;&nbsp;  <i><b>option n:</b></i> The text of the specific option. If the text begins with a "|", this is considered the default option and will be selected by default.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>description n:</b></i> The description to display when <i><b>option n</b></i> is selected.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>image n:</b></i> The image to display when <i><b>option n</b></i> is selected.  An empty string will make no image display.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Case'>Case</a></h3>
+<p class="list-1">&bull;&nbsp;  The lines following the <b>Case</b> will be run if the user selected <i><b>option n</b></i> on the dialog, until a <b>Break</b> or <b>EndSelect</b> is met.</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Case"><span style="color:blue;">Case</span></a> <i>option</i> <i>n</i></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h3><a id='Default'>Default</a></h3>
+<p class="list-1">&bull;&nbsp;  The lines following the <b>Default</b> will be run, until a <b>Break</b> or <b>EndSelect</b>,  if none of the <b>Case</b> options have been run.</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Default"><span style="color:blue;">Default</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h3><a id='Break2'>Break</a></h3>
+<p class="list-1">&bull;&nbsp;  Stops running lines in the current <b>Case</b> or <b>Default</b> block.</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Break"><span style="color:blue;">Break</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h3><a id='EndSelect'>EndSelect</a></h3>
+<p class="list-1">&bull;&nbsp;  Signals the end of the <b>Select</b> control block.</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='SelectMany1'>SelectMany</a></h2>
+<p>Shows a <a href="bash/images/selectmany.jpg">dialog</a> where the user can select multiple options from a list.  After the user presses the "Next" button, this begins a <b>Select</b> control block.  See <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> for usage.
+</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='Return'>Return</a></h2>
+<p>Signals completion of the wizard.  This will jump right to the <a href="bash/images/finish.png">finish page</a>.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Return"><span style="color:blue;">Return</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='Cancel1'>Cancel</a></h2>
+<p>Cancels the wizard, with an optional text to display in a <a href="bash/images/cancel.jpg">dialog</a> as to why the wizard was canceled.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Cancel"><span style="color:blue;">Cancel</span></a> [<i>text</i>]</span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='RequireVersions'>RequireVersions</a></h2>
+<p>Tests the users system agains version requirements you specify.  If the requirements are not met, a <a href="bash/images/versions.jpg">warning dialog</a> will be shown asking if you wish to continue anyway.
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> <i>game_version</i> [, <i>se_version</i>, <i>ge_version</i>, <i>wrye_bash_version</i>]</span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>game_version:</b></i> Version of the game to test for.  See <a href="#CompareGameVersion">CompareGameVersion</a> for the proper format of the string.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>se_version:</b></i> Optional.  Version of the Script Extender to test for.  See <a href="#CompareSEVersion">CompareSEVersion</a> for the proper format of the string.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>ge_version:</b></i> Optional.  Version of the Graphics Extender to test for.  See <a href="#CompareGEVersion">CompareGEVersion</a> for the proper format of the string.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>wrye_bash_version:</b></i> Optional.  Version of Wrye Bash to test for.  See <a href="#CompareWBVersion">CompareWBVersion</a> for more info.</p>
+  <p class="empty">&nbsp;</p>
+<h1><a id='Operators'>Operators</a></h1>
+  <p class="empty">&nbsp;</p>
+<h2><a id='AssignmentOperators'>Assignment Operators</a></h2>
+  <p class="empty">&nbsp;</p>
+<p>Assignment operators are how you assign values to variables.  The usage can either be to assign one variable a value, or multiple variables the same value:
+</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span>
+<span class="code-n" style="display: inline;"><i>variable1</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>variable2</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>variable3</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Assignment'>Assignment (=)</a></h3>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<h3><a id='CompoundAssignmentetc'>Compound Assignment (+=, -=, etc)</a></h3>
+<p>There are compound assignment operators for all of the math operators.  A compound assignment will first perform the math operation using the variable and the value, then assign the result to the variable.
+</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>variable</i> <a href="#CompountAssignmentetc"><span style="color:black;">+=</span></a> <i>value</i></span>
+<span class="code-n" style="display: inline;"><i>variable</i> <a href="#CompountAssignmentetc"><span style="color:black;">-=</span></a> <i>value</i></span>
+<span class="code-n" style="display: inline;"><i>variable</i> <a href="#CompountAssignmentetc"><span style="color:black;">*=</span></a> <i>value</i></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<h2><a id='MathOperators'>Math Operators</a></h2>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Addition'>Addition (+)</a></h3>
+<p>Adds two values, variables, etc together
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Subtraction'>Subtraction (-)</a></h3>
+<p>Subtracts two values, variables, etc.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Multiplication'>Multiplication (*)</a></h3>
+<p>Multiplies two values, variables, etc together.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Division'>Division (/)</a></h3>
+<p>Divides two values, variables, etc.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Exponentiation'>Exponentiation (^)</a></h3>
+<p>Raised one value to the power of another value
+</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='BooleanOperators'>Boolean Operators</a></h2>
+<p>Used to test the Truth of values
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Andampand'>And (&amp;, and)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Andampand"><span style="color:black;">&amp;</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#Andampand"><span style="color:blue;">and</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if both <i><b>left</b></i> and <i><b>right</b></i> are <i><b>True</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Oror'>Or (|, or)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Oror"><span style="color:black;">|</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#Oror"><span style="color:blue;">or</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if either <i><b>left</b></i> or <i><b>right</b></i> is <i><b>True</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if neither <i><b>left</b></i> nor <i><b>right</b></i> is <i><b>True</b></i>.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Notnot'>Not (!, not)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#Notnot"><span style="color:black;">!</span></a><i>value</i></span>
+<span class="code-n" style="display: inline;"><a href="#Notnot"><span style="color:blue;">not</span></a> <i>value</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if value is <i><b>False</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> if value is <i><b>True</b></i>.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Inin'>In (in)</a></h3>
+<h3><a id='CaseInsensitiveInin'>Case Insensitive In (in:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Inin"><span style="color:blue;">in</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveInin"><span style="color:blue;">in:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is contained in right.  For example <b>'hi' in 'this'</b> would return <i><b>True</b></i>.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='ComparisonOperators'>Comparison Operators</a></h2>
+<p>Used to compare two values, variables, etc together.
+</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='Equal'>Equal (==)</a></h3>
+<h3><a id='CaseinsensitiveEqual'>Case insensitive Equal (==:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#Equal"><span style="color:black;">==</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseinsensitiveEqual"><span style="color:black;">==:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is equal to right.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='NotEqual'>Not Equal (!=)</a></h3>
+<h3><a id='CaseinsensitiveNotEqual'>Case insensitive Not Equal (!=:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#NotEqual"><span style="color:black;">!=</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseinsensitiveNotEqual"><span style="color:black;">!=:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left does not equal right.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='GreaterThanorEqualgt'>Greater Than or Equal (&gt;=)</a></h3>
+<h3><a id='CaseInsensitiveGreaterThanorEqualgt'>Case Insensitive Greater Than or Equal (&gt;=:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#GreaterThanorEqualgt"><span style="color:black;">&gt;=</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveGreaterThanorEqualgt"><span style="color:black;">&gt;=:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is greater than or equal to right.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='GreaterThangt'>Greater Than (&gt;)</a></h3>
+<h3><a id='CaseInsensitiveGreaterThangt'>Case Insensitive Greater Than (&gt;:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#GreaterThangt"><span style="color:black;">&gt;</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveGreaterThangt"><span style="color:black;">&gt;:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is greater than right.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='LessThanorEquallt'>Less Than or Equal (&lt;=)</a></h3>
+<h3><a id='CaseInsensitiveLessThanorEquallt'>Case Insensitive Less Than or Equal (&lt;=:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#LessThanorEquallt"><span style="color:black;">&lt;=</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveLessThanorEquallt"><span style="color:black;">&lt;=:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is less than or equal to right.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise.</p>
+  <p class="empty">&nbsp;</p>
+<h3><a id='LessThanlt'>Less Than (&lt;)</a></h3>
+<h3><a id='CaseInsensitiveLessThanlt'>Case Insensitive Less Than (&lt;:)</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><i>left</i> <a href="#LessThanlt"><span style="color:black;">&lt;</span></a> <i>right</i></span>
+<span class="code-n" style="display: inline;"><i>left</i> <a href="#CaseInsensitiveLessThanlt"><span style="color:black;">&lt;:</span></a> <i>right</i></span>
+</pre>
+<p class="list-1">&bull;&nbsp;  <b>Return:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>True</b></i> if left is less than right.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>False</b></i> otherwise</p>
+  <p class="empty">&nbsp;</p>
+<h2><a id='CaseInsensitiveOperators'>Case Insensitive Operators</a></h2>
+<p>Some of the operators have case insensitive versions, which function the same as their normal versions, but when comparing strings, case is ignored.  The case insensitive versions end with a colon (:).  The following have case insensitive versions:
+</p>
+  <p class="empty">&nbsp;</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#CaseinsensitiveEqual"><span style="color:black;">==:</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#CaseinsensitiveNotEqual"><span style="color:black;">!=:</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#CaseInsensitiveGreaterThanorEqualgt"><span style="color:black;">&gt;=:</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#CaseInsensitiveGreaterThangt"><span style="color:black;">&gt;:</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#CaseInsensitiveLessThanorEquallt"><span style="color:black;">&lt;=:</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#CaseInsensitiveLessThanlt"><span style="color:black;">&lt;:</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#CaseInsensitiveInin"><span style="color:blue;">in:</span></a></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<h2><a id='DotOperator'>Dot Operator</a></h2>
+<p>Some functions can be accesed in an easier way, using the dot operator (.)  When accessed in this method, rather than specifying the first argument, the item to the left of the dot operator will be used.  The following functions can be called in this way:
+</p>
+  <p class="empty">&nbsp;</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#len"><span style="color:purple;">len</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#endswith"><span style="color:purple;">endswith</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#startswith"><span style="color:purple;">startswith</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#lower"><span style="color:purple;">lower</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#find"><span style="color:purple;">find</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#rfind"><span style="color:purple;">rfind</span></a></span>
+</pre>
+  <p class="empty">&nbsp;</p>
+<h2><a id='Indexing'>Indexing</a></h2>
+<p>Indexing is used to access specific parts of a sequence like item.  Currently, only strings and string variables can be indexed.  If you are familiar with Python's indexing syntax, then this will be familiar to you.
+</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Usage:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>string</b></i>[<i><b>start</b></i>:<i><b>stop</b></i>:<i><b>step</b></i>]</p>
+<p class="list-1">&bull;&nbsp;  <b>Arguments:</b></p>
+  <p class="list-2">&bull;&nbsp;  <i><b>start:</b></i> index to start at.  If not specified, indexing will begin at index 0.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>stop:</b></i> index to stop at. If not specified, but the colon(:) is supplied, indexing will stop at the end of the string.  Otherwise, only one character will be indexed.</p>
+  <p class="list-2">&bull;&nbsp;  <i><b>step:</b></i> how to increment when indexing.  For example, a value of 2 would make the indexing return every second item.  If not specified, a value of 1 will be used.</p>
+  <p class="list-2">&bull;&nbsp;  Negative values for <i><b>start</b></i> and <i><b>stop</b></i> will be relative to the end of the sequence.  For example, -1 would mean the first character from the end of the sequence.</p>
+  <p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  <b>Examples:</b></p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<span style="color:cyan;">0</span>]   <i>returns</i> <span style="color:brown;">"H"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<span style="color:cyan;">0</span>:]  <i>returns</i> <span style="color:brown;">"Hello"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[:]   <i>returns</i> <span style="color:brown;">"Hello"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<span style="color:cyan;">0</span>:<span style="color:cyan;">2</span>] <i>returns</i> <span style="color:brown;">"He"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<a href="#Subtraction"><span style="color:black;">-</span></a><span style="color:cyan;">1</span>]  <i>returns</i> <span style="color:brown;">"o"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<span style="color:cyan;">1</span>:<span style="color:cyan;">3</span>] <i>returns</i> <span style="color:brown;">"el"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:brown;">"Hello"</span>[<a href="#Subtraction"><span style="color:black;">-</span></a><span style="color:cyan;">2</span>:] <i>returns</i> <span style="color:brown;">"lo"</span></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h1><a id='BuiltinConstants'>Built-in Constants</a></h1>
+<p>There are only a few constants that come defined in BAIN wizards.
+</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='True'>True</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Value:</b> True (1)</p>
+<p class="empty">&nbsp;</p>
+<h3><a id='False'>False</a></h3>
+<p class="list-1">&bull;&nbsp;  <b>Value: </b> False (0)</p>
+<p class="empty">&nbsp;</p>
+<h1><a id='EscapeSequences'>Escape Sequences</a></h1>
+<p>Escape sequences are special sequences of character you can put in a string to get a different character out when used in the wizard
+</p>
+<p class="list-1">&bull;&nbsp;  <b>'\t':</b> Insert a Tab</p>
+<p class="list-1">&bull;&nbsp;  <b>'\n':</b> Insert a newline character.</p>
+<p class="empty">&nbsp;</p>
+<h1><a id='CommonScriptingProblems'>Common Scripting Problems</a></h1>
+<p>Have a problem with your wizard script? Here are some common mistakes that cause errors or other strange behavior.
+</p>
+<p class="list-1">&bull;&nbsp;  Make sure the Case is right. Ex1: SelectSubPackage NOT SeLEctsUBPaCkaGe Ex2: Break NOT break</p>
+<p class="list-1">&bull;&nbsp;  Mismatched quotes. Ex: 'Plugin.esp" SHOULD BE 'Plugin.esp' or "Plugin.esp"</p>
+<p class="list-1">&bull;&nbsp;  Might be missing a , \ at the end of the line or one \ might need removed. This usually throws an error or not all options will be displayed.</p>
+<p class="list-1">&bull;&nbsp;  Extra spaces or tabs at the end of a line can cause problems with options showing up. Ex: "","",""\&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  Missing called Image File.</p>
+<p class="empty">&nbsp;</p>
+<h1><a id='ExamplesforBeginners'>Examples for Beginners</a></h1>
+<p class="empty">&nbsp;</p>
+<h2><a id='BAINwizardScriptHighlighterforNotePad'>BAIN wizard Script Highlighter for NotePad++</a></h2>
+<p class="empty">&nbsp;</p>
+<p><img src="bash/images/wizardscripthighlighter.jpg" alt="Notepad++ BAIN wizard Script Hightlighter in action" width="740" height="328" style='border: 0;'></img>
+</p>
+<p class="empty">&nbsp;</p>
+<p class="list-1">&bull;&nbsp;  It is recommended that you install utumno's <a href="http://www.tesnexus.com/downloads/file.php?id=32654">BAIN wizard Script Highlighter for Notepad plus plus</a> if you use Notepad++ to write your install scripts.</p>
+<p class="list-1">&bull;&nbsp;  It makes for spotting errors in your script a lot easier.</p>
+<p class="empty">&nbsp;</p>
+<h2><a id='BAINWizardSyntaxforEmEditor'>BAIN Wizard Syntax for EmEditor</a></h2>
+<p class="list-1">&bull;&nbsp;  broken85 created a similar Wizard highlighter for EmEditor. It can be found here: <a href="http://www.tesnexus.com/downloads/file.php?id=34240">BAIN Wizard Syntax for EmEditor</a></p>
+<p class="empty">&nbsp;</p>
+<h2><a id='CreateaPackageOverviewReadme'>Create a Package Overview Readme</a></h2>
+<p class="list-1">&bull;&nbsp;  Every Wizard should have some sort of nice little overview for the user to read before proceeding with the actual installation questions.</p>
+<p class="list-1">&bull;&nbsp;  Notice the following example has no Case's(This is intended) and the Default character is before the 'Start Here_Readme'.</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">"Welcome to the ExampleMod's mod Setup Wizard"</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"|Start Here_Readme"</span>, <span style="color:brown;">"If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do."</span>,<span style="color:brown;"> ""</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"ExampleMod Overview"</span>, <span style="color:brown;">"ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla"</span>,<span style="color:brown;"> ""</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"Changelog"</span>, <span style="color:brown;">"Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release"</span>,<span style="color:brown;"> ""</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"Guidelines for a Example install"</span>,<span style="color:brown;"> ""</span>,<span style="color:brown;"> ""</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"ExampleMod Screenshots"</span>,<span style="color:brown;"> ""</span>, <span style="color:brown;">"Screenshots\\ExampleScreenshot.jpg"</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"Credits\\Authors"</span>, <span style="color:brown;">"Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud."</span>,<span style="color:brown;"> ""</span>, \</span>
+<span class="code-n" style="display: inline;">    <span style="color:brown;">"Language"</span>, <span style="color:brown;">"Language or Nationality this BAIN wizard was written in. \n\n English (USA)"</span>, <span style="color:brown;">"Wizard Images\\EnglishUSA.jpg"</span></span>
+<span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='YesNoQuestion'>Yes/No Question?</a></h2>
+<p class="list-1">&bull;&nbsp;  Lets say that you want to ask the user a Yes or No question whether to install a feature of your mod.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> in the following example could be replaced by many other <a href="#Keywords">Keywords</a>.</p>
+<p class="list-1">&bull;&nbsp;  <a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> in the following example could be replaced by many other <a href="#Keywords">Keywords</a> or even another Yes/No Question Block.</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <span style="color:brown;">"Example: Yes/No Question?"</span>, \</span>
+<span class="code-n" style="display: inline;">      <span style="color:brown;">"Yes"</span>, <span style="color:brown;">"Description"</span>, <span style="color:brown;">"Wizard Images\\Yes.jpg"</span>, \</span>
+<span class="code-n" style="display: inline;">      <span style="color:brown;">"No"</span>, <span style="color:brown;">"Description"</span>, <span style="color:brown;">"Wizard Images\\No.jpg"</span></span>
+<span class="code-n" style="display: inline;">    <a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">"Yes"</span></span>
+<span class="code-n" style="display: inline;">        <a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a> <span style="color:brown;">"00 Example Subpackage"</span><span style="color:green;"> ;;;Action/No Action</span></span>
+<span class="code-n" style="display: inline;">        <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;">    <a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">"No"</span></span>
+<span class="code-n" style="display: inline;"><span style="color:green;">        ;No Plugin ;;Action/No Action</span></span>
+<span class="code-n" style="display: inline;">        <a href="#Break"><span style="color:blue;">Break</span></a></span>
+<span class="code-n" style="display: inline;"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='CheckforaPlugin'>Check for a Plugin</a></h2>
+<p class="list-1">&bull;&nbsp;  Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<span style="color:brown;">"ExamplePlugin.esp"</span>)</span>
+<span class="code-n" style="display: inline;">    <a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">"ExamplePlugin Detected."</span><span style="color:green;"> ;;;Action/No Action</span></span>
+<span class="code-n" style="display: inline;">    <a href="#SelectEspm"><span style="color:blue;">SelectEspm</span></a> <span style="color:brown;">"PatchPlugin.esp"</span><span style="color:green;">   ;;;Action/No Action</span></span>
+<span class="code-n" style="display: inline;"><a href="#Else"><span style="color:blue;">Else</span></a><span style="color:green;"> ; ExamplePlugin.esp wasn't detected</span></span>
+<span class="code-n" style="display: inline;"><span style="color:green;">    ;No Plugin                     ;;;Action/No Action</span></span>
+<span class="code-n" style="display: inline;"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='UseSVNfeaturessafely'>Use SVN features safely</a></h2>
+<p class="list-1">&bull;&nbsp;  You're spruicing up your wizard with some fancy new features that are only availible in the SVN.  How will you make sure that your wizard still works for people with the official release?</p>
+<p class="list-1">&bull;&nbsp;  Enclose the 'SVN only' code in a version check.</p>
+<pre style="width:850px;"><span class="code-n" style="display: inline;"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a>(<span style="color:brown;">'292'</span>) <a href="#GreaterThanorEqualgt"><span style="color:black;">&gt;=</span></a> <span style="color:cyan;">0</span></span>
+<span class="code-n" style="display: inline;"><span style="color:green;">    ; User is running 292+</span></span>
+<span class="code-n" style="display: inline;"><span style="color:green;">    ; Do some 292+ only stuff here, like...</span></span>
+<span class="code-n" style="display: inline;">    <a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">'Oblivion.ini'</span>, <span style="color:brown;">'Display'</span>, <span style="color:brown;">'bAllowScreenShot'</span>, <span style="color:cyan;">1</span>)</span>
+<span class="code-n" style="display: inline;"><a href="#Else"><span style="color:blue;">Else</span></a></span>
+<span class="code-n" style="display: inline;"><span style="color:green;">    ; User is running &lt; 292, so EditINI is unavailable.</span></span>
+<span class="code-n" style="display: inline;">    <a href="#Note"><span style="color:blue;">Note</span></a> <span style="color:brown;">"Don't forget to enable screenshots in Oblivion.ini"</span></span>
+<span class="code-n" style="display: inline;"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span>
+</pre>
+<p class="empty">&nbsp;</p>
+<h2><a id='ModswithWizards'>Mods with Wizards</a></h2>
+<p class="list-1">&bull;&nbsp;  This is a list of some mods that have wizards included with them if you would like to look at them for reference.</p>
+  <p class="list-2">&bull;&nbsp;  <a href="http://www.tesnexus.com/downloads/file.php?id=19628">Animated Window Lighting System and Chimneys - AWLS</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=31062">Bain Conversion Files</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=16513">Bananasplit Better Cities</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=36005">Fast and Easy Frans WIZBAIN Archive Maker -ENGLISH ONLY-</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=35856">Metallicow Cursor Mod</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=19370">Unique Landscapes Compilation</a>,  <a href="http://www.tesnexus.com/downloads/file.php?id=18305">Weather - All Natural</a></p>
+  <p class="empty">&nbsp;</p>
+</td></tr></table>
+<h1><a id='WizardtoOBMMScriptComparison'>Wizard to OBMM Script Comparison</a></h1>
+<table style="width:100%;"><tr valign="top"><td style="border: 1px solid #000000; padding: 5px; background: #f6f68c; width:100%;">
+<p>This is a comparison of OBMM's OMOD scripting language to BAIN's Wizards.
+</p>
+<h2><a id='FunctionalitywithdirectcorrelationtoOBMMScript'>Functionality with direct correlation to OBMM Script</a></h2>
+<table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
+<p>OBMM
+</p>
+</td><td style="border: 1px; padding:5px; background: #F6F68C; width:50%;">
+<p>Wizards
+</p>
+</td></tr>
+<tr><td class="code">
+<h3><a id='Ifltfunctiongtspan'>If <span style="color:blue;">&lt;function&gt;</span> [...]</a></h3>
+<p><b>IfNot <span style="color:blue;">&lt;function&gt;</span> [...]</b>
+</p>
+</td>
+<td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i></span><br />
+<span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#Notnot"><span style="color:blue;">not</span></a> <i>statement</i></span><br />
+</td></tr><tr><td class="code">
+<br />
+<h3><a id='Else1'>Else</a></h3>
+<h3><a id='EndIf1'>EndIf</a></h3>
+</td>
+<td class="code"><span class="code-n"><a href="#Elif"><span style="color:blue;">Elif</span></a></span><br />
+<span class="code-n"><a href="#Else"><span style="color:blue;">Else</span></a></span><br />
+<span class="code-n"><a href="#EndIf"><span style="color:blue;">EndIf</span></a></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfDialogYesNoltMessagegtspanTitlespan'>If DialogYesNo <span style="color:blue;">&lt;Message&gt;</span> <span style="color:brown;">[Title]</span></a></h3>
+</td>
+<td class="code"><span class="code-n"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <i>message</i>, <span style="color:brown;">"Yes"</span>, <i>yes_description</i>, <i>yes_image</i>, <span style="color:brown;">"No"</span>, <i>no_description</i>, <i>no_image</i></span><br />
+<span class="code-n"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">"Yes"</span></span><br />
+<span class="code-n">    <i>statements</i></span><br />
+<span class="code-n">    <a href="#Break"><span style="color:blue;">Break</span></a></span><br />
+<span class="code-n"><a href="#Case"><span style="color:blue;">Case</span></a> <span style="color:brown;">"NO"</span></span><br />
+<span class="code-n">    <i>statements</i></span><br />
+<span class="code-n">    <a href="#Break"><span style="color:blue;">Break</span></a></span><br />
+<span class="code-n"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfDataFileExistsltFileNamegtspan'>If DataFileExists <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<i>filename</i>)</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfScriptExtenderPresent'>If ScriptExtenderPresent</a></h3>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a>(<span style="color:brown;">"0.0.0.0"</span>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfScriptExtenderNewerThanltversiongtspan'>If ScriptExtenderNewerThan <span style="color:blue;">&lt;version&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareSEVersion"><span style="color:purple;">CompareSEVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfGraphicsExtenderPresent'>If GraphicsExtenderPresent</a></h3>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a>(<span style="color:brown;">"0.0.0.0"</span>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfGraphicsExtenderNewerThan'>If GraphicsExtenderNewerThan</a></h3>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareGEVersion"><span style="color:purple;">CompareGEVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfOblivionNewerThanltversiongtspan'>If OblivionNewerThan <span style="color:blue;">&lt;version&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#CompareGameVersion"><span style="color:purple;">CompareGameVersion</span></a>(<i>version</i>) <a href="#Equal"><span style="color:black;">==</span></a> <span style="color:cyan;">1</span></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='IfEqualltarg1gtspanltarg2gtspan'>If Equal <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></a></h3>
+<p><b>If GreaterThan <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></b>
+</p>
+<p><b>If GreaterEqual <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></b>
+</p>
+<p><b>If fGreaterThan <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></b>
+</p>
+<p><b>If fGreaterEqual <span style="color:blue;">&lt;arg1&gt;</span> <span style="color:green;">&lt;arg2&gt;</span></b>
+</p>
+</td><td class="code"><span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i> <a href="#Equal"><span style="color:black;">==</span></a> <i>statement</i></span><br />
+<span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i> <a href="#GreaterThangt"><span style="color:black;">&gt;</span></a>  <i>statement</i></span><br />
+<span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i> <a href="#GreaterThanorEqualgt"><span style="color:black;">&gt;=</span></a> <i>statement</i></span><br />
+<span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i> <a href="#GreaterThangt"><span style="color:black;">&gt;</span></a>  <i>statement</i></span><br />
+<span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <i>statement</i> <a href="#GreaterThanorEqualgt"><span style="color:black;">&gt;=</span></a> <i>statement</i></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='SelectltTitlegtspanltOption1gtspanOption2span'>Select <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:purple;">[Option2]</span> [...]</a></h3>
+<p><b>SelectWithPreview <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:brown;">&lt;ImagePath1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:blue;">[ImagePath2]</span> [...]</b>
+</p>
+<p><b>SelectWithDescriptions <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:orange;">&lt;Description1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:orange;">[Description2]</span> [...]</b>
+</p>
+<p><b>SelectWithDescriptionsAndPreviews <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:brown;">&lt;ImagePath1&gt;</span> <span style="color:orange;">&lt;Description1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:blue;">[ImagePath2]</span> <span style="color:orange;">[Description2]</span> [...]</b>
+</p>
+</td><td class="code"><span class="code-n"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a> <i>title</i>, <i>option1</i>, <i>description1</i>, <i>image1</i>, <i>option2</i>, <i>description2</i>, <i>image2</i> [...]</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='SelectManyltTitlegtspanltOption1gtspanOption2span'>SelectMany <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:purple;">[Option2]</span> [...]</a></h3>
+<p><b>SelectManyWithPreview <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:brown;">&lt;ImagePath1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:blue;">[ImagePath2]</span> [...]</b>
+</p>
+<p><b>SelectManyWithDescriptions <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:orange;">&lt;Description1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:orange;">[Description2]</span> [...]</b>
+</p>
+<p><b>SelectManyWithDescriptionsAndPreviews <span style="color:blue;">&lt;Title&gt;</span> <span style="color:green;">&lt;Option1&gt;</span> <span style="color:brown;">&lt;ImagePath1&gt;</span> <span style="color:orange;">&lt;Description1&gt;</span> <span style="color:purple;">[Option2]</span> <span style="color:blue;">[ImagePath2]</span> <span style="color:orange;">[Description2]</span> [...]</b>
+</p>
+</td><td class="code"><span class="code-n"><a href="#SelectMany1"><span style="color:blue;">SelectMany</span></a> <i>title</i>, <i>option1</i>, <i>description1</i>, <i>image1</i> [...]</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='Caseltoptiongt'>Case &lt;option&gt;</a></h3>
+<h3><a id='Default1'>Default</a></h3>
+<h3><a id='Break3'>Break</a></h3>
+<h3><a id='EndSelect1'>EndSelect</a></h3>
+</td><td class="code"><span class="code-n"><a href="#Case"><span style="color:blue;">Case</span></a> <i>option</i></span><br />
+<span class="code-n"><a href="#Default"><span style="color:blue;">Default</span></a></span><br />
+<span class="code-n"><a href="#Break"><span style="color:blue;">Break</span></a></span><br />
+<span class="code-n"><a href="#EndSelect"><span style="color:blue;">EndSelect</span></a></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='ForCountltVariablegtspanltStartgtspanltEndgtspanStepspan'>For Count <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;Start&gt;</span> <span style="color:blue;">&lt;End&gt;</span> <span style="color:orange;">[Step]</span></a></h3>
+<p><b>Continue</b>
+</p>
+<p><b>Exit</b>
+</p>
+<p><b>EndFor</b>
+</p>
+</td><td class="code"><span class="code-n"><a href="#For"><span style="color:blue;">For</span></a> <i>variable</i> <a href="#from"><span style="color:blue;">from</span></a> <i>start</i> <a href="#to"><span style="color:blue;">to</span></a> <i>end</i> <a href="#by"><span style="color:blue;">by</span></a> <i>step</i></span><br />
+<span class="code-n"><a href="#Continue"><span style="color:blue;">Continue</span></a></span><br />
+<span class="code-n"><a href="#Break"><span style="color:blue;">Break</span></a></span><br />
+<span class="code-n"><a href="#EndFor"><span style="color:blue;">EndFor</span></a></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='Return1'>Return</a></h3>
+</td><td class="code"><span class="code-n"><a href="#Return"><span style="color:blue;">Return</span></a></span><br />
+</td></tr><tr><td class="code">
+<p><b>DontInstallPlugin <span style="color:blue;">&lt;Plugin&gt;</span></b>
+</p>
+<h3><a id='InstallPluginltPlugingtspan'>InstallPlugin <span style="color:blue;">&lt;Plugin&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#DeSelectEspm"><span style="color:blue;">DeSelectEspm</span></a> <i>plugin</i></span><br />
+<span class="code-n"><a href="#SelectEspm"><span style="color:blue;">SelectEspm</span></a> <i>plugin</i></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='CopyPluginltCopyFromgtspanltCopyTogtspan'>CopyPlugin <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#RenameEspm"><span style="color:blue;">RenameEspm</span></a> <i>original_name</i> <i>new_name</i></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='EditINIltsectiongtspanltkeygtspanltvaluegtspan'>EditINI <span style="color:blue;">&lt;section&gt;</span> <span style="color:purple;">&lt;key&gt;</span> <span style="color:green;">&lt;value&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#EditINI"><span style="color:purple;">EditINI</span></a>(<span style="color:brown;">"Oblivion.ini"</span>, <i>section</i>, <i>setting</i>, <i>value</i>)</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='FatalError'>FatalError</a></h3>
+</td><td class="code"><span class="code-n"><a href="#Cancel"><span style="color:blue;">Cancel</span></a> [<i>message</i>]</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='SetVarltVariablegtspanltValuegtspan'>SetVar <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;Value&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>value</i></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='StringLengthltVariablegtspanltStringgtspan'>StringLength <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <a href="#len"><span style="color:purple;">len</span></a>(<i>string</i>)</span><br />
+<span class="code-n"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>string</i><a href="#DotOperator"><span style="color:black;">.</span></a><a href="#len"><span style="color:purple;">len</span></a>()</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='iSetltVariablegtspanltexpressiongtspan'>iSet <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;expression&gt;</span></a></h3>
+<p><b>fSet <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;expression&gt;</span></b>
+</p>
+</td><td class="code"><span class="code-n"><i>variable</i> <a href="#Assignment"><span style="color:black;">=</span></a> <i>expression</i></span><br />
+</td></tr><tr><td class="code">
+<h3><a id='ExecLinesltlinesgtspan'>ExecLines <span style="color:blue;">&lt;lines&gt;</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#Exec"><span style="color:purple;">Exec</span></a>(<i>lines</i>)</span><br />
+</td></tr><tr><td class="code">
+<h3><a id='SubStringltVariablegtspanltStringgtspanltstartfromgtspanlengthspan'>SubString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></h3>
+</td><td class="code"><span class="code-n"><a href="#find"><span style="color:purple;">find</span></a>(<i>variable</i>, <i>string</i>, <i>start</i>, <i>stop</i>)</span><br />
+<span class="code-n"><i>variable</i><a href="#DotOperator"><span style="color:black;">.</span></a><a href="#find"><span style="color:purple;">find</span></a>(<i>string</i>, <i>start</i>, <i>stop</i>)</span><br />
+</td></tr></table>
+<h2><a id='FunctionsinOBMMthatdonothaveadirectequivalentbutasimilareffectcanbeachievedinWizards'>Functions in OBMM that do not have a direct equivalent, but a similar effect can be achieved in Wizards</a></h2>
+<table style="width:100%;"><tr valign="top"><td style="border: 1px; padding:5px background: #F6F68C; width:50%;">
+<p>OBMM
+</p>
+</td><td style="border: 1px; padding:5px; background: #F6F68C; width:50%;">
+<p>Wizards
+</p>
+</td></tr>
+<tr><td class="code">
+<h3><a id='MessageltMessagegtspanTitlespan'>Message <span style="color:blue;">&lt;Message&gt;</span> <span style="color:brown;">[Title]</span></a></h3>
+<h3><a id='DisplayImageltImageFilePathgtspanTitlespan'>DisplayImage <span style="color:blue;">&lt;Image File Path&gt;</span> <span style="color:brown;">[Title]</span></a></h3>
+<h3><a id='DisplayTextltTextFilePathgtspanTitlespan'>DisplayText <span style="color:blue;">&lt;Text File Path&gt;</span> <span style="color:brown;">[Title]</span></a></h3>
+</td><td class="code">
+<p>Similar functionality can be reproduced using <span class="code-n"><a href="#Note"><span style="color:blue;">Note</span></a></span> and <span class="code-n"><a href="#SelectOne1"><span style="color:blue;">SelectOne</span></a></span> or <span class="code-n"><a href="#SelectMany1"><span style="color:blue;">SelectMany</span></a></span> keywords.</p>
+</td></tr>
+<tr><td class="code">
+<h3><a id='ConflictWithltModNamegtspanCommentspanLevelspan'>ConflictWith <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='DependsOnltModNamegtspanCommentspanLevelspan'>DependsOn <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+</td><td class="code">
+<p>Similar functionality can be reproduced using <span class="code-n"><a href="#If"><span style="color:blue;">If</span></a> <a href="#DataFileExists"><span style="color:purple;">DataFileExists</span></a>(<i>modname</i>)</span>
+</p>
+</td></tr>
+<tr><td class="code">
+<h3><a id='DontInstallDataFileltFileNamegtspan'>DontInstallDataFile <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
+<h3><a id='InstallDataFileltFileNamegtspan'>InstallDataFile <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
+<h3><a id='DontInstallDataFolderltFolderNamegtspanRecurseSubfoldersspan'>DontInstallDataFolder <span style="color:blue;">&lt;FolderName&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></h3>
+<h3><a id='InstallDataFolderltFolderNamegtspanRecurseSubfoldersspan'>InstallDataFolder <span style="color:blue;">&lt;FolderName&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></h3>
+<h3><a id='CopyDataFileltCopyFromgtspanltCopyTogtspan'>CopyDataFile <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span></a></h3>
+<h3><a id='CopyDataFolderltCopyFromgtspanltCopyTogtspanRecurseSubfoldersspan'>CopyDataFolder <span style="color:blue;">&lt;CopyFrom&gt;</span> <span style="color:purple;">&lt;CopyTo&gt;</span> <span style="color:brown;">[RecurseSubfolders]</span></a></h3>
+</td><td class="code">
+<p>Similar functionality can be obtained by packaging the mod differently, and then using <span class="code-n"><a href="#SelectSubPackage"><span style="color:blue;">SelectSubPackage</span></a></span> and <span class="code-n"><a href="#DeSelectSubPackage"><span style="color:blue;">DeSelectSubPackage</span></a></span>
+</p>
+</td></tr>
+<tr><td class="code">
+<h3><a id='ForEachDataFolderltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan'>For Each DataFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+<h3><a id='ForEachDataFileltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan'>For Each DataFile <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+<h3><a id='ForEachPluginFolderltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan'>For Each PluginFolder <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+<h3><a id='ForEachPluginltVariablegtspanltFolderPathgtspanRecurseSubFoldersspanSearchStringspan'>For Each Plugin <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;FolderPath&gt;</span> <span style="color:brown;">[RecurseSubFolders]</span> <span style="color:orange;">[SearchString]</span></a></h3>
+</td><td class="code">
+<p>Use:
+</p>
+<span class="code-n">  <a href="#For"><span style="color:blue;">For</span></a> <i>subpackage</i> <a href="#Inin"><span style="color:blue;">in</span></a> <a href="#ForContinueBreakEndFor"><span style="color:cyan;">SubPackages</span></a></span>
+<p>and/or:
+</p>
+<span class="code-n">  <a href="#For"><span style="color:blue;">For</span></a> <i>file</i> <a href="#Inin"><span style="color:blue;">in</span></a> <i>subpackage</i></span>
+<p>to iterate over files and folders in an installer.  Then use:
+</p>
+<span class="code-n">  <i>file</i><a href="#DotOperator"><span style="color:black;">.</span></a><a href="#lower"><span style="color:purple;">lower</span></a>()<a href="#DotOperator"><span style="color:black;">.</span></a><a href="#endswith"><span style="color:purple;">endswith</span></a>(<span style="color:brown;">".esp"</span>)</span><br />
+<span class="code-n">  <a href="#GetFilename"><span style="color:purple;">GetFilename</span></a>(<i>file</i>)</span><br />
+<span class="code-n">  <a href="#GetFolder"><span style="color:purple;">GetFolder</span></a>(<i>file</i>)</span><br />
+<p>and other string manipulation functions to test file names and folders.
+</p>
+</td></tr></table>
+  <p class="empty">&nbsp;</p>
+<h2><a id='FunctionsinOBMMthatdonothaveanequivalentinWizards'>Functions in OBMM that do not have an equivalent in Wizards</a></h2>
+<table style="width:100%;"><tr valign="top">
+<td class="code">
+<h3><a id='SelectVarltVariablegtspan'>SelectVar <span style="color:green;">&lt;Variable&gt;</span></a></h3>
+<h3><a id='SelectStringltVariablegtspan'>SelectString <span style="color:green;">&lt;Variable&gt;</span></a></h3>
+<h3><a id='Gotoltlabelgtspan'>Goto <span style="color:blue;">&lt;label&gt;</span></a></h3>
+<h3><a id='Labelltlabelgtspan'>Label <span style="color:blue;">&lt;label&gt;</span></a></h3>
+<h3><a id='LoadBeforeltPlugin1gtspanltPlugin2gtspan'>LoadBefore <span style="color:blue;">&lt;Plugin1&gt;</span> <span style="color:purple;">&lt;Plugin2&gt;</span></a></h3>
+<h3><a id='LoadAfterltPlugin1gtspanltPlugin2gtspan'>LoadAfter <span style="color:blue;">&lt;Plugin1&gt;</span> <span style="color:purple;">&lt;Plugin2&gt;</span></a></h3>
+  <p class="list-2">&nbsp;&nbsp;  Use BOSS in Wrye Bash instead.</p>
+<h3><a id='UncheckESPltplugingtspan'>UncheckESP <span style="color:blue;">&lt;plugin&gt;</span></a></h3>
+<h3><a id='SetDeactivationWarningltplugingtspanltwarninggtspan'>SetDeactivationWarning <span style="color:blue;">&lt;plugin&gt;</span> <span style="color:purple;">&lt;warning&gt;</span></a></h3>
+<h3><a id='ConflictsWithltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan'>ConflictsWith <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='ConflictsWithRegexltModNamegtspanCommentspanLevelspan'>ConflictsWithRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='ConflictsWithRegexltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan'>ConflictsWithRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='DependsOnltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan'>DependsOn <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='DependsOnRegexltModNamegtspanCommentspanLevelspan'>DependsOnRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='DependsOnRegexltModNamegtspanltMinMajorVersiongtspanltMinMinorVersiongtspanspanstylecolorblueltMaxMajorVersiongtspanltMaxMinorVersiongtspanCommentspanLevelspan'>DependsOnRegex <span style="color:blue;">&lt;ModName&gt;</span> <span style="color:green;">&lt;MinMajorVersion&gt;</span> <span style="color:brown;">&lt;MinMinorVersion&gt;</span><span style="color:blue;">&lt;MaxMajorVersion&gt;</span> <span style="color:green;">&lt;MaxMinorVersion&gt;</span> <span style="color:purple;">[Comment]</span> <span style="color:orange;">[Level]</span></a></h3>
+<h3><a id='RegisterBSAltFileNamegtspan'>RegisterBSA <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
+<h3><a id='UnregisterBSAltFileNamegtspan'>UnregisterBSA <span style="color:blue;">&lt;FileName&gt;</span></a></h3>
+<h3><a id='EditShaderltShaderPackagegtspanltShaderNamegtspanltBinaryObjectPathgtspan'>EditShader <span style="color:blue;">&lt;ShaderPackage&gt;</span> <span style="color:purple;">&lt;ShaderName&gt;</span> <span style="color:green;">&lt;BinaryObjectPath&gt;</span></a></h3>
+<h3><a id='SetGMSTltfilegtspanltEditorIDgtspanltnewvaluegtspan'>SetGMST <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;Editor ID&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='SetGloballtfilegtspanltEditorIDgtspanltnewvaluegtspan'>SetGlobal <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;Editor ID&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='SetPluginByteltfilegtspanltoffsetgtspanltnewvaluegtspan'>SetPluginByte <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='SetPluginByteltfilegtspanltoffsetgtspanltnewvaluegtspan1'>SetPluginByte <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='SetPluginShortltfilegtspanltoffsetgtspanltnewvaluegtspan'>SetPluginShort <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='SetPluginLongltfilegtspanltoffsetgtspanltnewvaluegtspan'>SetPluginLong <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='SetPluginFloatltfilegtspanltoffsetgtspanltnewvaluegtspan'>SetPluginFloat <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;offset&gt;</span> <span style="color:green;">&lt;new value&gt;</span></a></h3>
+<h3><a id='GetFolderNameltVariablegtspanltpathgtspan'>GetFolderName <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></h3>
+<h3><a id='GetFileNameltVariablegtspanltpathgtspan'>GetFileName <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></h3>
+<h3><a id='GetFileNameWithoutExtensionltVariablegtspanltpathgtspan'>GetFileNameWithoutExtension <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path&gt;</span></a></h3>
+<h3><a id='CombinePathsltVariablegtspanltpath1gtspanltpath2gtspan'>CombinePaths <span style="color:gree;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;path1&gt;</span> <span style="color:blue;">&lt;path2&gt;</span></a></h3>
+<h3><a id='RemoveStringltVariablegtspanltStringgtspanltstartfromgtspanlengthspan'>RemoveString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;String&gt;</span> <span style="color:blue;">&lt;startfrom&gt;</span> <span style="color:brown;">[length]</span></a></h3>
+<h3><a id='InputStringltVariablegtspanTitlespanInitialspan'>InputString <span style="color:green;">&lt;Variable&gt;</span> <span style="color:brown;">[Title]</span> <span style="color:purple;">[Initial]</span></a></h3>
+<h3><a id='ReadINIltVariablegtspanltsectiongtspanltvaluegtspan'>ReadINI <span style="color:green;">&lt;Variable&gt;</span> <span style="color:blue;">&lt;section&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></h3>
+<h3><a id='ReadRenderInfoltVariablegtspanltvaluegtspan'>ReadRenderInfo <span style="color:green;">&lt;Variable&gt;</span> <span style="color:purple;">&lt;value&gt;</span></a></h3>
+<h3><a id='EditXMLLineltfilegtspanltlinenumbergtspanltnewlinegtspan'>EditXMLLine <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;line number&gt;</span> <span style="color:green;">&lt;new line&gt;</span></a></h3>
+<h3><a id='EditXMLReplaceltfilegtspanlttexttofindgtspanlttexttoreplacegtspan'>EditXMLReplace <span style="color:blue;">&lt;file&gt;</span> <span style="color:purple;">&lt;text to find&gt;</span> <span style="color:green;">&lt;text to replace&gt;</span></a></h3>
+</td></tr>
+</table>
+  <p class="empty">&nbsp;</p>
+<h2><a id='FunctionsinWizardsthatdonothaveanequivalentinOBMM'>Functions in Wizards that do not have an equivalent in OBMM</a></h2>
+<table style="width:100%;"><tr valign="top">
+<td class="code"><span class="code-n"><a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a>(<i>version</i>)</span><br />
+<span class="code-n"><a href="#GetEspmStatus"><span style="color:purple;">GetEspmStatus</span></a>(<i>plugin</i>)</span><br />
+<span class="code-n"><a href="#str"><span style="color:purple;">str</span></a>(<i>value</i>)</span><br />
+<span class="code-n"><a href="#int"><span style="color:purple;">int</span></a>(<i>value</i>)</span><br />
+<span class="code-n"><a href="#float"><span style="color:purple;">float</span></a>(<i>value</i>)</span><br />
+<span class="code-n"><a href="#SelectAll"><span style="color:blue;">SelectAll</span></a></span><br />
+<span class="code-n"><a href="#DeSelectAll"><span style="color:blue;">DeSelectAll</span></a></span><br />
+<span class="code-n"><a href="#SelectAllEspms"><span style="color:blue;">SelectAllEspms</span></a></span><br />
+<span class="code-n"><a href="#DeSelectAllEspms"><span style="color:blue;">DeSelectAllEspms</span></a></span><br />
+<span class="code-n"><a href="#While"><span style="color:blue;">While</span></a> <i>expression</i></span><br />
+<span class="code-n">    <a href="#Continue"><span style="color:blue;">Continue</span></a></span><br />
+<span class="code-n">    <a href="#Break"><span style="color:blue;">Break</span></a></span><br />
+<span class="code-n"><a href="#EndWhile"><span style="color:blue;">EndWhile</span></a></span><br />
+<p class="list-1">&nbsp;&nbsp;  Similar loops can be made using Label/Goto and If statements in OBMM.</p>
+<span class="code-n"><a href="#RequireVersions"><span style="color:blue;">RequireVersions</span></a> <i>oblivion</i>, <i>obse</i>, <i>obge</i>, <i>wrye_bash</i></span>
+</td></tr>
+</table>
+<p class="empty">&nbsp;</p>
+<h2><a id='FunctionsthathavenomeaninginWryeBash'>Functions that have no meaning in Wrye Bash</a></h2>
+<table style="width:100%;"><tr valign="top">
+<td class="code">
+<h3><a id='IfVersionGreaterThanltversiongtspan'>If VersionGreaterThan <span style="color:blue;">&lt;version&gt;</span></a></h3>
+<h3><a id='IfVersionLessThanltversiongtspan'>If VersionLessThan <span style="color:blue;">&lt;version&gt;</span></a></h3>
+  <p class="list-2">&nbsp;&nbsp;  Use <span class="code-n"><a href="#CompareWBVersion"><span style="color:purple;">CompareWBVersion</span></a></span> to check the Wrye Bash version.</p>
+<h3><a id='PatchDataFileltNewFilegtspanltFileToPatchgtspanCreatespan'>PatchDataFile <span style="color:blue;">&lt;NewFile&gt;</span> <span style="color:purple;">&lt;FileToPatch&gt;</span> <span style="color:brown;">[Create]</span></a></h3>
+<h3><a id='PatchPluginltNewFilegtspanltFileToPatchgtspanCreatespan'>PatchPlugin <span style="color:blue;">&lt;NewFile&gt;</span> <span style="color:purple;">&lt;FileToPatch&gt;</span> <span style="color:brown;">[Create]</span></a></h3>
+  <p class="list-2">&nbsp;&nbsp;  Unnecessary due to BAIN's conflict resolution of data files.</p>
+<h3><a id='AllowRunOnLines'>AllowRunOnLines</a></h3>
+  <p class="list-2">&nbsp;&nbsp;  Runon lines have always been supported in Wizards.</p>
+</td></tr>
+</table>
+  <p class="empty">&nbsp;</p>
+</td></tr></table>
+</body>
+</html>

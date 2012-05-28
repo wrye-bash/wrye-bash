@@ -1,0 +1,135 @@
+﻿
+This is just some general guidlines on keeping Wrye Bash unicode compatible,
+that I(Lojack) learned converting everything to be unicode.
+
+* Always use unicode strings inside of translatible strings:
+   Good: _(u'Translate me!')
+   Bad:  _('Translate me!')
+  This makes sure whether you're using a translation file or not, the resulting
+  string will always be a unicode object.
+
+* Whenever possible, use unicode string objects instead of str objects.
+    Good: message = u'Wrye Bash 296'
+	Bad: message = 'Wrye Bash 296'
+  Reason being, this will ensure the result of a string concantination or using
+  a string formatting operator (%) will always result in a unicode string.
+  This is especially important for the formatting operator, as the following
+  will give a unicode error if the Path object contains unicode characters:
+    'Could not open %s, aborting!' % fileName.s
+  This is because Python will implicitly encode fileName.s to ASCII to perform
+  the format operation.  Doing this with a unicode string wont perform the
+  conversion:
+    u'Could not open %s, aborting!' % fileName.s
+
+* Avoid using the str() function.  It creates string objects (duh).  Use
+  unicode() or u'%s' instead.
+
+* Be careful using the 'print' statement(have yet to go through and fix
+  usage of these).  When wxPython has control of stdout, this will work fine,
+  as it's redirected to a unicode compliant output.  However, when going to
+  the console, this will be implicitly encoded to ASCII, or sometimes the
+  user's locale specified encoding.  This will most likely result in a
+  UnicodeEncodeError.  'deprint' will safely encode the string to 'mbcs' instead.
+
+* Avoid the stringizing operator (`).  This also makes string objects, which
+  when combined with concantination or the string formatting operator can
+  result in unicode decode errors.  Use unicode() or u'%i' or u'%s' instead.
+
+* subprocess.*** calls (Popen, call, etc)
+  All of these internally use subprocess.Popen.  Unfortunately, subprocess.Popen
+  implicitly tries to encode the command into ASCII.  In the case where you need
+  to pass a unicode filename to another program via the subprocess module
+  (for example, extracting an archive, where the name is in unicode), temporarily
+  rename the offending files to a non-unicode filename, perform the operation, then
+  rename the file back.  I've implemented 'Path.tempMoveTo' for this purpose, and
+  'Path.temp' now by default produces temporary names that are unicode safe.  So
+  for example, extracting "れどめ.7z", would be done like so:
+  
+  safePath = file.temp
+  with file.tempMoveTo(safePath):
+      # Call 7z via subprocess, using safePath instead
+  # file is automatically renamed back when using the 'with' statement and 'tempMoveTo'
+  
+* Along the lines of the above, trying to call 'attrib' to clear the read-only flag
+  will fail for unicode filenames.  Instead, most operation have an alternate method
+  built in now, via os.chmod.  If you need to explicitly clear the read-only flag
+  (should never be the case), use the 'Path.clearRO' instead.  It will use chmod
+  recursively to clear the flag.
+
+* csvreader:
+  This module doesn't support unicode.  Use 'bolt.CsvReader' instead.  It automatically
+  encodes the lines in UTF-8 first, which csvreader can handle.
+
+* urllib.quote:
+  This also wont work with unicode.  URI's arguable don't have a specification for their
+  encoding, so the best way to handle this is: encode the string in UTF-8, pass it to
+  urllib.quote.  Then since urllib with use % notation for any characters > 128, in
+  addition to the other stuff (spaces, etc), if you need the string back in unicode,
+  use cp1252.  Example:
+      text = text.encode('utf8')
+	  text = urllib.quote(text)
+	  text = unicode(text,'cp1252')
+
+* wx.TextCtrl.LoadFile:
+  Oddly, this one isn't unicode capable, even in unicode wxPython.  Instead, open
+  the file via the filesystem, read in the data and decode it appropriately, then
+  pass it to the text control.
+
+* reading/writing files under strict control of Wrye Bash:  This means .csv files used
+  for Bashed Patches and Import/Export, readme files in wtxt format for generating html
+  readmes, etc.  Always open using 'utf-8-sig', which will allow UTF-8 with BOM or without.
+  In general, save in 'utf-8-sig', so other programs can read it easier.  Most programs
+  are fine without the BOM, but some need it to read it properly.  The best way to do this
+  is via the bolt.Path class, passing the 'encoding' keyword argument:
+
+  with file.open('w',encoding='utf-8-sig') as out:
+
+  The encoding must be passed in as a keyword for it to work, that's the way it's been
+  implemented, so allow the usual file.open() arguements to still work.
+
+* reading/writing files under control of other programs:
+
+  BOSS: specified to use UTF-8 with BOM, so always use that
+  OBMM: 'config' file in omod conversion data.  No specification for how it outputs,
+        so use the _unicode function.  OBMM will read the 'config' file fine if you
+		encode (just the strings) in UTF-8, so use that.
+  Oblivion's plugins.txt: appears to accept unicode filenames.  Use _encode
+  Skyrim's plugins.txt: doesn't appear to accept any filenames not in cp1252.
+  
+  Where we have a required encoding for files, catch any UnicodeDecodeErrors, as that
+  means the file isn't saved in the correct encoding.  Then inform the user of the
+  descrepancy.
+
+  Others:  A good example of this is the 'author' field in a mod.
+    Use _unicode for input.  This will utilize Mozilla's encoding detection library to attemp
+	    to pick the best encoding.  Failing that, it will use an encoding that
+		does not throw a UnicodeDecodeError.
+	Use _encode for output.  This will try various codecs that don't throw a UnicodeEncodeError,
+	    then using Mozilla's encoding detection library, see if that encoded string gets
+		detected as the same encoding used to encode it.  If not, it will continue to try
+		encodings.  If not encoding meets this criteria, it will use the first successful one.
+
+* Translatible strings: Try to keep newline characters out of the string.  This makes it
+  easier to write the translation files:
+  This:
+    _(u'Please choose one:\n\n1. A banana.\n2. An apple.')
+  Would be better as:
+    _(u'Please choose one:')+u'\n\n'+_(u'1. A banana')+u'\n'+_(u'2. An apple.')
+	
+  Also, keep any wtxt formatting out of the string.
+  This:
+    _(u'=== %s results') % fileName.s
+  Would be better as:
+    u'=== '+_(u'%s results') % fileName.s
+	
+  String formatting: use named format characters (I've yet to do this).  This is because
+  depending on the language, the grammar may need these bits rearranged.
+  Example:
+    _(u'Apply %s to %s?') % (tweakFile.s,targetFile.s)
+	
+  In a made up pirate language, say this translates to:
+    'Should ye be going to change %s by applying the %s?' % (targetFile.s,tweakFile.s)
+  But the translater has no way of changing the order.  So instead, you should use:
+    _(u'Apply %(tweakFile)s to %(targetFile)s?') % {'tweakFile':tweakFile.s,'targetFile':targetFile.s}
+  This way, the translater can specify the string as:
+    'Should ye be going to change %(targetFile)s by applying the %(tweakFile)s?'

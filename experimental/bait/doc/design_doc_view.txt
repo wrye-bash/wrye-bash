@@ -1,0 +1,60 @@
+
+
+Title: Wrye Bash Installer Tab View Design Document
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+See component_diagram_view.* for a visual representation of the following
+design.
+
+
+=========================
+  Thread Model and Flow
+=========================
+The view consists of two threads of execution.  The first is the wxPython
+event loop thread, and will be the only thread that interacts with GUI elements
+(since the GUI elements are not thread safe).  It handles all widget events and
+may call Presenter methods as a result.  It also executes the callbacks
+enqueued by the second thread.
+
+The second thread dequeues ViewCommand objects from the Presenter output queue,
+determines the requested action, and enqueues a callback that will execute in
+the wxPython event loop context using wx.CallLater().
+
+
+=====================
+  Design Philosophy
+=====================
+Overall, the view should contain minimal logic as it will receive the least
+amount of automated testing.
+
+The View should not change Presenter- or Model-related GUI state directly as a
+result of user action.  For example, when a user clicks on a checkbox, the View
+should not automatically check the item and its children.  The View should
+notify the Presenter of the requested change in check state.  The Presenter
+will, after interacting with the Model, enqueue ViewCommand objects that will
+direct the view to check the appropriate items.  This allows the lower layers to
+customize the effects of user actions.
+
+The classes that represent the widgets should not extend wx classes,
+instead keeping the wx objects as private members.  That is, View classes
+should have a has-a relationship with wx classes, not an is-a relationship.
+This will encourage creation of well-defined high-level widget APIs, leading to
+easier long-term maintainability.
+
+Since widgets need to be directly accessible by the Presenter update callbacks,
+the widget namespace should be flat, perhaps all accessible from a dict.
+
+
+==================
+  Widget Classes
+==================
+The widgets that must be accessible from the callbacks are:
+1) Status panel
+2) Packages tree
+3) Package details tabs
+4) Package contents tree
+
+If we are to give the search bar "awesome bar" capabilities, then the search
+bar must be accessible as well.
