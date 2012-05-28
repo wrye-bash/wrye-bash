@@ -6908,7 +6908,7 @@ DEL %%0"""
             deprint('Updater: Automatically initiating update check.',trace=False)
         self.pool = multiprocessing.Pool(processes=1)
         func = bweb.getAllUpdates
-        args = (settings['bash.readme'][1],)
+        args = (settings['bash.version'],)
         self.result = self.pool.apply_async(func,args)
         # Check for results in 1 second
         wx.CallLater(1000,self.CheckUpdateStatus)
@@ -6952,7 +6952,7 @@ DEL %%0"""
 
     def FilterUpdates(self,updates):
         """Filter out updates that are already installed"""
-        currentVersion = settings['bash.readme'][1]
+        currentVersion = settings['bash.version']
         installedDefs = settings['bash.update.defs']
         installedLangs = settings['bash.update.lang']
         for version in updates:
@@ -7175,7 +7175,7 @@ DEL %%0"""
         else:
             backupExt = u'.7z'
         backup  = u'Wrye_Bash_%s%s_backup_%s%s' % (
-            settings['bash.readme'][1],kind,
+            settings['bash.version'],kind,
             time.strftime(u'%d-%m-%Y-%H%M',time.localtime()),
             backupExt)
         backup = outDir.join(backup).s
@@ -7479,7 +7479,7 @@ class BashFrame(wx.Frame):
                 title = bush.game.altName + u' %s%s'
             else:
                 title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.name
-            title = title % (settings['bash.readme'][1],
+            title = title % (settings['bash.version'],
                 _(u'(Standalone)') if settings['bash.standalone'] else u'')
             if CBash:
                 title += u', CBash v%u.%u.%u: ' % (
@@ -8479,15 +8479,17 @@ class ModChecker(wx.Frame):
 
 #------------------------------------------------------------------------------
 def GetBashVersion():
+    return bass.AppVersion
+
     #--Version from readme
-    readme = bosh.dirs['mopy'].join(u'Wrye Bash.txt')
-    if readme.exists() and readme.mtime != settings['bash.readme'][0]:
-        reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
-        for line in readme.open(encoding='utf-8-sig'):
-            maVersion = reVersion.match(line)
-            if maVersion:
-                return (readme.mtime,maVersion.group(1))
-    return settings['bash.readme'] #readme file not found or not changed
+    #readme = bosh.dirs['mopy'].join(u'Wrye Bash.txt')
+    #if readme.exists() and readme.mtime != settings['bash.readme'][0]:
+    #    reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
+    #    for line in readme.open(encoding='utf-8-sig'):
+    #        maVersion = reVersion.match(line)
+    #        if maVersion:
+    #            return (readme.mtime,maVersion.group(1))
+    #return settings['bash.readme'] #readme file not found or not changed
 
 #------------------------------------------------------------------------------
 class BashApp(wx.App):
@@ -8567,8 +8569,8 @@ class BashApp(wx.App):
                     del balt.sizes[key]
         #--Current Version
         settings['bash.version'] = 43
-        if settings['bash.readme'] != GetBashVersion():
-            settings['bash.readme'] = GetBashVersion()
+        if settings['bash.version'] != GetBashVersion():
+            settings['bash.version'] = GetBashVersion()
             # rescan mergeability
             if not CBash: #Because it is rescanned on showing of patch dialogue anyways so that would double up in CBash Mode.
                 nullProgress = bolt.Progress()
@@ -13472,7 +13474,7 @@ class UpdateDialog(wx.Dialog):
             definitions = version_updates['definitions']
             languages = version_updates['languages']
 
-            if ((not bool(programs) and version != settings['bash.readme'][1]) or
+            if ((not bool(programs) and version != settings['bash.version']) or
                 (not programs and not definitions and not languages)):
                 continue
             ids = []
@@ -13527,7 +13529,7 @@ class UpdateDialog(wx.Dialog):
                     date_rev = update[1]
                     date_rev = ' '+date_rev[1]+'-'+date_rev[2]+'-'+date_rev[0]+date_rev[3]
                     check = balt.checkBox(self,text+date_rev)
-                    if version == settings['bash.readme'][1] and GPath(update[0]) in settings[key]:
+                    if version == settings['bash.version'] and GPath(update[0]) in settings[key]:
                         # It's an update for the user's current version, and it's already
                         # been applied
                         check.Enable(False)
