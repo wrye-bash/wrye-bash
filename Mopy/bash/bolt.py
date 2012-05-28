@@ -2662,7 +2662,7 @@ class StringTable(dict):
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
                     deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
-                            % (dataSize, eof-dataSize, stringsStart))
+                            % (path, dataSize, eof-dataSize, stringsStart))
 
                 for x in xrange(numIds):
                     progress(x)

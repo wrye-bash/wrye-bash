@@ -11677,7 +11677,7 @@ class Installer_OpenTesNexus(InstallerLink):
         message = _(u"Attempt to open this as a mod at TES Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_(u'Open at TES Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+id)
+            os.startfile(u'http://oblivion.nexusmods.com/mods/'+id)
 
 class Installer_OpenSkyrimNexus(InstallerLink):
     def AppendToMenu(self,menu,window,data):
@@ -11691,7 +11691,7 @@ class Installer_OpenSkyrimNexus(InstallerLink):
         message = _(u"Attempt to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_(u'Open at Skyrim Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://www.skyrimnexus.com/downloads/file.php?id='+id)
+            os.startfile(u'http://skyrim.nexusmods.com/downloads/file.php?id='+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
