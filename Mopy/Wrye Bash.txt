@@ -2531,7 +2531,12 @@ msgid "Argument is out"
 {{CONTENTS=0}}
 **All versions by Wrye unless otherwise noted.**
 
-=== 296 [XX/X/2012] [Lojack,PacificMorrowind,Waruddar]
+=== 297 [xx/x/2012] [Trira,Daidalos,Other community members]
+* We're working on it :)
+* General bugfixing for Skyrim and Oblivion.
+* Some potential lag relief for Bash's use of BAPI.
+
+=== 296 [27/5/2012] [Lojack,PacificMorrowind,Waruddar]
 * CBash updated to version 0.6
 * Bashed Patch:
   * Races Patcher refactored a bit: now has racial tweaks you can select and source mods that you can select.
@@ -2553,7 +2558,9 @@ msgid "Argument is out"
 * Duplicate files for multiple files fixed.
 * Minimum Column width enforced.
 * Status bar help tips added to many menu items.
- 
+* General error cleanup in parts of the code.
+* Updated URLs for Nexus information.
+
 === 295.5 [17/1/2012] [Lojack,PacificMorrowind]
 * Bugfix release:
   * Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
