@@ -4793,6 +4793,7 @@ class FileInfos(DataDict):
         fileInfo = self[oldName]
         #--File system
         newPath = self.dir.join(newName)
+        oldIndex = boss.GetPluginLoadOrder(oldName)
         if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
         oldPath.moveTo(newPath)
@@ -4802,6 +4803,7 @@ class FileInfos(DataDict):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
+        boss.SetPluginLoadOrder(newName, oldIndex)
         #--Done
         fileInfo.madeBackup = False
 
