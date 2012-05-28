@@ -400,6 +400,14 @@ class ModWriter:
         """Write subrecord header and fid reference."""
         if fid is not None: self.out.write(struct.pack('=4sHI',type,4,fid))
 
+    def writeGroup(self,size,label,groupType,stamp):
+        if type(label) is str:
+            self.pack('=4sI4sII','GRUP',size,label,groupType,stamp)
+        elif type(label) is tuple:
+            self.pack('=4sIhhII','GRUP',size,label[1],label[0],groupType,stamp)
+        else:
+            self.pack('=4s4I','GRUP',size,label,groupType,stamp)
+
 # Mod Record Elements ----------------------------------------------------------
 #-------------------------------------------------------------------------------
 # Constants
