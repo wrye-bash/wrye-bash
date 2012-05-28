@@ -7446,6 +7446,14 @@ class PatchDialog(wx.Dialog):
                 message = _(u'Activate %s?') % patchName.s
                 if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
                     try:
+                        # Note to the regular WB devs:
+                        #  The bashed patch wasn't activating when it had been manually deleting. So, on
+                        #   startup, WB would create a new one, but something, somewhere (BAPI?) wasn't
+                        #   registering this so when this: bosh.modInfos.select(patchName) executed, bash
+                        #   couldn't actually find anything to execute. This fix really belongs somewhere else
+                        #   (after the patch is recreated?), but I don't know where it goes, so I'm sticking it
+                        #   here until one of you come back or I find a better place.
+                        bosh.modInfos.refreshBapi(True)
                         oldFiles = bosh.modInfos.ordered[:]
                         bosh.modInfos.select(patchName)
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
@@ -17577,7 +17585,7 @@ class App_BOSS(App_Button):
                     balt.showError(bashFrame,
                                    (_(u"Used Path: %s") % exePath.s + u'\n' +
                                     _(u"Used Arguments: %s") % exeArgs),
-                                   _(u'Could not launch BOSS'))
+                                    _(u'Could not launch BOSS'))
                 finally:
                     cwd.setcwd()
         else:
