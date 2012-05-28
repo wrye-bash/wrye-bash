@@ -1787,6 +1787,7 @@ class ModList(List):
             itemDex = self.items.index(itemDex)
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
+        fileBashTags = bosh.modInfos[fileName].getBashTags()
         cols = self.cols
         for colDex in range(self.numCols):
             col = cols[colDex]
@@ -1845,7 +1846,7 @@ class ModList(List):
             item.SetTextColour(colors['mods.text.esm'])
             mouseText += _(u"Master file. ")
         elif fileName in bosh.modInfos.mergeable:
-            if u'NoMerge' in bosh.modInfos[fileName].getBashTags():
+            if u'NoMerge' in fileBashTags:
                 item.SetTextColour(colors['mods.text.noMerge'])
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
             else:
@@ -1863,7 +1864,7 @@ class ModList(List):
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
 
         #should mod be deactivated
-        if u'Deactivate' in bosh.modInfos[fileName].getBashTags():
+        if u'Deactivate' in fileBashTags:
             item.SetFont(fonts[2])
         else:
             item.SetFont(fonts[0])
@@ -1884,7 +1885,7 @@ class ModList(List):
         elif fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             mouseText += _(u"WARNING: Has same load order as another mod.  ")
-        elif u'Deactivate' in bosh.modInfos[fileName].getBashTags() and checkMark == 1:
+        elif u'Deactivate' in fileBashTags and checkMark == 1:
             item.SetBackgroundColour(colors['mods.bkgd.deactivate'])
             mouseText += _(u"Mod should be imported and deactivated.  ")
         elif fileInfo.isExOverLoaded():
