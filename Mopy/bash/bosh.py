@@ -5536,7 +5536,7 @@ class ModInfos(FileInfos):
             allMods = self.getOrdered([x for x in allMods if x in self])
             #--List
             modIndex,header = 0, None
-            if not wtxt: log(u'[spoiler][xml]', False)
+            if not wtxt: log(u'[spoiler][xml]\n', False)
             for name in allMods:
                 if name in masters:
                     prefix = bul+u'%02X' % (modIndex)
@@ -5574,7 +5574,7 @@ class ModInfos(FileInfos):
         Either for all mods in the data folder or if specified for one specific mod.
         """
         tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
-        tagList += u'[spoiler][xml]'
+        tagList += u'[spoiler][xml]\n'
         if modList:
             for modInfo in modList:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
@@ -8294,7 +8294,7 @@ class InstallerArchive(Installer):
         with sio() as out:
             log = bolt.LogFile(out)
             log.setHeader(_(u'Package Structure:'))
-            log(u'[spoiler][xml]', False)
+            log(u'[spoiler][xml]\n', False)
             reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
             file = u''
             isdir = False
@@ -8545,7 +8545,7 @@ class InstallerProject(Installer):
         with sio() as out:
             log = bolt.LogFile(out)
             log.setHeader(_(u'Package Structure:'))
-            log(u'[spoiler][xml]', False)
+            log(u'[spoiler][xml]\n', False)
             apath = dirs['installers'].join(archive)
 
             walkPath(apath.s, 0)
@@ -9446,7 +9446,7 @@ class InstallersData(bolt.TankData, DataDict):
             allPackages = sorted(self.data,key=orderKey)
             #--List
             modIndex,header = 0, None
-            log(u'[spoiler][xml]',False)
+            log(u'[spoiler][xml]\n',False)
             for package in allPackages:
                 prefix = u'%03d' % (self.data[package].order)
                 if isinstance(self.data[package],InstallerMarker):
