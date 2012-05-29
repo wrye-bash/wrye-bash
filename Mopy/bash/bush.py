@@ -35,6 +35,7 @@ from bolt import GPath,Path,deprint
 # Setup -----------------------------------------------------------------------
 game = None
 gamePath = None
+dontSkip = None
 
 def detectGames(workingDir=u''):
     """Detect which supported games are intalled.

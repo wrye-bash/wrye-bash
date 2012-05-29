@@ -100,6 +100,11 @@ class laa:
     exe = u'**DNE**'     # Executable to run
     launchesSE = False  # Whether the launcher will automatically launch the SE as well
 
+# Files BAIN shouldn't skip
+dontSkip = (
+# Nothing so far
+)
+
 #--Some stuff dealing with INI files
 class ini:
     #--True means new lines are allowed to be added via INI Tweaks
