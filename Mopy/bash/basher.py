@@ -20381,10 +20381,12 @@ def InitModLinks():
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
-        ModList.itemMenu.append(Mod_DecompileAll())
+        if bush.game.name != u'Skyrim':
+            ModList.itemMenu.append(Mod_DecompileAll())
         ModList.itemMenu.append(Mod_FlipSelf())
         ModList.itemMenu.append(Mod_FlipMasters())
-        ModList.itemMenu.append(Mod_SetVersion())
+        if bush.game.name == u'Oblivion':
+            ModList.itemMenu.append(Mod_SetVersion())
 #    if bosh.inisettings['showadvanced'] == 1:
 #        advmenu = MenuLink(_(u"Advanced Scripts"))
 #        advmenu.links.append(Mod_DiffScripts())
