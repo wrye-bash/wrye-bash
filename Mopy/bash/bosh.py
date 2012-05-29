@@ -7382,7 +7382,7 @@ class Installer(object):
             elif fileExt in docExts:
                 if reReadMeMatch(file):
                     self.hasReadme = full
-                if skipDocs:
+                if skipDocs and not (fileLower.split('\\')[-1] in bush.dontSkip):
                     continue
             elif fileStartsWith(u'--'):
                 continue
