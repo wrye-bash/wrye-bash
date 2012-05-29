@@ -272,6 +272,7 @@ allBethFiles = set((
 dataDirs = set((
     u'bash patches',
     u'dialogueviews',
+    u'docs',
     u'interface',
     u'meshes',
     u'strings',
