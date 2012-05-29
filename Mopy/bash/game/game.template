@@ -94,6 +94,11 @@ class laa:
     exe = '*DNE*'       # Executable to run
     launchesSE = False  # Whether the launcher will automatically launch the SE
 
+# Files BAIN shouldn't skip
+dontSkip = (
+# Nothing so far
+)
+
 #--Save Game format stuff
 class ess:
     # Save file capabilities

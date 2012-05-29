@@ -99,6 +99,12 @@ class laa:
     exe = u'**DNE**'
     launchesSE = False
 
+# Files BAIN shouldn't skip
+dontSkip = (
+       u'skyui_cfg.txt',
+       u'skyui_translate.txt'
+)
+
 #--Some stuff dealing with INI files
 class ini:
     #--True means new lines are allowed to be added via INI Tweaks
