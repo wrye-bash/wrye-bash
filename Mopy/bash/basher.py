@@ -9105,8 +9105,10 @@ class PatchDialog(wx.Dialog):
             return
         if self.doCBash:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
+            bosh.PatchFile.patchName = bosh.CBash_PatchFile.patchName
         else:
             bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
+            bosh.CBash_PatchFile.patchName = bosh.PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
     def ConvertConfig(self,patchConfigs):
@@ -16090,11 +16092,13 @@ class Mod_Patch_Update(Link):
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
             if self.doCBash:
                 bosh.CBash_PatchFile.patchTime = fileInfo.mtime
+                bosh.CBash_PatchFile.patchName = fileInfo.name
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
             else:
                 bosh.PatchFile.patchTime = fileInfo.mtime
+                bosh.PatchFile.patchName = fileInfo.name
                 if settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
