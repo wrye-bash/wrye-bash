@@ -14247,10 +14247,21 @@ class PatchFile(ModFile):
         self.patcher_mod_skipcount = {}
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
+
         #--Mods
-        loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
+
+        database = boss.ActivePlugins
+        loadMods = []
+        for name in database:
+            if(name == self.fileInfo.name):
+                break
+            else:
+                loadMods.append(name)
+
+        #loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
+
         if not loadMods:
-            raise BoltError(u"No active mods dated before the bashed patch")
+            raise BoltError(u"No active mods set to load before the bashed patch")
         self.setMods(loadMods, [])
         for patcher in self.patchers:
             patcher.initPatchFile(self,loadMods)
@@ -14617,10 +14628,21 @@ class CBash_PatchFile(ObModFile):
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         self.races_vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
         self.races_data = {'EYES':[],'HAIR':[]}
+
         #--Mods
-        loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
+
+        database = boss.ActivePlugins
+        loadMods = []
+        for name in database:
+            if(name == CBash_PatchFile.patchName):
+                break
+            else:
+                loadMods.append(name)
+
+        #loadMods = [name for name in modInfos.ordered if modInfos[name].mtime < self.patchTime]
+
         if not loadMods:
-            raise BoltError(u"No active mods dated before the bashed patch")
+            raise BoltError(u"No active mods set to load before the bashed patch")
         self.setMods(loadMods,[])
         for patcher in self.patchers:
             patcher.initPatchFile(self,loadMods)
@@ -14712,15 +14734,18 @@ class CBash_PatchFile(ObModFile):
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
         for name in self.mergeSet:
-            if modInfos[name].mtime < self.patchTime:
+            #if modInfos[name].mtime < self.patchTime:
+            if boss.GetPluginLoadOrder(name) < boss.GetPluginLoadOrder(self.patchName):
                 self.Current.addMergeMod(modInfos[name].getPath().stail)
         for name in self.loadSet:
             if name not in self.mergeSet:
-                if modInfos[name].mtime < self.patchTime:
+                #if modInfos[name].mtime < self.patchTime:
+                if boss.GetPluginLoadOrder(name) < boss.GetPluginLoadOrder(self.patchName):
                     self.Current.addMod(modInfos[name].getPath().stail)
         for name in self.scanSet:
             if name not in self.mergeSet and name not in self.loadSet:
-                if modInfos[name].mtime < self.patchTime:
+                #if modInfos[name].mtime < self.patchTime:
+                if boss.GetPluginLoadOrder(name) < boss.GetPluginLoadOrder(self.patchName):
                     self.Current.addScanMod(modInfos[name].getPath().stail)
         self.patchName.temp.remove()
         patchFile = self.patchFile = self.Current.addMod(self.patchName.temp.s, CreateNew=True)
@@ -15127,11 +15152,22 @@ class ListPatcher(Patcher):
             autoKey = set((autoKey,))
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
-                if modInfo.mtime > PatchFile.patchTime: continue
-                autoItems.append(modInfo.name)
-                if self.choiceMenu: self.getChoice(modInfo.name)
+
+        database = boss.LoadOrder
+        for name in database:
+            if autoRe.match(name.s) or (autoKey & modInfos.data.get(name).getBashTags()):
+                autoItems.append(name)
+                if self.choiceMenu: self.getChoice(name)
+            if name == PatchFile.patchName:
+                break
+
+        #for modInfo in modInfos.data.values():
+        #       if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
+        #               #if modInfo.mtime > PatchFile.patchTime: continue
+        #               if boss.GetPluginLoadOrder(modInfo.name) > boss.GetPluginLoadOrder(PatchFile.patchName): continue
+        #               autoItems.append(modInfo.name)
+        #               if self.choiceMenu: self.getChoice(modInfo.name)
+
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(dirs['patches'].list()):
             if reFile.search(fileName.s):
@@ -15213,11 +15249,20 @@ class CBash_ListPatcher(CBash_Patcher):
             autoKey = set((autoKey,))
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
-                if modInfo.mtime > CBash_PatchFile.patchTime: continue
-                autoItems.append(modInfo.name)
-                if self.choiceMenu: self.getChoice(modInfo.name)
+
+        database = boss.LoadOrder
+        for name in database:
+            if autoRe.match(name.s) or (autoKey & modInfos.data.get(name).getBashTags()):
+                autoItems.append(name)
+                if self.choiceMenu: self.getChoice(name)
+            if name == CBash_PatchFile.patchName:
+                break
+
+        #for modInfo in modInfos.data.values():
+        #       if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
+        #               if modInfo.mtime > CBash_PatchFile.patchTime: continue
+        #               autoItems.append(modInfo.name)
+
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(dirs['patches'].list()):
             if reFile.search(fileName.s):
@@ -15614,9 +15659,19 @@ class PatchMerger(ListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < PatchFile.patchTime:
-                autoItems.append(modInfo.name)
+
+        database = boss.LoadOrder
+        for name in database:
+            if name == PatchFile.patchName:
+                break
+            if name in modInfos.mergeable and u'NoMerge' not in modInfos.data.get(name).getBashTags():
+                autoItems.append(name)
+
+        #for modInfo in modInfos.data.values():
+        #       #if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < PatchFile.patchTime:
+        #       if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and boss.GetPluginLoadOrder(modInfo.name) < boss.GetPluginLoadOrder(PatchFile.patchName):
+        #               autoItems.append(modInfo.name)
+
         return autoItems
 
     #--Patch Phase ------------------------------------------------------------
@@ -15642,9 +15697,18 @@ class CBash_PatchMerger(CBash_ListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < CBash_PatchFile.patchTime:
-                autoItems.append(modInfo.name)
+
+        database = boss.LoadOrder
+        for name in database:
+            if name == CBash_PatchFile.patchName:
+                break
+            if name in modInfos.mergeable and u'NoMerge' not in modInfos.data.get(name).getBashTags():
+                autoItems.append(name)
+
+        #for modInfo in modInfos.data.values():
+        #       if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and modInfo.mtime < CBash_PatchFile.patchTime:
+        #               autoItems.append(modInfo.name)
+
         return autoItems
 
     #--Patch Phase ------------------------------------------------------------
@@ -28871,10 +28935,20 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = set(self.__class__.autoKey)
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
-                if modInfo.mtime > PatchFile.patchTime: continue
-                autoItems.append(modInfo.name)
+
+        database = boss.GetLoadOrder()
+        for name in database:
+            if autoRe.match(name.s) or (autoKey & set(modInfos.data.get(name).getBashTags())):
+                autoItems.append(name)
+            if name == PatchFile.patchName:
+                break
+
+        #for modInfo in modInfos.data.values():
+        #       if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
+        #              #if modInfo.mtime > PatchFile.patchTime: continue
+        #              if boss.GetPluginLoadOrder(modInfo.name) > boss.GetPluginLoadOrder(PatchFile.patchName): continue
+        #              autoItems.append(modInfo.name)
+
         return autoItems
 
     #--Patch Phase ------------------------------------------------------------
