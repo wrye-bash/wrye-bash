@@ -16074,16 +16074,10 @@ class Mod_Patch_Update(Link):
         """Handle activation event."""
         # Create plugin dictionaries -- used later. Speeds everything up! Yay!
         fullLoadOrder   = bosh.boss.LoadOrder
-        activeLoadOrder = bosh.boss.ActivePlugins
 
         index = 0
         for name in fullLoadOrder:
             bush.fullLoadOrder[name] = index
-            index = index + 1
-
-        index = 0
-        for name in activeLoadOrder:
-            bush.activeLoadOrder[name] = index
             index = index + 1
 
         fileName = GPath(self.data[0])
