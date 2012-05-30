@@ -1756,9 +1756,9 @@ class ModList(List):
         bosh.boss.LoadOrder = newOrder
         bosh.modInfos.refreshBapi(False, True)
         bosh.modInfos.refreshInfoLists()
-        self.RefreshUI()
+        self.RefreshUI(reloadTags=False)
 
-    def RefreshUI(self,files='ALL',detail='SAME',refreshSaves=True):
+    def RefreshUI(self,files='ALL',detail='SAME',refreshSaves=True,reloadTags=True):
         """Refreshes UI for specified file. Also calls saveList.RefreshUI()!"""
         #--Details
         if detail == 'SAME':
@@ -1767,13 +1767,13 @@ class ModList(List):
             selected = set([detail])
         #--Populate
         if files == 'ALL':
-            self.PopulateItems(selected=selected)
+            self.PopulateItems(selected=selected,reloadTags=reloadTags)
         elif isinstance(files,bolt.Path):
-            self.PopulateItem(files,selected=selected)
+            self.PopulateItem(files,selected=selected,reloadTags=reloadTags)
         else: #--Iterable
             for file in files:
                 if file in bosh.modInfos:
-                    self.PopulateItem(file,selected=selected)
+                    self.PopulateItem(file,selected=selected,reloadTags=reloadTags)
         modDetails.SetFile(detail)
         bashFrame.SetStatusCount()
         #--Saves
@@ -1781,13 +1781,13 @@ class ModList(List):
             saveList.RefreshUI()
 
     #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
+    def PopulateItem(self,itemDex,mode=0,selected=set(),reloadTags=True):
         #--String name of item?
         if not isinstance(itemDex,int):
             itemDex = self.items.index(itemDex)
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
-        fileBashTags = bosh.modInfos[fileName].getBashTags()
+        fileBashTags = bosh.modInfos[fileName].getBashTags(reload=reloadTags)
         cols = self.cols
         for colDex in range(self.numCols):
             col = cols[colDex]
@@ -1918,6 +1918,11 @@ class ModList(List):
             self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
         #--Status bar text
 
+    def PopulateItems(self,col=None,reverse=-2,selected='SAME',reloadTags=True):
+        """Sort items and populate entire list."""
+        if reloadTags: bosh.modInfos.reloadBashTags()
+        super(ModList, self).PopulateItems(col,reverse,selected)
+
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
         (col, reverse) = self.GetSortSettings(col,reverse)
@@ -2005,8 +2010,8 @@ class ModList(List):
                         if bosh.modInfos[thisFile].isEsm() != bosh.modInfos[swapFile].isEsm(): break
                         bosh.modInfos.swapOrder(thisFile,swapFile)
                         bosh.modInfos.refreshInfoLists()
-                        self.RefreshUI(refreshSaves=False)
-                    self.RefreshUI([],refreshSaves=True)
+                        self.RefreshUI(refreshSaves=False,reloadTags=False)
+                    self.RefreshUI([],refreshSaves=True,reloadTags=False)
         event.Skip()
 
     def OnKeyUp(self,event):
@@ -2301,7 +2306,7 @@ class ModDetails(SashPanel):
             self.SetFile(self.modInfo.name)
             bosh.modInfos.refresh(doInfos=False)
             bosh.modInfos.refreshInfoLists()
-            modList.RefreshUI()
+            modList.RefreshUI(reloadTags=False)
             return
         #--Backup
         modInfo.makeBackup()
@@ -3303,7 +3308,7 @@ class InstallersList(balt.Tank):
             #--Refresh UI
             if refreshNeeded:
                 self.data.refresh(what='I')
-                modList.RefreshUI()
+                modList.RefreshUI(reloadTags=False)
                 if iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
                     # and never initialized
@@ -12765,7 +12770,7 @@ class Mods_LoadList:
     def DoNone(self,event):
         """Unselect all mods."""
         bosh.modInfos.selectExact([])
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
 
     def DoAll(self,event):
         """Select all mods."""
@@ -12787,14 +12792,14 @@ class Mods_LoadList:
                     modInfos.select(mod)
         except bosh.PluginsFullError:
             balt.showError(self.window, _(u"Mod list is full, so some mods were skipped"), _(u'Select All'))
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
 
     def DoList(self,event):
         """Select mods in list."""
         item = self.GetItems()[event.GetId()-ID_LOADERS.BASE]
         selectList = [GPath(modName) for modName in self.data[item]]
         errorMessage = bosh.modInfos.selectExact(selectList)
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
         if errorMessage:
             balt.showError(self.window,errorMessage,item)
 
@@ -13164,7 +13169,7 @@ class Mods_LockTimes(Link):
         if not lockLO: bosh.modInfos.mtimes.clear()
         settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
 
 #------------------------------------------------------------------------------
 class Mods_OblivionVersion(Link):
@@ -13186,7 +13191,7 @@ class Mods_OblivionVersion(Link):
         if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
         bosh.modInfos.refresh()
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
         bashFrame.SetTitle()
@@ -14542,7 +14547,7 @@ class Mod_BaloGroups_Edit(wx.Dialog):
         bosh.modInfos.setBaloGroups(self.groups,self.removed)
         bosh.modInfos.updateAutoGroups()
         bosh.modInfos.refresh()
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
@@ -17547,7 +17552,7 @@ class Saves_Profiles:
         self.swapOblivionVersion(newSaves)
         bashFrame.SetTitle()
         self.window.details.SetFile(None)
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
         bashFrame.RefreshData()
 
     def DoList(self,event):
@@ -17562,7 +17567,7 @@ class Saves_Profiles:
         self.window.details.SetFile(None)
         bashFrame.RefreshData()
         bosh.modInfos.autoGhost()
-        modList.RefreshUI()
+        modList.RefreshUI(reloadTags=False)
 
     def swapPlugins(self,arcSaves,newSaves):
         """Saves current plugins into arcSaves directory and loads plugins
