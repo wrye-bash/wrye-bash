@@ -37,7 +37,6 @@ game = None
 gamePath = None
 dontSkip = None
 fullLoadOrder = {}
-activeLoadOrder = {}
 
 def detectGames(workingDir=u''):
     """Detect which supported games are intalled.
