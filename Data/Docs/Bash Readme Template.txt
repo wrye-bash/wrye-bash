@@ -67,7 +67,7 @@ o Alternate bullet char
 * **BoldItalic**
 
 ===Links
-* External Link: [[http://wrye.ufrealms.net]] or [[http://wrye.ufrealms.net | Wrye Musings]]
+* External Link: [[http://www.wryemusings.com]] or [[http://www.wryemusings.com | Wrye Musings]]
 * Internal Link: [[#ReuseandCredits| Reuse and Credits]] or [[#| Reuse and Credits]].
 * {{A:Non-Header Anchor}} is linked to by [[#|Non-Header Anchor]]
 * **Notes:**
@@ -97,7 +97,7 @@ Blank lines can be used as spacers:
 
 
 == Reuse and Credits ==========================================================
-~~Optional. Licenses are particularly useful for keeping mods alive after the original author(s) has left the scene and/or the original download server has gone down. The default license below is fairly generous. You can find other licenses at [[http://wrye.ufrealms.net/WML%201.0.html | Wrye Modding Licenses 1.0]] or you may wish to make your own. You can skip a license altogether, but this may result in your mod becoming unavailable eventually if you can't be contacted.~~
+~~Optional. Licenses are particularly useful for keeping mods alive after the original author(s) has left the scene and/or the original download server has gone down. The default license below is fairly generous. You can find other licenses at [[http://www.wryemusings.com/WML%201.0.html | Wrye Modding Licenses 1.0]] or you may wish to make your own. You can skip a license altogether, but this may result in your mod becoming unavailable eventually if you can't be contacted.~~
 
 === License: WML 1.0 Modify and Redistribute, Share Alike
 * You are free to redistribute this work in unmodified form.
