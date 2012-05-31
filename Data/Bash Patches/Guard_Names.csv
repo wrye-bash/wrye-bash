@@ -510,6 +510,20 @@ NPC_,road+bridges.esp,0x000883,NRB4ImperialLegionSoldierDownstairs,Roadsman Luca
 NPC_,road+bridges.esp,0x014625,NRB4ImperialLegionSoldierRoadTowers,Roadsman Waldo
 NPC_,road+bridges.esp,0x014628,NRB4ImperialLegionSoldierRoadTowersIndoors,Roadsman Caesar
 ,,,,
+NPC_,Roads of Cyrodiil.esp,0x01705F,NRB4ImperialLegionRiderHalfwayInn1,Roadsman Warren
+NPC_,Roads of Cyrodiil.esp,0x01DDA8,NRB4ImperialLegionRiderHalfwayInn2,Roadsman Brunus
+NPC_,Roads of Cyrodiil.esp,0x01705A,NRB4ImperialLegionSoldierDownstairs,Roadsman Lucas
+,,,,
+CREA,Roads of Cyrodiil.esp,0x000878,NRB4ImpLegionHorseHalfwayInn,Marceror
+NPC_,Roads of Cyrodiil.esp,0x000884,NRB4ImperialLegionRiderHalfwayInn1,Roadsman Warren
+NPC_,Roads of Cyrodiil.esp,0x000885,NRB4ImperialLegionRiderHalfwayInn2,Roadsman Brunus
+NPC_,Roads of Cyrodiil.esp,0x0128F2,NRB4ImperialLegionRiderICAU,Roadsman Tellurius
+NPC_,Roads of Cyrodiil.esp,0x000886,NRB4ImperialLegionRiderNibenBridge,Roadsman Sanjius
+NPC_,Roads of Cyrodiil.esp,0x00D023,NRB4ImperialLegionRiderNibenBridge2,Roadsman Trovius
+NPC_,Roads of Cyrodiil.esp,0x000883,NRB4ImperialLegionSoldierDownstairs,Roadsman Lucas
+NPC_,Roads of Cyrodiil.esp,0x014625,NRB4ImperialLegionSoldierRoadTowers,Roadsman Waldo
+NPC_,Roads of Cyrodiil.esp,0x014628,NRB4ImperialLegionSoldierRoadTowersIndoors,Roadsman Caesar
+,,,,
 NPC_,Mart's Monster Mod.esm,0x000CF6,ArcherAnvil,Private Gergus
 NPC_,Mart's Monster Mod.esm,0x001BBA,ArcherBravil,Private Ildoni
 NPC_,Mart's Monster Mod.esm,0x007462,ArcherBruma,Private Synniu
