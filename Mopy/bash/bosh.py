@@ -5276,6 +5276,9 @@ class ModInfos(FileInfos):
             mod = modInfos[GPath(path)]
             tags = (mod.getBashTagsDesc() or set()) | (configHelpers.getBashTags(mod.name) or set())
             tags -= (configHelpers.getBashRemoveTags(mod.name) or set())
+            tags = tags & allTagsSet
+            if tags & oldTagsSet:
+                tags -= oldTagsSet
             mod.setBashTags(tags)
 
     #--Full Balo --------------------------------------------------------------
@@ -6283,7 +6286,7 @@ class ConfigHelpers:
         #--No masterlist, use the taglist
         taglist = dirs['mods'].join(u'Bash Patches',bush.game.name,u'taglist.txt')
         if not taglist.exists():
-            raise bolt.BoltError(u'Data\\Bash Patches\\'+bush.game.name+u'taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Data\\Bash Patches\\'+bush.game.name+u'\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
