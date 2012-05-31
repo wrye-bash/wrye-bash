@@ -3,10 +3,10 @@
 <a href="http://validator.w3.org/check?uri=http%3A%2F%2Foblivionworks.svn.sourceforge.net%2Fviewvc%2Foblivionworks%2FPrograms%2FWrye%20Bash%2FMopy%2FWrye%20Bash.html"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0 Strict" height="31" width="88" /></a>
 === Quick Start
 * __[[#|Installation]]__
-* [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]]
-* [[http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/|RELZ Topic]]
-* [[https://sourceforge.net/projects/oblivionworks/|SourceForge Development Site]]
-* Download: [[http://tesnexus.com/downloads/file.php?id=22368|TesNexus]]
+* [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash | How To's and FAQs]]
+* [[http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/ | RELZ Topic]]
+* [[https://sourceforge.net/projects/oblivionworks/ | SourceForge Development Site]]
+* Download: [[http://oblivion.nexusmods.com/mods/22368 | TesNexus]]
 * [[wizards.html|BAIN Wizard Reference]]
 * [[patch_option_reference.html|Patch Option Reference]]
 * [[#Versions|Change Log]]
@@ -19,8 +19,8 @@
 __After you [[#Installation|install Wrye Bash]],__ you may find yourself a bit lost in the features. The rest of this manual describes the features in depth, but if you're looking to just do one or two things quickly, then you should consult the __[[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|Wrye Bash Help Pages]]__ at UESP.
 
 In particular, see:
-* [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Basic|Wrye Bash Basic Usage]] for quick "how to" guides of most common bash uses.
-* [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Advanced|Wrye Bash Advanced FAQs]]: Overviews of using advanced Bash features.
+* [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Basic | Wrye Bash Basic Usage]] for quick "how to" guides of most common bash uses.
+* [[http://www.uesp.net/wiki/Tes4Mod:Wrye Bash/Advanced | Wrye Bash Advanced FAQs]]: Overviews of using advanced Bash features.
 
 == Quick Tour
 <img src="bash/images/wryebash_04.png" style="width: 686; height: 527; border: 0;" alt="Saves Tab"></img>
@@ -81,12 +81,12 @@ In particular, see:
   * Kmacg94: Additional power exhaustion coverage.
   * To the testers/bug finders/helpful people on the forum when others have trouble (hopefully not missing too many people): Arthmoor, Corepc, Daemondarque, TommyH, Surazal, many others
 * **Misc. Resources**
-  * [[http://www.famfamfam.com/lab/icons/silk/|FamFamFam icons]]
+  * [[http://www.famfamfam.com/lab/icons/silk/ | FamFamFam icons]]
 
 === Homage Credits
 . ~~Aka, ideas/stuff I stole from other people.~~
 * Names Files
-  * Flak: [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=123|Flak's Complete Names Project]]
+  * Flak: [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=123 | Flak's Complete Names Project]]
 * Bash Features
   * Kyorisu: Tes IV Save Manager (Save Profiles)
   * No Light Flicker: Crypton's No Light Flicker mods
@@ -108,31 +108,31 @@ In particular, see:
 * If you have a question/comment about Wrye Bash, it's best to post it on the current RELZ topic on the Bethesda Game Studios (BGS) forums.
 
 == License ===================================================================
-Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed [[license.txt]] file for license details, or visit the [[http://www.gnu.org/copyleft/gpl.html|GNU Website]] for information on all of their licenses.
+Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed [[license.txt]] file for license details, or visit the [[http://www.gnu.org/copyleft/gpl.html | GNU Website]] for information on all of their licenses.
 
 === Packaged Programs
 Additionally, Wrye Bash comes packaged with the following programs:
 * Mozilla's chardet library.
-  * Website: [[http://pypi.python.org/pypi/chardet|Python.org]]
-  * License: [[http://www.gnu.org/licenses/lgpl.html|LGPL 2.1]]
+  * Website: [[http://pypi.python.org/pypi/chardet | Python.org]]
+  * License: [[http://www.gnu.org/licenses/lgpl.html | LGPL 2.1]]
   * Usage: Wrye Bash uses this library to help in detecting character encodings use when reading and writing encoded Unicode strings.
   * Modifications: Minor modifications to bring chardet in line with Python 2.7 - removed the EUCTWProber, from the MBCSGroupProber class.
 * BOSS API (Better Oblivion Sorting Software API)
-  * Website: [[http://code.google.com/p/better-oblivion-sorting-software/|Googlecode]]
-  * License: API - [[http://www.gnu.org/licenses/gpl.html|GPL 3.0]], Documentation - [[http://www.gnu.org/licenses/fdl.html|GNU FDL 1.3]].
+  * Website: [[http://code.google.com/p/better-oblivion-sorting-software/ | Googlecode]]
+  * License: API - [[http://www.gnu.org/licenses/gpl.html | GPL 3.0]], Documentation - [[http://www.gnu.org/licenses/fdl.html | GNU FDL 1.3]].
   * Usage: Wrye Bash uses this libarary to modify Load Order, and retrieve Bash Tag suggestions and Dirty mod information from BOSS's plugin databases.
 * CBash
-  * Website: [[http://sourceforge.net/projects/cbash/|SourceForge]]
-  * License: Triple-license [[http://www.mozilla.org/MPL/|MPL 1.1]]/[[http://www.gnu.org/copyleft/gpl.html|GPL 2.0]]/[[http://www.gnu.org/licenses/lgpl.html|LGPL 2.1]]
+  * Website: [[http://sourceforge.net/projects/cbash/ | SourceForge]]
+  * License: Triple-license [[http://www.mozilla.org/MPL/ | MPL 1.1]]/[[http://www.gnu.org/copyleft/gpl.html | GPL 2.0]]/[[http://www.gnu.org/licenses/lgpl.html | LGPL 2.1]]
   * Modifications:
     * cint.py - some changes made that have not yet been merged into the CBash SVN repository.  These are committed to the Wrye Bash SVN repository.
-    * C/C++ Source Code: Version 0.5.1 - 0.5.3 of CBash are built off modified source code, which can be found in the Wrye Bash SVN repository, [[http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/CBash/|here]].
+    * C/C++ Source Code: Version 0.5.1 - 0.5.3 of CBash are built off modified source code, which can be found in the Wrye Bash SVN repository, [[http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/CBash/ | here]].
 * 7zip:
-  * Website: [[http://www.7-zip.org/|7zip.org]]
-  * License: [[http://www.gnu.org/licenses/lgpl.html|LGPL]]
+  * Website: [[http://www.7-zip.org/ | 7zip.org]]
+  * License: [[http://www.gnu.org/licenses/lgpl.html | LGPL]]
   * Usage: Wrye Bash uses 7z to pack and unpack archives.
 * LZMA SDK:
-  * Website: [[http://www.7-zip.org/sdk.html|7zip.org]]
+  * Website: [[http://www.7-zip.org/sdk.html | 7zip.org]]
   * License: Plublic Domain
   * Usage: Wrye Bash uses lzma.exe from the SDK to unpack OBMM compressed data streams.
 
@@ -142,18 +142,18 @@ Additionally, Wrye Bash comes packaged with the following programs:
 
 == Installation ===============================================================
 === Get and Install
-* __Download and run Wrye Bash XXX - Installer ([[http://tesnexus.com/downloads/file.php?id=22368|TESNexus]] | [[http://www.skyrimnexus.com/downloads/file.php?id=1840|Skyrim Nexus]])__
+* __Download and run Wrye Bash XXX - Installer ([[http://oblivion.nexusmods.com/mods/22368 | Oblivion Nexus]] | [[http://www.skyrimnexus.com/downloads/file.php?id=1840 | Skyrim Nexus]])__
   * If you choose to install the Python version, this will check for the required dependancies.  If required, it will prompt you to allow it to download and install any missing dependancies.
   * If you choose to install the Standalone version (default), this will check for the required MSVC Runtime.  If missing, it will prompt you to allow it to download and install the missing dependancy.
 * __Manually installing Python (source code) version of Wrye Bash:__
-  * __Download and run ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Python XX]])__
+  * __Download and run ([[http://oblivion.nexusmods.com/mods/22368 | Wrye Python XX]])__
     * Install all components. It's best to accept the default settings for each installer.
     * __Note:__ This is not part of Wrye Bash itself -- rather it is a bundled installation of Python and related libraries that Wrye Bash is built on top of. You should only need to install this once. For more info, see [[#|Python Components]].
-  * __Download and Unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX - Python Source.7z]]) or Install via the Installer.__
+  * __Download and Unzip ([[http://oblivion.nexusmods.com/mods/22368 | Wrye Bash XXX - Python Source.7z]]) or Install via the Installer.__
   * For the manual archive installation, unzip the files ~~into your game installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skyrim\Mopy.
   * Note: This is the actual Wrye Bash code/application. It updates fairly frequently, but is small and easy to install.
 * __Manually installing the Standalone (default) version of Wrye Bash:__
-  * __Download and unzip ([[http://tesnexus.com/downloads/file.php?id=22368|Wrye Bash XXX - Standalone Executable.7z]]) or Install via the Installer.__
+  * __Download and unzip ([[http://oblivion.nexusmods.com/mods/22368 | Wrye Bash XXX - Standalone Executable.7z]]) or Install via the Installer.__
   * For the manual archive installation, unzip the files ~~into your game installation directory.~~ If you've done this correctly, you'll find Wrye Bash Launcher.pyw and other bash files under Oblivion\Mopy or Skyrim\Mopy.
   * Note: This is the actual Wrye Bash application.  It is comprised of the source files bundled together with an internal Python interpreter.
 * __Upgrading__
@@ -167,14 +167,14 @@ Additionally, Wrye Bash comes packaged with the following programs:
 === Windows Vista/7 and later
 * On Windows Vista and later, the UAC (User Account Control) protects the Program Files directory (usually C:\Program Files) against writing by regular users. This can be a problem for Bash and other mod editing and management tools (TESCS, TES4View, OBMM).
 * **Best Solution:** Install Oblivion to somewhere other than under the Program Files directory. (E.g., install to C:\Games\Oblivion). Such an alternate directory is not subject to UAC control and won't have the same access and virtualization problems that the default install will have.
-  * If your game is a Steam game, you will have to change the Steam install location to accomplish this.  Read [[https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129|Moving a Steam Install]] for more information on how to do this.
+  * If your game is a Steam game, you will have to change the Steam install location to accomplish this.  Read [[https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129 | Moving a Steam Install]] for more information on how to do this.
 * **Alternate Solution:**
   * Change the file permissions on your game directory, granting 'Full' privileges to the 'Everyone' user, or to the 'Users' group.  As this is an advanced configuration, details of the procedure will not be covered here.
 * **Other solutions (not recommended):**
   * Always run as full admin: To do this, for the Standalone, right click on Wrye Bash.exe and select 'Run as Admin'.
   * Disable UAC: Do this via the Windows Control Panel.
   * Both of these approaches significantly reduce the security of your computer, and so are not recommended.
-* For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help|Unofficial Help]] page at UESP.
+* For more advice, see the [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash_Help | Unofficial Help]] page at UESP.
 
 === Starting Wrye Bash
 * **Double click** the "Wrye Bash Launcher.pyw" file.
@@ -255,17 +255,17 @@ MemoryError</pre>
 * If uninstalling old Python and Python addon versions (recommended) make sure to uninstall all of them starting with the addons via the control panel->Add/Remove Programs or Programs &amp; Features.
 * __Components:__
   * __Python 2.7__
-    * This is the main install for [[http://www.python.org/|Python]]. It provides the base interpreter/compiler and the basic libraries.
-    * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi|Python 2.7.2]] ]__
+    * This is the main install for [[http://www.python.org/ | Python]]. It provides the base interpreter/compiler and the basic libraries.
+    * Download link: __Python [ [[http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi | Python 2.7.3]] ]__
   * __wxPython 2.8.12.1 Unicode__
-    * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/|wxPython]].
-    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe|wxPython 2.8.12.1 Unicode for Python 2.7]] ]__
+    * Python supports several different GUI libraries. Wrye Bash uses [[http://www.wxpython.org/ | wxPython]].
+    * Download link: __[ [[http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe | wxPython 2.8.12.1 Unicode for Python 2.7]] ]__
   * __PyWin32__
     * PyWin32 provides access to windows registry info on user folders, etc. Wrye Bash uses this to retrieve version info for BAIN Wizards.  Wrye Bash also uses this module to display HTML files.
-    * Download link: __[ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download|PyWin32 216 for Python 2.7]] ]__
+    * Download link: __[ [[http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download | PyWin32 217 for Python 2.7]] ]__
   * __ComTypes 0.6.2__
-    * Optional component (for the PM Archives Tab).  If [[http://starship.python.net/crew/theller/comtypes/|ComTypes]] is not installed, the PM Archives tab will not be visible.
-    * Download link:  __[ [[http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download|comtypes 0.6.2 for Python (all versions)]] ]__
+    * Optional component (for the PM Archives Tab).  If [[http://starship.python.net/crew/theller/comtypes/ | ComTypes]] is not installed, the PM Archives tab will not be visible.
+    * Download link:  __[ [[http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download | comtypes 0.6.2 for Python (all versions)]] ]__
 * __Alternate Python Installations__
   * Python 2.6 ~~might~~ work, however as Wrye Bash is being developed with Python 2.7, it's very likely that new features not supported by Python 2.6 are being used.
   * Python 2.5 or less: Not supported.
@@ -278,10 +278,10 @@ MemoryError</pre>
 * __Windows Are Off Screen:__
   * This may happen if you reduce your screen size or remove a second screen. Symptoms are that window shows up in taskbar, but doesn't appear. Also, you can use the taskbar to maximize the window, but once minimized it disappears again.
   * As of v190, Bash's main window should autocorrect to be displayed when you start Bash.
-  * For other windows, see [[http://www.howtogeek.com/howto/windows/bring-misplaced-off-screen-windows-back-to-your-desktop-keyboard-trick/|this tip]].
+  * For other windows, see [[http://www.howtogeek.com/howto/windows/bring-misplaced-off-screen-windows-back-to-your-desktop-keyboard-trick/ | this tip]].
 * __Other Tips/Help:__
   * First, Read this readme! Helps to use the search feature of your browser.
-  * Second, visit [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash|How To's and FAQs]].
+  * Second, visit [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash | How To's and FAQs]].
 
 == Backing Up =================================================================
 If you are looking to back up your Bash installation, Bash stores files in a variety of locations.
@@ -336,23 +336,23 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
   * [[http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set | TES Construction Set]] 16 <img src="bash/images/tescs16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/tescs32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
 
   * __General Tools__
-    * [[http://www.tesnexus.com/downloads/file.php?id=2097 | Oblivion Mod Manager]] 16 <img src="bash/images/OBMM16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OBMM32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]] 16 <img src="bash/images/ISOBL16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ISOBL32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]] 16 <img src="bash/images/Insanity'sReadmeGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Insanity'sReadmeGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]] 16 <img src="bash/images/Insanity'sRNG16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Insanity'sRNG32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]] 16 <img src="bash/images/RandomNPC16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/RandomNPC32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=7808 | Oblivion Face Exchange Lite]] 16 <img src="bash/images/OblivionFaceExchangerLite16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OblivionFaceExchangerLite32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]] 16 <img src="bash/images/ModListGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ModListGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258 | Oblivion Book Creator]] 16 <img src="bash/images/OblivionBookCreator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OblivionBookCreator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=3311 | BSA Commander]] 16 <img src="bash/images/BSACommander16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/BSACommander32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=33486 | Tabula]] 16 <img src="bash/images/Tabula16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Tabula32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=8489 | Tes4Files]] 16 <img src="bash/images/tes4files16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4files32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=8665 | Tes4Gecko]] 16 <img src="bash/images/TES4Gecko16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Gecko32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4View]] 16 <img src="bash/images/tes4view16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4view32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Edit]] 16 <img src="bash/images/TES4Edit16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Edit32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=11536 | Tes4Trans]] 16 <img src="bash/images/TES4Trans16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Trans32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=15781 | Tes4LodGen]] 16 <img src="bash/images/Tes4LODGen16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Tes4LODGen32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=20516 | BOSS]] 16 <img src="bash/images/Boss16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Boss32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> (Compatible with all released versions up to December 5th 2010) This one has some options!:
+    * [[http://oblivion.nexusmods.com/mods/2097 | Oblivion Mod Manager]] 16 <img src="bash/images/OBMM16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OBMM32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/ | Insanity Sorrow's Oblivion Launcher]] 16 <img src="bash/images/ISOBL16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ISOBL32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/ | Insanity Sorrow's Readme Generator]] 16 <img src="bash/images/Insanity'sReadmeGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Insanity'sReadmeGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://tesalliance.org/forums/index.php?/files/file/131-random-name-generator/ | Insanity Sorrow's Random Name Generator]] 16 <img src="bash/images/Insanity'sRNG16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Insanity'sRNG32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://tesalliance.org/forums/index.php?/files/file/128-random-npc/ | Insanity Sorrow's Random NPC Generator]] 16 <img src="bash/images/RandomNPC16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/RandomNPC32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/7808 | Oblivion Face Exchange Lite]] 16 <img src="bash/images/OblivionFaceExchangerLite16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OblivionFaceExchangerLite32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/ | Oblivion Mod List Generator]] 16 <img src="bash/images/ModListGenerator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/ModListGenerator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://tesalliance.org/forums/index.php?/files/file/258-oblivion-book-creator/ | Oblivion Book Creator]] 16 <img src="bash/images/OblivionBookCreator16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/OblivionBookCreator32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/3311 | BSA Commander]] 16 <img src="bash/images/BSACommander16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/BSACommander32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/33486 | Tabula]] 16 <img src="bash/images/Tabula16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/Tabula32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://straygenius.com/index.php?title=TES4Files | Tes4Files]] 16 <img src="bash/images/tes4files16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4files32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/8665 | Tes4Gecko]] 16 <img src="bash/images/TES4Gecko16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Gecko32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/11536 | Tes4View]] 16 <img src="bash/images/tes4view16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/tes4view32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/11536 | Tes4Edit]] 16 <img src="bash/images/TES4Edit16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Edit32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/11536 | Tes4Trans]] 16 <img src="bash/images/TES4Trans16.png" width="16" height="16" style="border: 0;" alt="tool image"></img> 32 <img src="bash/images/TES4Trans32.png" width="32" height="32" style="border: 0;" alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/15781 | Tes4LodGen]] 16 <img src="bash/images/Tes4LODGen16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Tes4LODGen32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/20516 | BOSS]] 16 <img src="bash/images/Boss16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/Boss32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img> (Compatible with all released versions up to December 5th 2010) This one has some options!:
       * If the option in the main menu is selected will automatically turn Lock Times off while running and then turn Lock Times back on.
       * For BOSS version 1.6+ (released October 2010):
         * If the option in the main menu is selected/ __U__ is pressed will tell BOSS to update the masterlist first.
@@ -416,7 +416,7 @@ At the bottom left of Bash's main window you'll find launch buttons for Oblivion
 
   * __Misc__
     * [[http://www.fraps.com/download.php | Fraps]] 16 <img src="bash/images/fraps16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/fraps32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
-    * [[http://www.tesnexus.com/downloads/file.php?id=3961 | Interactive Map of Cyrodiil and Shivering Isles]] 16 <img src="bash/images/InteractiveMapofCyrodiil16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/InteractiveMapofCyrodiil32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
+    * [[http://oblivion.nexusmods.com/mods/3961 | Interactive Map of Cyrodiil and Shivering Isles]] 16 <img src="bash/images/InteractiveMapofCyrodiil16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/InteractiveMapofCyrodiil32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
     * [[http://www.logitech.com/index.cfm/434/285&amp;cl=za | Logitech G11 Keyboard Profiler]] 16 <img src="bash/images/LogitechKeyboard16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/LogitechKeyboard32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
     * [[http://www.mediamonkey.com/ | Media Monkey]] 16 <img src="bash/images/MediaMonkey16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/MediaMonkey32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
     * [[http://notepad-plus.sourceforge.net/ | Notepad++]] 16 <img src="bash/images/notepad++16.png" width="16" height="16" style="border: 0;"  alt="tool image"></img> 32 <img src="bash/images/notepad++32.png" width="32" height="32" style="border: 0;"  alt="tool image"></img>
@@ -761,7 +761,7 @@ The following commands are available from context menu of packages.
   * __Has Extra Directories:__ Ordinarily, Bain will only recognize a limited set of subdirectories of the Data directory -- and files that come from other directories will be skipped over. However if a package has special directories (usually restricted to OBSE scripts), checking this option will cause Bain to recognize these special directories as valid subdirectories (and thus allow them to be installed).
   * __Override Skips:__ If this is checked, Bain will not skip over files that would normally be skipped due to the __Skip XX__ options.
   * __Don't Refresh:__ When refreshing Projects, this package won't get refreshed.  The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.
-  * __Skip Voices:__ If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' Universal Silent Voice extension ([[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=4269|PES]], [[http://www.tesnexus.com/downloads/file.php?id=16622|TesNexus]]) to prevent dialog subtitles from fading too rapidly.
+  * __Skip Voices:__ If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' Universal Silent Voice extension ([[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=4269 | PES]], [[http://oblivion.nexusmods.com/mods/16622 | TesNexus]]) to prevent dialog subtitles from fading too rapidly.
 * __Wizard Install Options:__ Only Available if Wizard Install system is active (see the wizards [[wizards.html|documentation]] for more info on the wizard install system)
   * __Wizard:__ Runs the Wizard for the package and sets up the package options as selected in the wizard (only available if wizard.txt exists in the archive).
   * __Auto Wizard:__ Runs the wizard but selects the default options (only available if wizard.txt exists in the archive).
@@ -817,7 +817,7 @@ The following commands are available by right clicking on the column header of t
   * __Auto-Refresh Projects:__ Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
   * __Auto-Refresh Bethsoft Content:__ Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs.  Enabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  Preferred setting: disabled.
 * __Behavior__
-  * __BSA Redirection:__ Uses Quarn's [[http://devnull.sweetdanger.net/archiveinvalidation/|BSA redirection technique]] to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+  * __BSA Redirection:__ Uses Quarn's [[http://devnull.sweetdanger.net/archiveinvalidation/ | BSA redirection technique]] to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
   * __Clean Data Directory:__ If this is checked, then any empty subfolders of the Oblivion\Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves Oblivion.exe performance.
   * __Show Inactive Conflicts:__ If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
   * __Show Lower Conflicts:__ If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
@@ -1213,7 +1213,7 @@ These are the commands found on context menu for mods...
 
 === Nvidia Fog Fix
 * Systems with Nvidia cards can suffer a black screen bug when the player enters interior cells where near fog, far fog and fog clipping distance are all equal to 0. To avoid this, this function scans the mod and sets near fog to 0.001 in problem cells.
-* This feature is based on Quarn's [[http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859|Nvidia Black Screen Fix]]
+* This feature is based on Quarn's [[http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859 | Nvidia Black Screen Fix]]
 * It is advised that modders run this function on their mods before releasing.
 
 === Rebuild Patch
@@ -1374,7 +1374,7 @@ A __Bashed Patch__ is a configurable, custom built patch. The patch can have mul
   * Several of the patch components ([[#|Leveled Lists]], [[#|Import NPC Faces]]) have automatic lists. In these, the list is automatically generated based on Bash Tags.
 * __Examining/Editing__
   * It's slightly difficult to view the contents of a Bashed Patch, since it uses esp-mastering (i.e., it has esps as well as esms as masters).
-  * If you just want to examine the patch, you may want to use [[http://www.tesnexus.com/downloads/file.php?id=11536|Tes4View]] which will allow you to browse the structure, and more importantly compare its data with other loaded mods.
+  * If you just want to examine the patch, you may want to use [[http://oblivion.nexusmods.com/mods/11536 | Tes4View]] which will allow you to browse the structure, and more importantly compare its data with other loaded mods.
   * However, if you would like to open/edit in TESCS, then you'll need to use the [[#|Espify/Esmify Masters]] command. (Be sure to Espify Masters before playing.)
 
 === Bash Tags
@@ -1565,7 +1565,7 @@ __Importers__ are components that import specific information from selected mods
 
 === Import Graphics
 * __Overview__
-. Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's [[http://www.tesnexus.com/downloads/file.php?id=5570|Book Jackets]] mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
+. Most graphics replacers work by replacing textures and meshes. However, sometimes such replacers are done by modifying the mod to point to different meshes and/or textures than the original mod. This is often done when vanilla Oblivion only offers a few simple meshes for a large number of objects, while the replacer aims to diversify the graphics for those objects (e.g. Phoenix Amon's [[http://oblivion.nexusmods.com/mods/5570 | Book Jackets]] mod). This patcher resolves this by extracting graphics components from specified mods and merging them into other changes to the same records.
 * __Configuration:__
   * Source mods are automatically recognized if they have a <code>Graphics</code> [[#BashTags|tag]] in the mod description.
 * __Graphics/Records Handled:__
@@ -1594,10 +1594,10 @@ __Importers__ are components that import specific information from selected mods
 
 === Import NPC Faces
 * __Overview__
-. This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the [[http://www.dreamingthepyramid.net/TNR-home.html|Tamriel NPCs Revamped mods]]), and add it to the patch, merging it over any changes to those same NPCs from other mods.
+. This patcher component will extract the face, hair and eyes data from an NPC face modifying mod (which is to say any/all of the [[http://oblivion.nexusmods.com/mods/35265 | Tamriel NPCs Revamped mods]]), and add it to the patch, merging it over any changes to those same NPCs from other mods.
 * __Configuration__
   * Source mods are automatically recognized if their mod name starts with __TNR __ or the mod has a <code>NpcFaces</code> or <code>NpcFacesForceFullImport</code> or <code>Npc.EyesOnly</code> or <code>Npc.HairOnly</code>[[#BashTags|tag]] in the mod description.
-  * Note that since there is a now a [[http://www.dreamingthepyramid.net/misc/tnrallracesfinal.zip|TNR All Races]] mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
+  * Note that since there is a now a [[http://oblivion.nexusmods.com/mods/35265 | TNR All Races]] mod, you may wish to discard (or at least uncheck) any previous TNR mods you have.
   * If tagged with NpcFaces only changed face subrecords will be imported into the patch; this will get changes from more esps at once - like hair from mod 1 and facial changes from mod 2 however depending on the exact changes the results may not __look__ good though.
   * If tagged with Npc.EyesOnly will import only eye changes. (Can be used with Npc.HairOnly if desired).
   * If tagged with Npc.HairOnly will import only hair changes. (Can be used with Npc.EyesOnly if desired).
@@ -1615,7 +1615,7 @@ __Importers__ are components that import specific information from selected mods
   * Handles most named objects types (except lights). Does **not** handle GMSTs, cells, landmarks or dialogs. If source mods is fully covered (no GMSTs, cells, etc.) then it does not need to be loaded after merging.
 * __Guard Names__
   * A names patcher file that covers guards, legion soldiers, couriers, and a few other generically named characters and creatures from both Oblivion and Oscuro's Oblivion Overhaul.
-;  * This is based on [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=123| Flak's Complete Names Project]]. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
+;  * This is based on [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=123 | Flak's Complete Names Project]]. However, ranks have been strongly tweaked from Flak's version and OOO names have been added.
 * ___OOO Potion Names__
   * A names patcher file that renames the alcoholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
 * __Random NPC Names/Random NPC Alternate Names__
@@ -1782,7 +1782,7 @@ Merged with Tweak Settings in 296.
   * The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'
 * __Nvidia Fog Fix__
   * Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen.
-  * This feature is based on Quarn's [[http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859|Nvidia Black Screen Fix]].
+  * This feature is based on Quarn's [[http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859 | Nvidia Black Screen Fix]].
 * __Right Hand Rings__
   * Makes rings behave more consistently by making all rings prefer to be on the right hand.
   * With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to **make one ring permanently equipped** -- just equip it to the left hand and it will stay on until you specifically unequip it.
@@ -1905,7 +1905,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 * Converts powers into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.
   * Assorted_Exhaust.csv: This patcher extends coverage to the Orrery and Shivering Isles powers.
   * Kmacg94_Exhaust.csv: This patcher (by Kmagc94) extends coverage to several more mods (bgBalancingEVCore, Consequences, Kenhanimal's Awesome Vampire Mod, Oblivion War Cry EV, Oscuro's Oblivion Overhaul, StartX Vanilla Vampires Revised, Vampire Hunter Tools, Vows and Covenants).
-* Cobl's power exhaustion feature is intended as a replacement for Wrye's [[http://www.Wryemusings.com/Power%20Exhaustion.html|Power Exhaustion]] mod.
+* Cobl's power exhaustion feature is intended as a replacement for Wrye's [[http://www.Wryemusings.com/Power%20Exhaustion.html | Power Exhaustion]] mod.
 
 === Content Checker
 * When activated, this will check the inventory contents of containers, creatures and NPCs, and the entries of leveled lists to make sure that their entries are of valid types. E.g. it will try to ensure that leveled spell lists only contain spells and other leveled lists.
@@ -1930,7 +1930,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
   * Generally it's best to set the bash tags correctly and leave the configuration on auto. However, it's also possible to manually configure delevelers/relevelers.
   * To add/remove mods from the list, uncheck Automatic and use the Add/Remove buttons.
   * To manually override the Delev/Relev tags for a given mod, right click on the mod name and check/uncheck states as necessary. To return to automatic setting, choose the "Auto" option instead.
-* __[[http://devnull.sweetdanger.net/convergence/|FCOM]]__
+* __[[http://devnull.sweetdanger.net/convergence/ | FCOM]]__
   * FCOM (aka Kaboom, aka FraBOOOMMM) is a mod by dev_akm and others that attempts to merge the changes from various major mods. While this might seem to be competitive with Bash's List Merger, it's actually complementary, since it's able to intelligently merge complicated list structures as well as correct and merge faction information.
   * For further information on using FCOM with Bash, see the FCOM release notes/topics.
 * __Empty Sublist Cleaning__
@@ -1942,7 +1942,7 @@ __Special__ patch components don't fit into the categories above. Two of them ([
 
 === Power Exhaustion
 * __Overview:__
-* Wrye's deprecated [[http://www.Wryemusings.com/Power%20Exhaustion.html|Power Exhaustion]] mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.
+* Wrye's deprecated [[http://www.Wryemusings.com/Power%20Exhaustion.html | Power Exhaustion]] mod changes the greater powers in Vanilla (non-Shivering Isles) into lesser powers, but imposes a (potentially fatal) penalty if they're used too frequently.
 * Replaced by Cobl Exhaustion and (finally) removed in Wrye Bash 296.
 
 <a id="ImportRaceInfo"></a>
@@ -1962,10 +1962,10 @@ __Special__ patch components don't fit into the categories above. Two of them ([
     * R.Attributes-M: If specifying race attributes for males.
     * R.ChangeSpells: If totally overwriting race spells list(s).
     * R.Description: If specifying race description(s).
-    * R.Mouth: If specifying/changing mouth/tongue. (See [[http://www.tesnexus.com/downloads/file.php?id=10674|Merged Mouth]].)
+    * R.Mouth: If specifying/changing mouth/tongue. (See [[http://oblivion.nexusmods.com/mods/10674 | Merged Mouth]].)
     * R.Relations: If specifying race relations.
     * R.Skills: If specifying race skill bonuses ([[#|Race Records]]).
-    * R.Teeth: If specifying/changing upper/lower teeth. (See [[http://www.tesnexus.com/downloads/file.php?id=10674|Merged Teeth]].)
+    * R.Teeth: If specifying/changing upper/lower teeth. (See [[http://oblivion.nexusmods.com/mods/10674 | Merged Teeth]].)
     * Voice-F: If specifying female voice.
     * Voice-M: If specifying male voice.
     . E.g., for Beautiful People, the tag should be {{BASH:Hair,Eyes}}.
@@ -2054,7 +2054,7 @@ At the top of the report are generic warnings.
 The rest of the report is divided into rulesets reports. Rulesets are text files provided by modders and other modders and other players. They basically tell Bash's mod checker which things to look out for and what to say about them in the Mod Checker report.
 * Rulesets are plain text file stored in the Oblivion\Data\Bash Patches directory. Any file in this directory that ends in "Rules.txt" will be assumed to be a ruleset and included in the report.
 * Rulesets can be edited while bash is running. Edit ruleset as desired and regenerate (update) the report. Bash will recognize the changed ruleset and reload it before it re-generates the report.
-* For more info on ruleset syntax, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker|UESP: Wrye Bash Mod Checker]].
+* For more info on ruleset syntax, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker | UESP: Wrye Bash Mod Checker]].
 
 === Only One Warnings
 These warnings may appear the top of the ruleset report. Such warnings are followed by a list of active/merged esps. These are typically are conflicting mods that do almost the same thing. You can resolve this by deactivating all but one of the listed mods.
@@ -2201,7 +2201,7 @@ These are the commands found on context menu for saves...
   * These are the sizes of the major arrays in the savegame.
   * Created Items are items created while playing -- e.g., spells, enchanted armor, clothing, weapons.
   * Records are records of changes to previously defined objects. E.g., removing the essential flag from an NPC.
-  * FormIds is a table which maps an internal reference number to a [[http://www.uesp.net/wiki/Tes4Mod:FormId|formid number]]. Kind of technical, but what it comes down to is, if the savegame ever had to refer to a specific formid, then that formid shows up in this table. If the formid comes from a mod that is later removed from the game, then its entry in this table is replaced with a 0. (I refer to such an entry as a "lost ref" because it's lost its connection to the source mod.)
+  * FormIds is a table which maps an internal reference number to a [[http://www.uesp.net/wiki/Tes4Mod:FormId | formid number]]. Kind of technical, but what it comes down to is, if the savegame ever had to refer to a specific formid, then that formid shows up in this table. If the formid comes from a mod that is later removed from the game, then its entry in this table is replaced with a 0. (I refer to such an entry as a "lost ref" because it's lost its connection to the source mod.)
 * Created Items
   * This shows the counts for the various types of items created in-game.
   * If there are lot of any one type (e.g., over 1000), then you likely have a older, buggy companion share mod which should be upgraded.
@@ -2246,7 +2246,7 @@ These are the commands found on context menu for saves...
 * This allows you to rename any spells that you have created in-game.
 
 === Reweigh Potions
-* Potions created in-game are given a weight that is somewhat arbitrarily selected and potentially high (over 1 lb per potion). (See: [[http://www.uesp.net/wiki/Oblivion:Alchemy#Weight|UESP: Oblivion Alchemy]].)
+* Potions created in-game are given a weight that is somewhat arbitrarily selected and potentially high (over 1 lb per potion). (See: [[http://www.uesp.net/wiki/Oblivion:Alchemy#Weight | UESP: Oblivion Alchemy]].)
 * You can use this command to set the weight for all of your created potions to specified value.
 * Notes:
   * Effects ~~all current potions~~ -- and thus all future potions with the same name and effects.
@@ -2279,7 +2279,7 @@ These are the commands found on context menu for saves...
 * "Abomb Animation Slowing" is a slowing a of animations that typically appears around 225 hours into the game (though it may occur earlier or later). Effects are that many animations (spell effects, burning fires, opening/closing doors) have noticeably stop action effects, even while the rest of the scene is rendered normally. In fact the problem is ~~worse~~ in areas with high frame rates (e.g., simple interiors). This is presumably a bug with the game engine, probably something with thread prioritization for animations.
 * The trigger for animation slowing seems to be the last four bytes of the TesClass data chunk in the save file. These bytes apparently represent a float value, which increments steadily with game play (on my machine advancing at about 2/3 of game seconds played). When the counter crosses a certain threshold (0x49000000), the animation slowing kicks in suddenly. The fix seems to be to simply reset this counter to an early value (0.0 would probably work. I use 8.0 or 0x41000000).
 * There have been some reports of related problems with animations (dying wraiths not dropping properly) and physics collisions. Also, some have reported problems showing up before 0x49000000. However, there is clearly a substantial change as the counter crosses 0x490000, and the reported physics problems have been seen earlier in the game and so may be unrelated.
-* For more discussion see: [[http://forums.bethsoft.com/?showtopic=688265|ESForums: Slow/Frozen Doors]].
+* For more discussion see: [[http://forums.bethsoft.com/?showtopic=688265 | ESForums: Slow/Frozen Doors]].
 
 === Repair Factions
 * (Mostly) fixes empty faction bug introduced in Wrye Bash v 105 (with most people experiencing them starting at version 111 which introduced new [[#|Update NPC Levels]] function.
@@ -2565,7 +2565,7 @@ msgid "Argument is out"
 * Bugfix release:
   * Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
   * [[#InstallersTab|BAIN]]: Fixed a problem associated with Embedded BCFs, causing BAIN to become unusable.
-  * Wrye Bash Installer updated to included the necessary files of the [[http://www.microsoft.com/download/en/details.aspx?id=14431|MSVC 2005 SP1 Redistributable with ATL Security Update]].  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
+  * Wrye Bash Installer updated to included the necessary files of the [[http://www.microsoft.com/download/en/details.aspx?id=14431 | MSVC 2005 SP1 Redistributable with ATL Security Update]].  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
   * Wrye Bash Uninstaller updated to remove some files it was missing.
   * Changed how the 'Apps' folder launchers are used, to work with Unicode better.
   * Fixed a problem with restarting Wrye Bash.  Specifically, the Standalone version would shutdown instead of restart, when required.
@@ -2872,7 +2872,7 @@ msgid "Argument is out"
 * Bugs fixed (General):
   * Fixed multiple issues dealing with '&amp;' in filenames.
   * BOSS's dirty edit CRCs will be properly read from the masterlist now.
-  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears outside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809|here]]
+  * Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears outside of the spoiler tag as requested by speedyg869 [[http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809 | here]]
   * Fixed the launching of OBSE when a Steam install is detected.
 * Updated NSIS installer.
 * Unicode Mode:
@@ -3570,7 +3570,7 @@ msgid "Argument is out"
 * DarN Books:
   * Restore some formatting behavior that got lost between v 264 and v 266.
 * Power Exhaustion
-  * [[http://www.tesnexus.com/downloads/file.php?id=24343|Added Kmagc94_Exhaust.csv]]
+  * [[http://oblivion.nexusmods.com/mods/24343 | Added Kmagc94_Exhaust.csv]]
 
 === 266 [4/10/2009] [Waruddar]
 * [[#|Installers Tab]]:
@@ -4051,7 +4051,7 @@ msgid "Argument is out"
 * Refactoring: Fix bug in bashmon.
 * [[#|Merge Filtering]]: Filter creature and npc spells, factions and items.
 * Add more info on Load Error during Bashed Patch rebuilding.
-* Add csFunction function to bish.py. For use with [[http://cs.elderscrolls.com/constwiki/index.php/Raw_Function_List|CSW Raw Function List]].
+* Add csFunction function to bish.py. For use with [[http://cs.elderscrolls.com/constwiki/index.php/Raw_Function_List | CSW Raw Function List]].
 
 === 181 [5/23/2008]
 * Updated Portuguese (by Hadoki).
