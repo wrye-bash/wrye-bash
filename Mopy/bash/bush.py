@@ -162,50 +162,6 @@ def setGame(gameName,workingDir=u''):
     del allGames
     return foundGames.keys()
 
-# Installer -------------------------------------------------------------------
-# ensure all path strings are prefixed with 'r' to avoid interpretation of
-#   accidental escape sequences
-wryeBashDataFiles = set((
-    u'Bashed Patch.esp',
-    u'Bashed Patch, 0.esp',
-    u'Bashed Patch, 1.esp',
-    u'Bashed Patch, 2.esp',
-    u'Bashed Patch, 3.esp',
-    u'Bashed Patch, 4.esp',
-    u'Bashed Patch, 5.esp',
-    u'Bashed Patch, 6.esp',
-    u'Bashed Patch, 7.esp',
-    u'Bashed Patch, 8.esp',
-    u'Bashed Patch, 9.esp',
-    u'Bashed Patch, CBash.esp',
-    u'Bashed Patch, Python.esp',
-    u'Bashed Patch, FCOM.esp',
-    u'Bashed Patch, Warrior.esp',
-    u'Bashed Patch, Thief.esp',
-    u'Bashed Patch, Mage.esp',
-    u'Bashed Patch, Test.esp',
-    u'ArchiveInvalidationInvalidated!.bsa',
-    u'Docs\\Bash Readme Template.html',
-    u'Docs\\wtxt_sand_small.css',
-    u'Docs\\wtxt_teal.css',
-    u'Docs\\Bash Readme Template.txt'
-    ))
-wryeBashDataDirs = set((
-    u'Bash Patches',
-    u'INI Tweaks'
-    ))
-ignoreDataFiles = set((
-    u'OBSE\\Plugins\\Construction Set Extender.dll',
-    u'OBSE\\Plugins\\Construction Set Extender.ini'
-    ))
-ignoreDataFilePrefixes = set((
-    u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
-    ))
-ignoreDataDirs = set((
-    u'OBSE\\Plugins\\ComponentDLLs\\CSE',
-    u'LSData'
-    ))
-
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
     (u'Root',),
@@ -239,79 +195,12 @@ groupTypes = [
     _(u'Cell Visible Distant Children'),
 ]
 
-#--Top types in Oblivion order.
-topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
-    'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI', 'APPA', 'ARMO', 'BOOK',
-    'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'STAT', 'GRAS', 'TREE', 'FLOR',
-    'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM', 'KEYM', 'ALCH', 'SBSP',
-    'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE',
-    'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH']
-
-#--Dict mapping 'ignored' top types to un-ignored top types.
-topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
-
-recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
-
 # Id Functions ----------------------------------------------------------------
 def getIdFunc(modName):
     return lambda x: (GPath(modName),x)
 
 ob = getIdFunc(u'Oblivion.esm')
 cobl = getIdFunc(u'Cobl Main.esm')
-
-# Race Info -------------------------------------------------------------------
-raceNames = {
-    0x23fe9 : _(u'Argonian'),
-    0x224fc : _(u'Breton'),
-    0x191c1 : _(u'Dark Elf'),
-    0x19204 : _(u'High Elf'),
-    0x00907 : _(u'Imperial'),
-    0x22c37 : _(u'Khajiit'),
-    0x224fd : _(u'Nord'),
-    0x191c0 : _(u'Orc'),
-    0x00d43 : _(u'Redguard'),
-    0x00019 : _(u'Vampire'),
-    0x223c8 : _(u'Wood Elf'),
-    }
-
-raceShortNames = {
-    0x23fe9 : u'Arg',
-    0x224fc : u'Bre',
-    0x191c1 : u'Dun',
-    0x19204 : u'Alt',
-    0x00907 : u'Imp',
-    0x22c37 : u'Kha',
-    0x224fd : u'Nor',
-    0x191c0 : u'Orc',
-    0x00d43 : u'Red',
-    0x223c8 : u'Bos',
-    }
-
-raceHairMale = {
-    0x23fe9 : 0x64f32, #--Arg
-    0x224fc : 0x90475, #--Bre
-    0x191c1 : 0x64214, #--Dun
-    0x19204 : 0x7b792, #--Alt
-    0x00907 : 0x90475, #--Imp
-    0x22c37 : 0x653d4, #--Kha
-    0x224fd : 0x1da82, #--Nor
-    0x191c0 : 0x66a27, #--Orc
-    0x00d43 : 0x64215, #--Red
-    0x223c8 : 0x690bc, #--Bos
-    }
-
-raceHairFemale = {
-    0x23fe9 : 0x64f33, #--Arg
-    0x224fc : 0x1da83, #--Bre
-    0x191c1 : 0x1da83, #--Dun
-    0x19204 : 0x690c2, #--Alt
-    0x00907 : 0x1da83, #--Imp
-    0x22c37 : 0x653d0, #--Kha
-    0x224fd : 0x1da83, #--Nor
-    0x191c0 : 0x64218, #--Orc
-    0x00d43 : 0x64210, #--Red
-    0x223c8 : 0x69473, #--Bos
-    }
 
 # Default Eyes/Hair -----------------------------------------------------------
 standardEyes = [ob(x) for x in (0x27306,0x27308,0x27309)] + [cobl(x) for x in (0x000821, 0x000823, 0x000825, 0x000828, 0x000834, 0x000837, 0x000839, 0x00084F, )]

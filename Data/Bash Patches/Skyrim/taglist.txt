@@ -1,0 +1,5217 @@
+﻿/*
+? Masterlist Revision: 4514 (May 31, 2012)
+
+Masterlist Syntax Notes
+
+Unlike the other masterlists, this one should take full advantage of MF2.2 syntax. Only the most commonly-used parts of the syntax are covered here.
+See the BOSS Masterlist Syntax.html documentation file in data/boss-common/ on the Google Code repository for full details.
+
+  * Use blank lines to separate mods that are grouped together or where it helps readability.
+  * Use silent comments when you think something needs clarification to others reading the masterlist (such as when a mod looks like it is misspelled, but is correct).
+  * Only make edits/additions you're confident about - otherwise discuss the issue on the official forum threads.
+  * If you're unsure on how to write something in the correct syntax, check the masterlists for examples, and don't be afraid to ask other committers for help.
+  * When you include a web link in a message, enclose it in double quotes "", for example: www.example.org should be written "www.example.org".
+  * When you list Bash Tags for a mod, separate them using ", " and not just ",". Eg. {{BASH: Graphics,NoMerge}} should be written {{BASH: Graphics, NoMerge}}. This improves readability in the BOSSlog and the masterlist itself.
+  * Don't include any HTML formatting in messages. In particular, web links do not need to be formatted as HTML hyperlinks, as BOSS will do this automatically.
+
+Silent Comments:
+
+Silent comments are ignored by BOSS, and may be written by starting a line with the backslash '\' character (as used by this block of text).
+You cannot start a silent comment part-way into a line, only whole lines may be silent.
+
+ Message Type                      Keyword      Description
+ =====================================================================
+ General message                   SAY          A general message for the mod above.
+ Bash Tag suggestion               TAG          A Bash Tag suggestion for the mod above.
+ Requirement                       REQ          An installation requirement for the mod above.
+ Incompatibility                   INC          A specific incompatibility for the mod above.
+ Dirty mod message                 DIRTY        A message relating to dirty edits in the mod above.
+ Warning                           WARN         A message used to display a non-critical warning for the mod above.
+ Error                             ERROR        A message used to display a critical (ie. install-breaking) error for the mod above.
+
+Message keywords should be indented by a single space and followed by a colon ':' then the message string.
+
+
+Once again, see the Masterlist Format Syntax wiki page for information on BOSS's full masterlist functionality.
+Items not covered here include: conditional messages, masterlist variables, plugin groups, regular expression matching and global messages.
+*/
+
+\ Upgrade message for 1.7+ users:
+ IF (<2.0.1.0|"BOSS") GLOBAL WARN: An update for BOSS (v2.0.1) has been released. Download it at "http://oblivion.nexusmods.com/mods/20516", "http://skyrim.nexusmods.com/downloads/file.php?id=6", "http://fallout3.nexusmods.com/mods/10193" or "http://newvegas.nexusmods.com/mods/35999"
+
+\ Masterlist variable setup for BOSS v1.7+.
+\=====================================================================
+
+IF (r"Complete Crafting Overhaul( - BS version)?\.esp") SET: CCO
+IF ("ASIS-Dependency.esp") || IF ("ASIS.esp") || IF ("Automatic Spells.esp") || IF ("Automatic Variations.esp") || IF ("Automatic Variants.esp") GLOBAL SAY: A dynamically created plugin is installed. Please refer to the authors notes for more information on determining the best load order.
+IF ("DS-MoreAgressionForRemover.esp") SET: IncDSwarmMorAgress
+IF (r"DragonSwarms.*\.esp") SET: DSwarmInst
+IF (r"Noble_Artifacts_For_Skyrim_(Eng|Rus|Deu)?\.esp") SET: NobleArtInst
+IF ("GM-ForgeAdditions.esp") || IF ("GM-ForgeAdditionsLAotB.esp") SET: GMForgeAdd
+IF ("GM-ForgeAdditionsLevelledOutfits.esp") && IF ("GM-ForgeAdditionsLAotBLevelledOutfits.esp") SET: DualGMLevList
+IF ("GM-ForgeAdditions.esp") && IF ("GM-ForgeAdditionsLAotB.esp") SET: DualGMForgeAdd
+IF ("EpicGloryByMadmole.esp") SET: EpicGloryInst
+IF ("UFO - Ultimate Follower Overhaul.esp") SET: UFO
+
+\=====================================================================
+
+/* Latest thread */
+GLOBAL SAY: Latest BOSS thread: "http://forums.bethsoft.com/topic/1376899-relz-boss-for-skyrim/"
+
+BEGINGROUP: ESMs
+
+Skyrim.esm
+Update.esm
+Correctif - Skyrim.esm
+3rdEraWeaponsMoS.esm
+AIKhajiitCompanions.esm
+All Housecarls Are Hunks.esm
+Lycanthropy_Music.esm
+REGEX: PersonalizedMusic.*\.esm
+NoTint.esm
+LessTint.esm
+CLARALUX - More and Brighter Lights.esm
+DarkerNights.esm
+DarkerInteriors.esm
+DarkerInteriorsAdd.esm
+DirectorsTools.esm
+Expanded Towns - Ivarstead.esm
+Expanded Towns - Riverwood.esm
+Expanded Towns - Darkwater.esm
+SCoL Main.esm
+HorseBranding.esm
+More Interactive Items.ESM
+Imp's More Complex Needs.esm
+ IF ("imp's more complex needs.esp") SAY: Use either Nexus or Steam Workshop version, not both.
+LorecraftESM.esm
+Realistic Wildlife Loot.esm
+Real Wildlife - IMCN.esm
+Smithing Extended.esm
+TravellersOfSkyrim.esm
+CraftSketching.esm
+ForbiddenRomance.esm
+itsatrap!.esm
+more_Travelers.esm
+Populated Cities NPCListMaster.esm
+Sexy Crafting Merchants.esm
+SkyMoMod.esm
+SpartanV10.esm
+Vigilant of Stendarr Quests Master.esm
+WARZONES - Civil Unrest.esm
+AOM.esm
+BlackTowerArmory.esm
+HBE.esm
+REGEX: JSwords(DV)?\.esm
+Mother_of_Tears_Epics_Eng.esm
+AemersRefuge.esm
+ANK_Castle_Main.esm
+ SAY: Old version upgrade to version 5.0+
+Aurora.esm
+BertsBreezehomeGarden.esm
+BertsBreezehomeRemodel.V.1.0(esm).esm
+BertsBreezehomeGardenConnecter(RemodelESM).esm
+BertsBreezehomeRemodel(MiniBreeze).esm
+Niire'sPortstonesForBertsBreezehomeRemodel.esm
+basement.esm
+BecomeKingOfRiverHelm.esm
+BlackreachRailroad.ESM
+breezehomebasement.esm
+CoD Waking Nightmare II.esm
+Domus_Dementis.esm
+Deus Mons.esm
+dovahkiin_sanctuary.esm
+DragonsReach_Hideout.esm
+Evil Lair of Hydra.esm
+Grytewake.esm
+hideout.esm
+LevelersTower.esm
+Manantis.esm
+moonpath.esm
+Nchuzzrezar.esm
+Proudspire Manor Refurbished.esm
+REGEX: OverlookTower.*\.esm
+Ranger Ridge.esm
+retreat.esm
+SkyrimSewers.esm
+SleepingTreeSanctuary.esm
+Undercity.esm
+warehouse.esm
+WinterholdDestruction.esm
+kuerteeInventoryAndWeight.esm
+REGEX: Blood \(\w+\)\.ESM
+ SAY: Use only one Blood (*).ESM
+ArmedttTeeth.esm
+DeadlyDragons.esm
+ SAY: Obsolete. Upgrade to 4.2.1
+Mannequin.esm
+alchstone5x.esm
+REGEX: EagleEyePerk(_defStamina|_half_stamina)?\.esm
+ SAY: Use only one EagleEyePerk esm
+FluxMOD_ArtifactEffectPerk.esm
+GetArrowsBack80.esm
+vinis_food_and_rest.esm
+Lycanthropy_Audio_by_Brevi.esm
+Skyrim Adventurer's Tent.esm
+Skyrim Dark.esm
+SPTMuscularFemaleRaces.esm
+ SAY: Obsolete. Update to SPTDiverseGuards
+SPTDiverseGuardsSkyrimResources.esm
+Natural Characters and Companions.esm
+ REQ: ApachiiSkyHair, Lovely Hairstyles
+SpecializedFollowers.esm
+ SAY: Obsolete. Update to latest verion.
+DFB - Random Encounters.esm
+HuntersDiscipline.esm
+MBMaster.esm
+NoKillMoves.ESM
+AP Skyrim.esm
+customGraph.esm
+ApachiiHair.esm
+Succubus.esm
+MTOH.esm
+ SAY: Hair standalone mod for other mods which edit NPCs. If this one is used, MTOH.esp should be disabled.
+Omegared99-Compilation.esm
+Farkasv2.esm
+XFLMain.esm
+ IF ($UFO) INC: UFO - Ultimate Follower Overhaul.esp, delete and use UFO instead
+ IF ("BDO.esp") INC: BDO.esp, delete and use BDO instead
+DrowCompanions.esm
+Sirenia.esm
+Tyth.esm
+Vashira esm.esm
+Viin.esm
+CMNewCompanions.esm
+OneiroMoarFollowers.esm
+RaceCompatibility.esm
+BBLuxurySuite.esm
+GluRuSArtifactEffectPerk.esm
+Extended Colors.esm
+ENDGROUP: ESMs
+
+BEGINGROUP: Official DLC Files
+
+HighResTexturePack01.esp
+HighResTexturePack02.esp
+ENDGROUP: Official DLC Files
+
+BEGINGROUP: Earliest mods
+
+Die Skyrim-Lokalisierung - Director's Cut.esp
+Skyrim - Director's Cut.esp
+Zwerge zu Dwemer.esp
+Malachit zu Vulkanglas.esp
+SLFC.esp
+VanillaReducedTextures.esp
+Eindeutige Regionsnamen.esp
+ENDGROUP: Earliest mods
+
+BEGINGROUP: Vanilla fixes
+
+3DVisionWater.esp
+Amulet of Articulation Leveling Fix.esp
+ TAG: {{BASH: Relev}}
+Ancient Knowledge Fix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+Ancient Shrouded Cowl Beast Race Fix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+Argonian Disarming Bash Bug Fix.esp
+AspectOfTerrorFixv1.0.esp
+AtronachEffectFix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+AtronachForgeBootsFix.esp
+Bardfix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+bardsfix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+bard's_college_quests_fix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+bookshelf_fix0.2.esp
+brandsheiprisonfix.esp
+breezehomelightfix.esp
+BreezehomeLadderFix.esp
+BreezehomeLightingFix.esp
+Brynjolf Dialogue Fix.esp
+Bugfix-NoFollowerTrespassDialog.esp
+bugfixalchemynoregeneration.esp
+bugfixenchanmentnoregeneration.esp
+Conjuration Fix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+Ancient Shrouded Cowl Beast Race Fix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+ArmorSetFixQuickFox.esp
+correctif ombres.esp
+CriticalChargeFix.esp
+DaedricShieldHiResFix.esp
+DaggerBowEnchantPotionFixes.esp
+DB_WitD Quest Fix.esp
+Deflect Arrows Fix - Realistic.esp
+Derkeethus_fix.esp
+Domus_Dementis_fixes.esp
+dragonarmourratingfix.esp
+REGEX: EbonyBladeFixed.*\.esp
+ElvBootEmStaFix.esp
+Farengar.esp
+Farm Wheat Height Fix.esp
+FixedEyeAdaption.esp
+FoodRestoreHealthFix.esp
+forsworn boots fix.esp
+FXFixSW.esp
+GhorzaGraBagolInvestmentFix.esp
+GiantPhysicsFix.esp
+GM-KhajiitDSHFix.esp
+GrammaticalLoading.esp
+HeadsmansAxeFixed.esp
+HelmetStackFix.esp
+HjerimMessFix.esp
+ImperialHelmetHeavyFix.esp
+Kataous' Bug Fixes for Player Homes.esp
+REGEX: KeeningFix.*\.esp
+KeeningSmithing.esp
+KR - Whiterun gate light fix.esp
+lightplacement.esp
+lydia chair fix.esp
+MageRobesCommentFix.esp
+REGEX: Magnus\d{2,3}\.esp
+MatchingSetCheat.esp
+MatchingSetFixes.esp
+Miner's Clothes Variant Fix.esp
+Minor Miner Fixes.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch 1.0+
+Muiri's Problem.esp
+Nocturnal Robes - 1st person mesh fix.esp
+noxx_skyrim_fixes.esp
+prisonerfix.esp
+PrometheusCapes_armorsfix.esp
+Proudspire Manor Bug Fixes.esp
+ IF ("ProudspireManorImprovements.esp") WARN: Delete. Included in 'ProudspireManorImprovements.esp'
+Quick Orc Fixes.esp
+regenfix.esp
+RiftenJailVisualFix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+RiverwoodTraderInvestorFix.esp
+SanguineRoseFix.esp
+ WARN: Delete. Fixed in official patch 1.5+
+sapphire_speak_fix.esp
+REGEX: Shadow.?Striping.?Fix\.esp
+Shrine of Azura LOD Fix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+REGEX: Silent Moons Enchantment Fix.*\.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch
+StaggerFix.esp
+TalosShrineFix.esp
+thearmourerfixes.esp
+Thief armor fix.esp
+Thorald.esp
+Vampire Eyes Fix.esp
+VampireInvisibleItemsFix.esp
+Vulkanglas statt Malachit.esp
+Wandering Dupe Mannequin Fix v1.2 SPODUM Vanilla.esp
+Whiterun Lighting Fix.esp
+Whiterun Market Fixes.esp
+Whiterun_no_standing.esp
+Whiterun-GildergreenTree-FullyGrownable.esp
+whitrun stair fix.esp
+Correctif - Skyrim.esp
+
+Unofficial Skyrim Patch.esp
+ TAG: {{BASH: Delev, Relev}}
+
+ENDGROUP: Vanilla fixes
+
+BEGINGROUP: DLC Fixes
+
+HighResTexturePackFix.esp
+chopping_block_wood_fires.esp
+ REQ: DLC HighResTexturePack
+ENDGROUP: DLC Fixes
+
+REGEX: Skyrim HD Full - .+\.esp
+ REQ: 4gb or more RAM, for full version.
+
+BEGINGROUP: NPC face mods
+\TAG: {{BASH: NpcFaces}}
+
+SupermodelSkyrim.esp
+ REQ: ApachiiHair.esm
+AlfhildBattleBorn.esp
+AlternateUlfric.esp
+Aranea.esp
+bellabetterfemales.esp
+Carlotta.esp
+CustomUthgerd.esp
+Cuter Essential Housecarls.esp
+DW Followers.esp
+DW Commoners.esp
+DW Enemies and Wanderers.esp
+eligible bachelors.esp
+Farkas.esp
+Fianna.esp
+HousecarlWindhelm.esp
+Lisette.esp
+NPC_Hair_Replacer.esp
+NPC_Hair_Rep_Forsworn_Bandit.esp
+NPC_Hair_Rep_Necro.esp
+ REQ: Apachii and Coolsims Hair
+NPC REDESIGN.esp
+ REQ: Apachii hair
+Gwendolyn.esp
+NPC_Hair_Replace_Bandit_Forsworn.esp
+ REQ: Apachii and Coolsims Hair
+Riften Girl s Replacer v 0.1.esp
+Riften_Female.esp
+Cute Girl s Replacer Markarth v01.esp
+Cute Girl s Replacer Riften v 0.2.esp
+Cute Girl s Replacer Solitude v01.esp
+Cute Girl s Replacer Witherun v 3.0.esp
+OlfinaGrayMane.esp
+OrientalbeautyMod.esp
+ SAY: The OrientalbeautyMod.esp you use depends on which female body replacer (if any) you use.
+RANs_CharGen_Morph_0.43a.esp
+RealisticEyeLighting.esp
+Solitude Girl's Replacer.esp
+TheCompanionShort.esp
+Vilkas.esp
+VilkasLongHair.esp
+Windleham_Female.esp
+winterhold_female.esp
+ENDGROUP: NPC face mods
+
+BEGINGROUP: General Base Mods
+\
+\Includes nearly all new items (except weapons and armor).
+\Low priority mods.
+
+BEGINGROUP: Weather mods and overhauls
+\
+\Unlikely to be affected by anything but sound mods.
+
+Chesko_Frostfall.esp
+IFNOT (r"Realistic Lighting.*\.esp") MOD: enhanceddynamicweathersystem.esp
+ SAY: Use only one enhanceddynamicweathersystem esp
+REGEX: enhanceddynamicweathersystem(normal|snowy|rainy|sunny)\.esp
+ SAY: Use only one enhanceddynamicweathersystem esp
+ INC: Realistic Lighting
+ENDGROUP: Weather mods and overhauls
+
+BEGINGROUP: Sound mods
+
+Bardsoundsmalukah.esp
+DFG's Blade & Dagger Sheathe Sounds.esp
+DragonShout.esp
+IceBreaker's Improved Reverb.esp
+immersive thunder.esp
+Improved Combat Sounds v2.0.esp
+ICS Possible Fix 1.esp
+newheavyarmorsound.esp
+Nordic Natural Sound.esp
+Phenderix's Magic Sounds Improved.esp
+projectpew.esp
+the real fus ro dah.esp
+Rooster At Dawn v1.0.esp
+skyradio.esp
+SoS - The Dungeons.esp
+SoS - The Wilds.esp
+QuieterRestorationDrawnSound.esp
+ENDGROUP: Sound mods
+
+BEGINGROUP: Lighting
+
+alvor's house dynamic.esp
+Bright Lights.esp
+CLARALUX - More and Brighter Lights.esp
+CLARALUX - LightAdjuster - Increased Bright Increased Radius.esp
+CLARALUX - LightAdjuster - Vanilla Bright Increased Radius.esp
+CLARALUX - LightAdjuster - Vanilla Lights.esp 
+CLO.esp
+ColorfulLightsNoShadows.esp
+Darker Nights.esp
+Darker Nights_20bl.esp
+Dark Nights.esp
+Dark Nights and Bright Skies.esp
+Darker Nights and Bright Skies.esp
+Darker Nights No Weather.esp
+Darkest Nights.esp
+DarkerSkyrimLighting.esp
+Encryptions Water Arrow.esp
+fixedeyeadaptation.esp
+IFNOT (r"Realistic Lighting.esp") MOD: Dark Dungeons for ENB.esp
+IFNOT (r"Realistic Lighting.esp") MOD: Further Dark Dungeons for ENB.esp
+real lights in dragonsreach.esp
+IF ("Realistic Lighting.esp") MOD: Better Dynamic Snow.esp
+ \Bethsoft9.187
+Natural Skyrim Rain.esp
+ \Bethsoft6.118,128and9.187,193
+Realistic Lighting.esp
+ IF (r"Realistic Lighting.esp") MOD: Dark Dungeons for ENB.esp
+ IF (r"Realistic Lighting.esp") MOD: Further Dark Dungeons for ENB.esp
+Realistic Lighting - Full.esp
+REGEX: RL - .*\.esp
+Realistic Lighting Patcher.esp
+enhancedlightingforrealisticlighting.esp
+REGEX: Warmer Magic Lights v.+\.esp
+IC-Lighting.esp
+NoTint.esp
+DarkerInteriors.esp
+DarkerNights.esp
+DOF.esp
+REGEX: KatuLights.*\.esp
+ SAY: Use only one KatuLights*.esp
+RealLights-Base.esp
+Real Lights - Cities.esp
+Dark Light Templates.esp
+bigdanscozyvillages.esp
+OLSE.esp
+SkyrimURWL.esp
+slowereyeadapt.esp
+ZFixed Lights.esp
+Zfixed Lights RCRN.esp
+ENDGROUP: Lighting
+
+IF (r"Realistic Lighting.*\.esp") MOD: enhanceddynamicweathersystem.esp
+ \See readme for more info about load order
+ SAY: Use only one enhanceddynamicweathersystem esp
+
+BEGINGROUP: Music
+
+REGEX: Dawn_addon.*\.esp
+IF (r"Dawn_addon_part\d\.esp") SAY: Obsolete. Upgrade to latest version.
+dragonborn with lute.esp
+REGEX: enhanced soundtrack.+\.esp
+REGEX: PersonalizedMusic.*\.esp
+ENDGROUP: Music
+
+BEGINGROUP: Base Early
+
+SFD_NumericQuality.esp
+REGEX: Weapons and Armor fixes( - Hacks)?\.esp
+ IF (r"REGEX: Smithing Perks Overhaul( - Balanced)?\.esp") && IF ($CCO) SAY: For 'WAF+SPO+CCO' users. No conflicts with 'Smithing Perks Overhaul' and 'Complete Crafting Overhaul'.(checked in FNVEdit)
+\Vanilla fixes. Must be load here(and also for CCO and SPO), for prevent to override new changes from mods in Base group. Too many conflicts with other mods in Base group.
+Shadow Striping Fix.esp
+SMIM_Fixes.esp
+REGEX: SpellFix.*\.esp
+StaticMeshImprovementMod.esp
+SkyrimImprovedChanges.esp
+ TAG: {{BASH: Delev, Relev}}
+SI_NoSaltOreMapMarkers.esp
+SI_VanillaMerchants.esp
+SI_VanillaMessages.esp
+SIRW.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+SIMIIPatch.esp
+Economics of Skyrim.esp
+ENDGROUP: Base Early
+
+BEGINGROUP: Base #
+
+00EButterfliegenENGLISH.esp
+3DNPC.esp
+REGEX: 83Willows_101BUGs_.+\.esp
+ TAG: {{BASH: Delev, Relev}}
+ENDGROUP: Base #
+
+BEGINGROUP: Base A
+
+ABCsforBarbarians.esp
+aDragonRide.esp
+ADV HB-Style.esp
+alchemistshack01.esp
+AlcoholRecipes.esp
+Ale_and_Mead_labels.esp
+all killable.esp
+AllArmorsPlayable.esp
+AllCraft.esp
+Alternate Clothing Names.esp
+ancalagon.esp
+ARTOFMAGIC.esp
+ SAY: Obsolete. Upgrade to latest version.
+AOMGHOST.esp
+AOM.esp
+a perfect circle.esp
+Arcticia's LifeCycles.esp
+AsharaMerchantNPC.esm
+ENG_All_In_One_v1.2.esp
+NoRestorationExploit.esp
+ANB - ArrowsToPicks.esp
+Arachne.esp
+Archery-Overhaul.esp
+ArcheryOverhaulFletcherArrowsOnly.esp
+Archmage Crafting - Enchanted Items.esp
+Archmage Crafting - Unenchanted Clothing.esp
+REGEX: Arrowsmith\w{0,2}\.esp
+Ars Metallica.esp
+arrowsstick.esp
+REGEX: Arrows of Magicka.*\.esp
+ SAY: Use only one Arrows of Magicka*.esp
+AThievesTreasure.esp
+Auto Unequip Helmet.esp
+AV1Dragon_Lords.esp
+ENDGROUP: Base A
+
+BEGINGROUP: Base B
+
+BabettesFeast.esp
+BabettesFeast - IMCN.esp
+BabettesFeastBalanced.esp
+BabettesFeastOverpowered.esp
+BabettesFeastWeakerEffects.esp
+Batch Crafting Recipes.esp
+Back off, Barbas!.esp
+REGEX: (Vidani's )?Bag of Holding\.esp
+REGEX: BagofTrash\w*\.esp
+ SAY: Use only one BagofTrash*.esp
+BakingRecipes.esp
+Balanced Crafting Project - Smithing Part.esp
+Balanced Crafting Project - Enchanting Smithing.esp
+BanditsEyepatch.esp
+Bandits Wear Helmets.esp
+ TAG: {{BASH: Relev}}
+bards sing everywhere v0.1.esp
+bards for all houses.esp
+bard - ajen - honeyside.esp
+bard - dez - archmage.esp
+bard - dora - breezehome.esp
+bard - jora - vlindrel hall.esp
+bard - karen - proudspire manor.esp
+bard - loren - hjerim.esp
+bard  - loren - hjerim.esp
+Barrels and Crates.esp
+ TAG: {{BASH: Relev}}
+Better Alchemy Loot.esp
+Better Skill and Quest Books Names.esp
+BetterFishAdded.esp
+ TAG: {{BASH: Relev}} not tested
+betterstartingitems.esp
+bbLager.esp
+guild battlemage.esp
+BetterArchmagesRobes.esp
+Better Skill and Quest Books Names - BS.esp
+Birds.esp
+BirdsFlocks_FR_2.3.esp
+Blade Temple Visitors.esp
+bladesfactionfix.esp
+BlazesMassIngots.esp
+BLESSINGS - Altar Descriptions.esp
+bloodierCombatv1.1.esp
+BonesTheDracolich.esp
+Book's Of The Secret Knowledge.esp
+BooksBooksBooks.esp
+BookOfConsole.esp
+BookSortingUnpubs.esp
+BookSortingTitles.esp
+boss.esp
+BrewABetterPotion.esp
+Bring Out Your Dead.esp
+buttplug-calyps.esp
+ENDGROUP: Base B
+
+BEGINGROUP: Base C
+
+CallingCardFence.esp
+Cannabis.esp
+Cannibalism.esp
+cao_InventoryPacks.esp
+cao_DweSchematicsCheat.esp
+cao_ToolsTrade_BuyRL.esp
+CarryWeightSpells.esp
+Carriage1.esp
+Cart in Each Big Town.esp
+Cat_mount.esp
+Catsofskyrim.esp
+CatFavMenu_ITA_HircineFIX.esp
+Cautious Bears and Sabercats.esp
+ccImmersiveDiseases.esp
+CCGuides.esp
+CCScrolls.esp
+CCStaff.esp
+CCPortableTools.esp
+CCLevelImprove.esp
+CCUniqueItems.esp
+CCMaterialsandPerks.esp
+CCTailoring.esp
+CCMainFile.esp
+Chau.esp
+Chesko_MorrowindPotionNames.esp
+\ TAG: {{BASH: Names}}
+Chesko_WearableLantern.esp
+SIWLPatch.esp
+ClamsDropPearls.esp
+Cliffracers.esp
+ClothesTearingAddition.esp
+clutter_weapons.esp
+cMKCustomStorageSpells.esp
+cobwebless proudspire.esp
+REGEX: CollectibleXarxes(-nosteal)?\.esp
+Collectors Edition in Brisenheim.esp
+Collectors Edition in Honigheim.esp
+CollectorsED.esp
+College lights.esp
+Colored_Dragonscale_v1.esp
+\ TAG: {{BASH: Invent}}
+Companions Visitors.esp
+Falkreath Visitors.esp
+Mages College Visitors 1.esp
+thieves guild visitors.esp
+Conjuration & Summoning fixes.esp
+ IF ("SpellFix.esp") WARN: Delete. Alreasy included in SpellFix.esp.
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch.esp
+Console Books.esp 
+Convenient Horses.esp
+Cooking Mod - Yummy in Your Tummy.esp
+CookingExpanded.esp
+CookingExpanded - EoS.esp
+CookingExpanded - IMCN.esp
+Cowardly horses.esp
+Cowardly essential horses.esp
+REGEX: Cowardly Frost.*\.esp
+REGEX: Cowardly essential Frost.*\.esp
+Cowardly Shadowmere.esp
+Cowardly essential Shadowmere.esp
+Cautious wolves.esp
+Cowardly wolves.esp
+Cowardly skeevers.esp
+Cowardly Wolves and Skeevers.esp
+CPDisease.esp
+cplesourcelight.esp
+CRAFT - Salvage Material.esp
+craftable.esp
+craftable - draugr.esp
+CraftableEmptySoulstoneswithoutblack.esp
+REGEX: Craftable Soulstones.+\.esp
+craftablelockpicks.esp
+craftable soulgems.esp
+Craftable Soulstoneswithforge.esp
+Craftable Torches.esp
+craftablescrolls.esp
+Crafting300.esp
+ TAG: {{BASH: Delev, Relev}}
+craftingplusv2.esp
+CraftingMaterialsRecipes.esp
+CraftingRecipesRevisited.esp
+craftplusweaponssteam.esp
+Crimson Tide - Blood.esp
+GS.esp
+Cupid_ArrowBeGone.esp
+ENDGROUP: Base C
+
+BEGINGROUP: Base D
+
+d_b Whetstone.esp
+DamageEnchantBonus20v2.esp
+dbmisc.esp
+dbtomisc.esp
+REGEX: Decorator Assistant.+\.esp
+ SAY: Use only one Decorator Assistant*.esp
+DecorativeTrophies.esp
+ TAG: {{BASH: Relev}}
+ \not sure about 'Relev' tag, maybe need 'Invent' tag(after it comp. in WB) need check
+DaedricCrownCraftable.esp
+Deeper Snow.esp
+Deeper Snow with Wind and less View.esp
+Deflect Arrows Perk Fix.esp
+DenseGrass.esp
+DFB - Random Encounters.esp
+Diverse Faction Weapons.esp
+DivinePunishmentForArrowsToTheKnee.esp
+Domino_PerkBooks_Easy.esp
+DragonChristine.esp
+DragonCrownCraftable.esp
+DragonPlateCrownCraftable.esp
+DragonsDiversified.esp
+dremora armor looting.esp
+REGEX: .. - Enhanced Blood Main\.esp
+REGEX: dD-\w{4} Screen Blood\.esp
+REGEX: dD-.{4,9} Screen Blood Duration\.esp
+/* Both can be used at the same time */
+dD-Reduced Splatter Size.esp
+dD-Reduced Wound Size.esp
+DeadThrall.esp
+REGEX: Death Cam \(\d{2} Seconds\)\.esp
+Diaries of Training.esp
+Disease Descriptions.esp
+REGEX: Don.?Juan.*\.esp
+ REQ: Apachis Hairs and Fores Idle Animations
+Dogsofskyrim.esp
+Domino_PerkBooks.esp
+Door_locker.esp
+doubleloot.esp
+Dr_Bandolier.esp
+Lorecraft - Bandolier.esp
+ SAY: Keep dr_bandolier.esp aswell!
+dragoncurse_alpha_1.esp
+dragonsoulstoperks.esp
+dragonstone.esp
+DragonWithSoul.esp
+Dragons in the Wild.esp
+ TAG: {{BASH: Delev}}
+Drink JuiceMod.esp
+dropfixes.esp
+DSpSoB.esp
+Dwemer Certified.esp
+Dwemer Spectres.esp
+dualcastingcostfixed.esp
+dwarven_scrap_renamed.esp
+DungeonQuestAwareness.esp
+DynamicTorches.esp
+ENDGROUP: Base D
+
+BEGINGROUP: Base E
+
+Easter Egg Hunt.esp
+EbonyCrownCraftable.esp
+ElvenCrownCraftable.esp
+ElvenHelmetFix.esp
+Enchanters Merchant.esp
+EnhancementGems.esp
+enchonehandeddaggerfix.esp
+enhanceddistantterrain.esp
+EnverCamoran.esp
+EquipableMap.esp
+EquivalentExchange.esp
+erweiterte schmiedekunst.esp
+EternalTorch.esp
+EveryoneGetInside.esp
+expanded children.esp
+ExpandedJewelryCrafting.esp
+REGEX: Lorecraft - ExpandedJewelry(Crafting|NoChaos).esp
+LORECRAFT-ExpandedJewelryCrafting.esp
+ExpensiveCarriagesInns.esp
+ExpensiveCarriagesInns_x5.esp
+explosivechickens.esp
+ENDGROUP: Base E
+
+BEGINGROUP: Base F
+
+farmeve.esp
+FCSkriptures.esp
+FemHousecarl_TavernCloths.esp
+FreeRide.esp
+FishingInSkyrim.esp
+Fixed Followers.esp
+Fixsmith.esp
+floofy crafting.esp
+Food and Ingredient Overhaul.esp
+followerhuntingbowfix.esp
+ IF ("BDO.esp") WARN: Delete. Already included in BDO.esp
+ IF (r"Better Followers - [SBNP].*\.esp") WARN: Delete. Already included in Better followers
+fpImmersiveMiningFull.esp
+fpImmersiveMiningLite.esp
+fpImmersiveMiningPickaxes.esp
+FullyEquippedBlacksmiths.esp
+Furbag.esp
+ENDGROUP: Base F
+
+BEGINGROUP: Base G
+
+GBob_More_Minor_Vendors.esp
+general npc fixes.esp
+GenebrisTreasureChests.esp
+ TAG: {{BASH: Delev, Relev}}
+\not sure about Delev
+genpeople.esp
+genpeople lite.esp
+getnpcinfo.esp
+gettingitemsfaster.esp
+gifts of akatosh.esp
+GiveADogAHome.esp
+GlaiceLootMod.esp
+ TAG: {{BASH: Delev, Relev}}
+GlassCrownCraftable.esp
+Gleaming Salvage Caravan.esp
+GM-Fletching04.esp
+REGEX: GM-Fletching(Harder|Standard)\.esp
+ SAY: Use only one version of GM-Fletching*.esp
+GM-ForgeAdditions.esp
+ IF ($DualGMForgeAdd) SAY: Use Only One
+GM-ForgeAdditionsLevelledOutfits.esp
+ IF ($DualGMLevList) SAY: Use only one
+/* will work alongside The Lost Art of the Blacksmith */
+GM-ForgeAdditionsLAotB.esp
+ IF ($DualGMForgeAdd) SAY: Use Only One
+GM-ForgeAdditionsLAotBLevelledOutfits.esp
+ IF ($DualGMLevList) SAY: Use only one
+Grab Moveable Statics.esp
+ SAY: Obsolete, consider upgrading
+GrandSoulGemOnly.esp
+greatwyrm.esp
+guardedborders.esp
+GuardsGuardThePlayer.esp
+ENDGROUP: Base G
+
+BEGINGROUP: Base H
+
+Half-sized Snowberries.esp
+HarvestOverhaul.esp
+HarvestOverhaulCreatures.esp
+hdplants+herbs.esp
+helganstartinggear.esp
+hellayracedesc.esp
+hq_skyrimmap.esp
+HjerimChests.esp
+HigherLevelEnemies.esp
+ TAG: {{BASH: Relev}}
+HillmanShack.esp
+HM MicroCraft.esp
+HorseFlute.esp
+HorseMarker.esp
+HotkeyMod.esp
+HousecarlWhiterun.esp
+hqsnow.esp
+humanblood.esp
+humans drop human parts.esp
+huntershack.esp
+HunterTraps.esp
+huntingprofit.esp
+HuntingbowFix.esp
+ENDGROUP: Base H
+
+BEGINGROUP: Base I
+
+I5K Skull Hunt.esp
+Icy.esp
+Improved Container Names.esp
+\ TAG: {{BASH: Names}}
+ImprovedCraftableLockpicks.esp
+improvedskillbooks.esp
+improvedquestbooks.esp
+Immersive Patrols.esp
+improvedrecipes.esp
+ImprovedScImpUniforms - Vanilla only.esp
+improvedskillbooksclassic.esp
+REGEX: Invisibility_Spells(_Plus)?\.esp
+ SAY: Only use one Invisibility_Spells plugin, not both
+increasedbountyrewards.esp
+REGEX: increasedbountyrewards\((ultra-)?lite\)\.esp
+IngredientsOfTamriel.esp
+ingridtheartist.esp
+invulnerableuniquehorses.esp
+Invulnerable Horses.esp
+Ish's Respec Mod.esp
+ TAG: {{BASH: Relev}}
+ItemRewardsForBounties.esp
+Item Sorting by Saige.esp
+itsatrap!.esp
+itsatrapv1.0.esp
+ENDGROUP: Base I
+
+BEGINGROUP: Base J
+
+JAWS.esp
+jbs_smithing_real_ext.esp
+jbs_smithing_soul.esp
+jbs_item_breakdown_rev.esp
+ IF ("jbs_smithing_overhaul.esp") INC: jbs_smithing_overhaul.esp use More Realistic Recipes [revised] instead
+jbs_smithing_real.esp
+/* -- Please Advise -- Should this be Base Early -- Check rev 4258 */
+jbs_weight_overhaul_complete.esp
+jbs_item_breakdown.esp
+ IF ("jbs_smithing_real.esp") INC: jbs_smithing_real.esp
+jbs_weight_overhaul_pot.esp
+jbs_smithing_overhaul.esp
+JenassaBarkeep&Bard.esp
+JewelCraft.esp
+REGEX: -?JK-ValsCraftingMeltdownModifiedv1.esp
+JK Crafting Breakdown.esp
+JokeMOD-KillerTomato.esp
+ENDGROUP: Base J
+
+BEGINGROUP: Base K
+
+KatixasRefillablePotions.esp
+KatixasUsableBarrels.esp
+KDC - Better Food.esp
+KillThemGenerals.esp
+Krisan's Children.esp
+ktxcompleteskyforge.esp
+kuerteeHorseCommands.esp
+ENDGROUP: Base K
+
+BEGINGROUP: Base L
+
+REGEX: Lanterns Of Skyrim - Around Cities(_bright)?\.esp
+REGEX: Lanterns Of Skyrim - Bridges x2 - OnOff(_bright)?\.esp
+Lanterns on the Roads (50% less lanterns).esp
+LBInteriorDecorating.esp
+REGEX: LeatherWeightFix\(\d.\d\)\.esp
+leazeropenlock.esp
+Lady Body.esp
+ INC: Other body replacers.
+LegendarySmithingUpgrades.esp
+Legendary Smithing Upgrades.esp
+Legionettes.esp
+ TAG: {{BASH: Relev}}
+REGEX: LegionArmorVariety(OPTIONAL\d)?\.esp
+ SAY: Use only one LegionArmorVariety esp
+Legs.esp
+CraftUniqueArtifactWEAP.esp
+ REQ: LegendarySmithingUpgrades.esp
+LFHM expert.esp
+LFox Alchemists Have Potions and Poisons.esp
+ TAG: {{BASH: Delev, Relev}}
+LFox Blacksmiths Have Metals.esp
+ TAG: {{BASH: Delev, Relev}}
+LFox Bottle That Blood.esp
+Linked Home Chests.esp
+lockBreaker_EV.esp
+Long lost smelters.esp
+Loot_Overhaul_Rebalanced_v.04.esp
+ TAG: {{BASH: Delev, Relev}}
+Lore Friendly - Dwemer Names.esp
+\ TAG: {{BASH: Names}}
+Lunar Forge Patch.esp
+UnlimitedBookshelves.esp
+SIUBPatch.esp
+ REQ: UnlimitedBookshelves.esp
+lorecorrectvolendrung.esp
+Lorecraft - Cooking.esp
+Lorecraft - Crafting Complete.esp
+Lorecraft - MCraft.esp
+Lorecraft - Vanilla.esp
+Lorecraft - Traps.esp
+Lorecraft - Perks.esp
+Lost Art of the Blacksmith.esp
+Lost Art of the Blacksmith-Bethesdasafe.esp
+lovecraftbooks.esp
+lt_better_horses.esp
+HMBHPatch.esp
+SIBHPatch.esp
+lt_camping.esp
+lush trees.esp
+lustymaidonehand.esp
+LydiaExchangeableArmor.esp
+LydiaLoopFix.esp
+lydia out please.esp
+ENDGROUP: Base L
+
+BEGINGROUP: Base M
+
+MAD Axe Bleeding Rebalance.esp
+MAD Ingots & Leather.esp
+Malkavs Collection.esp
+malukahmainmenu.esp
+mammoth hide.esp
+Mannequins.esp
+Mini-Mannequins.esp
+marader.esp
+marijuana.esp
+MasterChest.esp
+MaybeHeartsAndFlesh.esp
+mcCampingLite.esp
+MD Skyrim Saddle Bags.esp
+mehrdrachenstufen.esp
+MightyDragonsHolyBook.esp
+mintylightningmod.esp
+Mining Extended.esp
+Missing_Carriges.esp
+mm_AspectOfTheBeastPotion.esp
+mmbedroll1.esp
+Modern Day Calendar Names_Learn Names.esp
+MomoDash.esp
+Mononoke.esp
+Moose&Carrie.esp
+moulin.esp
+More Craftables.esp
+ TAG: {{BASH: Relev}}
+More Craftables - Crafting 300 compatibility.esp
+More Craftables - Dwemer Certified compatibility.esp
+Convertible Azura's Star.esp
+more carriages.esp
+More Interactive Items.esp
+more locked containers.esp
+more npcs in the wild.esp
+More Prey animals.esp
+moredragonloot.esp
+MoreFood.esp
+MoreGrass.esp
+MoreLanterns.esp
+REGEX: moreloot(3v1)?\.esp
+REGEX: MoreRain(Windy)?(\d{2,3}percentLessView)?\.esp
+MoreRainHeavyandDarker.esp
+REGEX: MoreSnowWindyand\d{2,3}percentLessView\.esp
+MoreSnow.esp
+MoreSnowWindy.esp
+MoreVillageAnimals.esp
+Morozik75_Better_Skillbook_Rus.esp
+masser_and_secunda_from_morr.esp
+ENDGROUP: Base M
+
+BEGINGROUP: Base N
+
+Named bosses in skyrim I v1.1.esp
+\ TAG: {{BASH: Names}}
+NamedSoulGems.esp
+navetsea female face preset.esp
+new guards.esp
+NewBeveragesAndMiscItems.esp
+NightingaleArmorTextureFix.esp
+Nightingale Equipment Tweaks.esp
+REGEX: NoAutoSkillBooks\((Normal|Better)\)\.esp
+\ IF ("NoAutoSkillBooks(Better).esp") TAG: {{BASH: Names}}
+ SAY: Use only one (Normal) or (Better) version
+NoSaltRecipes.esp
+NPC Bartering.esp
+ENDGROUP: Base N
+
+BEGINGROUP: Base O
+
+Oblivious Horses.esp
+Occupy Skyrim.esp
+outfitchanger.esp
+Owned.esp
+ENDGROUP: Base O
+
+BEGINGROUP: Base P
+
+PeopleofSkyrim v1.esp
+People Have Lanterns.esp
+People Have Torches.esp
+Perfect Legionnaire 3.0.esp
+Perk Books.esp
+PerkPointPotion.esp
+PilgrimsDelight.esp
+Piratelords Loot Adjustments.esp
+ TAG: {{BASH: Delev, Relev}}
+PlayableGreybeardRobe.esp
+Plus_de_charriots_1.0.esp
+Populus.esp
+Portable Campsite.esp
+Portable Campsite Lite.esp
+Portable Campsite Craftable.esp
+potent food.esp
+Potions Renamed.esp
+psychosteve_stone of barenziah.esp
+REGEX: Prides of Skyrim( weak)?\.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+Pupetteer Master.esp
+ENDGROUP: Base P
+
+BEGINGROUP: Base Q
+
+q mannequins and more.esp
+ENDGROUP: Base Q
+
+BEGINGROUP: Base R
+
+Rabbit's Foot Caravan.esp
+RabbitsPlus.esp
+rats.esp
+RaushanSayoran.esp
+Real Days.esp
+real glaciers.esp
+ SAY: Old version update to Real Glaciers V2
+real glaciers v2.esp
+Real Months.esp
+\tags not tested
+real mountains.esp
+realistic clouds.esp
+REGEX: Realistic Wildlife Loot V.+\.esp
+ TAG: {{BASH: Delev, Relev}}
+RWL Option - 3x Giant toes.esp
+ SAY: Use only one Realistic Wildlife Loot esp
+Realistic Wildlife Loot - IMCN.esp
+ TAG: {{BASH: Delev, Relev}}
+REGEX: Real Wildlife Skyrim.*\.esp
+ TAG: {{BASH: Relev}}
+/* Does this Satisfy SIRWPach.esp and SIRWPatch.esp */
+REGEX: SIRWPat?ch.esp
+ TAG: {{BASH: Delev, Relev}}
+\not tested
+Real Wildlife Skyrim 0.1 IMCN.esp
+realrain.esp
+recipeammoarrows.esp
+recipeingots.esp
+RecyclingMod.esp
+ IF ("Crafting300.esp") SAY: Recommeded RecyclingModCrafting300.esp for Crafting300 mod. See RecyclingMod download page.
+ IF (r"Weapons of the Third Era.+\.esp") SAY: Recommeded RecyclingModWo3E.esp for Weapons of the Third Era mod. See RecyclingMod download page.
+RecyclingModCrafting300.esp
+ REQ: Crafting300.esp
+RevisedHorsesFeeding.esp
+RiftenHQtexture-Part1.esp
+RiftenHQtexture-Part2.esp
+RiftenSmelter.esp
+riverwood flora.esp
+RuSort Potions & Poisons.esp
+\TAG: {{BASH: Names}}
+Rusty Antler Caravan.esp
+ENDGROUP: Base R
+
+BEGINGROUP: Base S
+
+S2C-All.esp
+SA Valuable Named Silverware.esp
+\ TAG: {{BASH: Names, Stats}}
+SaderHorses.esp
+SabreFurBag.esp
+sanctuarycleanup.esp
+SB - Loot Mod.esp
+ TAG: {{BASH: Delev, Relev}}
+\tags not tested
+SB Crafting.esp
+ScaledArmorFix.esp
+ScalingKhajiitClawDamage.esp
+ScarabHearthstone.esp
+ScenicCarriages.esp
+SCoL Glue.esp
+Scouter.esp
+SephDragonAuras.esp
+ser house market fix.esp
+SevenFightsAldudagga.esp
+sextoys-calyps-2.esp
+sharpe craftsmanship - made to order.esp
+Shields_on_back.esp
+shMannequinDecorate_WBh.esp
+SIDT.esp
+\ TAG: {{BASH: Names}}
+sign.esp
+Silent Moon Forging 1.2.esp
+Silverupgrade.esp
+SkBBP - Blacksmithing and Balance.esp
+SkBBP - Loot Drops and Leveled Lists.esp
+ TAG: {{BASH: Delev, Relev}}
+Skeleton Key Recipe.esp
+SkoomaModKidduffah v1.0.esp
+Skyforge Smelter.esp
+Skyforge_Plus v3.esp
+SkyHavenLightFix.esp
+SkyMoMod.esp
+ SAY: Obsolete. Update to latest version
+ TAG: {{BASH: Delev, Relev}}
+SkyMoMod_lists.esp
+ TAG: {{BASH: Delev, Relev}}
+SkyMoMod Extras Collectables.esp
+SkyMoMod Extras Conjuration.esp
+Skyrim Barbers.esp
+Skyrim Expanded Loot Tables.esp
+\ TAG: {{BASH: Invent}}
+Skyrim Extended Potions.esp
+Skyrim Scaling Stopper - Misc Edits.esp
+ TAG: {{BASH: Delev, Relev}}
+Skyrim Scaling Stopper - Vanilla Dragon Scaling Patch.esp
+ TAG: {{BASH: Delev, Relev}}
+SkyrimLive.esp
+SkyrimsUniqueTreasures.esp
+Slaughterfish Monster.esp
+Sleep well.esp
+SMDropLitTorch.esp
+smeltable dwarven scrap metal.esp
+smelting extended.esp
+smelting mod by soto.esp
+smeltingtowns.esp
+smithing&clothings_variety_mod.esp
+Smithing Basic.esp
+Smithing Coinage.esp
+Smithing Cooking.esp
+Smithing Extended.esp
+Smithing DrainMill.esp
+Smithing Jewelry.esp
+Smithing Scrolls.esp
+Smithing AlchBowl.esp
+Smithing Tailoring.esp
+/* from Steam Workshop */
+smithingextended.esp
+ TAG: {{BASH: Delev, Relev}}
+\tag not tested
+SmithingTomes.esp
+solssecretstash.esp
+SortiertesInventar.esp
+SpaceWikingSpecialEffectFreyjaGems.esp
+spectralfrostdragon.esp
+SpeedPotionsV1.2.esp
+Speed booster.esp
+spellbreaker_material_fix.esp
+SPTFemaleGuards.esp
+ SAY: Obsolete. Update to SPTDiverseGuards
+SPTFemaleGuardsInPlace.esp
+ SAY: Obsolete. Update to SPTDiverseGuards
+SPTDiverseGuardsSkyrim.esp
+  TAG: {{BASH: Delev}}
+\not tested
+srmcompanioncart.esp
+StaRe.esp
+ SAY: Obsolete. Update to 'SkyRe_StandingStones.esp'
+StarX Frost Giants.esp
+Frost Giants.esp
+stone_overhaul.esp
+REGEX: StormcloakArmorVariety(OPTION\d)?\.esp
+ SAY: Use only one StormcloakArmorVariety esp
+SweetRollin.esp
+SwordMelting.esp
+ClothesTearingAddition.esp
+DrinksAddition.esp
+ItemProcessingAddition.esp
+MineralAddition.esp
+ScrapMeltingAddition.esp
+Syynx Stubborn Skeletons.esp
+ENDGROUP: Base S
+
+BEGINGROUP: Base T
+
+REGEX: Tamriel Compendium( Skill Book Version)?\.esp
+ TAG: {{BASH: Relev}}
+test silver.esp
+ThalmorBanditVamp.esp
+thalmorimmersiondialogue.esp
+TemperSkyforgeDaggers.esp
+REGEX: TemperedIronwork\w*\.esp
+Testing Hall Door.esp
+tGBoA-4_volumes.esp
+The Bears.esp
+The Dead Bee Scrolls.esp
+The-Great-Book-of-Alchemy.esp
+The Visitors.esp
+thieves guild visitors (fixed).esp
+Third Era Attributes for Skyrim.esp
+Tiny.esp
+TK_Placeable_Clutter.esp
+TK_Clutter_Plants.esp
+Too Long Since We Had a Good Bandit Raid.esp
+REGEX: Torch of Everlasting.*\.esp
+TorchesForSkyrim.esp
+REGEX: TorchesForSkyrim.*\.esp
+TorchShadow_Default.esp
+TorchShadow_Tweaked.esp
+TraderEvo.esp
+training mannequin.esp
+Transmute Iron First.esp
+transmuteironorefirst.esp
+TravellersOfSkyrim.esp
+ SAY: Obsolete. Upgrade to latest version.
+TravellersOfSkyrim - Vanilla.esp
+travelingargonians.esp
+treeplanting.esp
+TribalMightHorse.esp
+Twilis's Skooma, Grind bonemeal etc.esp
+two_handed_rebalance.esp
+REGEX: Tytanis\w{0,2}(GER)?\.esp
+ TAG: {{BASH: Delev, Relev}}
+tytanis horse armo vendor stand alone.esp
+Tytanis - Horse Armor Vendor.esp
+Tytanis - Farming.esp
+ENDGROUP: Base T
+
+BEGINGROUP: Base U
+
+UltimatePotionsPoisons.esp
+Unicorn.esp
+Unique Horse Textures.esp
+UniqueRadiantAndPartyClothes.esp
+Usefulremains.esp
+ENDGROUP: Base U
+
+BEGINGROUP: Base V
+
+ValCraftingMeltdownAlpha.esp
+ValsCraftingMeltdownAlpha.esp
+ValsCraftingMeltdown.esp
+ValsScrollCreation.esp
+ValsRedefs.esp
+ValsLegendaryMeltdown.esp
+ValsGoldnPicks.esp
+ValsCraftingMeldown.esp
+ValsArrowCrafting.esp
+ValsAlchRecipes.esp
+Valuable Foods and Misc.esp
+Arrows renamed for better sorting.esp
+REGEX: Valdacil's Item Sorting - .+\.esp
+Valdacil's Item Sorting - Smithing No Smelter Categories.esp
+ IF ("Valdacil's Item Sorting - Smithing Smelter Categories.esp") WARN: Delete 'Valdacil's Item Sorting - Smithing Smelter Categories.esp' or use instead
+Valdacil's Item Sorting - Smithing Smelter Categories.esp
+valuablehidesandskins.esp
+Vampirefix3.esp
+VampireBlood.esp
+vibrantauroras.esp
+Villains Have Torches.esp
+VonwarrOneClickLoot.esp
+ENDGROUP: Base V
+
+BEGINGROUP: Base W
+
+WerewolfAftermathEquipper.esp
+werewolfloadscreenreduction.esp
+werewolvesofskyrim.esp
+WerewolvesSpawn.esp
+Whistle.esp
+REGEX: Wilderness War Parties Standalone.*\.esp
+wildhorses.esp
+Winterlude's Arrowsmithing Mod.esp
+REGEX: WiS IV - Heroes & Villains( insane| Easy)?\.esp
+ SAY: Use only one WiS IV - Heroes & villains esp
+REGEX: Wolfs_Buff_Recipes(_Rus)?\.esp
+Wolfs_Simple_Recipes.esp
+REGEX: Wolfs_Intermediate_Recipes(_Rus)?\.esp
+REGEX: Wolfs_Advanced_Recipes(_Rus)?\.esp
+Woodcutter's Wife.esp
+WRenchant_rotated.esp
+ENDGROUP: Base W
+
+BEGINGROUP: Base XYZ
+
+xFenWeaponSpeed.esp
+xFenWSOWAF.esp
+ TAG: {{BASH: Delev, Relev}}
+xylozi_tougher_traps.esp
+yngolbarrowbuttonfix.esp
+ZutatenAblegen.esp
+ENDGROUP: Base XYZ
+
+BEGINGROUP: Base Late
+
+Darwins_Primitive_Times.esp
+REGEX: DarwinsHT_.+\.esp
+
+adventurersandtravelers.esp
+AdventurersAndTravelersLight.esp
+BeastBanditsV1.esp
+CrowdedCities.esp
+REGEX: KoS_Outcast(_Lite)?\.esp
+ SAY: Use only one KoS_Outcast*.esp
+KoS_Land_at_War.esp
+REGEX: more_Travelers(_light)?\.esp
+ SAY: Use only one more_Travelers*.esp
+MoreUP.esp
+repopulatedskyrim.esp
+REGEX: SIM.?- NPC.?Additions(HOSTILE|WEREWOLVES)?\.esp
+SIM - NPCSUBMITTED.esp
+SIM - Treasure Anywhere.esp
+REGEX: .+Waterbugfix\.esp
+\Only this REGEX work for SIM - Waterbugfix.esp
+ENDGROUP: Base Late
+ENDGROUP: General Base Mods
+
+BEGINGROUP: Load Order Independent Mods
+
+Auto Unequip Arrows.esp
+AutoHarvest.esp
+AutoLoot.esp
+AutomaticItemStorage.esp
+DragonWarrior-Effects.esp
+Dynavision.esp
+WARN: DYNAVISION will work with most ENB configuations, however if you are using ENB, remember to turn OFF the ENB DOF feature in your graphics options
+DYNAVISION Dynamic Depth of Field.esp
+ SAY: Make sure you have not switched DoF off in your ini file. If you don't see any effect, open you Skyrimprefs.ini and look for 'bDoDepthOfField'. Make sure it is set to 1.
+horsefp.esp
+IMAGINATOR - Visual Control for Skyrim.esp
+kuerteeAutoSaveAndTime.esp
+Mart's Savegame DeBloatifier.esp
+Skyrim Timed AutoSave Helper
+skyui.esp
+TimedAutoSave10.esp
+towAutoFP.esp
+ENDGROUP: Load Order Independent Mods
+
+BEGINGROUP: Map marker Tweaks
+
+accurate prison markers.esp
+Barenziah.esp
+BarenziahQuestMarkers.esp
+ IF ("BarenziahQuestMarkers_Droppable.esp") WARN: Delete. Already included in BarenziahQuestMarkers_Droppable.esp
+BetterMapMarkerPlacements.esp
+camp_map_markers.esp
+cartographers map markers.esp
+Compelling Treasure Maps.esp
+crimsonquestmarkers.esp
+detaillierte minen kartenmarkierungen.esp
+ext_mapm.esp
+FastTravelLocationsVAD1.1.esp
+follower map markers.esp
+HideMapMarkers.esp
+House Map Markers (RUS).esp
+House Markers.esp
+MapMarksProject.esp
+minemapmarkers.esp
+Necessary Map Markers (all files included).esp
+Necessary Map Markers with alternate house.esp
+Necessary Markers.esp
+Houses.esp
+Proudspire Manor - Map Marker.esp
+PlayerHomeMapMarkers.esp
+Secondary Locations Map Markers.esp
+skyforge_map_marker.esp
+REGEX: smakit_house_markers(_plus)?(_russian|_german)?\.esp
+REGEX: Unmarked Places - .+\.esp
+WorldMapInFull3D.esp
+ SAY: If you are using other map mods, e.g. Quality World Map with roads, change uLockedTerrainLOD to 32 to display them (only indoors)
+ENDGROUP: Map marker Tweaks
+
+BEGINGROUP: Items (armor and weapons)
+\
+\VITAL for overhaul mod users: Wrye Bash tag all armor replacers {{BASH: Graphics}}(After it work for Skyrim) to keep their new look.
+\Some items will need to go after overhaul or location altering mods to appear.
+
+BEGINGROUP: Items #
+
+118 Weapon Pack.esp
+18 Black Katanas.esp
+1handedWarhammers.esp
+3dmlingfsfs.esp
+1nivPantsArmor.esp
+ENDGROUP: Items #
+
+BEGINGROUP: Items A
+
+Actualize Apparel.esp
+AdditionalAmulets.esp
+ADEC_Chain&Ringmail.esp
+ADEC_HalfPlate.esp
+ADEC_DianoArmor.esp
+ADEC_Clothes.esp
+ADEC_VanillaArmor_Wolf.esp
+ADEC_VanillaArmor_Stormcloak.esp
+ADEC_VanillaArmor_Elven.esp
+ADEC_Nocturnal.esp
+AEOR.esp
+Airy Armor.esp
+AK- Daedric Blue Weapons.esp
+Akaviri Dai-Katana.esp
+Alduin's son.esp
+AlduinWing.esp
+AliceMadnessReturnsVorpal.esp
+AliceMadnessReturnsWeapons.esp
+Alternate_Armor_Appearances_v1.20.esp
+AmazonArmor.esp
+Amiella Outfit.esp
+AmuletOfHomecoming.esp
+AmuletOfTheNine.esp
+amuletofthenines.esp
+amuletsofthedivines.esp
+Anathiel.esp
+ANB - WearableTSun.esp
+AncientNordArmorBuff.esp
+Andragorn's Armoury.esp
+Angelic_Demonic.esp
+REGEX: Animetica.+\.esp
+AnotherBlackThievesGuildArmor_v2.1.esp
+Arcania_armory.esp
+ TAG: {{BASH: Relev}}
+Arcania_armory (base).esp
+ IF ("Arcania_armory.esp") INC: Arcania_armory.esp , use only one.
+Archmage's Boots.esp
+Armor_Swaps_v1.00.esp
+armor_eisen.esp
+Armor_Tera_HmF_L18.esp
+armored armwraps and footwraps.esp
+armored nocturnal robes.esp
+ArmoredCircletsQuickFox.esp
+ArmoredAlikrGarb.esp
+armorkits.esp
+ TAG: {{BASH: Relev}}
+Arngrim_Evening_Dress.esp
+REGEX: ArrowsNoGravity(_Fast)\.esp
+ArrowsOfLight.esp
+AsharaRomanticOutfit.esp
+AsharaDimonizedDress.esm
+AsharaPartyOutfit.esp
+AsharaWeddingOutfit.esp
+Ashbringer.esp
+aassassinscraftables.esp
+AssassinsCreedArmor.esp
+Atlantean Sword.esp
+AtlanteanDragonSlayer.esp
+REGEX: AttTWeapons.?\d\.esp
+AttTJSwords.esp
+auriel_bow.esp
+Autumn elven set.esp
+AuxilaryEquipment.esp
+AzzinothWarglaive.esp
+ENDGROUP: Items A
+
+BEGINGROUP: Items B
+
+BabetteShroudedRobes.esp
+BarbarianArmor.esp
+Barbarian Jewelry.esp
+BaratheonArmor.esp
+Basara.esp
+BattleFlute.esp
+BBP_ArmorPack.esp
+BBP_Apple.esp
+BBP_Dragon_Princess.esP
+BBLSspouse.esp
+BelethorGoods.esp
+REGEX: Berserk Black Swordsman Armor( - No Arm)?\.esp
+ SAY: Use only one version of Berserk Black Swordsman Armor
+BetterArchmagesRobes.esp
+Bingles_Buff_Armors.esp
+BinglesSplinterArmor.esp
+BiPolarBlade.esp
+black mage armor.esp
+BlackHideArmor.esp
+BlackSacramentArmor.esp
+BlackSacramentDBreplacer.esp
+blackknight.esp
+BlackLaceCutieDress.esp
+blackswordsman.esp
+Blade of Eplear.esp
+Blade_of_Olympus.esp
+Blades_of_Chaos.esp
+Blades of Sithis.esp
+bladesman daggers.esp
+bladeofnocturnal.esp
+BladesDragonArmor.esp
+BleachTotalConversion.esp
+blindfold of skyrim.esp
+Blindfolds_of_Skyrim.esp
+bluearchmage.esp
+blueswordcrafter.esp
+BMC - Craftable Glove Alternatives.esp
+bobsarmory.esp
+boots_of_blinding_speed.esp
+boots of speed.esp
+bound weapons redux.esp
+BowOfGunnar.esp
+BowOfShadows.esp
+Brand-Shei's Strongbox.esp
+brutal armor.esp
+Buckler DV.esp
+Bucklers.esp
+Bucklers - Complete.esp
+Bucklers-Complete.esp
+Bucklers - Buckler Only.esp
+Bucklers Only.esp
+ENDGROUP: Items B
+
+BEGINGROUP: Items C
+
+cellanweaponry.esp
+ChickenStaff.esp
+chinaDressRavana.esp
+circlet.esp
+CircletOfIllumination.esp
+ClericCraftable.esp
+REGEX: Cloaks( - PC Only| - No Imperial| - Player Only)?\.esp
+ SAY: Use only one cloaks*esp
+REGEX: Lorecraft - Cloaks( No Imperial| Player Only)?\.esp
+Lorecraft - Cloaks09.esp
+REGEX: 1nivWICCloaks(CRAFT)?\.esp
+REGEX: 1nivWICSkyCloaksPatch(-No Imp)?\.esp
+ SAY: Use only one 1nivWICSkyCloaksPatch esp
+CompanionsShields.esp
+CMStrongBoxes.esp
+ConanSwords.esp
+Lorecraft - Conan.esp
+CraftableTemplar.esp
+CraftableNocturnalRobes.esp
+Craftable TPL Dagger.esp
+Craftable Triss armor.esp
+Craftable Arrows.esp
+Craftable Artifacts.esp
+Craftable Psijic.esp
+Craftable Staffs.esp
+Craftable Greybeard Robes.esp
+CraftableHoods.esp
+CraftableJewelry.esp
+craftablerobes.esp
+CraftBoundWeaponsAndArrows.esp
+CraftableBloodcrownbyDraco.esp
+CrainteVomir.esp
+Crane.esp
+CrazyVaclavsArrows.esp
+ENDGROUP: Items C
+
+BEGINGROUP: Items D
+
+daedric longsword standalone crafting.esp
+Daedric Lord Armor.esp
+Daedric Mage Armor.esp
+daedric_phelm.esp
+daedric+dragonstatswap.esp
+DaedricCorset.esp
+DaedricMask.esp
+Damascus_Swords.esp
+DandelionArmor.esp
+dantes rebellion.esp
+Darklilith.esp
+LFDarksidersWarArmor.esp
+darksiders_pack.esp
+darksiders_scythe.esp
+DarkwindCBBE3ByNausicaa.esp
+DB_Light_Armor_Robes.esp
+dbarrows.esp
+dbbetterf.esp
+dbbownogloss.esp
+dbbowtest.esp
+dbdagger.esp
+DSmystictails.esp
+dbsword.esp
+REGEX: FluffkinsDaedricCorset.*\.esp
+ REQ: Daedric Corset mod
+DaggerCraft.esp
+SkyReDaggerCraftPlugin.esp
+Dagger of time.esp
+Dark Crusader Reforged - Klingen-Set.esp
+DarkStringArmor.esp
+DCR_Blade_Set.esp
+DCR_Shadow_Buckler.esp
+DCSorceress.esp
+DEATH-DEALER.esp
+DeathSting.esp
+Demon Lord Armor Set.esp
+Demothris.esp
+DesertWindByNausicaa.esp
+REGEX: DG Jewelry\d?\.esp
+ SAY: Obsolete. Update to latest version
+UNP Jewelry.esp
+DGJewelryExtended.esp
+DMC_3&4.esp
+DMC Weapons.esp
+Doomshard Bow.esp
+Dovahkiin Mercenary Armor and Weapons CBBE.esp
+Dovahkiin's_Great_Sword.esp
+DPArmor.esp
+DraconicArmor.esp
+DragonArrow.esp
+DragonBane2H.esp
+dragonbonescythe.esp
+Dragonbone Weapons.esp
+Dragonbone Weapons - Faster Arrows.esp
+Dragonbone Weapons - Tytanis Compatibility.esp
+dragonbonedaggerpreview.esp
+dragonbonedaggers.esp
+REGEX: DragonBoneWeapons.+\.esp
+Lorecraft - Dragonbone Weapons Complete.esp
+dragonborngarb.esp
+DragonplateHelmFix.esp
+dragonpriestmasks.esp
+REGEX: Dragonscale.?hood.*\.esp
+dragonslayer.esp
+dragonslayer_dracula.esp
+Dread Knight Weapon Set.esp
+DreadWeapons_Fifthdreads_Weapon_Pack.esp
+Dreadweave Axes.esp
+Drizzt1.esp
+ds_sword.esp
+DS_to_Dragonbone_Helmet.esp
+Divine Aegis.esp
+Divine Aegis Sword.esp
+DQ3SageOutfit.esp
+DualSwords.esp
+Duel Craftable Arrows.esp
+Duel Craftable Arrows FIXED.esp
+DungeonGear01.esp
+DwarvenArmorWeapons.esp
+DwarvenMech.esp
+DwarvenShooter.esp
+Dwemer Scouter.esp
+DwemerAutoBlade.esp
+DwemerRifle.esp
+DynamicLoot.esp
+Dynasty Armor.esp
+Dynasty Armour Compilation.esp
+DynastyArmor.esp
+ENDGROUP: Items D
+
+BEGINGROUP: Items E
+
+Earrings Set1.esp
+EarRingHelmets.esp
+Ebony Craw Wizard Armor fixed.esp
+Northborn Fur Hoods.esp
+EinherjarArmor.esp
+Lorecraft - EinherjarArmor.esp
+EisenPlate.esp
+EI.esp
+Elculous.esp
+REGEX: ElementalBlade.(epicv|progression).\.esp
+Elemental Staves.esp
+ElvenGreatBlade.esp
+ElvenWeaponry.esp
+ElysiumArmor.esp
+EnchantedAccessories.esp
+EtherealEdge.esp
+Experimenter_Ring.esp
+expertandmasterhoods.esp
+explosive arrows.esp
+Ezio's Armor.esp
+ENDGROUP: Items E
+
+BEGINGROUP: Items F
+
+FaalSizaan.esp
+Falmer Darkseeker.esp
+FantasyWeapons.esp
+FF7 Blades.esp
+FF7 Bustersword.esp
+FFweapons.esp
+Field Mage Craftable Armor.esp
+Field Mage Outfit.esp
+finnsword.esp
+FistWraps.esp
+FionaOutfit.esp
+Fire Blade.esp
+FlameAtronachArmor.esp
+FioraArmor.esp
+ForkOfHorripilation.esp
+Forsworn Boots Replacer.esp
+/* Companion for Katharinian Barefoot Legguards for DIMONIZED UNP female body V1.2 */
+Forsworn Legwraps.esp
+Forsworn-Sabrecat.esp
+REGEX: fox\d\d? Armor\.esp
+Frostmourne.esp
+FS_AngelsInSkyrim.esp
+FS_EveningStar.esp
+FS_ExorcizamusTe.esp
+FS_SwordOfTheSeeker.esp
+FSS - The Moving Day Ring.esp
+FullBootForKKSA.esp
+Futanarium.esp
+ENDGROUP: Items F
+
+BEGINGROUP: Items G
+
+GattiBondage0.esp
+GattiQBCollection.esp
+ REQ: CBBE3
+REGEX: GDRanger(Armor|Dress)\.esp
+Gearblade.esp
+REGEX: Geralt_RavenArmor_v.*\.esp
+GeraltJacket.esp
+ghostlier ghostblade.esp
+Gizmodian-Obliviweapons.esp
+GizmodianOblivionWeaponsCraftable.esp
+Gizmodian Silver Swords.esp
+Gizmodian-Witchbane.esp
+REGEX: Glass Mage Armor (Skyrim Vanilla|Ashlander Silver|Outlander Gold)\.esp
+GM-LeatherHood.esp
+ IF ($GMForgeAdd) INC: Gromits Smithing Forge Additions
+goldbrand.esp
+GoldRapier01.esp
+GoldTeraH17.esp
+GondorianArmour.esp
+GoT_Sigils.esp
+Greybeards.esp
+grimreaperhoods.esp
+Guardian of Noctunal.esp
+GuardianArmor.esp
+GuardianWeapons.esp
+Guild Duelist Armor.esp
+gun.esp
+Gwendolic Armor.esp
+ENDGROUP: Items G
+
+BEGINGROUP: Items H
+
+Hartherz1.2.esp
+HartherzEnglish.esp
+HBetterBows.esp
+HealerRobes.esp
+heatershield.esp
+HeatWavev4.esp
+Heavy Stormcloak Officer Armor.esp
+Heavenly Legion Armor.esp
+HedgeKnight.esp
+HellionArrows_v1.15.esp
+REGEX: Henrys Ring of Light( v1-0)?\.esp
+ IF ("Henrys Ring of Light v1-0.esp") SAY: Obsolete. Upgrade to latest version.
+Hana.esp
+Hentai_mixed_Armor.esp
+HentaiCasualWears.esp
+HentaiGaleArmor.esp
+HentaiGaleCBBE3ByNausicaa.esp
+HentaiKarliahArmor.esp
+HentaiMaxiArmor.esp
+HentaiMaxiCBBE3ByNausicaa.esp
+HentaiNightmareArmor.esp
+HentaiSaberDress.esp
+HentaiSuccubusArmor.esp
+HentaiVoidArmor.esp
+HentaisJamellaArmor.esp
+HentaisTemplePlateArmor.esp
+HeroicDwarven.esp
+HeroicStorm.esp
+Herose.esp
+highric Armor.esp
+HighelfL17.esp
+HUM_Armor.esp
+HuntersSight.esp
+HuntressArmor.esp
+Hvergelmir's Armor Retexture - HAR.esp
+Hvergelmir's Shield Retexture - HSR.esp
+ENDGROUP: Items H
+
+BEGINGROUP: Items I
+
+imp_guard_helm.esp
+imp_helm.esp
+REGEX: imp_helm_(night|imp)\.esp
+ImperialArmor.esp
+Improved Potions.esp
+InfernoGreatSword.esp
+Insanity's Chrysamere.esp
+Insanity's Dragon Katana.esp
+Insanity's Empire Longswords.esp
+Insanity's Goldbrand.esp
+Insanity's Sorrow.esp
+Insanity's Umbra Sword.esp
+InvisRing.esp
+InvisibleArmorSets.esp
+IsilGlamdring.esp
+isilNarsil.esp
+Lorecraft - isilNarsil.esp
+IorvethLightArmor_v_1_3.esp
+Ivory.esp
+ENDGROUP: Items I
+
+BEGINGROUP: Items J
+
+jammersslavegear.esp
+JDRobedArmor.esp
+Jojjos Warglaives.esp
+JSScomplete.esp
+T3nd0sOverhaulJSwordsPlugin.esp
+ SAY: For JSwords users
+ SAY: Obsolete. Update to latest 'SkyRe - Skyrim Redone'
+JSwords.esp
+ SAY: Obselete, upgrade to v13+
+Faster Combat-Jswords.esp
+JSwordsDistributionBalancePlugin.esp
+JSwords_FR_Plugin_V13C.esp
+Lorecraft - JSwords.esp
+JulietByNausicaa.esp
+ENDGROUP: Items J
+
+BEGINGROUP: Items K
+
+KaraByNausicaa.esp
+Karliah-MiniByNausicaa.esp
+KarliahArmor2.esp
+KatanaCrafting.esp
+Katharinian Armor.esp
+Kaw's Claws.esp
+Kaw's Cat Disguise.esp
+khajit-ears.esp
+KhantuArmor.esp
+kimono's witcher silver swords.esp
+King's Slayer Armor.esp
+KingOfWorms.esp
+KO Katana.esp
+kokutou yoru.esp
+Kubikiri Ax Edition.esp
+ENDGROUP: Items K
+
+BEGINGROUP: Items L
+
+Lacey Clover.esp
+LadyBatByNausicaa.esp
+LanternHands.esp
+LayerBikini.esp
+LB_MuchAdoSnowElves.esp
+LeahArmor.esp
+leathercollar1mm.esp
+REGEX: LeatherBackpack.*\.esp
+LeazerBoundArmor.esp
+Lee Sams und Mu-Ryeongs Waffen.esp
+Leeloo_Monokini.esp
+legend of kod suleyk.esp
+Legendary Necromancer Amulet.esp
+Legendary Shield of Ysgramor.esp
+Legendary Volendrung.esp
+Legendary Wuuthrad.esp
+LegendaryG(heavy).esp
+leia.esp
+LFArmors.esp
+Lorecraft - LFArmors.esp
+REGEX: Light Armor Hoods - (Normal|Higher) ?Armor Value.esp
+Lich King's Armor.esp
+LichKingByNausicaa.esp
+Light Ebony Mail v1_1.esp
+LightAndHeavyCirclets.esp
+LightArmorPack14.esp
+lilithscleaver.esp
+lilithsdecapitator1_0.esp
+lilithsdecapitator1h_allinone.esp
+ REQ: lilithsdecapitator1_0.esp
+lilithsdisemboweler.esp
+lilithsrazor1_1.esp
+lilithsreaver.esp
+lingling_gg.esp
+listernersarmorset.esp
+loners_sword.esp
+longerlastingmagearmor.esp
+Lorecraft - AncientFalmerSwords.esp
+LoreFriendlyArmors.esp
+lordamor.esp
+LordAmorAddon1.esp
+LordAmorAddon2.esp
+Iorveth.esp
+LostSecretsAllin1_v1dot3.esp
+LOTR Shield Pack.esp
+LubaSkyWings.esp
+ly ftgs.esp
+ly witch.esp
+ENDGROUP: Items L
+
+BEGINGROUP: Items M
+
+MaleClericArmor.esp
+Magicka Sabers.esp
+mage champion.esp
+mage robe hoods.esp
+Malo_Waffen.esp
+March Madness Standalone.esp
+maruMask.esp
+matys knights of the nine armor 2.1.esp
+MaceofAevar.esp
+Masters of Death - Sicarius Armor (Standalone).esp
+Maxwell Outfit.esp
+REGEX: Mechanos Dwemer SteamPunk - .+\.esp
+MECR_Classic_Nord_Shields.esp
+MessiasDarkJester.esp
+mh3_mod.esp
+MHSNW.esp
+Mjolnir.esp
+mlr.esp
+MM_SunniesWoe.esp
+Moar Kontent.esp
+Mods247Helf16.esp
+Mondschwert von General Lee Sam.esp
+MongolArmor.esp
+monster_hunter.esp
+Monster Hunter.esp
+MoonAndStarRing.esp
+morenamedbows.esp
+REGEX: morrowin[ds] weapons.+\.esp
+morrowindweapons bloodmoon.esp
+Mutilator.esp
+MultiGlass.esp
+mwCraftableCirclets.esp
+MyArmor.esp
+Mystic.esp
+MysticGloves.esp
+ENDGROUP: Items M
+
+BEGINGROUP: Items N
+
+REGEX: NA_BipolarBlade_(Eng|Rus|Deu)\.esp
+ IF ($NobleArtInst) WARN: Delete already in Noble_Artifacts_For_Skyrim(Eng|Rus).esp
+REGEX: NA_Chrysamere_(Eng|Rus|Deu)\.esp
+ IF ($NobleArtInst) WARN: Delete already in Noble_Artifacts_For_Skyrim(Eng|Rus).esp
+REGEX: NA_Goldbrand_(Eng|Rus|Deu)\.esp
+ IF ($NobleArtInst) WARN: Delete already in Noble_Artifacts_For_Skyrim(Eng|Rus).esp
+REGEX: NA_IBOTM_(Eng|Rus|Deu)\.esp
+ IF ($NobleArtInst) WARN: Delete already in Noble_Artifacts_For_Skyrim(Eng|Rus).esp
+REGEX: NA_Scourge_(Eng|Rus|Deu)\.esp
+ IF ($NobleArtInst) WARN: Delete already in Noble_Artifacts_For_Skyrim(Eng|Rus).esp
+REGEX: Noble_Artifacts_For_Skyrim_(Eng|Rus|Deu)\.esp
+NarquelionBow.esp
+NemonicDragonSlayer.esp
+Neo's Outlander.esp
+Neo's Swordmage.esp
+Neo's Oriental Dress.esp
+Neo's Outlander 2.esp
+Neo's Slave Leia.esp
+Neo's Witch.esp
+NewBladesArmor.esp
+Newermind Bow Collection.esp
+Niagras Bleach Pack.esp
+Nicos Craftable Arrows.esp
+Nicos Gift.esp
+Nicos Scimitar.esp
+Nicoroshi Creations.esp
+Night_Dweller_Armor.esp
+Nightingale Armor for Mages.esp
+Nightingale_with_DBenchants.esp
+Nightingale Shield.esp
+nightshade_armor.esp
+NightingaleBowDmgIncDEFAULT.esp
+NightsWatchArmor.esp
+NobleFemaleClothes.esp
+Nocturnal's Accoutrements.esp
+nomo1.esp
+Non-playable Armor.esp
+NordicSpears.esp
+notched.esp
+NorseMaille.esp
+Novamonk.Butler Uniform.esp
+NPCRedDress.esp
+ENDGROUP: Items N
+
+BEGINGROUP: Items O
+
+Obsidian.esp
+Obsidian Axe.esp
+OchinClothingMod01_RobeSet_Edit00.esp
+Omegared99-Compilation.esp
+ SAY: Obsolete. Upgrade to version 3.3
+Omegared99-WeaponSets.esp
+Omegared99-LvLList-CompOnly.esp
+ TAG: {{BASH: Relev}}
+Omegared99-Compilation-NPC Plugin.esp
+ TAG: {{BASH: Relev}}
+Lorecraft - Omegared99-Compilation.esp
+OrcishMaskedHelmet.esp
+Orgnum'sDagger.esp
+Oriental Weapon&Armor.esp
+Osare AutoMail.esp
+Osare KneeSocks.esp
+ REQ: DIMONIZED UNP female body
+Osare Maid Outfit.esp
+ REQ: DIMONIZED UNP female body
+ENDGROUP: Items O
+
+BEGINGROUP: Items P
+
+Paladin.esp
+PhoenixArmor.esp
+pinkbutterfly.esp
+REGEX: PinoLightArmors_1_1(_FR)?\.esp
+Pirsing.esp
+plate hoods pack-normal armor.esp
+plate hoods pack-fixed.esp
+playable greybeard.esp
+Plush Backpack.esp
+Pony_Armor.esp
+PonySword.esp
+PracticeBowandArrows.esp
+private_singular_quivers.esp
+PrometheusCapes.esp 
+Prometheus_ConanOutfits.esp
+psijic mage.esp
+Psiijic_Master_Outfits.esp
+PTMageArmor.esp
+puresteel.esp
+\ TAG: {{BASH: Invent}}
+Pushup-Bikini.esp
+ENDGROUP: Items P
+
+BEGINGROUP: Items Q
+
+QSMChaos.esp
+qsmspacemarinearmor.esp
+qsmweaponpack.esp
+ENDGROUP: Items Q
+
+BEGINGROUP: Items R
+
+REGEX: R18Pn - .+\.esp
+RealFireArrows.esp
+RangerArmor.esp
+Ranger's Cape.esp
+Rapplez Armor.esp
+REGEX: Raven Set v.*\.esp
+RavenArmor.esp
+Reaper's Quests-Timing Book.esp
+Red Queen.esp
+Redguard Shield.esp
+RedguardKnight.esp
+Lorecraft - RedguardKnight.esp
+Reinforced Hoods.esp
+Remodeled Armor.esp
+Remodeled Armor - addon.esp
+Rena's Craftable Clothing.esp
+ReversedDaggers2.1.esp
+RingDwemer.esp
+Ring of Change.esp
+Ring of Nighteye.esp
+RingOFNighteye.esp
+Rings of Sanguinare Vampiris.esp
+RingOfAssassins.esp
+RingofKhajiit.esp
+RingOfKonahrik.esp
+RingsOfPotions.esp
+RingsOfPower.esp
+RingOfTheNecromancer.esp
+RingsOfTamriel.esp
+RobedSteelPlateArmor.esp
+RogueArmor.esp
+RogueOutfit.esp
+ REQ: CBBE body
+rosegeant.esp
+royal_daedric.esp
+ENDGROUP: Items R
+
+BEGINGROUP: Items S
+
+S&D outfit.esp
+SabrecatGear_AncientArmor
+SabrecatGear_AncientArmorVs.esp
+SabrecatGear_AncientArmorVs_wFix.esp
+SabrecatGear_AncientVs_wPants.esp
+SabrecatGear_AncientVs_wPants_wFix.esp
+SabreCat_Gear.esp
+Lorecraft - SabrecatPack.esp
+SamuraiArmor.esp
+Sekirei.esp
+Sapphire Rose.esp
+Saskia.esp
+SC.esp
+ScaleArmor.esp
+Scalpel.esp
+ScampsIron.esp
+Scene's Blood Dragon Armour.esp
+Scene's Fire Dragon Armour.esp
+Scene's Frost Dragon Armour.esp
+ScoutArmor.esp
+scoutarmor-armor.esp
+scoutarmor-capes.esp
+scythecompilationpack.esp
+REGEX: ScoutArmorAddon\d\.esp
+seethroughlook.esp
+SeraphimStandAlone.esp
+SexyJersey.esp
+Shard of Azzinoth.esp
+Shields_of_the_northern_kingdoms.esp
+Siege Bow & Backpacks.esp
+Silverlight Armor.esp
+Skeleton bikini.esp
+SkimpySilverlight.esp
+SkyforgeWeapons.esp
+SkyHeels.esp
+skyrule.esp
+smithingclavicusmask.esp
+Smithmaster Ring.esp
+SnakeBattleaxe.esp
+SnowLeopardForsworn.esp
+SnowyNightingale.esp
+So Hot.esp
+sord.esp
+soulcalibur.esp
+Soul Calibur Siegfired Requiem.esp
+SoulEaterScythe.esp
+SoulReaver.esp
+Sovngarde Steel Armor and Weapons.esp
+SpaceWikingArchmageEnchantment.esp
+SpawnAxe.esp
+spawnshield.esp
+SpeedRings.esp
+Spring elven set.esp
+sulundo.esp
+StaffBundle.esp
+stalkerarmor.esp
+StandalonePack20.esp
+SteelImperialArmor.esp
+SteelSoldiersWithCloaks.esp
+StormcloakArmorVariety.esp
+\tag not tested
+ TAG: {{BASH: Relev}}
+StrapOnbyaeonv1.1.esp
+SuccubusHead.esp
+Summon Animal Pets DV.esp
+SummonAnimalPets_immersive.esp
+SummonAnimalPets_immortal.esp
+survivor_armor.esp
+Sweeping Onehanders.esp
+Sweeping TwoHanders.esp
+SwitchAxe.esp
+Sword of the One Eyed Crow.esp
+sword_of_omens.esp
+sword_yamato.esp
+ENDGROUP: Items S
+
+BEGINGROUP: Items T
+
+TaliArmor.esp
+Talon of Akatosh.esp
+TamrielicArtifactsV1-1.esp
+tbmchrysamere.esp
+TCOSS.esp
+ TAG: {{BASH: Delev, Relev}}
+temperysgramor.esp
+Temptressdressv1.esp
+tera bows.esp
+tera swords.esp
+tera001.esp
+Tera High Elf L03 Armor.esp
+Tera_HmF_L13.esp
+TeraCastanicFArmors.esp
+terafighter.esp
+TeraHeavy4.esp
+TeraHeavyArmor17.esp
+TeraHEFArmors.esp
+TERA Heavy Armor.esp
+TERX-Set.esp
+testfinal.esp
+REGEX: TH3WICK3D1-.+\.esp
+\REGEX because only items from this autor
+Thalmor Light Armor.esp
+ThalmorStandalone.esp
+The Bow of the Drow.esp
+The Siegebreaker Greatsword.esp
+TheEbonyBlade.esp
+ThunderBirdArmor.esp
+TriRings of Powers v1.0.esp
+theRoadstrokersAlvinHewOutfitSet.esp
+Thor.esp
+CloseFaceRobesAndHelm.esp
+the ancient nord.esp
+The Ring of Night-Eye.esp
+TheDarkFollowerArmor.esp
+TheViciousHeart.esp
+Lorecraft - ViciousWeaps.esp
+Throwing Knives.esp
+Tifa.ff7.byHimmelsky.esp
+Tifa.ff7.Orignalcloth by Himmelsky.esp
+TimeStopRing.esp
+tkwleemodtestcloth.esp
+tom349fistweapons.esp
+Tona_airy.esp
+Tools of Kagrenac.esp
+TrenchKnives Dagger Edition.esp
+TribalMightArmor.esp
+TrissArmorRetextured.esp
+TrissStandalone.esp
+TS_GattiBondage1.esp
+TS_SlickArmour.esp
+TS_SlickSuit.esp
+TS_StripperDresses.esp
+TTHN-Northern Sky.esp
+TwisterBow.esp
+Twohanded Dawnbreaker.esp
+typemoonWeapon.esp
+Tyrael Armor.esp
+TyraelArmor_KoRe.esp
+TyraelArmorVariations.esp
+ENDGROUP: Items T
+
+BEGINGROUP: Items U
+
+Ultima Weapon.esp
+UltraVision.esp
+Umbra (Two handed).esp
+umbra by r3van(one handed).esp
+UmbraSturmbringer.esp
+Unarmed Enhanced.esp
+Unenchanted Necromancer Amulet.esp
+REGEX: UniqueLeveledItemsUpgrade(1dot3)?\.esp
+ IF (r"UniqueLeveledItemsUpgrade\ddot\d\.esp") WARN: Obsolete. Upgrade to latest version.
+UniqueRadiantAndPartyClothes.esp
+UNP Boots.esp
+UNP Simply Clothes.esp
+UNPPantyhose.esp
+uruk.esp
+uruk_greatsword.esp
+urukhelmet.esp
+urukshield.esp
+REGEX: Useful Dragon Priest Masks- (Heavy|Light|Mage)\.esp
+ENDGROUP: Items U
+
+BEGINGROUP: Items V
+
+VagabondArmor.esp
+Valdacil's Light Armor Robes.esp
+VampiricDagger.esp
+VanguardArmor.esp
+Velvec Outfit.esp
+Vicious Heart.esp
+viciousdawnbreaker.esp
+VickysArmor.esp
+Vidala'sDress.esp
+VividRings.esp
+voidarmor.esp
+ENDGROUP: Items V
+
+BEGINGROUP: Items W
+
+REGEX: W2_HelmetPack(-2)?\.esp
+Wanderer Armor.esp
+wanlifu Dress.esp
+warchief armor.esp
+WarchiefArmor.esp
+Lorecraft - hothtrooper44 armors.esp
+ SAY: Do not load any of the original .ESP files that come with hothtrooper44's original mods.
+WarfighterArmory.esp
+Warglaive of Azzinoth.esp
+warmagearmor.esp
+Lorecraft - DoODABoOM.esp
+Warsword.esp
+The Way of the Voice.esp
+REGEX: WayoftheVoice\d\.esp
+WeaponsOfTheShogunate.esp
+REGEX: Weapons of the Third Era.+\.esp
+ TAG: {{BASH: Relev}}
+REGEX: WeaponsOf3E(-alpha|-beta|_Replacer)?\.esp
+ TAG: {{BASH: Relev}}
+WeaponsOf3E - No Leveled Lists.esp
+3rdEraWeaponsMoS.esp
+ TAG: {{BASH: Delev, Relev}}
+ INC: WeaponsOf3E*.esp
+3rdEraWeaponsMoS-ACE-Patch.esp
+ IFNOT (r"3rdEraWeaponsMoS.esp") ERROR: Requires 3rdEraWeaponsMoS.esp
+3rdEraWeaponsMoS - Hacks.esp
+RecyclingModWo3E.esp
+ REQ: Weapons of the Third Era
+Winterscale Armor.esp
+WoTES.esp
+Lorecraft - 3rdEra.esp
+Lorecraft - WeaponsOf3E.esp
+xFenWot3E.esp
+wow.esp
+Wyrmslayer.esp
+ TAG: {{BASH: Delev, Relev}}
+Witchersblades.esp
+witchplate.esp
+WoodlandRanger.esp
+Wulfharth's Dragonbone Weapons.esp
+WVExpansion.esp
+ TAG: {{BASH: Delev, Relev}}
+Lorecraft - WVExpansion.esp
+Wyrmfang.esp
+ENDGROUP: Items W
+
+BEGINGROUP: Items XYZ
+
+XIVShanker.esp
+yangyang_BeautyQueen.esp
+YogWeapons.esp
+zabswitchhat.esp
+ZeldaMod.esp
+zzALittleSexyApparelReplacer.esp
+ENDGROUP: Items XYZ
+ENDGROUP: Items (armor and weapons)
+
+BEGINGROUP: Overhauls
+\
+\Initial position for Overhaul mods
+
+REGEX: Smithing Perks Overhaul( - Balanced)?.esp
+ IF ("PerkUP-Smithing.esp") INC: PerkUP, use only one.
+ IF ("Complete Crafting Overhaul - BS version.esp") && IF ("Complete Crafting Overhaul.esp") SAY: Use only one Smithing Perks Overhaul esp
+ IF ($CCO) && IF ("Complete Crafting Overhaul.esp") SAY: Use balanced version with Complete Crafting Overhaul mod
+REGEX: Complete Crafting Overhaul( - BS version)?\.esp
+ IF (r"(Headbomb's )?Better Sorting.*\.esp") && IF ("Complete Crafting Overhaul.esp") WARN: Use only BS-version for Better Sorting.
+ SAY: Will conflict with mods that modify existing recipes.
+Lorecraft - Crafting Overhaul.esp
+ScarabCraftingHacks.esp
+Crafting 300 Basic.esp
+ TAG: {{BASH: Delev, Relev}}
+\tags as in original crafting 300 mod
+Crafting300_Basic_extras_v1.0.esp
+Darwins_Hard_Times.esp
+MM_BeluaSangunaireRevisited.esp
+MM_BeluaSangunaireRevisitedLootTables.esp
+mm_BeluaSanguinareRevisitedStaminaSprintDrain.esp
+T3nd0sOverhaul.esp
+ SAY: Obsolete. Update to latest 'SkyRe - Skyrim Redone'
+ SAY: Only for non ENB users
+T3nd0sOverhaulNoLighting.esp
+ SAY: Obsolete. Update to latest 'SkyRe - Skyrim Redone'
+ IF ("T3nd0sOverhaul.esp") INC: T3nd0sOverhaul.esp use only one
+ SAY: Only for ENB users
+Legendary Lore - Dragons.esp
+ INC: Deadly Dragons and other Dragon overhaul mods
+dragonnests.esp
+Dragon Overhaul.esp
+ INC: Deadly Dragons and other Dragon overhaul mods
+EpicEndeavours.esp
+\ TAG: {{BASH: Actors.ACBS, Actors.CombatStyle, Delev, Factions, Actors.AIData, Actors.Spells, NPC.Class, Relev}}
+ TAG: {{BASH: Delev, Relev}}
+EpicGlorySlowerLevelingByMadmole.esp
+ IF ($EpicGloryInst) INC: EpicGloryByMadmole.esp
+FactionOverhaulV25.esp
+ SAY: Obsolete. Upgrade to version v3.0
+LegionOverhaulV25.esp
+/* Designed to work with "Deadly Dragons" mod (v3.1.0) */
+megadragons.esp
+Mighty Dragons.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+ IF (r"REGEX: DeadlyDragons(Hard|Normal|Hardcore)?( DV)?\.esp") SAY: Use compatibility patch for deadly dragons:("http://skyrim.nexusmods.com/downloads/file.php?id=13423")
+ INC: Other dragon mods
+Mighty Dragons Unleveled.esp
+ INC: Mighty Dragons.esp , use only one.
+soma's archery overhaul (sao).esp
+ProjectFrenzy.esp
+
+/* Should this have it's own section */
+DragonSwarms.esp
+ IF ($IncDSwarmMorAgress) INC: DS-MoreAgressionForRemover.esp
+REGEX: DragonSwarms (V...)?-Easy Mode\.esp
+ IF ($IncDSwarmMorAgress) INC: DS-MoreAgressionForRemover.esp
+DragonSwarms - Insane Mode.esp
+DS-ExtendedDragonList.esp
+ IF ($DSwarmInst) WARN: Not Needed Already in v3.1
+ IF ($IncDSwarmMorAgress) INC: DS-MoreAgressionForRemover.esp
+DS-FlybyOpt.esp
+ IF ($DSwarmInst) WARN: Not Needed Already in v3.1
+ IF ($IncDSwarmMorAgress) INC: DS-MoreAgressionForRemover.esp
+DS-MoreAgressionForRemover.esp
+ IF ($DSwarmInst) WARN: Not Needed Already in v3.1
+DragonSwarmsOptRemoveTimerStable.esp
+ IF ($DSwarmInst) WARN: Not Needed Already in v3.1
+DS-VanillaTimer+MultipleEvents.esp
+ IF ($IncDSwarmMorAgress) INC: DS-MoreAgressionForRemover.esp
+
+BEGINGROUP: PISE
+PISE.esp
+ TAG: {{BASH: Delev, Relev}}
+PISE-AI Overhaul.esp
+REGEX: Increased Spawns, Loot, and AI.esp
+REGEX: .{0,5}Increased Level Scales\.esp
+REGEX: .{0,5}Increased Spawns Only\.esp
+PISE-Encounter Zones.esp
+PISE-Encounter Zones Only.esp
+PISE-NPC Tweaks and Potions.esp
+REGEX: .{0,5}Loot Tweaks Only\.esp
+REGEX: .{0,5}Sneak Tweaks Only\.esp
+PISE-Gold Tweaks Only.esp
+REGEX: .{0,5}AI Tweaks Only\.esp
+PISE-Vendors.esp
+PISE-Misc Vendors.esp
+PISE-Vendor Tweaks Only.esp
+PISE-Dragon weighting only.esp
+\TAG: {{BASH: Stats}}
+PISE-Difficult Bartering.esp
+PISE-Bartering Tweaks.esp
+PISE-Bartering Tweaks Only.esp
+ SAY: The next one conflicts with some equipment changes, but you'll get some of my changes with the rest of his in the case of a conflict. In most cases, do not use.
+PISE-NPC Equipment Tweaks Only.esp
+PISE-Less Intense Level Scaling.esp
+WARN: Obsolete. Remove this and update to latest version
+PISE-More Intense Level Scaling.esp
+PISE-Dragon Weighting Only.esp
+
+WeaponsOf3E Beta PISE Compatibility Plugin.esp
+ TAG: {{BASH: Delev, Relev}}
+WeaponsOf3E 1-0 PISE Plugin.esp
+ TAG: {{BASH: Delev, Relev}}
+WeaponsOf3E PISE Compatibility Plugin.esp
+ TAG: {{BASH: Delev, Relev}}
+WeaponsOf3E PISE Plugin.esp
+ TAG: {{BASH: Delev, Relev}}
+ENDGROUP: PISE
+
+BEGINGROUP: War in Skyrim
+
+WarinSkyrim.esp
+ WARN:  Obsolete. Update to latest version.
+ TAG: {{BASH: Delev,  Relev}}
+WarinSkyrimII.esp
+ WARN:  Obsolete. Update to latest version.
+ TAG: {{BASH: Delev, Relev}}
+WiS2 Armory.esp
+ TAG: {{BASH: Delev, Relev}}
+WiS III.esp
+ SAY:  Obsolete. Update to latest version.
+ TAG: {{BASH: Delev, Relev}}
+WiS III armory.esp
+ TAG: {{BASH: Delev, Relev}}
+WiS IV armory.esp
+ TAG: {{BASH: Delev, Relev}}
+WiS IV.esp
+ TAG: {{BASH: Delev, Relev}}
+REGEX: WiS IV - (Rainbow mode|Normal mode|Golden Age|Dark Rainbow( II)?|Dark Age|Lore Friendly)( & Plugins)?\.esp
+ SAY: Use only one esp --- WiS IV - Rainbow mode or Normal mode or Golden Age or Dark Rainbow or Dark Age or Lore Friendly
+ TAG: {{BASH: Delev, Relev}}
+WiS IV - double hp npc.esp
+WiS IV - Double fall damage.esp
+WiS IV Heroes.esp
+WiS IV - New Equipement for NPC.esp
+WiS IV - Perks for NPC.esp
+WiS IV - Stealth Troubles.esp
+REGEX: WiS IV - Diseases?\.esp
+WiS IV - Perks For NPCs.esp
+WiS IV - NPCs Heal & Resurrect.esp
+WiS IV - Npc Heal other & resurrect.esp
+WiS IV - Bash & Power Attack.esp
+REGEX: WiS IV - Waters? Wars\.esp
+WiS IV - Armors & Blocks.esp
+WiS IV - Fix FrostspiderGiant.esp
+ENDGROUP: War in Skyrim
+
+BEGINGROUP: Deadly Dragons
+
+REGEX: DeadlyDragons(Hard|Normal|Hardcore)?( DV)?\.esp
+ TAG: {{BASH: Delev, Relev}}
+DeadlyDragonsX.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+DeadlyDragonsCraft.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+DeadlyDragonsSpells.esp
+DeadlyDragonsCreature.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+DeadlyDragonsEF.esp
+REGEX: DeadlyDragonsPISE( DV)?\.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+REGEX: DeadlyDragonsHardPISE( DV)?\.esp
+ TAG: {{BASH: Delev, Relev}} not tested
+REGEX: DeadlyDragonsSpawn.*\.esp
+DeadlyDiversifiedDragonsPatch.esp
+Dragonbone Weapons - Deadly Dragons Compatibility.esp
+REGEX: MD\d compatible with DD\.esp
+DeadlyDragonsArmory.esp
+ENDGROUP: Deadly Dragons
+ENDGROUP: Overhauls
+
+BEGINGROUP: Quests and Locations
+\
+\All mods that add or change quests,
+\add player houses,
+\add or change dungeons,
+\add or change towns, villiages, cities and/or landscape.
+\
+\Mods not in alphabetical order have been hand placed to avoid conflicts (as much as possible).
+
+BEGINGROUP: Quests #
+
+1 crazy home.esp
+3modz_DragonBelly.esp
+ENDGROUP: Quests #
+
+BEGINGROUP: Quests A
+
+A REAL Imperial Camp.esp
+A True ImpeREAL Camp.esp
+Abandoned House.esp
+AbandonedStronghold - Gash Murug.esp
+Adam Adamowicz's Grave.esp
+ajd_skyrimbookstores.esp
+AlchemyChest.esp
+REGEX: alternativeCityAccess.*\.esp
+Amazing Riverwood Starter Home.esp
+Quest_AndTheRealmsOfDaedra.esp
+Ank_Castle_Main.esp
+Ank_Castle_Standalone.esp
+Ank_Castle_Addon.esp
+ SAY: Upgrade to version 5.0+
+AnorithsShack.esp
+/* Might be old version */
+arbitrary faction additions - forsworn.esp
+ArbitraryFA - Forsworn.esp
+archaeologistguild.esp
+archmage quarters .esp
+ArieFarm.esp
+Auditorium.esp
+Aurora.esp
+ENDGROUP: Quests A
+
+BEGINGROUP: Quests B
+
+Bards Questing in Tombs.esp
+bardscollegewithfix.esp
+bardscollegewithoutfix.esp
+BaradMithost.esp
+basement.esp
+BBLuxurySuiteExt.esp
+BBLSapachii.esp
+Beautiful Riften.esp
+Beautiful Whiterun.esp
+BecomeKingOfRiverHelm.esp
+beforsworn.esp
+BertsBreezeRemodel.V.1.1.esp
+BertsBreezehomeGreenhouse.V.1.0.esp
+BertsBreezehomeGarden(Cheat).esp
+BertsBreezehomeRemodel(AutoSort).esp
+BertsBreezehomeRemodel(Exterior).esp
+BertsBreezehomeRemodel(Perks).esp
+BertsBreezehomeRemodel(Dave).esp
+BBRemodelPatch4UnlmtdBkshlvs.esp
+BertsBreezehomeRemodel(Deutsche).esp
+BertsBreezehomeRemodel(Update.2).esp
+Niire'sRe-RemodelForBertsBreezehomeRemodel.esp
+Niire'sPortstonesForBertsBreezehomeRemodel.esp
+BertsBreezehomeGardenConnecter(RemodelESP).esp
+beschuetzer von himmelsrand.esp
+betterbreezehome.esp
+BetterRiften.esp
+bettertameriel.esp
+BetterThievesGuild.esp
+beyond_skyrim.esp
+REGEX: Bigger Cities and Villages.*\.esp
+ IF ("Bigger Cities and Villages0.1.1.esp") SAY: Obsolete/ Upgrade to latest version.
+blackmarsh.esp
+BlackreachRailroad.esp
+BlackTowerUpdate.esp
+bossdungeon.esp
+boss dungeon2.esp
+bossdungeon3.esp
+breezehome enhanced.esp
+Breezehome_FullyUpgradable.esp
+Breezehome Remodeled Finely.esp
+Breezehome1stwing.esp
+ SAY: No longer support, use Dovahkiin Hideout instead
+BreezehomeAnvil.esp
+Breezehome Basement.esp
+breezehomebasement.esp
+BreezehomeBasementRedux.esp
+breezehome balcony.esp
+breezehomedogfriend.esp
+BreezehomeLibrary.esp
+Breezehome Open Windows.esp
+BreezehomeRenovation.esp
+Breezehomeshelves01.esp
+Breezehomeshelves02.esp
+BreezehomeEnchantingTable.esp
+BreezehomeEnchantingTable1.3.esp
+BreezehomeEnchantingTableFrench.esp
+BreezehomeGrindStone.esp
+ENDGROUP: Quests B
+
+BEGINGROUP: Quests C
+
+CampingKitNorthernRanger.esp
+CampingKitNorthernRanger - Without Shop.esp
+Camps of the Wilderness.esp
+CampsAndShipwrecks.esp
+caos tools- ninjaweaps.esp
+cascade_house.esp
+Castle Strunmah.esp
+CastleGrey.esp
+Cavern Pitfalls.esp
+CavernIsles2.esp
+Clam Farm.esp
+ClearFields.esp
+CoD Waking Nightmare II.esp
+College Of Winterhold Overhaul Release - V1.02.esp
+Creed Hills Estate.esp
+Creepy Hovel.esp
+CryptOfTheTongues.esp
+CrystalRock.esp
+ENDGROUP: Quests C
+
+BEGINGROUP: Quests D
+
+Dalls_Proudspire_Castle.esp
+darkstadt.esp
+Darkwater Estate.esp
+DawnStarHome 0.2v.esp
+DawnstarBetterDocks.esp
+Dawnstar_Fortified.esp
+dbriverwoodsanctuary.esp
+REGEX: DeadManor.*\.esp
+DetailedCities.esp
+REGEX: Deus Mons(_WithNPCs)?\.esp
+Divine Intervention.esp
+DremFahPahNahl.esp
+Domus Domentis.esp
+DoV.esp
+DoomstoneClasses.esp
+dovahkiin_sanctuary.esp
+Drakehelm.esp
+Dragon Falls Manor.esp
+Drelas_Cottage_0.5b.esp
+REGEX: DragonsReach_Hideout_(Plus|Assassin|Nightingale)\.esp
+ SAY: Use only one DragonsReach_Hideout_*.esp
+dnihome.esp
+dwemer_egg.esp
+dwemerstatuetest.esp
+DwemerTower.esp
+Dynasty_Manor.esp
+ENDGROUP: Quests D
+
+BEGINGROUP: Quests E
+
+Elvenwood.esp
+EK_UnusualApplications.esp
+EkkiiBreeze.esp
+Elvenwood.esp
+EroticStatues.esp
+Evil Lair of Hydra.esp
+Expanded Towns and Settlements.esp
+exo_WhiterunCaveHouse.esp
+ExRorikstead.esp
+ExpandedWinterholdRuins.esp
+ENDGROUP: Quests E
+
+BEGINGROUP: Quests F
+
+REGEX: Falkreath Graveyard\w?\.esp
+FalkreathCabin.esp
+FalkreathFarmhouse.esp
+falkreath expansion.esp
+Fantasy Markarth.esp
+Farm House_V2.esp
+Fishers Farm.esp
+Free Mine.esp
+FrozenPeakLaboratory.esp
+ENDGROUP: Quests F
+
+BEGINGROUP: Quests G
+
+GardensOfWhiterun.esp
+Golden Egg Treasure Hunt.esp
+Gildergreen Regrown.esp
+golkar.esp
+Great House Barrow.esp
+Grey Stead Manor.esp
+Grytewake.esp
+ENDGROUP: Quests G
+
+BEGINGROUP: Quests H
+
+HelmsHaven.esp
+HjerimExpansion.esp
+HjerimForge.esp
+hideout.esp
+hideoutcompact.esp
+EMHighviewCottage.esp
+hg.esp
+HM VampireStones.esp
+hobbithouse.esp
+HomeSweetStronghold v1.0.0.esp
+Homogenous Detailed Landscapes.esp
+HoneySmithy2.esp
+House1.esp
+Hunt01.esp
+Hunter.esp
+ REQ: SkyMoMod.esm
+Hunter's Campsite v1.1.esp
+HuntForTheWayStones.esp
+ENDGROUP: Quests H
+
+BEGINGROUP: Quests I
+
+Immersive Lore & Hidden Treasures.esp
+improved thieves guild.esp
+ivarstead-expanded.esp
+ENDGROUP: Quests I
+
+BEGINGROUP: Quests J
+
+JKJsenhancedhotpools.esp
+Jorrvaskr Lofthome.esp
+ENDGROUP: Quests J
+
+BEGINGROUP: Quests K
+
+Kapuwa.esp
+Kapuwa Grass.esp
+KatixasCiderhouse.esp
+KRZ - Better Archmage Quarters.esp
+ENDGROUP: Quests K
+
+BEGINGROUP: Quests L
+
+LakesideHideaway.esp
+Landscaped_Breezehome.esp
+Landscaped_Homes_Honeyside.esp
+Landscaped_Homes_Proudspire.esp
+Landscaped_Proudspire.esp
+lastdefeat.esp
+LetsGetRich.esp
+LevelersTower.esp
+ SAY: Obsolete. Upgrade to latest version.
+LFox Moon Sugar Manor.esp
+LocalizedGuildJobs.esp
+Lost Paradise.esp
+Lost Prospect Mine Home.esp
+ENDGROUP: Quests L
+
+BEGINGROUP: Quests M
+
+Magelight Grotto.esp
+Manor Dragonborn.esp
+mannyDragonhead.esp
+Milan's PAck.esp
+MilanDungeonPack2.esp
+moonpath_questdata.esp
+MoreStables.esp
+More Winterhold Flora.esp
+merryfair_bridge.esp
+morthalhouse.esp
+Mother_of_Tears_Contracts_Eng.esp
+Mother_of_Tears_Dungeons.esp
+Mother_of_Tears_Epics_Eng.esp
+Museum.esp
+Mystic Home.esp
+ENDGROUP: Quests M
+
+BEGINGROUP: Quests N
+
+N333-BetterWindhelm-V_1.0.esp
+Nchuzzrezar.esp
+neaextbromjunaar.esp
+Neiheleim.esp
+Netch Fetcher Convoy.esp
+Nightingale Hall.esp
+NightingalePortal.esp
+NirnFallsManor.esp
+Quest_NoMercy.esp
+Nordricks Grave.esp
+nowellrocks.esp
+NPC - Shady Fences.esp
+ENDGROUP: Quests N
+
+BEGINGROUP: Quests O
+
+Ornhamir.esp
+orvarstomb2.esp
+owninggoldenglowestate.esp
+ENDGROUP: Quests O
+
+BEGINGROUP: Quests P
+
+Perfect Whiterun_outside district by ReVan1199.esp
+PhWaterfallRidge.esp
+Pinewood Village.esp
+Pinewoods Cottage.esp
+Pirate Sharphook.esp
+PlayerMansion.esp
+Proudspire.esp
+Proudspire Manor - Dragonborn Edition.esp
+proudspire manor armory.esp
+Proudspire Manor Refurbished.esp
+Proudspire_Noglare.esp
+ProudspireSmithy1.2.esp
+ProudspireManorImprovements.esp
+Chop More Wood.esp
+ENDGROUP: Quests P
+
+BEGINGROUP: Quests Q
+
+Quick TG Entrance_Riften Well.esp
+ENDGROUP: Quests Q
+
+BEGINGROUP: Quests R
+
+RabbitOverkill.esp
+Radiance.esp
+raggedshortcut.esp
+Ranger Ridge.esp
+Ranger Cabins.esp
+Ranger Ridge_v1.esp
+Ranger Ridge_addon.esp
+Ranger's Valley Lodge.esp
+Rangers Refuge.esp
+RayeksEnd.esp
+RealisticWhiterun.esp
+retreat.esp
+Review Studio.esp
+Riften Bivouac.esp
+riften_back_entrance.esp
+RiftenBetterDocks.esp
+MoreRiftenTrees.esp
+Riften Riverside Home.esp
+HellayRiseWaterEvil.esp
+riverside camp.esp
+RiversideLodge.esp
+RiverSideShack.esp
+Riverwatch.esp
+RiverWood_Beautiful.esp
+RiverwoodImprovement.esp
+riverwood creek.esp
+Riverwood Lakehouse 1_6.esp
+Riverwood R9.esp
+RiverWood Redux.esp
+Riverwood Redux Expanded Basement.esp
+Riverwood Smelter.esp
+RiverwoodHouse.esp
+riverwoodhuntingcabin.esp
+RiverWoodShack.esp
+riverwoodpicnicarea.esp
+robbersroost.esp
+roof-jumping treasure mod.esp
+rooq.esp
+rooq_bathing_twocell.esp
+roseandthorn.esp
+royalmansion.esp
+rwhideout.esp
+ENDGROUP: Quests R
+
+BEGINGROUP: Quests S
+
+SCA - Skyrim Character Archetypes (Beta).esp
+Quest_SeaOfGhosts.esp
+SkoomaShip.esp
+Scout Addon for ATIC.esp
+SeabreezeEstate.esp
+secretroom-bh-en.esp
+ IF ("The Secret Room of Breezehome.esp") SAY: Use only one 'The Secret Room of Breezehome.esp' or 'secretroom-bh-en.esp'
+Sentinel Falls.esp
+Sevenkeys.esp
+Shack.esp
+ShipHome.esp
+SilvercrestTomb.esp
+SkyHavenTempleEnhanced.esp
+SlavePack.esp
+ IFNOT ("ApachiiHair.esm") WARN: Before loading in, do confirm you have Apachii hair mod activated or game might crash.
+SleepingDangers-SandsofTime.esp
+SKY.esp
+SkyrimSewers.esp
+SolitudeSKY.esp
+SkyHavenTempleEnhanced.esp
+Skyrim Toilets.esp
+skyrim trade guild.esp
+skyrim villages.esp
+smelterinriverwood.esp
+SteepledHat's Riverwood Home.esp
+SolitudeCapitalCity.esp
+SolitudeBetterDocks.esp
+MoreSolitudeFlora V1.0.esp
+SoulForge.esp
+SpouseLife.esp
+SpouseStoreMod.esp
+ENDGROUP: Quests S
+
+BEGINGROUP: Quests T
+
+HellayTalesOfTheDraugrLibrarian.esp
+TactlessToxins.esp
+TamagenManor.esp
+Taverns.esp
+TDP-Karlu's refuge.esp
+TDP-Rivercave.esp
+TDP-Rivermine.esp
+teg_wizards_of_winterhold.esp
+TeleportRoom.esp
+TKratosteleports.esp
+Temporal Rift.esp
+The Arena.esp
+The Asteria - Dwemer Airship.esp
+Quest_TheBiggerTheyAre.esp
+TheClone Breezehome.esp
+TheClone Breezehome - alternative.esp
+TheClone Breezehome - housemarkerfasttravel fix.esp
+TheClone Breezehome Light fix.esp
+The Secret Room of Breezehome.esp
+ IF ("secretroom-bh-en.esp") SAY: Use only one 'The Secret Room of Breezehome.esp' or 'secretroom-bh-en.esp'
+theMannysOutPost.esp
+thereserve.esp
+ThievesGuildTrapdoor.esp
+ThistleCottage.esp
+thundersnow1.esp
+Tired.esp
+Tolucan.esp
+Tomb ahranas.esp
+tomb of lucien lachance.esp
+tos_secretprayereng.esp
+townsandcitiesenhanced.esp
+TQC.esp
+Trees for Solitude V1.1.esp
+Trees for Solitude.esp
+treehouse.esp
+Twilight Forest.esp
+Twilight Forest - Ambient Lighting.esp
+ENDGROUP: Quests T
+
+BEGINGROUP: Quests U
+
+Undercity.esp
+unkeptunderstonekeep025.esp
+ENDGROUP: Quests U
+
+BEGINGROUP: Quests V
+
+VampireHideouts.esp
+varenguard.esp
+Vengeance.esp
+Vigilant of Stendarr Quests.esp
+Vigilant of Stendarr Quests No Joining Requirements Patch.esp
+VlindrelArmory.esp
+VlindrelForge.esp
+Vlindrel Hall - Dragonborn Edition.esp
+VoiceMasterHouse.esp
+voidLetsGetNaked.esp
+Vortai.esp
+ENDGROUP: Quests V
+
+BEGINGROUP: Quests W
+
+Wanderer Shelter.esp
+WardrobeRoom.esp
+WARZONES - Civil Unrest.esp
+ SAY: Obsolete. Upgrade to version V4+
+WARZONES - Optional Performance Pack.esp
+ScImpUniformsWARZONES.esp
+warehouse_landscape.esp
+Wayhouse.esp
+WestbrookKeep.esp
+Whiterun Spruce by ReVan1199.esp
+Windhelm Dock FTP.esp
+WindhelmBetterDocks.esp
+warehouse_landscape.esp
+wheezesdungeonpack1.esp
+whiterunexenhanced.esp
+Whiterun Ferns.esp
+WinterholdDestruction.esp
+WhitrunRebuild.esp
+WhiterunRebuilt .esp
+Whiteruntrees.esp
+whiterunMarket.esp
+WhiterunFortified.esp
+WhiterunREVISION.esp
+RRBetterWhiterunInt.esp
+Winterhold repair.esp
+wizard.esp
+WRenchanter_tilted.esp
+ENDGROUP: Quests W
+
+BEGINGROUP: Quests XYZ
+
+Zwerge in Dwemer.esp
+ENDGROUP: Quests XYZ
+ENDGROUP: Quests and Locations
+
+BEGINGROUP: Overrides
+\
+\Mods that deliberately change specific things about vanilla Skyrim, overhauls or other mods.
+\Some late loading quests and locations in here too.
+
+BEGINGROUP: Weight Changes
+\moved to this position because have conflicts with too many plugins in overrides groups
+\ TAG: {{BASH: Stats}} for all
+
+Armor Weight Adjustment.esp
+Axe and Pickaxe weight.esp
+Domino_ReducedWeight_All.esp
+REGEX: DragonboneWeightRedux\(x\d\d?\)\.esp
+REGEX: DragonboneWeightReduction.+\.esp
+lighterdragonscalesandbones.esp
+GM-HMSPotions3SecsWeighted.esp
+HuntersMod.esp
+IngredientReweight.esp
+Items Weight Adjustment.esp
+LeatherWeightFix(0.1).esp
+lightertools.esp
+lighter_mining_smithing_materials.esp
+Lightweight Potions and Poisons.esp
+lockpickweight.esp
+mini Potion Mod 01.esp
+pf_0weightquestitems.esp
+REGEX: PRPs_UChoosePotnWght_\d\.esp
+/* German plugin to change potion weights */
+Realistische Trankgewichte.esp
+Realistic Gold Weight.esp
+RebalancedDwarvenIngots.esp
+Rebalanced Potion Weight.esp
+Reweighed Potions.esp
+Reweighed Potions - All Light.esp
+REGEX: WeightedLockpicks.+\.esp
+REGEX: Weighted Items.*\.esp
+REGEX: Pickaxe(Weight)?Redu(ction|x).+\.esp
+Pickaxe & Woodcutter Axe Adjustment.esp
+Scale Tipper.esp
+unusualgemweightless.esp
+Utopolyst's Item Sorting.esp
+REGEX: SkyrimCoinReplacer.*\.esp
+ TAG: {{BASH: Delev}}
+TradeTools&FirewoodWeightFix.esp
+vinis_ingredients.esp
+Weapon Weight Adjustment.esp
+REGEX: Weightless.{1,23}\.esp
+weir_weightlessgems.esp
+ENDGROUP: Weight Changes
+
+BEGINGROUP: Overrides Early
+
+AK- Azura's Black Star.esp
+ArmorSpeed.esp
+\Armies of Skyrim>
+---Riften, Falkreath, Morthal, Dawnstar Guards---.esp
+---Stormcloaks, Windhelm, Sons & Ralof---.esp
+--Imperial soldiers & Legates--.esp
+--Markarth Guards--.esp
+--Penitus Oculatus--.esp
+--Solitude Guards--.esp
+Whiterunguards.esp
+\<Armies of Skyrim
+Dragonbonestats.esp
+Creaturestatsrevised.esp
+ElementalGauldurAmulet.esp
+EnhancedGauldurAmuletITA.esp
+REGEX: female mannequins( in homes)?\.esp
+Glowing Soul Gems.esp
+LessAnnoyingItems.esp
+Masters of Death.esp
+xFenWSOWAFW3E.esp
+ TAG: {{BASH: Delev, Relev}}
+\ TAG: {{BASH: Delev, Stats, Relev}}
+no_quest_items.esp
+PrettySkins.esp
+\ TAG: {{BASH: Stats}}
+PrettyOres.esp
+\ TAG: {{BASH: Stats}}
+UniqueWeapons.esp
+zzALittleSexyApparelReplacer_looseNoUnderwear.esp
+ENDGROUP: Overrides Early
+
+BEGINGROUP: Overrides #
+
+00 friedlichere wilde tiere.esp
+0nk Better Gauldur and Saarthal Amulet Copy.esp
+REGEX: ...?XCarryWeight\.esp
+1DayVendorRestockingV1.2.esp
+REGEX: .Sec(ond)?ShadowWarrior\.esp
+5_minute_candlelight.esp
+ENDGROUP: Overrides #
+
+BEGINGROUP: Overrides A
+
+Accessible Vendor Chests.esp
+IFNOT ("EmpoweredMagic.esp") REGEX: Acquisitive Soul Gems( FR)?\.esp
+AddChoices01.esp
+Adoption.esp
+alcoholiceffect.esp
+AltarsRestoreMagicka.esp
+AlternateBreezehomePurchase.esp
+alternate sunglare.esp
+AmazingFollowerTweaks.esp
+Amulette der Neun.esp
+Angel_of_Death.esp
+Another Shadowmere Mod.esp
+Another_Skooma.esp
+Arachnophobia.esp
+Archery Overhaul.esp
+REGEX: Improved Archery and Bows - Enemy Archers.*\.esp
+ArchmageTolfdir.esp
+ArchmageNecklace.esp
+Argonian Breathless Emerge.esp
+Argonian Claws and Pugilist bonus.esp
+Argonian resist poison.esp
+armored-horses.esp
+Arrows Progressive Damage (BS and CCO).esp
+ SAY: Obsolete. Update to 'AT - Progressive Damage (BS and CCO).esp'
+ArtifactOverhaul.esp
+Ash Pile Expiration.esp
+REGEX: AT - Loot Arrows [-\+]\d\d\d?\%\.esp
+REGEX: AT - Faster Arrows Improved \+\d\d\d?\%\.esp
+REGEX: AT - Merchants Arrows [-\+]\d\d\d?\%\.esp
+REGEX: AT - Recover (\d\d\% )?(Even )?(Less|More) Arrows\.esp
+REGEX: AT - Progressive Damage( \(BS and CCO\)| \(with Nord Hero Arrow\))?.*\.esp
+REGEX: AT - Increased Progressive Damage.*\.esp
+ATTTemplate.esp
+augmentedspells.esp
+AutoAim.esp
+ IF ("NoAutoAim.esp") WARN: Use only one AutoAim.esp or NoAutoAim.esp
+NoAutoAim.esp
+Proper Aiming.esp
+ INC: AutoAim.esp
+Waterbreathing Breathless Emerge.esp
+REGEX: ArmorCap90.*\.esp
+ SAY: Use only one ArmorCap esp
+ArmoredThalmorRobes.esp
+REGEX: ArrowInTheEverywhere.*\.esp
+ENDGROUP: Overrides A
+
+BEGINGROUP: Overrides B
+
+Balanced and Split Sword Axe Mace Weapon Perks.esp
+Barenziah's Crown.esp
+BarenziahQuestMarkers_Droppable.esp
+BasicHorseRidingAI.esp
+ IF ($UFO) WARN: included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO instead
+Better Bone Armor.esp
+Better Bound Weapons.esp
+Better Dragons.esp
+IFNOT ("Realistic Lighting.esp") MOD: Better Dynamic Snow.esp
+Better_Food_and_Sleep.esp
+Better House Carls.esp
+Better Honeyside.esp
+Better Legion.esp
+Better Necromancer's Amulet.esp
+Better Stormcloaks.esp
+BetterItemSorting.esp
+BetterStaffofCorruptionMED.esp
+IF (r"(Headbomb's )?Better Sorting.*\.esp") MOD: CreeperFollower.esp
+REGEX: (Headbomb's )?Better Sorting.*\.esp
+Weightless Ingredients - Better Sorting.esp
+Weightless Soulgems and Fragments - Better Sorting (PseudoVanilla).esp
+Weightless Soulgems and Fragments - Better Sorting (Ranked).esp
+Weightless Ores, Ingots, Firewood and Coal - Better Sorting.esp
+betterbhmagic.esp
+BetterQuestObjectives.esp
+REGEX: BetterSkillBooks.*\.esp
+BetterStaffofMagnus.esp
+BetterSwimming.esp
+Bigger dragons.esp
+Binocular Vision For NPCs while Sneaking.esp
+bleedeffects.esp
+Blizzard v 1.4.esp
+BlockSparkles.esp
+REGEX: Bloodx\d{1,4}\.esp
+REGEX: Bodies Stay Longer( \(Extreme\))?\.esp
+book prices fix.esp
+border.esp
+BorderRegionsDisabledEV.esp
+BoundWpnScaleWithConj.esp
+bow x5.esp
+br_hoodcirclets.esp
+BreezehomeExtraLight.esp
+Brighter Campfires X20.esp
+brrobecirclets.esp
+brutal elven.esp
+brutal hide.esp
+brutal iron.esp
+brutal orcish.esp
+brutal steel.esp
+brutal steel plate.esp
+BurntCorpse.esp
+ENDGROUP: Overrides B
+
+BEGINGROUP: Overrides C
+
+Carga.esp
+Clavicus_Mask_Upgrade.esp
+CleanArrowPlayer.esp
+CloseFaceRobesAndHelm.esp
+CMFreeTimeMod.esp
+codifredsenhancedhunting.esp
+codifredsenhancedsmithing.esp
+Consistent Conjuration.esp
+\ TAG: {{BASH: Names}}
+CriticalDamageRevised.esp
+crominteractionimprovement.esp
+CustomDifficultyEnemiesOnly.esp
+REGEX: CutthroatMerchants\w+.esp
+ENDGROUP: Overrides C
+
+BEGINGROUP: Overrides D
+
+Daedric Artifact Enhancements.esp
+Daedric Artifacts Overlord.esp
+DaedricWOP.esp
+DangerousTraps.esp
+dense vegetation.esp
+DarwinsPT_less_food75.esp
+DarwinsPT_runspeed.esp
+DarwinsPT_Infected.esp
+db-nightshade-replacer.esp
+Deadly Traps.esp
+Death Reload (30 Minutes).esp
+REGEX: Default Torches - .+\.esp
+DefenderNoSpiders.esp
+dD - Easy Lift Bodies and Objects.esp
+dD - Easy Lift Bodies and Objects - Light Only.esp
+dD-Increase Fall Damage.esp
+dD-No Screen Blood.esp
+dD-Reduced Weapon Blood Duration.esp
+DescaledUniques.esp
+REGEX: DFB - Additional Health Per Level - \d\d\.esp
+REGEX: DFB - Carry Weight Per Stamina - \d\d\.esp
+DFB - Companion Bow Visible.esp
+DirectorsTools_FogUnlocker.esp
+REGEX: Disable Fast Travel Permanently.*\.esp
+ SAY: Use only one 'Disable Fast Travel Permanently*.esp'
+disablefasttravel.esp
+disablelydiatradedialog.esp
+doublebounddmg.esp
+\ TAG: {{BASH: Stats}}
+droppablebarenziah.esp
+ IF ("BarenziahQuestMarkers_Droppable.esp") WARN: Delete. Already included in BarenziahQuestMarkers_Droppable.esp
+DS-FlybyOpt.esp
+DS-MoreAgressionForRemover.esp
+Dr_ItemBones.esp
+dragonbitetaildamage +.esp
+Drelas_Cottage.esp
+DynamicMerchants.esp
+ENDGROUP: Overrides D
+
+BEGINGROUP: Overrides E
+
+Eat My Dust.esp
+EbonyDaggerOfMephala.esp
+EK_LimitedItems.esp
+Eld-emptyUrnsRicherDraugrChests.esp
+Eld-rareCostlyLockpicks.esp
+emSCChangeOfDress.esp
+Encryption - DoF.esp
+Encumbered Is Sacrosanct.esp
+ENG_Firewood_Ore_&_Ingot_weight_reduction_v1.0.esp
+enhanced soul gems.esp
+EnduringDragons.esp
+enterablewindows.esp
+Equip more Rings.esp
+Essential dogs v2.esp
+Essential Frost.esp
+Essential horses - all horses.esp
+Essential Karinda.esp
+Essential Meeko.esp
+Essential Shadowmere.esp
+Essential Whiterun horses.esp
+essentialhorsemen.esp
+Extended Selection.esp
+Essential Vigilance.esp
+ExpandedCarriageService.esp
+eyeFix.esp
+ENDGROUP: Overrides E
+
+BEGINGROUP: Overrides F
+
+FA Guard Helmet.esp
+FalmerHuntCrab.esp
+Fast Respawns And Rich Merchants.esp
+ TAG: {{BASH: Relev}}
+REGEX: Faster Arrows Improved \d\d\d?\.esp
+FastTravelFromIndoors.esp
+REGEX: FasterArrows\d*\.esp
+faster vanilla horses.esp
+Faster Wild Animals.esp
+Faster Woodland Creatures v1.2.esp
+FasterDeer.esp
+REGEX: FasterHorses_Sprint_x.+\.esp
+FasterSpeeds.esp
+Filling Food & Restful Sleep.esp
+flags of victory.esp
+FImperialCuirass.esp
+fixwards.esp
+FreeRide.esp
+followersalpha7.esp
+REGEX: Follower Tweaks.*\.esp
+ SAY: Only use one Follower Tweaks - plugin at once
+FollowerWander.esp
+forger.esp
+forsworn briarheart.esp
+Fortify1H-Daggers.esp
+FrostHorseWhite.esp
+frostyfrost.esp
+ INC: other horse mods
+FSS-No pause between lines.esp
+FSS-Slight pause between lines.esp
+Fullcamprespawn.esp
+ENDGROUP: Overrides F
+
+BEGINGROUP: Overrides G
+
+Garys_Real_Mare_Horse_Mod.esp
+GauldurAmuletBoost.esp
+Get Out of my Bedroom with Chair.esp
+GetArrowsBack.esp
+getdrunk.esp
+REGEX: Ghostly Shadowmere.*\.esp
+ SAY: Use only one
+REGEX: Hellspawn Shadowmere.*\.esp
+ SAY: Use only one
+REGEX: Sinister Shadowmere.*\.esp
+ SAY: Use only one
+giant_giants_and_mammoths.esp
+GKorrPerks.esp
+REGEX: GloriousGrass( PineForests)?\.esp
+GoldenVendors.esp
+ TAG: {{BASH: Relev}}
+globalimprovements.esp
+REGEX: GM-CookingRebalance.*\.esp
+GM-CookingEnhanced06b.esp
+GM-Smelting.esp
+GM-Tanning.esp
+greener aspenforest.esp
+GSRDivorce.esp
+Guard Shields - Light.esp
+GuardDialogue.esp
+GuardDialogue50.esp
+GuardianStonesOverhaul-Candrian.esp
+guardskillcomments.esp
+GuardsNoShoutStop.esp
+ENDGROUP: Overrides G
+
+BEGINGROUP: Overrides H
+
+H&C for VGR.esp
+HardcoreSkyrim.esp
+HarderAlduin.esp
+HB BasicRidingAI.esp
+REGEX: HBE( - |_).+\.esp
+Heavy Imperial Armor.esp
+HeavyMetal.esp
+heimskrshutsup3.esp
+Hemet2CircletReplacer.esp
+Helmets - Khajiit Ears Hair.esp
+helmless_warrior.esp
+Helms and Circlets.esp
+HelmsWithCirclets.esp
+Hide all headgear - Heavy.esp
+H&C mask addon.esp
+Hoodless Archmage Robes.esp
+HoodsAndCirclets.esp
+Horse Whisper - NO TRACKING.esp
+HorsesGoneWild.esp
+Horses sprint for longer.esp
+horsesignorecombat.esp
+Cowardly horses sprint for longer.esp
+Housecarl - Wear anything.esp
+housecarl_fem.esp
+Housecarls Can Wear Anything.esp
+REGEX: Housecarls improved AI( \+ higher lvl cap)?\.esp
+ IF ($UFO) WARN: Improved AI included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+REGEX: Housecarls Mixed Feminine.*\.esp
+Housecarls V3 D for Deluxe.esp
+HT_traveltax.esp
+hunter's discipline - 100%.esp
+Hypothermia.esp
+FixFollowerBow.esp
+FixFollowerBow_12Arrows.esp
+FollowerDaedricBow12.esp
+FollowerDwarvenBow12.esp
+FollowerEbonyBow12.esp
+FollowerElvenBow12.esp
+FollowerGlassBow12.esp
+FollowerHuntingBow12.esp
+FollowerLongbow_12.esp
+FollowerOrcishBow12.esp
+Follower Healing Potion and Arrows.esp
+Follower Magicka and Healting Potion.esp
+hqworkbenchandgrindstone.esp
+Shadowmere-Essential.esp
+PalominoHorse-Essential.esp
+GreyHorse-Essential.esp
+Frost-Essential.esp
+BrownHorse-Essential.esp
+BlackHorse-Essential.esp
+BlackAndWhiteHorse-Essential.esp
+ENDGROUP: Overrides H
+
+BEGINGROUP: Overrides I
+
+I work for Belethor.esp
+REGEX: iMaxPlayerRunes\d+\.esp
+ SAY: This is actually iMaxPlayerRunes which is a game setting - you might be able to just set it in the .ini file and skip the plugin.
+ImmediateDragons.esp
+Improved Archery and Bows.esp
+Improved Cloaks.esp
+Improved Radiant Rewards.esp
+Improved Familiars.esp
+Improved Mage Armor.esp
+Improved Runes.esp
+ImprovedArchMageRobes.esp
+ImprovedFood.esp
+ImprovedScImpUniforms - Main.esp
+Increase Torch Range.esp
+Increased Arrow Damage.esp
+Increased Candlelight Duration (5min).esp
+Increased Inn Costs.esp
+Increased Merchant Stock x5.esp
+improved nettlebane.esp
+IncreasedCartCosts.esp
+InfiniteCharge.esp
+InvisibleHelmets.esp
+REGEX: LeatherWeightFix\(.{3}\)v1\.2\.esp
+Ish's Weighted Gold.esp
+ENDGROUP: Overrides I
+
+BEGINGROUP: Overrides J
+
+REGEX: JailtimeMax\d\d\d?\.esp
+JM_BetterAlchemySatchel.esp
+JMO-Dragons.esp
+ SAY: Posible conflicts with other Dragon mods
+joopraetorian.esp
+JumpHigher_130.esp
+ENDGROUP: Overrides J
+
+BEGINGROUP: Overrides K
+
+REGEX: killable.children(.V?\d.\d{1,2})?\.esp
+killable_children_qp_aventus.esp
+killable_children_qp_nelkir.esp
+Killable Children - Quest Important Protected.esp
+KillEssential.esp
+killkids.esp
+killkidsV2.esp
+REGEX: knc_resilient_dragons(_Vanillashout)?\.esp
+ INC: Other dragons mods(Deadly Dragons etc)
+kuerteeGoldAjustment.esp
+ENDGROUP: Overrides K
+
+BEGINGROUP: Overrides L
+
+ladiesofdaedric.esp
+Lawrens RNG Guards.esp
+Lawren RNG Guards.esp
+LaFemmeLycana.esp
+Legendary Artifacts.esp
+Legendary Gauldur Amulet.esp
+LegionArmorVarietyOPTIONAL1.esp
+LegionRequisition.esp
+Lenhador.esp
+REGEX: LessDragon.+\.esp
+REGEX: LessTraining_\d\.esp
+REGEX: Less Talkative NPCs Release.+\.esp
+ SAY: Use only one Less Talkative NPCs Release esp
+lesssnowywinterhold.esp
+Lethal Archery.esp
+Leveled Smithing.esp
+ TAG: {{BASH: Delev, Relev}}
+\not tested
+levelingmerchantswallets.esp
+ TAG: {{BASH: Delev, Relev}}
+\not tested
+LightShieldofSolitude.esp
+REGEX: LFox Alchemists Have Ingredients.+\.esp
+ TAG: {{BASH: Relev}}
+LFox Better Thieves Guild Practice Locks.esp
+Lfox Vampire Skintone Fix.esp
+REGEX: LFox Vendors Have.+\.esp
+Light Blades Armor.esp
+Lighter_Alchemy_Ingredients.esp
+Lightweight Scrolls.esp
+Long-Lasting Torches (Default Radius + 10min).esp
+Longer Lasting Smith and Ench Potions.esp
+LongerCraftingDurations.esp
+longerblessings.esp
+longercandlelight5min.esp
+Lore Friendly Ebony Mail.esp
+Lush Grass.esp
+lush grass and trees.esp
+LycantropyLesserPower.esp
+Lyn_RealArrows_FasterArrows.esp
+LZA Incremental Difficulty.esp
+REGEX: LZA Incremental Difficulty_.*\.esp
+ SAY: Use only one 'LZA Incremental Difficulty_*.esp'
+ENDGROUP: Overrides L
+
+BEGINGROUP: Overrides M
+
+MageFriendlyDiademOfTheSavant.esp
+MageFriendlyDragonPriestMasks.esp
+Magelightshadow.esp
+magicmoonsp.esp
+Mannequin.esp
+MannequinReplacerImperial.esp
+REGEX: masser Size x\d\.\d\.esp
+MasterEnchanter.esp
+/* Companion file for MasterEnchanter.esp */
+REGEX: EnchantPowerX.*\.esp
+ SAY: Use only One EnchantPowerX*.esp
+MasterTrainers100.esp
+REGEX: MatsoImmersive(Rain|Sun)\.esp
+Mehrune's Razor Power.esp
+MehrunesRazorHigherKillChance.esp
+Melee Overhaul - Distinct Styles.esp
+Merchants Reply Only With Take A Look.esp
+Mercy.esp
+MH_ArchMageQuartersMinimalMod.esp
+Mighty Dragon Priests.esp
+Mikaelarps Disenchantable armor.esp
+Mikaelarps disenchantable artifacts.esp
+MiningFaster.esp
+MiningMore.esp
+mjhKhajiitSpeak.esp
+ SAY: This mod overwrites all dialogue enable only when playing Khajiit.
+mjhKhajittSpeak.esp
+ SAY: This mod overwrites all dialogue enable only when playing Khajiit.
+MODdisguises.esp
+more dragons.esp
+More Dynamic Shadows.esp
+REGEX: More Dynamic Shadows.*\.esp
+More Powerful Daedric Artifacts.esp
+\ TAG: {{BASH: Stats}}
+More Powerful Dragons.esp
+REGEX: MoreTraining_\d\d\.esp
+moredeathreloadtime.esp
+MoreVendorGold_1_01.esp
+MorokeiFix.esp
+MorokeiFixNoHelmet.esp
+MorokeiFixCloth.esp
+MorokeiFixClothNoHelmet.esp
+MorokeiCirclet.esp
+Morrowind-Colored Soul Gems.esp
+morrowind_skooma.esp
+ENDGROUP: Overrides M
+
+BEGINGROUP: Overrides N
+
+NeutralHjerim.esp
+new_beautiful_sunglare_1.0.esp
+New Encounter zone Levels.esp
+/* Part of New Encounter zone Levels.esp */
+Tougher named NPCs.esp
+NGEC.esp
+Nightingale Maskless.esp
+REGEX: NoAutoQuestStart_ThievesGuild_(High|Med|Reg)\.esp
+nocollegetour.esp
+No_dog_meat.esp
+No Fast Traveling.esp
+No Fast Travel.esp
+no_guard_warning_after_shouts.esp
+No Helmets Required.esp
+No More Arrows in the Knee.esp
+no more immortal childs.esp
+no nocturnal oath.esp
+No NPC Greetings.esp
+No Perk Prereqs.esp
+No Perk Prereqs - No Helmets Required.esp
+No Perk Prereqs - Smithing Excluded.esp
+No Vendor Yells.esp
+No Random Dragons.esp
+NoCombatMusic.esp
+NoDeepCaveAmbianceLoops.esp
+NoDragonborn.esp
+Matching_Armor_Set_Fixed_-_No_Helmets_Required.esp
+noflickpulse.esp
+REGEX: NoHelmet.*\.esp
+NoHealthRegen.esp
+noguardhelmets.esp
+non-leveled items.esp
+Non-player Armor.esp
+NonEssentialChilds.esp
+NordResist-50stamina.esp
+NordResist-25%.esp
+NoResetZone.esp
+nosalt.esp
+NoSpiders - BearSpiders.esp
+NoSpiders - MudcrabSpiders.esp
+NothingSellsForZero.esp
+NoTraining.esp
+NPCShutUP.esp
+NPCsMoveatPlayerSpeed.esp
+ENDGROUP: Overrides N
+
+BEGINGROUP: Overrides O
+
+onfire.esp
+OpenFaceGuardHelmets.esp
+OpenFaceHelmets.esp
+ENDGROUP: Overrides O
+
+BEGINGROUP: Overrides P
+
+Painful traps.esp
+PaperMapHeight-RemoveFog.esp
+PerQ.esp
+Passive dragons.esp
+playing_children.esp
+Usable lantern.esp
+Child Armor.esp
+pf_lightfootcompanions.esp
+ REQ: playing_children.esp
+potions_0_1.esp
+poisons_0_1.esp
+potions_poisons_0_1.esp
+posesivecorpses.esp
+PowerOfTheBeast.esp
+PrettyPrices.esp
+ENDGROUP: Overrides P
+
+BEGINGROUP: Overrides Q
+
+Quieter_Dungeons.esp
+Quieter_Winds.esp
+ENDGROUP: Overrides Q
+
+BEGINGROUP: Overrides R
+
+Real 1st Person View.esp
+realcarriage.esp
+Realistic werewolf speed.esp
+realisticskoomamodv1.esp
+realrainBWRLWC.esp
+ REQ: Realistic Lighting with Customization
+ReallyGiantGiantsandMammoths.esp
+RebalanceMain.esp
+lessarrows.esp
+Recover Less Arrows.esp
+Recover More Arrows.esp
+Recover Much More Arrows.esp
+Reduced Distance NPC Greetings.esp
+Reduced Early Perk Skill Reqs.esp
+ReducedWardCost.esp
+RemoveAmbientInteriorFog.esp
+ IF ("Realistic Lighting.esp") INC: Realistic Lighting, use only one
+respec.esp
+RevampedExteriorFog.esp
+ IF ("Realistic Lighting.esp") INC: Realistic Lighting, use only one
+Revised.esp
+reworkedmannequins.esp
+REGEX: RichMerchants\w*\.esp
+ TAG: {{BASH: Relev}}
+ IF ("MidasSkyrim.esp") WARN: Possible conflict with Vendor-version of Midas Magic in Skyrim, use Reactor-version.
+/* ...adds a new objective per quest... They now have quest markers added. */
+RitualQuestMarkers.esp
+RunesAlwaysStagger.esp
+/* Will - and ; cause an issue ? Should REGEX be used?  REGEX: runes-?\cloak-fix.esp */
+runes-;cloak-fix.esp
+ENDGROUP: Overrides R
+
+BEGINGROUP: Overrides S
+
+SameWalkRunSpeeds.esp
+STFU.esp
+STFU - guards.esp
+SameWalkRunSpeedsLite.esp
+SB - Jump.esp
+SB - Sneak Dagger Boost.esp
+SB - Sprint Mod.esp
+SB - Training Mod.esp
+SB Bartering Mod.esp
+ScalingElementalRunes.esp
+scaredchildren.esp
+Shadow Remover.esp
+skooma.esp
+Skooma Incorporated.esp
+Skyrim_Best Daedric Artifacts.esp
+Skyrim bigger trees.esp
+Riften Bigger Trees.esp
+Skyrim_Dragon Update.esp
+ TAG: {{BASH: Delev, Relev}}
+\tags not tested
+ INC: Other Dragon override mods, use only one.
+Distant Detail.esp
+REGEX: ElementalRunesImpact.*\.esp
+REGEX: secunda Size x\d\.\d\.esp
+selbs_combatfinesse.esp
+SensibleMerchants.esp
+SER Merchant fix.esp
+shut up dogs.esp
+ShutUP Guards.esp
+REGEX: Skyrim Moon Size x\d\.\d\.esp
+Slightly Reduced Distance NPC Greetings.esp
+slightly reduced npc greetings.esp
+SlightlyIncreaseCarryWeight.esp
+slowercompanions.esp
+Sickly Diseases.esp
+Simple Spell Scaling.esp
+skoomaeffect.esp
+SkyRe_Main.esp
+ TAG: {{BASH: Relev, Delev}}
+ SAY: Make sure to get both available resource-packs.
+SkyRe_Races.esp
+ IF ("RaRe.esp") SAY: Remember to delete RaRe.esp
+SkyRe_Combat.esp
+SkyRe_Enemies.esp
+SkyRe_StandingStones.esp
+ IF ("StaRe.esp") SAY: Remember to delete StaRe.esp
+SkyRe_Lighting.esp
+ SAY: Only for non ENB users
+SkyRe.esp
+ SAY: Obsolete. Upgrade to latest version
+ IF ("SkyReNoLighting.esp") SAY: Choose SkyRe.esp or for ENB Users use SkyReNoLighting.esp
+SkyReBaratheonArmorPlugin.esp
+ SAY: Obsolete. Ugrade to latest version
+ IF ("BaratheonArmor.esp") SAY: Remember to delete BaratheonArmor.esp
+SkyRe_Plugin_BaratheonArmor_1.esp
+ IF ("BaratheonArmor.esp") SAY: Remember to delete BaratheonArmor.esp
+SkyReBetterBowsPlugin.esp
+ SAY: Obsolete. Ugrade to latest version
+ IF ("BaratheonArmor.esp") SAY: Remember to delete BaratheonArmor.esp
+SkyRe_Plugin_BetterBows_1.4.1.esp
+ IF ("HBetterBows.esp") SAY: Remember to delete HBetterBows.esp
+SkyReHedgeKnightArmorPlugin.esp
+ SAY: Obsolete. Ugrade to latest version
+ IF ("HedgeKnight.esp") SAY: Remember to delete HedgeKnight.esp
+SkyRe_Plugin_HedgeKnightArmor_1.esp
+ IF ("HedgeKnight.esp") SAY: Remember to delete HedgeKnight.esp
+SkyReJaySuSwordsPlugin.esp
+ IF (r"JSwords(DV)?\.esm") SAY: Remember to delete JSwords*.esp
+ SAY: Obsolete. Ugrade to latest version
+SkyRe_Plugin_JaySuSwords_1.3D.esp
+ IF (r"JSwords(DV)?\.esm") SAY: Remember to delete JSwords*.esp
+SkyReNicoroshiCreationsPlugin.esp
+ SAY: Obsolete. Ugrade to latest version
+ IF ("Nicoroshi Creations.esp") SAY: Remember to delete Nicoroshi Creations.esp
+SkyRe_Plugin_NicoroshiCreations_1.1.esp
+ IF ("Nicoroshi Creations.esp") SAY: Remember to delete Nicoroshi Creations.esp
+SkyReNoLighting.esp
+ SAY: Obsolete. Upgrade to latest version
+ IF ("SkyRe.esp") SAY: Choose SkyRe.esp or for ENB Users use SkyReNoLighting.esp
+SkyReRedguardKnightArmorPlugin.esp
+ SAY: Obsolete. Upgrade to latest version
+ IF ("RedguardKnight.esp") SAY: Remember to delete RedguardKnight.esp
+SkyRe_Plugin_RedguardKnightArmor_3.esp
+ IF ("RedguardKnight.esp") SAY: Remember to delete RedguardKnight.esp
+SkyReVagabondArmorPlugin.esp
+ IF ("VagabondArmor.esp") SAY: Remember to delete VagabondArmor.esp
+SkyReWarchiefArmorPlugin.esp
+ IF ("warchiefarmor.esp") SAY: Remember to delete warchiefarmor.esp
+Signs and Guardians.esp
+ REQ: Skyrim official patch v1.4.27 or newer
+ESP.esp
+ SAY: Will overwrite racial information changes from SkyRe.esp or SkyReNoLighting.esp, but can be safely deactivated after using the race menu.
+Skyrim Creatures Alive.esp
+ TAG: {{BASH: Relev, Delev}}
+Skyrim Dark.esp
+\ TAG: {{BASH: Names, Invent}}
+Skyrim Smithing Components Rebalanced Full Version.esp
+Skyrim Trade Guild.esp
+SkyTEST-RealPredators.esp
+ SAY: Obsolete. Update to latest version
+SkyTEST-RealPredators&Animals.esp
+ SAY: Obsolete. Update to 1.20+
+SkyTEST-RealisticAnimals&Predators.esp
+Slighty Mighty Dragons.esp
+Slighty Mighty Dragons Unleveled.esp
+Slighty Mighty Dragon Priests.esp
+Mighty Dragon Priests.esp
+slowerstaminadrain.esp
+Super Mighty Dragon Priests.esp
+Super Mighty Dragons.esp
+Super Mighty Dragons Unleveled.esp
+Speed Revised.esp
+Superjump_2x.esp
+REGEX: SSCR Hard Type.*\.esp
+SmallerAtronachs.esp
+SMEssentialPlayer.esp
+SneakNamira.esp
+Snotgurg Useful Food.esp
+Soul Gems Rebalanced.esp
+REGEX: Soul Gems Differ.*\.esp
+Soul Gems Glow When Full.esp
+SoultrapSummons.esp
+Standin Stonene's Value Fix V1.esp
+stronger alduin.esp
+stronger daedric artifacts.esp
+\ TAG: {{BASH: Stats}}
+strongermagerewards.esp
+Spells Cast Light.esp
+Spell Tome price fix light.esp
+spellbreaker_300.esp
+SSyphon15vsAnimalsAndMonstersfix.esp
+StaffOfMagnusFix.esp
+strong carriages.esp
+Sunnie_AMQ_NoWindTunnel.esp
+ENDGROUP: Overrides S
+
+BEGINGROUP: Overrides T
+
+REGEX: Tougher Traps - \w{5,10}\.esp
+TCO - Travel Cost Overhaul.esp
+/* texture overide from Steam Workshop */
+thatsice.esp
+VariedGuards.esp
+VariedGuards2H.esp
+VariousGuardReplacer.esp
+\ TAG: {{BASH: Graphics}}
+TheRiftenRangers.esp
+torches for realistic lighting.esp
+REGEX: torches for RL \(.+\)\.esp
+torchradius.esp
+Tougher guards.esp
+Tougher Traps.esp
+Train over 9000!!!! times.esp
+training dummies.esp
+fr - training dummies.esp
+trap_x2_damage.esp
+True_Groundcover.esp
+ENDGROUP: Overrides T
+
+BEGINGROUP: Overrides U
+
+Uncle Sheo.esp
+UnderTows Alcohol Effects.esp
+UnenchantedThalmorRobes.esp
+Unlevelled World.esp
+ TAG: {{BASH: Relev, Delev}}
+Unlevelled World - War in Skyrim II Patch.esp
+ TAG: {{BASH: Relev, Delev}}
+Skyrim Creatures Alive.esp
+ TAG: {{BASH: Relev, Delev}}
+UnderstandingShadowmarksV1.1.esp
+Unlimited_Amulets.esp
+Unlimited Charge for Daedric Artifacts.esp
+Unlimited_Rings.esp
+Unlimited Rings Multilingual.esp
+UnlimitedSprint.esp
+UnreadBooksGlow.esp
+REGEX: (Skyrim )?Unlimited Rings And Amulets.*\.esp
+ENDGROUP: Overrides U
+
+BEGINGROUP: Overrides V
+
+valuablehidesandskinsvanilla.esp
+REGEX: VendorsHaveMoreMoney\d*\.esp
+Vile Art of Necromancy.esp
+ENDGROUP: Overrides V
+
+BEGINGROUP: Overrides W
+
+walk.esp
+IFNOT (r"ACE .*\.esp") MOD: WayOfTheMonk.esp
+Weapon Specialization - Generalized.esp
+Werewolves Plague in Skyrim.esp
+whiterun guard.esp
+wieldablelantern.esp
+wieldablelanternlanternreplacer.esp
+WiS IV - Double ArrowDamage.esp
+ IF (r"Bashed Patch.*\.esp") WARN: DO NOT merge this esp into Bashed Patch, this will cause all arrows in the game to display LOOKUP FAILED
+ TAG: {{BASH: NoMerge}}
+\ If merging the "doublearrowdamage" esp into wrye bash, this will cause all arrows in the game to display LOOKUP FAILED. This is because bashed patch is merging the esp but not the strings and thus anything in the strings will not be visible!! Taken from readme WIS
+\ TAG: {{BASH: Stats}}
+WiS IV - Double Arrow Damage.esp
+ IF (r"Bashed Patch.*\.esp") WARN: DO NOT merge this esp into Bashed Patch, this will cause all arrows in the game to display LOOKUP FAILED
+ TAG: {{BASH: NoMerge}}
+\ TAG: {{BASH: Stats}}
+Woodelf Extended Animal Friend.esp
+ENDGROUP: Overrides W
+
+BEGINGROUP: Overrides XYZ
+
+YKBeefierDawnbreaker.esp
+YKBeefsteakierDawnbreaker.esp
+yourwalkspeed.esp
+Ysolda.esp
+Zarias_Piercings1.esp
+zFreeRoamHC.esp
+ENDGROUP: Overrides XYZ
+ENDGROUP: Overrides
+
+BEGINGROUP: Towns and Villages
+
+Better Villages.esp
+Expanded Towns - Riverwood.esp
+Expanded Towns - Ivarstead.esp
+Expanded Towns - Darkwater.esp 
+Riverwood Enhanced - Detailed Cities.esp
+PrimbyTown.esp
+riverwood gates.esp
+Riverwood R9D.esp
+ENDGROUP: Towns and Villages
+
+BEGINGROUP: Landscaping
+
+REGEX: CityForest.*\.esp
+ IF ("CityForestv2.esp") WARN: Obsolete. Update to latest version.
+ENDGROUP: Landscaping
+
+BEGINGROUP: City Overhauls
+
+Unique Region Names.esp
+Beautiful Cities.esp
+detailed outskirts.esp
+detailed cities.esp
+HoldStables.esp
+REGEX: Populated Cities.*\.esp
+Open Cities Skyrim.esp
+
+ENDGROUP: City Overhauls
+
+BEGINGROUP: Realism
+
+BasicHumanNeeds.esp
+Basic Human Needs - Food Drink and Sleep
+kuerteeBattleFatigueAndInjuries.esp
+REGEX: AdvancedFoodandRestENG( lazy)?\.esp
+REGEX: dD.?- Realistic Ragdoll Force.*\.esp
+drink eat sleep.esp
+/* Steam network version is an esp and BSA */
+imp's more complex needs.esp
+ IF ("Imp's More Complex Needs.esm") SAY: Use either Nexus or Steam Workshop version, not both.
+REGEX: Jump\d{2,3}\.esp
+kuerteeEncumberingLootArmourAndWeapons.esp
+ REQ: kuerteeInventoryAndWeight.esm
+kuerteeEatAndSleep.esp
+npcuseammo.esp
+P-Froggys Rest and Eat.esp
+RealisticCarryWeight.esp
+Realistic Weapon Weights.esp
+\  TAG: {{BASH: Stats}}
+Realistic Running Speed.esp
+Realistic Speed and Jump Fix.esp
+SkyrimSpeeds.esp
+REGEX: Sprint\d\.esp
+REGEX: StaminaCarryWeight_\d{2}\.esp
+REGEX: staminaregen\d{2,3}\.esp
+StealthImmFixv1.esp
+THS - Base Module.esp
+TRO_BasicNeeds.esp
+SIBNPatch.esp
+ IFNOT ("TRO_BasicNeeds.esp") ERROR: Requires TRO_BasicNeeds.esp
+CookingExpanded - TRO_BN.esp
+TRO_BasicNeeds_WATERPatch.esp
+SkBBP - Lore-Friendly Stats and Encumbrance.esp
+vinis_food_and_rest.esp
+REGEX: vinis_food_and_rest.+\.esp
+/* Imps More Complex Needs - Vampirism to load after other vampire feeding mods */
+IMCN - Overrides.esp
+EOS - IMCN Compatibility.esp
+ENDGROUP: Realism
+
+BEGINGROUP: Vampires and Werewolves
+
+UVO - Ultimate Vampirism Overhaul.esp
+better vampires.esp
+Better Weres and Vamps.esp
+dvampire.esp
+IFNOT ("Extended Colors - Selection.esp") MOD: VampireOverhaul.esp
+IFNOT ("Extended Colors - Selection.esp") MOD: VampireEffectProject.esp
+VampFX-OverhaulPatch.esp
+wild werewolves.esp
+Advanced Vampires.esp
+AdvancedWerewolf.esp
+REGEX: Advanced Vampires No sun damage.*\.esp
+REGEX: Advanced Vampires sun damage.*\.esp
+arsvampires.esp
+REGEX: Better.?Werewolf.*\.esp
+FemaleWerewolf.esp
+LFox No Werewolf Form Cooldown.esp
+ IF ("LFox Werewolf Improvements.esp") WARN: Disable and remove it. Already included in 'LFox Werewolf Improvements.esp'
+LFox Werewolf Improvements.esp
+Lycanthropy_Main_by_Brevi.esp
+MaintainingVampireAppearance.esp
+matedrestedwolf.esp
+NoWerewolfFormCooldown.esp
+ SAY: Possible conflicts with other Werewolf-mods
+playervampirerearrange.esp
+power_of_blood.esp
+powerful_vampires.esp
+Scriptless werewolf bonus.esp
+Tales_of_Lycanthropy.esp
+Werewolf Loot - ToL compatible.esp
+REGEX: True Vampirism - .+\.esp
+UltVampire.esp
+REGEX: vampire_tweaks(_feed_on_kids)?\.esp
+vampire sight.esp
+Vampire Toggle.esp
+VampireFaction.esp
+VampireUpgrade.esp
+REGEX: Vampirism Inverter( B)?\.esp
+Werepyre.esp
+Werewolf Enhancer.esp
+REGEX: Werewolf Enhancer -.+\.esp
+WerewolfSecondHowlToggle.esp
+WerewolfTweaksTransformToughRegen.esp
+WerewolfTweaksMoreDamageCurved.esp
+WerewolfTweaksFeedRegen.esp
+WerewolfTweaksFear.esp
+WerewolfTweaks350Health_300AR_30MR.esp
+WerewolfUpgrade.esp
+Werewolf Loot.esp
+ REQ: WerewolfUpgrade.esp
+Werewolf Loot - Edible Animals.esp
+WiS IV - Werewolf & Vampire.esp
+ENDGROUP: Vampires and Werewolves
+
+BEGINGROUP: Magic
+\
+\Overrides overhauls. New spells and magic systems go here for convenience.
+
+
+BEGINGROUP: General Spells
+
+1portalgun.esp
+ActorBall.esp
+apocalypse.esp
+Apocalypse - The Spell Package.esp
+EOS - Apocalypse Spells Compatibility.esp
+AddtionalLights.esp
+Ancient Spells.esp
+ TAG: {{BASH: Relev}}
+ASX - Spells.esp
+Battle Mage.esp
+Battle_Mage_v1_1.esp
+REGEX: BetterMage(Alt)?\.esp
+BoundTools.esp
+ INC: MiningFlames.esp and Midas Magic's Bound Pickaxe spell. You can have more than one mod enabled, but only one of the added methods will be able to "mine" ore.
+CallAssassins.esp
+Candlespell.esp
+CandlelightShadow.esp
+REGEX: CandleLightToggle.*\.esp
+CarryWeightSpells(BetterSorting).esp
+Chameleon.esp
+CommandHorse.esp
+conjurationmadnessmodv1.esp
+conjureatronarchfix.esp
+ IF ("Unofficial Skyrim Patch.esp") WARN: Delete. Included in Unofficial Skyrim Patch.esp
+CurseSpell.esp
+demonocus detect life spell.esp
+DirectorsTools.esp
+dovahkiin_levitate_spell.esp
+dovahkiin_shieldward.esp
+E0TeleportSpells.esp
+Elementalist.esp
+elemballlightning.esp
+FeatherSpells.esp
+FlashStep.esp
+REGEX: FluxMOD_DeadThrallEnhanced_v\d\.esp
+follow.esp
+ForbiddenMagic.esp
+ForcePush.esp
+Ghostifish-Magical Alchemy Harvest-o-tron.esp
+gkorrspellsv2.esp
+Grand Healing Mod.esp
+REGEX: GriptzionTeleportMenuSpell.*\.esp
+Haste Spells.esp
+Heal Other Mod.esp
+Horse Whisper.esp
+horsecomehere.esp
+Invent.esp
+JSB-AdvancedDestruction.esp
+JoOMassLightning.esp
+Kamehameha Attack.esp
+kdansky_freewards.esp
+kdansky_indefinitebuffs.esp
+Leveled Concentrated Restoration Spells.esp
+LFDivineTarget.esp
+LFFixTargetStats.esp
+LFContingency.esp
+Magic Box.esp
+Magicka Revamp - Destruction - Extra Spells - WIP.esp
+maintainedarmorspells.esp
+markrecall.esp
+MarkRecallAlt.esp
+MarkRecallCon.esp
+MECR_NightEye_DetectLife_Overhaul.esp
+MidasSkyrim.esp
+mindcontrol.esp
+mm_HorseWhisperer.esp
+Necromimesis.esp
+nighteye.esp
+NightEyeIllusionSpell.esp
+nighteyetoggle.esp
+OpenUnlock.esp
+togglevampiresight.esp
+Paladin Spell Pack.esp
+REGEX: Phenderix's Magic Evolved( No Perks| Cheat)?\.esp
+Phenderix AI Add-On.esp
+PJs_Spell_Compendium.esp
+TwinSoulsExpandedLevels.esp
+Physic Magic 0.8v.esp
+poisondestruction.esp
+PowerMasterTheTimeAndSpace.esp
+quiet conjuration.esp
+RamaTeleporterSystem_v1.esp
+Raj's Restoration 100.esp
+ReflectiveWard.esp
+room.esp
+Rune Expansion.esp
+Skyrim Spells Restored.esp
+SMARTS.esp
+SMEssentialKills.esp
+SoulGemTransmutation.esp
+spellcraft.esp
+SpellsExpanded.esp
+SpellMasterOfTheTimeAndSpace.esp
+spelltomeconjureetherealhorse.esp
+SpellDeathAwaits.esp
+SpellForceFire.esp
+SpellForceIce.esp
+SpellForceLightning.esp
+SpellMassForce.esp
+Succubus.esp
+SummonAncestorGuardian.esp
+SummonAnimalPets.esp
+SummonCraftingFurniture.esp
+SummonDarklings.esp
+/* Not sure if they need to load in a specific order. */
+ToggleSpells - MagicEffects.esp
+ToggleSpells - Spells.esp
+touchspells.esp
+transmutation.esp
+transmutesoulgem.esp
+TriRoc Stripper Companion.esp
+TSO.esp
+UBW.esp
+UnlockSpell.esp
+UnplayableMadePlayable.esp
+Upgrade Leveled Items Spell.esp
+Upscaled Beginner Destruction Spells.esp
+URWL_BNDN.esp
+vinis_transmute.esp
+Ward Shield.esp
+weatherchangespell.esp
+Where's My Horse Gone.esp
+ REQ: Skyrim 1.5.24+
+Wintercross Ancient Art of Magick 1.2.esp
+ENDGROUP: General Spells
+
+BEGINGROUP: Shouts
+
+WoP - Dragon Language.esp
+BetterShoutingthroughSpeech.esp
+CanleLightToggle1NC.esp
+dovahkiinrelax.esp
+DragonbornAscendant.esp
+dragonbreathshouts.esp
+DragonRealShout.esp
+DragonShoutsRTEnhancer.esp
+EnhancedShouts.esp
+Improved Dragon Shouts.esp
+LetItAllOut.esp
+REGEX: LFox Improved Shouts( Master( Changes Only)?)?\.esp
+MorePowerfulShouts.esp
+PeryitesBlessing.esp
+QuickShouts.esp
+RealDragonShoutingRecharge.esp
+Rodah.esp
+RuminationsontheRotmulaag.esp
+sheogorath_shout.esp
+Shoo_WTFShout.esp
+ShoutCD.esp
+ShoutCD-V103-LessOP.esp
+Shouts Overlord.esp
+shoutrecoverytimereduced.esp
+fastershouts.esp
+True Dovahkiin Fire and Frost Breath Normal Cooldown Time.esp
+True Dovahkiin Breath.esp
+ENDGROUP: Shouts
+
+BEGINGROUP: Spells Late
+
+5SecondShadowWarrior.esp
+Ancestor Guardian.esp
+AspectIllusionOnly.esp
+Battlemage's Arcanes.esp
+binding_spell.esp
+candlelightnobulb.esp
+gkorrspellsv2.esp
+InvestedMagic.esp
+tSSSSS.esp
+tSSSSS - No Restoration.esp
+Mighty Magick - Magicka Rules.esp
+MMOAlterationChanges.esp
+MMOConjurationChanges.esp
+MMODestructionChanges.esp
+MMOIllusionChanges.esp
+MMORestorationChanges.esp
+BetterDualCasting.esp
+BetterSpellFinishers.esp
+BetterMasterSpells.esp
+BetterMagic_FULL.esp
+BurnifiedEffects.esp
+ SAY: Obsolete. Upgrade to latest version.
+ IF ("BurntCorpse.esp") INC: BurntCorpse.esp
+ INC: Any mod that modifies any fire spells
+BFSEffects.esp
+ IF ("BurntCorpse.esp") INC: BurntCorpse.esp, use only one.
+ INC: Any mod that modifies any fire spells
+DeadlySpellImpacts.esp
+DeadlySpellImpacts - Two Fire.esp
+DIRemoveStartSpellsFlamesHealing.esp
+Dismiss Summons.esp
+DL33-PermDragonRend.esp
+Dual Casting - Time - X0.3.esp
+ELEMEarthPrison.esp
+ElemIceWall.esp
+EmpoweredMagic.esp
+ IF ("EmpoweredMagic.esp") REGEX: Acquisitive Soul Gems( FR)?\.esp
+Even Smaller Spell Light Radius.esp
+FNISspells.esp
+ignitetheworld.esp
+Improved Walls.esp
+LFox No Nightingale Power Cooldown.esp
+LFox No Racial Power Cooldown.esp
+Longer Conjuration Spells.esp
+LZA Quieter Dremora Summons.esp
+Magelight Multi Cast.esp
+MagicDetox.esp
+Magicka balance.esp
+REGEX: magickaregen.*\.esp
+MagicUnderControl.esp
+REGEX: Mighty Magick - (Dual Casting|Alteration|Conjuration|Destruction|Illusion|Restoration|Scaling)\.esp
+Mighty Magick - Fortify Magic School Enchantment and Alchemy Reversed.esp
+REGEX: Mighty Magick - .+ Extras\.esp
+MiningFlames.esp
+More Visible Soul Trap Effect.esp
+mpn.esp
+necromancy tweak.esp
+NEO Optional Longer Potions.esp
+NEO Optional Longer Scroll.esp
+NEO Optional Persistent Spell.esp
+Night Eye Overhaul.esp
+Nighteye(red).esp
+NoPlayerSpells.esp
+nospellstart.esp
+Permanent Blessing.esp
+power_nighteye.esp
+PowerfulIllusion.esp
+ShadowOfTheMagic.esp
+REGEX: Silent khajiit night-eye improved( 2)?\.esp
+SkyrimBalancedMagicSystem.esp
+SkyrimBalancedMagicSystem - spells.esp
+ SAY: Old, consider updating
+SkyrimBalancedMagicSystemSpellsOnly.esp
+SkyrimBalancedMagicSystem-Light.esp
+REGEX: Skyrim Improved Magic System( - No Race Spell Removal)?\.esp
+ IF ("Skyrim Improved Magic System.esp") && IF ("Skyrim Improved Magic System - No Race Spell Removal.esp") WARN: Use only one Skyrim Improved Magic System esp
+Smaller Spell Light Radius.esp
+SpellSneak.esp
+Starting Spell Choice.esp
+Startingspells begone.esp
+StrongerSpells.esp
+SummonSuccubus.esp
+TelekinesisImproved.esp
+Teleport.esp
+Torchlight.esp
+transmute tweak make all silver first.esp
+TrueTransmutation.esp
+Voice_of_the_Sky.esp
+REGEX: WiS IV - AI & Spells for NPC( - No Knockdown)?\.esp
+ SAY: Use only one WiS IV - AI & Spells for NPC esp
+Z_DualCasting_BeGood.esp
+ENDGROUP: Spells Late
+
+BEGINGROUP: Alchemy
+
+Alchemy Fixed Beta 0.02.esp
+ SAY: Obsolete. Update to latest version.
+Alchemy Apparatuses .91.esp
+AutoPotion.esp
+learn_alchemy.esp
+\ TAG: {{BASH: Scripts}}
+alch5x.esp
+alchemyenhancedxp.esp
+AlchemyOrganization.esp
+ASX - Potions.esp
+BetterWhitePhialEffects.esp
+Black lightened Alchemy.esp
+Black lightened Alchemy ML.esp
+Eld-combinePotions.esp
+REGEX: GM-HMSPotions.+\.esp
+REGEX: .{0,5}NPC Spell lists and Potions\.esp
+PISE-Reduced Potions.esp
+ TAG: {{BASH: Delev, Relev}}
+poison diseaseSpells.esp
+REGEX: PTAlchemyFoodOverhaul(_\d_\d)?\.esp
+PTAlchemyFoodOverhaul_BetterSorting.esp
+PTAlchemyOverhaul_ONLY.esp
+PTAlchemyOverhaul_ONLY_BetterSorting.esp
+PTFoodOverhaul_ONLY.esp
+selbs_alchemybalance.esp
+ENDGROUP: Alchemy
+
+BEGINGROUP: Enchantment
+
+zzzEverlastingWeaponEnchant.esp
+Balanced Crafting Project - Enchanting Part.esp
+Balanced Enchanting v2.esp
+Z_Enchantment.esp
+Darkons Enchantment Changes.esp
+enchant4effects.esp
+Enchant_Me_items.esp
+Enchant_Me_perks.esp
+Enchanted Items Overhaul.esp
+ TAG: {{BASH: Delev, Relev}}
+EnchantMagicPower.esp
+enchantmentoverhaul.esp
+Enchanting - IDWIW.esp
+HM Enchanting Unlocker.esp
+enchanting freedom.esp
+EnchantmentPower.esp
+Enchant Plus.esp
+EnchantmentCleanser.esp
+Fortify Enchanting necklace.esp
+IPutASpellOnYou.esp
+hankyench.esp
+HoodlessPsijicArchmageReplacement.esp
+\move this mod to items group with Graphics tag after it work in bashed patch for Skyrim
+Backstab Enchantment new.esp
+stackableenchants.esp
+bootsofnimblespeed.esp
+BowsElementalFury.esp
+Artifact Disenchanting.esp
+Disenchantable Dragonbane.esp
+Muffle Enchantment.esp
+NAEE.esp
+NightEye_Ench+Potion+Spell.esp
+ TAG: {{BASH: Relev}}
+ENDGROUP: Enchantment
+ENDGROUP: Magic
+
+BEGINGROUP: Thievery, Sneaking and Crime
+\
+\Overrides overhauls.
+
+Thievery.esp
+REGEX: cao_extrapockets_D.+\.esp
+crimes!.esp
+crime pays lite.esp
+REGEX: ezpick(lite)?\.esp
+REGEX: Fluffkins_LockPicking(_Light)?\.esp
+REGEX: Hardcore Lockpicking\d-\d\d\.esp
+Higher Bounties Hold Specific.esp
+immersiveUI_LockpickPlus.esp
+improvedsneakdetection.esp
+LessLockpicks.esp
+LockpickingRedone.esp
+lockpicksweetspot.esp
+REGEX: LFox Pickpocketing Chance Caps at .+\.esp
+Nerf and Balance Sneaking for Adept.esp
+Path of Shadows.esp
+pickpocket_min_20.esp
+REGEX: Pickpocket Fixed \[\d{2}\]\.esp
+randomized lockpicking.esp
+Real Time Lockpicking Minigames.esp
+Realistic crime report radius.esp
+REGEX: Realistic crime report radius( zero)?\.esp
+ SAY: Use only one Realistic crime report radius esp
+shenkthieveryoverhaul.esp
+ReneersCrimeOverhaul.esp
+RoguePro.esp
+SB - Lockpick.esp
+SB - Pickpocket.esp
+SB - Sneak Mod.esp
+ShadowPlay.esp
+NoSneakAttackSound.esp
+ENDGROUP: Thievery, Sneaking and Crime
+
+BEGINGROUP: Combat
+
+ACE Realistic Fighting.esp 
+REGEX: CustomDifficultyP.*\.esp
+\Changes game difficulty, put here as initial position
+UCO.esp
+REGEX: Added_Killmoves_All_Weapons.+\.esp
+Added_Slow_Motion_to_1stPerson_with_1st_Person_Only.esp
+REGEX: The Dance of Death.*\.esp
+ IF ("The Dance of Death V.+.esp") SAY: Obsolete. Update to latest version
+Chimera.esp
+combat.esp
+combat fists.esp
+DamageMultiplier.esp
+DeadlyCombat.esp
+SIDCPatch.esp
+DeadlyCombos.esp
+REGEX: DeadlyCombat_.+\.esp
+DisableAutoAim.esp
+Dual Wield Parrying.esp
+Dual Wield Parrying_ScriptDragon.esp
+Dual Wield Parrying_RandomAttacks.esp
+Duel.esp
+Duel_v2_1b.esp
+Duel - Combat Realism.esp
+Duel Combat Realism CK.esp
+Duel - Combat Realism FAST.esp
+Duel_Master.esp
+Duel Extension.esp
+Duel2_ArmorRating.esp
+ INC: Duel_Master.esp
+Duel2_Blocking.esp
+ INC: Duel_Master.esp
+Duel2_Knockback_Knockdown.esp
+ INC: Duel_Master.esp
+Duel2_ReducedReach.esp
+ INC: Duel_Master.esp
+Duel2_ShieldBash.esp
+ INC: Duel_Master.esp
+Duel2_Stagger.esp
+ INC: Duel_Master.esp
+Duel2_Stamina.esp
+ INC: Duel_Master.esp
+Duel_NoArmorTweak.esp
+DukePatricks - CombatTweaks.esp
+ SAY: Outdated use Duke Patricks - Heavy Weapons Combat.esp instead
+Duke Patricks - Heavy Weapons Combat.esp
+decap50.esp
+decap 50.esp
+Eld-unarmedCombat.esp
+Fighting Stances.esp
+Fighting Stances(optional) EnemiesPack.esp
+fists of steel lvls.esp
+firstPersonKillmoveOnly.esp
+killmove.esp
+Killmove +.esp
+Killmove + only player.esp
+kuerteeFightOrFly.esp
+REGEX: Epic Dual Wielding V.+\.esp
+REGEX: KillMoveRandom \d{2,3}\.esp
+Locational Damage.esp
+newkillmoves.esp
+NewKillMovesKnight.esp
+killmoverandom-100-P-L.esp
+decap_chance_10.esp
+KillmoveSetRanger.esp
+AdvancedKillMoves.esp
+AKM_0.01b.esp
+only1stpfinishers.esp
+unarmed combat.esp
+WiS III realistic combat.esp
+WiS IV realistic combat.esp
+WiS IV - Realistic Combat.esp
+WiS IV - Realistic Combat - No Cooldown.esp
+zZiG Warrior Pack.esp
+private_nokillblur_test.esp
+fox-disableautoaim.esp
+NoKillCam.esp
+No Kill Moves.esp
+ENDGROUP: Combat
+
+BEGINGROUP: Skills, Attributes and Leveling
+
+Revised Character System.esp
+REGEX: ...?% Slower Leveling\.esp
+REGEX: 1 - NO Rebalance - \d{2,3}% Speed\.esp
+REGEX: 1 - Skill Rebalance \+ \d{2,3}% Speed\.esp
+1 - Skill Rebalance + No Speed Change.esp
+2 - Leveling - Less Linear to 100 (RECOMMENDED).esp
+2 - Leveling - Less Linear X 50.esp
+2 - Leveling - Less Linear.esp
+2 - Leveling - Linear to 100.esp
+2 - Leveling - Linear.esp
+2x Skill Increase Rate.esp
+3 - Reduced Early Perk Skill Reqs.esp
+REGEX: ...?% Skill Speed\.esp
+REGEX: leveling_\dx_slower.+\.esp
+ACE Crafting.esp
+ACE Speech.esp
+Alternate_Birthstones.esp
+Alternate_Perks.esp
+Alternate_Perks_MultipleSummons.esp
+Alternate_Racials.esp
+Half Leveling Speed.esp
+UnlimitedConjuration.esp
+ArcaneAssassin.esp
+BetterSpellMastery.esp
+BetterMageArmor.esp
+Balanced_Alteraton.esp
+Balanced_Alteration.esp
+Balanced_Alteraton_No_Armor_Penalties.esp
+Balanced_Conjuration.esp
+Balanced_Destruction.esp
+balanceddestruction.esp
+Balanced_Destruction_No_Armor_Penalties.esp
+Balanced_Illusion.esp
+Balanced_Restoration.esp
+Balanced Weapon Skill Perks.esp
+REGEX: Balanced_Magic_(Adept|Novice|Master)\.esp
+ SAY: Choose only one of the below - optional if you prefer vanilla settings or other mods which adjust these values.
+Balanced_Magic_BETA_2_0.esp
+BS-Balanced_Magic_BETA_2_0.esp
+ REQ: Balanced_Magic_BETA_2_0.esp
+Perk_Deft_Movement_Power_25.esp
+REGEX: PPE_Perk-.+\.esp
+ SAY: Obsolete. Update to last version of 'PerkUP' mod
+REGEX: PerkUP-.{4,12}\.esp
+ SAY: For users of incompatible plugins in this mod plugins. You will probably lose some already used perks, check this in game.
+ INC: Extra Effect Perk-Additional Rank by thedemoninside , No Perk Prerequisites by ClassicalNoodle , Deflect Arrows Perk Fix by JeffSteel , Caos Advanced Perk Ranks by CaoMengde777 (fixed bugs, naturally) , Caos Extra Pockets Perk Upgrades by CaoMengde777 , Dead Aim perk x5 x10 x15 x20 by evi002 (rebalanced) , Better archery Eagle Eye perk by Graxster , Concentrated Poisons by kenevir1991 , Bugfix - Critical Charge with swords by Kevin Kidder ....
+\For Basic
+REGEX: PerkUP-.*\.esp
+\For Optional
+More Craftables - PerkUP compatibility.esp
+ REQ: More Craftables and PerkUP
+NapalmPerkOverhaul.esp
+REGEX: New Leveled Encounter Levels - (SUPER |VERY )?HARD\.esp
+ SAY: Use only one 'New Leveled Encounter Levels*.esp'
+Noredundantperks.esp
+ACE Archery.esp
+Lorecraft - Ace Archery.esp
+ACE Armor.esp
+ACE Enchanting.esp
+ACE Melee.esp
+ACE Smithing.esp
+ACE Synergy.esp
+ IF (r"ACE .*\.esp") MOD: WayOfTheMonk.esp
+Actually A Deadly Verbal Debate.esp
+ASAP.esp
+ArcaneSmithsPerkTree15.esp
+archeryperks 3-6.esp
+archeryperks 3-9.esp
+archeryperks 4-12.esp
+Balanced Armor Effects.esp
+cao_PerkRanks.esp
+Combat Perks Overhaul.esp
+Conjuration Perks Overhaul Beta 0.1.esp
+REGEX: Deadly Torches - (Non-)?Everlasting with (Low|High) Damage\.esp
+ SAY: Use only one Deadly Torches - *.esp
+Dual Flurry for all.esp
+EagleEye3x.esp
+Eld-betterLockpickPerks.esp
+EM-AllInOne.esp
+enchant3effects.esp
+EpicGloryByMadmole.esp
+EpicGlory-SkillsStartAtZeroByMadmole.esp
+ IF ($EpicGloryInst) INC: EpicGloryByMadmole.esp
+EpicGloryStatsStartAt50ByMadmole.esp
+ IF ($EpicGloryInst) INC: EpicGloryByMadmole.esp
+flexibleperktrees.esp
+GDTES5 Lockpick Perk Tree Reconfigure.esp
+GluRUS_magicscaling.esp
+GrandMaster.esp
+HeavyArmorPerks v1.1.esp
+JulesPerkRankAssign.esp
+Illusion Perks Overhaul.esp
+iMO-Perks.esp
+Improved Casting.esp
+Improved Casting Enhanced.esp
+REGEX: Improved Destruction Perks.*\.esp
+Improved Expert Spells.esp
+REGEX: Improved Master Spells.*\.esp
+JokeMOD-SilentRunning.esp
+lcr.esp
+leveling_2x_slower1_5.esp
+Leveling Destruction Perks.esp
+Leveling Destruction Perks - Only Perks.esp
+levelingperkslite.esp
+ IF ("perksbymatope.esp") WARN: Delete. Already included in perksbymatope.esp
+REGEX: MageArmor(Easy)?\.esp
+magicscaling.esp
+MagicSneakCrit.esp
+MBAxe.esp
+MBBow.esp
+MBDaggerAlone.esp
+MBDagger.esp
+MBSword.esp
+no more ability perk tree.esp
+non-linear perk trees.esp
+REGEX: pace_\w_\d{2,4}_\d{1,2}.*\.esp
+PERK_TREE_Refit_Vanilla.esp
+PerfectperksMain.esp
+PerfectperksSpells.esp
+PerfectperksLocks.esp
+PerksBalance.esp
+perksbymatope.esp
+ IF ("levelingperkslite.esp") WARN: Delete. Already included in levelingperkslite.esp
+Perk_Soul_Siphon_100.esp
+PerQ_ReqSkillLevel.esp
+pfeile schmieden perk.esp
+proper_alchemy.esp
+proper_archery.esp
+ruestungstalente_ohne_helm.esp
+REGEX: PTAlchemyOverhaul_SkillRate_\d_\d\d?\.esp
+ SAY: Use only one PTAlchemyOverhaul_SkillRate esp
+RacialSkillBoost.esp
+SB - Level Scaling Mod.esp
+SB Skills and Leveling.esp
+SkBBP - Enchanting Skill Gain Balanced.esp
+SMLeveledItemSmithing.esp
+ SAY: Conflict with other mods that modify the smithing perk tree.
+scale.esp
+scale-enemies.esp
+SkillGrindCap.esp
+skillslevelfaster_less.esp
+Skyrim Scaling Stopper.esp
+ TAG: {{BASH: Delev, Relev}}
+REGEX: SleepFor.+xExp\.esp
+SlowerLevelingAlchemy.esp
+SlowerLevelingEnchanting.esp
+SlowerLevelingSmithing.esp
+REGEX: SlowerSkills_v.+\.esp
+SmithingMasteryPerks.esp
+ IF ("PerkUP-Smithing.esp") INC: PerkUP, use only one.
+The Fingersmith Mod + Perk Adjustments 1.2b.esp
+ToL Perk Tree.esp
+REGEX: training_costs_\d{1,2}_x\d_x\d\.esp
+train 10 times per level.esp
+TrueYield.esp
+Twili's Unarmed perk.esp
+Twili's Unarmored perk.esp
+REGEX: Uncapped Perks - [CM].+\.esp
+ REQ: Skyrim Uncapper
+ IF (r"PerkUP-.*\.esp") INC: PerkUP, use only one.
+Uncapped Perks.esp
+ REQ: Skyrim Uncapper
+ IF (r"PerkUP-.*\.esp") INC: PerkUP, use only one.
+Uncapped Perks - Optional Magic Add-on.esp
+ REQ: Skyrim Uncapper
+REGEX: Uncapped Perks - .+\.esp
+ IF (r"PerkUP-.*\.esp") INC: PerkUP, use only one.
+BlueStarPerkAdventure.esp
+ REQ: Skyrim Uncapper
+REGEX: WiS IV - leveld World X\d+\.esp
+ SAY: Use only one WiS IV - leveld World esp
+Perk_Soul_Siphon_Full_Recharge.esp
+SynergyBonuses.esp
+XPModNormal.esp
+Z_Skillpoints Matter.esp
+ZB - Simple Destruction Overhaul.esp
+perq_en.esp
+CombinePotionsAlchemy.esp
+hokutoshinken.esp
+ArmorPerkHelmetRemover.esp
+vinis_alchemy_tree.esp
+Skyrim15SmithingFix.esp
+\must be load after any perk and/or smithing mods
+ REQ: Skyrim patch 1.5
+ENDGROUP: Skills, Attributes and Leveling
+
+BEGINGROUP: Pose and Animation Mods
+\
+\new animations.
+\ TAG: {{BASH: Actors.Anims}}
+
+AP Skyrim.esp
+dD-No Spinning Death Animation.esp
+DIWS_SlowerWalk.esp
+DynamicallyIncreasedWalkSpeed.esp
+effeminatenazeem.esp
+MoreUnarmedKillAnimations15.esp
+Onehanded.esp
+REGEX: Pinups\d?\.esp
+Shake it!.esp
+Skyhawk_eat_drink_animation.esp
+ENDGROUP: Pose and Animation Mods
+
+BEGINGROUP: Beauty Packs & Race Changes\Addons
+\
+\Hair, eyes, race addons & changes and other cosmetics.
+
+BEGINGROUP: Hair
+\ TAG: {{BASH: Hair}}
+
+ApachiiHair.esp
+ SAY: Do not use with ApachiiHair.esm, Obsolete upgrade to V1.1
+ApachiiHairStyles.esp
+ApachiiHairStylesELVES.esp
+bald hair.esp
+Beautiful Hair.esp
+Grimoa_83WillowsDreadlocks_Nonreplacing.esp
+hair.esp
+LovelyHairstyles.esp
+mmkhajiithair11.esp
+MTOH.esp
+N_43 Hair Pack.esp
+numenume Hair.esp
+RANsHair_02_06.esp
+RenHair.esp
+TelRedHair.esp
+TelDarkRedHair.esp
+tera hair pack.esp
+TeraHairWeightFix.esp
+Unisex Argonian Hairstyles.esp
+UseAllTheHairStyles.esp
+ENDGROUP: Hair
+
+BEGINGROUP: Eyes
+\TAG: {{BASH: Eyes}}
+
+DorkDiva Elf Eye Additions.esp
+DorkDiva Eyes For Dark Characters pack one.esp
+FlansEyesForSkrim.esp
+KhajiitEyes.esp
+Krisan's Eyes.esp
+MissAniThrope's Mystic Eyes.esp
+OrientalEyes.esp
+PurpleEyes.esp
+TheEyesofBeauty.esp
+Improved Eyes Skyrim.esp
+ENDGROUP: Eyes
+
+BEGINGROUP: EyeBrows
+\new EyeBrows
+
+numenume femalebrows MARO.esp
+OrientalBrows.esp
+ENDGROUP: EyeBrows
+
+BEGINGROUP: Warpaints
+\new warpaints.
+
+ButterflyFemaleWarpaint_2_1.esp
+Warpaint Immortal.esp
+warpaintattoo.esp
+REGEX: wyldtat\d\d?\.esp
+ENDGROUP: Warpaints
+
+BEGINGROUP: Mixed
+\ TAG: {{BASH: Hair, Eyes}}
+ENDGROUP: Mixed
+
+BEGINGROUP: Race additions
+\ + hair + eyes etc
+
+mjhImprovedRaces.esp
+ INC: Anything that changes the race descriptions or races.
+ChildRace.esp
+CustomRaces.esp
+DarkRaces.esp
+Decapitate_Children.esp
+Draman Skeleton Mod.esp
+FFRace.esp
+GreybeardRace.esp
+Kaleen2.esp
+MysticalElvesV1.5.esp
+NedeRace.esp
+New Playable Races by Budcat v3.0.esp
+NewRaces.esp
+OrientalRace.esp
+PersianRace.esp
+playable dremora.esp
+qmod01shadowscale.esp
+race+.esp
+RGMsTattooedRaces.esp
+witcherinskyrim.esp
+Yaksha.esp
+ZazimelDrow.esp
+ENDGROUP: Race additions
+ENDGROUP: Beauty Packs & Race Changes\Addons
+
+BEGINGROUP: Companions
+\
+\Those related to companion mod systems. Most others in Quests section.
+\Recommended by authors to load very late.
+\
+
+Althirs Companion and Carriage Command v1.1.esp
+followers keep up.esp
+AccurateCompanionGuild.esp
+DFB - Disable Hidden Follower Bows & Arrows.esp
+ IF ($UFO) SAY: Is redundant for 'UFO - Ultimate Follower Overhaul.esp'. You can remove all default followers equpment with UFO.
+Eternal Bunny Pet (Gray Silent).esp
+FairKhajiit.esp
+Gabby Companion.esp
+AIKhajiitCompanions.esp
+Ja´dirr + Kharjo Makeover.esp
+KCustomFollowers.esp
+sec_goatfrey.esp
+EnhancedCompanionGuildNoCosmetic.esp
+femcalder.esp
+Feralfade.esp
+XFLHorses.esp
+XFLTweaks.esp
+followers alpha9.esp
+foxpet-petfox.esp
+REGEX: Vashira the Crimson Flash( shorter named)?\.esp
+TCG.esp
+ IF ($UFO) WARN: Included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+TCGStarterKit.esp
+HorseCompanions.esp
+ IF ($UFO) WARN: HorseCompanions.es is included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+REGEX: .*HorseRidingFollowers\.esp
+ IF ($UFO) WARN: HorseRidingFollowers is included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+Horses for followers.esp
+voidMountedFollowers.esp
+ IF ($UFO) WARN: MountedFollowers is included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+ IF ("BDO.esp") WARN: Delete. Included in BDO.esp
+Hroki Wife Companion.esp
+mercenariesplus.esp
+NoFollowerTorch.esp
+UFO - Ultimate Follower Overhaul.esp
+ REQ: Skyrim 1.5+
+ IF ("BDO.esp") INC: BDO.esp, use only one. Have same functional.
+ SAY: For safe install need dismiss all your followers, save, delete all included mods, load, save and install UFO. For safe uninstall or update see special instructions on mod page.
+UFO - AllwaysDrawWeapons.esp
+SIUFO.esp
+SIUFOPatch.esp
+TravellersOfSkyrim - UFO Compatibility Patch.esp
+Essential followers - all followers.esp
+ IF ($UFO) SAY: Is redundant for 'UFO - Ultimate Follower Overhaul.esp'. You can make essential any your followers with UFO.
+essential followers.esp
+ IF ($UFO) SAY: Is redundant for 'UFO - Ultimate Follower Overhaul.esp'. You can make essential any your followers with UFO.
+essentialfollowers.esp
+ IF ($UFO) SAY: Is redundant for 'UFO - Ultimate Follower Overhaul.esp'. You can make essential any your followers with UFO.
+Essential Vigilance.esp
+ IF ($UFO) SAY: Is redundant for 'UFO - Ultimate Follower Overhaul.esp'. You can make essential any your followers with UFO.
+Better Companions.esp
+BetterCompanions.esp
+Natural Characters and Companions.esp
+Companion Followers.esp
+DogCompanions.esp
+AmazonianKhajiitAlpha.esp
+REGEX: AnotherFollowerMod_.+\.esp
+Barbarian Companions.esp
+conancompanion.esp
+CMNewCompanions.esp
+CMCompanionLevel.esp
+ IF ("BDO.esp") WARN: Delete. Included in BDO.esp
+IFNOT (r"(Headbomb's )?Better Sorting.*\.esp") MOD: CreeperFollower.esp
+All Housecarls Are Hunks.esp
+MODNewfollowers.esp
+OneiroFollowers.esp
+housecarl_fem_plus.esp
+ExtraBlades.esp
+Better Followers.esp
+ IF ("throwingweapons.esp") SAY: Some NPC changes not work with  'throwingweapons.esp'. See note for  IF ("throwingweapons.esp") INC: throwingweapons.esp.
+ SAY: Obsolete. Upgrade to latest version.
+SpecializedFollowers.esp
+ IF (r"Better Followers - .+\.esp") WARN: Delete. Use Better Followers - S*.esp instead.
+REGEX: Better Followers - Specialized( - Not E)?\.esp
+ SAY: Obsolete. Upgrade to latest version of Better Followers.
+BrelynaMaryon.esp
+CamillaValerius.esp
+CarlottaValentia.esp
+EkkiiBreezeBasementAFMLydia.esp
+ElizaValentine.esp
+FionaValentine.esp
+herman.esp
+HirelingJenassa.esp
+HirelingBelrand.esp
+HirelingMarcurio.esp
+Annekke.esp
+Claire.esp
+ElisaBrea.esp
+Jenassa.esp
+ IF ("throwingweapons.esp") INC: throwingweapons.esp.
+Lydia.esp
+ IF ("throwingweapons.esp") INC: throwingweapons.esp.
+Mjoll.esp
+Uthgerd.esp
+Lydia-TCG.esp
+ IF ("throwingweapons.esp") INC: throwingweapons.esp.
+Iona-TCG.esp
+Mjoll-TCG.esp
+Sylgja-TCG.esp
+Uthgerd-TCG.esp
+Jordis-TCG.esp
+Uthgerd-Dovas_Angels-TCG.esp
+Sylgja-Dovas_Angels-TCG.esp
+Saadia-Dovas_Angels-TCG.esp
+Mjoll-Dovas_Angels-TCG.esp
+Lydia-Dovas_Angels-TCG.esp
+Jordis-Dovas_Angels-TCG.esp
+Iona-Dovas_Angels-TCG.esp
+ESFAela.esp
+Aelafacelift.esp
+AelaTheHuntress.esp
+ INC: Other mods that change the Aela the Huntress companion, move one of them down, for his work.
+Tyth.esp
+Sirenia.esp
+REGEX: Mjollfacelift-(blackhair|blondehair)\.esp
+Miravel.esp
+Viin.esp
+Uthgerd.esp
+katia.esp
+scar.esp
+Shady.esp
+/* They change close when they exit a player home */
+SHARPE Housecarls.esp
+saadia.esp
+SMSkyrim.esp
+Sylgja.esp
+SylgjaUpgraded.esp
+SylgiaCompleteNopickaxe.esp
+Vilkas_v1.esp
+Halfling Race.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+ SAY: Use only one 'Halfling Race.Esp' or 'Sam Merry and Peppin.Esp' or 'Frodo Sam Merry & Peppin.Esp'
+REGEX: (Frodo )?Sam Merry \& Peppin\.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+ SAY: Use only one 'Halfling Race.Esp' or 'Sam Merry and Peppin.Esp' or 'Frodo Sam Merry & Peppin.Esp'
+Dwarf Race.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+ SAY: Use only one 'Dwarf Race.Esp' or 'Gimli.Esp'
+Gimli.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+ SAY: Use only one 'Dwarf Race.Esp' or 'Gimli.Esp'
+Aragorn.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+Boromir.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+Gandalf.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+Legolas.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+Gollum.Esp
+ REQ: 'Ultimate Follower Overhaul' and 'Better males - Beautiful nudes and faces - New hairstyles'
+zzz_Jenassa_MAKEOVER_by83Willow.esp
+NewLiveNPC_Nal.esp
+REGEX: Better Followers - [SBNP].*\.esp
+ IF ("TCG.esp") INC: TCG.esp
+ IF ($UFO) WARN: Do not use dialogue.esp and delete C01QuestScript.pex from data/scripts folder
+ IF (r"Better Followers - (BP|BNP|SBP|SBNP)\.esp") REQ: Better Followers - Armor Pack I & II, download it on BF page.
+ SAY: Use only one Better Followers - *.esp
+REGEX: Better Follower(s -)? Dialogue-?(All|Dog|Reorder|Thane)?\.esp
+ SAY: Obsolete. Update to latest version of Better Followers and use Big Dialod Overhaul(BDO) instead.
+ IF ("BDO.esp") WARN: Delete. Included in BDO.esp
+ IF ($UFO) WARN: Delete. Use UFO - Ultimate Follower Overhaul.esp instead
+Better Follower Improvements.esp
+Better NPC - Faction Pack.esp
+ IFNOT (r"Better Followers - (BP|BNP|SBP|SBNP)\.esp") REQ: Beauty version of Better Followers, named BP or BNP or SBP or SBNP
+Better NPC - Marriage Pack.esp
+ IFNOT (r"Better Followers - (BP|BNP|SBP|SBNP)\.esp") REQ: Beauty version of Better Followers, named BP or BNP or SBP or SBNP
+AskFollowerSkills.esp
+ IF ("BDO.esp") WARN: Delete. Included in BDO.esp
+BDO.esp
+ INC: Better Followers - Dialogue, Ask Follower Skills, Followers can Relax, CM's Level your Followers Skills, Mounted Followers -- included in BDO
+Respectful_Lydia-Letsseeit_subtitle.esp
+Respectful_Lydia-Whatdoyouwantmetocarry_subtitle.esp
+Respectful_Lydia-Asyouwishmythane__subtitle.esp
+Followers Unlimited 11.esp
+ IF ($UFO) WARN: Followers Unlimited is included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+XFLPlugins.esp
+ IF ($UFO) INC: UFO - Ultimate Follower Overhaul.esp, delete and use UFO instead
+ IF ("BDO.esp") INC: BDO.esp, delete and use BDO instead
+XFLDialogue.esp
+ IF ($UFO) INC: UFO - Ultimate Follower Overhaul.esp, delete and use UFO instead
+ IF ("BDO.esp") INC: BDO.esp, delete and use BDO instead
+Follower Trap Safety.esp
+FollowerWander2.esp
+ IF ("BDO.esp") WARN: Delete. Included in BDO.esp
+MultipleFollowers.esp
+ IF ($UFO) WARN: Multi followers functional is included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+ SAY: Make sure you dismiss any followers (except dogs) before installation.
+Follower Limit Increased.esp
+ IF ($UFO) WARN: Multi followers functional is included in UFO - Ultimate Follower Overhaul.esp, delete and use UFO
+ IF ("Better Follower Improvements.esp") INC: Better Follower Improvements.esp, use only one, not both.
+multimarriage.esp
+\must be load after multiple followers mods for wedding ceremony work.
+marriagemod - alpha v3.esp
+DudestiaMultiMarriages.esp
+Spousetocustomhome.esp
+MyOwnRubee.esp
+New Partners.esp
+nordguardfollower.esp
+PetSabrecatJango.esp
+portal2mod.esp
+Pets.esp
+Sabretooth.esp
+Sabretoothmod_1_02.esp
+Get Out of my Bedroom Original.esp
+Taarie.esp
+VampireCompanionBetav1.esp
+Vashira The blood flash.esp
+WealtheowValentine.esp
+wisplicker.esp
+DogCompanionsToFoxes.esp
+Shut Up Mjoll!.esp
+Silent Lydia.esp
+BBLSHousecarlsmovein.esp
+REGEX: moveit(LWT)?\.esp
+ IF (r"Better Followers - [SBNP].*\.esp") INC:  Better Followers, BF already have same functions. Use only if you need to set settings from moveit - fBumpReactionSmallWaitTimer to 2 (0.3 in BF) and fBumpReactionSmallDelayTime to 1(Vanilla) (0.3 in BF) other settings same as in BF.
+ SAY: Use only one moveit esp
+MrKrabs.esp
+MrSlackPants-DeadlyTraps.esp
+StopBumpingIntoMe.esp
+ REQ: moveit.esp or moveitLWT.esp
+HugMe.esp
+ REQ: moveit.esp or moveitLWT.esp
+FriendlyFireTolerance99not4.esp
+throwingweapons.esp
+ INC: All mods that change the next NPC: Gerdur, Farkas, Athis, Erik the Slayer, Argis the Bulwark, Lydia, Jordis the Sword-Maiden, Calder, Iona, Vorstag, Marcurio, Belrand, Jenassa, Stenvar.
+ENDGROUP: Companions
+
+BEGINGROUP: Alternative starts
+
+SkBBP - Start on Level Zero.esp
+Alternative Startfraktionen - Abgeschworener.esp
+Alternative Startfraktionen - Bandit.esp
+Alternative Startfraktionen - Hexe.esp
+Alternative Startfraktionen - Silberne Hand.esp
+Necromancer Start.esp
+REGEX: QuickStart3_.+\.esp
+ SAY: Use only one QuickStart3_*.esp
+Live Another Life.esp
+Quick Start - Skip the Opening Sequence.esp
+
+ENDGROUP: Alternative starts
+
+BEGINGROUP: Race Overrides
+
+[mpx]raceheights.esp
+AllWarPaintRaces.esp
+AutoCastRacials.esp
+Barber.esp
+Basvanbeu MuscleTextureChanger with Navetsea set.esp
+REGEX: Better Racials- .+\.esp
+ IF ("Better Racials- Altmer Edition.esp") && IF ("Better Racials- Altmer Edition - NW.esp") SAY: Use only one Better Racials- Altmer Edition.esp or Better Racials- Altmer Edition - NW.esp
+Better races V1,1.esp
+ClassicClasses.esp
+Feminine Female Orcs.esp
+Height Adjusted Skyrim.esp
+ SAY: Obsolete. Update to Height Adjusted Races
+Height Adjusted Races.esp
+Height Adjusted Skyrim - Oblivion Lore Heights.esp
+Height Adjusted Races - Oblivion Lore Heights.esp
+Height Adjusted Races with True Giants.esp
+Height Adjusted Races with True Giants - Oblivion Lore Heights.esp
+Height Adjusted Races with True Giants - Morrowind Lore Heights.esp
+Height Adjusted Skyrim with True Giants.esp
+Height Adjusted Skyrim with True Giants - Morrowind Lore Heights.esp
+True Giants.esp
+EnhancedCharacterEdit.esp
+Facelight.esp
+REGEX: Extended Colors - .+\.esp
+/* Part of Extended Colors */
+VanillaRaces - Prepatched - English.esp
+Expanded Eye Color Selection.esp
+ SAY: Use only one Extended Colors - *.esp
+IF ("Extended Colors - Selection.esp") MOD: VampireOverhaul.esp
+IF ("Extended Colors - Selection.esp") MOD: VampireEffectProject.esp
+RaceRevamp.esp
+Races and Doomstones.esp
+Race Tweaks.esp
+Khajiit Awesome.esp
+Khajiit Racial Tweek.esp
+More Hair Colors.esp
+Morrowind Races.esp
+mwcrh&w.esp
+PrettyKhajiit.esp
+RaRe.esp
+ SAY: Obsolete. Upgrade to 'SkyRe_Races.esp'
+REGEX: CBBELE.*\.esp
+Skyrim Sizes.esp
+WiS III races.esp
+REGEX: WiS IV( -)? Races?\.esp
+XCE.esp
+Gri_BeastFeet.esp
+ENDGROUP: Race Overrides
+
+BEGINGROUP: Message suppression/changing overrides
+\
+\Best loaded late to override possible message additions from other mods.
+
+DisableNoFastTravelMessage.esp
+DragonWordsDisplayed.esp
+First Person Messages.esp
+no_annoying_messages.esp
+NoMoreMessages.esp
+noSkillMessage.esp
+RacialBonusesOnCharacterCreation.esp
+sOverEncumbered.esp
+You Are Over-encumbered.esp
+ENDGROUP: Message suppression/changing overrides
+
+BEGINGROUP: Respawn & day length overrides
+
+72HoursRespawn.esp
+fastercellrespawn.esp
+bloodcoins.esp
+REGEX: blood coins .+\.esp
+WiS III blood coins.esp
+REGEX: WiS IV( -)? Blood Coins( slow| normal| Insane)?\.esp
+ SAY: Use only one Blood Coins esp
+ChickenNestFix.esp
+REGEX: Respawn\w{3,5}Days{0,1}\.esp
+shorter_respawns.esp
+REGEX: SkyRim \d+ DeadBody Remover\.esp
+REGEX: SkyRim \d Day DeadBody Timer\.esp
+REGEX: SkyRim \d Day Respawn\.esp
+REGEX: skyrimespawn\d{0,1}\.esp
+REGEX: Skyrim \d{1,2} Day Vendor Respawn\.esp
+NO_RESPAWN.esp
+SlowRespawn_NoClearedCellRespawn.esp
+
+REGEX: Dynamic.?Timescale\.esp
+longerdays_v1.esp
+REGEX: Skyrim Timescale \d+\.esp
+sliders10.esp
+REGEX: Timescale\d{1,2}\.esp
+ENDGROUP: Respawn & day length overrides
+
+BEGINGROUP: Shader Mods
+\
+\Need to go after new items to affect them.
+
+BEGINGROUP: Shader Removers
+
+Death Cam - No Blur.esp
+Duns_Inc_Shaders_Begone.esp
+Duns_Inc_Shaders_Begone_xWeapons.esp
+No Bloom.esp
+SkyrimSDR.esp
+ENDGROUP: Shader Removers
+
+BEGINGROUP: Shader Replacers
+
+REGEX: RCRN (Classic|Legacy|Pure) - Hybrid Shaders\.esp
+ INC: Original FXAA Post Process Injector and Realistic Lighting Without Post-Processing
+rcrnShaders.esp
+ SAY: Make sure you have bEnableFileSelection=1 in SkyrimPrefs.ini under [Launcher].
+Animated Weapon Enchants.esp
+Animated Enchantments.esp
+BetterNightEye.esp
+Bound Weaponry.esp
+ccNightEye.esp
+REGEX: Different Invisibility Effects plus Eyes Fix( - Chameleon Version)?\.esp
+Glowtastic.esp
+LFox Improved Night Eye No Blur.esp
+Replacer Visuals for Spell Effects.esp
+Showermod.esp
+spellstrip-skyrim.esp
+Vampire Sight no blur.esp
+ENDGROUP: Shader Replacers
+
+BEGINGROUP: Water and Lava
+
+ClearWater.esp
+ImmersiveWater3.esp
+Purewaters.esp
+RealisticWaterTextures.esp
+ IF ("WATER.esp") WARN: DELETE. Use WATER.esp instead
+ IFNOT ("WATER.esp") SAY: Old. Use WATER mod instead ("http://skyrim.nexusmods.com/downloads/file.php?id=13268")
+/* Not sure if this is obsolete its from Realistic Water Textures and Terrain */
+RWTT - Get Wet.esp
+ SAY: Originally for Realistic Water Textures and Terrain, may be obsolete.
+WATER.esp
+WATER - Get Wet.esp
+/* I Think Water F.X. and Water FX - Get Wet are obsolete. */
+Water F.X.esp
+Water FX - Get Wet.esp
+kerplunk.esp
+ IF ("WATER.esp") WARN: DELETE. Included in 'WATER.esp'
+waterfxgetwet.esp
+ IF ("WATER - Get Wet.esp") SAY: Use either waterfxgetwet.esp or WATER - Get Wet.esp
+GreenWaterFixForPureWaters.esp
+ SAY: OBsoleve upgrade to new version.
+GreenWaterFixForWATER.esp
+ SAY: Obsolete upgrade to new version.
+GreenWaterFix.esp
+ IF (7F378D8E|"GreenWaterFix.esp") SAY: Upgrade to vertion 1.1 (For Vanilla water ONLY)
+GreenWaterFix_Compatible.esp
+GreenWaterFix_CrystalClearPatch.esp
+GreenWaterFix_LesserBlurPatch.esp
+ENDGROUP: Water and Lava
+
+ENDGROUP: Shader Mods
+
+BEGINGROUP: Bashed Patch
+
+Bashed Patch.esp
+REGEX: Bashed Patch.*\.esp
+ENDGROUP: Bashed Patch
+
+BEGINGROUP: Post Bashed Patch
+
+ASIS-Dependency.esp
+ASIS.esp
+Automatic Spells.esp
+Automatic Variations.esp
+Automatic Variants.esp
+Customized AI.esp
+
+/* Normaly only Dynamic plugins created by SkyProc go here.  Try to limit placing any plugins here.  
+Once WryeBash is updated this shouldn't be needed, since that's what its for. 
+*/
+EzEWorldMap.esp
+ENDGROUP: Post Bashed Patch
