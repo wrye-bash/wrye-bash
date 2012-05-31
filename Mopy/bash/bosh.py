@@ -4863,7 +4863,7 @@ class FileInfos(DataDict):
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
-        FileInfos.__init__(self, dirs['mods'].join(u'INI Tweaks'),INIInfo)
+        FileInfos.__init__(self, dirs['mods'].join(u'INI Tweaks',bush.game.name),INIInfo)
         self.ini = oblivionIni
 
     def rightFileType(self,fileName):
@@ -5276,10 +5276,7 @@ class ModInfos(FileInfos):
             mod = modInfos[GPath(path)]
             tags = (mod.getBashTagsDesc() or set()) | (configHelpers.getBashTags(mod.name) or set())
             tags -= (configHelpers.getBashRemoveTags(mod.name) or set())
-            tags = tags & allTagsSet
-            if tags & oldTagsSet:
-                tags -= oldTagsSet
-            mod.setBashTagsDesc(tags)
+            mod.setBashTags(tags)
 
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
@@ -9193,7 +9190,7 @@ class InstallersData(bolt.TankData, DataDict):
                             if newCrc != oldCrc:
                                 target = dirs['mods'].join(file)
                                 # Creat a copy of the old one
-                                baseName = dirs['mods'].join(u'INI Tweaks', u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
+                                baseName = dirs['mods'].join(u'INI Tweaks', bush.game.name, u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
                                 oldIni = baseName
                                 num = 1
                                 while oldIni.exists():

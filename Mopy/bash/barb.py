@@ -138,7 +138,7 @@ class BackupSettings(BaseBackupSettings):
         for path, tmpdir in (
               (dirs['l10n'],                      game+u'\\Mopy\\bash\\l10n'),
               (dirs['mods'].join(u'Bash Patches'),game+u'\\Data\\Bash Patches\\'+game),
-              (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks'),
+              (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks\\'+game),
                 ):
             tmpdir = GPath(tmpdir)
             for name in path.list():
@@ -314,7 +314,7 @@ class RestoreSettings(BaseBackupSettings):
                 (dirs['mods'].join(u'Bash'),        game+u'\\Data\\Bash'),
                 (dirs['mods'].join(u'Bash Patches'),game+u'\\Data\\Bash Patches\\'+game),
                 (dirs['mods'].join(u'Docs'),        game+u'\\Data\\Docs'),
-                (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks'),
+                (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks\\'+game),
                 (dirs['modsBash'],                  game+u' Mods\\Bash Mod Data'),
                 (dirs['modsBash'].join(u'INI Data'),game+u' Mods\\Bash Mod Data\\INI Data'),
                 (dirs['installers'].join(u'Bash'),  game+u' Mods\\Bash Installers\\Bash'),
