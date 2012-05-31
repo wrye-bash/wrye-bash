@@ -336,6 +336,50 @@ dataDirsPlus = set((
     u'ini',
     u'obse'))
 
+# Installer -------------------------------------------------------------------
+# ensure all path strings are prefixed with 'r' to avoid interpretation of
+#   accidental escape sequences
+wryeBashDataFiles = set((
+    u'Bashed Patch.esp',
+    u'Bashed Patch, 0.esp',
+    u'Bashed Patch, 1.esp',
+    u'Bashed Patch, 2.esp',
+    u'Bashed Patch, 3.esp',
+    u'Bashed Patch, 4.esp',
+    u'Bashed Patch, 5.esp',
+    u'Bashed Patch, 6.esp',
+    u'Bashed Patch, 7.esp',
+    u'Bashed Patch, 8.esp',
+    u'Bashed Patch, 9.esp',
+    u'Bashed Patch, CBash.esp',
+    u'Bashed Patch, Python.esp',
+    u'Bashed Patch, FCOM.esp',
+    u'Bashed Patch, Warrior.esp',
+    u'Bashed Patch, Thief.esp',
+    u'Bashed Patch, Mage.esp',
+    u'Bashed Patch, Test.esp',
+    u'ArchiveInvalidationInvalidated!.bsa',
+    u'Docs\\Bash Readme Template.html',
+    u'Docs\\wtxt_sand_small.css',
+    u'Docs\\wtxt_teal.css',
+    u'Docs\\Bash Readme Template.txt'
+    ))
+wryeBashDataDirs = set((
+    u'Bash Patches\\'+name,
+    u'INI Tweaks'
+    ))
+ignoreDataFiles = set((
+    u'OBSE\\Plugins\\Construction Set Extender.dll',
+    u'OBSE\\Plugins\\Construction Set Extender.ini'
+    ))
+ignoreDataFilePrefixes = set((
+    u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
+    ))
+ignoreDataDirs = set((
+    u'OBSE\\Plugins\\ComponentDLLs\\CSE',
+    u'LSData'
+    ))
+
 #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
 gmstEids = ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal',
@@ -398,6 +442,60 @@ CBash_patchers = (
     'CBash_SoundPatcher', 'CBash_StatsPatcher', 'CBash_SEWorldEnforcer',
     'CBash_ContentsChecker',
     )
+
+# Race Info -------------------------------------------------------------------
+raceNames = {
+    0x23fe9 : _(u'Argonian'),
+    0x224fc : _(u'Breton'),
+    0x191c1 : _(u'Dark Elf'),
+    0x19204 : _(u'High Elf'),
+    0x00907 : _(u'Imperial'),
+    0x22c37 : _(u'Khajiit'),
+    0x224fd : _(u'Nord'),
+    0x191c0 : _(u'Orc'),
+    0x00d43 : _(u'Redguard'),
+    0x00019 : _(u'Vampire'),
+    0x223c8 : _(u'Wood Elf'),
+    }
+
+raceShortNames = {
+    0x23fe9 : u'Arg',
+    0x224fc : u'Bre',
+    0x191c1 : u'Dun',
+    0x19204 : u'Alt',
+    0x00907 : u'Imp',
+    0x22c37 : u'Kha',
+    0x224fd : u'Nor',
+    0x191c0 : u'Orc',
+    0x00d43 : u'Red',
+    0x223c8 : u'Bos',
+    }
+
+raceHairMale = {
+    0x23fe9 : 0x64f32, #--Arg
+    0x224fc : 0x90475, #--Bre
+    0x191c1 : 0x64214, #--Dun
+    0x19204 : 0x7b792, #--Alt
+    0x00907 : 0x90475, #--Imp
+    0x22c37 : 0x653d4, #--Kha
+    0x224fd : 0x1da82, #--Nor
+    0x191c0 : 0x66a27, #--Orc
+    0x00d43 : 0x64215, #--Red
+    0x223c8 : 0x690bc, #--Bos
+    }
+
+raceHairFemale = {
+    0x23fe9 : 0x64f33, #--Arg
+    0x224fc : 0x1da83, #--Bre
+    0x191c1 : 0x1da83, #--Dun
+    0x19204 : 0x690c2, #--Alt
+    0x00907 : 0x1da83, #--Imp
+    0x22c37 : 0x653d0, #--Kha
+    0x224fd : 0x1da83, #--Nor
+    0x191c0 : 0x64218, #--Orc
+    0x00d43 : 0x64210, #--Red
+    0x223c8 : 0x69473, #--Bos
+    }
 
 #--Plugin format stuff
 class esp:

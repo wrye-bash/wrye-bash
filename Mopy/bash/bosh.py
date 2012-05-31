@@ -5103,7 +5103,7 @@ class ModInfos(FileInfos):
         self.autoGroups.clear()
         modGroups = ModGroups()
         for base in (u'Bash_Groups.csv',u'My_Groups.csv'):
-            path = self.dir.join(u'Bash Patches',base)
+            path = self.dir.join(u'Bash Patches',bush.game.name,base)
             if path.exists(): modGroups.readFromText(path)
         self.autoGroups.update(modGroups.mod_group)
 
@@ -5276,7 +5276,10 @@ class ModInfos(FileInfos):
             mod = modInfos[GPath(path)]
             tags = (mod.getBashTagsDesc() or set()) | (configHelpers.getBashTags(mod.name) or set())
             tags -= (configHelpers.getBashRemoveTags(mod.name) or set())
-            mod.setBashTags(tags)
+            tags = tags & allTagsSet
+            if tags & oldTagsSet:
+                tags -= oldTagsSet
+            mod.setBashTagsDesc(tags)
 
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
@@ -6281,14 +6284,14 @@ class ConfigHelpers:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
-        taglist = dirs['mods'].join(u'Bash Patches',u'taglist.txt')
+        taglist = dirs['mods'].join(u'Bash Patches',bush.game.name,u'taglist.txt')
         if not taglist.exists():
-            raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Data\\Bash Patches\\'+bush.game.name+u'taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
         except bapi.BossError:
-            deprint(u'An error occure while parsing taglist.txt with the BOSS API.', traceback=True)
+            deprint(u'An error occured while parsing taglist.txt with the BOSS API.', traceback=True)
             raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
 
     def getBashTags(self,modName):
@@ -9369,15 +9372,15 @@ class InstallersData(bolt.TankData, DataDict):
                 installed += installer.data_sizeCrc
         keepFiles = set(installed)
         keepFiles.update((GPath(f) for f in bush.game.allBethFiles))
-        keepFiles.update((GPath(f) for f in bush.wryeBashDataFiles))
-        keepFiles.update((GPath(f) for f in bush.ignoreDataFiles))
+        keepFiles.update((GPath(f) for f in bush.game.wryeBashDataFiles))
+        keepFiles.update((GPath(f) for f in bush.game.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
         removes = set(data_sizeCrcDate) - keepFiles
         destDir = dirs['bainData'].join(u'Data Folder Contents (%s)' %(datetime.datetime.now().strftime(u'%d-%m-%Y %H%M.%S')))
         emptyDirs = set()
-        skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.wryeBashDataDirs]
-        skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.ignoreDataDirs])
-        skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.ignoreDataFilePrefixes])
+        skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.game.wryeBashDataDirs]
+        skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
+        skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
         for file in removes:
             # don't remove files in Wyre Bash-related directories
             skip = False
@@ -13031,7 +13034,7 @@ class PCFaces:
             return self.gender and u'Female' or u'Male'
 
         def getRaceName(self):
-            return bush.raceNames.get(self.race,_(u'Unknown'))
+            return bush.game.raceNames.get(self.race,_(u'Unknown'))
 
         def convertRace(self,fromRace,toRace):
             """Converts face from one race to another while preserving structure, etc."""
@@ -13358,9 +13361,9 @@ class PCFaces:
         raceForm = raceRef and saveFile.fids[raceRef]
         gender, = struct.unpack('B',data[namePos-2])
         if gender:
-            hairForm = bush.raceHairFemale.get(raceForm,0x1da83)
+            hairForm = bush.game.raceHairFemale.get(raceForm,0x1da83)
         else:
-            hairForm = bush.raceHairMale.get(raceForm,0x90475)
+            hairForm = bush.game.raceHairMale.get(raceForm,0x90475)
         hairRef = saveFile.getIref(hairForm)
         data = data[:namePos-18]+struct.pack('I',hairRef)+data[namePos-14:]
         saveFile.setRecord(record[:-1]+(data,))
@@ -13425,7 +13428,7 @@ class PCFaces:
         masterMap = MasterMap(face.masters,tes4.masters+[modInfo.name])
         #--Eid
         npcEids = set([record.eid for record in modFile.NPC_.records])
-        eidForm = u''.join((u"sg", bush.raceShortNames.get(face.race,u'Unk'),
+        eidForm = u''.join((u"sg", bush.game.raceShortNames.get(face.race,u'Unk'),
             (face.gender and u'a' or u'u'), re.sub(ur'\W',u'',face.pcName),u'%02d'))
         count,eid = 0, eidForm % 0
         while eid in npcEids:
@@ -30838,7 +30841,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['builds'] = dirs['app'].join(u'Builds')
-    dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+    dirs['patches'] = dirs['mods'].join(u'Bash Patches',bush.game.name)
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
@@ -30858,7 +30861,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             # Set the data folder to sLocalMasterPath
             dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath',u'Data\\'))
             # this one is relative to the mods path so it must be updated too
-            dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+            dirs['patches'] = dirs['mods'].join(u'Bash Patches',bush.game.name)
     except:
         # Error accessing folders for Oblivion.ini
         # We'll show an error later
