@@ -1571,7 +1571,7 @@ class INIList(List):
                        + u'\n\n' +
                        _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                        )
-            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
+            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks\\"+bush.game.name)):
                 return
         dir = self.data.dir
         #--No point applying a tweak that's already applied
@@ -7680,8 +7680,8 @@ class BashFrame(wx.Frame):
             self.incompleteInstallError = True
             message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
                        + u'\n\n' +
-                       _(u'Correct installation will create %s\\Mopy, %s\\Data\\Docs and %s\\Data\\INI Tweaks directories.')
-                       % (bush.game.name,bush.game.name,bush.game.name)
+                       _(u'Correct installation will create %s\\Mopy, %s\\Data\\Docs and %s\\Data\\INI Tweaks\\%s directories.')
+                       % (bush.game.name,bush.game.name,bush.game.name,bush.game.name)
                        )
             balt.showWarning(self,message,_(u'Incomplete Installation'))
         #--Merge info
@@ -11248,7 +11248,7 @@ class Installer_Wizard(InstallerLink):
         #       iniList-> left    -> splitter ->INIPanel
         panel = iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
-            outFile = bosh.dirs['mods'].join(u'INI Tweaks',u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bosh.dirs['mods'].join(u'INI Tweaks',bush.game.name,u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in belt.generateTweakLines(ret.IniEdits[iniFile],iniFile):
                     out.write(line+u'\n')
@@ -11269,7 +11269,7 @@ class Installer_Wizard(InstallerLink):
                                + u'\n\n' +
                                _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
                                ) % iniFile.sbody
-                    if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
+                    if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks\\'+bush.game.name)):
                         continue
                 panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
@@ -11557,7 +11557,7 @@ class Installer_Install(InstallerLink):
                     balt.showInfo(self.window,
                         _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
                         +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
-                        _(u'INI Tweaks')
+                        _(u'INI Tweaks\\'+bush.game.name)
                         )
         finally:
             self.data.refresh(what='N')
@@ -12919,7 +12919,7 @@ class INI_Apply(Link):
                        + u'\n\n' +
                        _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
                        )
-            if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
+            if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks\\'+bush.game.name)):
                 return
         dir = self.window.data.dir
         needsRefresh = False
@@ -12951,9 +12951,9 @@ class INI_CreateNew(Link):
         """Handle creating a new INI tweak."""
         pathFrom = self.data[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
-        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['mods'].join(u'INI Tweaks'),fileName,_(u'INI Tweak File (*.ini)|*.ini'))
+        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['mods'].join(u'INI Tweaks',bush.game.name),fileName,_(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return
-        bosh.dirs['mods'].join(u'INI Tweaks', pathFrom).copyTo(path)
+        bosh.dirs['mods'].join(u'INI Tweaks', bush.game.name, pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
         iniList.data.refresh()
         oldTarget = iniList.data.ini
