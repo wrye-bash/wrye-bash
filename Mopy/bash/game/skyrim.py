@@ -292,6 +292,44 @@ dataDirsPlus = set((
     u'asi',
     ))
 
+# Installer -------------------------------------------------------------------
+# ensure all path strings are prefixed with 'r' to avoid interpretation of
+#   accidental escape sequences
+wryeBashDataFiles = set((
+    u'Bashed Patch.esp',
+    u'Bashed Patch, 0.esp',
+    u'Bashed Patch, 1.esp',
+    u'Bashed Patch, 2.esp',
+    u'Bashed Patch, 3.esp',
+    u'Bashed Patch, 4.esp',
+    u'Bashed Patch, 5.esp',
+    u'Bashed Patch, 6.esp',
+    u'Bashed Patch, 7.esp',
+    u'Bashed Patch, 8.esp',
+    u'Bashed Patch, 9.esp',
+    u'Bashed Patch, CBash.esp',
+    u'Bashed Patch, Python.esp',
+    u'Bashed Patch, Warrior.esp',
+    u'Bashed Patch, Thief.esp',
+    u'Bashed Patch, Mage.esp',
+    u'Bashed Patch, Test.esp',
+    u'Docs\\Bash Readme Template.html',
+    u'Docs\\wtxt_sand_small.css',
+    u'Docs\\wtxt_teal.css',
+    u'Docs\\Bash Readme Template.txt'
+    ))
+wryeBashDataDirs = set((
+    u'Bash Patches\\'+name,
+    u'INI Tweaks'
+    ))
+ignoreDataFiles = set((
+    ))
+ignoreDataFilePrefixes = set((
+    ))
+ignoreDataDirs = set((
+    u'LSData'
+    ))
+
 # Function Info ----------------------------------------------------------------
 conditionFunctionData = ( #--0: no param; 1: int param; 2 formid param
     (  0, 'GetWantBlocking', 0, 0),
@@ -742,6 +780,59 @@ CBash_patchers = tuple()
 #-------------------------------------------------------------------------------
 # Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
+# Race Info -------------------------------------------------------------------
+raceNames = {
+    0x13740 : _(u'Argonian'),
+    0x13741 : _(u'Breton'),
+    0x13742 : _(u'Dark Elf'),
+    0x13743 : _(u'High Elf'),
+    0x13744 : _(u'Imperial'),
+    0x13745 : _(u'Khajiit'),
+    0x13746 : _(u'Nord'),
+    0x13747 : _(u'Orc'),
+    0x13748 : _(u'Redguard'),
+    0x13749 : _(u'Wood Elf'),
+    }
+
+raceShortNames = {
+    0x13740 : u'Arg',
+    0x13741 : u'Bre',
+    0x13742 : u'Dun',
+    0x13743 : u'Alt',
+    0x13744 : u'Imp',
+    0x13745 : u'Kha',
+    0x13746 : u'Nor',
+    0x13747 : u'Orc',
+    0x13748 : u'Red',
+    0x13749 : u'Bos',
+    }
+
+raceHairMale = {
+    0x13740 : 0x64f32, #--Arg
+    0x13741 : 0x90475, #--Bre
+    0x13742 : 0x64214, #--Dun
+    0x13743 : 0x7b792, #--Alt
+    0x13744 : 0x90475, #--Imp
+    0x13745 : 0x653d4, #--Kha
+    0x13746 : 0x1da82, #--Nor
+    0x13747 : 0x66a27, #--Orc
+    0x13748 : 0x64215, #--Red
+    0x13749 : 0x690bc, #--Bos
+    }
+
+raceHairFemale = {
+    0x13740 : 0x64f33, #--Arg
+    0x13741 : 0x1da83, #--Bre
+    0x13742 : 0x1da83, #--Dun
+    0x13743 : 0x690c2, #--Alt
+    0x13744 : 0x1da83, #--Imp
+    0x13745 : 0x653d0, #--Kha
+    0x13746 : 0x1da83, #--Nor
+    0x13747 : 0x64218, #--Orc
+    0x13748 : 0x64210, #--Red
+    0x13749 : 0x69473, #--Bos
+    }
 
 #--Plugin format stuff
 class esp:
