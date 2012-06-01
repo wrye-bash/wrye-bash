@@ -161,6 +161,45 @@ dataDirsPlus = set()
 # Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
+# Installer -------------------------------------------------------------------
+# ensure all path strings are prefixed with 'r' to avoid interpretation of
+#   accidental escape sequences
+wryeBashDataFiles = set((
+    u'Bashed Patch.esp',
+    u'Bashed Patch, 0.esp',
+    u'Bashed Patch, 1.esp',
+    u'Bashed Patch, 2.esp',
+    u'Bashed Patch, 3.esp',
+    u'Bashed Patch, 4.esp',
+    u'Bashed Patch, 5.esp',
+    u'Bashed Patch, 6.esp',
+    u'Bashed Patch, 7.esp',
+    u'Bashed Patch, 8.esp',
+    u'Bashed Patch, 9.esp',
+    u'Bashed Patch, CBash.esp',
+    u'Bashed Patch, Python.esp',
+    u'Bashed Patch, FCOM.esp',
+    u'Bashed Patch, Warrior.esp',
+    u'Bashed Patch, Thief.esp',
+    u'Bashed Patch, Mage.esp',
+    u'Bashed Patch, Test.esp',
+    u'ArchiveInvalidationInvalidated!.bsa',
+    u'Docs\\Bash Readme Template.html',
+    u'Docs\\wtxt_sand_small.css',
+    u'Docs\\wtxt_teal.css',
+    u'Docs\\Bash Readme Template.txt'
+    ))
+wryeBashDataDirs = set((
+    u'Bash Patches\\'+name,
+    u'INI Tweaks\\'+name
+    ))
+ignoreDataFiles = set((
+    ))
+ignoreDataFilePrefixes = set((
+    ))
+ignoreDataDirs = set((
+    ))
+
 #--Plugin format stuff
 class esp:
     #--Wrye Bash capabilities
