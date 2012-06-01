@@ -137,7 +137,7 @@ allTagsSet = set(allTags)
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
-reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.0.7.5|_GOTY non-SI).esm$',re.U)
+reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$',re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
@@ -5761,7 +5761,7 @@ class ModInfos(FileInfos):
 
     def delete(self,fileName,doRefresh=True):
         """Deletes member file."""
-        if fileName.s != u'Oblivion.esm' and fileName.s != u'Nehrim.esm' and fileName.s != u'Skyrim.esm' and fileName.s != u'Update.esm':
+        if fileName.s not in bush.game.masterFiles:
             self.unselect(fileName)
             FileInfos.delete(self,fileName,doRefresh)
 
