@@ -756,6 +756,16 @@ allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
 
+# Magic Info ------------------------------------------------------------------
+weaponTypes = (
+    _(u'Blade (1 Handed)'),
+    _(u'Blade (2 Handed)'),
+    _(u'Blunt (1 Handed)'),
+    _(u'Blunt (2 Handed)'),
+    _(u'Staff'),
+    _(u'Bow'),
+    )
+
 #--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
 gmstEids = [
