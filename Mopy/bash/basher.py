@@ -17824,7 +17824,7 @@ class Save_EditCreatedData(balt.ListEditorData):
             buff.write(_(u'Clothing')+u'\n'+_(u'Flags: '))
             buff.write(u', '.join(record.flags.getTrueAttrs())+u'\n')
         elif record.recType == 'WEAP':
-            buff.write(bush.weaponTypes[record.weaponType]+u'\n')
+            buff.write(bush.game.weaponTypes[record.weaponType]+u'\n')
             for attr in ('damage','value','speed','reach','weight'):
                 buff.write(u'%s: %s\n' % (attr,getattr(record,attr)))
         #--Enchanted? Switch record to enchantment.
