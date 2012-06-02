@@ -4344,10 +4344,10 @@ class ModInfo(FileInfo):
             description = description + u'\n' + strKeys
         self.writeDescription(description)
 
-    def getBashTags(self, reload=True):
+    def getBashTags(self):
         """Returns any Bash flag keys."""
         tags = modInfos.table.getItem(self.name,'bashTags',None)
-        if tags is None and reload:
+        if tags is None:
             tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
             tags -= (configHelpers.getBashRemoveTags(self.name) or set())
         # Filter and remove old tags
