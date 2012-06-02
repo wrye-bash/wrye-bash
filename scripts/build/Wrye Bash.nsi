@@ -574,6 +574,9 @@
 NoComTypes:
                 ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
                 ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                ${If} $1 == $Empty
+                    ReadRegStr $1         HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                ${EndIf}
                 StrCpy $Python_pywin32 $1 3 -3
                 ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
                 ${VersionConvert} $Python_wx "+" $Python_wx
