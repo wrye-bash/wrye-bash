@@ -5649,14 +5649,14 @@ class ModInfos(FileInfos):
                 for master in self[fileName].header.masters:
                     if master in modSet:
                         self.select(master,False,modSet,children)
+                #--Select in plugins
+                if fileName not in boss.ActivePlugins:
+                    boss.ActivePlugins.append(fileName)
+                    self.refreshFile(fileName)
             except bapi.BossError as e:
                 if e.code == bapi.BOSS_API_ERROR_PLUGINS_FULL:
                     raise PluginsFullError
                 raise
-            #--Select in plugins
-            if fileName not in boss.ActivePlugins:
-                boss.ActivePlugins.append(fileName)
-                self.refreshFile(fileName)
         finally:
             if doSave:
                 self.refreshInfoLists()
