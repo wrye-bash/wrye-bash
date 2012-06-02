@@ -183,8 +183,8 @@
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
 
         StrCpy $MinVersion_Comtypes '0.6.2'
-        StrCpy $MinVersion_wx '2.8.10'
-        StrCpy $MinVersion_pywin32 '213'
+        StrCpy $MinVersion_wx '2.8.12'
+        StrCpy $MinVersion_pywin32 '217'
         StrCpy $Python_Comtypes "1"
         StrCpy $Python_wx "1"
         StrCpy $Python_pywin32 "1"
@@ -592,7 +592,7 @@ NoComTypes:
                     Pop $Label
                 IntOp $0 $0 + 41
                 ${If} $Python_Path == $Empty
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python 2.7.2"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python 2.7.3"
                         Pop $Check_Python
                         ${NSD_SetState} $Check_Python ${BST_CHECKED}
                     IntOp $0 $0 + 2
@@ -622,7 +622,7 @@ NoComTypes:
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_pywin32 == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 216"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 217"
                         Pop $Check_pywin32
                         ${NSD_SetState} $Check_pywin32 ${BST_CHECKED}
                     IntOp $0 $0 + 2
