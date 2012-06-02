@@ -5482,10 +5482,9 @@ class ModInfos(FileInfos):
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
         modNames = set(modNames)
-        present = modNames - set(self.LoadOrder)
-        missing = modNames - present
+        missing  = modNames - set(self.LoadOrder)
         try:
-            boss.SetActivePlugins(modNames)
+            boss.SetActivePlugins(self.getOrdered(modNames))
         except bapi.BossError as e:
             if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
                 raise
