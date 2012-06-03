@@ -1,0 +1,3837 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="shortcut icon" href="bash/images/bash_32.ico"/>
+<title>Wrye Bash Version History</title>
+<style>
+	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
+	h1, h2 { background: #9ACD32; margin-left: -8px; margin-right: -8px; padding:0.6em; }
+	h1 { margin-top:-8px; padding-left:1.5em;margin-bottom:0;}
+	h2 { margin-top:5em; padding-left:2em;}
+	h3 { font-size:1.1em; margin-top:3em;}
+	a:link { text-decoration:none; }
+	a:hover { text-decoration:underline; }
+	li ul, li ol {margin-top:0.4em;}
+	li {margin-bottom:10px;}
+	ol li ol {list-style:lower-alpha;}
+	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
+	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
+	thead {font-weight:bold; background:#8af;}
+	img {border:0;}
+	a[href^="http"]:after {vertical-align: super;  content: "\21E7";}
+	q {font-style:italic;}
+	code {display:inline-block; padding:2px 5px; background:#DDD;}
+	code.box {line-height:20px; white-space:pre; margin:1em 0 0 3em; display:table; padding:5px 10px;}
+	blockquote {background:#E6E6FA; display:table; padding:5px 30px 5px 10px;}
+	figure {margin:0;}
+	figcaption {font-style:italic; margin-bottom:2em;}
+ .missing {background:red; color:white; border:0.25em solid black;}
+	abbr {cursor:help;}
+	
+	h2 {margin-left:0; padding:0; background:inherit; font-size:1.1em; margin-top:3em;}
+</style>
+
+<h1 id="history">Wrye Bash Version History</h1>
+
+<p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
+
+<h2>297 [XX/X/2012] [Trira,Daidalos,Arthmoor,wrinklyninja,alt3rn1ty,Other community members]</h2>
+<ul>
+ <li>General bugfixing for Skyrim and Oblivion.
+ <li>Some potential lag relief for Bash's use of BAPI.
+ <li>Documentation update.
+</ul>
+
+<h2>296 [27/5/2012] [Lojack,PacificMorrowind,Waruddar,Metallicow]</h2>
+<ul>
+	<li>CBash updated to version 0.6
+	<li>Bashed Patch:
+	<ul>
+		<li>Races Patcher refactored a bit: now has racial tweaks you can select and source mods that you can select.
+		<li>new race tweakers:
+		<ul>
+			<li>Bigger Nords & Orcs (moved from tweak actors)
+			<li>Merge Eyes from similar races
+			<li>Merge Hairs from similar races
+			<li>Playable Eyes
+			<li>Playable Hairs
+			<li>Races have All Eyes
+			<li>Races have All Hairs
+			<li>Sexless Hairs
+		</ul>
+		<li>Globals Patcher has been merge into Tweak Settings.   
+		<li>Python Mode Only: new but deleted records won't affect mergeability.
+		<li>In CBash mode instead of merging deleted REFR, ACRE, ACHR records they will be merged as and undeleted (disabled and moved -1000 units on the z axis). (doesn't affect Python mode since Python mode doesn't merge cells)
+		<li>Tweak Settings Patcher:
+		<ul>
+			<li>A few tweak names tweaked to better match other tweak names.
+		</ul>
+	</ul>
+	<li>ini option to ensure bashed patch exists at program start added (by default on).
+	<li>Duplicate files for multiple files fixed.
+	<li>Minimum Column width enforced.
+	<li>Status bar help tips added to many menu items.
+ <li>General error cleanup in parts of the code.
+ <li>Updated URLs for Nexus information.
+ <li>Metallicow's WIZBAIN editor (has not been documented yet)
+</ul>
+ 
+<h2>295.5 [17/1/2012] [Lojack,PacificMorrowind]</h2>
+<ul>
+	<li>Bugfix release:
+	<ul>
+		<li>Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
+		<li><a href="Wrye%20Bash%20General%20Readme.html#bain">BAIN</a>: Fixed a problem associated with Embedded BCFs, causing BAIN to become unusable.
+		<li>Wrye Bash Installer updated to included the necessary files of the <a href="http://www.microsoft.com/download/en/details.aspx?id=14431">MSVC 2005 SP1 Redistributable with ATL Security Update</a>.  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
+		<li>Wrye Bash Uninstaller updated to remove some files it was missing.
+		<li>Changed how the 'Apps' folder launchers are used, to work with Unicode better.
+		<li>Fixed a problem with restarting Wrye Bash.  Specifically, the Standalone version would shutdown instead of restart, when required.
+		<li>Fixed a problem with formatting numbers for the user's location.
+		<li>Better printing of error messages on startup, when using the Standalone version.
+		<li>Corrected a problem with <a href="Wrye%20Bash%20General%20Readme.html#ini">INI Tweaks</a> where adding new lines sometimes would not write the whole line.
+		<li>Made an adjustment to <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">Save Profiles</a>, that should help out when the Profile name has Unicode in it.
+	</ul>
+</ul>
+
+<h2>295.4 [15/1/2012] [Lojack,PacificMorrowind]</h2>
+<ul>
+	<li>Bugfix release:
+	<ul>
+		<li>Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.
+		<li><a href="Wrye%20Bash%20General%20Readme.html#patch">Bashed Patch</a>:
+		<ul>
+			<li>Small tweak to Leveled Lists patcher, allowing changes to the Flags of a list to be imported in rare occasions where they were not.
+			<li>Reverted the change to the Graphics patcher from 295.3, mods requiring the model file name to be imported should be using the <code>Actors.Skeleton</code> <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tags">Tag</a> to accomplish this.
+		</ul>
+		<li>Fixed <a href="Wrye%20Bash%20General%20Readme.html#ini">INI Tweaks</a> that un-deleted a tweak line.  Now instead of re-adding the tweak in as a new line, the original line will correctly be replaced.
+		<li>Fixed an issue with switching <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">Save Game profiles</a>, that was introduced due to the new INI Tweak changes.
+		<li>Fixed an issue where <a href="Wrye%20Bash%20General%20Readme.html#bain">BAIN</a> would sometimes install document files from inactive packages.
+		<li>Updated the Wrye Bash Installer with some typo fixes, and to correctly remove some files associated with newer versions of Wrye Bash when required.
+		<li>Fixed a bug causing Wrye Bash to never ask to backup your settings on an upgrade.
+	</ul>
+</ul>
+
+<h2>295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind]</h2>
+<ul>
+	<li>Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:
+	<ul>
+		<li>Special thanks to __bluesky404__ for a ton of work testing, debugging, and providing patches to help make this possible.
+		<li>By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does ~~not~~ cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).
+		<ul>
+			<li>To modify this behavior, there is a new setting, accessible via the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Setting Menu</a>, Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other languages that don't fall under the 'Western European' encoding.
+			<li>This is a global setting, so changing it will have an effect on ~~all~~ plugins.
+			<li>Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
+			<li>Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.
+		</ul>
+		<li>Some minor inconsistencies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
+		<li>Unicode file names are fully supported.
+		<li>Limitations:
+		<ul>
+			<li>Skyrim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarantee that activated plugins with Unicode file names will actually be loaded.
+			<li>Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bash's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
+			<li>The masterlist.txt and userlist.txt files for BOSS are expected to also be in UTF-8 format.  This is a requirement imposed by BOSS, so no change should be noticed there.
+		</ul>
+		<li><a href="Wrye%20Bash%20General%20Readme.html#international">Translation files</a> format has changed.  Old translation files have been converted to the new format.
+	</ul>
+	<li>More refactoring for multi-game support.
+	<li>New Skyrim features:
+	<ul>
+		<li>Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.
+		<li>Merge support for AACT, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC added.
+		<li>Basic ONAM support for TES4 records.
+		<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tags">Bashed Tags</a>:
+		<ul>
+			<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-lists">Delev and Relev</a> - These can be used to intelligently merge leveled lists.
+			<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-filter">Filter</a>, NoMerge, and Deactivate - These can be used to modify behavior in regards merging and importing records.
+		</ul>
+		<li>Better merging of records with NULL Form IDs, for records that allow it (COBJ and GMST for example).
+		<li>New <a href="Wrye%20Bash%20General%20Readme.html#bain">BAIN</a> option: <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-commands">Auto-name String Translation files</a>:
+		<ul>
+			<li>Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.
+		</ul>
+	</ul>
+	<li>Bugfixes:
+	<ul>
+		<li>An uncommon Drag and Drop of Tabs related bug is fixed (relating to Mouse Capture).
+		<li><a href="Wrye%20Bash%20Advanced%20Readme.html#savesListMasters">List Masters</a> command corrected to display the masters of a Save File, rather than the current Load Order.
+		<li>Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
+		<li>Startup crash when Skyrim.esm was ghosted, and set to be inactive within Wrye Bash.
+		<li>Fixed an issue where the <a href="Wrye%20Bash%20General%20Readme.html#patchImportGraphics">Graphics</a> tag was not properly importing the model file name on CREA records.
+	</ul>
+	<li>Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
+	<li>Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
+	<li>Other improvements:
+	<ul>
+		<li>New Simplified Chinese translation, provided by bluesky404.
+		<li>New Traditional Chinese translation, provided by bluesky404.
+		<li><a href="Wrye%20Bash%20General%20Readme.html#bain">BAIN</a>:
+		<ul>
+			<li>Wizard.txt and readmes will no longer show up as 'Skipped' if it's in an odd directory.
+			<li>New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
+			<li>The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with File IDs less than 4 digits now.
+		</ul>
+		<li><a href="Wrye%20Bash%20General%20Readme.html#ini">INI Edits</a>:
+		<ul>
+			<li>Double click to apply an INI Tweak
+			<li>Left Click on the checkbox to apply an INI Tweak
+			<li>INI Tweaks can now add and remove new lines to target INIs.
+			<ul>
+				<li>Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Oblivion, enabled by default for Skyrim).
+			</ul>
+			<li>The syntax for denoting a line to be deleted is to prepend the line with ";-".
+			<li>BAIN Wizards can also create "deleted" INI Tweak lines, via the <a href="Wrye%20Bash%20Technical%20Readme.html#DisableINILine">DisableINILine</a> command.
+		</ul>
+		<li>Better support for Mac Command button.
+		<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch">Bashed Patch</a>:
+		<ul>
+			<li>New <a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Assorted Tweaker</a>: No Description Loading Screens (requested by hellwing).
+		</ul>
+		<li>Wrye Bash will ask to backup your settings on ~~every~~ update now, instead of just a major version update (like from 294 to 295).
+		<li>Quickly switching between games can be accomplished via the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings Menu</a>.
+	</ul>
+</ul>
+
+<h2>295.2 [2/12/2011] [Lojack,bluesky404,Metallicow]</h2>
+<ul>
+	<li>Bugfixes:
+	<ul>
+	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>:
+	  <ul>
+		<li>Fixed the 'List Sub-Packages' command.
+		<li>Fixed installation of Script Extender plugins when not in Oblivion game mode.
+		<li>Fixed a refresh bug where changing the install order via Ctrl+Up or Ctrl+Down would not refresh the need to Anneal packages.
+		<li>Fixed an incorrect color being used for packages that need Annealing.  Previously a light gray background color was used to indicate a package has underrides that need to be corrected by Annealing.  Now BAIN correctly uses a yellow background, as described in this readme.
+	</ul>
+	  <li>Fixed Save Profiles so they work even when the game's INI file doesn't initially have the 'sLocalSavePath' entry (ie: Skyrim).
+	  <li>Fixed the 'Check for Updates' option while running in Standalone mode.
+	  <li>Fixed the spelling on the German Wizard Image
+	  </ul>
+	<li>New features:
+	<ul>
+	  <li>4Gb/LAA Launcher supported:
+		<li>For games that have a LAA Launcher (Skyrim currently), launching the game will launch via the LAA Launcher.
+		<li>A new <a href="Wrye%20Bash%20General%20Readme.html#launchers-toggles">status bar button</a> for enabling/disabling the LAA Launcher.
+	  <li>Added Status Bar mouse over texts for BAIN Packages.
+	  <li>BAIN will silently ignore the "config" file that NMM places into downloaded packages.
+	</ul>
+	<li>Skyrim specific:
+	<ul>
+	  <li>Basic editing of Save Games:
+	  <ul>
+		<li>Masters
+		</ul>
+	  <li>Basic editing of Mod files:
+	  <ul>
+		<li>Author
+		<li>Description
+		<li>Masters
+	</ul>
+	  <li>Bashed Patches:
+	  <ul>
+		<li>Can merge GMST, GLOB, AMMO, and COBJ records.
+		</ul>
+	</ul>
+</ul>
+
+<h2>295.1 [27/11/2011] [Lojack,Waruddar,myk002,PaificMorrowind]</h2>
+<ul>
+	<li>Skyrim support added:
+<ul>
+	  <li>Can read basic information from Skyrim mods (author and description)
+	  <li>Can read basic save game information (player name, level, play time)
+	  <li>Can modify your Load Order
+<ul>
+		<li>Update.esm will show up in the Load Order as unselected initially.  Skyrim treats this mod specially, and always loads it directly after Skyrim.esm.  Changings it's load order and activation status should have no effect on the game.
+</ul>
+	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">BAIN</a> is supported, including the standard directories and SKSE plugins.
+</ul>
+	<li>UI Improvements:
+<ul>
+	  <li>Customizible Status Bar and Tabs:
+<ul>
+		<li>Drag and drop reordering
+		<li>Hideable
+</ul>
+</ul>
+	<li>Bugfixes:
+<ul>
+	  <li>Fixed a few <a href="Wrye%20Bash%20General%20Readme.html#ini">INI Edits</a> tab related startup crashes.
+	  <li>More information should be displayed when Wrye Bash fails to startup.
+	  <li>More information is displayed in debug mode when a Tab fails to initialize.
+	  <li>Fixed a crash on startup bug when no plugins are found in the Data directory.
+</ul>
+	<li><a href="Wrye%20Bash%20Technical%20Readme.html#wizards">BAIN Wizards</a>:
+<ul>
+	  <li>New function <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsCompareGameVersion">CompareGameVersion</a> replaces the older <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsCompareObVersion">CompareObVersion</a>.  The older function is retained for backwards compatibility only.
+	  <li>New function <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsCompareSEVersion">CompareSEVersion</a> replaces the older <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsCompareOBSEVersion">CompareOBSEVersion</a>.  The older function is retained for backwards compatibility only.
+	  <li>New function <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsCompareGEVersion">CompareGEVersion</a> replaces the older <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsCompareGEVersion">CompareOBGEVersion</a>.  The older function is retained for backwards compatibility only.
+</ul>
+	<li>Changes to the installation requirements:
+<ul>
+	  <li>You may still install Wrye Bash to "path.to.you.game\Mopy" as before, and it will function normally.
+	  <li>You may also install Wrye Bash to any other location.  In that case, here is how it will decide what game to manage:
+<ul>
+		<li>Read the Windows Registry to see what supported games you have installed.
+		<li>Also check one directory up relative to Wrye Bash to see if it contains a supported game.
+		<li>If only one supported game is detected:  Wrye Bash will manage that game.
+		<li>If multiple supported games are detected:
+<ul>
+		  <li>If the '-g' command line argument is used, Wrye Bash will manage the game specified by '-g'.
+		  <li>If the '-o' command line argument is specified, Wrye Bash will manage the game in the location specified by '-o'.
+		  <li>If Wrye Bash is installed as a sub-directory to a detected game, Wrye Bash will manage that game.
+		  <li>Finally, Wrye Bash will display a prompt asking which game to manage.
+</ul>
+</ul>
+</ul>
+	<li>New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:
+<ul>
+	  <li><code><span style="color:brown;">"Wrye Bash.exe"</span> -<i>g</i> <i>oblivion</i></code>
+	  <li>Will tell Wrye Bash to manage your Oblivion installation.  
+</ul>
+</ul>
+
+
+<h2>295 [30/9/2011] [bluesky404,Gratis_monsta,Lojack,myk002,PacificMorrowind,valda,Waruddar]</h2>
+<ul>
+	<li>Many thanks to Arthmoor, silverbluemoon, Zoar5, GabaZieute, and VKS, who contributed their time, gave us feedback, and beta tested solutions for several difficult bugs.  It's community members like you that help Wrye Bash succeed!
+	<li>First-run Usability Improvements:
+<ul>
+	  <li>Default options and widget sizes have been revamped for a smoother first-time experience
+	  <li>More startup errors are shown in a popup messagebox instead of just being dumped to the log
+	  <li>Default window sizes have been increased so you can actually see their contents on first load
+	  <li>Debug .bat file now works for all supported Python versions and all Python installation paths instead of being hardcoded to look for c:/Python27
+	  <li>Wrye Bash can now be started from any directory instead of requiring Mopy as the working directory
+</ul>
+	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch">Bashed Patch</a>:
+<ul>
+	  <li>Usability improvements:
+<ul>
+		<li>Mods with tags that are being bashed for the first time will now automatically be checked and bolded in the bashed patch dialog.
+		<li>Corresponding patchers will be automatically enabled and bolded.
+		<li>If you would rather do things manually, you can turn the new autocheck behavior off in the ini.
+		<li>When you enable a mod or tweak in a patcher, the corresponding patcher is now auto-checked (always on: not controlled by the ini).
+</ul>
+	  <li>Assorted tweakers:
+<ul>
+		<li>New tweak: Skyrim-style Weapons.
+		<li>New tweak: Uniform Groundcover.
+		<li>CBash 'Magic: Script Effect Silencer' tweak fixed.
+		<li>PBash 'Default icons' tweak fixed.
+		<li>VORB tweak now assigns special skeletons correctly.
+		<li>Fixed type mismatch that was preventing custom values for float GMST tweaks from being applied correctly in CBash.
+</ul>
+	  <li>Names tweaker:
+<ul>
+		<li>New tweak: Proper English Names: Staffs -> Staves.
+		<li>New tweak: Proper English Names: Dwarfs -> Dwarves.
+		<li>Updated NPC/Guard names csvs. (Contributed by Gratis_monsta)
+</ul>
+	  <li>Updated Assorted to Cobl.csv for Replace Form IDs. (Contributed by Gratis_monsta)
+	  <li>Merge Patcher no longer merges in script records that depend on missing masters.
+	  <li>Refresh displayed values for tweakers with selectable options properly when configuration is reverted or imported.
+	  <li>Revert to Default option added; just reverts the patch config to default.
+	  <li>Settings tweaker:
+<ul>
+		<li>New tweaks:
+<ul>
+		  <li>AI: Conversation Chance/AI: Conversation Chance - Interior: Chance of NPCs engaging each other in conversation (possibly also with the player (not in and in interiors respectively).
+		  <li>Leveled Creature Max level difference
+</ul>
+</ul>
+</ul>
+	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">BAIN</a>:
+<ul>
+	  <li>Automatic generation of INI tweak files when installing an INI that doesn't match the CRC of what is already installed
+	  <li>BAIN Wizards: Updated the <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsEditINI">EditINI</a> function to allow comments.
+	  <li>Installer->open readme command added.
+	  <li>Modified <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command so that it doesn't remove DLC content or Wrye Bash-related files
+	  <li>It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
+	  <li>Don't reset subpackage selections if a wizard is started but canceled
+	  <li>Speed improvement; readonly status for files in the data folder only changed if/when needed. (and removed bClearRO option from ini since it'll only occur on individual files/subfolder and only if needed now)
+</ul>
+	<li>Unicode Mode:
+<ul>
+	  <li>Bugfixes from valda and bluesky404
+</ul>
+	<li>Added activation status as a new mods column/sort option.
+	<li>New mod commands:
+<ul>
+	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsLoadAll">Load All</a> will activate all mods (up to 255 of them, at least)
+	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.
+	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.
+	  <li>Ghost will ghost just the selected mod(s) 
+	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportPatchConfig">Export Patch Config...</a> exports the selected patch's configuration to a file.
+	  <li>File-><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
+	  <li>File-><a href="Wrye%20Bash%20Advanced%20Readme.html#modsNewBashedPatch">New Bashed Patch</a> will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
+	  <li>Mods Tab-><a href="Wrye%20Bash%20Advanced%20Readme.html#modsRemoveDummyMasters">Remove Dummy Masters</a> will delete any empty plugins created using the <a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateDummyMasters">Create Dummy Masters</a> command.
+</ul>
+	<li>Add Master command can now add multiple masters in one go.
+	<li>Fixed Settings backup files should have WB version in their names.
+	<li>Ghosting fixed to remove the ugly chance of having both .ghost and .esp versions of the same mod.
+	<li>Replacers tab and associated code totally removed.
+	<li>BALO is now officially deprecated, having been entirely superseded by BOSS.  If you are still using it, please consider using BOSS instead.
+	<li>Fixed CBash crash while scanning for dirty edits on some plugins
+	<li>Fixed launching of bashmon
+	<li>Startup:
+<ul>
+	  <li>Fixed startup processing so you can in one startup both backup and restore settings.
+	  <li>Added -L/--Language as cmdline options to set Wrye Bash's language.
+</ul>
+	<li>Added warning if user has more than 325 esp/ms/bsa in the data folder and aren't using ghosting (and more strongly worded warning if more than 400).
+	<li>Ini Tab -> list active ini's command added.
+	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">ModChecker</a>:
+<ul>
+	  <li>Fixed default size to be wide enough to display all buttons.
+	  <li>Added option to toggle display of CRCs for mods in the mod list.
+	  <li>Added option to toggle display of version numbers for mods in the mod list.
+	  <li>Display note if no dirty mods are found (so that users know that it did successfully check and isn't malfunctioning).
+</ul>
+	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a>: crc display is off by default and added code to enable crc display if 'c' is pressed.
+	<li>Most untranslatable strings adjusted to be translatable (adds more than 240 strings that can now be translated).
+	<li>UI components in the Mods and Saves Tabs are now resizable
+	<li>Progress bars now shown in several cases where the program could be perceived to be hung but was actually processing data
+	<li>Fixed progress bar disappearing for some people while loading the installers tab
+	<li>UI colors are now customizable with the <a href="Wrye%20Bash%20Advanced%20Readme.html#settingsColors">Colors Dialog</a>.  This allows you to change what colors Wrye Bash uses for various informational purposes.  This only configures the custom colors that Wrye Bash uses.  Anything else uses your system defaults, so if you want to change those, you'll need to do it through your OS.
+	<li>Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
+	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#launchers-custom">Custom launcher buttons</a> now support launching of msi created shortcuts.
+	<li>Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
+	<li>CBash no longer causes random occurances of googly eyes
+</ul>
+	
+<h2>294.2 [1/8/2011] [Lojack,myk002,PacificMorrowind]</h2>
+<ul>
+<li>Small fix to the Python race patcher for dremora records
+<li>Lots of installer fixes
+</ul>
+
+<h2>294.1 [25/7/2011] [DJ_Kovrik,Lojack,Metallicow,myk002,PacificMorrowind,valda]</h2>
+<ul>
+<li>Program-wide Changes:
+<ul>
+  <li>Wrye Bash has a new directory layout!  Now the Mopy directory just contains important files that you can run.  All other files have been moved into subdirectories.
+  <li>If manually updating, please delete the old Mopy directory before copying the new one in to get rid of the old files
+  <li>Your configuration will get converted to a new format on first load which will not be readable by older versions of Wrye Bash, so be sure to back up your settings when you upgrade so they will be available if you ever need to downgrade again
+  <li>Python 2.5x and under compatibility: warn that those are unsupported versions but if the user really wants to use em anyways make some changes so that it is less likely to fail as much.
+  <li>Installer checks Python 2.7x first and foremost and if no python versions detected provides links/downloads python 2.7.2 and compatible extensions.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch">Bashed Patch</a>:
+<ul>
+  <li>Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
+  <li>All multitweakers with choices now autoselect the default value if not user selected.
+  <li>Race Patcher: 
+<ul>
+    <li>Added Npc.HairOnly, Npc.EyesOnly tags
+    <li>Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
+</ul>
+  <li>Fixed revert to saved configs (CBash).
+  <li>All multitweakers modified to accept custom arguments (if not a on or off type thing).
+  <li>Tweak settings Patcher:
+<ul>
+    <li>Added a whole bunch of tweaks:
+<ul>
+      <li>Drag: Max Moveable Weight tweak.
+      <li>Msg: Auto Saving.
+      <li>Msg: Harvest Failure.
+      <li>Msg: Harvest Success.
+      <li>Msg: Horse Stabled.
+      <li>Msg: Loading Area.
+      <li>Msg: No Fast Travel.
+      <li>Msg: Not Enough Charge.
+      <li>Msg: Quick Load.
+</ul>
+    <li>Typo fix for the custom option of Compass: POI Recognition.
+</ul>
+  <li>Fixed Harvest Chance tweaker adjusts nirnroots when it shouldn't (since they are a quest plant).
+  <li>Fixed Factions, AI, Global, GMST and LL patchers not ignoring unchanged records.
+  <li>Fixed Actors.ACBS merging flags when it shouldn't be
+  <li>Fixed CBash patcher not cleaning unused masters
+  <li>CBash no longer gives GMSTs and MGEFs new FormIDs
+</ul>
+<li>Unicode Mode:
+<ul>
+  <li>More bugfixes from valda
+  <li>Non-Unicode Mode unicode support: errors changed to warnings - it'll still not install the file but it won't crash out.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves">Saves Tab</a>:
+<ul>
+  <li>Added ability to export screenshot from savegame.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">BAIN</a>:
+<ul>
+  <li>List Esp/ms command added to esp/m pane r-click menu.
+  <li>Open at Google regex improved so better automatic search terms.
+  <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainUninstallAll">Uninstall All</a> command. 
+  <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command
+  <li>Fixed markers disappearing on edit
+  <li>Fixed a processing error when subpackages have ampersands in their names
+</ul>
+<li>Bugs fixed (General):
+<ul>
+  <li>Fixed corrupted size saved when maximizing a Wizard.
+  <li>Fixed Export Settings suggests the incorrect Wrye Bash version for settings file output.
+  <li>Fixed fatal error if BashSettings.dat is corrupted (try backup/new settings file).
+  <li>Export Stats (CBash)
+  <li>Fixed compatibility with BOSS 1.8
+</ul>
+<li>Enhancements/New Features (General):
+<ul>
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#launchers-custom">Custom launcher buttons</a> are easier to use now.  Just drop a shortcut into the Mopy\Apps directory.
+  <li>Calling external programs that require administrator privileges is now supported
+  <li>Added bash.ini option to automatically adjust column sizes on the main tabs to display the full data/full header.
+  <li>Added the GOTY version of the non-SI esm and an alternate 1.1 size as well to the list of accepted ESM versions for ESM version switching (36 bytes smaller than the non-GOTY 1.1 and 46 bytes larger for the alternate).
+  <li>New mod->Export Cell Blocks Info command.
+  <li>New start menu icon.
+  <li>OBSE is now enabled by default if detected.
+  <li>Updated Russian Translation (contributed by DJ_Kovrik).
+</ul>
+<li>Additional bugfixes in 294.1:
+<ul>
+  <li>Fixed a bug in the Race Patcher that would fail on some Dremora records.
+  <li>Fixed a bug when selecting 'Cancel' after trying to export a screenshot from a saved game.
+  <li>More Unicode fixes from valda.
+  <li>If custom icon extraction fails for a Custom Launcher button, Wrye Bash will attempt to fall back to the 16x16 one.
+  <li>Fixed a bug where line endings weren't correctly stripped in the INI Edits Tab, resulting in 'boxes' showing in the UI.
+  <li>Fixed a bug when Wrye Bash tries to activate a newly built Bashed Patch, and 255 mods are active.
+</ul>
+</ul>
+
+<h2>293 [27/6/2011] [PacificMorrowind,Lojack,myk002,valda] [rev 1280]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch">Bashed Patch</a>:
+<ul>
+  <li>Bugs fixed (CBash):
+<ul>
+    <li>Filter mods that were incorrectly being treated as not mergeable are mergeable once again.
+    <li>Bug with the <a href="Wrye%20Bash%20General%20Readme.html#patchImportActorsAIPackages">NPC AI Packages</a> patcher fixed (incorrectly detecting if OOO and the UOP were installed).
+    <li>Bash will now properly report mergeable mods that have active non-mergeable dependant mods as not mergeable.
+    <li>Hack added to make sure that OOO.esp is reported as non-mergeable.
+    <li>Fix for mergeability detection for corrupted/unrecognized format mods (presume non-mergeable and warn if in debug mode but don't fail - which could prevent rebuilding of patch in CBash mode).
+    <li><a href="Wrye%20Bash%20General%20Readme.html#patchImportNPCFaces">NPC Face data</a> should properly be merged, vice overridden.
+    <li>Fixed merging of QUST records from Filter mods.
+</ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a><b>: Default Icons</b> updated to skip records that should not have icons (stageless quests, non-playable clothing, armor, and items).
+  <li>Added ability to import Bashed Patch config from CBash to Python and Python to CBash.
+  <li>Added the ability to build a Python Bashed Patch when CBash is active.  This now requires that a Python based <a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> to be automatically executed before rebuilding.
+<ul>
+    <li>No more renaming CBash.dll!
+</ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchRevertToSaved">Revert to Saved</a> option, to restore the settings last used to build the Bashed Patch.
+</ul>
+<li>Bugs fixed (General):
+<ul>
+  <li>Fixed multiple issues dealing with '&amp;' in filenames.
+  <li>BOSS's dirty edit CRC's will be properly read from the masterlist now.
+  <li>Updated format of forum-postable text copied to clipboard (e.g. "List mods" output) so that the title appears outside of the spoiler tag as requested by speedyg869 <a href="http://forums.bethsoft.com/index.php?app=forums&amp;module=forums&amp;section=findpost&amp;pid=17975809">here</a>
+  <li>Fixed the launching of OBSE when a Steam install is detected.
+</ul>
+<li>Updated NSIS installer.
+<li>Unicode Mode:
+<ul>
+  <li>Bugs fixed:
+<ul>
+    <li>debug printing failing of an error in reading a mod failing with some unicode mods.
+    <li>Rename Player
+    <li>Rename Save items (including Enchanted, Potions, Spells)
+</ul>
+</ul>
+<li>Startup
+<ul>
+  <li>refactored cmdline opt getting
+  <li>added/changed cmdline options:
+<ul>
+    <li>-d/--debug: no longer automatically disables Psyco import.
+    <li>--no-psyco: disable Psyco import.
+    <li>-C/--Cbash-mode: force cbash mode (requires CBash.dll to be named one of Rename_CBash.dll, CBash.dll or _CBash.dll).
+    <li>-P/--Python-mode: force python mode (whether or not CBash.dll exists).
+    <li>-U/--Unicode: equivalent to setting <b>bEnableUnicode</b> to <i><b>True</b></i> in bash.ini (but the cmdline options override the ini when specified).
+    <li>-A/--Ansi: equivalent to setting <b>bEnableUnicode</b> to <i><b>False</b></i> in bash.ini (but the cmdline options override the ini when specified).
+    <li>-i/--include-changed-images: includes changed images in mopy/images in backup/restore (if present in backup file) operation.
+    <li>-I/--include-all-images: include all images in mopy/images in backup/restore (if present in backup file) operation.
+</ul>
+</ul>
+<li>Preliminary support for BOSS 1.8
+</ul>
+
+<h2>292 [10/6/2011] [Gratis_monsta,Leandro Conde,myk002,PacificMorrowind,Lojack,VadersApp,valda] [rev 1176]</h2>
+<ul>
+<li><b>CBash</b> is live!  The default install now uses CBash.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch">Bashed Patch</a>:
+<ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Race Patcher</a>
+<ul>
+    <li>Fixed error with setting race eyes for some uncommon races.
+    <li>eyes with undefined meshes now skipped and removed from races rather than causing fatal warning.
+    <li>CBash random eye setting fixed (was choosing only one eye per race).
+</ul>
+  <li>Fix for typos in CBash SpellStats Patcher
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakActors">Tweak Actors</a> patcher:
+<ul>
+    <li>Added note to MAO patcher that it requires MAO.
+    <li>Added a VORB patcher (requires VORB).
+    <li>Added Bigger Nords and Orcs tweaker
+    <li>Sexy Walk and Real Walk tweakers finally fixed to not replace the current animations but add the Swalk/Rwalk animation. (and CBash version of each added)
+</ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakSettings">Tweak Settings</a> (GMST) patcher:
+<ul>
+    <li>Now handles deleted GMSTs correctly (skips) instead of choking to death on them. (contributed by Leandro Conde)
+    <li>AI: Max Smile Distance tweak added.
+    <li>Combat: Max Ally Hits tweak added.
+</ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>:
+<ul>
+    <li>Merged Random NPC Names csvs (deleted old single csvs). (Contributed by Gratis_monsta)
+    <li>Added OOO Potion Names.csv - reverts OOO's alcoholic beverage naming to vanilla. (Contributed by Gratis_monsta)
+    <li>Updated Guard_Names.csv to support more mods. (Contributed by Gratis_monsta)
+</ul>
+  <li>Mark mergeable detection of other mods requiring current mod fixed.
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a> patcher:
+<ul>
+    <li>Added Set Sound Attenuation Levels tweaker.
+    <li>Added 'Set Sound Attenuation Levels: Nirnroot only' tweaker.
+    <li>Added 'Faction crime Gold Multiplier Fix' tweaker.
+    <li>Added 'No Light Fade Value Fix' tweaker.
+</ul>
+  <li>Added a cancel button to the build progress bar.
+  <li>New keyboard shortcuts: Ctrl+A and Ctrl+Shift+A in the patcher list box will SelectAll or DeselectAll suboptions, respectively.
+  <li>Deleted references in the Bashed Patch will automatically be undeleted and disabled.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">BAIN</a>:
+<ul>
+  <li>Speed improvement for package uninstallation (moved data folder readonly setting clearing to a do once each launch of Bash instead of on each uninstall operation)
+  <li>Size of comments section saved between launches (contributed by myk002)
+  <li>Wizards:
+<ul>
+    <li>New functions:
+<ul>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsGetEspmStatus">GetEspmStatus</a>: Find the status of an installed mod (Missing, Inactive, Imported, Active, Merged)
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsEditINI">EditINI</a>: Create ini tweaks programmatically, which will can be automatically applied to either Oblivion.ini or an INI from the current installer.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsExec">Exec</a>: Execute wizard lines stored in a string.  Useful for dynamically creating menus.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsendswith">endswith</a>: Test what a string ends with.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsstartswith">startswith</a>: Test what a string starts with.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardslower">lower</a>: Convert a string to lower case.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsfind">find</a>: Find the first occurrence of a substring within a string.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsrfind">rfind</a>: Find the last occurrence of a substring within a string.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsGetFilename">GetFilename</a>: For getting a filename from a path string.
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsGetFolder">GetFolder</a>: For getting a folder name from a path string.
+</ul>
+    <li>Improved <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> loops, for iterating over files in an installer:
+<ul>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> <var>subpackage</var> in Subpackages
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsForContinueBreakEndFor">For</a> <var>file</var> in <var>subpackage</var>
+</ul>
+    <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizards-operators-ci">Case Insensitive Operators</a>: Operators that ignore the case of a string when comparing.
+    <li>The <a href="Wrye%20Bash%20Technical%20Readme.html#wizards-operators-dot">Dot Operator</a>
+    <li>Bugfix <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsRequireVersions">RequireVersions</a>: The version page will now show correctly if the Wrye Bash version is incorrect.
+    <li>A new icon will indicate that an installer contains a wizard.
+    <li>The Wizard window is now resizable, with automatic scaling images.
+    <li>Wizards now have a back button.  Be sure to note if there are any errors with this and report them.
+    <li>Improved responsiveness of pages by extracting all images at the start of the Wizard, rather than as needed.
+    <li>To better improve the language, Keywords that take multiple arguments must have their arguments separated by commas.  Keywords that this affects:
+<ul>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsSelectOne">SelectOne</a>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsSelectMany">SelectMany</a>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsRenameEspm">RenameEspm</a>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsRequireVersions">RequireVersions</a>
+      <li>This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:
+<ul>
+        <li><b>name</b> = "00 Base "
+        <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsSelectSubPackage">SelectSubPackage</a>(<b>name</b>+"Textures")
+</ul>
+</ul>
+    <li>Function <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsDataFileExists">DataFileExists</a> extended to allow testing of multiple files with one function call.  It will return <i>True</i> if all of the files exist, and <i>False</i> if one or more of the files does not exist.  Additionally, <a href="Wrye%20Bash%20Technical%20Readme.html#wizardsDataFileExists">DataFileExists</a> will also detected ghosted ESPs and ESMs now.
+    <li>Changed the default for <i><b>Auto-Anneal/Install Wizards</b></i> to be checked.  Be sure to check this setting, and set it to your preference.
+</ul>
+  <li>Added a cancel button to the Refresh Data progress bar.
+  <li>New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
+  <li>Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
+  <li>new ini option <b>bClearRO</b> to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
+  <li>new ini option <b>sOblivionTexturesBSAName</b> incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves">Saves Tab</a>:
+<ul>
+  <li>Yes to All option for overwrite on Move/Copy Saves
+  <li>'Move To behaves identical to Copy To for savegame files' bug fixed (at looong last).
+  <li>Statistics report now properly displays the Hexadecimal Mod Index instead of decimal.
+</ul>
+<li>General:
+<ul>
+  <li>Fixed <b>s7zExtraCompressionArguments</b> to actually get the value from the ini (typo in ini which meant the value wasn't getting recognized as present).
+  <li>Fixed packing arguments to properly non fatally use 7zExtraCompressionArguments.
+  <li>Import Scripts CBash and non-CBash modes fixed to maintain Python 2.5 compatibility.
+  <li>Now automatically removes bad tags from mods as per BOSS/BOSS userlist tagging suggestions.
+  <li>updated Wrye Text->Html Function to write valid xhtml 1.0 Strict.
+<ul>
+    <li>updated html snippets in wizards.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
+    <li>updated html snippets in Wrye bash.txt to turn into valid xhtml 1.0 Strict when ran through Wrye Text->Html converter.
+</ul>
+  <li>Improved <a href="Wrye%20Bash%20General%20Readme.html#ini">INI Edits tab</a> UI:
+<ul>
+    <li>Column width is remembered now.
+    <li>Shows the contents of an INI tweak, including status of each line in it compared to the master INI.
+    <li>Shows the contents of the master INI
+    <li>Clicking on a highlighted line will also show the applicable line in the master INI or INI tweak
+    <li>New INI Tweak file command "Copy to new Tweak", for creating a tweak file with the same settings as the target INI.
+    <li>Bugfix for batch script ini's that would incorrectly replace some variables.
+</ul>
+  <li>Various small UI improvements
+  <li>regex for TesNexus searching updated to work with a few less common mod archive name formats.
+  <li>Support for BOSS 1.7.
+  <li>New automatic taglist generator to generate the taglist from the masterlist.
+  <li>New option to see all the tags on all installed/selected mods.
+  <li>Taglist updated to BOSS rev 2608.
+  <li>Removed Balo and the Replacers Tab from the UI.  To re-enable, set <b>bEnableBalo</b> or <b>bEnableReplacers</b> to <i><b>True</b></i> as applicable in bash.ini
+<ul>
+    <li>These features may be removed in future versions.
+</ul>
+  <li>Wrye Bash will now automatically reset all BSA timestamps to 01-01-2006.  To disable this, set <b>bResetBSATimestamps</b> to <i><b>False</b></i> in bash.ini
+  <li>In cases where the <b>bUseMyGameDirectory</b> is 0 in oblivion.ini Wrye Bash will now read/write plugins.txt in the Oblivion (or Nehrim as the case may be) folder instead of appdata folder.
+  <li>Unicode improvements: (all only applicable in unicode mode)
+<ul>
+    <li>Fixed viewing/saving modfiles with tejon and other non-ascii author names.
+    <li>Fixed project view/scanning for projects containing non-ascii filenames.
+    <li>Fixed project->archive packaging for projects that contain files with non-ascii names.
+    <li>Warning added if using Unicode Wrye Bash but using non-unicode wxPython.
+    <li>Fixed viewing savefile with non-ascii data (contributed by valda).
+    <li>Fixed omod config viewing/editing with non-ascii data.
+    <li>Fixed manipulation (install/uninstall/Pack to archive/delete etc.) of projects/archives with non-ascii project/archive name (contributed by valda).
+    <li>Fixed translatable messages to be returned in unicode (contributed by valda).
+</ul>
+  <li>Steam support improvement: now launches Oblivion via Oblivion.exe rather than obselauncher.exe (as is required with Steam).
+  <li>Selectable jpeg quality in the <a href="Wrye%20Bash%20Advanced%20Readme.html#screenshots">Screenshots Tab</a>.
+  <li>Wrye Bash will check directory permissions at startup, and give an error if the correct permissions are not available.
+  <li>Advanced ini options for compatibility with mTES4 Manager: <b>sInstallersData</b> and <b>sBashModData</b> to specify where <i><b>Installers.dat</b></i>, <i><b>Converters.dat</b></i>, etc are stored by Wrye Bash.
+  <li>Added an option to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Mod Checker</a> to scan for deleted references, and if CBash is enabled, Identical to Master records.  The number of ITM records reported in this check will usually be slightly less than TES4Edit will report, due to not checking GRUP records.
+  <li>New mod command <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListPatchConfig">List Patch Config...</a>, for posting your Bashed Patch configuration on the forums.
+  <li>Readme updated and thoroughly spellchecked (in American English).
+</ul>
+</ul>
+
+<h2>291 [22/1/2011] [Gaticus,Gratis_monsta,Lojack,myk002,PacificMorrowind,Smooth,Spotty42,Waruddar]</h2>
+<ul>
+<li>Bashed Patch:
+<ul>
+  <li>typo fix for Actor Strength Encumbrance Multiplier (Multifier -> Multiplier).
+  <li>Tweak Actors:
+<ul>
+    <li>Quiet Feet patcher added.
+    <li>Irresponsible Creatures tweaker added (thanks to Joben for the idea).
+</ul>
+  <li>Tweak Assorted:
+<ul>
+    <li>another skip added to All Clothes Playable patcher
+    <li>Script Effect Silencer added.
+    <li>Default Icons tweaker added.
+</ul>
+  <li>Import Names
+<ul>
+    <li>Crowded Roads Revisited NPC names csv file added (contributed by Smooth)
+    <li>Crowded Roads Revamped NPC names csv file added (contributed by Spotty42)
+    <li>Crowded Roads Revisited NPC names alternate csv file added (contributed by Gratis_monsta)
+    <li>Crowded Cities 30/15 NPC names csv file added (contributed by Gratis_monsta)
+    <li>Crowded Cities 30/15 NPC names alternate csv file added (contributed by Gratis_monsta)
+    <li>PT_RoamingNPCs names csv file added (contributed by Gratis_monsta)
+    <li>TamrielTravellers/SITamrielTravellers NPC names csv file added (contributed by Gratis_monsta)
+</ul>
+  <li>Race Patcher: skips adjusting eyes instead of fatal error with races that have either left or right eyes unset (or both).
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">BAIN</a>:
+<ul>
+  <li>fix so that the end of the display of the number of packages does not get cut off.
+  <li>Read-Only files in installers (or in Data on uninstall) will no longer throw errors (automatically converted to non-ReadOnly).
+  <li>Subpackages are recognized if they have a broader range of folders\files in them (i.e. no more need to include a dummy texture to force subpackages to be recognized in some instances).
+  <li>Fixed 'Open at TesNexus' to work with the new format (still works with the old format ofc)
+  <li>Delete Project will no longer fail if there are Read-Only files in the Project; they are set to Write access first.
+  <li>New keyboard shortcuts added:
+<ul>
+    <li>Enter: Open archive/project.
+    <li>F2: Rename archive/project.
+</ul>
+  <li>New ini option for (extra) 7z compression arguments - if set and has the solid specification will not prompt for solid details on archive creation.
+  <li>3 new skip options: Skip Lod Meshes, Skip Lod Normals and Skip Lod Textures.
+  <li>7z dll/exe updated to version 9.20
+  <li>New Option to enable installation of OBSE Plugin dlls with large warning.
+<ul>
+    <li>Also main menu options for import/export of the dll installation permissions.
+</ul>
+  <li>hackish fix for errors emptying temp - try twice since it'll usually work the second time when it fails the first with a "Windows Error".
+  <li>new 'Open at Planet Elderscrolls' menu item.
+  <li>new 'Open at Google' menu item
+  <li>all Open at * menu items moved into 'Open At' submenu.
+  <li>added .001 as a valid read extension - as in BAIN now supports multipart archives.
+  <li>slow double click renames packages (on an default windows installation that is two clicks at least 1/2 second apart and at most 2 second apart).
+  <li>fix for an couple at exit crash bug.
+  <li>Installers panel now allows dropping files onto it, giving the option of copying or moving the files.
+  <li>Esp/ms can now be renamed via the Esp/m Filter box (just right click them).
+  <li>Changed the rename installer dialog for in place renaming.
+  <li>Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
+  <li>Widgets on installers tab made resizable (contributed by myk002).
+  <li>Added a sub-packages r-click menu:
+<ul>
+    <li>added Select All Sub-packages command.
+    <li>added Deselect All Sub-packages command.
+    <li>added Toggle Selected Sub-packages command.
+    <li>added List Sub-packages command.
+</ul>
+</ul>
+<li>BAIN Wizards:
+<ul>
+  <li>packages may now have a 'Wizard Images' directory that won't be installed but may contain images for use with the wizard
+  <li>added ability to use default images located in the 'Mopy\Wizard Images' directory
+<ul>
+    <li>Example: If you use 'Wizard Images\Yes.jpg'
+<ul>
+      <li>BAIN Wizards first checks if it exists in your package. If it does, it uses that and stops looking.
+      <li>Then BAIN Wizards then checks to see if it exists in 'Mopy\Wizard Images'. If it does, it uses that and stops looking.
+</ul>
+</ul>
+  <li>3 new Wizard functions
+<ul>
+    <li>RenameEspm "original name" "new name".
+    <li>ResetEspmName "original name".
+    <li>ResetAllEspmNames.
+</ul>
+</ul>
+<li>Saves Tab:
+<ul>
+  <li>Rename Save(s) command added (in the saves menu->file).
+  <li>Re-number Save(s) command added (in the saves menu->file).
+  <li>Rename Player command added.
+</ul>
+<li>General:
+<ul>
+  <li>fix for launcher code which prevented launching in some cases (contributed by myk002)
+  <li>fix for move/copy saves so that Default is not selectable if already in Default profile.
+  <li>fix for launcher code to avoid a rare instance in which it was possible for multiple instances to be launched (contributed by Gaticus)
+  <li>Refresh mergeables is now run on CBash Enable/Disable and Version upgrade/downgrade.
+  <li>Backup/Restore settings options added (contributed by Gaticus)
+  <li>Updated BOSS Launcher code to better handle different versions and to give the correct args to BOSS version 1.6.2+.
+  <li>Ini Tweaking fixed to work fine with Nehrim.
+  <li><a href="Wrye%20Bash%20General%20Readme.html#launchers">Launch Buttons</a> for more applications are now supported via Bash.ini (contributed by Metallicow).
+<ul>
+    <li>Sculptris, Softimage Mod Tool, SpeedTree, Tree[d], Mudbox, Tabula, MyPaint, Pixia, PhotoSEAM, TextureMaker, DeepPaint, Crazy Bump, xNormal, WinSnap, WTV, MaPZone, NVIDIA Melody, Switch, Freeplane.
+    <li>Also improved 3dsMax, Notepad++, Twisted Brush icons (contributed by Metallicow).
+</ul>
+  <li>Bash.ini typo fixes (contributed by Metallicow).
+  <li>Exception handling fixes to maintain Python 2.5 compatibility.
+  <li>Bash Installer automatically handling requirements created... still a bit fuzzy but *should* work in most cases.
+  <li>File read error warning printout fixed
+  <li>Import/Export NPC Levels has been updated to work with more than one mod at a time (when exporting).
+  <li>The csv file must now end in "*_NPC_Levels.csv".
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportFactions">Export Factions</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportFactions">Import Factions</a> may now be used directly on a mod.
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportRelations">Export Relations</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportRelations">Import Relations</a> may now be used directly on a mod.
+  <li>Creating/Duplicating a file will no longer cause a time conflict and suggests non-conflicting file names.
+  <li>Minor improvements to Export/Import Map Markers .
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportSigilStones">Export Sigil Stones</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportSigilStones">Import Sigil Stones</a> added.
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportSpellStats">Export Spell Stats</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportSpellStats">Import Spell Stats</a> re-added and expanded to support the export/import of flags and all spell effects. It does not support JRoush's OBME yet.
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportIngredients">Export Ingredients</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportIngredients">Import Ingredients</a> added.
+  <li>Status bar text when mousing over improved to display all applicable messages instead of only one.
+  <li>Fixes/clarifications in wizards.txt/html.
+  <li>Fix so that if Wrye Bash (usually the user account) doesn't have permission to change the date on an esp/m file on startup instead of silently dying warns and continues to launch.
+  <li>Experimental unicode support re-added as an option that is disabled by default.
+<ul>
+    <li>Allows Bash and BAIN to work with extended character sets.
+    <li>Requires the unicode version of wxPython to be installed.
+    <li>Set bEnableUnicode in bash.ini to True to test it.
+</ul>
+  <li>Applications started by Bash no longer prevent Bash from being run if Bash is closed and then attempted to be reopened while the application is still running.
+  <li>INI Tweaks renamed to be more consistent
+  <li>Added default grass fade INI Tweak (provided by Metallicow)
+</ul>
+</ul>
+
+<h2>290 [15/10/2010] [PacificMorrowind]</h2>
+<ul>
+<li>fix fatal typo in non-CBash Bashed Patch build introduced in 289 (reported by Tokc.D.K.)
+<li>added Disable/Enable ini tweaks for Screenshots.
+</ul>
+
+<h2>289 [14/10/2010] [myk002,PacificMorrowind,roxahris,valda68k]</h2>
+<ul>
+<li>Bashed Patch:
+<ul>
+  <li>Fixed Reweigh Staff logger
+  <li>Fixed some missing gmstIds for non-CBash build of the tweak settings (gmst tweaker)
+  <li>Added CBash version of Import Actors: Spells
+  <li>optimizations/fixes applied to Import Actors: Spells (both CBash &amp; non-CBash versions)
+  <li>Actors.Skeleton importer added
+  <li>skeleton removed from graphics import for creatures.
+  <li>NpcFacesForceFullImport tag added.
+</ul>
+<li>Improved Nehrim Support (contributed by roxahris)
+<li>A slight fix so that if the user has BOSS version 1.6 but hasn't created a masterlist yet it'll still work fine.
+<li>7z reverted to version 9.15 and then updated to version 9.17
+<li>Unicode/ansi fatal installer errors fixed. (it still may copy slightly er funkified file names of some non-ASCII char files).
+<li>DnD ordering in Installers fixed for Non-English installs (contributed by valda68k)
+<li>Escaping of quotations in names export (contributed by valda68k)
+<li>fix/improvement for oneInstanceChecker (contributed by myk002)
+</ul>
+
+<h2>288 [06/10/2010] [DJ_Kovrik,PacificMorrowind,roxahris,scooby,Waruddar]</h2>
+<ul>
+<li>Bashed Patch:
+<ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>':
+<ul>
+    <li>'Playable Armor' and 'Playable Clothes' now skip over even more items that shouldn't be made playable
+    <li>'Harvest Chance' tweaker added
+    <li>'No Wind' tweaker added
+    <li>Weigh adjusting tweakers adjusted
+    <li>'Reweigh: Arrows' tweaker added
+    <li>'Reweigh: ingredients' tweaker added
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakActors">Tweak Actors</a>':
+<ul>
+    <li>MAO Skeleton setter now has option to only affect male or female NPCs or all NPCs
+</ul>
+</ul>
+<li>BAIN:
+<ul>
+  <li>Archives created with solid compression may now set the solid block size.
+  <li>The General Info tab now displays the block size an archive was compressed with.
+<ul>
+    <li>Solid archives not made by BAIN will display "Unknown" for the block size.
+</ul>
+  <li>BCFs may now set the block size of the resulting archive.
+  <li>Unpack to Project now works on multiple selections (though then uses automatic naming for the projects names)
+</ul>
+<li>General:
+<ul>
+  <li>The error message for unexpected subrecords is now a little more helpful.
+  <li>A few untranslatable strings fixed to be translatable (as reported by DJ_Kovrik)
+  <li>Updated Russian Translation (contributed by DJ_Kovrik).
+  <li>BOSS Launcher (if (new) option selected in menu automatically deactivates and reactivates Lock Times)
+  <li>Updated BOSS Launcher and various other code to work with new BOSS version (1.6+) and still work with the old one.
+  <li>Updated Bash Tag grabbing code to read the new BOSS userlist.
+  <li>A few readme updates
+  <li>Export Script text now adds comment signifiers (;) to the start of the bash added lines.
+</ul>
+<li>New Export/Import function: Map Markers (CBash active only)
+<li>Make use of/follow the oblivion.ini option of bUseMyGamesDirectory to have basically totally separate Bash &amp; Oblivion profiles (contributed by scooby)
+<li>Initial Nehrim Support (based on contributions by roxahris)
+<li>New option to save settings/data at any time from the right click header menu.
+<li>Taglist updated to BOSS rev 1605
+</ul>
+
+<h2>287 [22/07/2010] [Waruddar]</h2>
+<ul>
+<li>BAIN:
+<ul>
+  <li>File skipping (Skip DistantLOD/Voices/Screenshots and '--' directories) was broken by 286. Fixed.
+</ul>
+</ul>
+
+<h2>286 [21/07/2010] [Lojack,Metallicow,PacificMorrowind,valda,Waruddar]</h2>
+<ul>
+<li>Bashed Patch:
+<ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchReplaceFormIDs">Replace Form IDs</a>' added (both Bash and CBash)
+<ul>
+    <li>It is just like <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportFormIDs">Import Formids</a> (but slower). It changes the references in the bashed patch instead of in the file itself
+    <li>Included demo file "P1DCandles_Formids.csv", must be used in conjunction with mmmpld's Candles for Kleptos mod
+</ul>
+<ul>
+      <li>When used, all candles are replaced with his pickupable versions
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchImportActorsAIPackages">Import Actors: AIPackages</a>' and '<a href="Wrye%20Bash%20General%20Readme.html#patchImportActorsSpells">Import Actors: Spells</a>' no longer give an error if active with no selected mods (reported by Shi_shinu)
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchImportActorsSpells">Import Actors: Spells</a>' significantly refactored
+<ul>
+    <li>SpellsOnly tag replaced with Actors.SpellsForceAdd
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchImportSounds">Import Sounds</a>' no longer checks invalid variable name on weather records
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchImportSpellStats">Import Spell Stats</a>' no longer checks the wrong bash tag
+<ul>
+    <li>It now works with both Spells and SpellStats tags
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakActors">Tweak Actors</a>':
+<ul>
+    <li>'As Intended: Imps' and 'As Intended: Boars' work more reliably
+    <li>'Mayu's Animation Overhaul Skeleton Tweaker' and 'Vanilla Beast Skeleton Tweaker' no longer fail when dealing with unnamed NPCs
+    <li>'No Bloody Creatures' now correctly sets the record flags
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>':
+<ul>
+    <li>'Number of uses for pre-enchanted weapons and staffs' now has improved handling
+    <li>'Playable Armor' and 'Playable Clothes' now skip over more items that shouldn't be made playable
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>':
+<ul>
+    <li>'Armor' and 'Clothes' no longer fail with a keyerror
+<ul>
+      <li>Also fixed misspelling: 'Trowsers' -> 'Trousers'
+</ul>
+    <li>'Lore Friendly Names: Dwarven->Dwemer' fixed
+</ul>
+<ul>
+      <li>Expanded to check all text fields except scripts and cell names
+      <li>CBash also checks cell names
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakSettings">Tweak Settings</a>':
+<ul>
+    <li>'AI: Max Dead Actors' added for both Bash and CBash (based settings posted by showler)
+    <li>'Essential NPC Unconsciousness' 10s option was previously setting it to 20s
+</ul>
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchPowerExhaustion">Power Exhaustion</a>' no longer assigns to a non-existent variable
+  <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Race Records</a>' now has an expanded description
+<ul>
+    <li>Unlike other import patchers, it works even if no mods are selected
+</ul>
+  <li>Changed the 'Tweak XXX' patchers SelectAll/DeselectAll buttons to be consistent with the rest of the patchers
+  <li>Custom Values for tweaks fully working
+  <li>The Bashed Patch now shows how long it took to build (as suggested by AdmiralWarron)
+  <li>Lists with enough items to scroll will retain their scroll position after using popup menus
+</ul>
+<li>BAIN:
+<ul>
+  <li>'<a href="Wrye%20Bash%20Advanced%20Readme.html#bainPackageCommands">Package Commands</a>':
+<ul>
+    <li>Commands such as duplicating a package no longer result in incorrect ordering
+    <li>'Copy Conflicts to Project' added
+    <li>Disabled various commands when only non-installable items are selected
+<ul>
+      <li>Install / Anneal / Uninstall / HasExtraData / SkipVoices / Copy Conflicts to Project
+</ul>
+    <li>Markers can now be renamed
+</ul>
+  <li>'<a href="Wrye%20Bash%20Advanced%20Readme.html#bainHeaderCommands">Package Header Commands</a>':
+<ul>
+    <li>Projects may now be unhidden
+</ul>
+  <li>Double clicking a package will now open it
+  <li>Implemented valda's patch for partial support of japanese multi-byte characters
+  <li>Refreshing packages now ignore Skipped Directories (those that start with '--' or 'Bash')
+  <li>Selecting sub-packages that contain large numbers of files now refreshes a little more quickly (reported by Vindicator)
+<ul>
+    <li>Still needs more work to make it faster
+</ul>
+  <li>Sub-package and Esp/m lists now retain their position when selected
+  <li>The "Hide" command now works with multiple packages selected
+<ul>
+    <li>It is disabled if any selected package is a marker
+</ul>
+  <li>Toggling "Skip DistantLOD" no longer causes packages to be marked dirty (reported by Vindicator)
+</ul>
+<li>BAIN Wizards:
+<ul>
+  <li>Added For loops (For/Continue/Break/EndFor)
+  <li>Added While loops (While/Continue/Break/EndWhile)
+  <li>Default keyword wasn't working properly, fixed now
+  <li>Fixed minor bug where allowing unmatched quotes at the end of a line
+  <li>Fixed the increment and decrement operators (++,--)
+  <li>Fixed two typos that caused 'DeSelectSubPackage' (and probably others) to throw an error
+  <li>Removed some debugging prints
+  <li>SelectOne dialogs with no default option have the 'Next' button disabled until an option is selected
+  <li>SelectOne/SelectMany dialogs with no default option will now be shown even during an Auto-WizardReturn
+  <li>Updated wizard documentation for this, and also to include comments (;)
+</ul>
+<li>CBash:
+<ul>
+  <li>CBash 90% integrated
+  <li>CBash temporarily disabled while remaining issues fixed.
+<ul>
+    <li>Will be re-enabled in a later release
+</ul>
+</ul>
+<li>General:
+<ul>
+  <li>7z updated to latest version
+  <li><a href="Wrye%20Bash%20General%20Readme.html#trouble-backup">Backing Up</a> section added
+  <li>CELL block size calculation corrected (reported by valda)
+<ul>
+    <li>Not as important as it may sound. The size isn't actually used except for error raising.
+</ul>
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves-face">Face Import</a> no longer fails when the mod index of the record is higher than expected
+  <li>Import/Export Scripts from/to mod/csv optimized/significantly enhanced
+  <li>Import Prices from csv file added
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#pm">Import Archives</a> now works with the new forum PMs
+  <li>INFO definitions fixed (reported by valda)
+  <li>Ini setting added: bSkipHideConfirmation. (suggested by Utumno)
+<ul>
+    <li>When True, the hide confirmation is suppressed.
+</ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#launchers">Launch Buttons</a> for more applications are now supported via Bash.ini (contributed by Metallicow)
+<ul>
+    <li>EVGA Precision,FastStone Image Viewer,FreeMind,PaintShop Photo Pro,Photobie Design Studio,PhotoFiltre,PhotoScape,XnView
+</ul>
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> can now change formerly mergeable mods to non-mergeable
+  <li>Mergeable mods that are a master of non-mergeable mods are no longer considered mergeable
+  <li>Missing resource error on Wryemonkey16.jpg has been fixed
+  <li>Non-lower case file extensions used in Bash.ini no longer cause issues (reported by Vindicator)
+  <li>Several readme images updated (contributed by Metallicow)
+  <li>Various cell and reference flags corrected
+  <li>Various typos fixed, and more strings are translatable (as reported by DJ_Kovrik)
+  <li>Slight fix to recognize mods in the BOSS masterlist/taglist that the modname starts with a '!' or '['.
+  <li>Version reading code modified to recognize ver/rev/r/v as well as version (and any combination of separating whitespace and '.' and ':' (except for r/v).
+</ul>
+</ul>
+
+<h2>285 [01/06/2010] [Lojack,Metallicow,PacificMorrowind,Waruddar]</h2>
+<ul>
+<li>Bashed Patch Changes:
+<ul>
+  <li>Master 'Select All' and 'Deselect All' patchers and items in list/tweak patchers buttons added.
+  <li>Export/Import Config buttons added.
+  <li>Save config button removed (due to bug it caused - use Export/Import instead).
+  <li>Actors.AIPackages totally refactored (as in it works properly now).
+<ul>
+    <li>Also removes the OOO duplicate version of UOP AI Package fixes if you are using both of them (except for one on HaulsHisRopes but that shouldn't cause any problems).
+</ul>
+  <li>R.Ears fixed.
+  <li>Misc Tweaks:
+<ul>
+    <li>fix (reported by Blade of Mercy) and improvements to All Clothes playable tweak.
+</ul>
+  <li>Rebuilding doesn't complain about missing masters for the bash patch now (truly!).
+  <li>NoMerge tag warning text updated to be clearer (contributed by Sartivarg).
+  <li>suggestion to deactivate and merge mergeable mods added to rebuild patch checks.
+  <li>NoMerge/Mergeable/Deactivate/Filter warnings/questions merged into one scrollable and much more legible text warning/question window.
+  <li>Patch Dialogue now has an icon assigned (the Wrye Monkey Icon).
+  <li>For tweaks with options that take numbers as value (i.e. tweak settings) new 'Custom' entry option; select custom and enter your own number in the prompt following any directions there.
+</ul>
+<li>New Save Game Tweaker: Set Number of Uses for Weapon Enchantments.
+<li>BAIN Changes:
+<ul>
+  <li>fix so that when you check/uncheck an esp in the esp/m list the view maintains its scroll position.
+  <li>above fix also applied to subpackages list.
+  <li>Wizards changes:
+</ul>
+<ul>
+    <li>DataFileExists properly documents
+    <li>newline error fixed in textboxes
+</ul>
+<li>Magic Effect school for Spells/enchantments with more than one effect based on highest cost not first effect (so in line with in game values).
+<li>Bash.ini typos fixed, prettied and sorted a bit better (contributed by Metallicow)
+<li>Start of the CBash implementation into Wrye Bash:
+<ul>
+  <li>CBash.dll included as Rename_CBash.dll; it will only be used if renamed to just 'CBash.dll'
+  <li>Bunch of Import/Export functions modified to use that if available: EditorID, Names, Npclevels, Scripts (though leaves a whole lot of backup files on import).
+</ul>
+</ul>
+
+<h2>284 [24/05/2010] [Lojack,Metallicow,PacificMorrowind,ThreeD,Valda68k,Waruddar]</h2>
+<ul>
+<li>Incorrect italicization fixed.
+<li>BashIni changes:
+<ul>
+  <li>text colors for mergeable/'No-Merge' tagged/non-mergeable/esm mods settable.
+</ul>
+<li>Active mods with the 'Deactivate' tag will be highlighted in red.
+<li>Bashed Patch changes:
+<ul>
+  <li>Actors.DeathItems moved (back) to separate patcher for better Warcry &amp; FCOM ease of use (and similar issues). (with fixes in the full release - reported by baphometal)
+  <li>New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
+  <li>RacePatcher changes:
+<ul>
+    <li>Left eye import fix (contributed by Valda68k)
+    <li>R.Ears tag added; imports ears
+    <li>R.Attributes-F tag added; imports race attributes for females
+    <li>R.Attributes-M tag added; imports race attributes for males
+    <li>R.Skills tag added; imports race skill bonuses
+    <li>R.Description tag added; imports race description
+    <li>R.AddSpells tag added; imports race spells additions.
+    <li>R.ChangeSpells tag added; imports race spell as totally new list.
+    <li>R.Head added; imports race head record.
+    <li>NPC Hairlength will also be randomized when random hair/eyes are assigned (and even if both of those are pre-set) <b>if</b> hair length is 0.0 or None.
+    <li>another not insignificant optimization.
+</ul>
+  <li>Merge dialogue no longer shows mergeable mods that load after the patch (those are not and have never been merged anyways)
+  <li>Warning about delinquent/missing masters on rebuild doesn't warn for such errors for the patch itself (since presumably you are rebuilding the patch since you've changed your LO intentionally)
+  <li>New warnings about NoMerge/Deactivate tagged mods being active at rebuild time (they shouldn't be).
+  <li>No warning about NoMerge tagged mods that are non-mergeable anyways.
+  <li>4 new GMST changers added to tweak settings
+  <li>New Names tweaker added: 'Lore Friendly Names: Dwarven -> Dwemer' added.
+  <li>NPC Tweaker changes:
+<ul>
+    <li>Renamed to Tweak Actors.
+    <li>'No Bloody Creatures' tweak added.
+    <li>'As Intended: Boars' tweak added.
+    <li>'As Intended: Imps' tweak added.
+    <li>Redguard FGTS Nuller now correctly handles npcs with no race assigned (very odd!) (reported by blake7791, specifically found in Skin Toned Mannequins) - just skips such NPCs instead of raising a fatal error in patch build.
+</ul>
+  <li>Select/Deselect All buttons on list/tweak patchers (i.e. everything except for a few special patcher such as SEWorld Tests etc.) added.
+  <li>All patchers no longer display mods that are loading after the patch (since they were not included in build anyways (even selected) this makes it much simpler and less confusing).
+</ul>
+<li>Mod Checker now alerts you if you have NoMerge or Deactivate tagged mods active instead of imported &amp; deactivated.
+<li>BAIN:
+<ul>
+  <li>Renaming now updates the 'Mods' and 'INI Edits' tabs
+  <li>2 bugfixes dealing with filtering (reported by Vindicator)
+  <li>Double or middle clicking on an image in a BAIN Wizard will open the full image.
+  <li>You can now create your own 'Markers'.  Right click->Add Marker..., then type the name.  the '==' will be added before and after for you.
+  <li>List Packages now has option to only export active packages
+  <li>List Packages shows whether package is active or not.
+</ul>
+<li>INI Edits:
+<ul>
+  <li>Now supports applying tweaks to any Ini
+  <li>Supports script type Ini files.  Can modify any <b>set</b> or <b>setGS</b> command.
+  <li>Files ending in '.ace','.tgz','.tar','.tar.gz','.omod' will no longer be installed by BAIN. (requested by myk002)
+</ul>
+<li>comtypes is optional now.  It is required for a couple function but most have workarounds enabled (i.e. Bashed Patch log loads in default internet browser) and Wrye Bash will work without it (features currently without workarounds are: the PM Archive panel, Doc Browser).
+<li>You can delete Installers and INI Edits with the Delete key now.
+<li>You can rearrange Load Order/Install Order on the Mods Tab and Installers Tab by dragging and dropping.
+<li>German translation updated to Wrye Bash 284RC1 (contributed by ThreeD).
+<li>3 new tool launchers added (contributed by Metallicow).
+<li>Save/ESP Details window shows current order as well as saved order of esp/ms. (so you can see what the difference is much easier when (for example) updating a save game.
+<li>Some image files renamed to be correct case for case sensitive OSes (patch from Frodo_TheDarkLord)
+<li>Fix so that it is impossible to open multiple copies of Wrye Bash at the same.
+<li>Added option in Patch dialogue to save configuration (i.e. then you can click cancel without losing the configuration changes you've done).
+<li>Taglist updated to BOSS masterlist revision 943.
+</ul>
+
+<h2>283 [18/04/2010] [Lojack,PacificMorrowind,Waruddar]</h2>
+<ul>
+<li>Taglist: updated to masterlist version 824 and a bunch of cruft removed.
+<li>Fixes:
+<ul>
+  <li>Fixed untranslatable strings reported by ThreeD.
+  <li>Remaining scrolling issues in installers tab fixed.
+</ul>
+<li>BAIN Wizard strings now translatable.
+<li>INI Tweaks tab edits:
+<ul>
+  <li>Fixed sorting on the INI Tweaks tab.
+  <li>Added option to sort valid ini tweaks to the top.
+  <li>Added option to see what is causing an INI tweak to be considered invalid (Right Click->List Errors).
+</ul>
+<li>Check added at start of patch build dialogue to detect (with warning and choice of proceeding or not) missing/delinquent masters.
+<li>Option to show/hide ruleset info from Mod Checker added.
+<li>Import Scripts can now add new scripts to the esp (optional).
+<li>Fixed major bug and a slight optimization in Race Patcher.
+<li>Slight optimization to translation feature (only affects you if you have a Non-English OS).
+<li>Some more random strings made translatable.
+<li>New tag <b>Deactivate</b>: suggests when you should import &amp; deactivate (if mergeable or mergeable but with NoMerge you always should merge &amp; deactivate).
+<li>Fix for potential type of bashsettings.dat corruption
+<li>NPC patchers optimized.
+</ul>
+
+<h2>282 [08/04/2010] [Waruddar,PacificMorrowind,Metallicow,Lojack]</h2>
+<ul>
+<li>bug fixes:
+<ul>
+  <li>fix for AttributeError: 'str' object has no attribute 'get'
+  <li>fix for when wrong color was occasionally used
+  <li>fixed various icons and launchers (reported by Metallicow)
+  <li>minor fix for List Structure. It wasn't disabled properly when multiple installers were selected.
+  <li>fix for bug causing archives to fail to 'Unpack to Project' and to apply BCF's, also caused the archive to show up in the list of skipped files.
+  <li>minor improvements to the BAIN wizards.
+  <li>fix for UI not refreshing on installer renames
+  <li>fix for renaming installer projects
+  <li>fix for renamed installers not retaining installed state
+  <li>fix for Ctrl-Up/Down on installer tab not scrolling
+</ul>
+<li>Ctrl-A (select all) support added for all tabs except People.
+<li>Updated readme to reflect that the installer tab uses navy blue as a text color and not blue like the mods tab does
+<li>Cleaned out some old test code
+</ul>
+
+<h2>281 [05/04/2010] [DJ_Kovrik,haama,Lojack,PacificMorrowind,Waruddar]</h2>
+<ul>
+<li>bug fixes:
+<ul>
+  <li>2 tool launcher icon names fixed.
+  <li>error in race patcher eye section fixed.
+  <li>error in INI read code fixed.
+  <li>fix for when reading absolutely huge cosave (i.e. .obse) files.
+  <li>error allowing a BCF to be applied without all source packages (contributed by Waruddar)
+</ul>
+<li>Updated Russian translation (contributed by DJ_Kovrik).
+<li>Russian version of the ini file (contributed by DJ_Kovrik).
+<li>List Structure printout for BAIN packages (contributed by Waruddar)
+<ul>
+  <li>It generates a tree-style report of the files and folders, which can be useful when comparing how packages are structured.
+</ul>
+<li>Mergeable mods with NoMerge tag are now color coded (purple) in the mods tab instead of being green like fully mergeable mods or black like unmergeables (depending on version)
+<li>taglist updated to Masterlist version 791
+</ul>
+
+<h2>280 [25/03/2010] [haama,PacificMorrowind,Metallicow]</h2>
+<ul>
+<li>Ini changes
+<ul>
+  <li>Can set options (-o, -p, -l, -u) from ini
+  <li>Tool Button Changes
+<ul>
+    <li>Bugfix: Boolean options were ignored (show---tool, AutoItemCheck)
+    <li>Tes4Edit
+<ul>
+      <li>Bugfix for later Tes4Edits: Now correctly launches Tes4View and Tes4Trans
+      <li>Options to show/hide View/Edit/Trans
+</ul>
+    <li>Custom
+<ul>
+      <li>Allow Java apps (.jar) to be used
+      <li>Allow anything that can be double-clicked (i.e., Folders, Images, etc.)
+      <li>Allow Option Switches to be used
+</ul>
+    <li>23 new specific tool launchers added (thanks to Metallicow for images and paths and suggestions :))
+    <li>number of custom launchers allowed to be defined in INI increased to 18! (also icons included which display custom &lt;num> in nice script (contributed by Metallicow))
+</ul>
+</ul>
+<li>Taglist fix (reported by Surazal)
+<li>Taglist updated to Masterlist version 730
+<li>Installer fix (reported by half of everyone on bethsoft)
+<li>Way nicer icons for most of the tool launchers (contributed by Metallicow)
+<li>Bugfix: Readme weirdo bold formatting reversal (reported by myk002 &amp; WalkerInShadows)
+<li>Bash Patch Changes:
+<ul>
+  <li>New Patchers:
+<ul>
+    <li>C.Music (added to Import Cells)
+</ul>
+  <li>Changes:
+<ul>
+    <li>Race Patcher now also ignores identical to master records.
+</ul>
+</ul>
+<li>Enable Wizard Toggle Fix: Wouldn't work if you were using bash.ini
+<li>Bugfix: errors on clicking on an esp that you just installed via BAIN (reported by a few people since BAIN was developed - most recently by Aellis)
+<li>Unique icon for the Doc Browser (contributed by Metallicow)
+</ul>
+
+<h2>279 [05/03/2010] [PacificMorrowind, haama, Lojack, Badhair]</h2>
+<ul>
+<li>Fixed *two* bugs in autotagging (reported by Arthmoor)
+<li>Fixed Export Prices &amp; Export Stats were not exporting Apparatus info. (reported by TheNiceOne)
+<li>Images for wizard docs added (reported by Surazal)
+<li>Bashed Patch changes:
+<ul>
+    <li>New patchers:
+<ul>
+        <li>Cell RecordFlags import (C.RecordFlags) added to Cells Patcher
+        <li>Actors.ACBS (added to Import Actors)
+        <li>NPC.Class (added to Import Actors)
+        <li>Actors.CombatStyle (added to Import Actors)
+        <li>Creatures.Blood (added to Import Actors)
+</ul>
+    <li>Changes:
+<ul>
+        <li>Actors.Stats, Actors.AIData, Actors.DeathItems merged into one Import Actors (but with the same tags)
+        <li>Import Cells (all tags) now only imports the value for each attribute only if different than the master(s).
+</ul>
+</ul>
+<li>Taglist updated to Masterlist version 714 and other readability enhancements/fixes/upgrades
+<li>LeveledList.csv removed and only using Taglist/Masterlist to get tags.
+<li>Fixes/improvements to the bash ini, custom tool launchers (reported by Metallicow)
+<li>Fixed some operators/function in the Wizard Install System
+<li>Fixed export scripts (reported by Foxbrian)
+<li>reverted to older 7z dll &amp; exe (will upgrade later but will require some significant installer changes)
+<li>various typo fixes
+<li>optimization for master record checking (contributed by Badhair)
+<li>Added -o argument at Command Prompt
+<ul>
+  <li>Use to specify the location of Oblivion directory (with Oblivion.exe).
+  <li>Allows users to install \Mopy\ folder outside of Oblivion directory.
+</ul>
+</ul>
+
+
+<h2>278.1 [24/02/2010] [PacificMorrowind]</h2>
+<ul>
+<li>Fixed an issue with launching via bash.py instead of the launcher (reported by daemondarque)
+<li>Fixed a fatal bug with new autocheck inisettings(reported by Gabba)
+<li>Fixed a bug in autotagging (reported by Gabba)
+</ul>
+
+<h2>278 [23/02/2010] [PacificMorrowind, Haama, Lojack]</h2>
+<ul>
+<li>NoMerge tag now correctly makes mods not show up as mergeable in the main window
+<li>The Mark Mergeable command now shows all reasons for the mod to be not mergeable (and now includes having a NoMerge tag).
+<li>New export/import options; Item Data, Prices
+<li>INI Tweaks tab instead of Ini tweaks menu, showing status of the tweak etc. (contributed by Lojack)
+<li>Bashed Patch changes:
+<ul>
+    <li>New patchers:
+<ul>
+        <li>Actors.DeathItems
+        <li>Actors.Animations
+        <li>Actors.AIData
+        <li>Actors.AIPackages
+        <li>Actors.Stats
+        <li>Redguard FGTS nuller
+        <li>Cell Names importer (C.Name) (added to Import Cells)
+</ul>
+    <li>Changes:
+<ul>
+        <li>Import Scripts modified to only import the script record on a record if the script record doesn't match the master's script record for that particular importing mod.
+        <li>Import Graphics, Sound, ScriptContents, (Actors.X all built to follow that new system) also changed like Import Scripts (Import Inventory, Relations, Factions already doing a merge rather than straight import so don't need changing)
+        <li>Timescale tweaked
+</ul>
+</ul>
+<li>All items() calls changed to iteritems() since iteritems() is (slightly) faster.
+<li>Tool Launchers:
+<ul>
+    <li>Artweaver
+    <li>Audacity
+    <li>DDSConverter
+    <li>Fraps
+    <li>Notepad++
+    <li>Paint.NET
+    <li>Custom 1, 2, 3, 4
+    <li>All icons now are in either 32*32 or 16*16 - defaults to 16*16, change if desired in the ini ofc.
+    <li>Options to show/hide some of them added to the INI
+</ul>
+<li>NEW! Wizard based install system (contributed by: Lojack)
+<li>Updated 7z dll &amp; exe to latest version
+<li>Various small fixes and code cleanups
+<li>Fixes to
+<ul>
+	<li>A few memory usage optimizations when building the Bashed Patch
+	<li>Bash tags list now looks in all of header description, tags list, BOSS masterlist, LLPatch list (instead of stopping and returning the tags from the first of those that had tags).
+	<li>A new ini setting to determine whether or not to autocheck new items in the Bashed Patch dialogue (previously was determined per patcher in the code).
+</ul>
+</ul>
+
+<h2>277 [01/08/2010] [PacificMorrowind, Haama, Badhair]</h2>
+<ul>
+<li>fixes: a GMST error causing problems with rebuilding the Bashed Patch, a couple others, typo fixes.
+<li>a new Bashed Patch section added: Globals
+<li>5 new Global tweaks added; Timescale, Crime: Force Jail, and 3 TG quest penalties
+<li>added support for launching of Blender, Gmax, 3dsMax, Maya, Photoshop, GIMP, Insanity Sorrow's(IS) Oblivion Launcher, IS's Readme Generator, IS's Random NPC Generator, Oblivion Book Creator, IS's Random Name Generator! (all with settable paths in the ini)
+<li>added an Export/Import script function to the right click menu of mod files
+<li>added an obse/pluggy statistics viewer (code contributed by Badhair, pluggy definitions by Haama)
+<li>Automatically deghost and reghost when using the link to BOSS
+<li>BAIN:
+<ul>
+    <li>Hide/Unhide package
+    <li>Open at TesAlliance
+    <li>Rename package
+</ul>
+</ul>
+
+<h2>276 [12/28/2009] [PacificMorrowind &amp; Raziel23x]</h2>
+<ul>
+<li>bugfix: fixed potion weight deselection error
+<li>paths for external tools (TES4edit/view/trans, TES4LodGen, TES4Gecko, TES4Files) settable via the ini for better organization/fun
+<li>tweaked game settings
+<li>added support for launching of TES4Files
+</ul>
+
+<h2>275 [11/06/2009] [PacificMorrowind]</h2>
+<ul>
+<li>Bugfix: removed accidental python 2.6 refs preventing load if using python 2.5
+<li>Bashed Patch: Added Mayu's Animation Overhaul patcher; see details under special patches
+<li>Added 2 new game settings tweaks, updated Oblivion_ids.pkl to allow add them.
+</ul>
+
+<h2>274 [11/05/2009] [PacificMorrowind]</h2>
+<ul>
+<li>BAIN: Couple changes to speed up prescanning if skipping file types.
+<li>Misc: Fix to NIFZ (and KFFZ) writing to prevent incorrect writing of bad data.
+<li>Bashed Patch: Added Import Script Contents (at last &amp; only partially unfortunately); see details up above.
+<li>Added 4 new game settings tweaks, updated docs
+</ul>
+
+<h2>273 [11/02/2009] [Raziel23x]</h2>
+<ul>
+<li>Tweaked Training Max settings 1, default[5], 50, 100, 200, 99
+<li>Tweaked Maximum Armor Rating 50, 75, default[85], 90, 95
+</ul>
+
+<h2>272 [11/01/2009] [Raziel23x]</h2>
+<ul>
+<li>Added two new gaming settings
+</ul>
+
+<h2>271 [8/28/2009]</h2>
+<ul>
+<li>Revert autorecognize Data\ini. Already standardized as Data\Scripts.
+<li>Minor change to errlog deletion to support Python 2.6 (hopefully).
+</ul>
+
+<h2>270 [8/26/2009] [PacificMorrowind]</h2>
+<ul>
+<li>Bain: just a couple changes (skip images/docs and autorecognizing ini folder)
+</ul>
+
+<h2>269 [8/23/2009]</h2>
+<ul>
+<li>Bain: Now supports umlauts, etc. in filenames. (At least on Wrye's machine: solution is a bit of a hack.)
+</ul>
+
+<h2>268 [7/27/2009] [PacificMorrowind]</h2>
+<ul>
+<li>Bashed Patch:
+<ul>
+  <li>New:
+<ul>
+    <li>Import Scripts
+    <li>Import Spell Stats
+</ul>
+  <li>Edited:
+<ul>
+    <li>Import Sounds: added ability to import more types of sounds
+    <li>Import Graphics: added ability to import more types of graphics
+    <li>Import Stats: added a ability to import a bunch of other object stats
+    <li>Import Inventory: added ability to import container inventory
+    <li>GMST Tweaks
+    <li>Other tweaks
+</ul>
+</ul>
+<li>Mods Tab:
+<ul>
+  <li>New: Import/Export Spell Stats
+  <li>Edited: Import/Export Stats
+</ul>
+<li>Misc:
+<ul>
+  <li>New: New shortcut and icon for BOSS in status bar
+  <li>Fixed Tes4edit path to new default distribution name
+</ul>
+</ul>
+
+<h2>267 [5/24/2009] [Wrye, Kmagc94]</h2>
+<ul>
+<li>Bugfix
+<ul>
+  <li>Safety check on bolt.Path.moveTo to avoid accidental deletion.
+  <li>Fix tooltip for Oblivion launcher to show "+ OBSE" correctly.
+  <li>Fix a bug in handling final lines of ini tweak files that lack a trailing new line.
+  <li>Bashed Patch rebuild will now auto-activate files as necessary.
+</ul>
+<li>Refactoring:
+<ul>
+  <li>Change formid/formId to fid.
+  <li>Removed "Id" from end of record fields.
+</ul>
+<li>Race Patcher:
+<ul>
+  <li>Change random hair/eye setter to use eid as seed (thus producing consistent results across patch rebuilds).
+</ul>
+<li>DarN Books:
+<ul>
+  <li>Restore some formatting behavior that got lost between v 264 and v 266.
+</ul>
+<li>Power Exhaustion
+<ul>
+  <li><a href="http://tes.nexusmods.com/downloads/file.php?id=24343">Added Kmagc94_Exhaust.csv</a>
+</ul>
+</ul>
+
+<h2>266 [4/10/2009] [Waruddar]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>:
+<ul>
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#bainPackageCommands">Package Commands</a>
+<ul>
+    <li>Added: "Package for Release" for projects
+</ul>
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#bainHeaderCommands">Package Header Commands</a>
+<ul>
+    <li>Added: "List Packages..."
+    <li>Added: "Auto-Refresh Projects": Option to disable auto-refreshing of projects
+<ul>
+      <li>This is intended as a temporary workaround for users with non-ascii filenames
+</ul>
+</ul>
+</ul>
+<li>Code checking/fixes:
+<ul>
+  <li>Added: <a href="Wrye%20Bash%20General%20Readme.html#bain-order">Ctrl-Up/Down</a> now works on the installer tab for reordering
+  <li>Fixed (v265): Issue with CELL records that caused some cells to be skipped
+  <li>Fixed: File -> Sort
+  <li>Fixed: Issue with merging some REGN records
+  <li>Fixed (possibly): Content Checker might work with injected records
+  <li>Updated: <a href="Wrye%20Bash%20General%20Readme.html#load-set">Ctrl-Up/Down</a> now works when multiple items are selected
+  <li>Updated: Improved handling of REGN records
+</ul>
+</ul>
+
+<h2>265 [4/06/2009] [Waruddar]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>:
+<ul>
+  <li>New feature: <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-bcf">Bain Conversion Files</a>.
+  <li>Added: "Pack to Archive" for projects
+  <li>Added: Support for auto-refreshing after a project is changed
+  <li>Added: The "Data CRC" is now displayed on the General Info tab
+  <li>Added: The last modified time is now displayed on the General Info tab
+  <li>Fixed: Inconsistent "Move To..." behavior
+  <li>Updated: The "Compressed: " field on the General Info tab was renamed to "Size: ", and it now indicates whether solid compression was used on the archive.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#mods">Mods Tab</a>:
+<ul>
+  <li><a href="Wrye%20Bash%20General%20Readme.html#load-overview">Activating Mods</a>: Mods may now be activated/deactivated with the space bar
+  <li>Many context menu choices now work with multiple selections:
+<ul>
+    <li><b>Note:</b> Most multiple selection choices will skip/ignore "Oblivion.esm" and "Oblivion_1.1.esm"
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsAutoGhost">Don't Ghost</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsBackup">Backup</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsDuplicate">Duplicate</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsSnapshot">Snapshot</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsDecompileAll">Decompile All</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCopyToEsm">Copy to Esp/Esm</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsEsmifySelf">Espify/Esmify Self</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsRemoveWorldOrphans">Remove World Orphans</a>
+    <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsUndeleteRefs">Undelete Refs</a>
+</ul>
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> and <a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>:
+<ul>
+    <li>Added climate, combat styles, idles, landscape textures, regions, skills, and subspaces to the mergeable records list
+</ul>
+</ul>
+<li>Code checking/fixes:
+<ul>
+  <li>Added: Missing record definitions (CLMT,CSTY,IDLE,LTEX,REGI,SBSP, XSOL subrecord)
+  <li>Fixed: bolt.Path.walk
+  <li>Fixed: Error logging on extraction/compression errors
+  <li>Updated: bolt.Path.size and bolt.Path.getmtime now support directories
+  <li>Updated: Installer CRCs now refer to the cumulative "Data CRC" rather than the file CRC
+  <li>Updated: Improved handling of subrecords (notably XMRK and XCLC)
+  <li>Updated: Various record definitions
+  <li>Updated: Standardized many variable names
+  <li>Minor optimizations
+</ul>
+</ul>
+
+<h2>264 [4/1/2009] [Wrye, DJ_Kovrik]</h2>
+<ul>
+<li>Updated Russian translation (by DJ_Kovrik).
+<li>Bashmon: Fix so that it doesn't crash when files are busy.
+<li>Tweaked Sort Mods by Selected to count Imported and Merged as "Selected".
+<li>Bashed Patch: Added <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Content Checker</a>.
+</ul>
+
+<h2>263 [3/22/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>:
+<ul>
+  <li>No more "removed files" message after uninstalling.
+  <li>Fix a bug with archive error reporting.
+</ul>
+<li>Balt: Minor fix(?) to some window showing
+<li>Import Editor Ids: Fix a bug that forgot old editor ids.
+<li>Bashed Patch: <a href="Wrye%20Bash%20General%20Readme.html#patchCoblExhaustion">Cobl Exhaustion</a>.
+<li>Rational Names: Add spells from Supreme Magicka.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>: DarNified Books: Add support for wtxt formatted books.
+</ul>
+
+<h2>262 [3/2/2009] [Wrye, Waruddar]</h2>
+<ul>
+<li>Code checking/fixes [Waruddar]
+<li>Updated Bash_MFact.csv and Guard_Names.csv.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>: Empty directory deletion is now only done for Oblivion\Data, not for projects.
+</ul>
+
+<h2>261 [2/22/2009] [Wrye, Waruddar,majaczek]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>:
+<ul>
+  <li>Added: Open at TesNexus
+  <li>Fix recognition of zero size files in archives.
+  <li>Fix package updating after removing packages.
+  <li>More useful error message after extraction error.
+  <li>Added: Omod Config Editing.
+</ul>
+<li>GMST Tweaks:
+<ul>
+  <li>Added Greeting Distance.
+  <li>Added Recharge Multiplier.
+  <li>Added/tweaked a few options.
+  <li>Flagged default option with extra brackets.
+</ul>
+<li>AutoTagging:
+<ul>
+  <li>Fix a bug related to mod names beginning with numbers and underscores.
+</ul>
+<li>Ini Tweaks:
+<ul>
+  <li>Add tweak setters for local map shader.
+  <li>Refraction Shaders [majaczek]
+</ul>
+<li>Bashed Patch: Race Records
+<ul>
+  <li>Added default hair setting (so that NPCs with no hair assigned won't get weird hair).
+</ul>
+<li>Cell Structure: Fix structure for XCLL subrecord. [Waruddar]
+</ul>
+
+<h2>260 [2/7/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>:
+<ul>
+  <li>Minor filtering changes.
+  <li>Developer directory skipping.
+  <li>Option to skip screenshots.
+  <li>Better omod skipping.
+</ul>
+</ul>
+
+<h2>259 [2/3/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Show Inactive/Lower options now refresh the UI.
+  <li>Skip voice files from espms that have been filtered out.
+</ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#launchers-apps">Application Buttons</a>:
+<ul>
+  <li>Tes4Edit Expert option passes -IknowWhatImDoing parameter.
+</ul>
+<li>Replacers Tab: Now hidden by default. (New option to unhide.)
+<li>Wrye Text: ------ lines convert to HRs.
+</ul>
+
+<h2>258 [2/2/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Improve GUI info tab performance.
+  <li>Rearrange some menus.
+  <li>Changed Conflict report. New Show Inactive/Lower options.
+  <li>Added Skip DistantLOD option.
+</ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#launchers-apps">Application Buttons</a>:
+<ul>
+  <li>Add launch icons for Tes4LodGen and Tes4Gecko.
+  <li>Replace various icons.
+</ul>
+</ul>
+
+<h2>257 [2/2/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Fix minor UI bug with Skipped tab.
+</ul>
+
+<h2>256 [2/1/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Now tracks/anneals dirty installs.
+</ul>
+
+<h2>255 [2/1/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Added recognition of underrides.
+  <li>Added Anneal and Anneal All commands.
+</ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#launchers-apps">Application Buttons</a>:
+<ul>
+  <li>Tweak icon code a little bit.
+  <li>Tweak Tes4Edit/Trans to use command lines for Tes4Edit.
+  <li>Ctrl-click for Tes4View/Edit/Trans to apply -FixupPGRD parameter.
+</ul>
+</ul>
+
+<h2>254 [1/30/2009]</h2>
+<ul>
+<li>Updated Russian translation (by DJ_Kovrik).
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsAutoGhost">Auto-Ghost</a>: Change "Allow Ghosting" to "Don't Ghost.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Activating BSA-Redirection will now auto-reset Textures BSA.
+  <li>Fix some colors
+  <li>Modify move command slightly.
+  <li>Added ==Last== marker.
+  <li>Tweaked default order of duplicated and unpacked archives.
+</ul>
+</ul>
+
+<h2>253 [1/28/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Fix a bug in directory cleaning.
+</ul>
+
+<h2>252 [1/26/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Fix package txt/img naming for project packages.
+<li>bash.ini: Fix a bug.
+</ul>
+
+<h2>251 [1/25/2009]</h2>
+<ul>
+<li>Oblivion.ini: Fix a new bug with Screenshot setting.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Recognize Data\Scripts folder.
+  <li>Add field for package name.
+  <li>Now recognizes BOSS's masterlist.txt.
+</ul>
+</ul>
+
+<h2>250 [1/25/2009]</h2>
+<ul>
+<li>Oblivion.ini tweaking: Fix case sensitivity bug.
+<li>Add (minimal) bash.ini support.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Minor tweak to esmp sorting.
+  <li>Improved BSA-Redirection.
+  <li>Remove empty directories after uninstalling.
+  <li>Fix removing of ghosted mods on uninstall.
+  <li>Fix bug with installing from projects.
+</ul>
+</ul>
+
+<h2>249 [1/23/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsAutoGhost">Auto-Ghost</a>: Fix compatibility with some copy and move commands.
+</ul>
+
+<h2>248 [1/23/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsAutoGhost">Auto-Ghost</a>: fix updating after profile switching.
+</ul>
+
+<h2>247 [1/22/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsAutoGhost">Auto-Ghost</a>: fix updating after profile switching.
+</ul>
+
+<h2>246 [1/22/2009]</h2>
+<ul>
+<li>Add <a href="Wrye%20Bash%20Advanced%20Readme.html#modsAutoGhost">Auto-Ghost</a>.
+</ul>
+
+<h2>245 [1/20/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Added BSA Redirection option.
+  <li>Added Espm filtering.
+</ul>
+</ul>
+
+<h2>244 [1/20/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Fix display bug.
+</ul>
+
+<h2>243 [1/20/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Fix crc scanning for unusual data directories.
+  <li>Expanded mismatched/conflicts tab.
+</ul>
+</ul>
+
+<h2>242 [1/20/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Fix a bug with updating after deleting files externally.
+  <li>Revamped information display.
+  <li>Installers Option: Sort by Active
+  <li>Installer Options:
+</ul>
+<ul>
+    <li>Has Extra Directories
+    <li>Skip Voices
+</ul>
+</ul>
+
+<h2>241 [1/19/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Fix an version updating bug.
+  <li>Add Unpack to Project and Sync from Data commands.
+</ul>
+</ul>
+
+<h2>240 [1/18/2009]</h2>
+<ul>
+<li>Alternate directories for Installers and Data\Bash.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>:
+<ul>
+  <li>Terminology change: Now "Packages".
+  <li>Add project type packages.
+  <li>Clean Data Directory.
+  <li>Update icons.
+  <li>Update docs a lot.
+</ul>
+</ul>
+
+<h2>239 [1/12/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Keep scrolling of subInstallers when checking/unchecking installers.
+<li>People Tab: Fix a bug.
+</ul>
+
+<h2>238 [1/12/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Some handling for corrupt/incomplete archives.
+</ul>
+
+<h2>237 [1/11/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Add Unpack Archive command. Minor UI performance tweak.
+<li>Mods Tab: Fix a rare bug related to renaming a mod.
+</ul>
+
+<h2>236 [1/11/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Squish a bug with unpacking. Add Build Open, Delete commands.
+</ul>
+
+<h2>235 [1/11/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Squish a bug with unpacking.
+</ul>
+
+<h2>234 [1/11/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Squish a bug. Add "Install Missing" command.
+</ul>
+
+<h2>233 [1/11/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Squish a bug. Minor details tweak.
+</ul>
+
+<h2>232 [1/11/2009]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers</a>: Add Open/Duplicate/Delete commands
+</ul>
+
+<h2>231 [1/9/2009]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#bain">Installers Tab</a>.
+<li>bolt.py: Add AnchorHeaders tag to WryeText.
+<li>Discard vestigial BuildData/BuildPanel code.
+</ul>
+
+<h2>230 [12/21/2008]</h2>
+<ul>
+<li>Add auto-deactivation for <a href="Wrye%20Bash%20General%20Readme.html#patchImportRoads">Import Roads</a> if no source mods are selected.
+</ul>
+
+<h2>229 [12/20/2008]</h2>
+<ul>
+<li>Fix a bug in <a href="Wrye%20Bash%20General%20Readme.html#patchImportRoads">Import Roads</a>.
+</ul>
+
+<h2>228 [12/20/2008]</h2>
+<ul>
+<li>Bashed Patch: <a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Race Records</a> will now randomly assign eyes to npcs with unset eyes.
+<li>Revised <a href="Wrye%20Bash%20General%20Readme.html#patchImportRoads">Import Roads</a> to import from inactive mods.
+<li>Tweak <a href="Wrye%20Bash%20General%20Readme.html#patchImportFormIDs">Import Formids</a>.
+</ul>
+
+<h2>227 [12/19/2008]</h2>
+<ul>
+<li>Bashed Patch: <a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Race Records</a>
+<ul>
+  <li>Added R.Teeth and R.Mouth tags.
+  <li>Eyes and Hair for each race are now sorted by name.
+</ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchImportRoads">Import Roads</a>.
+<li>Fix a bug in working with world records in Bashed Patch.
+<li>Workaround for bug in time.strptime for Japanese locale.
+</ul>
+
+<h2>226 [12/14/2008]</h2>
+<ul>
+<li>Minor additions to Mod Checker syntax/reporting.
+<li>Fix a bug with saving some types of files.
+<li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#modsDecompileAll">Decompile All</a>.
+</ul>
+
+<h2>225 [12/13/2008]</h2>
+<ul>
+<li>Bashed Patch now checks for "compile all" mods.
+</ul>
+
+<h2>224 [12/12/2008]</h2>
+<ul>
+<li>Updated Rational_Names.csv.
+<li>Bug fix for world orphan mod reporting in Bashed Patch.
+</ul>
+
+<h2>223 [12/11/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Mod Checker</a>
+<ul>
+  <li>Mod List option.
+  <li>Automatic update.
+  <li>Revised syntax (incompatible with previous syntax).
+  <li>IF/ASSUME: Or and negate operators.
+  <li>Header: Multiline allowed.
+  <li>New: Notes field.
+  <li>Refactor into new classes.
+</ul>
+<li>Refactored some string formatting code where only a single format is used.
+</ul>
+
+<h2>222 [12/6/2008]</h2>
+<ul>
+<li>Fix an iteritems bug in Balo group setting.
+<li>Fix a rare bug with PM archiving dating for undated archives.
+<li>Bashed Patch now gets magic school/name from active mods.
+<li>bolt.Flags: add eq/ne operator handling.
+<li>Cell/World record review/update for fuller support of cell/world records.
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#modsRemoveWorldOrphans">Remove World Orphans</a>.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Mod Checker</a>
+<ul>
+  <li>Discard previous Check Mods command. Instead use toolbar icon.
+  <li>Revised ruleset syntax.
+  <li>Revised report format.
+  <li>Added Configuration, Suggestions and Copy Text buttons.
+</ul>
+</ul>
+
+<h2>221 [11/23/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Check Mods</a>
+<ul>
+  <li>Now checks for missing/delinquent masters.
+  <li>Now supports merge only checking.
+  <li>Now supports file existence checking.
+</ul>
+</ul>
+
+<h2>220 [11/23/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Check Mods</a>
+<ul>
+  <li>Now checks for mergeable, but active mods.
+  <li>Now supports HEADER and ONEOF blocks.
+  <li>Changed report format slightly.
+</ul>
+</ul>
+
+<h2>219 [11/22/2008]</h2>
+<ul>
+<li>New feature: <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Check Mods</a>.
+</ul>
+
+<h2>218 [11/17/2008]</h2>
+<ul>
+<li>Fix bug with auto-updating after removing a mergeable file.
+</ul>
+
+<h2>217 [11/16/2008]</h2>
+<ul>
+<li>Revamped <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tags">Bash Tags</a> specification/handling.
+<li>Mergeability is now determined automatically (see <a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> and <a href="Wrye%20Bash%20General%20Readme.html#patchMergePatches">Merge Patches</a>.)
+</ul>
+
+<h2>216 [11/14/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Race Records</a> add support for R.Relations.
+<li><a href="Wrye%20Bash%20General%20Readme.html#install">Installation</a> Simplified installation: Wrye Python, no shortcuts.
+<li>Fix translation so that 'German' locales map to 'DE'.
+<li>Maybe fix incompatibilities with very old config files.
+<li>Move bash tag tweaking to a new field in the details view.
+</ul>
+
+<h2>215 [11/2/2008]</h2>
+<ul>
+<li>bolt.genHtml: Minor argument tweak.
+</ul>
+
+<h2>214 [10/29/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchCoblCatalogs">Alchemical Catalogs</a>:
+<ul>
+  <li>Changed to case insensitive sorting of ingredients in "Alchemical Effects" catalogs.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportRelations">Export Relations</a>, <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportRelations">Import Relations</a> and <a href="Wrye%20Bash%20General%20Readme.html#patchImportRelations">Import Relations</a> Bashed Patch component.
+</ul>
+
+<h2>213 [10/27/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchCoblCatalogs">Alchemical Catalogs</a>:
+<ul>
+  <li>Fixed translation bug for attribute/skill effects.
+  <li>Changed to case insensitive sorting of ingredients in catalog.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tags">Bash Tags</a>. Added support for Factions and Sound tags.
+</ul>
+
+<h2>212 [10/25/2008]</h2>
+<ul>
+<li>Updated German Translation (by ThreeD).
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchCoblCatalogs">Alchemical Catalogs</a>: Fixed formatting in ingredients catalog.
+</ul>
+
+<h2>211 [10/19/2008]</h2>
+<ul>
+<li>Added <a href="Wrye%20Bash%20Advanced%20Readme.html#patch-tags">Bash Tags</a> command to mod menu.
+</ul>
+
+<h2>210 [10/12/2008] [Wrye,DragoonWraith]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-iim">Item Interchange Mode</a> (fixed version of InventOnly hack).
+<li>Message quote/code formatting [DragoonWraith].
+</ul>
+
+<h2>209 [9/14/2008]</h2>
+<ul>
+<li>Add GMST Tweak: Repair Cost Multiplier.
+<li>Minor bugfix for circular masters note.
+</ul>
+
+<h2>208 [8/31/2008]</h2>
+<ul>
+<li>Add "Copy To" command for saves.
+<li>Updated Russian translation (by DJ_Kovrik).
+<li>Moved translation files to Mopy\Data (to avoid "import locale" error).
+</ul>
+
+<h2>207 [8/16/2008] [Ralgor]</h2>
+<ul>
+<li>Changed the order of the tweaks so Tweak Names always works.
+<li>Fixed a bug with loading cells in localized versions of Oblivion.
+</ul>
+
+<h2>206 [8/9/2008] [Ralgor]</h2>
+<ul>
+<li>Fix a bug with <a href="Wrye%20Bash%20General%20Readme.html#patchImportSound">Import Sound</a>.
+<li>Fix a bug with cell output.
+</ul>
+
+<h2>205 [8/1/2008]</h2>
+<ul>
+<li>Fix a bug with the v204 bugfix.
+</ul>
+
+<h2>204 [8/1/2008]</h2>
+<ul>
+<li>Fix a couple of minor bugs.
+</ul>
+
+<h2>203 [7/31/2008] [Ralgor, Wrye]</h2>
+<ul>
+<li>Tweak cell patching for improved flag merging. [Ralgor]
+<li>Tweak cell water height default again. [Wrye]
+<li>Fix a v196 bug in Copy to Esm/esp.
+</ul>
+
+<h2>202 [7/29/2008] [Ralgor, Wrye]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchImportCells">Import Cells</a> Updated to not include cells in patch unless necessary.
+<li>Tweaked cell water default.
+<li>Error message tweak.
+</ul>
+
+<h2>201 [7/29/2008]</h2>
+<ul>
+<li>Minor debugging.
+</ul>
+
+<h2>200 [7/28/2008]</h2>
+<ul>
+<li>Fix a cell record related bug.
+</ul>
+
+<h2>199 [7/28/2008]</h2>
+<ul>
+<li>Fix some cell record related bugs.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>: Add Nvidia Fog Fix.
+</ul>
+
+<h2>198 [7/28/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchImportInventory">Import Inventory</a>: Add InventOnly support.
+</ul>
+
+<h2>197 [7/27/2008]</h2>
+<ul>
+<li><i><b>Warning: Dev Version release!</b></i>
+<li>Debug Ralgor changes and adapt some more code to new object structure.
+<li>Added: Skill record handling.
+</ul>
+
+<h2>196 [7/26/2008] [Ralgor]</h2>
+<ul>
+<li><i><b>Warning: Dev Version release!</b></i>
+<li>Add support for cell and world blocks.
+<li>Switch mod file record handling to new style objects.
+<li>Add ability to use psyco.
+</ul>
+
+<h2>195 [7/26/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#savesDiffMasters">Diff Masters</a> can now diff two saves.
+<li>BashMon: Fix backward compatibility bug.
+<li>Added notes field for savegames.
+<li>Added notes field for save profiles.
+<li>Fixed a bug that inverted .obse and .pluggy cosave flags.
+<li>Fixed various pluggy file operations to keep the same date.
+<li>Bashed Patch: Improved progress bar and description field.
+</ul>
+
+<h2>194 [7/20/2008]</h2>
+<ul>
+<li>Copying files now copies mtimes. (Mainly affects dates of cosaves.)
+<li>Fix a bug in inventory merging when master lists are empty.
+</ul>
+
+<h2>193 [7/16/2008]</h2>
+<ul>
+<li>Added <a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportFactions">Export Factions</a> and <a href="Wrye%20Bash%20General%20Readme.html#patchImportFactions">Import Factions</a>
+<li>Expanded Bash_MFact.csv: should be pretty complete now.
+</ul>
+
+<h2>192 [7/13/2008]</h2>
+<ul>
+<li>Fix some checkmark icons.
+<li>Maybe fix a bug in filtering.
+</ul>
+
+<h2>191 [7/12/2008]</h2>
+<ul>
+<li>BashMon: stability improvement, moveSave.
+<li>CoSaves detection: Check for corruption based on date.
+</ul>
+
+<h2>190 [7/6/2008]</h2>
+<ul>
+<li>BashMon: Expand to work with pluggy text file based signals (for Wrye Morph).
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves-overview">Save Details</a> panel now shows whether OBSE and Pluggy cosave files exist.
+<li>Make sure that main frame is visible.
+<li>Fix a v189 bug with body part codes.
+</ul>
+
+<h2>189 [7/5/2008]</h2>
+<ul>
+<li>Fix a bug with Merge Filtering.
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchImportSounds">Import Sound</a>.
+<li>Can now choose body part codes in <a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>.
+</ul>
+
+<h2>188 [7/2/2008]</h2>
+<ul>
+<li>Fix minor bug with Diff Masters.
+<li>NVidia Fog fix can now work on multiple mods at a time.
+<li>Minor tweaks to Import Names.
+<li>Added Undelete Refs command for mods.
+</ul>
+
+<h2>187 [6/24/2008]</h2>
+<ul>
+<li>Updated Guard_Names.csv (for <a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>) (more OOO female guards).
+</ul>
+
+<h2>186 [6/24/2008]</h2>
+<ul>
+<li>Added Guard_Names.csv (for <a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>).
+<li>Updated Bash_MFact.csv (for <a href="Wrye%20Bash%20General%20Readme.html#patchMorphFactions">Morph Factions</a>).
+</ul>
+
+<h2>185 [6/22/2008]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#savesDiffMasters">Diff Masters</a>.
+</ul>
+
+<h2>184 [6/18/2008]</h2>
+<ul>
+<li>Rename Created: Handle items with missing names.
+</ul>
+
+<h2>183 [6/17/2008]</h2>
+<ul>
+<li>Fix conflict with TESCS that resulted in inability to change plugins.txt when TESC was running.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchLeveledLists">Leveled Lists</a>: Now discards empty leveled sublists from lists containing them.
+<li>Modify pluggy file version check to accept newer .pluggy file versions.
+</ul>
+
+<h2>182 [6/2/2008]</h2>
+<ul>
+<li>Refactoring: Fix bug in bashmon.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-filter">Merge Filtering</a>: Filter creature and npc spells, factions and items.
+<li>Add more info on Load Error during Bashed Patch rebuilding.
+<li>Add csFunction function to bish.py. For use with <a href="http://cs.elderscrolls.com/constwiki/index.php/Raw_Function_List">CSW Raw Function List</a>.
+</ul>
+
+<h2>181 [5/23/2008]</h2>
+<ul>
+<li>Updated Portuguese (by Hadoki).
+<li>Fixed problem with updating masters for .pluggy file.
+</ul>
+
+<h2>180 [5/18/2008]</h2>
+<ul>
+<li>Mods Lists now check for out of order ("Delinquent") masters.
+</ul>
+
+<h2>179 [5/18/2008]</h2>
+<ul>
+<li>File: New Mod: Fixed a bug from when selected mod had no group.
+<li>Mods Lists now check for missing masters.
+</ul>
+
+<h2>178 [5/16/2008]</h2>
+<ul>
+<li>Fix a bug with locktimes not forgetting times when deactivated.
+</ul>
+
+<h2>177 [5/12/2008]</h2>
+<ul>
+<li>Fixed a rare bug with saving readme docs.
+</ul>
+
+<h2>176 [5/9/2008]</h2>
+<ul>
+<li>More refactoring.
+<li>Fixed some updating bugs after unlocking times, etc.
+<li>Fixed a bug in reporting load list truncation.
+<li>Fixed a download link.
+</ul>
+
+<h2>175 [5/7/2008]</h2>
+<ul>
+<li>Fixed a refactoring bug.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#people">People Tab</a>: minor tweak.
+</ul>
+
+<h2>174 [5/7/2008]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#people">People Tab</a>.
+</ul>
+
+<h2>173 [4/30/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a>: Added "Open Doc" button.
+<li>Extreme Refactoring: Fix some bugs in screenshot commands.
+<li>Balo: Fixed an updating bug.
+<li>Doors: Removed some old cruft from door records.
+<li>Races: Removed some minor not-quite errors.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>: Fix a bug that would set some objects to have name == "NO NAME".
+</ul>
+
+<h2>172 [4/27/2008]</h2>
+<ul>
+<li>Ensure that autogrouping is applied when full balo is activated.
+</ul>
+
+<h2>171 [4/27/2008]</h2>
+<ul>
+<li>Autogrouping will now report on what mods it has grouped.
+</ul>
+
+<h2>170 [4/27/2008]</h2>
+<ul>
+<li>Fix a startup bug for new users.
+</ul>
+
+<h2>169 [4/27/2008]</h2>
+<ul>
+<li>Extreme Refactoring: Push more stuff into balt.py.
+<li>Extreme Refactoring: Fix a bug with saving setting files.
+<li>Balo: Automatic grouping.
+</ul>
+
+<h2>168 [4/26/2008]</h2>
+<ul>
+<li>Extreme Refactoring: Fix some more bugs.
+<li>Extreme Refactoring: Some more refactoring.
+<li>Full Balo
+<ul>
+  <li>Discard old Balo Groups command.
+</ul>
+</ul>
+
+<h2>167 [4/22/2008]</h2>
+<ul>
+<li>Extreme Refactoring: More bugfixes.
+</ul>
+
+<h2>166 [4/22/2008]</h2>
+<ul>
+<li>Another small fix: auto-makedirs as needed for dat files.
+</ul>
+
+<h2>165 [4/21/2008]</h2>
+<ul>
+<li>Extreme Refactoring: Zap ancient wx.Points from settings file.
+</ul>
+
+<h2>164 [4/21/2008]</h2>
+<ul>
+<li>Scrollpos Memory: Fix a minor bug
+</ul>
+
+<h2>163 [4/21/2008]</h2>
+<ul>
+<li>Extreme Refactoring: More bug fixes, etc.
+<li>Mod and saves lists now remember scroll positions.
+</ul>
+
+<h2>162 [4/21/2008]</h2>
+<ul>
+<li>Update download links for python 2.4 and 2.5.
+<li>Extreme Refactoring: More bug fixes.
+</ul>
+
+<h2>161 [4/20/2008]</h2>
+<ul>
+<li>Extreme Refactoring: Fix a bug that prevented startup.
+<li>Misc. UI tweaks.
+</ul>
+
+<h2>160 [4/20/2008]</h2>
+<ul>
+<li><i><b>Extreme Refactoring</b></i>
+<ul>
+  <li>Many base functions separated out into new bolt and balt libraries.
+  <li>Many base functions revised and improved. <i><b>especially</b></i> bolt.Path.
+  <li>Miscellaneous code cleanup/enhancement.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportNames">Export Names</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportNames">Import Names</a> now export "NO NAME" as needed.
+<li>Add support for CLAS records.
+<li>Simplified <a href="Wrye%20Bash%20Advanced%20Readme.html#savesRepairAbomb">Repair Abomb</a> messages.
+<li>In progress: Balo Upgrade
+</ul>
+
+<h2>159 [4/6/2008]</h2>
+<ul>
+<li>Rearranged mod file menu. (Advanced commands are now in last section.)
+<li>Fix a bug with writing very long text fields.
+<li>Added <a href="Wrye%20Bash%20Advanced%20Readme.html#modsNvidiaFogFix">Nvidia Fog Fix</a>.
+</ul>
+
+<h2>158 [4/5/2008]</h2>
+<ul>
+<li>Comment out a warn explicit that caused problems for some people.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">Save Profiles</a>: Added Move To command to quickly move files between profiles.
+</ul>
+
+<h2>157 [4/5/2008]</h2>
+<ul>
+<li>Pluggy support: Renaming masters of a savegame will now also update the masters as recorded in the .pluggy cofile (if it exists).
+</ul>
+
+<h2>156 [4/3/2008]</h2>
+<ul>
+<li>Updated Bash_MFact.csv (used by Wrye Morph mod).
+</ul>
+
+<h2>155 [3/29/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Race Records</a> (formerly "Import Race Info")
+<ul>
+  <li>Fixed a bug that broke it in recent releases.
+  <li>Now recognizes merged as well as active mods.
+</ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch">Bashed Patches</a>: Refactored modset and statistics reporting code.
+<li>Improved performance when hiding a bunch of files.
+<li>Recoded <a href="Wrye%20Bash%20Advanced%20Readme.html#pm">PM Archive Tab</a> to avoid a possible bug.
+</ul>
+
+<h2>154 [3/23/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>: Darnified books: Minor tweaks.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchCoblCatalogs">Alchemical Catalogs</a>: Darnified text.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>: Don't keep overrides unless necessary.
+<li>Updated Portuguese (by Hadoki).
+</ul>
+
+<h2>153 [3/23/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>: Darnified books.
+<li>Updated Portuguese (by Hadoki).
+</ul>
+
+<h2>152 [3/21/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>: Fix a bug with MGEF records.
+</ul>
+
+<h2>151 [3/20/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>: Fix another bug with merging scripts. (SCRO formids.)
+</ul>
+
+<h2>150 [3/18/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchImportGraphics">Import Graphics</a>: Added support for MGEFs.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakClothes">Tweak Clothes</a>: Will now ignore non-playable items.
+<li>Better handling for "Improper grouping" errors.
+<li>Resupport Hiding/Unhiding savefiles (now with pluggy support).
+<li>Support for unused magic effects.
+</ul>
+
+<h2>149 [3/16/2008]</h2>
+<ul>
+<li>Remove some left over debugging code.
+<li>Tweaked various info messageboxes (e.g. mtimes reset).
+</ul>
+
+<h2>148 [3/16/2008]</h2>
+<ul>
+<li>Added <a href="Wrye%20Bash%20General%20Readme.html#patchImportInventory">Import Inventory</a>.
+</ul>
+
+<h2>147 [3/16/2008]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>: Fix a bug with merging scripts. (SCRV/SCRO mixing.)
+<li>Balo:
+<ul>
+  <li>Fix a bug that left groups menu out of sync with added/removed groups.
+  <li>Fix a bug with auto-reading groups from description field.
+  <li>Added Mod Group Export/Import.
+</ul>
+<li>BashMon: Misc. additions/changes.
+<li>Bashed Patches: Changed help text for a few components.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>: Added Armor Shows Rings/Amulets.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakClothes">Tweak Clothes</a>: Added Gloves Show Rings.
+</ul>
+
+<h2>146 [3/10/2008]</h2>
+<ul>
+<li>Balo (Bash Auto Load Ordering)
+<ul>
+  <li>Add Balo Groups command.
+  <li>Auto-assign groups from Group: tag in description.
+  <li>Update docs.
+</ul>
+<li>Complete cosave (.pluggy and .obse) file support.
+<li>Fix a rare problem with patching light records.
+</ul>
+
+<h2>145 [3/6/2008]</h2>
+<ul>
+<li>Fix a v143 bug that prevented startup for most users.
+</ul>
+
+<h2>144 [3/6/2008]</h2>
+<ul>
+<li>Fix a v143 bug in .pluggy support.
+</ul>
+
+<h2>143 [3/5/2008]</h2>
+<ul>
+<li>Rearrange docs a little.
+<li>Delete key now works in Mod and Save lists.
+<li>Optional use of pywin32 to get user directories.
+<li>Added statusbar messages for mods.
+<li>Removed some unused savegame commands (hide, snapshot).
+<li>Updated .pluggy support to handle .bak.pluggy files.
+<li>In progress: Requirement checking.
+</ul>
+
+<h2>142 [2/27/2008]</h2>
+<ul>
+<li>Add support for renaming, duplicating and deleting .pluggy files associated with savefiles. (Other file commands (backup, snapshot hide/unhide are <i><b>not</b></i> supported.)
+<li>Simplify ordering heuristic (ignore parent order).
+<li>Change default groups to canonical Balo groups. (Won't affect users who have modified their group list in any way.)
+<li>Modify Faction Morph patcher to support recent Wrye Morph changes.
+</ul>
+
+<h2>141 [2/18/2008]</h2>
+<ul>
+<li>Another bug fix related to SreNpc refactor in v 139.
+</ul>
+
+<h2>140 [2/18/2008]</h2>
+<ul>
+<li>Fix a new bug with Update NPC Levels.
+<li>Add <a href="Wrye%20Bash%20General%20Readme.html#trouble-dump">Debug Mode</a>.
+</ul>
+
+<h2>139 [2/17/2008]</h2>
+<ul>
+<li>Wrye Morph support: In progress.
+<ul>
+  <li>Refactor SreNpc.
+  <li>Refactor/expand PCFaces getting/setting.
+</ul>
+<li>Updated Portuguese (by Hadoki).
+</ul>
+
+<h2>138 [2/15/2008]</h2>
+<ul>
+<li>Auto Ordering: Tweak diff between mods from 60 seconds to 70 (for OBMM compatibility).
+<li>Fix order of MGEF sub-records.
+<li>Disable ctrl-up/down for auto-sorted files.
+<li>Refactor saveFile.getRecord.
+<li>Upgraded <a href="Wrye%20Bash%20Advanced%20Readme.html#savesListMasters">List Masters</a> to be like <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a>.
+<li>Bashed Patch: <a href="Wrye%20Bash%20General%20Readme.html#patchMorphFactions">Morph Factions</a>.
+<li>Wrye Morph support: In progress.
+</ul>
+
+<h2>137 [2/5/2008]</h2>
+<ul>
+<li>Fix yet another updating bug with Relev,Delevs.
+<li>Add an error check for circular masters.
+<li>Rational Names: OOO.esp >> OOO.esm.
+</ul>
+
+<h2>136 [2/3/2008]</h2>
+<ul>
+<li>Auto-sorting: Misc. tweaks and UI fixes.
+</ul>
+
+<h2>135 [2/2/2008]</h2>
+<ul>
+<li>Added Portuguese translation (by Hadoki).
+<li>Added <a href="Wrye%20Bash%20General%20Readme.html#patchSEWorldTests">SEWorld Tests</a> to Bashed Patch.
+<li>Minor tweaks to Auto Ordering.
+</ul>
+
+<h2>134 [2/1/2008]</h2>
+<ul>
+<li>Fix: Auto Ordering to resort after redating anchor files.
+</ul>
+
+<h2>133 [2/1/2008]</h2>
+<ul>
+<li>New: Auto Ordering by group.
+<li>Group headers in mods lists.
+</ul>
+
+<h2>132 [1/31/2008]</h2>
+<ul>
+<li>Fix a bug with merging INGR records in Bashed Patch.
+</ul>
+
+<h2>131 [1/31/2008]</h2>
+<ul>
+<li>Hack to get around bug with screens tab not showing up correctly.
+<li>Make sure that group anchor mods sort to top after Sort command.
+<li>Fix a bug that prevented merged mods from acting as delevs/relevs.
+</ul>
+
+<h2>130 [1/28/2008]</h2>
+<ul>
+<li>Group sorting now allows groups to start with '='.
+<li>GMST Tweak: Msg. Equip Generic.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportFormIDs">Import Formids</a>.
+</ul>
+
+<h2>129 [1/14/2008]</h2>
+<ul>
+<li>Fix a v 124 bug with renaming mods.
+<li>In progress: Complete Dial/Info handling.
+<li>Minor UI tweaks and Rational Names CSV additions.
+</ul>
+
+<h2>128 [1/13/2008]</h2>
+<ul>
+<li>Fix a v 127 bug that broke Bash Patches.
+</ul>
+
+<h2>127 [1/12/2008]</h2>
+<ul>
+<li>Fix a bug with importing faces from Khajiits to a mod.
+<li>Fix a bug with names export.
+<li>Add support for quest and ai package records. (Will impact mod merging, editor id importing, etc.)
+<li>Added/fixed some entries in Rational Names (thanks Havner).
+</ul>
+
+<h2>126 [1/10/2008]</h2>
+<ul>
+<li>Fix minor bug in ordering mods after updating their details.
+<li>Fix bug with patching introduced in v 124 refactor.
+<li>Fix bish.py to work with v 124 refactoring.
+<li>Added settings.safeMode.
+</ul>
+
+<h2>125 [1/10/2008]</h2>
+<ul>
+<li>Fix a few bugs with refactoring in 124.
+</ul>
+
+<h2>124 [1/10/2008]</h2>
+<ul>
+<li>Refactor bosh.plugins. (Mostly merge with bosh.modInfos.)
+</ul>
+
+<h2>123 [12/23/2007]</h2>
+<ul>
+<li>Corrected Russian translation (by DJ_Kovrik).
+</ul>
+
+<h2>122 [12/23/2007]</h2>
+<ul>
+<li>Updated Russian translation (by DJ_Kovrik).
+<li>Better handling of deleted records.
+<li>Fix a problem with Bashed Patches not including recent additions.
+</ul>
+
+<h2>121 [12/16/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#mods-details">Mod Details</a> like TESCS Details view.
+<li>Minor addition to Game Setting: Essential NPC Unconsciousness.
+</ul>
+
+<h2>120 [12/15/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch-filter">Merge Filtering</a>
+<li>Mod activate/deactivate will now display message if masters/children are activated/deactivated.
+<li>Load lists now works like Load Masters on savegames.
+<li>Fix problem with pluggy.bak files in saves directory.
+<li>Fix a minor bug with duplicating .bak files.
+</ul>
+
+<h2>119 [12/10/2007]</h2>
+<ul>
+<li>Tweak <a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a> to a problem with unnamed races.
+</ul>
+
+<h2>118 [12/9/2007]</h2>
+<ul>
+<li>Tweak <a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a> to work better with Cosmetic Compilation.
+</ul>
+
+<h2>117 [12/9/2007]</h2>
+<ul>
+<li>Fix a bug with eye mesh filtering in <a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a> patcher.
+</ul>
+
+<h2>116 [12/9/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#savesRepairFactions">Repair Factions</a>: Bug fix part IV. I <i>think</i> it's fixed this time.
+<li>Fix a minor bug with Delete Spells when some masters are missing.
+</ul>
+
+<h2>115 [12/8/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#savesRepairFactions">Repair Factions</a>: Add extra check to make sure player has default spell.
+</ul>
+
+<h2>114 [12/8/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#savesRepairFactions">Repair Factions</a>
+<ul>
+  <li>New command splits repair function from 113 to separate command.
+  <li>Additional changes to code to prevent related errors.
+</ul>
+</ul>
+
+<h2>113 [12/7/2007]</h2>
+<ul>
+<li>Fix major bug with releveling npcs.
+<ul>
+  <li>Bug was probably introduced around v 105, but would have become more obvious around v 111 due to heavy use of new Update NPC Levels feature.
+  <li>Effect of bug were intrafaction NPC fighting. Possibly lack of spells.
+</ul>
+<li>Fix minor bug in setting time after copy to esm/esp.
+</ul>
+
+<h2>112 [12/6/2007]</h2>
+<ul>
+<li>Updated bashmon to support pingpong.
+</ul>
+
+<h2>111 [12/4/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#savesUpdateNPCLevels">Update NPC Levels</a> replaces Import NPC Levels.
+<li>Misc. Tweaks
+<ul>
+  <li>Misc tweaks to html browsing windows.
+  <li>Move doc browser button to status bar.
+</ul>
+<li>bashmon.py now included in distribution.
+<li>Updated recommended python and wxPython:
+<ul>
+  <li>Recommended python: 2.5.1
+  <li>Recommended wxPython 2.8.7.1
+</ul>
+</ul>
+
+<h2>110 [11/24/2007]</h2>
+<ul>
+<li>Misc. Tweaks
+<ul>
+  <li>Refactor Path objects in effort to improve performance.
+  <li>Make log messages look more modal.
+  <li>Mark Mergeable now reports in a log message.
+  <li>Add warning icon to continue queries.
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#pm">Import Archives</a> now handles messages archived from "Sent" mailbox.
+  <li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>: Spells: You can now use the "unlabeled" version to remove old labels without adding new ones.
+</ul>
+</ul>
+
+<h2>109 [11/10/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a>: Fix for races using reanimate eyes.
+</ul>
+
+<h2>108 [11/7/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a> Minor tweaks to eye mesh filtering.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#pm">PM Archive Tab</a> Import Archives now supports pre-2005 archives.
+</ul>
+
+<h2>107 [11/7/2007]</h2>
+<ul>
+<li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#pm">PM Archive Tab</a>.
+<li>Fix a minor bug in marking in patch imported mods in main mod list.
+</ul>
+
+<h2>106 [11/5/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a> Eye Mesh filtering: fix a bug, add argonianEyeMesh.
+</ul>
+
+<h2>105 [11/4/2007]</h2>
+<ul>
+<li>Refactor <a href="Wrye%20Bash%20General%20Readme.html#patchRaceRecords">Import Race Info</a>. Add eye mesh filtering.
+<li>Mods count now in bottom right of status bar (active/available).
+<li>Refactor savegame face getting/setting (for use with brzMonitor).
+<li>Updated Russian translation (by DJ_Kovrik).
+</ul>
+
+<h2>104 [10/27/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportEditorIDs">Export Editor Ids</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportEditorIDs">Import Editor Ids</a> now update scripts as well.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a> now supports sound records.
+<li>Refactor dictionary variable names to "key_value" form.
+<li>Refactor to use new Open/SaveDialog functions.
+<li>Tweak personal directory extraction code in initSettings.
+<li>Tweak wtxt to avoid odd contents bug.
+</ul>
+
+<h2>103 [10/19/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportEditorIDs">Export Editor Ids</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportEditorIDs">Import Editor Ids</a>.
+<li>Fix a bug with "*" checkmarking.
+<li>Replacers now handles shaders directory. (Be sure to back it up first!)
+</ul>
+
+<h2>102 [10/19/2007]</h2>
+<ul>
+<li>Retroactively celebrating 100th release by dropping the '.' from version #.
+<li>Mod list now indicates imported mods with "*" checkmark.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves-face">Face Import</a> from save now provides same options as importing from mod.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a> now supports water and shader effect records.
+<li>Csv files now use comma separators.
+<li>Bashed Patch sets its file version by loaded files.
+</ul>
+
+<h2>101 [10/16/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>
+<ul>
+  <li>Added No Light Flicker.
+  <li>Added Right Hand Rings.
+  <li>Added Max Weight Staffs.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a> Set Doc... now inserts mod name in sorted order.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch">Bashed Patches</a> will now query to activate the patch if it's not already activate.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> now recognizes NoMerge tag.
+<li>Refactored YesQuery dialogs.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a> now supports weather records.
+</ul>
+
+<h2>100 [10/12/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a>
+<ul>
+  <li>Modified mod/doc list display.
+  <li>Double clicking on mods in mod list now brings up doc browser.
+</ul>
+<li>Tweaked <a href="Wrye%20Bash%20Advanced%20Readme.html#savesDeleteSpells">Delete Spells</a> to show spell info.
+<li>Fix problem with erratic text colors in mod/master list under python 2.5.
+</ul>
+
+<h2>0.99 [10/6/2007]</h2>
+<ul>
+<li>Tweaked interface to <a href="Wrye%20Bash%20General%20Readme.html#patchLeveledLists">Leveled Lists</a> for greater clarity.
+<li>Tweaked savegame item renamers to show more info about item being renamed.
+<li>Fix bug with profile switching.
+</ul>
+
+<h2>0.98 [9/24/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchImportGraphics">Import Graphics</a> add support for load screens.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchLeveledLists">Leveled Lists</a> merger redesign.
+<ul>
+  <li>Change way chanceNone is selected while merging.
+  <li>Support additional "My Leveled Lists.csv" for Mark Levelers.
+</ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a> now supports creature records.
+</ul>
+
+<h2>0.97 [9/22/2007]</h2>
+<ul>
+<li>Added Tes4View launcher.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchLeveledLists">Leveled Lists</a> merger redesign.
+<ul>
+  <li>Added Mark Levelers.
+</ul>
+<li>Bash tags are now preferentially added at top rather than bottom of description field.
+</ul>
+
+<h2>0.96 [9/22/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchLeveledLists">Leveled Lists</a> merger redesign.
+<ul>
+  <li>Remove first mod's "soft lock" on list.
+  <li>Redefine "Relev" to separate out Delev behavior.
+  <li>Modify GUI to support Delev/Relev tag selection.
+</ul>
+<li>Fix a few problems with correct display of "+" check mark for <a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>.
+</ul>
+
+<h2>0.95 [9/21/2007]</h2>
+<ul>
+<li>Rename "Update Patch" to "Rebuild Patch".
+<li>Fix a bug when switching to some older profiles.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchLeveledLists">Leveled Lists</a> merger redesign.
+<ul>
+  <li>Made Relev less restrictive.
+  <li>Added Delev tag.
+</ul>
+</ul>
+
+<h2>0.94 [9/9/2007]</h2>
+<ul>
+<li>Fix bug with merging (hopefully).
+</ul>
+
+<h2>0.93 [9/8/2007]</h2>
+<ul>
+<li>Bashed Patches
+<ul>
+  <li>Renamed, resorted all patch components for increased clarity. Like components are now grouped together and named similarly.
+  <li>Moved bow and potion tweakers to Tweak Assorted.
+  <li>Merge Mods will now merge specified mods in even if they're also activated. (Previously, activated mods that were marked for merging, were <i>not</i> merged.)
+</ul>
+<li>Misc. additions, tweaks
+<ul>
+  <li>Add support for load screen records.
+  <li>Refactor stats import/export/patching:
+</ul>
+<li>Misc fixes
+<ul>
+  <li>Fixed sizes of some PNG images.
+  <li>Fix a bug with the "Rename Doc..." button in the doc browser.
+  <li>Fix an error handler for modinfos.
+  <li>Fix a crash due to patch source files being unexpectedly removed.
+  <li>Fix a bug with importing faces from saves where PC hasn't leveled yet.
+</ul>
+</ul>
+
+<h2>0.92 [8/13/2007]</h2>
+<ul>
+<li>Fix a bug with leveled list merging that prevented some merged leveled lists from being saved.
+<li>Fix handling of ignored records in most cases.
+</ul>
+
+<h2>0.91 [8/11/2007]</h2>
+<ul>
+<li>Merged mods now marked by '+' checkbox.
+<li>Updated <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a> command to list merged mods.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a> now checks for associated bsa files.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a> will skip name types that aren't supported.
+<li>Various patchers no longer throw errors if source mod/file has been removed.
+<li>Updated Rational_Name.csv.
+</ul>
+
+<h2>0.90 [8/4/2007]</h2>
+<ul>
+<li>Oops. Remove debugging code.
+</ul>
+
+<h2>0.89 [8/4/2007]</h2>
+<ul>
+<li>Export from multiple files now supported for Export Names and Export Stats.
+<li>Minor correction to LIGH record handling for compatibility with Tes4View.
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a>
+<ul>
+  <li>Can Merge replaced with <a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Mark Mergeable</a>.
+  <li>Mods marked as mergeable now marked with green text in main mods list.
+</ul>
+</ul>
+
+<h2>0.88 [8/2/2007]</h2>
+<ul>
+<li>New <a href="Wrye%20Bash%20General%20Readme.html#patchAliasModNames">Patch Aliases</a> handling.
+<li>New <a href="Wrye%20Bash%20General%20Readme.html#patch-merging">Merge Patches</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsMarkMergeable">Can Merge</a> command.
+<li>Fix minor bug with deleted quick/autosave backup files.
+<li>Add support for Ammo to <a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportStats">Export Stats</a>, <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportStats">Import Stats</a> and <a href="Wrye%20Bash%20General%20Readme.html#patchImportStats">Import Stats</a>.
+<li>Added Rational_Names.csv for use with <a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>.
+</ul>
+
+<h2>0.87 [7/28/2007]</h2>
+<ul>
+<li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportStats">Export Stats</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportStats">Import Stats</a> for mods.
+<li>New <a href="Wrye%20Bash%20General%20Readme.html#patchImportStats">Import Stats</a>.
+</ul>
+
+<h2>0.86 [7/28/2007]</h2>
+<ul>
+<li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#savesRenamePotions">Rename Potions</a> for savegames.
+<li>Minor tweaks to other savegame created item reamers.
+<li>Version number is now shown in title.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportNames">Export Names</a> and <a href="Wrye%20Bash%20Advanced%20Readme.html#modsImportNames">Import Names</a>
+<ul>
+  <li>Now based on formid instead of editor id.
+  <li>Minor tweaks to command names.
+  <li>Exported file can be used by <a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>.
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Fix bug with taking snapshots of savegames.
+  <li>Fix bug with date of "Revert to First Backup".
+  <li>Fix bug with reading enchantments.
+</ul>
+</ul>
+
+<h2>0.85 [7/26/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>
+<ul>
+  <li>Improved pop up choice menu text for all tweakers.
+  <li>Armor name tweaker now adds H/L for heavy/light armor.
+  <li>Scroll name tweaker now allows choice of sort order.
+  <li>Scroll name tweaker now allows choice of magic labels.
+  <li>Spell name patcher removes old labels like ILi3: or MDA3:.
+  <li>More labeling options for armor, spell and weapon name tweakers.
+</ul>
+<li>Misc.
+<ul>
+  <li>Added support for light (LIGH) records for graphics and names patchers.
+  <li>Test for incomplete installation (esp. Docs directory).
+  <li>Add Disable command to masters list in <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-overview">Save Details</a>.
+  <li>Disable manual editing of Automatic Lists (use bash tags instead).
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Don't allow Espify Self for esm files. TESCS doesn't like it.
+  <li>Skip dump of ANAM enchantPoint subrecord if unneeded.
+  <li>Fix a bug with selecting Elaborate Eyes in Races Patcher.
+</ul>
+</ul>
+
+<h2>0.84 [7/16/2007]</h2>
+<ul>
+<li>Updated: <a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>. Optional scrolls and notes tweaker.
+<li>Update: <a href="Wrye%20Bash%20General%20Readme.html#patchImportGraphics">Import Graphics</a> Minor tweak for flags on armor and clothing.
+</ul>
+
+<h2>0.83 [7/13/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListMods">List Mods</a>.
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchTweakNames">Tweak Names</a>.
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-face">Stats Import</a> when importing faces.
+<li>Import Names now handles magic effects records.
+<li>Fixed a bug with Ancotar's Ring of Burden.
+</ul>
+
+<h2>0.82 [7/1/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchImportGraphics">Import Graphics</a>.
+<li>Bugfixes/Misc.
+<ul>
+  <li>Fix race body patcher skipping some changes.
+  <li>Fix patcher to ignore mods after patcher even if patcher isn't activated.
+  <li>Patcher now reports on active mods.
+  <li>Fix swapped labels for "Combat: Recharge Weapons" option.
+  <li>Patcher now handles Improperly Grouped files more gracefully.
+  <li>Mod selections that activate children or deactivate masters mods now generate notice in status bar.
+  <li>Fixed unnecessary race patching due to model comparisons.
+</ul>
+</ul>
+
+<h2>0.81 [6/19/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20Advanced%20Readme.html#EsmifySelf">Espify/Esmify Self</a>.
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#EsmifyMasters">Espify/Esmify Masters</a>: Changed to flip esp/esm bit method.
+<li>Settings/Table files
+<ul>
+  <li>Move/rename user files to My Games\Oblivion.
+  <li>Change to binary format.
+  <li>Improve error recovery in case of file corruption.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#international">Internationalization</a>
+<ul>
+  <li>Updated Russian (by DJ_Kovrik).
+  <li>Updated German (by DWS).
+</ul>
+<li>Misc.
+<ul>
+  <li>Fix race patcher to output eyes/hair in standard format.
+  <li>Better missing image file message.
+  <li>Tweak snapshot numbering.
+  <li>Recognize esp/esm status by bit setting instead of esp/esm.
+  <li>Allow rename of .bak save files to .ess files.
+</ul>
+</ul>
+
+<h2>0.80 [6/10/2007]</h2>
+<ul>
+<li>GMST Patchers
+<ul>
+  <li>Chase Camera Distance: Improved zooming speed.
+  <li>Message Display: Removed because it had no effect.
+</ul>
+<li>Masters Listing
+<ul>
+  <li>Move from saveinfo header menu to savegame context menu (List Masters).
+  <li>Now shows modindex number instead of bogus mod number at beginning.
+  <li>Now shows list in log window, but still copies list to clipboard.
+</ul>
+<li>Misc.
+<ul>
+  <li>Savegame Statistics: Ignore extra Missing Master NPC added by 1.2.0416 patch.
+  <li>Help button now opens help in preferred html browser.
+  <li>Now under GPL Version 2 License.
+</ul>
+</ul>
+
+<h2>0.79 [5/14/2007]</h2>
+<ul>
+<li>Tweaked Power Exhaustion mod mangler to work on fort endurance instead of fort mercantile.
+</ul>
+
+<h2>0.78 [5/13/2007]</h2>
+<ul>
+<li>Minor docs update (thanks BlackRazor!)
+<li>Bug fix for Power Exhaustion patcher.
+<li>Removed Fbomb repair.
+<li>Fixed bug with race voice patching.
+</ul>
+
+<h2>0.77 [5/9/2007]</h2>
+<ul>
+<li>Patchers
+<ul>
+  <li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchPowerExhaustion">Power Exhaustion</a>
+</ul>
+
+<h2>0.76 [5/7/2007]</h2>
+<li>Patchers
+<ul>
+  <li>New: BowPatcher tweaker to fix bows with zero reach.
+  <li>New: Reweigh Potions tweaker reduces standard potion weight to 0.2.
+  <li>New GMST: Chase Camera distance.
+  <li>New GMST: Magic Bolt Speed
+  <li>Tweak GMST: Additional options for arrow speed.
+  <li>New GMST: Combat: Recharge Weapons
+  <li>Import Race Info: Now, with male/female body/voice merging.
+</ul>
+<li>Bugfixes:
+<ul>
+  <li>Minor tweak to settings, table pkl saving in hope of fixing rare file corruption.
+  <li>Prevent DLC content from being red-highlighted because on first load.
+  <li>Fix bug with 10 day option of cell spawn game setting.
+</ul>
+</ul>
+
+<h2>0.75 [4/18/2007]</h2>
+<ul>
+<li>Additional <a href="Wrye%20Bash%20General%20Readme.html#patchTweakSettings">Tweak Settings</a> tweaks.
+<li>Minor tweaks to some <a href="Wrye%20Bash%20General%20Readme.html#patchTweakSettings">Tweak Settings</a> tweak choice menus.
+<li>Tweaks of translator to avoid some redundant strings.
+<li>More warnings on use of FBomb repair, and default to higher reset value.
+<li>Added tip display for patchers.
+<li>Fix rare bug with importing faces to mods.
+<li>Updated German translation (thanks DWS).
+</ul>
+
+<h2>0.74 [4/15/2007]</h2>
+<ul>
+<li>Additional <a href="Wrye%20Bash%20General%20Readme.html#patchTweakSettings">Tweak Settings</a> tweaks.
+</ul>
+
+<h2>0.73 [4/13/2007]</h2>
+<ul>
+<li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#savesReweighPotions">Reweigh Potions</a>.
+<li>Restructured <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-commands">Save File Commands</a>.
+<li>Docs: New screenshots, restructuring.
+</ul>
+
+<h2>0.72 [4/13/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchTweakSettings">Tweak Settings</a> tweaker.
+<li>Revamped <a href="Wrye%20Bash%20General%20Readme.html#patchTweakClothes">Tweak Clothes</a>.
+<li>Update mods list after adding/removing replacer on Replacers Tab.
+<li>Tweaked <a href="Wrye%20Bash%20General%20Readme.html#patchImportRaceRecords">Import Race Info</a> to merge cosmetics from different mods.
+</ul>
+
+<h2>0.71 [4/9/2007]</h2>
+<ul>
+<li>New: Repair Fbomb command.
+</ul>
+
+<h2>0.70 [4/7/2007]</h2>
+<ul>
+<li>Disable Import: TNR Faces command. (Use Bash Face patcher instead.)
+<li>Disabled old ability to disable/uncheck savegames. (Use profiles instead.)
+<li>Fix bug with "Change To" command.
+<li>Warn on Oblivion.ini corruption
+<li>Updated Russian translation (by DJ_Kovrik).
+<li>Added Fbomb counter to savegame <a href="Wrye%20Bash%20Advanced%20Readme.html#savesStatistics">Statistics</a>.
+</ul>
+
+<h2>0.69 [4/5/2007]</h2>
+<ul>
+<li>Re-enable importing faces into a mod. Oops.
+</ul>
+
+<h2>0.68 [4/2/2007]</h2>
+<ul>
+<li>Fix a bug with OBSE launching TESCS.
+</ul>
+
+<h2>0.67 [4/2/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#launchers">Launch Buttons</a>.
+<li>Update docs a lot.
+<li>Disable Import: TNR Faces command. (Pretty much replaced by <a href="Wrye%20Bash%20General%20Readme.html#patchImportNPCFaces">Import NPC Faces</a> patcher.)
+<li>Some compatibility fixes for people upgrading from much older Bash versions.
+<li>Auto creation of Bashed Patch (one time only).
+</ul>
+
+<h2>0.66 [3/31/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchImportRaceRecords">Import Race Info</a>.
+</ul>
+
+<h2>0.65 [3/30/2007]</h2>
+<ul>
+<li>Bugfix some Profile and Oblivion.esm swapping interaction stuff.
+</ul>
+
+<h2>0.64 [3/30/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchImportNames">Import Names</a>.
+<li>Misc.
+<ul>
+  <li>Progress bar on startup.
+  <li>Write error log for some startup errors.
+  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> stability, setup for internationalization.
+</ul>
+</ul>
+
+<h2>0.63 [3/30/2007]</h2>
+<ul>
+<li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a>.
+<li>Misc.
+<ul>
+  <li>Esms now have blue text color rather than line color.
+  <li>Shifted menus around a bit.
+  <li>Changed "Explore..." to "Open..." and added it in more places.
+  <li>Added "Oblivion.ini..." to direct open that file.
+  <li>Added OBMM and TESCS launching icons to bottom toolbar. (Thanks Gez!)
+</ul>
+</ul>
+
+<h2>0.62 [3/28/2007]</h2>
+<ul>
+<li>Misc.
+<ul>
+  <li>Fix face patching to work with Shivering Isles.
+  <li>Fix a bug with save directory getting.
+</ul>
+</ul>
+
+<h2>0.61 [3/28/2007]</h2>
+<ul>
+<li>Misc.
+<ul>
+  <li>Explore... commands for all tabs.
+  <li>Added initial OBMM/Lock Times message.
+  <li>Autocreate Oblivion.ini if necessary.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#screenshots">Screenshots Tab</a>
+<ul>
+  <li>Jpg images now listed/shown.
+  <li>Next Screenshot... command.
+  <li>Convert to jpg command.
+  <li>Rename... command
+</ul>
+</ul>
+
+<h2>0.60 [3/27/2007]</h2>
+<ul>
+<li>New Replacers Tab replaces previous replacers menu command.
+<ul>
+  <li>New Textures BSA archive invalidation.
+  <li>Now handle esps, esms and bsa files at root level of replacer.
+</ul>
+<li>Misc
+<ul>
+  <li>Delete command for screenshots.
+  <li>Fix some typos.
+</ul>
+</ul>
+
+<h2>0.59 [3/26/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#ini">INI Tweaks</a>.
+<li>Bugfixes/Tweaks
+<ul>
+  <li>Fixed bug that ignored checkmarks in Import NPC Faces and list merging configuration.
+  <li>Fixed bug in savegame spell list editing.
+  <li>Refactoring adding strings to paths.
+  <li>Tweaked created item name editing.
+</ul>
+</ul>
+
+<h2>0.58 [3/22/2007]</h2>
+<ul>
+<li>New: <a href="Wrye%20Bash%20General%20Readme.html#patchTweakClothes">Tweak Clothes</a>.
+<li>In progress: Dial block handling.
+<li>Refactored: MreRecord default loading, string getting.
+</ul>
+
+<h2>0.57 [3/18/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20General%20Readme.html#patch">Bashed Patches</a> complete!
+<li>Bugaround for inconsistent int/float with mtime get/set.
+</ul>
+
+<h2>0.56 [3/15/2007]</h2>
+<ul>
+<li>Tweak to ctrl-up/down sorting.
+<li>Tweak to bloat cleaning.
+<li>Tweaks to progress dialogs.
+<li>In progress: Bashed Patches
+</ul>
+
+<h2>0.55 [3/14/2007]</h2>
+<ul>
+<li>Fixes and improvements for Replacers.
+</ul>
+
+<h2>0.54 [3/14/2007]</h2>
+<ul>
+<li>Bashed Patch Beta (Bashed Lists + TNR faces).
+<li>Reorder mods by ctrl-up/down.
+</ul>
+
+<h2>0.53 [3/13/2007]</h2>
+<ul>
+<li>Replaced "Remove Null Refs" with <a href="Wrye%20Bash%20Advanced%20Readme.html#savesRemoveBloat">Remove Bloat</a>.
+<li>Refactored progress dialog code.
+<li>Log message windows now remember position and size.
+<li>In progress: Bashed Patches
+</ul>
+
+<h2>0.52 [3/11/2007]</h2>
+<ul>
+<li>Tweaked <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-face">Face Import dialog</a> (better layout, saves game screenshot as image).
+<li>Added Load Order column to <a href="Wrye%20Bash%20General%20Readme.html#mods">Mods Tab</a>.
+<li>Fix a bug that broke Replacers feature.
+<li>Better handling for savegame file errors.
+<li>Expanded <a href="Wrye%20Bash%20Advanced%20Readme.html#savesStatistics">savegame statistics</a>.
+<li>Added <a href="Wrye%20Bash%20Advanced%20Readme.html#screenshots">Screenshots Tab</a>.
+<li>Added Dump Translator command for <a href="Wrye%20Bash%20Advanced%20Readme.html#international">Internationalization</a>.
+<li>In progress: Replacers tab.
+</ul>
+
+<h2>0.51 [3/6/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#international">Internationalization</a> Russian (Complete) (by DJ_Kovrik)
+<li>Fix a bug in null ref cleaning.
+<li>Importing face from mod no longer requires the editor id end in "PC".
+<li>Refactored GUI layout code slightly. Hopefully didn't break anything!
+</ul>
+
+
+<h2>0.50 [2/27/2007]</h2>
+<ul>
+<li>Tweak Unicode encoding to fix with Cyrillic (and hopefully other languages).
+<li>Add <a href="Wrye%20Bash%20Advanced%20Readme.html#savesRemoveBloat">Remove Null Refs</a> command.
+<li>Add <a href="Wrye%20Bash%20General%20Readme.html#patchImportNPCFaces">Import TNR Faces</a> command.
+</ul>
+
+
+<h2>0.49 [2/19/2007]</h2>
+<ul>
+<li>Savegame <a href="Wrye%20Bash%20Advanced%20Readme.html#savesStatistics">Statistics</a> bugfix.
+</ul>
+
+
+<h2>0.48 [2/19/2007]</h2>
+<ul>
+<li>More savegame <a href="Wrye%20Bash%20Advanced%20Readme.html#savesStatistics">Statistics</a>.
+</ul>
+
+
+<h2>0.47 [2/18/2007]</h2>
+<ul>
+<li>List Merging: Html logging
+<li>Fix bug with mtime getting for python 2.5.
+</ul>
+
+
+<h2>0.46 [2/5/2007]</h2>
+<ul>
+<li>Command lines functions
+<ul>
+  <li>convertFace
+  <li>scriptVars
+</ul>
+</ul>
+
+<h2>0.45 [2/3/2007]</h2>
+<ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#international">Internationalization</a>
+<ul>
+  <li>German (Complete) (by DWS)
+</ul>
+</ul>
+
+<h2>0.44 [1/28/2007]</h2>
+<ul>
+<li>Tweaks
+<ul>
+  <li>WikiText: CSS tag.
+  <li>Better support for customizing menus and status bar buttons.
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Fix a bug with face importing.
+</ul>
+</ul>
+
+<h2>0.43 [1/27/2007]</h2>
+<ul>
+<li>Tweaks
+<ul>
+  <li>Improved install debugging help.
+  <li>Allow shorter internal link specification.
+  <li>Add Anchor wikitext tag.
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Fixed template name.
+  <li>Fixed MreRace data dumping.
+</ul>
+<li><a href="Wrye%20Bash%20Advanced%20Readme.html#international">Internationalization</a>
+<ul>
+  <li>German (Partial) (by DWS)
+  <li>Italian (Partial) (by Abot)
+</ul>
+</ul>
+
+<h2>0.42 [1/25/2007]</h2>
+<ul>
+<li>New Stuff
+<ul>
+  <li>Wiki Text Html Generation.
+  <li>Added support for <a href="Wrye%20Bash%20Advanced%20Readme.html#international">Internationalization</a>.
+  <li>Tweaked shortcuts to be more generic.
+  <li>Added support for more mod record types.
+  <li>Optimized Mod elements code (remove getattr, setattr).
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Fix a new bug with path for help browser.
+  <li>Hopefully fixed flags problem with Python 2.5
+</ul>
+</ul>
+
+<h2>0.41 [1/15/2007]</h2>
+<ul>
+<li>Fix a bug with Python 5.1 compatibility.
+</ul>
+
+
+<h2>0.40 [1/14/2007]</h2>
+<ul>
+<li>Alchemical Catalogs
+<ul>
+  <li>Are now books since scrolls don't correctly display large amounts of text.
+</ul>
+<li>Merged Lists
+<ul>
+  <li>Now handles leveled spells lists too.
+</ul>
+<li>Refactoring
+<ul>
+  <li>Added Python 2.5 compatibility. Python 2.5 is now preferred platform. (Though development is still done on Python 2.4.)
+  <li>Added Path class and refactored all path accessing code to use it.
+  <li>Flags Class: Refactored code to use new flags class.
+  <li>Renamed Mod record names to start with Mre.
+  <li>Added Mod Element structure classes.
+  <li>Converted existing record classes to mod element definition, and added many new mod record classes.
+</ul>
+</ul>
+
+<h2>0.39 [12/26/2006]</h2>
+<ul>
+<li>Alchemical Catalogs
+<ul>
+  <li>Added recognition of risky spell effects (RSWD, DUMY, DISE). (There's a mod that uses RSWD.)
+  <li>Cut ingredient scroll prices in half.
+</ul>
+</ul>
+
+
+<h2>0.38 [12/25/2006]</h2>
+<ul>
+<li>Alchemical Catalogs
+</ul>
+
+
+
+<h2>0.37 [12/18/2006]</h2>
+<ul>
+<li>Autosave and Quicksave Backups
+<ul>
+  <li>Automatic backups of autosave and quicksave files are now shown on the Saves tab.
+</ul>
+<li>Leveled List Merging
+<ul>
+  <li>"Releveling" mods now "own" general settings (chance none, template, etc.) for lists that they relevel.
+  <li>Better handling of mods that don't change entries.
+  <li>Better error handling,
+</ul>
+<li>Bugfix
+<ul>
+  <li>Fixed a bug in handling "ignored" groups.
+</ul>
+</ul>
+
+<h2>0.36 [12/16/2006]</h2>
+<ul>
+<li>New
+<ul>
+  <li>Mods: "Add Master..."
+  <li>Mods: Import: Merged Lists...
+</ul>
+<li>Bugfix
+<ul>
+  <li>Fix an inconsequential date bug with "Copy to esm/p".
+</ul>
+</ul>
+
+<h2>0.35 [12/10/2006]</h2>
+<ul>
+<li>Improved
+<ul>
+  <li>Mod Duplicate and rename functions now warn if mod has associated bsa and/or voice directory.
+</ul>
+<li>Bugfix
+<ul>
+  <li>Unselecting a mod in load list now unselects its children mods too.
+</ul>
+</ul>
+
+<h2>0.34 [11/25/2006]</h2>
+<ul>
+<li>New
+<ul>
+  <li>Mod: Version 0.8: New command allows you to set mod version back to 0.8.
+  <li>Save: Edit Spell List: Remove unused spells from spell list.
+</ul>
+<li>Improved
+<ul>
+  <li>Load Masters: Improved error message if some mods missing.
+  <li>Tweaked ini file reading to avoid problem with extra backslashes in saves directory.
+  <li>Tweaked sorting of mods by name to ignore extension.
+  <li>Now generates plugins.txt if necessary.
+  <li>Now handles corrupted mod and save files correctly.
+</ul>
+</ul>
+
+<h2>0.33 [8/2/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Add hours game hours column for save games.
+  <li>Fixed zombie progress bars for Replacers. (I think.)
+  <li>Added a couple of directory error checks.
+  <li>Added help button.
+</ul>
+<li>Improved Savegame Profiles
+<ul>
+  <li>Edit: Add/Rename/Remove
+  <li>Current (non-default) profile shows in Wrye Bash app title.
+  <li>Now remembers/resets plugins.txt for each profile.
+</ul>
+</ul>
+
+<h2>0.32 [7/7/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Export/Import Object Names now handles Birthsigns and sigil stones.
+</ul>
+</ul>
+
+<h2>0.31 [7/5/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Added Mod: Move To... command.
+  <li>Object Name Export/Import now includes object type.
+</ul>
+</ul>
+
+<h2>0.30 [7/2/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Added Object Name Export/Import for mods.
+</ul>
+</ul>
+
+<h2>0.29 [6/29/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Added link to open readme (same effect as clicking on Doc Browser button).
+  <li>Added abomb info to savegame statistics report.
+  <li>Added Repair Abomb command for save games.
+</ul>
+<li>Bugfix
+<ul>
+  <li>Fixed a problem with mod file error handling.
+</ul>
+</ul>
+
+<h2>0.28 [6/20/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>NPC Level Export/Import
+</ul>
+</ul>
+
+<h2>0.27 [6/12/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Added a Save: Statistics command.
+</ul>
+<li>Bugfix
+<ul>
+  <li>Fixed an error in calculating record count for un-analyzed top blocks.
+</ul>
+</ul>
+
+<h2>0.26 [6/8/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Fixed mod face import to allow import of eyes/hair that come from mod itself.
+</ul>
+</ul>
+
+<h2>0.25 [6/5/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Replaced "Unlevel NPCs" with "Import NPC Levels".
+</ul>
+</ul>
+
+<h2>0.24 [6/1/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Added Save: Repair Hair function.
+</ul>
+</ul>
+
+<h2>0.23 [5/31/2006]</h2>
+<ul>
+<li>Bugfix
+<ul>
+  <li>Disabled addition of masters while importing face to esp. Tended to break stuff while importing faces to non-simple esps.
+  <li>Fixed new lines in description field.
+  <li>Added support for -u command line option to manually set user home directory.
+  <li>All files now use pc style line returns.
+</ul>
+</ul>
+
+<h2>0.22 [5/28/2006]</h2>
+<ul>
+<li>Bugfix
+<ul>
+  <li>Fixed created item name disambiguation bug.
+</ul>
+</ul>
+
+<h2>0.21 [5/27/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Edit New Spells/Enchantments added for saves.
+</ul>
+<li>Bugfix/Improved
+<ul>
+  <li>Expanded SaveFile data to allow more manipulation.
+  <li>Now use temp file for pickle files to lessen chance of corruption.
+</ul>
+</ul>
+
+<h2>0.20 [5/19/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Save details now shows stats and save game image.
+  <li>Save Directories for compatibility with Rurisu's Save Game Manager.
+  <li>Converted Save: Export Face to Mod: Import Face.
+  <li>Updated docs.
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Ignore directories with filename extensions.
+  <li>Handle corrupt save files.
+</ul>
+</ul>
+
+<h2>0.19 [5/15/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Resurrected completion message on importing a face from an esp.
+  <li>Added Update Archive Invalidator. (Experimental and most likely somewhat incomplete. Use at own discretion.)
+</ul>
+<li>Bugfix/Improved
+<ul>
+  <li>Fixed bug that ignored checkboxes when importing a face from an esp.
+</ul>
+</ul>
+
+<h2>0.18 [5/9/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Added Exclusion groups.
+  <li>Sort now sorts after time of first selected file rather than earliest time. (This makes it easy to move a file forward in time as well as back.)
+</ul>
+</ul>
+
+<h2>0.17 [5/8/2006]</h2>
+<ul>
+<li>Bugfix
+<ul>
+  <li>Replace listSubtract function. Guess I needed it after all...
+</ul>
+</ul>
+
+<h2>0.16 [5/7/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>New command: Unlevel NPCs for save games.
+  <li>Minor tweaks to face importing. Probably won't have a visible difference.
+</ul>
+</ul>
+
+<h2>0.15 [5/6/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Allow editing of  master names.
+  <li>Allow sort masters by Save Order: i.e., by current order in the file.
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Fix master listing to sort on first load.
+  <li>Fix a bug that prevented backups from being made.
+</ul>
+</ul>
+
+<h2>0.14 [5/6/2006]</h2>
+<ul>
+<li>Bugfixes
+<ul>
+  <li>Fixed a bug that broke face exporting.
+</ul>
+</ul>
+
+<h2>0.13 [5/5/2006]</h2>
+<ul>
+<li>Tweaked
+<ul>
+  <li>Updated docs
+  <li>Faces exported to a mod file now are given an editor id that starts with "sg" (save game).
+</ul>
+<li>Bugfixes
+<ul>
+  <li>Fixed a Face Import bug that threw an error if eyes or hair of an NPC in an esp face file were set to None.
+</ul>
+</ul>
+
+<h2>0.12 [5/4/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+  <li>Purple boxes for saves that exactly match load list.
+  <li>Improved face import. Check to import race, gender, name. Face Preview.
+</ul>
+</ul>
+
+<h2>0.11 [5/3/2006]</h2>
+<ul>
+<li>Bugfixes
+<ul>
+  <li>Fixed unicode encoding problem. (I think.)
+</ul>
+</ul>
+
+<h2>0.10 [5/1/2006]</h2>
+<ul>
+<li>Bugfixes
+<ul>
+  <li>Fixed some bugs with description contents and snapshots.
+</ul>
+</ul>
+
+<h2>0.09 [4/30/2006]</h2>
+<ul>
+<li><b>Face Export/Import</b> <i><b>[BETA!]</b></i>
+<ul>
+  <li>Import now imports face, eyes, hair, haircolor, hairlength and gender. Race is not imported because it would require tweaking additional records (player's powers, etc.)
+  <li><b>Note:</b> Old code rewritten: it's possible that new bugs have been introduced.
+</ul>
+<li>New/Improved
+<ul>
+  <li>Internal: Mod and save game parsing fleshed out significantly.
+</ul>
+</ul>
+
+<h2>0.08 [4/26/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+<li><i><b>Beta!</b></i> Export face from save to esp.
+</ul>
+</ul>
+
+<h2>0.07 [4/25/2006]</h2>
+<ul>
+<li>Bugfixes
+<ul>
+<li>(Hopefully) fix a couple of directory bugs for foreigners and people with home directories stored in weird places.
+</ul>
+</ul>
+
+<h2>0.06 [4/23/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+<li><i><b>BETA!</b></i> Import face from one save into another.
+</ul>
+</ul>
+
+<h2>0.05 [4/23/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+<li>Redid InitDirs to extract directory settings from Windows Registry.
+<li>Added ability to enable/disable saves.
+<li>Bash now stores configuration settings in user's Local Settings\Applications\Oblivion directory.
+</ul>
+</ul>
+
+<h2>0.04 [4/14/2006]</h2>
+<ul>
+<li>Bugfixes
+<ul>
+<li>Fixed a bug with getting the user's home path.
+</ul>
+</ul>
+
+<h2>0.03 [4/13/2006]</h2>
+<ul>
+<li>Bugfixes
+<ul>
+<li>Fixed a bug with getting the user's home path.
+</ul>
+</ul>
+
+<h2>0.02 [4/13/2006]</h2>
+<ul>
+<li>New/Improved
+<ul>
+<li>Added Replacers handling.
+<li>Updated docs.
+</ul>
+</ul>
+
+<h2>0.01 [4/13/2006]</h2>
+<ul>
+<li><i><b>First Release!</b></i>
+</ul>
