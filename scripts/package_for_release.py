@@ -10,7 +10,9 @@ import re
 import sys
 import optparse
 import binascii
-# Need a working import statement to bring in ..\Mopy\bash\bass.py to get at the AppVersion variable. See GetVersionInfo below.
+
+sys.path.append( '../Mopy/bash' ) #Bad general practice, don't do this in a production app. We're fudging here for expediency.
+import bass
 
 # ensure we are in the correct directory so relative paths will work properly
 scriptDir = os.path.dirname(unicode(sys.argv[0], sys.getfilesystemencoding()))
@@ -47,15 +49,13 @@ except:
 
 
 #--GetVersionInfo: Gets version information about Wrye Bash
-#Currently gimped because Python is refusing to import bass.py to get the version number, so it's been manually set for the moment.
 def GetVersionInfo(padding=4):
     '''Gets version information from Mopy\bash\bass.py, returns
        a tuple: (version, file_version).  For example, a
        version of 291 would with default padding would return:
        ('291','0.2.9.1')'''
 
-#    version = bass.AppVersion
-    version = "297"
+    version = bass.AppVersion
     file_version = ('0.'*abs(padding))[:-1]
 
     v = version
