@@ -10,7 +10,7 @@ import re
 import sys
 import optparse
 import binascii
-
+# Need a working import statement to bring in ..\Mopy\bash\bass.py to get at the AppVersion variable. See GetVersionInfo below.
 
 # ensure we are in the correct directory so relative paths will work properly
 scriptDir = os.path.dirname(unicode(sys.argv[0], sys.getfilesystemencoding()))
@@ -27,7 +27,6 @@ if sys.platform.lower().startswith("linux"):
     exe7z = '7z'
 else:
     exe7z = os.path.join(mopy, 'bash', 'compiled', '7z.exe')
-readme = os.path.join(mopy, 'Wrye Bash.txt')
 dest = os.path.join(scripts, 'dist')
 
 
@@ -48,35 +47,25 @@ except:
 
 
 #--GetVersionInfo: Gets version information about Wrye Bash
-def GetVersionInfo(readme=readme, padding=4):
-    '''Gets version information from Wrye Bash.txt, returns
+#Currently gimped because Python is refusing to import bass.py to get the version number, so it's been manually set for the moment.
+def GetVersionInfo(padding=4):
+    '''Gets version information from Mopy\bash\bass.py, returns
        a tuple: (version, file_version).  For example, a
        version of 291 would with default padding would return:
-       ('291','0.2.9.1')
+       ('291','0.2.9.1')'''
 
-       padding: number of digits to padd the file_version to,
-          using zeroes.  If padding is less than 0, the padding
-          will be added to the end, otherwise it will be added
-          to the front
-    '''
-    version = 'SVN'
+#    version = bass.AppVersion
+    version = "297"
     file_version = ('0.'*abs(padding))[:-1]
 
-    if os.path.exists(readme):
-        file = open(readme, 'r')
-        reVersion = re.compile('^=== ([\.\d]+) \[')
-        for line in file:
-            maVersion = reVersion.match(line)
-            if maVersion:
-                v = version = maVersion.group(1)
-                v = v.replace('.','')
-                if padding < 0:
-                    file_version = '.'.join(c for c in v.ljust(-padding,'0'))
-                else:
-                    file_version = '.'.join(c for c in v.rjust(padding,'0'))
-                break
-    return version,file_version
+    v = version
+    v = v.replace('.','')
+    if padding < 0:
+        file_version = '.'.join(c for c in v.ljust(-padding,'0'))
+    else:
+        file_version = '.'.join(c for c in v.rjust(padding,'0'))
 
+    return version,file_version
 
 #--rm: Removes a file if it exists
 def rm(file):
