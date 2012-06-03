@@ -1,6 +1,4 @@
-﻿Note: I am not a developer for this project. We are keeping stewardship of things while the main developers are away.
-
-Continuing from the [topic=1369624]previous thread[/topic]...
+﻿Continuing from the [topic=1369624]previous thread[/topic]...
 
 [b]What does Wrye Bash do?[/b][list]
 [*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
@@ -56,7 +54,7 @@ If you are using the Python version, dependency installation will be handled aut
 [*][url="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi"]Python 2.7.3[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
 [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe"]wxPython 2.8.12.1 unicode for Python 2.7[/url]
 [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2[/url]
-[*][url="https://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/"]PyWin32 for Python 2.7[/url]
+[*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url]
 [*]Other setups _may_work_, but this is the only officially supported setup.
 [*]Python 3.x: [b][u]NOT Supported[/u][/b]
 [/list]
@@ -107,7 +105,7 @@ Rinse and repeat when a new svn comes out.
 [/list][*]If you think you've found an error in the WBSA, be sure to uninstall ALL python components and test it again first, to be sure we get an accurate report.  Having python installed can sometimes trick the WBSA into thinking that it has all of the files it requires, even if it really doesn't.
 [/list]
 [/spoiler]
-[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://oblivion.nexusmods.com/mods/22368"]TESNexus[/url] or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
+[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://oblivion.nexusmods.com/mods/22368"]Oblivion Nexus[/url] or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
 
 [b]Related Projects[/b]:[list]
 [*]Load orders should be managed with [url="http://oblivion.nexusmods.com/mods/20516"]BOSS[/url] (Better Oblivion Sorting Software), which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
@@ -141,5 +139,4 @@ Rinse and repeat when a new svn comes out.
 [*]Minimum Column width enforced.
 [*]Status bar help tips added to many menu items.
 [*]General error cleanup in parts of the code.
-[*]Updated URLs for Nexus information.[/spoiler]
-[/list]
+[*]Updated URLs for Nexus information.[/list][/spoiler]

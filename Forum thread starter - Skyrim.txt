@@ -22,7 +22,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
 [/list][/list][/spoiler]
 
-[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] or [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
+[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] or [url=http://oblivion.nexusmods.com/mods/22368]Oblivion Nexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
 
 [b]Documentation[/b]:
 [list]
@@ -98,79 +98,31 @@ Rinse and repeat when a new svn comes out.
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 [b]Changelog for Latest Version[/b]:
-=== 295.5 [17/1/2012] [Lojack,PacificMorrowind][spoiler][list]
-[*] Bugfix release:[list]
-  [*] Skyrim: Corrected more record definitions.  All record definitions have been double checked now.
-  [*] BAIN: Fixed a problem associated with Embedded BCF's, causing BAIN to become unusable.
-  [*] Wrye Bash Installer updated to included the necessary files of the [url=http://www.microsoft.com/download/en/details.aspx?id=14431]MSVC 2005 SP1 Redistributable with ATL Security Update[/url].  These files are required on Windows XP for 7zUnicode.exe to run.  These files are not included in the Manual Install archives - users should install the redistributable package from Microsoft for manual installs.
-  [*] Wrye Bash Uninstaller updated to remove some files it was missing.
-  [*] Changed how the 'Apps' folder launchers are used, to work with Unicode better.
-  [*] Fixed a problem with restarting Wrye Bash.  Specifically, the Standalone version would shutdown instead of restart, when required.
-  [*] Fixed a problem with formatting numbers for the user's location.
-  [*] Better printing of error messages on startup, when using the Standalone version.
-  [*] Corrected a problem with INI Tweaks where adding new lines sometimes would not write the whole line.
-  [*] Made an adjustment to Save Profiles, that should help out when the Profile name has Unicode in it.[/list][/list][/spoiler]
-=== 295.4 [15/1/2012] [Lojack,PacificMorrowind][spoiler][list]
-[*] Bugfix release:[list]
-  [*] Skyrim: Corrected the record definitions for LVLI, LVLN, LVSP, MISC, ARMO, and ARMA records.
-  [*] Bashed Patch:[list]
-    [*] Small tweak to Leveled Lists patcher, allowing changes to the Flags of a list to be imported in rare occasions where they were not.
-    [*] Reverted the change to the Graphics patcher from 295.3, mods requiring the model file name to be imported should be using the 'Actors.Skeleton' Tag to accomplish this.[/list]
-  [*] Fixed INI Tweaks that un-deleted a tweak line.  Now instead of re-adding the tweak in as a new line, the original line will correctly be replaced.
-  [*] Fixed an issue with switching Save Game profiles, that was introduced due to the new INI Tweak changes.
-  [*] Fixed an issue where BAIN would sometimes install document files from inactive packages.
-  [*] Updated the Wrye Bash Installer with some typo fixes, and to correctly remove some files associated with newer versions of Wrye Bash when required.
-  [*] Fixed a bug causing Wrye Bash to never ask to backup your settings on an upgrade.[/list][/list][/spoiler]
-=== 295.3 [14/1/2012] [Lojack,bluesky404,PacificMorrowind][spoiler][list]
-[*] Major Unicode rewrite!  Everything has been gone through to make Wrye Bash works with Unicode file names and characters:[list]
-  [*] Special thanks to [b]bluesky404[/b] for a ton of work testing, debugging, and providing patches to help make this possible.
-  [*] By default when reading plugins, Wrye Bash first tries to interpret the data as 'Western European'.  This includes languages such as English, French, German, Spanish, and Italian.  Some languages this does [i]not[/i] cover are Russian and Asian languages (Chinese, Japanese, Korean, etc).[list]
-    [*] To modify this behavior, there is a new setting, accessible via the Setting Menu > Plugin Encoding.  This would be used if you have a plugin with Chinese, Russian, or other langauges that don't fall under the 'Western European' encoding.
-    [*] This is a global setting, so changing it will have an effect on [i]all[/i] plugins.
-    [*] Changing this setting won't be immediately obvious on the Mods Tab, as the data isn't updated unless it is read from file again.  However, the change will effect Bashed Patch creation and the mod file Import/Export commands immediately.
-    [*] Changing this setting to Automatic will have the best result all around, but due to the extra processing involved in Automatic mode, it is not enabled by default.  In one example, Bashed Patch creation time went from about 15 minutes with a specified encoding, to 22 minutes with Automatic encoding.[/list]
-  [*] Some minor inconsistancies might be observed, specifically when viewing the Author or Description field on mods, or viewing the Name or Location of a saved game.  Wrye Bash tries its best to detect the encoding of strings, and makes some educated guesses based off that, but sometimes it will just get it wrong.  When this happens, the displayed text might show up as random characters from another language.
-  [*] Unicode file names are fully supported.
-  [*] Limitations:[list]
-    [*] Skryim and Oblivion have problems with reading the 'plugins.txt' file when there are unicode file names in it.  Therefore, we cannot guarentee that activated plugins with Unicode file names will actually be loaded.
-    [*] Files specific to Wrye Bash for input must be formatted in UTF-8 (with or without BOM).  This means any .txt files utilizing Wrye Bashe's wtxt format, any .csv files used as input for the Bashed Patch, and BAIN wizard.txt files.
-    [*] The masterlist.txt and userlist.txt files for BOSS are expected to also be in UTF-8 format.  This is a requirement imposed by BOSS, so no change should be noticed there.[/list]
-  [*] Translation files format has changed.  Old translation files have been converted to the new format.[/list]
-[*] More refactoring for multi-game support.
-[*] New Skyrim features:[list]
-  [*] Support for AACT, ACTI, ADDN, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC records added.
-  [*] Merge support for AACT, AMMO, ARMA, ARMO, COBJ, GLOB, GMST, LVLI, LVLN, LVSP, and MISC added.
-  [*] Basic ONAM support for TES4 records.
-  [*] Bashed Tags:[list]
-    [*] Delev and Relev - These can be used to intelligently merge leveled lists.
-    [*] Filter, NoMerge, and Deactivate - These can be used to modify behavior in regards merging and importing records.[/list]
-  [*] Better merging of records with NULL Form ID's, for records that allow it (COBJ and GMST for example).
-  [*] New BAIN option: Auto-name String Translation files:[list]
-    [*] Will automatically rename .STRINGS, .DLSTRINGS, and .ILSTRINGS files to the correct language for your game, but only if the installer does not already contain String Translation files for your language.[/list][/list]
-[*] Bugfixes:[list]
-  [*] An uncommon Drag and Drop of Tabs related bug is fixed (relating to Mouse Capture).
-  [*] List Masters command corrected to display the masters of a Save File, rather than the current Load Order.
-  [*] Startup crash when the Installers Tab is hidden and 'Avoid at Startup' is selected for the Installers Tab corrected.
-  [*] Startup crash when Skryim.esm was ghosted, and set to be inactive within Wrye Bash.
-  [*] Fixed an issue where the Graphics tag was not properly importing the model file name on CREA records.[/list]
-[*] Removed support for Skyrim's 4gb Launcher, as a recent patch makes this obsolete.
-[*] Updated the Wrye Bash Installer to check for Unicode versions of wxPython, and only accept Python 2.7 (no more 2.6 or 2.5 support).
-[*] Other improvements:[list]
-  [*] New Simplified Chinese translation, provided by bluesky404.
-  [*] New Traditional Chinese translation, provided by bluesky404.
-  [*] BAIN:[list]
-    [*] Wizard.txt and readme's will no longer show up as 'Skipped' if it's in an odd directory.
-    [*] New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
-    [*] The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with file id's less than 4 digits now.[/list]
-  [*] INI Edits:[list]
-    [*] Double click to apply an INI Tweak
-    [*] Left Click on the checkbox to apply an INI Tweak
-    [*] INI Tweaks can now add and remove new lines to target INI's.[list]
-      [*] Adding lines is only enabled if the 'Allow Tweaks with New Lines' option is enabled (disabled by default for Obilvion, enabled by default for Skyrim).[/list]
-    [*] The syntax for denoting a line to be deleted is to prepend the line with ";-".
-    [*] BAIN Wizards can also create "deleted" INI Tweak lines, via the DisableINILine command.[/list]
-  [*] Better support for Mac Command button.
-  [*] Bashed Patch:[list]
-    [*] New Assorted Tweaker: No Description Loading Screens (requested by hellwing).[/list]
-  [*] Wrye Bash will ask to backup your settings on [b][i]every[/i][/b] update now, instead of just a major version update (like from 294 to 295).
-  [*] Quickly switching beteween games can be accomplished via the Settings Menu.[/list][/list][/spoiler]
+=== 296 [27/5/2012] [Lojack,PacificMorrowind,Waruddar,Trira][spoiler]
+[list]
+[*]CBash updated to version 0.6
+[*]Bashed Patch:
+[list]
+[*]Races Patcher refactored a bit: now has racial tweaks you can select and source mods that you can select.
+[*]new race tweakers:
+[list]
+[*]Bigger Nords & Orcs (moved from tweak actors)
+[*]Merge Eyes from similar races
+[*]Merge Hairs from similar races
+[*]Playable Eyes
+[*]Playable Hairs
+[*]Races have All Eyes
+[*]Races have All Hairs
+[*]Sexless Hairs
+[/list][*]Globals Patcher has been merge into Tweak Settings.
+[*]Python Mode Only: new but deleted records won't affect mergeability.
+[*]In CBash mode instead of mergeing deleted REFR, ACRE, ACHR records they will be merged as and undeleted (disabled and moved -1000 units on the z axis). (doesn't affect Python mode since Python mode doesn't merge cells)
+[/list][*]Tweak Settings Patcher:
+[list]
+[*]A few tweak names tweaked to better match other tweak names.
+[/list][*]ini option to ensure bashed patch exists at program start added (by default on).
+[*]Duplicate files for multiple files fixed.
+[*]Minimum Column width enforced.
+[*]Status bar help tips added to many menu items.
+[*]General error cleanup in parts of the code.
+[*]Updated URLs for Nexus information.[/list][/spoiler]
