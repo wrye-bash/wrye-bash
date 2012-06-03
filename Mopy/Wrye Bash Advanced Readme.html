@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="shortcut icon" href="bash/images/bash_32.ico"/>
+<title>Wrye Bash Advanced Readme</title>
+<style>
+	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
+	h1, h2 { background: #9ACD32; margin-left: -8px; margin-right: -8px; padding:0.6em; }
+	h1 { margin-top:-8px; padding-left:1.5em;margin-bottom:0;}
+	h2 { margin-top:5em; padding-left:2em;}
+	h3 { font-size:1.1em; margin-top:3em;}
+	a:link { text-decoration:none; }
+	a:hover { text-decoration:underline; }
+	li ul, li ol {margin-top:0.4em;}
+	li {margin-bottom:10px;}
+	ol li ol {list-style:lower-alpha;}
+	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
+	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
+	thead {font-weight:bold; background:#8af;}
+	img {border:0;}
+	a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,R0lGODlhCQAMAMQAAPr7/Cpdi6q/0X2duURxmjRlkfz9/vz8/TVlkae8z4+qwoWivTlplDVmkvv8/Up1nUVymvn6/LrL2i1gjStejKS6zkNwmUFvmD5slkJwmbjJ2DZnkqm90Cdbiv///wAAACH5BAEAAB4ALAAAAAAJAAwAAAU6oCeOY7R0aNoByWURQUoOMTpqD0p1Ird1hEGGJ/gVJB5Ip9gpcESYDqOD4BxEFcWkwTGMHACSeDwKAQA7);}
+	q {font-style:italic;}
+	code {display:inline-block; padding:2px 5px; background:#DDD;}
+	code.box {line-height:20px; white-space:pre; margin:1em 0 0 3em; display:table; padding:5px 10px;}
+	blockquote {background:#E6E6FA; display:table; padding:5px 30px 5px 10px;}
+	figure {margin:0;}
+	figcaption {font-style:italic; margin-bottom:2em;}
+ .missing {background:red; color:white; border:0.25em solid black;}
+	abbr {cursor:help;}
+ 
+	.slideshow img {opacity:0; 
+		position:absolute;
+		transition: opacity 1.5s;
+		-moz-transition: opacity 1.5s;
+		-webkit-transition: opacity 1.5s;
+		-o-transition: opacity 1.5s;}
+	.slideshow img:first-child {opacity:1;}
+</style>
+
+<h1>Wrye Bash Advanced Readme</h1>
+
+<h2 style="margin-top:0;">Contents</h2>
+<ol>
+	<li><a href="#intro">Introduction</a>
+	<li><a href="#install">Advanced Installation</a>
+	<ol>
+		<li><a href="#install-alternate">Alternative Install Locations</a>
+		<li><a href="#install-components">Python Components</a>
+	</ol>
+	<li><a href="#bain">Installers Tab</a>
+	<ol>
+		<li><a href="#bain-ui">The User Interface In Detail</a>
+		<li><a href="#bain-skipped">Skipped Files</a>
+		<li><a href="#bain-se">Script Extender Plugin Installation</a>
+		<li><a href="#bain-omod">OMOD Conversion Data</a>
+		<li><a href="#bain-bcf">BAIN Conversion Files</a>
+		<li><a href="#bain-commands">Context Menu Commands</a>
+	</ol>
+	<li><a href="#mods">Mods Tab</a>
+	<ol>
+		<li><a href="#mods-exclusion">Exclusion Groups</a>
+		<li><a href="#mods-details">The Plugin Details Panel</a>
+		<li><a href="#mods-csv">CSV Files</a>
+		<li><a href="#mods-commands">Context Menu Commands</a>
+	</ol>
+	<li><a href="#patch">Advanced Bashed Patch</a>
+	<ol>
+		<li><a href="#patch-view">Viewing &amp; Editing The Bashed Patch</a>
+		<li><a href="#patch-tags">Bash Tags</a>
+		<li><a href="#patch-filter">Merge Filtering</a>
+		<li><a href="#patch-iim">Item Interchange Mode</a>
+		<li><a href="#patch-tweaks">Tweak Options In Detail</a>
+		<li><a href="#patch-csv">Default CSV Files</a>
+		<li><a href="#patch-lists">Leveled Lists</a>
+	</ol>
+	<li><a href="#saves">Saves Tab</a>
+	<ol>
+		<li><a href="#saves-overview">Overview</a>
+		<li><a href="#saves-profiles">Save Profiles</a>
+		<li><a href="#saves-face">Face Import</a>
+		<li><a href="#saves-symbols">What Symbols &amp; Colours Mean</a>
+		<li><a href="#saves-commands">Context Menu Commands</a>
+	</ol>
+	<li><a href="#screenshots">Screenshots Tab</a>
+	<ol>
+		<li><a href="#screenshots-overview">Overview</a>
+		<li><a href="#screenshots-commands">Context Menu Commands</a>
+	</ol>
+	<li><a href="#launchers">Advanced Launchers</a>
+	<ol>
+		<li><a href="#launchers-hide">Hiding Launchers</a>
+		<li><a href="#launchers-custom">Custom Launchers</a>
+	</ol>
+	<li><a href="#pm">PM Archive Tab</a>
+	<ol>
+		<li><a href="#pm-overview">Overview</a>
+		<li><a href="#pm-commands">Buttons &amp; Context Menu Commands</a>
+	</ol>
+	<li><a href="#people">People Tab</a>
+	<ol>
+		<li><a href="#people-overview">Overview</a>
+		<li><a href="#people-symbols">What Symbols &amp; Colours Mean</a>
+		<li><a href="#people-commands">Context Menu Commands</a>
+	</ol>
+	<li><a href="#tools">Miscellaneous Tools</a>
+	<ol>
+		<li><a href="#tools-settings">Settings Menu</a>
+		<li><a href="#tools-docs">Docs Browser</a>
+		<li><a href="#tools-checker">Mod Checker</a>
+		<li><a href="#tools-swapping">Oblivion.esm Swapping</a>
+		<li><a href="#tools-shortcuts">Keyboard Shortcuts</a>
+	</ol>
+	<li><a href="#international">Internationalisation</a>
+	<ol>
+		<li><a href="#international-overview">Overview</a>
+		<li><a href="#international-format">Translator File Format</a>
+	</ol>
+</ol>
+
+<h2 id="intro">Introduction</h2>
+<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion and TES V: Skyrim. Its features include:
+<ul>
+	<li>A mod installation and conflict manager
+	<li>A plugin load order manager
+	<li>Increased mod compatibility
+	<li>Lifting of the 255 plugin limit through automatic merging of compatible mods
+	<li>.ini and settings files tweak management
+	<li>Screenshot management
+	<li>Many, many more features
+</ul>
+<p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
+<p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and many area geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on how Wrye Bash functions. It assumes the reader has previously read the General Readme.
+<p>Note that the <a href="#people">People</a> and <a href="#pm">PM Archive</a> tabs are hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
+
+<h2 id="install">Advanced Installation</h2>
+<h3 id="install-alternate">Alternative Install Locations</h3>
+<p>Wrye Bash can be installed in any folder, but if it is installed outside of the game's folder, then the OblivionPath bash.ini option must be adjusted.
+<p>To do so:
+<ol>
+	<li>Open <code>bash_default.ini</code> in the <code>Mopy</code> folder and save it as <code>bash.ini</code>.
+	<li>In the new bash.ini, enter the full path of your game's installation folder (the one that contains the game's executable) for the <q>sOblivionPath</q> setting.
+	<li>Save the edited bash.ini.
+</ol>
+<p>Alternatively, you can launch Wrye Bash with the -o argument, quoting the path as the argument's parameter. Note that backslashes must be doubled as Python treats a single backslash as an escape character. For example, <code>"Wrye Bash Launcher.pyw" -o "C:\\Games\\Oblivion\\"</code> if you are running Wrye Bash for Oblivion.
+
+
+<h3 id="install-components">Python Components</h3>
+<p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.
+<ul>
+	<li><a href="http://www.python.org/ftp/python/2.7.2/python-2.7.2.msi">Python 2.7.2</a>
+	<li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 unicode for Python 2.7</a>
+	<li><a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build216/pywin32-216.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
+	<li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, only required for users of the PM Archives tab. If Comtypes is not installed, the PM Archives tab will not be visible.
+</ul>
+
+<h2 id="bain">Installers Tab</h2>
+<h3 id="bain-ui">The User Interface In Detail</h3>
+<p>The Installers tab is split into three main sections: on the left is the Package List, and the right is split between the Information Tabs at the top and the Comments field at the bottom. The Information Tabs and Comments sections display information specific to the currently selected package. Much of the contents of the Information Tabs depends on the install status and order of the package. The information tabs are detailed in the table below.
+<table>
+	<thead>
+		<tr><th colspan="2">Information Tabs
+		<tr><th>Tab<th>Description
+	<tbody>
+		<tr><td>General<td>Shows summary info and the files to be installed, as determined by sub-package, esp/m, voice filtering, etc.
+		<tr><td>Matched<td>Shows files which are identical to current Data directory files.
+		<tr><td>Missing<td>Files which are missing from the Data directory.
+		<tr><td>Mismatched<td>Files which are present in the data directory, but which aren't identical to the selected package's version of those files.
+		<tr><td>Conflicts<td>Shows which other packages will conflict the current package and for what files. Note that if a given file is mismatched, but the mismatch isn't due to other packages, then it won't appear. This report can be modified to show inactive conflicts and lower order conflicts by enabling the <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> options respectively.
+		<tr><td>Underriden<td>Shows packages which should be overridden, but are not, due to install order errors. This can be corrected by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
+		<tr><td>Dirty<td>Shows files which the selected package previously installed, but which now should be removed or altered due to a reconfiguration of the package. Dirty files can be cleared by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
+		<tr><td>Skipped<td>Shows which files in the selected package were <a href="#bain-skipped">skipped</a> by Bain.
+</table>
+<p>The Comments field is provided as an area in which notes may be kept on packages. It is useful for keeping track of what packages do, what your favourite install options are, etc.
+
+
+<h3 id="bain-skipped">Skipped Files</h3>
+<p>BAIN skips the installation of some files and directories. The types of files skipped are:
+<ul>
+	<li>Silent skips. These are thumbs.db files, and the omod conversion directory and its subfiles.
+	<li>Developer files. Any file or directory that begins with '--' and is at the top level of a package or a subpackage will be silently skipped. This is so that mod authors can include files related to a mod that are not required for it to work (eg. screenshots) in packages.
+	<li>Non-standard directories. Standard directories include all the game's default directories (including those only found in BSAs by default) and 'ini', ini tweaks', 'pluggy', 'scripts', 'streamline' and '_tejon'. Installation of these directories may be forced by using the <a href="#bainHasExtraDirectories">Has Extra Directories</a> option. Files skipped because of this will be listed in the <q>Skipped</q> panel on the right.
+	<li>Archives &amp; executables. Executable files, apart from Script Extender plugins if the <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option is disabled, and archives in packages will be skipped. Files skipped because of this will be listed in the <q>Skipped</q> panel on the right.
+	<li>Specified skips. There are a few options in BAIN to skip the installation of certain file types. If any such options are enabled, the file type(s) in question will be skipped.
+</ul>
+
+
+<h3 id="bain-se">Script Extender Plugin Installation</h3>
+<p>Script Extender (OBSE, SKSE) plugins (.dll, .dlx extensions) may be installed through BAIN if the following conditions are met:
+<ul>
+	<li>The package or subpackage containing the OBSE plugin has it in <code>OBSE\Plugins</code> (for Oblivion), <code>SKSE\Plugins</code> (for Skyrim) or a subfolder of the same.
+	<li>The <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option found in the Installers tab column header context menu is disabled.
+</ul>
+<p>When attempting to install a specific Script Extender plugin for the first time, Wrye Bash will display a warning dialogue and ask you to confirm or deny the plugin's installation. Thereafter you can uninstall and install the plugin as you like without seeing the warning. These additional requirements are due to the significant (though currently theoretical) dangers of installing executable files.
+<p>The list of allowed and disallowed Script Extender plugins can be imported and exported using the <a href="#settingsImportList">Import list of allowed/disallowed OBSE plugin dlls</a> and <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a> options in Wrye Bash's <a href="#settings">Settings</a> menu.
+
+
+<h3 id="bain-omod">OMOD Conversion Data</h3>
+<p>If a mod author is building a mod that supports BAIN, manual and OMOD installs, they can use the <a href="#bainOmodInfo">Omod Info...</a> option in the package context menu to create or update the OMOD config file.
+<p>If a mod author wishes to include a screenshot for use by the OMOD, they simply need to copy the screenshot saved as a JPEG to the OMOD Conversion Data folder and rename it to <q>screenshot</q> with no file extension.
+<p>An OMOD installation script may also be created by creating a text file named <q>script.txt</q> and writing the script in any text editor. Testing is still best done in OBMM though.
+<p>The OMOD config file is the only true requirement for an OMOD to be created from OMOD Conversion Data. The screenshot and installation script can be used to enhance an OMOD. Note that the <q>info.txt</q> file that OMODs create when exporting Conversion Data in OBMM is unnecessary, and is provided for purely informational purposes.
+
+
+<h3 id="bain-bcf">BAIN Conversion Files</h3>
+<p><abbr title="BAIN Conversion Files">BCFs</abbr> are effectively automated archive converters, converting an existing archive or several archives into a new layout. They can be used to make BAIN-incompatible archives compatible, or make compatible archives easier to install. As they don't contain any files that are found in the existing archive(s), the only copyright/permissions that apply are those that the BCF creator stipulates, which generally makes distribution easier. BCFs are also usually much smaller, only containing new files that it adds (commonly <q>package.txt</q> and ini file tweaks) and a <q>BCF.dat</q> that tells Wrye Bash how to reorganise the archive(s).
+<p>To create a BCF:
+<ol>
+	<li>Add all of the source archives to BAIN.
+	<li>Create a new project with the contents of the source archives, and rearrange the files as you see fit.
+	<li>Right-click the project and select <a href="#modsPackToArchive">Pack To Archive...</a>.
+	<li>Name the new archive, and choose whether to use solid compression or not. Solid compression results in smaller file sizes, but also reduces performance.
+	<li>Set any options on the new archive package that you wish to be set whenever the BCF is applied (such as default sub-packages or <q>Skip...</q> options).
+	<li>Select all the source archives in the package list, then right-click them and choose <a href="#modsConversionsCreate">Conversions->Create</a>. Select the archive that you just created, and name the BCF.
+	<li>Look over the result log to make sure it looks OK. If it looks wrong, try again, you may have gotten the sources/target wrong. If it looks right, you can find the new BCF in <code>[Game] Mods\Bash Installers\Bain Converters</code>. It is recommended that you copy/paste the result log into your readme for your BCF.
+</ol>
+<p>Some points of interest regarding BCFs:
+<ul>
+	<li>BCFs must end in either <code>-BCF.7z</code> or <code>-BCF-*.7z</code> (where the * is a wildcard matching any character string).
+	<li>The converted archive may use 7-zip (.7z) or Zip (.zip) compression.
+	<li>BCFs support an arbitrary number and level of archives embedded within an archive.
+	<li>BCFs store the configuration settings of the original converted archive used when creating the BCF, allowing authors to pre-select options (see instructions above).
+	<li>BCFs found to be duplicates will be moved to <code>[Game] Mods\Bash Installers\Bain Converters\--Duplicates</code>.
+	<li>BCFs use data CRCs to verify the integrity of source archives. These use the contents of an archive, but not the name or type of the archive, so a source archive may be renamed or recompressed without affecting its ability to be used by a BCF. Wrye Bash displays the data CRCs of packages on the General Info tab for this reason.
+</ul>
+
+
+<h3 id="bain-commands">Context Menu Commands</h3>
+<p>The tables below detail the full list of context menu commands available in the Mods tab.
+<table id="bainHeaderCommands">
+	<thead>
+		<tr><th colspan="3">Column Header Context Menu
+		<tr><th colspan="2">Command<th>Description
+	<tbody>
+		<tr><td rowspan="7">Sort By<td>Sort By Active<td>Active installers will be sorted to the top.
+		<tr><td>Projects First<td>If this is checked, then project packages will be sorted to the top of the list.
+		<tr><td>Package<td>Sort packages by package name.
+		<tr><td>Order<td>Sort packages by install order.
+		<tr><td>Modified<td>Sort packages by date modified.
+		<tr><td>Size<td>Sort packages by size.
+		<tr><td>Files<td>Sort packages by number of files they contain.
+		<tr><td rowspan="5">Columns<td>Package<td>Display the Package (name) column.
+		<tr><td>Order<td>Display the Order column.
+		<tr><td>Modified<td>Display the (date) Modified column.
+		<tr><td>Size<td>Display the Size column.
+		<tr><td>Files<td>Display the (number of) Files column.
+		<tr><td colspan="2">Open...<td>Opens the Installers directory in Windows Explorer.
+		<tr><td colspan="2">Refresh Data<td>Re-scans the Data directory and all project directories. This is done once per run of Wrye Bash, when the Installers tab is first opened. If you manually alter the directories after that, you should run this command to update BAIN to reflect the changes.
+		<tr><td colspan="2">Full Refresh<td>This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
+		<tr><td colspan="2">Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
+		<tr><td colspan="2">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
+		<tr><td colspan="2" id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
+		<tr><td colspan="2">Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
+		<tr><td colspan="2" id="bainUninstallAll">Uninstall All Packages<td>Uninstalls all the packages in the package list.
+		<tr><td colspan="2" id="bainCleanData">Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
+			<ul>	
+				<li>Vanilla game content.
+				<li>Official DLC content.
+				<li>Wrye Bash.
+				<li>Installed BAIN packages.
+			</ul>
+		The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
+		<tr><td colspan="2">Avoid At Startup<td>Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you should enable this.
+		<tr><td colspan="2" id="bainEnabled">Enabled<td>This enables/disables Bain itself. Preferred setting: Enabled (checked).
+		<tr><td colspan="2" id="bainAutoAnneal">Auto-Anneal<td>Toggles the auto-anneal process on/off. Preferred setting: enabled.
+		<tr><td colspan="2">Auto-Anneal/Install Wizards<td>Toggles whether or not to automatically install/anneal a package when finished with its wizard.
+		<tr><td colspan="2" id="bainAutoRefreshProjects">Auto-Refresh Projects<td>Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
+		<tr><td colspan="2">Auto-Refresh BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Enabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed. Preferred setting: disabled.
+		<tr><td colspan="2">Auto-Apply Embedded BCFs<td>
+		<tr><td colspan="2">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+		<tr><td colspan="2">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
+		<tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
+		<tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
+		<tr><td colspan="2">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
+		<tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td><i>Oblivion only.</i> If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed.
+		<tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
+		<tr><td colspan="2">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
+		<tr><td colspan="2">Skip Images<td>If checked, image files will be skipped.
+		<tr><td colspan="2">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
+		<tr><td colspan="2">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
+		<tr><td colspan="2">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
+		<tr><td colspan="2">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
+		<tr><td colspan="2">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+		<tr><td colspan="2">Auto-name String Translation Files<td><i>Skyrim only.</i> 
+</table>
+<table id="bainPackageCommands">
+	<thead>
+		<tr><th colspan="3">Package Context Menu
+		<tr><th colspan="2">Command<th>Description
+	<tbody>
+		<tr><td colspan="2">Open...<td>Opens the selected package(s) in the file system.
+		<tr><td colspan="2">Duplicate...<td>Makes a duplicate of the selected package(s).
+		<tr><td colspan="2">Delete<td>Deletes the selected package(s). Deleted packages are <b>not</b> sent to the Recycling Bin, they are permanently deleted.
+		<tr><td rowspan="5">Open at<td>Google...<td>Attempts to perform a Google search for the selected package's name.
+		<tr><td>TES Nexus...<td>Attempts to open the selected package's page on TES Nexus.  This command assumes that the trailing digits in a package's name is the package ID at the site.
+		<tr><td>Skyrim Nexus...<td>Attempts to open the selected package's page on Skyrim Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.
+		<tr><td>TES Alliance...<td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.
+		<tr><td>Planet Elderscrolls...<td>Attempts to open the selected package's page on Planet Elderscrolls. This command assumes that the trailing digits in a package's name is the package ID at the site.
+		<tr><td colspan="2">Hide...<td>Hides the package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
+		<tr><td colspan="2">Rename...<td>Renames the selected package or marker.
+		<tr><td colspan="2">Refresh<td>Refreshes all info for the selected package(s). Since BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie. you select another program's window, then switch back to Wrye Bash), this is only useful if a package has been changed and it has <a href="#bainDontRefresh">Don't Refresh</a> selected, or the <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled. Note that scanning a project for changes takes much longer than scanning an archive for changes.
+		<tr><td colspan="2">Move To...<td>Moves the selected package(s) to the specified position.
+		<tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
+		<tr><td colspan="2">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to the Skip XX options.
+		<tr><td colspan="2">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://tes.nexusmods.com/downloads/file.php?id=16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
+		<tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing Projects, this package won't get refreshed. The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.
+		<tr><td colspan="2">Wizard<td>Runs the Wizard for the package, if it has one.
+		<tr><td colspan="2">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
+		<tr><td colspan="2">View Wizard...<td>Opens the wizard.txt for viewing.
+		<tr><td colspan="2">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
+		<tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors.
+		<tr><td colspan="2">Install<td>Fully installs the package except for files that would be overriden by later packages.
+		<tr><td colspan="2">Install Last<td>Moves the package to the end of the order list and installs it.
+		<tr><td colspan="2">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
+		<tr><td colspan="2">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overriden will be installed as required.
+		<tr><td rowspan="2">Conversions<td>Create...<td>Archives only. Creates a new Bain Conversion File.
+		<tr><td>Apply->[BCF]<td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.
+		<tr><td colspan="2">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
+		<tr><td colspan="2" id="modsPackToArchive">Pack to Archive...<td>Projects only. Packs the project to an archive. It defaults to .7z, but also supports .zip.
+		<tr><td colspan="2">Package For Release...<td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
+		<tr><td colspan="2">Sync From Data<td>Projects only. Synchronize the project with files from the Data directory. This is essentially the reverse of "Install" for projects since it copies from the Data directory to the project rather than the other way around.
+		<tr><td colspan="2">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Useful for comparing conflicting resources.
+		<tr><td colspan="2" id="bainOmodInfo">Omod Info...<td>Projects only. Allows you to read/write omod configuration info.
+		<tr><td colspan="2">List Structure...<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Sub-Package Context Menu
+		<tr><th>Command<th>Description
+	<tbody>
+		<tr><td>Select All<td>Selects all the sub-packages in the list.
+		<tr><td>Deselect All<td>Deselects all the sub-packages in the list.
+		<tr><td>Toggle Selection<td>Deselects currently selected sub-packages, and selects currently deselected subpackages.
+		<tr><td>List Sub-packages<td>Generates a forum-formatted list of sub-packages in the package, highlighting checked packages with <code>***</code>.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Esp/m Filter Context Menu
+		<tr><th>Command<th>Description
+	<tbody>
+		<tr><td>Select All<td>Selects all the plugins in the Filter list.
+		<tr><td>Deselect All<td>Deselects all the plugins in the Filter list.
+		<tr><td>List Esp/ms<td>Generates a forum-formatted list of plugins in the Filter list, highlighting checked plugins with <code>***</code>.
+		<tr><td>Rename...<td>Rename the selected plugin. Renamed plugins are displayed in the Filter list with a <code>*</code> before their name and are displayed in the information tabs as <code>original name -> new name</code>. Renaming a plugin before installing it is preferable to renaming a BAIN-installed plugin through other means, as the former allows BAIN to keep track of it, whereas the latter does not.
+		<tr><td>Reset Name<td>Resets the selected plugin's name to its default name.
+		<tr><td>Reset All Names<td>Resets all renamed plugins to their default names.
+</table>
+
+
+<h2 id="mods">Mods Tab</h2>
+<h3 id="mods-exclusion">Exclusion Groups</h3>
+<p>Exclusion groups can be used to help flag plugins that are incompatible. Incompatible plugins can be placed into exclusion groups, and when more than one plugin in a group is present, the plugins will be highlighted in orange.
+<p>An exlusion group may be defined or added to by renaming a plugin, putting the exclusion group name first, then a comma, then the plugin's original name. Eg. <code>Group, My plugin.esp</code>. If plugins share the same exclusion group name, they will be members of the same exclusion group.
+<p><b>Note:</b> The usage of exclusion groups is not recommended. Renaming plugins will cause them to become unrecognised by features such as BAIN or utilities such as BOSS that expect plugins to have the names they are distributed with. Renaming plugins will also break any plugins that are dependent on them.
+
+<h3 id="mods-details">The Plugin Details Panel</h3>
+<figure>
+<img src="bash/images/Mods-Plugin-Details-Panel.png" alt="plugin details panel"/>
+<figcaption>The plugin details panel on the right hand side of the Mods tab.</figcaption>
+</figure>
+<p>The plugin details panel contains the following:
+<table>
+	<thead><tr><th>Item<th>Description
+	<tbody>
+		<tr><td>File Name<td>The filename of the selected plugin. Note that changing this does not change the filename in the Masters Lists of any dependent plugins.
+		<tr><td>Modification Time<td>For Oblivion, this affects the load order of the selected plugin. For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin to be redownloaded as Steam Workshop uses modification time to detect file versions.
+		<tr><td>Author<td>Who made the selected plugin.
+		<tr><td>Description<td>Commonly used for a short description of what the selected plugin does, plus the version number and any Bash Tags the author sets.
+		<tr><td>Masters List<td>The plugins (.esm or .esp) that the selected plugin depends on, and their indices (positions in load order). Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. Renaming can be done by left-clicking the plugin entry and editing in the column display, or right-clicking the plugin and selecting <q>Change To...</q> then selecting the replacement plugin. <b>Do not</b> use this to change a plugin's masters to unrelated plugins, as this will cause file corruption.
+		<tr><td>Bash Tags<td>This field lists any Bash Tags that are assigned to the selected plugin. Right-clicking will display a list of Bash Tags and allow you to add or remove tags by checking or unchecking them.
+</table>
+
+<h3 id="mods-csv">CSV Files</h3>
+<p>Wrye Bash uses CSV files for many of its plugin data related features. CSV files are a very widely supported type of spreadsheet file, and once exported may be edited in programs like Microsoft Excel, LibreOffice Calc or even in text editors such as Notepad or Notepad++.
+<p>CSV files are used by the Import/Export... commands as this allows much easier editing of record data in large batches or in systematic manners than in the Construction Set. The data may be exported, edited in the CSV, then imported again. The following notes apply to CSV files.
+<ul>
+	<li>Wrye Bash will ignore any lines in a CSV file for which the second column does not begin with <code>0x</code>, so such lines can be used for comments.
+	<li>For Sigil Stones and Spell Stats CSV exports, additional effects can be added to a stone/spell by appending effects to the end of a line, leaving one blank column between each effect. If any of the Script Effect columns are set to <q>None</q> then all the script effects for that effect will be ignored.
+	<li>For the values of object stats such as price or weight or damage, etc., formulae may be used to work out the numerical values, but the file should contain the resulting numbers, not the formulae used.
+	<li>The faction lists for actors do not need to be complete - only the actor/faction pairs added or changed need to be listed. A rank of -1 in a faction will remove an actor from that faction.
+	<li>Relation lists do not need to be complete for each faction - only the added/changed main/other pairs need to be listed.
+</ul>
+<p>CSV files can also be used when building the Bashed Patch, for a number of options. The Bashed Patch builder will automatically detect the presence of any CSV files in the <code>Data\Bash Patches</code> folder and have the correct filename ending. These filename endings are:
+<table>
+	<thead><tr><th>Import Type<th>Required Filename Ending
+	<tbody>
+		<tr><td>Replace Form IDs<td>Formids.csv
+		<tr><td>Import Factions<td>Factions.csv
+		<tr><td>Import Names<td>Names.csv
+		<tr><td>Import Relations<td>Relations.csv
+		<tr><td>Import Spell Stats<td>Spells.csv
+		<tr><td>Import Stats<td>Stats.csv
+</table>
+
+
+
+<h3 id="mods-commands">Context Menu Commands</h3>
+<p>The tables below detail the full list of context menu commands available in the Mods tab.
+<table>
+	<thead>
+		<tr><th colspan="3">Column Header Context Menu
+		<tr><th colspan="2">Command<th>Description
+	<tbody>
+		<tr><td rowspan="5">Load<td id="modsLoadAll">All<td>Activates all the plugins in the mod list.
+		<tr><td>None<td>Deactivates all the plugins in the mod list.
+		<tr><td>Save List...<td>Saves the current load order to a new load list.
+		<tr><td>Edit Lists...<td>Allows the deletion and renaming of load lists.
+		<tr><td>[Load List]<td>[Load List] is the name of a load list, which are listed below the separator in the Load submenu. Clicking a load list will apply it, deactivating any plugins that are not listed as active in it.
+		<tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
+		<tr><td colspan="2">Oblivion.esm<td><i>Oblivion only.</i> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
+		<tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
+		<tr><td rowspan="4">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidently delete your current one or wish to have more than one.
+		<tr><td>New Mod...<td>Creates an empty plugin.
+		<tr><td>Open...<td>Opens the Data folder in Windows Explorer.
+		<tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden plugins to unhide. 
+		<tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
+		<tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
+		<tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
+		<tr><td colspan="2">Lock Load Order<td>This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye Bash is focussed (ie. on top of all other program windows) and reverses those changes.
+		<tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
+		<tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
+		<tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
+		<tr><td colspan="2">BOSS Disable Lock Load Order<td>If checked, this temporarily disables Lock Load Order when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order. It has no effect when BOSS is run from outside Wrye Bash.
+		<tr><td colspan="2">Check mods against BOSS's dirty mod list<td>BOSS's masterlist contains information on dirty plugins that can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if BOSS is installed.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="3">Plugin Context Menu
+		<tr><th colspan="2">Command<th>Description
+	<tbody>
+		<tr><td rowspan="11">File<td id="modsCreateDummyMasters">Create Dummy Masters...<td>Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.
+		<tr><td id="modsBackup">Backup<td>Creates a backup of the selected plugin in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up plugin has <code>f</code> appended to its file extension, giving <code>.espf</code> or <code>.esmf</code>.
+		<tr><td id="modsDuplicate">Duplicate...<td>Creates a duplicate of the selected plugin in the Data folder.
+		<tr><td id="modsSnapshot">Snapshot...<td>Creates a snapshot copy of the selected plugin in <code>Bash\Snapshots</code>. Snapshot filenames are appended with <code>-n</code> where n is a number between 01 and 99. Eg. the first snapshot of <code>Plugin.esp</code> is <code>Plugin-01.esp</code>. The number is incremented each time the plugin has a snapshot taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be appended to the version number in the same manner.
+		<tr><td>Delete<td><b>Permanently</b> deletes the selected plugin, and any backups of it, but not snapshots.
+		<tr><td>Hide<td>Moves the selected plugin to the <code>Bash\Hidden</code> subdirectory. If the plugin's group is defined and there is a Bash\Hidden subdirectory of the same name, the plugin will be placed there.
+		<tr><td>Redate...<td>Change the modification time of the selected plugin. If more than one plugin is selected, then all the plugins will have their modification times altered, with the first in the list being set to the specified time and the rest at one minute intervals from that time.
+		<tr><td>Sort<td>Set the load order of the selected plugins, sorting them alphabetically.
+		<tr><td>Revert To Backup<td>Reverts the selected plugin to the last backup made of it.
+		<tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
+		<tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
+		<tr><td colspan="2">Group<td>Set a group for the selected plugin(s). This group is not an <a href="#mods-exclusion">Exlusion Group</a>, but is instead a leftover from a feature known as <abbr title="Bash Auto Load Ordering">BALO</abbr> that has been disabled, as it was superceded by BOSS. Some references to these groups still remain, but they provide no functionality other than to place hidden plugins in group folders provided those folders already exist.
+		<tr><td colspan="2">Rating<td class="missing">This item has not yet been documented.
+		<tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
+		<tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
+		<tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
+		<tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
+		<tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official BOSS thread.
+		<tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
+		<tr><td colspan="2" id="modsDontGhost">Don't Ghost<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled.
+		<tr><td colspan="2">Ghost<td>Displayed if a single plugin is selected. Ghost this plugin when it is inactive even if Auto-Ghost is disabled.
+		<tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
+		<tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="modsDontGhost">Don't Ghost</a> for the selected plugins.
+		<tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
+		<tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...<td>Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why mods are unmergeable.
+		<tr><td colspan="2">Mark Mergeable (CBash)...<td><i>Oblivion only.</i> Does the same thing as <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge more plugins, so the results between the two Mark Mergeable commands will differ.
+		<tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
+		<tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><i>Oblivion only.</i> Rebuild the selected Bashed Patch using the CBash patcher.
+		<tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
+		<tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
+		<tr><td rowspan="14">Export<td>Cell Block Info...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+		<tr><td id="modsExportEditorIDs">Editor Ids...<td><b>For advanced mod authors only.</b> Exports the Editor IDs of the records in the selected plugin to a CSV file.
+		<tr><td>Groups...<td>Exports the selected plugin's groups to a CSV file.
+		<tr><td id="modsExportFactions">Factions...<td><b>For advanced mod authors only.</b> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
+		<tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
+		<tr><td id="modsExportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
+		<tr><td>Map Markers...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+		<tr><td>Prices...<td>Exports the prices of objects in the selected plugin to a CSV file.
+		<tr><td id="modsExportRelations">Relations...<td><b>For advanced mod authors only.</b> Exports the faction relationships in the selected plugin to a CSV file. This does not export race relationships. The CSV file can also be used in the Bashed Patch's Import Relations option.
+		<tr><td id="modsExportIngredients">Ingredients...<td class="missing">This item has not yet been documented.
+		<tr><td>Scripts...<td>Exports the scripts in the selected plugin to a series of text files. The scripts may then be edited in the text files and re-imported. <b>Warning:</b> Do not change the first three lines of each text file exported when editing unless you know what you're doing.
+		<tr><td id="modsExportSigilStones">Sigil Stones...<td>Exports the stats of sigil stones from the selected plugin to a CSV file.
+		<tr><td id="modsExportSpellStats">Spells...<td>Exports spell stats in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option. There are two modes of export, Basic and Detailed. The spell stats exported in Basic mode are as follows.
+			<ul>
+				<li>Form ID
+				<li>Editor ID
+				<li>Name
+				<li>Cost
+				<li>Level type
+				<li>Spell type
+			</ul>
+			In Detailed mode, all Basic stats are exported as well as a variety of flags and all the spell effects.
+		<tr><td id="modsExportStats">Stats...<td>Exports stats for the following record types in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option.
+			<ul>
+				<li>Ammunition
+				<li>Apparatus
+				<li>Armor
+				<li>Book
+				<li>Clothing
+				<li>Ingredient
+				<li>Key
+				<li>Light
+				<li>Misc. Item
+				<li>Sigil Stone
+				<li>Soulgem
+				<li>Weapon
+			</ul>
+		<tr><td rowspan="15">Import<td>Editor Ids...<td><b>For advanced mod authors only.</b> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes. <b>Note:</b> You may have to recompile any altered scripts in the Construction Set.
+		<p>If you wish to update script references <i>after</i> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
+		<tr><td>Groups...<td>Imports groups for the selected plugin from a CSV file as created by the Export Groups command.
+		<tr><td id="modsImportFactions">Factions...<td><b>For advanced mod authors only.</b> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
+		<tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
+		<tr><td id="modsImportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
+			<ul>
+				<li>The first column is the Form ID. <b>This must not have been edited.</b>
+				<li>The second column is the Editor ID, which is ignored on import.
+				<li>The next three columns are the levelling info.
+				<li>The last four columns are the original NPC levels from the game's master file. If the NPCs are mod-added, these will be blank. These columns are ignored on import.
+			</ul>
+		<tr><td>Map Markers...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+		<tr><td>Prices...<td>Imports the prices of objects from a CSV file into the selected plugin.
+		<tr><td id="modsImportRelations">Relations...<td><b>For advanced mod authors only.</b> Imports faction relationships from a CSV file into the selected plugin.
+		<tr><td id="modsImportIngredients">Ingredients...<td class="missing">This item has not yet been documented.
+		<tr><td>Scripts...<td>Imports scripts from a series of text files into the selected plugin. <b>Note:</b> You must recompile any altered or new scripts in the Construction Set.
+		<tr><td id="modsImportSigilStones">Sigil Stones...<td>Imports the stats of sigil stones from a CSV file into the selected plugin.
+		<tr><td id="modsImportSpellStats">Spells...<td>Imports spell stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their spell stats change, no records will be added. The spell stats supported are those exported by <a href="#modsExportSpellStats">Export Spell Stats...</a>, and importing uses the same Basic and Detailed mode distinctions.
+		<tr><td id="modsImportStats">Stats...<td>Imports stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their stats change, no records will be added. The object stats supported are those exported by <a href="#modsExportStats">Export Stats...</a>.
+		<tr><td id="modsImportFace">Face...<td>This command relates to <a href="#saves-face">Face Importing</a>.
+		<tr><td id="modsImportFormIDs">FormIDs...<td><b>For advanced mod authors only.</b> It is useful if you want to replace the records in one master with equivalent records in another master. This command replaces the Form IDs in a plugin according to a CSV file that acts as a Form ID mapper. An example of such a file is <code>Data\Bash Patches\TI to Cobl_Formids.csv</code>. The instructions below detail how to create a Form ID mapper.
+			<ol>
+				<li>Use <a href="modsExportEditorIDs">Export Editor Ids</a> on both the plugin containing the Form IDs to be replaced and the plugin containing the replacement Form IDs. 
+				<li>Combine the two CSV files produced into a CSV file with the following columns:
+				<ul>
+					<li>Record type. This is ignored by Wrye Bash, but can be useful for reference.
+					<li>Old Mod. This supplies the first two digits in the old Form ID.
+					<li>Old Object. This supplies the rest of the old Form ID.
+					<li>Old Eid. The Editor ID for the old object.
+					<li>New Eid. The Editor ID for the new object.
+					<li>New Mod This supplies the first two digits in the new Form ID.
+					<li>New Object. This supplies the rest of the new Form ID.
+				</ul>
+				<p>Note that if either of the new or old sides of a row are empty, the row will be skipped. Also, the new object does not have to be of the same type as the old object, but they should be compatible.
+				<li>Save the new CSV file so that its filename ends with <q>Formids.csv</q>.
+			</ol>
+			<p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using TES4Edit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.
+			<p><b>Note:</b> You can also use TES4Edit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. TES4Edit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
+		<tr><td rowspan="6">Mod Cleaning<td>Don't check against BOSS's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
+		<tr><td id="modsScanForDirtyEdits">Scan for Dirty Edits<td><i>Oblivion only.</i> Scans the selected plugin for Identical To Master records and deleted references, outputting counts of the dirty edits found. The dirty edit counts may differ from the output provided by TES4Edit as that includes other "junk" records in the <abbr title="Identical To Master record">ITM</abbr> count. Wrye Bash does not count these junk records as they are non-harmful.
+		<tr><td>Scan for <abbr title="Undeleted and Disabled Reference">UDR</abbr><td><i>Skyrim only.</i> Behaves as the above <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a>, but only for deleted references.
+		<tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
+		<tr><td id="modsNvidiaFogFix">Nvidia Fog Fix<td>Systems with Nvidia graphics cards can suffer a black screen bug when interior cell fog distances are set to 0. This command scans the selected plugin(s) and sets any zero-valued fog distances to 0.001. <b>It is advised that mod authors use this on their mods before release.</b>
+		<tr><td id="modsUndeleteRefs">Undelete Refs<td><b>This is an experimental feature for advanced mod authors. If you're trying to undelete references, you should probably use TES4Edit instead.</b> Deleted references can cause crashes. This command undeletes references and disables them instead. However, the undeleted reference does not contain the missing data caused by deletion. TES4Edit can add this data back in.
+		<tr><td colspan="2">Add Master...<td>Add a master to the list of masters for the selected plugin. <b>Warning:</b> For advanced mod authors only. You should only use this if you know exactly what you're doing.
+		<tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
+		<tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
+		<tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file extensions, but by a bit in the file. This command toggles that bit so that .esp files behave as .esm files and vice versa. It is useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise. Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. <b>Warning:</b> Make sure to toggle any plugins back before playing the game, otherwise savegames will get confused, possibly causing bugs and corruption.
+		<tr><td colspan="2" id="modsEsmifyMasters">Esmify/Espify Masters<td>This works as <a href="#modsEsmifySelf">Esmify/Espify Self</a> does, but toggles a plugin's masters rather than the plugin itself.
+		<tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set. <b>Warning:</b> It is possible that this may cause data loss.
+</table>
+
+<h2 id="patch">Advanced Bashed Patch</h2>
+<p>You can have multiple Bashed Patches, though one is generally enough per <a href="#saves-profiles">save profile</a> or character. The only requirement for Wrye Bash recognising a plugin as a Bashed Patch is that its <q>Author</q> field is set to <q>BASHED PATCH</q>, so you can name a Bashed Patch whatever you want.
+<h3 id="patch-view">Viewing &amp; Editing The Bashed Patch</h3>
+<p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="http://tes.nexusmods.com/downloads/file.php?id=11536">TES4Edit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Esmify Masters</a> command on it. Be sure to use <q>Espify Masters</q> before attempting to play the game.
+
+<h3 id="patch-tags">Bash Tags</h3>
+<p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from three sources:
+<ul>
+	<li>BOSS's <code>masterlist.txt</code> and <code>userlist.txt</code> files. If BOSS is installed, then Wrye Bash will apply its Bash Tag suggestions. You do not need to use BOSS to benefit from this, it just needs to be installed. REPLACE lines in the userlist will replace Bash Tags suggested in the masterlist, but will not affect Bash Tags specified in plugin description fields.
+	<li>The <code>Bash Patches\Leveled Lists.csv</code> file. This file contains a small list that is useful if BOSS is not installed.
+	<li>The <code>Bash Patches\taglist.txt</code> file. This is a stripped-down version of the BOSS masterlist as it was when the version of Wrye Bash installed was released.
+</ul>
+<p>Bash Tags may also be set manually, by right-clicking a plugin's Bash Tags field in the Mods Tab sidebar and checking or unchecking tags in the list displayed. If you wish to revert to automatic tagging, choose <q>Automatic</q> in the right-click list. If you are a mod author, you may wish to use <q>Copy to Description</q> for your mod's plugins before releasing it to ensure that users have the tags applied automatically.
+<p><b>Note:</b> A Bash Tag should only be applied when it is <b>important</b> that the plugin's change to whatever the Tag relates to is preserved. If a change your plugin makes is not important to the functioning of your mod, do not add a Bash Tag for it. Doing otherwise negates the purpose of the Bash Tag system.
+<table>
+	<thead>
+		<tr><th colspan="3">Bash Tags Available For All Games
+		<tr><th>Tag<td>Used When The Mod<th>Specific Record Types/Changes Supported
+	<tbody>
+		
+		<tr><td>Deactivate<td>Should be deactivated.<td><i>N/A</i>
+		<tr><td>Delev<td>Deletes entries from Leveled Lists.<td>Removal of entries from the leveled list entries of Leveled Creature (LVLC) (<i>Oblivion only</i>), Leveled Actor (LVLI) (<i>Skyrim only</i>), Leveled Item (LVLI) or Leveled Spell (LVSP) records.
+		<tr><td>Filter<td>Does not require all its masters to be installed to function. See the <a href="patch-filter">Merge Filtering</a> section for more information.<td><i>N/A</i>
+		<tr><td>NoMerge<td>Should not be merged even though it is technically mergeable.<td><i>N/A</i>
+		<tr><td>Relev<td>Relevels items in Leveled Lists.<td>Re-levelling of entries from the leveled list entries of Leveled Creature (LVLC) (<i>Oblivion only</i>), Leveled Actor (LVLI) (<i>Skyrim only</i>), Leveled Item (LVLI) or Leveled Spell (LVSP) records.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="3">Bash Tags Available For Oblivion Only
+		<tr><th>Tag<td>Used When The Mod<th>Specific Record Types/Changes Supported
+	<tbody>
+		<tr><td>Actors.ACBS<td>Modifies creature or NPC ACBS configuration.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
+			<ul>
+				<li>Base spell points
+				<li>Fatigue
+				<li>Barter gold
+				<li>Level
+				<li>Calc min
+				<li>Calc max
+				<li>IsBiped
+				<li>Sex
+				<li>IsEssential
+				<li>IsWeaponAndShield
+				<li>IsRespawn
+				<li>IsSwims
+				<li>IsFlies
+				<li>IsWalks
+				<li>IsAutoCalc
+				<li>IsPCLevelOffset
+				<li>IsNoLowLevel
+				<li>IsNoBloodSpray
+				<li>IsNoBloodDecal
+				<li>IsNoHead
+				<li>IsNoRightArm
+				<li>IsNoLeftArm
+				<li>IsNoCombatInWater
+				<li>IsNoShadow
+				<li>IsNoRumors
+				<li>IsSummonable
+				<li>IsNoPersuasion
+				<li>IsCanCorpseCheck
+			</ul>
+		<tr><td>Actors.AIData<td>Modifies creature or NPC AI data.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
+			<ul>
+				<li>Aggression
+				<li>Confidence
+				<li>Energy level
+				<li>Responsibility
+				<li>Services
+				<li>Training skill
+				<li>Training level
+			</ul>
+		<tr><td>Actors.AIPackages<td>Modifies creature or NPC AI packages list.<td>Addition or removal of AI Packages in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.AIPackagesForceAdd<td>Adds to creature or NPC AI package list. This tag forces the addition of packages even if they are removed by later-loading plugins tagged with Actors.AIPackages.<td>Addition of AI Packages in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.Animations<td>Modifies creature or NPC special animations lists.<td>The Animations (KFFZ) subrecord in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.CombatStyle<td>Modifies creature or NPC assigned combat styles.<td>The Combat Style (ZNAM) subrecord in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.DeathItem<td>Modifies creature or NPC death items.<td>The Death Items (INAM) subrecord in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.Skeleton<td>Modifies creature or NPC skeletons.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
+			<ul>
+				<li>Model path (MODL)
+				<li>Bound radius (MODB)
+				<li>MODT
+			</ul>
+		<tr><td>Actors.Spells<td>Modifies creature or NPC spell lists.<td>Addition or removal of spells in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.SpellsForceAdd<td>Modifies creature or NPC spell lists. This tag forces the addition of spells even if they are removed by other plugins tagged with Actors.Spells.<td>Addition of spells in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Actors.Stats<td>Modifies creature or NPC stats.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
+			<ul>
+				<li>Armorer
+				<li>Athletics
+				<li>Blade
+				<li>Block
+				<li>Blunt
+				<li>Hand to Hand
+				<li>Heavy Armor
+				<li>Alchemy
+				<li>Alteration
+				<li>Conjuration
+				<li>Destruction
+				<li>Illusion
+				<li>Mysticism
+				<li>Restoration
+				<li>Acrobatics
+				<li>Light Armor
+				<li>Marksman
+				<li>Mercantile
+				<li>Security
+				<li>Sneak
+				<li>Speechcraft
+				<li>Health
+				<li>Strength
+				<li>Intelligence
+				<li>Willpower
+				<li>Agility
+				<li>Speed
+				<li>Endurance
+				<li>Personality
+				<li>Luck
+			</ul>
+		<tr><td>Body-F<td>Modifies female body mesh/texture definitions.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Female tail model path
+				<li>Female tail model bound radius
+				<li>Female tail MODT
+				<li>Female upper body texture path
+				<li>Female lower body texture path
+				<li>Female hand texture path
+				<li>Female foot texture path
+				<li>Female tail texture path
+			</ul>
+		<tr><td>Body-M<td>Modifies male body mesh/texture definitions.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Male tail model path
+				<li>Male tail model bound radius
+				<li>Male tail MODT
+				<li>Male upper body texture path
+				<li>Male lower body texture path
+				<li>Male hand texture path
+				<li>Male foot texture path
+				<li>Male tail texture path
+			</ul>
+		<tr><td>Body-Size-F<td>Modifies female body weight/height definitions.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Female height
+				<li>Female weight
+			</ul>
+		<tr><td>Body-Size-M<td>Modifies male body weight/height definitions.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Male height
+				<li>Male weight
+			</ul>
+		<tr><td>C.Climate<td>Modifies cell climates.<td>The following Cell (CELL) subrecords:
+			<ul>
+				<li>Climate (XCCM)
+				<li>IsBehaveLikeExterior flag
+			</ul>
+		<tr><td>C.Light<td>Modifies cell lighting or fog.<td>The following Cell (CELL) subrecords:
+			<ul>
+				<li>Lighting Ambient Color
+				<li>Lighting Directional Color
+				<li>Lighting Fog Color
+			</ul>
+		<tr><td>C.Music<td>Modifies cell music type.<td>The Music (XCMT) subrecord in Cell (CELL) records.
+		<tr><td>C.Name<td>Modifies cell names.<td>
+		The Name (FULL) subrecord in Cell (CELL) records.
+		<tr><td>C.Owner<td>Modifies cell ownership.<td>The following Cell (CELL) subrecords:
+			<ul>
+				<li>Owner (XOWN)
+				<li>Rank (XRNK)
+				<li>Gobal variable (XGLB)
+				<li>IsPublicPlace flag
+			</ul>
+		<tr><td>C.RecordFlags<td>Modifies the off-limits or dangerous flags.<td>Any Cell (CELL) record flags not covered by the other Cell-related Bash Tags.
+		<tr><td>C.Water<td>Modifies cell water type or level.<td>The following Cell (CELL) subrecords:
+			<ul>
+				<li>Water (XCWT)
+				<li>Water height (XCLW)
+				<li>IsHasWater flag
+			</ul>
+		<tr><td>Creatures.Blood<td>Modifies the creature blood subrecords.<td>The following Creature (CREA) subrecords:
+			<ul>
+				<li>Blood spray (NAM0)
+				<li>Blood decal (NAM1)
+			</ul>
+		<tr><td>Eyes<td>Adds eyes to races.<td>The Eyes (ENAM) subrecord of Race (RACE) records.
+		<tr><td>Factions<td>Changes creature or NPC factions.<td>Addition or removal of a faction, or change of faction rank in NPC (NPC_) or Creature (CREA) records.
+		<tr><td>Graphics<td>Is a graphics replacer.<td>The following subrecords:
+			<ul>
+				<li>Birthsign: Icon path (ICON)
+				<li>Load Screen: Icon path (ICON)
+				<li>Class: Icon path (ICON)
+				<li>Landscape Texture: Icon path (ICON)
+				<li>Region: Icon path (ICON)
+				<li>Activator: Model path (MODL), bound radius (MODB) or MODT.
+				<li>Door: Model path (MODL), bound radius (MODB) or MODT.
+				<li>Flora: Model path (MODL), bound radius (MODB) or MODT.
+				<li>Furniture: Model path (MODL), bound radius (MODB) or MODT.
+				<li>Grass: Model path (MODL), bound radius (MODB) or MODT.
+				<li>Static: Model path (MODL), bound radius (MODB) or MODT.
+				<li>Potion: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Ammunition: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Alchemical Apparatus: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Book: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Ingredient: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Key: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Light Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Misc. Item: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Sigil Stone: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Soul Gem: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Weapon: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Tree: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Armor: Male biped model path (MODL), male biped model bound radius (MODB), male world model path (MOD2), male world model bound radius (MO2B), male icon path (ICON), female biped model path (MOD3), female biped model bound radius (MO3B), female world model path (MOD4), female world model bound radius (MO4B), female icon path (ICO2), flags or MODT.
+				<li>Clothing: Male biped model path (MODL), male biped model bound radius (MODB), male world model path (MOD2), male world model bound radius (MO2B), male icon path (ICON), female biped model path (MOD3), female biped model bound radius (MO3B), female world model path (MOD4), female world model bound radius (MO4B), female icon path (ICO2), flags or MODT.
+				<li>Creature: Models (NIFZ) or NIFT.
+				<li>Magic Effect: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
+				<li>Effect Shader: Almost anything.
+			</ul>
+		<tr><td>Hair<td>Adds hairs to races.<td>The Hairs (HNAM) subrecord of Race (RACE) records.
+		<tr><td>IIM<td>Is to be used in Item Interchange Mode. See the <a href="patch-iim">Item Interchange Mode</a> section for more information.<td><i>N/A</i>
+		<tr><td>Invent<td>Changes inventories.<td>Addition, removal or change in count/number of an item in NPC (NPC_), Creature (CREA) or Container (CONT) records.
+		<tr><td>InventOnly<td><i>Deprecated. Use Invent in conjunction with IIM instead.</i><td><i>N/A</i>
+		<tr><td>Merge<td><i>Obsolete. This tag is ignored.</i><td><i>N/A</i>
+		<tr><td>MustBeActiveIfImported<td>Must be active to function correctly even if it is imported into the Bashed Patch.<td><i>N/A</i>
+		<tr><td>Names<td>Changes the names of things.<td>The Name (FULL) subrecord in the following record types:
+			<ul>
+				<li>Class
+				<li>Faction
+				<li>Hair
+				<li>Eyes
+				<li>Race
+				<li>Magic Effect
+				<li>Enchantment
+				<li>Spell
+				<li>Birthsign
+				<li>Activator
+				<li>Alchemical Apparatus
+				<li>Armor
+				<li>Book
+				<li>Clothing
+				<li>Container
+				<li>Door
+				<li>Ingredient
+				<li>Light
+				<li>Misc. Item
+				<li>Flora
+				<li>Furniture
+				<li>Weapon
+				<li>Ammunition
+				<li>NPC
+				<li>Creature
+				<li>Soul Gem
+				<li>Key
+				<li>Potion
+				<li>Sigil Stone
+				<li>World
+				<li>Cell
+				<li>Dialogue
+				<li>Quest
+			</ul>
+		<tr><td>NpcFaces<td>Modifies NPC faces.<td>The following NPC (NPC_) subrecords:
+			<ul>
+				<li>FaceGen Geometry-Symmetric (FGGS)
+				<li>FaceGen Geometry-Asymmetric (FGGA)
+				<li>FaceGen Texture-Symmetry (FGTS)
+				<li>Eyes (ENAM)
+				<li>Hair (HNAM)
+				<li>Hair length (LNAM)
+				<li>Hair colour (HCLR)
+				<li>FNAM
+			</ul>
+		<tr><td>NpcFacesForceFullImport<td>Modifies NPC faces, and you wish to import the unmodified subrecords as well as the modified subrecords.<td><i>See NpcFaces for the list of supported subrecords.</i>
+		<tr><td>NPC.Class<td>Changes the classes of NPCs.<td>The Class (CNAM) subrecord of NPC (NPC_) records.
+		<tr><td>Npc.EyesOnly<td>Modifies NPC eyes.<td>The Eyes (ENAM) subrecord of NPC (NPC_) records.
+		<tr><td>Npc.HairOnly<td>Modifies NPC hair.<td>The Hair (HNAM) subrecord of NPC (NPC_) records.
+		<tr><td>NPC.Race<td>Modifies NPC races.<td>The Race (RNAM) subrecord of NPC (NPC_) records.
+		<tr><td>Relations<td>Changes faction relationships.<td>The relations of Faction (FACT) records.
+		<tr><td>Roads<td>Modifies road records.<td>The Road (ROAD) subrecord of Worldspace (WRLD) records.
+		<tr><td>R.AddSpells<td>Adds spells to racial spell list(s). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions to the spell list of Race (RACE) records.
+		<tr><td>R.Attributes-F<td>Modifies racial attributes for females.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Female strength
+				<li>Female intelligence
+				<li>Female willpower
+				<li>Female agility
+				<li>Female speed
+				<li>Female endurance
+				<li>Female personality
+				<li>Female luck
+			</ul>
+		<tr><td>R.Attributes-M<td>Modifies racial attributes for males.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Male strength
+				<li>Male intelligence
+				<li>Male willpower
+				<li>Male agility
+				<li>Male speed
+				<li>Male endurance
+				<li>Male personality
+				<li>Male luck
+			</ul>
+		<tr><td>R.ChangeSpells<td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions or removals to the spell list of Race (RACE) records.
+		<tr><td>R.Description<td>Modifies race descriptions.<td>The Description (DESC) subrecord of Race (RACE) records.
+		<tr><td>R.Ears<td>Modifies race ears.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Ear (Male) model path
+				<li>Ear (Male) model bound radius
+				<li>Ear (Male) MODT
+				<li>Ear (Male) icon path
+				<li>Ear (Female) model path
+				<li>Ear (Female) model bound radius
+				<li>Ear (Female) MODT
+				<li>Ear (Female) icon path
+			</ul>
+		<tr><td>R.Head<td>Modifies race heads.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Head model path
+				<li>Head model bound radius
+				<li>Head icon path
+				<li>FaceGen Geometry-Symmetric (FGGS)
+				<li>FaceGen Geometry-Asymmetric (FGGA)
+				<li>FaceGen Texture-Symmetry (FGTS)
+			</ul>
+		<tr><td>R.Mouth<td>Modifies race mouths.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Mouth model path
+				<li>Mouth model bound radius
+				<li>Mouth MODT
+				<li>Mouth icon path
+				<li>Tongue model path
+				<li>Tongue model bound radius
+				<li>Tongue MODT
+				<li>Tongue icon path
+			</ul>
+		<tr><td>R.Relations<td>Modifies race relationships.<td>The faction list of Race (RACE) records.
+		<tr><td>R.Skills<td>Modifies race skill bonuses.<td>The skill boosts of Race (RACE) records.
+		<tr><td>R.Teeth<td>Modifies race upper or lower teeth.<td>The following Race (RACE) subrecords:
+			<ul>
+				<li>Teeth (Lower) model path
+				<li>Teeth (Lower) model bound radius
+				<li>Teeth (Lower) MODT
+				<li>Teeth (Lower) icon path
+				<li>Teeth (Upper) model path
+				<li>Teeth (Upper) model bound radius
+				<li>Teeth (Upper) MODT
+				<li>Teeth (Upper) icon path
+			</ul>
+		<tr><td>ScriptContents<td><i>Should not be used. Can cause serious issues.</i><td><i>N/A</i>
+		<tr><td>Scripts<td>Modifies item, NPC or object scripts.<td>The Script (SCRI) subrecord in the following record types:
+			<ul>
+				<li>Activator
+				<li>Potion
+				<li>Alchemical Apparatus
+				<li>Armor
+				<li>Bool
+				<li>Clothing
+				<li>Container
+				<li>Creature
+				<li>Door
+				<li>Flora
+				<li>Furniture
+				<li>Ingredient
+				<li>Key
+				<li>Light
+				<li>Leveled Creature
+				<li>Misc
+				<li>NPC
+				<li>Quest
+				<li>Sigil Stone
+				<li>Soul Gem
+				<li>Weapon
+			</ul>
+		<tr><td>Sound<td>Replaces sounds.<td>The following subrecords:
+			<ul>
+				<li>Activator: sound (SNAM)
+				<li>Container: open sound (SNAM), close sound (QNAM).
+				<li>Creature: foot weight (WNAM), inherits sounds from (CSCR), other sounds.
+				<li>Door: open sound (SNAM), close sound (ANAM), loop sound (BNAM).
+				<li>Light: sound (SNAM)
+				<li>Magic Effect: casting/bolt/hit/area sounds.
+				<li>Weather: sounds
+			</ul>
+		<tr><td>SpellStats<td>Modifies spell stats.<td>The following Spell (SPEL) subrecords:
+			<ul>
+				<li>Name (FULL)
+				<li>Cost
+				<li>Level type
+				<li>Spell type
+			</ul>
+		<tr><td>Stats<td>Modifies item stats.<td>The following subrecords:
+			<ul>
+				<li>Potion: Weight, value.
+				<li>Ammunition: Weight, value, damage, speed, enchantment points (ANAM).
+				<li>Alchemical Apparatus: Weight, value, quality.
+				<li>Armor: Weight, value, health, strength
+				<li>Book: Weight, value, enchantment points (ANAM).
+				<li>Clothing: Weight, value, enchantment points (ANAM).
+				<li>Ingredient: Weight, value.
+				<li>Key: Weight, value.
+				<li>Light: Weight, value, duration.
+				<li>Misc. Item: Weight, value.
+				<li>Sigil Stone: Weight, value, uses.
+				<li>Weapon: Weight, value, health, damage, speed, reach, enchantment points (ANAM).
+			</ul>
+		<tr><td>Voice-F<td>Modifies female voice definitions.<td>The male voice of Race (RACE) records.
+		<tr><td>Voice-M<td>Modifies male voice definitions.<td>The female voice of Race (RACE) records.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="3">Bash Tags Available For Skyrim Only
+		<tr><th>Tag<td>Used When The Mod<th>Specific Record Types/Changes Supported
+	<tbody>
+		<tr><td><i>N/A</i><td><i>N/A</i><td><i>N/A</i>
+</table>
+
+
+<h3 id="#patch-filter">Merge Filtering</h3>
+<p>Merge filtering is an advanced option that allows records in a merged mod to be selectively filtered according to the current load order. For example, a patch mod could be created to rebalance weapons from several different weapon-adding mods. This feature would allow the patch to be used even if you didn't use all the mods, and the Bashed Patch would just apply the bits for the mods you do use. This saves the need for a separate patch plugin for each mod.
+<p>Merge filtering has requisite conditions that must be fulfilled for a plugin to take advantage of it, and some limitations. These conditions and limitations are:
+<ul>
+	<li>The plugin must be mergeable and tagged with <code>Filter</code>.
+	<li>The plugin must not be active at the time the patch is built. Note that if the user doesn't have all the plugin's masters installed, it will have to remain deactivated at all times.
+	<li>Filtering is done according to the currently active plugins: it is therefore very important that all the desired plugins are active when the Bashed Patch is built.
+	<li>Filtering is mostly limited to the top level, ie. if the plugin a record is from is missing, the record will be skipped. However, if a record references another record, and the latter's plugin is missing, the former will not be skipped, and the Bashed Patch will end up dependent on the latter's plugin being installed.
+	<li>There are a few exceptions to the above limitation: entries in leveled lists will be filtered, as will spells, factions and items referenced in Creature and NPC records.
+</ul>
+
+
+<h3 id="#patch-iim">Item Interchange Mode</h3>
+<p>Item Interchange Mode is a 'hack' (a horribly inelegant and inconsistent implementation of a feature that nonetheless works) to support Vacuity's Item Interchange mod.
+<p>Activation of the mode for a plugin relies on the following conditions:
+<ul>
+	<li>The plugin is tagged with <code>IIM</code>.
+	<li>The plugin is being merged into the Bashed Patch.
+	<li>The plugin is tagged with <code>Filter</code>.
+</ul>
+<p>Item Interchange Mode has the following effects:
+<ul>
+	<li>Prevents the records in the plugin from being merged into the Bashed Patch, apart from leveled list records, which are merged in.
+	<li>Prevents all the patch components except from the Leveled Lists and Import Inventory from even looking at the plugin.
+	<li>Causes Import Inventory to ignore all changes in the plugin except inventory changes.
+</ul>
+
+
+<h3 id="patch-tweaks">Tweak Options In Detail</h3>
+<p>Each <q>Tweak...</q> section has a table below that details the options found within it.
+<table>
+	<thead>
+		<tr><th colspan="2">Race Tweaks
+		<tr><th>Tweak<th>Description
+	<tbody>
+		<tr><td>Bigger Nords and Orcs<td>Adjusts the Orc and Nord race records (including mod added races named Orc/Nord) to be taller/heavier - to be more lore friendly. Three choices available - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.
+		<tr><td>Merge Eyes From Similar Races<td>Merges eye lists from similar races ie RBP Khajiit eyes to Elsweyr Khajiits etc.
+		<tr><td>Merge Hairs From Similar Races<td>Merges hair lists from similar races ie RBP Khajiit hair to Elsweyr Khajiits etc.
+		<tr><td>Playable Eyes<td>Sets all eyes to be playable.
+		<tr><td>Playable Hairs<td>Sets all hairs to be playable.
+		<tr><td>Races Have All Eyes<td>Gives all races all eyes - although Googly Eye scanning/removal takes place after this so the final patch will not have all eyes for all races.
+		<tr><td>Races Have All Hairs<td>Gives all races all hairs.
+		<tr><td>Sexless Hairs<td>Sets all hairs to be useable by both male and female characters.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Tweak Actors
+		<tr><th>Tweak<th>Description
+	<tbody>
+		<tr><td>As Intended: Boars<td>Adds the Bethesda Boar Resistances spells to all boars (found by the UOP team, based off of a mod made by Tejon).
+		<tr><td>As Intended: Imps<td>Adds the Bethesda Imp Resistances spells to imps (found by the UOP team, based off of a mod made by Tejon). May choose to apply to all imps, only full size imps, or only implings.
+		<tr><td>Irresponsible Creatures<td>Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes.
+		<tr><td>Mayu's Animation Overhaul Skeleton Tweaker<td>Sets NPC skeletons paths to match that required for MAO to work. <b>Requires</b> Mayu's Animation Overhaul or it will almost certainly cause CTDs.
+		<tr><td>No Bloody Creatures<td>Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except it is universal and doesn't work with MMM (MMM uses a different system - it won't cause any harm if used with MMM, it will just have pretty much no effect).
+		<tr><td>Quiet Feet<td>Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost.
+		<tr><td>Real Walk for female NPCs<td>Changes all female NPCs to use Mur Zuk's Real Walk. <b>Requires</b> Mur Zuk's Real Walk animation file.
+		<tr><td>Redguard FGTS Nuller<td>Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.
+		<tr><td>Sexy Walk for female NPCs<td>Changes all female NPCs to use Mur Zuk's Sexy Walk. <b>Requires</b> Mur Zuk's Sexy Walk animation file.
+		<tr><td>VadersApp's Oblivion Real Bodies Skeleton Tweaker<td>Changes all (modded and vanilla) NPCs to use diverse skeletons for different look. Not compatible with MAO. <b>Requires</b> VadersApp's Oblivion Real Bodies.
+		<tr><td>Vanilla Beast Skeleton Tweaker<td>Sets any NPCs using the vanilla non-beast skeleton path (skeleton.nif) to use the beast skeleton patch (skeletonbeast.nif). This avoids bugs when a mod changes the race of an NPC to a beast race without setting the skeleton path to the beast path, in which case the tail will appear to extend forever and weird stuff like that.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Tweak Assorted
+		<tr><th>Tweak<th>Description
+	<tbody>
+		<tr><td>All Armor Playable<td>Modifies non-playable armors to make them playable, unless the armor satisfies one of the following conditions:
+			<ul>
+				<li>It is unnamed.
+				<li>It is scripted.
+				<li>It contains no body flags set other than right ring.
+				<li>It contains any of the following (case-insensitive) words:
+				<ul>
+					<li>"mark"
+					<li>"token"
+					<li>"willful"
+					<li>"see" and "me"
+					<li>"werewolf"
+					<li>"no wings"
+					<li>"tsaesci tail"
+					<li>"widget"
+				</ul>
+			</ul>
+		<tr><td>All Clothing Playable<td>Modifies non-playable clothes to make them playable, unless the clothing satisfies one of the following conditions:
+			<ul>
+				<li>It is unnamed.
+				<li>It is scripted.
+				<li>It contains no body flags set other than right ring.
+				<li>It contains any of the following (case-insensitive) words:
+				<ul>
+					<li>"mark"
+					<li>"token"
+					<li>"willful"
+					<li>"see" and "me"
+					<li>"werewolf"
+					<li>"no wings"
+					<li>"tsaesci tail"
+					<li>"widget"
+				</ul>
+			</ul>
+		<tr><td>Armor Shows Amulets<td>Modifies playable armor to show amulets.
+		<tr><td>Armor Shows Rings<td>Modifies playable armor to show rings.
+		<tr><td>Bow Reach Fix<td>Some of the bows in Oblivion (and a few in user mods) have a reach of zero. Due to a bug in the Oblivion engine, if these bows are equipped by an NPC, the game will crash. This patch changes bows with zero reach to have reach of 1.
+		<tr><td>Clothing Shows Amulets<td>Modifies playable clothing to show amulets.
+		<tr><td>Clothing Shows Rings<td>Modifies playable clothing to show rings.
+		<tr><td>DarNified Books<td>Tweaks book colours and fonts for use with DarNified UI.
+		<tr><td>Default Icons<td>Sets a default icon for any records that don't have any icon assigned.
+		<tr><td>Disable Wind<td>Sets wind speed for all weathers to 0; this means that bushes and trees don't move in the wind since there isn't any. May help on machines with low end graphic cards.
+		<tr><td>Faction Crime Gold Multplier Fix<td>Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.
+		<tr><td>Harvest Chance<td>Sets the harvest chance of all flora to the desired chance.
+		<tr><td>Magic: Script Effect Silencer<td>Script Effects will be silenced and have no graphics.
+		<tr><td>No Light Fade Value Fix<td>Sets the fade values on all lights to a default of 1.0 if not already set.
+		<tr><td>No Light Flicker<td>Turns off flickering effects for lights. May help on machines with low end graphic cards.
+		<tr><td>Number of uses for pre-enchanted weapons and Staffs/Staves<td>The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.
+		<tr><td>Nvidia Fog Fix<td>Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen. This feature is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859">Quarn's Nvidia Black Screen Fix</a>.
+		<tr><td>Reweigh: Arrows<td>Reweighs arrows to a maximum weight.
+		<tr><td>Reweigh: Ingredients<td>Reweighs ingredients to a maximum weight.
+		<tr><td>Reweigh: Potions (Maximum)<td>Reweighs potions to a maximum weight. This does not affect potions with script effects or with current weight >= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins. Note that this is similar to, but not the same as, the Reweigh Potions command for savegames, which reweighs user created potions rather than mod created potions.
+		<tr><td>Reweigh: Potions (Minimum)<td>Reweighs potions to a minimum weight.
+		<tr><td>Reweigh: Staffs/Staves<td>Reweighs staves to a maximum weight.
+		<tr><td>Right Hand Rings<td>Makes rings behave more consistently by making all rings prefer to be on the right hand. With this tweak activated, rings will only equip to the left hand if the right hand has a ring, but the left hand does not. You can use this to make one ring permanently equipped - just equip it to the left hand and it will stay on until you specifically unequip it.
+		<tr><td>Set Sound Attenuation Levels<td>The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume).
+		<tr><td>Set Sound Attenuation Levels: Nirnroots Only<td>The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume (lower attenuation = higher volume). This one only affects Nirnroots.
+		<tr><td>Skyrim-style Weapons<td>Sets all one handed weapons as blades, two handed weapons as blunt.
+		<tr><td>Uniform Groundcover<td>Eliminates the random variation in groundcover (grass, vines, shrubs, etc). Tall groundcover will still be taller than short groundcover, but there will be less variation in size. May help on lower end machines.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Tweak Clothes
+		<tr><th>Tweak<th>Description
+	<tbody>
+		<tr><td>Gloves Show Rings<td>Prevents gloves from hiding rings.
+		<tr><td>Max Weight Amulets<td>Sets the maximum weight of amulets in the game. Amulets with higher weights will have their weight set to this value.
+		<tr><td>Max Weight Hoods<td>Sets the maximum weight of hoods in the game. Hoods with higher weights will have their weight set to this value.
+		<tr><td>Max Weight Rings<td>Sets the maximum weight of rings in the game. Rings with higher weights will have their weight set to this value.
+		<tr><td>Robes Show Amulets<td>Forces all robes to show amulets.
+		<tr><td>Robes Show Pants<td>Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. Not recommended because graphics clipping is common.
+		<tr><td>Unlimited Amulets<td>Allows you to wear an unlimited number of amulets. Not recommended because it is unbalancing and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
+		<tr><td>Unlimited Rings<td>Allows you to wear an unlimited number of rings. Not recommended because it is unbalancing and it prevents rings from displaying (i.e., they won't appear on your or NPC's fingers).
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Tweak Names
+		<tr><th>Tweak<th>Description
+	<tbody>
+		<tr><td>Body Part Codes<td>This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. Each code letter is assigned in order to: Amulets, Rings, Gloves, Helmets, Tail items, Robes (upper+lower body), Chest, Pants/Greaves, Boots/Shoes, Shields.
+		<tr><td>Armor<td>Tweaks names of armors to make them sort more easily in inventory. There is a choice of formats and whether you want armor rating to be shown.
+		<tr><td>Clothes<td>Tweaks names of clothes to make them sort more easily in inventory. There is a choice of formats.
+		<tr><td>Lore Friendly Names: Dwarven -> Dwemer<td>Changes nearly any usage of the word Dwarven to use Dwemer instead in order to better follow lore.
+		<tr><td>Notes and Scrolls<td>Tweaks names of notes and scrolls to make them sort more easily in inventory. There is a choice of formats and whether you want enchanted scrolls at top (~) or the bottom (.) of list. (Note that the "~" will not display in the inventory.)
+		<tr><td>Potions<td>Tweaks names of potions to make them sort more easily in inventory. There is a choice of formats.
+		<tr><td>Proper English Names: Dwarfs -> Dwarves<td>Renames any instances of dwarfs to dwarves
+		<tr><td>Proper English Names: Staffs -> Staves<td>Renames any instances of staffs to staves.
+		<tr><td>Spells<td> There is a choice of formats and whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
+		<tr><td>Weapons<td> There is a choice of formats and whether you want damage to be shown.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Tweak Settings
+		<tr><th>Tweak<th>Description
+	<tbody>
+		<tr><td>Actor Strength Encumbrance Multiplier<td>Actor strength * this multiplier = actor encumbrance capacity.
+		<tr><td>AI: Conversation Chance<td>Chance of NPCs engaging each other or the player in conversation in exteriors.
+		<tr><td>AI: Conversation Chance - Interior<td>Chance of NPCs engaging each other or the player in conversation in interiors.
+		<tr><td>AI: Max Active Actors<td>The maximum number of actors for AI to be processing at once. <b>Must</b> be higher than <a href="#patchCombatMaxActors">Combat: Max Actors</a>.
+		<tr><td>AI: Max Dead Actors<td>The maximum number of dead actors allowed before Oblivion begins to remove them.
+		<tr><td>AI: Max Smile Distance<td>Maximum distance for NPCs to start smiling.
+		<tr><td>Arrow: Litter Count<td>Shot arrows will be automatically removed from the world if their number exceeds the Arrow Litter Count.
+		<tr><td>Arrow: Litter Time<td>The period of time after which shot arrows will be automatically removed from the world.
+		<tr><td>Arrow: Recovery from Actor<td>Your chance of recovering an arrow shot into an actor (including arrows shot into player).
+		<tr><td>Arrow: Speed<td>Speed at which a full power arrow travels.
+		<tr><td>Bounty: Attack<td>The bounty for attacking a "good" npc when observed.
+		<tr><td>Bounty: Horse Theft<td>The bounty for horse stealing.
+		<tr><td>Bounty: Theft<td>The bounty for stealing as a fraction of the item's value.
+		<tr><td>Camera: Chase Distance<td>Changes the maximum distance the chase camera can be moved away from the player. Very useful for creating a bird's eye view – but also a little bit unbalancing for that reason.
+		<tr><td>Camera: Chase Tightness<td>Tightens up the 3rd person chase camera. Highest setting (x 3.0) essentially locks camera behind player.
+		<tr><td>Camera: PC Death Time<td>This is how long the camera lingers on the player after player's death before the reload menu appears. (Even at "Unlimited", you can hit escape to force reload menu to appear.)
+		<tr><td>Cell Respawn Time<td>Time that must pass after you've last visited a cell before the creatures, npcs and items in it respawn. Default is 3 days. Note that setting to longer durations will result in larger savegames.
+		<tr><td>Combat: Alchemy<td>By default, you cannot craft alchemy items in combat. Disallowing it encourages you to be ready for battle ahead of time.
+		<tr><td id="patchCombatMaxActors">Combat: Max Actors<td>The maximum number of actors that the engine will process in combat.
+		<tr><td>Combat: Max Ally Hits<td>The maximum number of hits on an ally allowed in combat before the ally will attack the hitting character.
+		<tr><td>Combat: Maximum Armor Rating<td>The maximum armor rating that you can get. Default: 85.
+		<tr><td>Combat: Recharge Weapons<td>By default, you can recharge weapons during combat. Disallowing that encourages you to be ready for battle ahead of time.
+		<tr><td>Combat: Repair<td>By default, you cannot repair items in combat. Disallowing it encourages you to be ready for battle ahead of time.
+		<tr><td>Companions: Max Number<td>Sets the maximum number of companions that will follow the player.
+		<tr><td>Compass: Disable<td>Disables POI's (Points of Interest), Quest Markers, or both on the compass. This may not work with some UI mods, and make some quests very hard to complete.
+		<tr><td>Compass: POI Recognition<td>Distance at which Points of Interest become visible on the compass. Default is 12,000 units. Lowest setting (x 0.25) is just a little farther than unvisited locations will be "found."
+		<tr><td>Cost Multplier: Enchantment<td>The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
+		<tr><td>Cost Multplier: Recharge<td>The cost multiplier factor for recharging.
+		<tr><td>Cost Multplier: Repair<td>The cost multiplier factor for repairing.
+		<tr><td>Cost Multplier: Spell Making<td>The cost multiplier factor for spellmaking.
+		<tr><td>Crime: Alarm Distance<td>The distance from the player that NPCs will be alerted to crimes.
+		<tr><td>Crime: Pickpocketing Fine<td>The fine for pickpocketing.
+		<tr><td>Crime: Trespass Fine<td>The fine for trespassing.
+		<tr><td>Drag: Max Moveable Weight<td>The max weight that can be dragged.
+		<tr><td>Essential NPC Unconciousness<td>Time for which an essential NPC stays unconscious after being knocked out.
+		<tr><td>Fatigue from Running/Encumbrance<td>Fatigue cost multiplier for running or encumbrance.
+		<tr><td>Greeting Distance<td>Distance at which NPCs will greet the player.
+		<tr><td>Horse Turning Speed<td>Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
+		<tr><td>Inventory Quantity Prompt<td>Number of items in a stack at which point Oblivion prompts for a quantity.
+		<tr><td>Jump Higher<td>Increases the maximum allowed jump height. Note that this may allow you to jump over city walls and so end up with graphical strangeness.
+		<tr><td>Leveled Creature Max Level Difference<td>Maximum difference to player level for leveled creature.
+		<tr><td>Leveled Item Max Level Difference<td>Maximum difference to player level for leveled items.
+		<tr><td>Magic: Bolt Speed<td>Speed at which at which magic bolts (projectiles) travel.
+		<tr><td>Magic: Chameleon Refraction<td>Turns off the refraction effect for chameleon, but leaves the incremental transparency effect on.
+		<tr><td>Magic: Max NPC Summons<td>Sets the number of summons a NPC may have active at one time.
+		<tr><td>Magic: Max Player Summons<td>Sets the number of summons the player may have active at one time. Normally less than Max NPC Summons.
+		<tr><td>Master of Mercantile Extra Gold Amount<td>The extra barter gold all vendor's have for a master of mercantile.
+		<tr><td>Msg: Auto Saving<td>Sets the message on autosaving to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Equip Misc. Item<td>Sets the message on equipping a misc item to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Harvest Failure<td>Sets the message on flora harvest failure to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Harvest Success<td>Sets the message on flora harvest success to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Horse Stabled<td>Sets the message on stabling a horse on fast travel to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Loading Area<td>Sets the message when background loading area to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: No Fast Travel<td>Sets the message when attempting to fast travel when it is prohibited to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Not Enough Charge<td>Sets the message on attempting to use an enchanted item with insufficient charge to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Quick Load<td>Sets the message on quick loading to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>Msg: Quick Save<td>Sets the message on quick saving to blank or either "." or "Hmm..." or a custom value entered by user.
+		<tr><td>NPC Blood<td>Sets a few gmsts to use either user specified blood textures or no blood.
+		<tr><td>Training Max<td>Sets the training limit per level allowed by trainers.
+		<tr><td>UOP Vampire Aging and Face Fix.esp<td>Duplicate of the UOP component that disables vampire aging (fixes a bug). Use instead of 'UOP Vampire Aging & Face Fix.esp' to save an esp slot.
+		<tr><td>Warning: Exterior Distance to Hostiles<td>Sets the minimum distance a hostile actor has to be from the player to allow the player to sleep/fast travel/etc. in exteriors.
+		<tr><td>Warning: Interior Distance To Hostiles<td>Sets the minimum distance a hostile actor has to be from the player to allow the player to sleep/fast travel/etc. in interiors.
+		<tr><td>Crime: Force Jail<td>The bounty level at which the player cannot pay the fine but has to go to jail.
+		<tr><td>Thieves Guild: Quest Attacking Penalty<td>Sets the penalty cost for attacking while completing a Thieves Guild quest.
+		<tr><td>Thieves Guild: Quest Killing Penalty<td>Sets the penalty cost for killing while completing a Thieves Guild quest.
+		<tr><td>Thieves Guild: Quest Stealing Penalty<td>Sets the penalty cost for stealing while completing a Thieves Guild quest.
+		<tr><td>Timescale<td>Sets the game's timescale.
+</table>
+
+
+<h3 id="#patch-csv">Default CSV Files</h3>
+<p>The following CSV files are supplied with Wrye Bash and are can be used when building your Bashed Patch.
+<table>
+	<thead>
+		<tr><th colspan="3">Default CSV Files
+		<tr><th colspan="2">CSV File<th>Description
+	<tbody>
+		<tr><td rowspan="2">Replace Form IDs<td>P1DCandles_Formids<td class="missing">This item has not yet been documented.
+		<tr><td>TI to Cobl_Formids<td class="missing">This item has not yet been documented.
+		<tr><td rowspan="15">Import Names<td>Crowded Cities 15_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Crowded Cities 15_Alternate_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Crowded Cities 30_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Crowded Cities 30_Alternate_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Crowded Roads Revamped_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Crowded Roads Revisited_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Crowded Roads Revisited_Alternate_Names<td class="missing">This item has not yet been documented.
+		<tr><td>Guard_Names<td>Based on <a href="http://tes.nexusmods.com/downloads/file.php?id=2326">Flak's Complete Names Project</a>, this CSV file gives unique names to guards, legion soldiers, couriers and a few other NPCs and creatures with generic names. It covers both vanilla Oblivion and Oscuro's Oblivion Overhaul.
+		<tr><td>OOO_Potion_Names<td>Renames the alcoholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
+		<tr><td>PTRoamingNPCs_Names<td class="missing">This item has not yet been documented.
+		<tr><td id="patchRandomNPCNames">Random NPC Names<td>Gives unique names to generically named NPCs and renames some others from the following mods:
+			<ul>
+				<li>Crowded Roads Revamped by Spotty42
+				<li>Crowded Roads Revisited by Smooth
+				<li>Tamriel Travellers by Gratis_monsta
+				<li>Crowded Cities 15/30 by Gratis_monsta
+				<li>PT_RoamingNPCs by Gratis_monsta
+			</ul>
+		<tr><td>Random NPC Alternate Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> above, but using different names.
+		<tr><td>Rational Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shiveriing Isles, Oscuro's Oblivion Overhaul and a few more mods.
+		<tr><td>ShiveringIsleTravellers_Names<td class="missing">This item has not yet been documented.
+		<tr><td>TamrielTravellers_Names<td class="missing">This item has not yet been documented.
+		<tr><td rowspan="2">Cobl Exhaustion<td>Assorted_Exhaust<td class="missing">This item has not yet been documented.
+		<tr><td>Kmacg94_Exhaust<td class="missing">This item has not yet been documented.
+		<tr><td>Morph Factions<td>Bash_MFact<td class="missing">This item has not yet been documented.
+</table>
+
+
+<h3 id="patch-lists">Leveled Lists</h3>
+<p>The leveled list patcher is slightly odd in comparison to the others: it's effectively an <q>Import...</q> patcher, but its options are decided automatically by default.
+<p>First, a bit of background. When different plugins alter the same leveled list, only the last loaded plugin's changes get applied. This tends not to be what is wanted. The leveled list patcher circumvents the issue by instead merging all the changes made to leveled lists and having this merged set of changes applied.
+<p>The leveled list merging is dictated by related Bash Tags, and functions as follows.
+<ul>
+	<li>The load order of plugins is still important to the result of the leveled list patcher. It decides what plugins' effects override others.
+	<li>Untagged plugins can only add new entries to leveled lists. If such a plugin adds an entry that already exists, it will be ignored. Furthermore, even if another plugin has already marked that entry as removed, it will not be re-added.
+	<li><code>Delev</code> tagged plugins can remove entries from leveled lists. Any items present in such a plugin's masters but not in the plugin itself will be removed.
+	<li><code>Relev</code> tagged plugins can relevel an existing entry (ie. change its levels and/or counts in the list), and can also override previous deletions of entries from leveled lists. However, it does not prevent a later-loading <code>Delev</code> tagged plugin from then removing an entry again.
+	<li><code>Delev</code> and <code>Relev</code> tagged mods simply combines the effects of the <code>Delev</code> and <code>Relev</code> Bash Tags.
+	<li>In addition to the above, the leveled list patcher removes any empty sublists from leveled lists, as these would otherwise cause the leveled list to select nothing if such a sublist was picked in-game.
+</ul>
+<p>It's best to simply ensure that your plugins have the correct tags and leave this section on automatic. To add plugins to or remove plugins from the list, uncheck the <q>Automatic</q> checkbox, and use the <q>Add</q> or <q>Remove</q> buttons. The latter will remove the currently selected plugin.
+<p>To manually override the Delev/Relev Bash Tags for a plugin, right-click it in the section list and check or uncheck the relevant options as desired. To return to the automatic setting, select the <q>Auto</q> option in the right-click menu.
+
+
+<h2 id="saves">Saves Tab</h2>
+<figure>
+<img src="bash/images/Saves.png" alt="Saves Tab"/>
+<figcaption>Wrye Bash's Saves tab.</figcaption>
+</figure>
+
+<h3 id="saves-overview">Overview</h3>
+<p>The Saves tab allows you to manage many aspects related to your game's saves. Save files are found in the <code>My Games\[Game]\Saves</code> directory and have the file extension <code>.ess</code>. When you quicksave or autosave, the game backs up the previous quick/autosave by replacing the file extension with <code>.bak</code>. This backup may be restored by restoring its original file extension.
+<p>If you have Pluggy and/or the game's Script Extender installed, each of your save files will have a corresponding <q>cosave</q> containing the Pluggy/OBSE/SKSE-specific data. These cosaves have file extensions <code>.pluggy</code>, <code>.obse</code>, <code>.skse</code> for Pluggy, OBSE and SKSE respectively.
+<p>The Saves tab is divided into two sections: the main panel lists your save files and displays some of their details in its columns. The Save Details panel on the right displays some more information relating to the currently selected save file. It comprises of the following sections:
+<table>
+	<thead><tr><th>Section<th>Description
+	<tbody>
+		<tr><td>File Name<td>This is the filename of the save. Changing it here will rename the save file.
+		<tr><td>Player Info<td>These three lines give the player character's name, their level, days have passed in-game, hours played and current location.
+		<tr><td>O/P Flags<td> These two flags appear to the right of the player info, and indicate the presence of cosave files: O is for OBSE cosaves, and P is for Pluggy cosaves.
+		<tr><td>Screenshot<td>The screenshot embedded in the save file, taken at the moment of saving.
+		<tr><td>Masters List<td>The plugins that the save file depends on, and their load order.<br />
+		Masters in the list can be renamed if the corresponding plugin has been renamed. To rename a master, either left-click it and edit it in the column display, or right-click it and select <q>Change To...</q> to select the desired replacement plugin from the Data directory.<br />
+		Masters can also be disabled if they have been removed and are preventing your save from loading, as may sometimes happen, by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of the plugin dependency, but this will let the game <i>try</i> to remove the dependency.
+		<tr><td>Notes<td>This section can be used to keep notes on the save file.
+</table>
+
+
+<h3 id="saves-profiles">Save Profiles</h3>
+<p>Save profiles are like player accounts, in that they consist of a load order plus a set of save files. They can be used to allow safe and easy switching between different characters than may use different combinations of mods, or between different stages of the same character's life (where different mods have been used in each stage). They can also associate different versions of Oblivion.esm with different save profiles, using <a href="tools-swapping">Oblivion.esm Swapping</a>.
+<p>To create or modify save profiles, use the <a href="savesEditProfiles">Edit Profiles...</a> command in the <q>Profile</q> submenu of the column header context menu. You can create a new save profile using <q>Add</q>, delete the selected existing save profile using <q>Remove</q> and rename the selected save profile using <q>Rename</q>. The central text field can be used to store notes on the selected save profile.
+<p>To select a save profile, select it from the list visible in the <q>Profile</q> submenu of the column header context menu.
+<p>To assign save files to a save profile, use the <a href="#savesMoveTo">Move To</a> or <a href="#savesCopyTo">Copy To</a> submenus in the save file context menu. This will also assign any related cosave files.
+
+
+<h3 id="saves-face">Face Import</h3>
+<figure>
+<img src="bash/images/WryeBash_03.png" alt="Face Import from Esp"/>
+<figcaption>Wrye Bash's Face Import dialog.</figcaption>
+</figure>
+<p>Faces may be imported from saves to saves or plugins, or from plugins to saves. This allows you to preserve a character's appearance should you wish to restart a character, to roleplay as a particular character, or to turn your character into an NPC that may be encountered during playing, among other uses.
+<p>To import a face to a save:
+<ol>
+	<li>Select the <a href="#savesImportFace">Import Face...</a> command in a save file's context menu. 
+	<li>Choose the source save or plugin in the file dialogue that is displayed.
+	<li>Choose the actor whose face you want to import. Click on a face in the list to display its details. If an image is associated with the face, it will be displayed.
+	<ul>
+		<li>If you chose a source plugin, the plugin's NPCs will be listed.
+		<li>If you chose a source save, the player character will be at the top of the list, possibly followed by some clones of the player that the game uses for various purposes and some other NPCs.
+	</ul>
+	<li>Use the checkboxes to select additional characteristics to import.
+	<ul>
+		<li><b>The Race Import is incomplete.</b> It will change the physical appearance and identification of the character, but not the racial powers.
+		<li><b>Use the Stats Import with care.</b> In-game stats are a combination of base stats, magical modifiers and scripted modifications. This command only affects the base stats. As such, the in-game effect may be negative or bizarrely high. In addition, such alteration of stats often confuses releveling mods, and such a mod may require temporary removal so that stats are imported to a save which does not have it active. Such mods can be reinstalled once the stats have been imported.
+	</ul>
+	<li>Click the <q>Import</q> button to finish.
+</ol>
+<p>To import a face to a plugin:
+<ol>
+	<li>Create a new plugin using the <a href="#modsNewMod">New Mod</a> command from the <q>File</q> menu of the plugin context menu in the Mods tab.
+	<li>Right-click the new plugin and select <a href="#modsImportFace">Import Face...</a>.
+	<li>Choose the source save in the file dialogue that is displayed.
+</ol>
+<p>Some notes on the usage of Face Import:
+<ul>
+	<li>Face Import does not check for unique Editor IDs. The Construction Set will inform you of any duplicates and auto-rename them, though you will probably want to rename them manually as DUPLICATE0000 is not very informative.
+	<li>If you want to associate an image with a face, save the image to <code>Data\Docs\Images\[EditorID].jpg</code>, where [EditorID] is the Editor ID of the face. The size of the image box is 250x210 pixels. Wrye Bash will scale down any image supplied to fit the box.
+	<li>To tweak the stats of an existing character, try importing them to a plugin, editing them there and then importing the character back into your save file.
+	<li>Normally when importing a face to a plugin, only eyes and hair from Oblivion.esm or the destination plugin will be imported. However, the following steps can be used to import eyes and hairs that come from other mods.
+	<ul>
+		<li>Convert the source cosmetic ESP to an ESM, using the <a href="#modsCopyToEsm">Copy to Esm</a> command in the plugin context menu in the Mods tab.
+		<li>Open the destination plugin in the Construction Set, also loading the converted source cosmetic ESM.
+		<li>Save the plugin in the Construction Set.
+		<li>In Wrye Bash's Mods tab, select the converted source cosmetic ESM in the destination plugin's Masters List and use the <q>Change To...</q> command to select the source cosmetic ESP.
+		<li>Now import the face as normal. The eyes/hair should also be imported.
+	</ul>
+</ul>
+
+
+<h3 id="saves-symbols">What Symbols &amp; Colours Mean</h3>
+<table>
+	<thead>
+		<tr><th>Checkbox Colour<th>Meaning
+	<tbody>
+		<tr><td><img src="bash/images/checkbox_purple_on.png" alt="Purple"/><td>Good. Exactly synced with the current load order.
+		<tr><td><img src="bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
+		<tr><td><img src="bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
+		<tr><td><img src="bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
+		<tr><td><img src="bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
+</table>
+
+<h3 id="saves-commands">Context Menu Commands</h3>
+<table>
+	<thead>
+		<tr><th colspan="3">Column Header Context Menu
+		<tr><th colspan="2">Command<th>Description
+	<tbody>
+		<tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the save list is sorted. This is equivalent to clicking on a column header.
+		<tr><td colspan="2">Oblivion.esm<td><i>Oblivion only.</i> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>. It allows you to swap the active version of Oblivion.esm.
+		<tr><td rowspan="2">Profile<td>Edit Profiles...<td>This submenu allows the creation, editing and removal of <a href="#saves-profiles">save profiles</a>.
+		<tr><td>[Profile]<td>[Profile] is the name of a save profile, which are listed below the separator in the Profile submenu. Clicking a save profile will activate it. 
+		<tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the save list. 
+		<tr><td colspan="2">Open...<td>Opens the saves folder in Windows Explorer. 
+		<tr><td colspan="2">Unhide...<td>Opens a dialogue window allowing you to select which hidden save files to unhide. 
+</table>
+<table>
+	<thead>
+		<tr><th colspan="3">Save Context Menu
+		<tr><th colspan="2">Command<th>Description
+	<tbody>
+		<tr><td rowspan="8">File<td>Backup<td>Creates a backup of the selected save file in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up save file has <code>f</code> appended to its file extension, giving .essf.
+		<tr><td>Duplicate...<td>Creates a duplicate of the selected save file in the saves folder. 
+		<tr><td>Delete<td>Permanently deletes the selected save file and any backups of it. 
+		<tr><td>Hide<td>Moves the selected save file to the <code>Bash\Hidden</code> subdirectory.
+		<tr><td>Revert to Backup<td>Reverts the selected save file to the last backup made of it. 
+		<tr><td>Revert to First Backup<td>Reverts the selected save file to the first backup made of it. 
+		<tr><td>Rename...<td>Rename the selected save file.
+		<tr><td>Re-number Save(s)...<td>Allows the re-numbering of the selected save file(s). If more than one file is selected, the first will be renumbered to the given number and the others will be numbered in increments of one from the given number.
+		<tr><td colspan="2" id="savesMoveTo">Move To<td>This submenu allows you to specify a save profile to move the selected save(s) to from the active save profile.
+		<tr><td colspan="2" id="savesCopyTo">Copy To<td>This submenu allows you to specify a save profile to copy the selected save(s) to, so that it is present in both the active and specified save profiles.
+		<tr><td colspan="2" id="savesLoadMasters">Load Masters<td>Synchronizes activated plugins to savegame's masters.
+		<tr><td colspan="2" id="savesListMasters">List Masters...<td>Lists savegame masters in load order and copies the list to the clipboard. Version numbers are displayed if detected.
+		<tr><td colspan="2" id="savesDiffMasters">Diff Masters...<td>If two savegames are selected, then this will compare the masters of the new save to those of the older save. If one savegame is selected, then this will compare the currently active plugins to the masters of the selected savegame. The comparison details masters that have been removed and added in the newer save since the older save, or removed and added in the load order since the selected save.
+		<tr><td colspan="2" id="savesStatistics">Statistics<td><i>Oblivion only.</i> This produces a set of various technical statistics for the selected savegame. The following information is produced:
+			<ul>
+				<li>Array sizes. These arrays are for each of the major sections in the save file.
+				<li>Created items. These are items created in-game, through scripting or some sort of crafting skill (eg. alchemy, spellmaking).
+				<li>Form IDs. This is a breakdown of the Form ID table in the savegame, sorted by source plugin. The Form ID table maps savegame reference numbers to the Form ID of the referenced record. If a reference is made to a record from a mod that is no longer loaded, the Form ID is replaced with a 0.
+				<li>Record details. This gives a breakdown of the different types of records stored in the save file. The type is given as a number and as text (eg. <code>48 Cell</code>), and then the number of records referenced from each plugin is given below.
+				<li>New ObjectRef Bases. These are objects that belong to the savegame, for example arrows dropped on the ground in-game. They generally are created and destroyed by the game as required, though bad scripting techniques can cause some of them to stick around. The "Base" of an objectRef is the baseid of the object (e.g., the formid of a steel arrow from Oblivion.esm). The objectRef refers to these indirectly through an "iref". Usually this will map back to a formid, but if the original mod has been removed from the load order, then the formid is set to zero. If this has happened, then a count of such "Null Bases" will be shown. After the "Null Base" count (if present) is a list of New ObjectRef Bases where the count is over 100 (e.g., if there are over 100 new arrows lying around). Show is the count, the iref and the base formid. Formid beginning with FF is reference to an object defined by the savegame. Otherwise, the formid will map back to a mod. The first two digits are the modindex, and can be matched to a mod through the "MI" column in the list of savegame masters.
+			</ul>
+		<tr><td colspan="2">.obse Statistics<td><i>Oblivion only.</i> This is similar to <a href="#savesStatistics">Statistics</a> above, but reports statistics for the .pluggy and/or .obse cosave files associated with the selected save.
+		<tr><td colspan="2" id="savesDeleteSpells">Delete Spells...<td><i>Oblivion only.</i> This allows you to delete unused spells from your spell list in the selected save. <b>Warning:</b> This cannot be undone. Most spells may be repurchased or recreated, but quest and other special spells will likely have to be added using the console.
+		<tr><td colspan="2">Rename Player...<td><i>Oblivion only.</i> Renames the player's character in the selected save.
+		<tr><td colspan="2">Set Number of Uses for Weapon Enchantments...<td><i>Oblivion only.</i> Allows you to set the number of casts available to any enchanted weapon you created in-game, or that has otherwise been recorded in your savegame.
+		<tr><td colspan="2">Import Face...<td><i>Oblivion only.</i> Relates to <a href="#saves-face">Face Importing</a>. This command allows you to import a face for the save file's player character (and possibly some NPCs) from another save file or from an NPC in a mod.
+		<tr><td colspan="2">Rename Enchanted...<td><i>Oblivion only.</i> Allows you to rename any enchanted items that you have created in-game for the selected save.
+		<tr><td colspan="2" id="savesRenamePotions">Rename Potions...<td><i>Oblivion only.</i> Allows you to rename any potions that you have created in-game for the selected save.
+		<tr><td colspan="2">Rename Spells...<td><i>Oblivion only.</i> Allows you to rename any spells that you have created in-game for the selected save.
+		<tr><td colspan="2" id="savesReweighPotions">Reweigh Potions...<td><i>Oblivion only.</i> Potions created in-game are given a weight that is somewhat arbitrarily selected and potentially high. This command may be used to set all created potions to have a specific weight. Potions created after the use of this command with new names, new effects or new durations will not be affected.
+		<tr><td colspan="2" id="savesUpdateNPCLevels">Update NPC Levels...<td><i>Oblivion only.</i> Updates the level information for NPCs stored in the selected savegame to reflect the active load order's NPC level settings. This is required because although NPC levels are set via plugins, once an NPC is encountered its level is stored in the save file, which overrides the plugin levels.
+		<tr><td colspan="2">Export Screenshot...<td>Allows you to save the image used as the save file's screenshot as a JPEG.
+		<tr><td colspan="2" id="savesRemoveBloat">Remove Bloat...<td><i>Oblivion only.</i> <b>This is an experimental command. It is recommended that saves are backed up before using it on them.</b> It attempts to determine how much bloating there is in the selected save file and then optionally remove it. If the command reports a large number of created objects, there could be a problem with one of your mods, and such mods should be removed or updated. There are two common types of bloat:
+			<ul>
+				<li>Excess created objects can occur through the use of scripting by a mod to duplicate existing objects in-game and a failure by the mod to clean up the duplicates after their use.
+				<li>Null references are caused when objects from a mod that is removed are present in the game world. These objects then get replaced with null references when the game is next saved with the mod missing.
+			</ul>
+		<tr><td colspan="2" id="savesRepairAbomb">Repair Abomb<td><i>Oblivion only.</i> <q>Abomb Animation Slowing</q> is a slowing of animations that typically occurs around 225 hours into the game, though it may occur earlier or later. This is an engine bug, and this command avoids its effects by resetting a related counter (TesClass Abomb counter is reset to 0x41000000).
+		<tr><td colspan="2" id="savesRepairFactions">Repair Factions<td><i>Oblivion only.</i> Attempts to repair the damage caused by a bug in <a href="#savesUpdateNPCLevels">Update NPC Levels</a> that was introduced in v105 and fixed in v116 of Wrye Bash. This also optionally updates NPC factions to reflect the faction changes by mods. <b>Do not use this function unless you know you have to.</b> It is better to revert to a recent save.
+		<tr><td colspan="2">Repair Hair<td><i>Oblivion only.</i> Oblivion has a bug that will cause a crash if your PC's hair comes from a mod that has been removed and you then run showRaceMenu. This command resets your hair to the default for that race and gender, so you can then use showRaceMenu to select a new hair again if you wish.
+</table>
+
+
+
+<h2 id="screenshots">Screenshots Tab</h2>
+<figure class="slideshow">
+<img src="bash/images/Screenshots-1.png" alt="Screenshots Tab"/>
+<img src="bash/images/Screenshots-2.png" alt="Screenshots Tab"/>
+<figcaption style="padding-top:655px;">Wrye Bash's Screenshots tab.</figcaption>
+</figure>
+<h3 id="screenshots-overview">Overview</h3>
+<p>The Screenshots tab allows you to preview any screenshots taken in-game using the built-in Print Screen functionality. These screenshots are saved as bitmap files (.bmp). Selecting a screenshot from the list on the left will display it on the right. Screenshots can be converted from bitmaps into a few other formats using context menu commands.
+<h3 id="screenshots-commands">Context Menu Commands</h3>
+<table>
+	<thead>
+		<tr><th colspan="2">Column Header Context Menu
+		<tr><th>Command<th>Description
+	<tbody>
+		<tr><td>Open<td>View the screenshot directory in Windows Explorer.
+		<tr><td>Next Shot<td>Set the name and number of the next screenshot.
+		<tr><td>JPEG Quality<td>Set the quality of JPEGs created during conversion.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">Screenshot List Context Menu
+		<tr><th>Command<th>Description
+	<tbody>
+		<tr><td>Delete<td>Deletes the selected file(s).
+		<tr><td>Convert<td>Converts the selected files to one of the following formats: JPEG, PNG, BMP, TIFF. If a file of the conversion format already exists with the same name as a file to be converted, the conversion will not take place for that file.
+		<tr><td>Rename<td>Renames the selected file(s). If multiple files are selected, they will be numbered sequentially. If a file already exists with the same name as a file's resulting name, that file will not be renamed.
+</table>
+
+<h2 id="launchers">Advanced Launchers</h2>
+<h3 id="launchers-hide">Hiding Launchers</h3>
+<figure class="slideshow">
+<img src="bash/images/ToolBar-11-RClick-Hide-GameLauncher.png" alt="toolbar hide launcher"/>
+<img src="bash/images/ToolBar-12-RClick-Hide-AutoQuit.png" alt="toolbar hide launcher"/>
+<img src="bash/images/ToolBar-13-RClick-Hide-OBSE-Toggle.png" alt="toolbar hide launcher"/>
+<figcaption style="padding-top:80px;">The Hide option in the right-click menu for launchers.</figcaption>
+</figure>
+<p>You can hide specific launcher icons, preventing them from being displayed, by right-clicking them and selecting <q>Hide...</q> or by inserting a semicolon before their path in the <q>bash.ini</q>. 
+<ul><li>For example, <code>sPhotoshopPath=;C:\Program Files\Adobe\Photoshop 7.0\Photoshop.exe</code>.</ul>
+<p>You can hide some of the toggle buttons using the <code>bShowTes4...</code> options in the <code>Tool Options</code> in the <q>bash.ini</q>.
+<p>You can unhide launchers hidden through the right-click option using the Settings menu. See the <a href="#tools-settings">Settings Menu</a> for more information.
+
+
+<h3 id="launchers-custom">Custom Launchers</h3>
+<p>Custom launcher buttons may be added by putting a shortcut to the application you wish to have a launcher for in the <code>Mopy\Apps</code> directory. Wrye Bash will then use the following information from the shortcut:
+<ul>
+	<li>Icon
+	<li>Working directory
+	<li>Command line arguments
+	<li>Comments
+</ul>
+<p>If you want to have a custom icon for a launcher, place a PNG image with the same name as the shortcut, appending the icon size, in the same folder. For example:
+<ul>
+	<li>Notepadpp.lnk
+	<li>Notepadpp24.png
+</ul>
+<p><b>Note:</b> 24x24 icons taken from shortcuts do not work well, so if you are using this size, be sure to include a custom icon. Icon size displayed can be adjusted in the <q>bash.ini</q> or the <a href="#tools-settings">Settings</a> menu.
+
+
+<h2 id="pm">PM Archive Tab</h2>
+<figure>
+<img src="bash/images/PM-Archive-2.png" alt="PM Archive Tab"/>
+<figcaption>Wrye Bash's PM Archive tab.</figcaption>
+</figure>
+<h3 id="pm-overview">Overview</h3>
+<p>The PM Archive tab can be used to archive, view and search Private Messages from the official Bethesda Softworks forums. Due to forum updates, messages archived since the 13th of March 2010 cannot be imported into Wrye Bash. As such, the tab is only available for legacy support of those with messages archived before then.
+<p><b>Warning:</b> This feature is both experimental and outdated. Keep a separate backup of any archives you import into Wrye Bash.
+<p>To import PM archives into Wrye Bash, follow the instructions below:
+<ol>
+	<li>Archive your PMs using the forum option, then download the HTML archive that is emailed as an attachment to you.
+	<li>Rename the archive file so that the filename begins with the date the archive was created, in the format YY.MM.DD. Eg. <code>07.11.06 archive.html</code>. It doesn't matter what the name is after the date.
+	<li>In Wrye Bash's PM Archives tab, right-click the box at the top and select <q>Import Archives...</q> then select the archive files you wish to import.
+</ol>
+<p>PMs may be searched using the bar at the bottom of the window, by entering in the search text then clicking the <q>Search</q> button or hitting return on your keyboard. Messages may be sorted by any of the columns by clicking a column header. Selecting multiple messages will display them all at once in the order they are listed.
+<h3 id="pm-commands">Buttons &amp; Context Menu Commands</h3>
+<table>
+	<thead><tr><th>Button<th>Description
+	<tbody>
+		<tr><td>Search<td>Search for the text entered into the search text box. Messages will be searched in the subject, author and text fields, and a filtered list of matching results will be displayed at the top of the window. Search may also be initiated by pressing the return keyboard key.
+		<tr><td>Clear<td>Clears the search box, removing the filter from the PM list and so displaying all archived PMs again. Search may also be cleared by emptying the search text box and pressing the return keyboard key.
+</table>
+<table>
+	<thead>
+		<tr><th colspan="2">PM List Context Menu
+		<tr><th>Command<th>Description
+	<tbody>
+		<tr><td>Delete<td>Deleted the selected message(s).
+		<tr><td>Import Archives...<td>Import one or more PM archive files.
+</table>
+
+<h2 id="people">People Tab</h2>
+<figure class="slideshow">
+<img src="bash/images/People-1.png" alt="People tab"/>
+<img src="bash/images/People-2.png" alt="People tab"/>
+<figcaption style="padding-top:655px;">Wrye Bash's People tab.</figcaption>
+</figure>
+<h3 id="people-overview">Overview</h3>
+<p>The People tab functions as a simple database that can be used to keep notes on various people (eg. why you blocked a forum user, or what a good mod someone made).
+<p>People are listed in the column on the left, and the large text box on the right can be used for writing notes on the selected person. Notes are saved automatically as you type them, but otherwise the text box behaves as a simple text editor such as Notepad.
+<p>The Karma column displays the karma level you have set for them. Karma is a simple way of rating your disposition towards a person. The Header column displays the first 75 characters of text in a person's notes. Clicking a column header will sort by that column.
+
+<h3 id="people-symbols">What Symbols &amp; Colours Mean</h3>	
+<table>
+	<thead>
+		<tr><th colspan="2">Checkbox Colours
+		<tr><th>Checkbox<th>Meaning
+	<tbody>
+		<tr><td><img src="bash/images/checkbox_purple_inc.png" alt="Purple"/><td>Person has +5 karma.
+		<tr><td><img src="bash/images/checkbox_blue_inc.png" alt="Blue"/><td>Person has +3 or +4 karma.
+		<tr><td><img src="bash/images/checkbox_green_inc.png" alt="Green"/><td>Person has +1 or +2 karma.
+		<tr><td><img src="bash/images/checkbox_grey_off.png" alt="Grey"/><td>Person has 0 karma.
+		<tr><td><img src="bash/images/checkbox_yellow_off.png" alt="Yellow"/><td>Person has -1 or -2 karma.
+		<tr><td><img src="bash/images/checkbox_orange_off.png" alt="Orange"/><td>Person has -3 or -4 karma.
+		<tr><td><img src="bash/images/checkbox_red_off.png" alt="Red"/><td>Person has -5 karma.
+</table>
+
+<h3 id="people-commands">Context Menu Commands</h3>
+<table>
+	<thead>
+		<tr><th colspan="2">Column Header &amp; Person Context Menus
+		<tr><th>Command<th>Description
+	<tbody>
+		<tr><td>Add...<td>Add a new person record to the list.
+		<tr><td>Delete<td>Delete a person record from the list.
+		<tr><td>Import...<td>Import a person record from an exported person record file.
+		<tr><td>Export...<td>Export a person record to a person record file. Exported person records are text files that contain the person's name and any notes you have on them. It doesn't export karma.
+		<tr><td>Columns<td>This submenu allows you to choose which columns are visible.
+		<tr><td>Karma<td>This submenu allows you to set a karma level for a person, ranging from +5 to -5.
+</table>
+
+
+<h2 id="tools">Miscellaneous Tools</h2>
+
+<h3 id="tools-settings">Settings Menu</h3>
+<figure class="slideshow">
+<img src="bash/images/Settings-1-Colour%20highlighted.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-2-Tabs%20highlighted.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-3-Status%20Bar%20and%20Icon%20size%20highlighted.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-4-Language%20highlighted.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-5-Plugin%20encoding%20highlighted.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-6-Game%20highlighted.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-7-Check%20for%20Updates%20highlighted.png" alt="Colors Dialog"/>
+<figcaption style="padding-top:400px;">Wrye Bash's Settings menu.</figcaption>
+</figure>
+<p>The Settings menu is where Wrye Bash's global settings may be accessed. The Settings menu can be opened by clicking on the <a href="Wrye%20Bash%20General%20Readme.html#launchersSettingsMenu">Settings button</a> in the status bar. The Settings menu's items are detailed in the table below.
+<table>
+	<thead>
+		<tr><th colspan="3">Settings Menu
+		<tr><th colspan="2">Item<th>Description
+	<tbody>
+		<tr><td colspan="2">Backup Settings...<td>Backs up all the parts of Wrye Bash that can be changed by the user to a location of the user's choosing. The backed up items are:
+			<ul>
+				<li>The bash.ini
+				<li>The Wrye Bash specific documents in <code>Data\Docs</code>
+				<li>The Mods, Installer, and Converter meta-data stored in <code>[Game] Mods</code>.
+				<li>Any user profiles you have created.
+				<li>Your application and UI settings.
+				<li>Your messages from the PM Archive tab.
+				<li>Your people from the People tab.
+				<li>Any translation files you have.
+				<li>All files in the <code>Data\Bashed Patches</code> directory.
+				<li>All INI Tweaks.
+				<li>(Optionally) image files, with a choice between all images, only changed or custom images or no images.
+			</ul>
+		<tr><td colspan="2">Restore Settings...<td>Restores your settings from a backup of your choice. This will force a restart of Wrye Bash to ensure the new settings take effect.
+		<tr><td colspan="2">Save Settings<td>Normally, Wrye Bash saves its settings to disc only on closing. Use this to force a save right now.
+		<tr><td colspan="2" id="settingsExportList">Export list of allowed/disallowed OBSE plugin dlls<td>This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
+		<tr><td colspan="2" id="settingsImportList">Import list of allowed/disallowed OBSE plugin dlls<td>This will import the list of Good/Bad OBSE dll definitions from a text file previously exported using <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a>.
+		<tr><td colspan="2" id="settingsColors">Colors...<td>Brings up the Colors dialog. This dialog can be used to change the colors that Wrye Bash uses to communicate various bits of information.
+			<p>The drop-down list is used to select the item for which you want to change the color. The square box next to the drop-down list opens a color picker, allowing you to choose a new color. The function of the other buttons is described in the table below.
+		<tr><td colspan="2">Tabs<td>This submenu allows you to choose which of the main tabs are displayed (eg. Installers, Mods, Saves, INI Edits, Screenshots, People, PM Archives) by checking and unchecking the tabs listed in it.
+		<tr><td rowspan="3">Status Bar<td>Icon Size<td>Choose between 16x16, 24x24, or 32x32 Status Bar icons.
+		<tr><td>Unhide Buttons<td>Unhide Status Bar buttons that you have hidden.
+		<tr><td>Show App Version<td>Shows the versions of applications in their launchers' tooltips.
+  <tr><td colspan="2" id="settingsLanguage">Language<td>This submenu lists the languages for which translations of Wrye Bash exist.
+  <tr><td colspan="2">Plugin Encoding<td>This submenu allows you to select the encoding that Wrye Bash assumes plugin descriptions to be written in. The <q>Automatic</q> option is selected, Wrye Bash attempts to detect the encoding from the contents of the description. If a plugin description is being displayed incorrectly, try selecting another encoding from this list.
+  <tr><td colspan="2">Game<td>This submenu lists the games that Wrye Bash supports and detects as being installed. Selecting a game will close Wrye Bash and re-open it for the selected game.
+		<tr><td colspan="2">Use Alternate Wrye Bash Name<td>If checked, displays in the title bar <q>Wrye Bash</q> when running for Oblivion and <q>Wrye Smash</q> when running for Skyrim. If unchecked, the title bar will contain <q>Wrye Bash for [Game]</q> instead.
+  <tr><td colspan="2">Debug Mode<td>Opens up a window to which debugging information is written.
+  <tr><td colspan="2" id="settingsDumpTranslator">Dump Translator<td>Generates a new translation file for your locale. See <a href="#international">Internationalisation</a> for more information.
+		<tr><td colspan="2">Check for Updates...<td>Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
+</table>
+<figure class="slideshow">
+<img src="bash/images/Settings-1-Colours-Dialogue-1.png" alt="Colors Dialog"/>
+<img src="bash/images/Settings-1-Colours-Dialogue-2.png" alt="Colors Dialog"/>
+<figcaption style="padding-top:400px;">The Colors dialog accessible through Wrye Bash's Settings menu.</figcaption>
+</figure>
+<table>
+	<thead>
+		<tr><th colspan="2">Colors Dialog Buttons
+		<tr><th>Button<th>Function
+	<tbody>
+		<tr><td>All Defaults<td>Returns all colors to their default setting. <a href="#settingsApplyAll">Apply All</a> must still be used for the changes to take effect.
+		<tr><td>Default<td>Returns the current item to its default color. <a href="#settingsApply">Apply</a> must still be used for the change to take effect.
+		<tr><td id="settingsApplyAll">Apply All<td>Applies all changes you have made to the colors since last opening the Colors dialog.
+		<tr><td id="settingsApply">Apply<td>Applies any change to the current item's color.
+		<tr><td>Export...<td>Exports the current color scheme to a text file.
+		<tr><td>Import...<td>Imports a color scheme from a text file previously exported. <a href="#settingsApplyAll">Apply All</a> must still be used for the changes to take effect.
+		<tr><td>OK<td>Closes the dialog. Does not apply any changes made.
+</table>
+
+<h3 id="tools-docs">Doc Browser</h3>
+<figure class="slideshow">
+<img src="bash/images/Doc-Browser-1.png" alt="doc browser">
+<img src="bash/images/Doc-Browser-2.png" alt="doc browser">
+<img src="bash/images/Doc-Browser-Set-Doc-Dialogue.png" alt="doc browser">
+<figcaption style="padding-top:520px;">Wrye Bash's Doc Browser.</figcaption>
+</figure>
+<p>The Doc Browser allows you to quickly and easily scan through your mods' documentation. The supported document types are: text files, HTML files and MHT files (HTML archives). To display the Doc Browser, double click any plugin in the main list of the Mods tab.
+<p>When you double-click a plugin, Wrye Bash will open the Doc Browser and attempt to determine which document to associate with it. If it can determine one, it will display it. Otherwise, a blank page will be displayed. To associate a document with a plugin, use the <q>Set Doc...</q> button in the Doc Browser. To disassociate a document with a plugin, use the <q>Forget Doc...</q> button in the Doc Browser.
+<p>You can also rename an associated document using the <q>Rename Doc...</q> button to select a new name and/or location. The document will be renamed and/or moved to this location.
+<p>You can edit a document by clicking the <q>Edit Doc...</q> button. The document can then be edited in the viewing window. To finish editing, click the <q>Edit Doc...</q> button again. Changes are automatically saved when you select a new plugin, close the Doc Browser or finish editing.
+<p>A document can be opened in its default external editor by clicking the <q>Open Doc...</q> button.
+<p>A new document can be created for a plugin by clicking the <q>Set Doc...</q> button and choosing a new filename. This creates a document using a blank template that you can then edit. The default template is <code>Data\Docs\My Readme Template</code> if it exists, or if not, <code>Data\Docs\Bash Readme Template.txt</code>. The latter is written in Wrye wiki text format, which will be displayed as HTML when the Doc Browser is not in edit mode.
+<p>To view a different document, select a different plugin in the list on the left of the Doc Browser or in the Mods tab.
+<p>Some notes on Doc Browser behaviour:
+<ul>
+	<li>If a plugin is renamed in the Mods tab, then any documents associated with it will become associated to the plugin's new name.
+	<li>If a plugin is copied in the Mods tab, then any documents associated with it will also become associated with the copy.
+	<li>Documents can be stored in any location, though <code>Data\Docs</code> is the standard location.
+	<li>If you delete a plugin, its documentation will not be deleted, but it will no longer be viewable through the Doc Browser.
+	<li>If you hide a plugin, its documentation will still be viewable through the Doc Browser.
+</ul>
+
+
+<h3 id="tools-checker">Mod Checker</h3>
+<figure>
+<img src="bash/images/Mod-Checker-1.png" alt="Mod Checker"/>
+<figcaption>Wrye Bash's Mod Checker</figcaption>
+</figure>
+<p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
+<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regardinng missing masters or delinquent masters.
+<ul>
+	<li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
+	<li>Delinquent masters occur when a plugin's master loads after the plugin itself. This shoud be fixed to prevent issues in-game.
+</ul>
+<p>The next section of the report details the output of any rulesets installed. These are text files that contain a set of instructions that tell the Mod Checker what to look for and what to say in the report if anything is found. Currently the only ruleset distributed by Wrye Bash is for Cobl. Rulesets are stored in <code>Data\Bash Patches</code> and end in <q>Rules.txt</q>. Information on ruleset syntax can be found at <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker">UESP: Wrye Bash Mod Checker</a>.
+<p>The rest of the report details any plugin groups that have been set up. Each group's section contains the following information:
+<ul>
+	<li>Notes: These are various notes on the plugin group, as entered by the user.
+	<li>Configuration: This is a summary of the plugin group's configuration. It uses a few symbols to denote the status of plugins, these are: x: active; +: merged; *: imported; -: inactive/unmerged.
+	<li>Suggestions: Specific suggestions for the plugin group. These are typically activating or deactivating certain plugins, or replacing mods with other mods.
+	<li>Warnings: Like suggestions, but the causes are more likely to cause issues. This section will detail what should be activated or deactivated to resolve the problems.
+</ul>
+<table>
+	<thead>
+		<tr><th colspan="2">Mod Checker Buttons
+		<tr><th>Button<th>Function
+	<tbody>
+		<tr><td>Forward/Back Arrows<td>The Mod Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser. 
+		<tr><td>Mod List<td>Toggles the display of the Active Mod Files list.
+		<tr><td>Rule Sets<td>Toggles the display of the headers for the rulesets installed, even if they produce no other output.
+		<tr><td>Notes<td>Toggles the display of plugin group notes.
+		<tr><td>Configuration<td>Toggles the display of plugin groups' configurations.
+		<tr><td>Suggestions<td>Toggles display of the suggestions produced by plugin groups.
+		<tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
+		<tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
+		<tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.
+		<tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
+		<tr><td>Update<td>Forces a refresh of the report.
+</table>
+
+
+<h3 id="tools-swapping">Oblivion.esm Swapping</h3>
+<p>Oblivion.esm swapping is a feature that allows mod authors to switch between different versions of Oblivion.esm on the fly. This is useful as it allows mod authors to make plugins that are totally SI-independent (as the Shivering Isles patches Oblivion.esm instead of using a new plugin). It can also be used to avoid the need for a fully patched Oblivion to run a plugin, but this usage is <b>not recommended</b>. If you want a plugin to work on older versions of Oblivion, use the <a href="#modsVersion0.8">Version 0.8</a> command on it.
+<p>The main requirement for swapping to work is that you have the necessary copies of the different Oblivion.esm files. <b>This is only possible if you copy and rename Oblivion.esm before installing Shivering Isles.</b> There are three accepted versions of Oblivion.esm in addition to the latest SI one. These are determined by their file size:
+<ul>
+	<li>247388848 bytes: this is the 1.1 version. Rename it to <code>Oblivion_1.1.esm</code>.
+	<li>247388812 bytes: this is the GOTY version without SI. Rename it to <code>Oblivion_GOTY non-SI.esm</code>.
+	<li>247388894 bytes: this is an uncommon variant of the 1.1 version. Rename it to <code>Oblivion_1.1b.esm</code>.
+</ul>
+<p>You can then swap between the different versions of Oblivion.esm using the <a href="#modsOblivion.esm">Oblivion.esm</a> submenu in the Mods tab column header context menu. Your currently active version will be checked, select another to swap them. You can also perform the same swapping in the Saves tab column header context menu, but in addition to the swapping this will also mark the selected version as the preferred version to use with the current <a href="#saves-profiles">Save Profile</a>. If you then switch to another save profile and back to this one, Oblivion.esm will be swapped automatically.
+<p>Wrye Bash displays the current version of Oblivion.esm in its version indicators. The main indicator is in the title bar of the main Wrye Bash window, but there are also indicators placed after Oblivion.esm in the Mods tab plugin list, and after Oblivion.esm in the Masters tab for plugins and savegames. The three possible indicators are:
+<ul>
+	<li>[1.1]: You are currently using the 1.1 or 1.1b version of Oblivion.esm.
+	<li>[GOTY non-SI]: You are currently using the GOTY without SI installed version of Oblivion.esm.
+	<li>[SI]: You are currently using the Shivering Isles-patched version of Oblivion.esm.
+</ul>
+
+
+<h3 id="tools-shortcuts">Keyboard Shortcuts</h3>
+<p>The following keyboard shortcuts work almost everywhere in Wrye Bash.
+<table>
+	<thead><tr><th>Shortcut<th>Function
+	<tbody>
+		<tr><td><code>ctrl-numpad plus (+)</code><td>Auto-sizes the columns to fit what is displayable.
+		<tr><td><code>ctrl-a</code><td>Selects all.
+		<tr><td><code>shift-ctrl-a</code><td>Deselects all.
+</table>
+
+<h2 id="international">Internationalisation</h2>
+<h3 id="international-overview">Overview</h3>
+<p>Wrye Bash has built-in support for translation into other languages, using text files that tell it which English strings in the source code should be translated, and into what. These text files are found in <code>Mopy\bash\l10n\</code>. New translations or updates to existing translations should be presented to the Wrye Bash team so that they may be included in future releases.
+<p>To begin translating, or to update an existing translation, use the following steps.
+<ol>
+	<li>Select <a href="settingsDumpTranslator">Dump Translator</a> from Wrye Bash's Settings menu. This generates a new version of the translation file for your locale. The new file will be named appropriately, except from the leading "NEW", and will contain any translations already done.
+	<li>Delete any existing translation text file for the same language.
+	<li>Rename the new translator file, removing the leading "NEW". Do not change the rest of the filename.
+	<li>Edit the translator file, adding translations or editing existing translations.
+	<li>To test a translator file, save your changes then restart Wrye Bash, and select the language from the <a href="settingsLanguage">Language</a> submenu in Wrye Bash's Settings menu.
+</ol>
+
+
+<h3 id="international-format">Translator File Format</h3>
+<p>Below is an excerpt from a translator file.
+<code class="box">=== basher.py, 3711
+Active profile cannot be removed.
+>>>>
+
+=== basher.py, 3717
+Delete profile %s and the %d save files it contains?
+>>>>
+DELETE PROFILE %s AND THE %d SAVE FILES IT CONTAINS?
+</code>
+<p>The above contains two separate translation entries. Each entry begins with the source code file and line number the string to be translated is found on.
+<p>The file line is followed by the original text string on a new line, which is then followed by a line containing only <code>&gt;&gt;&gt;&gt;</code>. The translation entry ends with a final line containing the translated text string.
+<p><b>Note:</b> It is important that the formatting characters are not removed or moved or added to. Formatting characters are those that start with a percentage sign or a backslash, eg. <code> %s %d %08X \n</code>. If a formatting character is missing, Wrye Bash will throw an exception, which is bad.
+
+<script>
+function nextImage(imgs, i){
+	for(var i=0;i<imgs.length;i++){
+		if(imgs[i].style.opacity=='1' || imgs[i].style.opacity==''){
+			imgs[i].style.opacity='0';
+			if(i+1<imgs.length){
+				imgs[i+1].style.opacity='1';
+			}else{
+				imgs[0].style.opacity='1';
+			}
+			break;
+		}
+	}
+	t=setTimeout(nextImage, 5000, imgs);
+}
+
+var figures = document.getElementsByTagName('figure');
+if(figures!=null){
+	for (var i=0; i < figures.length; i++) {
+		if (figures[i].className == 'slideshow'){
+			t=setTimeout(nextImage,5000, figures[i].getElementsByTagName('img'));
+		}
+	}
+}
+</script>
