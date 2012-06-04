@@ -365,8 +365,8 @@ wryeBashDataFiles = set((
     u'Docs\\Bash Readme Template.txt'
     ))
 wryeBashDataDirs = set((
-    u'Bash Patches\\'+name,
-    u'INI Tweaks\\'+name
+    u'Bash Patches',
+    u'INI Tweaks'
     ))
 ignoreDataFiles = set((
     u'OBSE\\Plugins\\Construction Set Extender.dll',
