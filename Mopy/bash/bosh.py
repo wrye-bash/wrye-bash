@@ -72,6 +72,16 @@ startupinfo = bolt.startupinfo
 #--Unicode
 exe7z = u'7zUnicode.exe'
 
+def getPatchesPath(fileName):
+    """Choose the correct Bash Patches path for the file."""
+    if dirs['patches'].join(fileName).isfile():
+        return dirs['patches'].join(fileName)
+    else:
+        return dirs['defaultPatches'].join(fileName)
+
+def getPatchesList():
+    """Get a basic list of potential Bash Patches."""
+    return set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())
 
 def formatInteger(value):
     """Convert integer to string formatted to locale."""
@@ -4710,9 +4720,10 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
-    def __init__(self,dir,factory=FileInfo):
+    def __init__(self,dir,factory=FileInfo, dirdef=None):
         """Init with specified directory and specified factory type."""
         self.dir = dir #--Path
+        self.dirdef = dirdef
         self.factory=factory
         self.data = {}
         self.bashDir = self.getBashDir()
@@ -4754,10 +4765,16 @@ class FileInfos(DataDict):
         updated = set()
         self.dir.makedirs()
         #--Loop over files in directory
-        names = [x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)]
+        names = [ x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x) ]
+        if self.dirdef:
+            names = { x for x in names } | {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
+            names = [ x for x in names ]
         names.sort(key=lambda x: x.cext == u'.ghost')
         for name in names:
-            fileInfo = self.factory(self.dir,name)
+            if self.dirdef and not self.dir.join(name).isfile():
+                fileInfo = self.factory(self.dirdef,name)
+            else:
+                fileInfo = self.factory(self.dir,name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
             if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
             oldInfo = self.data.get(name)
@@ -4863,7 +4880,7 @@ class FileInfos(DataDict):
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
-        FileInfos.__init__(self, dirs['mods'].join(u'INI Tweaks',bush.game.name),INIInfo)
+        FileInfos.__init__(self, dirs['tweaks'],INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
     def rightFileType(self,fileName):
@@ -5103,8 +5120,7 @@ class ModInfos(FileInfos):
         self.autoGroups.clear()
         modGroups = ModGroups()
         for base in (u'Bash_Groups.csv',u'My_Groups.csv'):
-            path = self.dir.join(u'Bash Patches',bush.game.name,base)
-            if path.exists(): modGroups.readFromText(path)
+            if getPatchesPath(base).exists(): modGroups.readFromText(getPatchesPath(base))
         self.autoGroups.update(modGroups.mod_group)
 
     def autoGhost(self,force=False):
@@ -6283,9 +6299,9 @@ class ConfigHelpers:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
-        taglist = dirs['mods'].join(u'Bash Patches',bush.game.name,u'taglist.txt')
+        taglist = getPatchesPath(u'taglist.txt')
         if not taglist.exists():
-            raise bolt.BoltError(u'Data\\Bash Patches\\'+bush.game.name+u'\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
@@ -6321,11 +6337,11 @@ class ConfigHelpers:
         """Reloads ruleSets if file dates have changed."""
         name_ruleSet = self.name_ruleSet
         reRulesFile = re.compile(u'Rules.txt$',re.I|re.U)
-        ruleFiles = set(x for x in dirs['patches'].list() if reRulesFile.search(x.s))
+        ruleFiles = set(x for x in getPatchesList() if reRulesFile.search(x.s))
         for name in name_ruleSet.keys():
             if name not in ruleFiles: del name_ruleSet[name]
         for name in ruleFiles:
-            path = dirs['patches'].join(name)
+            path = getPatchesPath(name)
             ruleSet = name_ruleSet.get(name)
             if not ruleSet:
                 ruleSet = name_ruleSet[name] = ModRuleSet()
@@ -9192,7 +9208,7 @@ class InstallersData(bolt.TankData, DataDict):
                             if newCrc != oldCrc:
                                 target = dirs['mods'].join(file)
                                 # Creat a copy of the old one
-                                baseName = dirs['mods'].join(u'INI Tweaks', bush.game.name, u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
+                                baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
                                 oldIni = baseName
                                 num = 1
                                 while oldIni.exists():
@@ -15143,9 +15159,10 @@ class ListPatcher(Patcher):
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(dirs['patches'].list()):
+        for fileName in sorted(getPatchesList()):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
+                autoNames.add(fileName)
         return autoItems
 
     def getConfig(self,configs):
@@ -15229,7 +15246,8 @@ class CBash_ListPatcher(CBash_Patcher):
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(dirs['patches'].list()):
+        autoNames = set()
+        for fileName in sorted(set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
         return autoItems
@@ -15241,10 +15259,10 @@ class CBash_ListPatcher(CBash_Patcher):
             self.autoIsChecked = True
         #--Verify file existence
         newConfigItems = []
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcPath in self.configItems:
             if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                reCsvExt.search(srcPath.s) and srcPath in patchesList):
                     newConfigItems.append(srcPath)
         self.configItems = newConfigItems
         if self.__class__.forceItemCheck:
@@ -15481,10 +15499,10 @@ class DoublePatcher(ListPatcher):
             self.autoIsChecked = True
         #--Verify file existence
         newConfigItems = []
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcPath in self.configItems:
             if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                reCsvExt.search(srcPath.s) and srcPath in patchesList):
                     newConfigItems.append(srcPath)
         self.configItems = newConfigItems
         if self.__class__.forceItemCheck:
@@ -15525,10 +15543,10 @@ class CBash_DoublePatcher(CBash_ListPatcher):
             self.autoIsChecked = True
         #--Verify file existence
         newConfigItems = []
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcPath in self.configItems:
             if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                reCsvExt.search(srcPath.s) and srcPath in patchesList):
                     newConfigItems.append(srcPath)
         self.configItems = newConfigItems
         if self.__class__.forceItemCheck:
@@ -15711,11 +15729,12 @@ class UpdateReferences(ListPatcher):
         """Get names from source files."""
         if not self.isActive: return
         progress.setFull(len(self.srcFiles))
+        patchesList = getPatchesList()
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
-            if srcPath not in patchesDir: continue
-            self.readFromText(dirs['patches'].join(srcFile))
+            if srcPath not in patchesList: continue
+            if getPatchesPath(srcFile).isfile():
+                self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
     def getReadClasses(self):
@@ -15905,11 +15924,12 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         if not self.isActive: return
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcFile in self.srcs:
             if not reModExt.search(srcFile.s):
-                if srcFile not in patchesDir: continue
-                fidReplacer.readFromText(dirs['patches'].join(srcFile))
+                if srcFile not in patchesList: continue
+                if getPatchesPath(srcFile).isfile():
+                    fidReplacer.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         self.old_new = fidReplacer.old_new
@@ -17546,14 +17566,14 @@ class ImportFactions(ImportPatcher):
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
+            patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
                 if srcPath not in modInfos: continue
                 srcInfo = modInfos[GPath(srcFile)]
                 actorFactions.readFromMod(srcInfo)
             else:
-                if srcPath not in patchesDir: continue
-                actorFactions.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                actorFactions.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         id_factions= self.id_factions
@@ -17656,12 +17676,12 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         CBash_ImportPatcher.initData(self,group_patchers,progress)
         actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
-                if srcPath not in patchesDir: continue
-                actorFactions.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                actorFactions.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         csvId_factions = self.csvId_factions
@@ -17762,14 +17782,14 @@ class ImportRelations(ImportPatcher):
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
+            patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
                 if srcPath not in modInfos: continue
                 srcInfo = modInfos[GPath(srcFile)]
                 factionRelations.readFromMod(srcInfo)
             else:
-                if srcPath not in patchesDir: continue
-                factionRelations.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                factionRelations.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         for fid, relations in factionRelations.id_relations.iteritems():
@@ -17867,12 +17887,12 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         CBash_ImportPatcher.initData(self,group_patchers,progress)
         factionRelations = CBash_FactionRelations(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
-                if srcPath not in patchesDir: continue
-                factionRelations.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                factionRelations.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         self.csvFid_faction_mod.update(factionRelations.fid_faction_mod)
@@ -18639,15 +18659,15 @@ class NamesPatcher(ImportPatcher):
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
+            patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
                 if srcPath not in modInfos: continue
                 srcInfo = modInfos[GPath(srcFile)]
                 fullNames.readFromMod(srcInfo)
             else:
-                if srcPath not in patchesDir: continue
+                if srcPath not in patchesList: continue
                 try:
-                    fullNames.readFromText(dirs['patches'].join(srcFile))
+                    fullNames.readFromText(getPatchesPath(srcFile))
                 except UnicodeError as e:
                     print srcFile.stail,u'is not saved in UTF-8 format:', e
             progress.plus()
@@ -18754,12 +18774,12 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         CBash_ImportPatcher.initData(self,group_patchers,progress)
         fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
-                if srcPath not in patchesDir: continue
-                fullNames.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                fullNames.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
         #--Finish
@@ -19436,14 +19456,14 @@ class StatsPatcher(ImportPatcher):
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
+            patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
                 if srcPath not in modInfos: continue
                 srcInfo = modInfos[GPath(srcFile)]
                 itemStats.readFromMod(srcInfo)
             else:
-                if srcPath not in patchesDir: continue
-                itemStats.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                itemStats.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
         #--Finish
@@ -19558,11 +19578,11 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         CBash_ImportPatcher.initData(self,group_patchers,progress)
         itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcFile in self.srcs:
             if not reModExt.search(srcFile.s):
-                if srcFile not in patchesDir: continue
-                itemStats.readFromText(dirs['patches'].join(srcFile))
+                if srcFile not in patchesList: continue
+                itemStats.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
         #--Finish
@@ -19653,14 +19673,14 @@ class SpellsPatcher(ImportPatcher):
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
+            patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
                 if srcPath not in modInfos: continue
                 srcInfo = modInfos[GPath(srcFile)]
                 spellStats.readFromMod(srcInfo)
             else:
-                if srcPath not in patchesDir: continue
-                spellStats.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                spellStats.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         self.id_stat.update(spellStats.fid_stats)
@@ -19753,12 +19773,12 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         spellStats = CBash_SpellRecords(aliases=self.patchFile.aliases)
         self.attrs = spellStats.attrs
         progress.setFull(len(self.srcs))
-        patchesDir = dirs['patches'].list()
+        patchesList = getPatchesList()
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
-                if srcPath not in patchesDir: continue
-                spellStats.readFromText(dirs['patches'].join(srcFile))
+                if srcPath not in patchesList: continue
+                spellStats.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
         self.csvId_stats.update(spellStats.fid_stats)
@@ -27486,9 +27506,9 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
         progress.setFull(len(self.srcFiles))
         for srcFile in self.srcFiles:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
-            if srcPath not in patchesDir: continue
-            self.readFromText(dirs['patches'].join(srcFile))
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
     def getReadClasses(self):
@@ -27581,9 +27601,9 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
-            if srcPath not in patchesDir: continue
-            self.readFromText(dirs['patches'].join(srcFile))
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
     def getTypes(self):
@@ -27907,7 +27927,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     def getDefaultTags():
         tags = {}
         for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
-            textPath = dirs['patches'].join(fileName)
+            textPath = getPatchesPath(fileName)
             if textPath.exists():
                 with bolt.CsvReader(textPath) as reader:
                     for fields in reader:
@@ -28173,7 +28193,7 @@ class MFactMarker(SpecialPatcher,ListPatcher):
         aliases = self.patchFile.aliases
         id_info = self.id_info
         for srcFile in self.srcFiles:
-            textPath = dirs['patches'].join(srcFile)
+            textPath = getPatchesPath(srcFile)
             if not textPath.exists(): continue
             with bolt.CsvReader(textPath) as ins:
                 for fields in ins:
@@ -28297,9 +28317,9 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            patchesDir = dirs['patches'].list()
-            if srcPath not in patchesDir: continue
-            self.readFromText(dirs['patches'].join(srcFile))
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
     def getTypes(self):
@@ -30840,7 +30860,10 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['builds'] = dirs['app'].join(u'Builds')
-    dirs['patches'] = dirs['mods'].join(u'Bash Patches',bush.game.name)
+    dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.name)
+    dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
+    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.name)
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
@@ -30859,8 +30882,9 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             dirs['saveBase'] = dirs['app']
             # Set the data folder to sLocalMasterPath
             dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath',u'Data\\'))
-            # this one is relative to the mods path so it must be updated too
-            dirs['patches'] = dirs['mods'].join(u'Bash Patches',bush.game.name)
+            # these are relative to the mods path so they must be updated too
+            dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+            dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     except:
         # Error accessing folders for Oblivion.ini
         # We'll show an error later
