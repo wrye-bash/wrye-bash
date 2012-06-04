@@ -1571,9 +1571,9 @@ class INIList(List):
                        + u'\n\n' +
                        _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                        )
-            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks\\"+bush.game.name)):
+            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
                 return
-        dir = self.data.dir
+        dir = tweak.dir
         #--No point applying a tweak that's already applied
         file = dir.join(self.items[hitItem])
         iniList.data.ini.applyTweakFile(file)
@@ -1620,7 +1620,7 @@ class INITweakLineCtrl(wx.ListCtrl):
             self.DeleteAllItems()
             return
         ini = bosh.iniInfos.ini
-        tweakPath = bosh.iniInfos.dir.join(tweakPath)
+        tweakPath = bosh.iniInfos[tweakPath].dir.join(tweakPath)
         self.tweakLines = ini.getTweakFileLines(tweakPath)
         num = self.GetItemCount()
         updated = []
@@ -7686,8 +7686,8 @@ class BashFrame(wx.Frame):
             self.incompleteInstallError = True
             message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
                        + u'\n\n' +
-                       _(u'Correct installation will create %s\\Mopy, %s\\Data\\Docs and %s\\Data\\INI Tweaks\\%s directories.')
-                       % (bush.game.name,bush.game.name,bush.game.name,bush.game.name)
+                       _(u'Correct installation will create %s\\Mopy and %s\\Data\\Docs directories.')
+                       % (bush.game.name,bush.game.name)
                        )
             balt.showWarning(self,message,_(u'Incomplete Installation'))
         #--Merge info
@@ -11254,7 +11254,7 @@ class Installer_Wizard(InstallerLink):
         #       iniList-> left    -> splitter ->INIPanel
         panel = iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
-            outFile = bosh.dirs['mods'].join(u'INI Tweaks',bush.game.name,u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in belt.generateTweakLines(ret.IniEdits[iniFile],iniFile):
                     out.write(line+u'\n')
@@ -11275,7 +11275,7 @@ class Installer_Wizard(InstallerLink):
                                + u'\n\n' +
                                _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
                                ) % iniFile.sbody
-                    if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks\\'+bush.game.name)):
+                    if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                         continue
                 panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
@@ -11563,7 +11563,7 @@ class Installer_Install(InstallerLink):
                     balt.showInfo(self.window,
                         _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
                         +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
-                        _(u'INI Tweaks\\'+bush.game.name)
+                        _(u'INI Tweaks')
                         )
         finally:
             self.data.refresh(what='N')
@@ -12898,6 +12898,66 @@ class INI_ListErrors(Link):
             wx.TheClipboard.Close()
         balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
 
+#------------------------------------------------------------------------------
+class INI_FileOpenOrCopy(Link):
+    """Open specified file(s) only if they aren't Bash supplied defaults."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if not len(data) == 1:
+            label = _(u'Open/Copy...')
+            help = _(u'Only one INI file can be opened or copied at a time.')
+        elif bosh.dirs['tweaks'].join(data[0]).isfile():
+            label = _(u'Open...')
+            help = _(u"Open '%s' with the system's default program.") % data[0]
+        else:
+            label = _(u'Copy...')
+            help = _(u"Make an editable copy of the default tweak '%s'.") % data[0]
+        menuItem = wx.MenuItem(menu,self.id,label,help)
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data)>0 and len(data) == 1)
+
+    def Execute(self,event):
+        """Handle selection."""
+        dir = self.window.data.dir
+        for file in self.data:
+            if bosh.dirs['tweaks'].join(file).isfile():
+                dir.join(file).start()
+            else:
+                bosh.iniInfos[file].dir.join(file).copyTo(bosh.dirs['tweaks'].join(file))
+                iniList.data.refresh()
+                iniList.RefreshUI(detail=path)
+                self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
+
+ #------------------------------------------------------------------------------
+ class INI_Delete(Link):
+     """Delete the file and all backups."""
+     def AppendToMenu(self,menu,window,data):
+         Link.AppendToMenu(self,menu,window,data)
+         if bosh.dirs['tweaks'].join(data[0]).isfile():
+             menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
+                 help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
+         else:
+             menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
+                 help=_(u'Bash default tweaks can\'t be deleted.'))
+             menu.AppendItem(menuItem)
+             menuItem.Enable(False)
+ 
+     def Execute(self,event):
+         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
+         message.extend(sorted(self.data))
+         dialog = ListBoxes(self.window,_(u'Delete Files'),
+                      _(u'Delete these files? This operation cannot be undone.'),
+                      [message])
+         if dialog.ShowModal() != wx.ID_CANCEL:
+             id = dialog.ids[message[0]]
+             checks = dialog.FindWindowById(id)
+             if checks:
+                 for i,mod in enumerate(self.data):
+                     if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():
+                         self.window.data.delete(mod)
+             self.window.RefreshUI()
+         dialog.Destroy()
+
 #-------------------------------------------------------------------------------
 class INI_Apply(Link):
     """Apply an INI Tweak."""
@@ -12923,9 +12983,9 @@ class INI_Apply(Link):
         if choice in bush.game.iniFiles:
             message = (_(u'Apply an ini tweak to %s?') % choice
                        + u'\n\n' +
-                       _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
+                       _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to your computer!')
                        )
-            if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks\\'+bush.game.name)):
+            if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                 return
         dir = self.window.data.dir
         needsRefresh = False
@@ -12957,9 +13017,9 @@ class INI_CreateNew(Link):
         """Handle creating a new INI tweak."""
         pathFrom = self.data[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
-        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['mods'].join(u'INI Tweaks',bush.game.name),fileName,_(u'INI Tweak File (*.ini)|*.ini'))
+        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['tweaks'],fileName,_(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return
-        bosh.dirs['mods'].join(u'INI Tweaks', bush.game.name, pathFrom).copyTo(path)
+        bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
         iniList.data.refresh()
         oldTarget = iniList.data.ini
@@ -20239,8 +20299,8 @@ def InitINILinks():
     INIList.itemMenu.append(INI_CreateNew())
     INIList.itemMenu.append(INI_ListErrors())
     INIList.itemMenu.append(SeparatorLink())
-    INIList.itemMenu.append(File_Open())
-    INIList.itemMenu.append(File_Delete())
+    INIList.itemMenu.append(INI_FileOpenOrCopy())
+    INIList.itemMenu.append(INI_Delete())
 
 def InitModLinks():
     """Initialize Mods tab menus."""
