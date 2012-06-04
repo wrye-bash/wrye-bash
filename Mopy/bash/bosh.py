@@ -6299,9 +6299,9 @@ class ConfigHelpers:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
-        taglist = getPatchesPath(u'taglist.txt')
+        taglist = dirs['defaultPatches'].join(u'taglist.txt')
         if not taglist.exists():
-            raise bolt.BoltError(u'Data\\Bash Patches\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
