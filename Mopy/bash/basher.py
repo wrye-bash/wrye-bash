@@ -12928,35 +12928,35 @@ class INI_FileOpenOrCopy(Link):
                 iniList.RefreshUI(detail=path)
                 self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
 
- #------------------------------------------------------------------------------
- class INI_Delete(Link):
-     """Delete the file and all backups."""
-     def AppendToMenu(self,menu,window,data):
-         Link.AppendToMenu(self,menu,window,data)
-         if bosh.dirs['tweaks'].join(data[0]).isfile():
-             menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
-                 help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
-         else:
-             menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
-                 help=_(u'Bash default tweaks can\'t be deleted.'))
-             menu.AppendItem(menuItem)
-             menuItem.Enable(False)
- 
-     def Execute(self,event):
-         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
-         message.extend(sorted(self.data))
-         dialog = ListBoxes(self.window,_(u'Delete Files'),
-                      _(u'Delete these files? This operation cannot be undone.'),
-                      [message])
-         if dialog.ShowModal() != wx.ID_CANCEL:
-             id = dialog.ids[message[0]]
-             checks = dialog.FindWindowById(id)
-             if checks:
-                 for i,mod in enumerate(self.data):
-                     if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():
-                         self.window.data.delete(mod)
-             self.window.RefreshUI()
-         dialog.Destroy()
+#------------------------------------------------------------------------------
+class INI_Delete(Link):
+    """Delete the file and all backups."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if bosh.dirs['tweaks'].join(data[0]).isfile():
+            menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
+                help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
+                help=_(u'Bash default tweaks can\'t be deleted.'))
+            menu.AppendItem(menuItem)
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
+        message.extend(sorted(self.data))
+        dialog = ListBoxes(self.window,_(u'Delete Files'),
+                     _(u'Delete these files? This operation cannot be undone.'),
+                     [message])
+        if dialog.ShowModal() != wx.ID_CANCEL:
+            id = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id)
+            if checks:
+                for i,mod in enumerate(self.data):
+                    if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():
+                        self.window.data.delete(mod)
+            self.window.RefreshUI()
+        dialog.Destroy()
 
 #-------------------------------------------------------------------------------
 class INI_Apply(Link):
