@@ -675,7 +675,10 @@ NoComTypes:
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Python "$0 - Installing..."
+                    Sleep 2000
+                    HideWindow
                     ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.3.msi"'
+                    BringToFront
                     ${NSD_SetText} $Check_Python "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_Python "$0 - Download Failed!"
@@ -691,7 +694,10 @@ NoComTypes:
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_wx "$0 - Installing..."
+                    Sleep 2000
+                    HideWindow
                     ExecWait '"$TEMP\PythonInstallers\wxPython.exe"'; /VERYSILENT'
+                    BringToFront
                     ${NSD_SetText} $Check_wx "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_wx "$0 - Download Failed!"
@@ -707,7 +713,10 @@ NoComTypes:
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_Comtypes "$0 - Installing..."
+                    Sleep 2000
+                    HideWindow
                     ExecWait  '"$TEMP\PythonInstallers\comtypes.exe"'
+                    BringToFront
                     ${NSD_SetText} $Check_Comtypes "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!"
@@ -723,7 +732,10 @@ NoComTypes:
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
+                    Sleep 2000
+                    HideWindow
                     ExecWait  '"$TEMP\PythonInstallers\pywin32.exe"'
+                    BringToFront
                     ${NSD_SetText} $Check_pywin32 "$0 - Installed."
                 ${Else}
                     ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!"
