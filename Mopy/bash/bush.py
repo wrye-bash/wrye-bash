@@ -35,7 +35,6 @@ from bolt import GPath,Path,deprint
 # Setup -----------------------------------------------------------------------
 game = None
 gamePath = None
-dontSkip = None
 fullLoadOrder = {}
 
 def detectGames(workingDir=u''):

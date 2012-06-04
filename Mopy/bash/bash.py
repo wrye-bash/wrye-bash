@@ -519,8 +519,6 @@ def main():
     global basherImported
     basherImported = True
 
-    bush.dontSkip = bush.game.dontSkip
-
     app.Init()
     app.MainLoop()
 
