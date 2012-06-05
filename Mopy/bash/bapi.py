@@ -186,7 +186,7 @@ def Init(path):
         details = c_uint8_p()
         ret = _CGetLastErrorDetails(byref(details))
         if ret != BOSS_API_OK:
-            raise Exception(u'An error occured while getting the details of a BOSS API error:\nOriginal error: %i\nResulting error: %s' % (return_code, ret))
+            raise Exception(u'An error occurred while getting the details of a BOSS API error:\nOriginal error: %i\nResulting error: %s' % (return_code, ret))
         return unicode(details.value,'utf8')
 
     def RegisterCallback(errorCode,callback):
