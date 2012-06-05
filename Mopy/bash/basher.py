@@ -41,6 +41,7 @@ has its own data store)."""
 import bush
 import bosh
 import bolt
+import bapi
 import barb
 import bass
 import bweb
@@ -6911,9 +6912,9 @@ DEL %%0"""
         if secondsToUpdate == 0:
             wx.CallLater(100,self.InitiateUpdate)
         else:
-            if secondsToUpdate > 2147483: # ~1/1000 max value for a C int/long, since wx.CallLater's first arg is limited to 32 bit signed integers (apparently -- anything above crashed for me)
-                secondsToUpdate = 2147483 # This leads to an incredibly minor bug: if auto-update is set to every month and the user leaves Wrye Bash open for the whole month, it'll update a few
-                                          # days earlier than expected. If there's a better way to check for overflow, feel free to change accordingly.
+            if secondsToUpdate > 2147483:   # ~1/1000 max value for a C int/long, since wx.CallLater's first arg is limited to 32 bit signed integers (apparently -- anything above crashed for me)
+                secondsToUpdate = 2147483   # This leads to an incredibly minor bug: if auto-update is set to every month and the user leaves Wrye Bash open for the whole month, it'll update a few
+                                            # days earlier than expected. If there's a better way to check for overflow, feel free to change accordingly.
 
             wx.CallLater(secondsToUpdate*1000,self.InitiateUpdate)
 
