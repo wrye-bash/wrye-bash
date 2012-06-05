@@ -1753,7 +1753,12 @@ class ModList(List):
         # create new order
         newOrder = oldOrder[:newPos] + toMove + oldOrder[newPos:]
         #--Save and Refresh
-        bosh.boss.LoadOrder = newOrder
+        try:
+            bosh.boss.LoadOrder = newOrder
+        except bapi.BossError as e:
+            if e.code == bapi.BOSS_API_ERROR_INVALID_ARGS:
+                #balt.showError(self, u'Cannot load plugins before masters.')
+                pass
         bosh.modInfos.refreshBapi(False, True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(reloadTags=False)
