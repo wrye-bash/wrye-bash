@@ -19443,7 +19443,7 @@ class App_Help(StatusBar_Button):
 
     def Execute(self,event):
         """Handle menu selection."""
-        html = bosh.dirs['mopy'].join(u'Wrye Bash.html')
+        html = bosh.dirs['mopy'].join(u'Wrye Bash General Readme.html')
         if not html.exists():
             bolt.WryeText.genHtml(bosh.dirs['mopy'].join(u'Wrye Bash.txt').s, None, bosh.dirs['mopy'])
         html.start()
