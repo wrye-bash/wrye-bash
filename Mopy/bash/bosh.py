@@ -4354,10 +4354,10 @@ class ModInfo(FileInfo):
             description = description + u'\n' + strKeys
         self.writeDescription(description)
 
-    def getBashTags(self):
+    def getBashTags(self, reload=True):
         """Returns any Bash flag keys."""
         tags = modInfos.table.getItem(self.name,'bashTags',None)
-        if tags is None:
+        if tags is None and reload:
             tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
             tags -= (configHelpers.getBashRemoveTags(self.name) or set())
         # Filter and remove old tags
@@ -5288,14 +5288,9 @@ class ModInfos(FileInfos):
 
     def reloadBashTags(self):
         """Reloads Bash Tags for all Mods"""
-        for path in modInfos.keys():
-            mod = modInfos[GPath(path)]
-            tags = (mod.getBashTagsDesc() or set()) | (configHelpers.getBashTags(mod.name) or set())
-            tags -= (configHelpers.getBashRemoveTags(mod.name) or set())
-            tags = tags & allTagsSet
-            if tags & oldTagsSet:
-                tags -= oldTagsSet
-            mod.setBashTags(tags)
+        for name in self.data:
+            mod = self[name]
+            mod.setBashTags( mod.getBashTags() )
 
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
