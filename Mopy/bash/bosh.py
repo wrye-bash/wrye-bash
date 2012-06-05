@@ -5494,12 +5494,13 @@ class ModInfos(FileInfos):
         """Selects exactly the specified set of mods."""
         modNames = set(modNames)
         missing  = modNames - set(self.LoadOrder)
+        present  = modNames - missing
         try:
-            boss.SetActivePlugins(self.getOrdered(modNames))
+            boss.SetActivePlugins(self.getOrdered(present))
         except bapi.BossError as e:
             if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
                 raise
-            extra = set(modNames) - set(boss.ActivePlugins)
+            extra = set(present) - set(boss.ActivePlugins)
         else:
             extra = set()
         #--Save
