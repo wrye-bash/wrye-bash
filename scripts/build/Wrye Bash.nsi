@@ -1363,12 +1363,12 @@ NoComTypes:
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
                 SetOutPath $Path_OB\Data
                 File /r "Data\ArchiveInvalidationInvalidated!.bsa"
-                SetOutPath "$Path_OB\Data\Bash Patches\Oblivion"
-                File /r "Data\Bash Patches\Oblivion\*.*"
+                SetOutPath "$Path_OB\Mopy\Bash Patches\Oblivion"
+                File /r "Mopy\Bash Patches\Oblivion\*.*"
                 SetOutPath $Path_OB\Data\Docs
                 File /r "Data\Docs\*.*"
-                SetOutPath "$Path_OB\Data\INI Tweaks\Oblivion"
-                File /r "Data\INI Tweaks\Oblivion\*.*"
+                SetOutPath "$Path_OB\Mopy\INI Tweaks\Oblivion"
+                File /r "Mopy\INI Tweaks\Oblivion\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
@@ -1400,12 +1400,12 @@ NoComTypes:
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
                 SetOutPath $Path_Nehrim\Data
                 File /r "Data\ArchiveInvalidationInvalidated!.bsa"
-                SetOutPath "$Path_Nehrim\Data\Bash Patches\Oblivion"
-                File /r "Data\Bash Patches\Oblivion\*.*"
+                SetOutPath "$Path_Nehrim\Mopy\Bash Patches\Oblivion"
+                File /r "Mopy\Bash Patches\Oblivion\*.*"
                 SetOutPath $Path_Nehrim\Data\Docs
                 File /r "Data\Docs\*.*"
-                SetOutPath "$Path_Nehrim\Data\INI Tweaks\Oblivion"
-                File /r "Data\INI Tweaks\Oblivion\*.*"
+                SetOutPath "$Path_Nehrim\Mopy\INI Tweaks\Oblivion"
+                File /r "Mopy\INI Tweaks\Oblivion\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
@@ -1435,12 +1435,12 @@ NoComTypes:
             ${If} Path_Skyrim != $Empty
                 SetOutPath $Path_Skyrim\Mopy
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                SetOutPath "$Path_Skyrim\Data\Bash Patches\Skyrim"
-                File /r "Data\Bash Patches\Skyrim\*.*"
+                SetOutPath "$Path_Skyrim\Mopy\Bash Patches\Skyrim"
+                File /r "Mopy\Bash Patches\Skyrim\*.*"
                 SetOutPath $Path_Skyrim\Data\Docs
                 File /r "Data\Docs\*.*"
-                SetOutPath "$Path_Skyrim\Data\INI Tweaks\Skyrim"
-                File /r "Data\INI Tweaks\Skyrim\*.*"
+                SetOutPath "$Path_Skyrim\Mopy\INI Tweaks\Skyrim"
+                File /r "Mopy\INI Tweaks\Skyrim\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Path" "$Path_Skyrim"
                 ${If} $CheckState_Skyrim == ${BST_CHECKED}
