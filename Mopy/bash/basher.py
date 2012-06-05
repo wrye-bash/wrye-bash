@@ -19307,6 +19307,7 @@ class TESCS_Button(App_Button):
             tip = self._obseTip % (dict(version=self.version))
         else:
             tip = self._obseTip % (dict(version=''))
+        if not self.obseArg: return tip
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + CSE
