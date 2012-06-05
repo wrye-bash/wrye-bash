@@ -12930,8 +12930,7 @@ class INI_FileOpenOrCopy(Link):
             else:
                 bosh.iniInfos[file].dir.join(file).copyTo(bosh.dirs['tweaks'].join(file))
                 iniList.data.refresh()
-                iniList.RefreshUI(detail=path)
-                self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
+                iniList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class INI_Delete(Link):
