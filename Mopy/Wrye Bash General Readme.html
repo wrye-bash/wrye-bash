@@ -12,11 +12,12 @@
 	a:hover { text-decoration:underline; }
 	li ul, li ol {margin-top:0.4em;}
 	li {margin-bottom:10px;}
-	ol li ol {list-style:lower-alpha;}
+	ol ol {list-style:lower-alpha;}
 	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
 	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
 	thead {font-weight:bold; background:#8af;}
 	img {border:0;}
+ ol ol li {margin-bottom:0.2em;}
 	a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);}
 	q {font-style:italic;}
 	code {display:inline-block; padding:2px 5px; background:#DDD;}
@@ -38,8 +39,8 @@
 
 <h1>Wrye Bash General Readme</h1>
 
-<h2 style="margin-top:0;">Contents</h2>
-<ol>
+<h2 style="margin-top:0;margin-bottom:2em;">Contents</h2>
+<ol style="float:left;margin-top:0;margin-bottom:0;margin-right:4em;">
 	<li><a href="#intro">Introduction</a>
 	<ol>
 		<li><a href="#intro-glossary">Glossary</a>
@@ -71,6 +72,8 @@
 		<li><a href="#patch-tweaking">Applying Tweaks</a>
 		<li><a href="#patch-other">Other Bashed Patch Options</a>
 	</ol>
+</ol>
+<ol start="7" style="float:left;margin-top:0;">
 	<li><a href="#ini">Applying Ini File Edits</a>
 	<ol>
 		<li><a href="#ini-overview">Overview</a>
@@ -99,6 +102,7 @@
 	<li><a href="#license">License</a>
 	<li><a href="#advanced">Advanced Readme Topics</a>
 </ol>
+<p style="clear:both;">
 
 <h2 id="intro">Introduction</h2>
 <p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion and TES V: Skyrim. Its features include:
