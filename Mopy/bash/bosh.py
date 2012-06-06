@@ -21,7 +21,7 @@
 #
 # =============================================================================
 
-"""This module defines provides objects and functions for working with Oblivion
+"""This module defines objects and functions for working with Oblivion
 files and environment. It does not provide interface functions which are instead
 provided by separate modules: bish for CLI and bash/basher for GUI."""
 
@@ -4354,10 +4354,10 @@ class ModInfo(FileInfo):
             description = description + u'\n' + strKeys
         self.writeDescription(description)
 
-    def getBashTags(self, reload=True):
+    def getBashTags(self):
         """Returns any Bash flag keys."""
         tags = modInfos.table.getItem(self.name,'bashTags',None)
-        if tags is None and reload:
+        if tags is None:
             tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
             tags -= (configHelpers.getBashRemoveTags(self.name) or set())
         # Filter and remove old tags
@@ -5285,12 +5285,6 @@ class ModInfos(FileInfos):
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                     self.mergeable.discard(fileName)
-
-    def reloadBashTags(self):
-        """Reloads Bash Tags for all Mods"""
-        for name in self.data:
-            mod = self[name]
-            mod.setBashTags( mod.getBashTags() )
 
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
