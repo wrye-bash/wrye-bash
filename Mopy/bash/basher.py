@@ -12997,14 +12997,15 @@ class INI_Apply(Link):
                        )
             if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                 return
-        dir = self.window.data.dir
         needsRefresh = False
         for item in self.data:
             #--No point applying a tweak that's already applied
             if bosh.iniInfos[item].status == 20: continue
             needsRefresh = True
-            file = dir.join(item)
-            iniList.data.ini.applyTweakFile(file)
+            if bosh.dirs['tweaks'].join(item).isfile():
+                iniList.data.ini.applyTweakFile(bosh.dirs['tweaks'].join(item))
+            else:
+                iniList.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
@@ -13288,6 +13289,34 @@ class Mods_BOSSDisableLockTimes(BoolLink):
                                           'BOSS.ClearLockTimes',
                                           _(u"If selected, will temporarily disable Bash's Lock Load Order when running BOSS through Bash.")
                                           )
+
+#------------------------------------------------------------------------------
+class Mods_BOSSLaunchGUI(Link):
+    """If BOSS.exe is available then BOSS GUI.exe should be too."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Launch BOSS GUI'),
+            help=_(u"Launch BOSS GUI to change settings or update the user rules list."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        exePath = bosh.dirs['boss'].join(u'BOSS GUI.exe')
+        if not exePath.exists(): return
+        args = [exePath.s]
+        statusBar.SetStatusText(u' '.join(args[1:]),1)
+        cwd = bolt.Path.getcwd()
+        exePath.head.setcwd()
+        try:
+            subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+        except Exception, error:
+            balt.showError(
+                bashFrame,
+                (u'%s'%error + u'\n\n' +
+                 _(u'Used Path: ') + self.exePath.s + u'\n' +
+                 _(u'Used Arguments: ') + u'%s' % self.exeArgs),
+                 _(u"Could not launch '%s'") % self.exePath.stail)
+        finally:
+            cwd.setcwd()
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -19216,6 +19245,7 @@ class App_BOSS(App_Button):
     """loads BOSS"""
     def __init__(self, *args, **kwdargs):
         App_Button.__init__(self, *args, **kwdargs)
+        self.mainMenu.append(Mods_BOSSLaunchGUI())
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
 
     def Execute(self,event,extraArgs=None):
