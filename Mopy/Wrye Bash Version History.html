@@ -12,7 +12,8 @@
 	a:hover { text-decoration:underline; }
 	li ul, li ol {margin-top:0.4em;}
 	li {margin-bottom:10px;}
-	ol li ol {list-style:lower-alpha;}
+	ol ol {list-style:lower-alpha;}
+ ol ol li {margin-bottom:0.2em;}
 	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
 	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
 	thead {font-weight:bold; background:#8af;}
@@ -28,6 +29,7 @@
 	abbr {cursor:help;}
 	
 	h2 {margin-left:0; padding:0; background:inherit; font-size:1.1em; margin-top:3em;}
+ li {margin-bottom:0.2em;}
 </style>
 
 <h1 id="history">Wrye Bash Version History</h1>
@@ -36,9 +38,27 @@
 
 <h2>297 [XX/X/2012] [Trira,Daidalos,Arthmoor,wrinklyninja,alt3rn1ty,Other community members]</h2>
 <ul>
- <li>General bugfixing for Skyrim and Oblivion.
  <li>Some potential lag relief for Bash's use of BAPI.
- <li>Documentation update.
+ <li>Replaced documentation with WrinklyNinja's rewritten documents.
+ <li>Added an option to launch the BOSS GUI to the BOSS icon.
+ <li>Added an archery distance tweak to the default ini tweaks for Skyrim.
+ <li>Improved support for launching Skyrim's creation kit: Bash now displays the correct icon and supplies the correct launch parameters.
+ <li>Moved default patchers and ini tweaks for Oblivion and Skyrim into the Mopy folder: user-installed patchers and tweaks will continue to go in their folders within each game's Data folder.
+ <li>Fixed applying INI Tweaks via the "Apply" choice.
+ <li>Fixed BAIN skipping the Data\Docs folder of packages when running for Skyrim.
+ <li>Fixed BAIN skipping SkyUI files when <q>Skip Docs</q> was enabled.
+ <li>Fixed the Bashed Patch ignoring some active plugins due to having an older timestamp in Skyrim.
+ <li>Fixed Bash not reading Bash Tags from BOSS's masterlist.
+ <li>Fixed <q>Load Masters</q> on a save in the Saves tab causing a BAPI error.
+ <li>Fixed an error when switching between mod lists.
+ <li>Fixed the Bash Tags box being uneditable when running for Skyrim.
+ <li>Removed the <q>Version 0.8</q> context menu command in the Mods tab when running for Skyrim.
+ <li>Fixed manually-set Bash Tags not being remembered by Wrye Bash after it is restarted.
+ <li>Fixed time format errors being displayed when the auto-update option was set.
+ <li>Updated all Nexus URLs to use the new URLs.
+ <li>Fixed world orphan removal command.
+ <li>Fixed Bashed Patch not being activated when user chooses to do so through the post-rebuild dialog.
+ <li>Fixed various installer bugs and made some improvements.
 </ul>
 
 <h2>296 [27/5/2012] [Lojack,PacificMorrowind,Waruddar,Metallicow]</h2>
@@ -73,6 +93,14 @@
  <li>General error cleanup in parts of the code.
  <li>Updated URLs for Nexus information.
  <li>Metallicow's WIZBAIN editor (has not been documented yet)
+ <li>Fixed a bug in ITM scanning causing it to fail.
+ <li>Fixed a bug causing the setting of a custom value for the <q>Combat: Max Armor Rating</q> Bashed Patch tweak to fail.
+ <li>Fixed rebuilding of the Bashed Patch not deactivating merged plugins when it offers to do so.
+ <li>Fixed renaming of an inactive plugin causing it to be moved to the top of the load order.
+ <li>Fixed drag and drop moving of plugins in the load order causing them to be placed at the top of the load order.
+ <li>Fixed Bash displaying cleaned plugins as dirty.
+ <li>Fixed load order not being resorted when it requires a refresh.
+ <li>Fixed scanning for UDRs failing on report generation when running for Skyrim.
 </ul>
  
 <h2>295.5 [17/1/2012] [Lojack,PacificMorrowind]</h2>

@@ -12,7 +12,8 @@
 	a:hover { text-decoration:underline; }
 	li ul, li ol {margin-top:0.4em;}
 	li {margin-bottom:10px;}
-	ol li ol {list-style:lower-alpha;}
+	ol ol {list-style:lower-alpha;}
+ ol ol li {margin-bottom:0.2em;}
 	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
 	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
 	thead {font-weight:bold; background:#8af;}
@@ -38,8 +39,8 @@
 
 <h1>Wrye Bash Advanced Readme</h1>
 
-<h2 style="margin-top:0;">Contents</h2>
-<ol>
+<h2 style="margin-top:0;margin-bottom:1em;">Contents</h2>
+<ol style="float:left;margin:0;margin-right:4em;">
 	<li><a href="#intro">Introduction</a>
 	<li><a href="#install">Advanced Installation</a>
 	<ol>
@@ -49,6 +50,7 @@
 	<li><a href="#bain">Installers Tab</a>
 	<ol>
 		<li><a href="#bain-ui">The User Interface In Detail</a>
+  <li><a href="#bain-editor">The WizBAIN Editor</a>
 		<li><a href="#bain-skipped">Skipped Files</a>
 		<li><a href="#bain-se">Script Extender Plugin Installation</a>
 		<li><a href="#bain-omod">OMOD Conversion Data</a>
@@ -80,6 +82,8 @@
 		<li><a href="#saves-symbols">What Symbols &amp; Colours Mean</a>
 		<li><a href="#saves-commands">Context Menu Commands</a>
 	</ol>
+</ol>
+<ol start="7" style="float:left;margin-top:0;">
 	<li><a href="#screenshots">Screenshots Tab</a>
 	<ol>
 		<li><a href="#screenshots-overview">Overview</a>
@@ -115,6 +119,7 @@
 		<li><a href="#international-format">Translator File Format</a>
 	</ol>
 </ol>
+<p style="clear:both;">
 
 <h2 id="intro">Introduction</h2>
 <p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion and TES V: Skyrim. Its features include:
@@ -154,7 +159,7 @@
 
 <h2 id="bain">Installers Tab</h2>
 <h3 id="bain-ui">The User Interface In Detail</h3>
-<p>The Installers tab is split into three main sections: on the left is the Package List, and the right is split between the Information Tabs at the top and the Comments field at the bottom. The Information Tabs and Comments sections display information specific to the currently selected package. Much of the contents of the Information Tabs depends on the install status and order of the package. The information tabs are detailed in the table below.
+<p>The Installers tab is split into three main sections: on the left is the Package List, and the right is split between the Information Tabs at the top and the Comments / WizBAIN Editor field at the bottom. The Information Tabs and Comments / WizBAIN Editor sections display information specific to the currently selected package. Much of the contents of the Information Tabs depends on the install status and order of the package. The information tabs are detailed in the table below.
 <table>
 	<thead>
 		<tr><th colspan="2">Information Tabs
@@ -169,7 +174,36 @@
 		<tr><td>Dirty<td>Shows files which the selected package previously installed, but which now should be removed or altered due to a reconfiguration of the package. Dirty files can be cleared by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
 		<tr><td>Skipped<td>Shows which files in the selected package were <a href="#bain-skipped">skipped</a> by Bain.
 </table>
-<p>The Comments field is provided as an area in which notes may be kept on packages. It is useful for keeping track of what packages do, what your favourite install options are, etc.
+<p>The Comments / WizBAIN Editor panel serves two functions: for packages without a Wizard it can be used to store notes on the package; and for packages with a Wizard, or packages for which you wish to create a Wizard, it can be used as a Wizard editor with many useful features.
+
+<h3 id="bain-editor">The WizBAIN Editor</h3>
+<p>The WizBAIN Editor, which doubles as the Comments panel when not being used to edit Wizards, is a work-in-progress feature designed to aid in the creation and editing of Wizards. If a package already contains a Wizard, then it can be opened for viewing in the WizBAIN Editor using the <a href="#bainViewWizardInComments">View Wizard In Comments...</a> package context menu command.
+<p>The editor supports Wizard syntax highlighting, so keywords are red, functions are purple, strings are yellow and numbers are red. Comments recieve no highlighting. The editor also supports code folding for conditional code blocks such as those beginning <code>If</code>, <code>Else</code> and <code>SelectOne</code>. The beginning of a foldable section of code is given a green arrow in the grey column to the right of the line number column, and clicking this arrow will collapse or expand that section.
+<p>Most of the editor's functionality is exposed through mouse gesture context menus, of which there are nine possible variations, with each context menu displayed for a different gesture. Gestures are performed by holding down the right mouse button and moving your mouse in one direction, then releasing the right mouse button. The movement of your mouse is displayed during the gesture as a yellow trace, and on release of the right mouse button the context menu corresponding to the gesture performed is displayed. 
+<p>The gestures and their corresponding context menu commands are detailed in the table below. All gestures are straight lines in a single direction, with the first entry in their menus being a numbered code corresponding to the keyboard numpad key that the gesture would land on if the mouse were centred on the "5" key (eg. top right has the code <q>MGM9</q>). The gesture menus have many empty entries, commonly labelled <q>Needs Label &amp; ID</q>, that have no functionality and as such are not detailed.
+<table id="bainHeaderCommands">
+	<thead>
+		<tr><th colspan="3">WizBAIN Editor Gestures &amp; Context Menus
+		<tr><th>Gesture Direction<th>Context Menu Command<td>Description
+	<tbody>
+  <tr><td rowspan="10"><i>No movement</i><td>Undo<td>Behaves as standard, undoing the last action performed.
+  <tr><td>Redo<td>Behaves as standard, redoing the last undone action.
+  <tr><td>Cut<td>Behaves as standard, removing the selected text from the editor panel and adding it to the clipboard.
+  <tr><td>Copy<td>Behaves as standard, copying the selected text from the editor panel to the clipboard.
+  <tr><td>Paste<td>Behaves as standard, pasting the text in the clipboard into the selected position in the editor.
+  <tr><td>Delete<td>Removes the selected text from the editor panel, but does not copy it to the clipboard.
+  <tr><td>Select All<td>Selects all the text in the editor panel.
+  <tr><td>Remove Trailing Whitespace<td>Trims any whitespace from the ends of all the lines of text in the editor panel.
+  <tr><td>File->Save As This Project's Wizard<td>Saves the contents of the editor panel as the current package's Wizard, overwriting any existing Wizard that may be present.
+  <tr><td>Mouse Gesture Menus<td>This submenu is displayed for all gesture context menus, and allows the switching between different gesture context menus without requiring their gestures to be performed.
+  <tr><td rowspan="2">Right<td>Txt2Wiz (FileDrop)<td>Opens up a floating miniframe into which a file can be drag and dropped and its contents converted to a wizard string for use in the editor panel.
+  <tr><td>Txt2WWiz (TextDrop)<td>Opens up a floating miniframe into which text can be drag and dropped and it converted to a wizard string for use in the editor panel.
+  <tr><td rowspan="5">Top Right<td>Show Whitespace<td>Toggles the display of whitespace characters, eg. small dots for spaces and long arrows for tabs, similar to many other text editors.
+  <tr><td>Toggle Indent Guides<td>Toggles the display of vertical dashed lines that are displayed in intervals equal to the default tab space size (often 4 spaces).
+  <tr><td>Toggle Wordwrap<td>Toggles the wrapping of text to fit within the panel without any horizontal scrolling, similar to many other text editors.
+  <tr><td>Highlight Selected Line<td>Toggles the highlighting of the currently selected line in the editor using a grey background.
+  <tr><td>Toggle EOL View<td>Toggles the display of symbols for end-of-line characters, similar to many other text editors.
+</table>
 
 
 <h3 id="bain-skipped">Skipped Files</h3>
@@ -304,7 +338,8 @@
 		<tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing Projects, this package won't get refreshed. The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.
 		<tr><td colspan="2">Wizard<td>Runs the Wizard for the package, if it has one.
 		<tr><td colspan="2">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
-		<tr><td colspan="2">View Wizard...<td>Opens the wizard.txt for viewing.
+		<tr><td colspan="2">View Wizard...<td>Opens the package's wizard.txt for viewing in your default text editor.
+  <tr><td colspan="2" id="bainViewWizardInComments">View Wizard In Comments...<td>Opens the package's Wizard for viewing in the Comments / WizBAIN Editor panel.
 		<tr><td colspan="2">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
 		<tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors.
 		<tr><td colspan="2">Install<td>Fully installs the package except for files that would be overriden by later packages.
@@ -418,7 +453,6 @@
 		<tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
 		<tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
 		<tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
-		<tr><td colspan="2">BOSS Disable Lock Load Order<td>If checked, this temporarily disables Lock Load Order when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order. It has no effect when BOSS is run from outside Wrye Bash.
 		<tr><td colspan="2">Check mods against BOSS's dirty mod list<td>BOSS's masterlist contains information on dirty plugins that can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if BOSS is installed.
 </table>
 <table>
