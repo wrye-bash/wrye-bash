@@ -11146,11 +11146,22 @@ class Installer_OpenWizardInCommentsWizBAINEditor(InstallerLink):
             dir = self.data.dir
             wizpath = u'%s' %dir.join(path.s, self.data[path].hasWizard)
             gInstallers.gComments.LoadFile(wizpath)
-
-            gInstallers.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-            gInstallers.gComments.AppendText(' ')#Need to set the modify flag manually so it saves when changing package selections. Also if the last word in the doc is a keyword(ex. Return) this updates the syntax highlighting.
-            gInstallers.gComments.SetFocus()
-            gInstallers.gComments.EnsureCaretVisible()
+        else:
+            # Archive, open for viewing
+            archive = self.data[path]
+            with balt.BusyCursor():
+                # This is going to leave junk temp files behind...
+                archive.unpackToTemp(path, [archive.hasWizard])
+            wizpath = u'%s' % archive.tempDir.join(archive.hasWizard)
+            gInstallers.gComments.LoadFile(wizpath)
+            try:
+                archive.tempDir.rmtree(archive.tempDir.stail)
+            except:
+                pass
+        gInstallers.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+        gInstallers.gComments.AppendText(' ')#Need to set the modify flag manually so it saves when changing package selections. Also if the last word in the doc is a keyword(ex. Return) this updates the syntax highlighting.
+        gInstallers.gComments.SetFocus()
+        gInstallers.gComments.EnsureCaretVisible()
 
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
