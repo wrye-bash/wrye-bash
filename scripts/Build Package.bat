@@ -6,27 +6,25 @@ CLS
 ECHO.
 ECHO.
 ECHO.
-ECHO Type a, Build and package the Installer and Manual packages 
-ECHO Type i, Build just the Installer version of Wrye Bash 
+ECHO Type a, Build and package the Installer and Manual packages
+ECHO Type i, Build just the Installer version of Wrye Bash
 ECHO Type w, Build and package the Standalone version of Wrye Bash
-ECHO Type m, Build and package the Manual version of Wrye Bash
-ECHO Type e, Create the WBSA exe, but don't package it into an archive
+ECHO Type m, Build and package the Source version of Wrye Bash
 ECHO Type h, Help
 ECHO Type q, Quit
 ECHO.
 SET Choice=
-SET /P Choice=No, I dont do coffee, make a choice and press enter: 
+SET /P Choice=No, I dont do coffee, make a choice and press enter:
 IF NOT '%Choice%'=='' SET Choice=%Choice:~0,1%
 IF /I '%Choice%'=='A' GOTO TheWorks
 IF /I '%Choice%'=='I' GOTO Installer
 IF /I '%Choice%'=='W' GOTO WBSAPackage
 IF /I '%Choice%'=='M' GOTO SourcePackage
-IF /I '%Choice%'=='E' GOTO WBSAExeOnly
 IF /I '%Choice%'=='H' GOTO Help
 IF /I '%Choice%'=='Q' GOTO End
 ECHO.
 ECHO.
-ECHO Erm "%Choice%" ? .. haha funny (snore). Please choose a,i,w,m,e,h or q.
+ECHO Erm "%Choice%" ? .. haha funny (snore). Please choose a,i,w,m,h or q.
 ECHO.
 PAUSE
 GOTO Choice
@@ -35,9 +33,9 @@ GOTO Choice
 CLS
 ECHO.
 ECHO.
-ECHO                    Wrye Bash Release Build Help
+ECHO                                    Wrye Bash Release Build Help
 ECHO -----------------------------------------------------------------------
-ECHO        You need help? Here's a few coins go phone someone :)
+ECHO            You need help? Here's a few coins go phone someone :)
 ECHO.
 ECHO If this script fails to produce the desired packages you will need ..
 ECHO Nullsoft Scriptable Install System (NSIS) - installed
@@ -60,12 +58,12 @@ CLS
 ECHO.
 ECHO.
 ECHO.
-ECHO            Building Wrye Bash packages, patience Avatar ...
+ECHO                    Building Wrye Bash packages, patience Avatar ...
 ECHO.
 "C:\Python27\python.exe" package_for_release.py
 ECHO.
-ECHO                       All Done! Hopefully ...
 ECHO.
+ECHO                                       All Done! Hopefully ...
 ECHO.
 GOTO End
 
@@ -74,12 +72,12 @@ CLS
 ECHO.
 ECHO.
 ECHO.
-ECHO            Building Wrye Bash packages, patience Avatar ...
+ECHO                    Building Wrye Bash packages, patience Avatar ...
 ECHO.
 "C:\Python27\python.exe" package_for_release.py -i
 ECHO.
-ECHO                       All Done! Hopefully ...
 ECHO.
+ECHO                                       All Done! Hopefully ...
 ECHO.
 GOTO End
 
@@ -88,12 +86,12 @@ CLS
 ECHO.
 ECHO.
 ECHO.
-ECHO            Building Wrye Bash packages, patience Avatar ...
+ECHO                    Building Wrye Bash packages, patience Avatar ...
 ECHO.
 "C:\Python27\python.exe" package_for_release.py -w
 ECHO.
-ECHO                       All Done! Hopefully ...
 ECHO.
+ECHO                                       All Done! Hopefully ...
 ECHO.
 GOTO End
 
@@ -102,37 +100,17 @@ CLS
 ECHO.
 ECHO.
 ECHO.
-ECHO            Building Wrye Bash packages, patience Avatar ...
+ECHO                    Building Wrye Bash packages, patience Avatar ...
 ECHO.
 "C:\Python27\python.exe" package_for_release.py -m
 ECHO.
-ECHO                       All Done! Hopefully ...
 ECHO.
-ECHO.
-GOTO End
-
-:WBSAExeOnly
-CLS
-ECHO.
-ECHO.
-ECHO.
-ECHO            Building Wrye Bash packages, patience Avatar ...
-ECHO.
-"C:\Python27\python.exe" package_for_release.py -e
-ECHO.
-ECHO                       All Done! Hopefully ...
-ECHO.
+ECHO                                       All Done! Hopefully ...
 ECHO.
 
 :End
-CLS
 ECHO.
-ECHO.
-ECHO.
-ECHO            Exiting script, pleasure to be of service.
-ECHO.
-ECHO.
-ECHO.
+ECHO                    Exiting script, pleasure to be of service.
 ECHO.
 ECHO.
 PAUSE
