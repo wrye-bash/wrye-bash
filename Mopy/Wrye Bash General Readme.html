@@ -13,11 +13,11 @@
 	li ul, li ol {margin-top:0.4em;}
 	li {margin-bottom:10px;}
 	ol ol {list-style:lower-alpha;}
+ ol ol li {margin-bottom:0.2em;}
 	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
 	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
 	thead {font-weight:bold; background:#8af;}
 	img {border:0;}
- ol ol li {margin-bottom:0.2em;}
 	a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);}
 	q {font-style:italic;}
 	code {display:inline-block; padding:2px 5px; background:#DDD;}
@@ -39,8 +39,8 @@
 
 <h1>Wrye Bash General Readme</h1>
 
-<h2 style="margin-top:0;margin-bottom:2em;">Contents</h2>
-<ol style="float:left;margin-top:0;margin-bottom:0;margin-right:4em;">
+<h2 style="margin-top:0;margin-bottom:1em;">Contents</h2>
+<ol style="float:left;margin:0;margin-right:4em;">
 	<li><a href="#intro">Introduction</a>
 	<ol>
 		<li><a href="#intro-glossary">Glossary</a>
@@ -364,7 +364,7 @@
 	<li><i>Oblivion only.</i> Selecting a group of plugins and choosing File->Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
 	<li>Dragging and dropping plugins will also change the load order if the plugins are being sorted by Load Order.
 </ul>
-<p>You can also lock your load order in place to prevent unintended changes to it by selecting the <a href="modsLockLoadOrder">Lock Load Order</a> option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure <a href="modsBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
+<p>You can also lock your load order in place to prevent unintended changes to it by selecting the <a href="modsLockLoadOrder">Lock Load Order</a> option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure <a href="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
 
 <h3 id="load-symbols">What Symbols &amp; Colours Mean</h3>
 <p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins. The different types of formatting used and their meanings are explained here.
@@ -410,7 +410,6 @@
 		<tr><td colspan="2" id="modsListBashTags">List Bash Tags<td>This lists all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
 		<tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that most other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
 		<tr><td colspan="2" id="modsLockLoadOrder">Lock Load Order<td>This prevents other utilities from altering plugin load order. More accurately, it detects changes to load order when Wrye Bash is focussed (ie. on top of all other program windows) and reverses those changes.
-		<tr><td colspan="2" id="modsBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order<td>If checked, this temporarily disables Lock Load Order when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order. It has no effect when BOSS is run from outside Wrye Bash.
 </table>
 <table>
 	<thead>
@@ -618,12 +617,13 @@
 		<tr><td><img src="bash/images/oblivion32.png" width="32" height="32" alt="Oblivion icon"/><td>Oblivion
 		<tr><td><img src="bash/images/tescs32.png" width="32" height="32" alt="Oblivion CS icon"/><td><a href="http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set">TES Construction Set</a>
 		<tr><td><img src="bash/images/skyrim32.png" width="32" height="32" alt="Skyrim icon"/><td>Skyrim
-		<tr><td><td>Skyrim Creation Kit
+		<tr><td><img src="bash/images/CreationKit32.png" width="32" height="32" alt="Creation Kit icon"/><td><a href="http://www.creationkit.com/">Skyrim Creation Kit</a>
 </table>
 <h3 id="launchers-utils">Game-Specific Utilities</h3>
 <p>Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available. Tes4Gecko &amp; Oblivion Book Creator will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory. The BOSS launcher has some options:
 <ul>
-	<li>If the option in the main menu is selected, it will automatically turn Lock Load Order off while running and then turn Lock Load Order back on.
+ <li>Right-clicking the BOSS icon and selecting <q id="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</q> will cause Wrye Bash to temporarily disable Lock Load Order when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS is run from outside Wrye Bash.
+ <li>Right-clicking the BOSS icon and selecting the <q>Launch BOSS GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
 	<li>If <b>V</b> is pressed, it will disable version parsing.
 	<li>If <b>R</b> is pressed, it will do a level 1 revert (to the state just prior to the last sort).
 	<li>If <b>Shift-R</b> is pressed, it will do a level 2 revert (to the state just prior to the 2nd last sort).
@@ -977,7 +977,9 @@ MemoryError</code>
 		<li>Sativarg: Proofreading.
 		<li>Kmacg94: Additional power exhaustion coverage.
 		<li>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.
-		<li>WrinklyNinja: The BOSS API and rewriting the readme.
+		<li>WrinklyNinja: The BOSS API and the rewritten documentation included in v297 and later.
+  <li>Alt3rn1ty: For supplying the screenshot images used in the documentation, many INI tweaks for Skyrim, and being an all-round bon oeuf and snappy dresser.
+  <li>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, trira, WrinklyNinja, and many others.
 	</ul>
 	<li><b>Misc. Resources</b>
 	<ul>
