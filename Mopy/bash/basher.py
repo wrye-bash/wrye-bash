@@ -1029,6 +1029,8 @@ class List(wx.Panel):
                         % fileName.s)
                     return
         #--Refresh
+        bosh.modInfos.refresh(doInfos=False)
+        bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
         #--Mark sort as dirty
         if self.selectedFirst:
@@ -1772,6 +1774,7 @@ class ModList(List):
         else:
             selected = set([detail])
         #--Populate
+        bosh.modInfos.refreshBapi()
         if files == 'ALL':
             self.PopulateItems(selected=selected)
         elif isinstance(files,bolt.Path):
