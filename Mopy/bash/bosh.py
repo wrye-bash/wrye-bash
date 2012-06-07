@@ -4923,12 +4923,10 @@ class ModInfos(FileInfos):
 
     @property
     def ordered(self):
-        self.refreshBapi()
         return self._active
 
     @property
     def LoadOrder(self):
-        self.refreshBapi()
         return self._plugins
 
     def swapOrder(self, leftName, rightName):
