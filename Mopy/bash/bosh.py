@@ -15150,7 +15150,7 @@ class ListPatcher(Patcher):
         for fileName in sorted(getPatchesList()):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
-                autoNames.add(fileName)
+                #autoNames.add(fileName)
         return autoItems
 
     def getConfig(self,configs):
@@ -15234,7 +15234,7 @@ class CBash_ListPatcher(CBash_Patcher):
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        autoNames = set()
+        #autoNames = set()
         for fileName in sorted(set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
