@@ -13139,7 +13139,7 @@ class Installer_OpenSkyrimNexus(InstallerLink):
         message = _(u"Attempt to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_(u'Open at Skyrim Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://skyrim.nexusmods.com/downloads/file.php?id='+id)
+            os.startfile(u'http://skyrim.nexusmods.com/mods/'+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
@@ -13170,7 +13170,7 @@ class Installer_OpenTESA(InstallerLink):
         message = _(u"Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_(u'Open at TES Alliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(2)
-            os.startfile(u'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)
+            os.startfile(u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+id)
 
 class Installer_OpenPES(InstallerLink):
     """Open selected file(s)."""
@@ -16207,7 +16207,7 @@ class Mod_CreateBOSSReport(Link):
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
-                        url = u'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
+                        url = u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
                 if url:
                     text += u'[url='+url+u']'+fileName.s+u'[/url]'
                 else:
@@ -16273,7 +16273,7 @@ class Mod_CopyModInfo(Link):
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
-                        url = u'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
+                        url = u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
                 if url:
                     text += u'[url=%s]%s[/url]' % (url, fileName.s)
                 else:

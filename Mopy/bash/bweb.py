@@ -58,15 +58,15 @@ class Nexus:
 
     # Class for interacting with TES/Skyrim Nexus
     def __init__(self,nexusSite='tesnexus',fileId=None):
-        self.urlBase = 'http://www.'+nexusSite+'.com'
+        self.urlBase = 'http://'+nexusSite+'nexusmods.com'
         self.fileId = fileId
 
     def getFiles(self,groups=None,fileId=None,nexusSite=None):
         if fileId is None: fileId = self.fileId
         if not fileId: raise ValueError('fileId')
         if nexusSite is None: urlBase = self.urlBase
-        else: urlBase = 'http://www.'+nexusSite+'.com'
-        urlFiles = urlBase + '/downloads/file/files.php?id=%i' % fileId
+        else: urlBase = 'http://'+nexusSite+'nexusmods.com'
+        urlFiles = urlBase + '/mods/%i' % fileId
         reFileGroupStart = self.reFileGroupStart
         reFileStart = self.reFileStart
         reFileEnd = self.reFileEnd
