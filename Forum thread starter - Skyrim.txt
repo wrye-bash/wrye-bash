@@ -29,7 +29,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [/list]
 [/spoiler]
 
-[b]Download[/b]: [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url] or [url=http://oblivion.nexusmods.com/mods/22368]Oblivion Nexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
+[b]Download[/b]: [url=http://skyrim.nexusmods.com/mods/1840]Skyrim Nexus[/url] or [url=http://oblivion.nexusmods.com/mods/22368]Oblivion Nexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
 
 [b]Documentation[/b]:
 [list]
@@ -112,12 +112,12 @@ Rinse and repeat when a new svn comes out.
 [/list]
 [/spoiler]
 
-[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://www.skyrimnexus.com/downloads/file.php?id=1840]Skyrim Nexus[/url], [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
+[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://skyrim.nexusmods.com/mods/1840]Skyrim Nexus[/url], [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
 
 [b]Related Projects[/b]:
 [list]
 [*]The Official [topic=1286667]Wrye Bash for Oblivion thread[/topic].
-[*]Load orders should be managed with [url=http://www.skyrimnexus.com/downloads/file.php?id=6]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
+[*]Load orders should be managed with [url=http://skyrim.nexusmods.com/mods/6]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
 

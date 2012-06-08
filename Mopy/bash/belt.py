@@ -578,9 +578,9 @@ class PageVersions(PageInstaller):
             sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geHave))
             sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGEOk]))
 
-        linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, u'Wrye Bash', u'http://www.tesnexus.com/downloads/file.php?id=22368')
+        linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, u'Wrye Bash', u'http://oblivion.nexusmods.com/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
-        linkWB.SetToolTip(wx.ToolTip(u'http://www.tesnexus.com/'))
+        linkWB.SetToolTip(wx.ToolTip(u'http://oblivion.nexusmods.com/'))
         sizerVersions.Add(linkWB)
         sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbNeed))
         sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbHave))
