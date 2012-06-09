@@ -93,7 +93,8 @@ class BaseBackupSettings:
 
     def CmpAppVersion(self):
         # Changed to prompt updating on any version change
-        return cmp(self.verApp.split(u'.'), bass.AppVersion.split(u'.'))
+        # Needs to check the cached value in settings for the initial upgrade check
+        return cmp(self.verApp, basher.settings['bash.version'])
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
