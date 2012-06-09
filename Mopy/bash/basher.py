@@ -79,6 +79,7 @@ import wx.stc as stc
 import keywordWIZBAIN  # Keywords for BAIN Wizard stc
 import keywordWIZBAIN2 # Keywords2 for BAIN Wizard stc
 from wx.lib.gestures import MouseGestures
+import wx.lib.dialogs
 # Font Stuff - defaults, etc
 if wx.Platform == '__WXMSW__':
     # For Windows OS
@@ -3761,7 +3762,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mopyDir = os.getcwd()
         self.imgDir = mopyDir + os.sep + 'bash' + os.sep + 'images'
         self.imgstcDir = mopyDir + os.sep + 'bash' + os.sep + 'images' + os.sep + 'stc'
-
         # print self.imgDir
         # print self.imgstcDir
 
@@ -3778,27 +3778,15 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             ('WordWrap', 0),
             ('TabsOrSpaces', 0),
             ('IndentSize', 4),
+            ('BraceCompletion', 0),
             ])
-
-        # gGlobalsDict = {
-                        # 'LoadSTCLexer'            : 'wizbainlexer',
-                        # 'ThemeOnStartup'          : 'Default',
-                        # 'FolderMarginStyle'       : 1,
-                        # 'ShowLineNumbersMargin'   : 1,
-                        # 'AutoAdjustLineMargin'    : 1,
-                        # 'CaretLineBackgroundAlpha': 100,
-                        # 'WordWrap': 0,
-                        # 'TabsOrSpaces': 0,
-                        # 'IndentSize': 4,
-                        # }
-
 
         self.SetLexer(stc.STC_LEX_PYTHON)
 
         self.SetKeyWords(0, u' '.join(keywordWIZBAIN.kwlist))
         self.SetKeyWords(1, u' '.join(keywordWIZBAIN2.kwlist))
 
-        self.SetEOLMode(stc.STC_EOL_LF) #UNIX
+        self.SetEOLMode(stc.STC_EOL_LF)#UNIX
 
         self.SetCaretLineVisible(True)
         self.SetCaretLineBackground('#D7DEEB')
@@ -3828,6 +3816,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         # Define the bookmark images
         self.MarkerDefineBitmap(0, wx.Image(self.imgstcDir + os.sep + 'caretlinebm16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
 
         # Setup a margin to hold line numbers
         self.SetMarginType(2, stc.STC_MARGIN_NUMBER)
@@ -3883,13 +3872,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_KEY_DOWN,              self.OnKeyDown)
 
         # Brace Completion stuff
-        self.brace_dict={
-                         40:')',
+        self.brace_dict={40:')',
                          91:']',
                          123:'}',
                          39:"'",
-                         34:'"'
-                         }
+                         34:'"'}
 
         self.Bind(wx.stc.EVT_STC_CHARADDED, self.OnCharAdded) # When a character is added to the stc
 
@@ -3923,10 +3910,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.OnSetTheme(self)
 
-
         self.OnFolderMarginStyle4(self, '#FFFFFF', '#000000')#Hmmmm This is having problems changing correctly on startup again...
         self.OnSetFolderMarginStyle(self)#Hmmmm
-
 
     def OnSelectNone(self, event):
         ''' Select nothing in the document. (DeSelect) '''
@@ -3942,13 +3927,24 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if key == 81 and event.ControlDown():#Ctrl+Q
             self.OnToggleComment(event)
 
-        if key == 32 and event.ControlDown():#Ctrl+Space
-            # # tips
-            # if event.ShiftDown():
-                # self.OnShowSelectedTextCallTip(event)
-            # else:
-                # self.OnShowAutoCompleteBox(event)
-            self.OnShowAutoCompleteBox(event)
+        if key == 87 and event.ControlDown():#Ctrl+W
+            self.OnShowWordCompleteBox(event)
+
+        if key == 32 and event.ControlDown():
+            # tips
+            if event.ShiftDown():#Ctrl+Shift+Space
+                self.OnShowSelectedTextCallTip(event)
+            else:#Ctrl+Space
+                self.OnShowAutoCompleteBox(event)
+
+        if key == 315 and event.ControlDown() and event.ShiftDown():#Ctrl+Shift+Up
+            self.OnMoveLineUp(event)
+
+        if key == 317 and event.ControlDown() and event.ShiftDown():#Ctrl+Shift+Down
+            self.OnMoveLineDown(event)
+
+        if key == 343:#F4
+            self.OnFindSelectedForwards(event)
 
         if key == 351:#F12
             self.OnToggleEditorThemes(event)
@@ -3969,8 +3965,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
     def OnUpdateUI(self, event):
         ''' If the text, the styling, or the selection has been changed, This is bound by stc.EVT_STC_UPDATEUI above.
             Used to update any GUI elements that should change as a result. Also for other tasks that can be performed using background processing. '''
-
-        #Update the user interface. '''
 
         '''Responsible for the bad brace check feature.'''
         # check for matching braces
@@ -4032,9 +4026,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if event.GetMargin() == 1:
             lineClicked = self.LineFromPosition(event.GetPosition())
             if self.MarkerGet(lineClicked):
-                self.MarkerDelete(lineClicked, 0)
+                self.MarkerDelete(lineClicked, 1)
             else:
-                self.MarkerAdd(lineClicked, 0)
+                self.MarkerAdd(lineClicked, 1)
 
     def OnFoldAll(self):
         ''' folding folds, marker - to + '''
@@ -4097,27 +4091,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
     def OnCharAdded(self, event):
         ''' Brace Completion. If the feature is enabled, it adds a closing brace at the current caret/cursor position. '''
         key = event.GetKey()
-        if key in [40,91,123,39,34]: #These numbers are the keycodes of the braces defined above: ( [ { ' " (the first half of them)
-            self.AddText(self.brace_dict[key])
-            self.CharLeft()
-
-    def OnShowAutoCompleteBox(self,event):
-        '''Shows the AutoComplete Box in the editor.'''
-        if gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
-            kw = keywordWIZBAIN.kwlist[:] + keywordWIZBAIN2.kwlist[:]
-            # Optionally add more ...
-            kw.append('__U__SePeRaToR__l__?')
-            # Python sorts are case sensitive
-            kw.sort()
-            # So this needs to match
-            self.AutoCompSetIgnoreCase(False)
-            self.AutoCompSetChooseSingle(True) #Should a single item auto-completion list automatically choose the item.
-
-            # Registered images are specified with appended '?type'
-            for i in range(len(kw)):
-                if kw[i] in keywordWIZBAIN.kwlist or keywordWIZBAIN2.kwlist:
-                    kw[i] = kw[i] + '?5'
-            self.AutoCompShow(0, ' '.join(kw))
+        if gGlobalsDict['BraceCompletion'] == 1:
+            if key in [40,91,123,39,34]: #These numbers are the keycodes of the braces defined above: ( [ { ' " (the first half of them)
+                self.AddText(self.brace_dict[key])
+                self.CharLeft()
 
     def OnSelectAll(self, event):
         self.SelectAll()
@@ -4200,7 +4177,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
     def OnRemoveTrailingWhitespace(self, event):
         '''Eliminates/Removes all trailing/extra whitespace characters from the end of each line in the whole document.'''
-        self.BeginUndoAction()  #Start a sequence of actions that is undone and redone as a unit. May be nested.
+        self.BeginUndoAction()
         curline = self.GetCurrentLine()
         firstvisline = self.GetFirstVisibleLine()
         endofdoc = self.GetLength()
@@ -4228,7 +4205,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # Retain the topline & line of the doc before striping
         for i in range(0, (firstvisline - secondvisline)):
             self.LineScrollDown()
-        self.EndUndoAction()    #End a sequence of actions that is undone and redone as a unit.
+        self.EndUndoAction()
 
     def OnSaveAsProjectsWizard(self, event):
         self.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
@@ -4270,7 +4247,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         texttowizardstringminiframe.SetSizeHints(200,150)
 
-        # texttowizardstringminiframe.textctrl1 = stc.StyledTextCtrl(texttowizardstringminiframe)
         texttowizardstringminiframe.textctrl1 = TextToWizardStringSTC(texttowizardstringminiframe)
         msg = u'Drag & Drop the textfile into this miniframe. \nIt will automatically be converted to a wizard string! \nYou can then SelectAll, Cut, Paste it into the Editor. \nThis is useful for readmes, etc...'
         try:
@@ -4283,7 +4259,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         filedroptarget = FileDropTargetForTextToWizardString(texttowizardstringminiframe.textctrl1)
         texttowizardstringminiframe.textctrl1.SetDropTarget(filedroptarget)
 
-        # # # texttowizardstringminiframe.Bind(stc.EVT_STC_UPDATEUI, self.OnCutEmptyRevertBackToWhiteFile)
         texttowizardstringminiframe.Centre()
         texttowizardstringminiframe.Show()
 
@@ -4292,7 +4267,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         texttowizardstringtextdropminiframe.SetSizeHints(200,150)
 
-        # texttowizardstringtextdropminiframe.textctrl1 = stc.StyledTextCtrl(texttowizardstringtextdropminiframe)
         texttowizardstringtextdropminiframe.textctrl1 = TextToWizardStringSTC(texttowizardstringtextdropminiframe)
         msg = u'Drag & Drop some text into this miniframe. \nIt will automatically be converted to a wizard string! \nYou can then SelectAll, Cut, Paste it into the Editor. \nThis is useful for text from a web page, some of the editor text, etc...'
         try:
@@ -4305,7 +4279,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         textdroptarget = TextDropTargetForTextToWizardString(texttowizardstringtextdropminiframe.textctrl1)
         texttowizardstringtextdropminiframe.textctrl1.SetDropTarget(textdroptarget)
 
-        # # # texttowizardstringtextdropminiframe.Bind(stc.EVT_STC_UPDATEUI, self.OnCutEmptyRevertBackToWhiteText)
         texttowizardstringtextdropminiframe.Centre()
         texttowizardstringtextdropminiframe.Show()
 
@@ -4315,50 +4288,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print ('This is handled by OnRMouseGestureMenuNone')
 
     def OnHelpWizBAINEditorGeneral(self, event):
-        # import wx.lib.agw.supertooltip as STT
-        import wx.lib.dialogs
-        from wx.lib.wordwrap import wordwrap
-
-        # bodymessage = wordwrap(
-        # u'The WizBAIN Editor is for mod authors and players to write fancy install scripts for their packages(called wizards),'\
-        # u'thus easing headaches and confusion during installation by all users. The Editor is primarily mouse gesture/context '\
-        # u'menu based and may not be obvious to a casual or first time user.\nThe mouse gesture menus are based off of a NUMPad, '\
-        # u'such as are on many keyboards. NUMPad 5 would be the default right or middle click context. To access the other menus '\
-        # u'just mouse gesture outward from 5 to another number. An example of how to open the right click mouse gesture 8 menu(R MGM 8) '\
-        # u'would be to first right click and hold the mouse button down and move your mouse forward/up and release.\n'\
-        # u'\n'\
-        # u'[7][8][9]\n'\
-        # u'[4][5][6]\n'\
-        # u'[1][2][3]\n'\
-        # u'\n'\
-        # u'Alternatively, you might want to check out the Full Application '\
-        # u'</l>TES4WizBAIN{http://oblivion.nexusmods.com/mods/37511}'\
-        # u'\n'\
-        # u'\n'\
-        # u'Enjoy ~Metallicow, TES4WizBAIN Dev\n'
-        # , 600, wx.ClientDC(self))
-        # self.stip = STT.SuperToolTip(bodymessage)
-        # self.stip.SetHeader(u'WizBAIN Editor Help-General')                 # Sets the header text.
-        # self.stip.SetDrawHeaderLine(True)                                   # Whether to draw a separator line after the header or not.
-        # bodybmp = wx.Bitmap(self.imgstcDir + os.sep + (u'wizardhat16.png'), wx.BITMAP_TYPE_PNG)
-        # self.stip.SetBodyImage(bodybmp)                                     # Sets the main body bitmap for L{SuperToolTip}.
-        # footerbmp = wx.Bitmap(self.imgDir + os.sep + (u'wizard.png'), wx.BITMAP_TYPE_PNG)
-        # self.stip.SetFooterBitmap(footerbmp)
-        # # footermessage = 'Mwahaha'
-        # # self.stip.SetFooter(footermessage)             # Sets the footer text.
-        # # self.stip.SetDrawFooterLine(True)              # Whether to draw a separator line before the footer or not.
-        # # self.stip.SetBottomGradientColor('#FF0000')    # Sets the bottom gradient colour for L{SuperToolTip}.
-        # # self.stip.SetMiddleGradientColor('#FF0000')    # Sets the middle gradient colour for L{SuperToolTip}.
-        # # self.stip.SetTopGradientColor('#FF0000')       # Sets the top gradient colour for L{SuperToolTip}.
-        # self.stip.SetTextColor('#000000')              # Sets the text colour for L{SuperToolTip}.
-        # # self.stip.SetUseFade(True)                     # Whether to use a fade in/fade out effect or not. (Windows XP Only)
-        # self.stip.SetDropShadow(True)                  # Whether to draw a shadow below L{SuperToolTip} or not. (Windows XP Only)
-        # self.stip.ApplyStyle('XP Blue')                # Applies one of the predefined styles.
-        # self.stip.SetTarget(gInstallers.commentsLabel) # Sets the target window for L{SuperToolTip}.
-        # self.stip.EnableTip(False)                     # Globally (application-wide) enables/disables L{SuperToolTip}.
-        # self.stip.DoShowNow()
-
-        message = wordwrap(
+        message = (
         u'The WizBAIN Editor is for mod authors and players to write fancy install scripts for their packages(called wizards),'\
         u'thus easing headaches and confusion during installation by all users. The Editor is primarily mouse gesture/context '\
         u'menu based and may not be obvious to a casual or first time user.\nThe mouse gesture menus are based off of a NUMPad, '\
@@ -4373,23 +4303,37 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         u'\n'\
         u'\n'\
         u'Enjoy ~Metallicow, TES4WizBAIN Dev\n'
-        , 500, wx.ClientDC(self))
+        )
 
         dialog = wx.lib.dialogs.ScrolledMessageDialog(self, message, u'WizBAIN Editor Help-General', size=(500, 350))
         dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + '..' + os.sep + 'help16.png', wx.BITMAP_TYPE_PNG))
         dialog.ShowModal()
         dialog.Destroy()
 
+    def OnHelpWizBAINEditorAPIDocStrings(self, event):
+        ''' print the doctrings of the fuction for help '''
+
+        functionlist = [self.OnToggleComment,self.OnUPPERCASE,self.Onlowercase,self.OnInvertCase,self.OnCapitalCase]
+        message = ''
+        for function in functionlist:
+            message += function.__name__ # ''' bla bla bla docstring '''
+            message += '\n'
+            message += function.__doc__ # ''' bla bla bla docstring '''
+            message += '\n'
+            message += '\n'
+
+        dialog = wx.lib.dialogs.ScrolledMessageDialog(self, u'%s' %message, u'WizBAIN Editor API Doc Strings', size=(500, 350))
+        dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + '..' + os.sep + 'help16.png', wx.BITMAP_TYPE_PNG))
+        dialog.ShowModal()
+        dialog.Destroy()
+
     def OnToggleComment(self, event):
+        ''' Toggle commenting on current or selected line(s) - ;#'''
         self.BeginUndoAction()
         selstart = self.GetSelectionStart()
         selend = self.GetSelectionEnd()
         line = self.LineFromPosition(self.GetCurrentPos())
         # print ('char1: ' + str(self.GetCharAt(self.GetLineIndentPosition(line))))
-        # print ('char2: ' + str(self.GetCharAt(self.GetLineIndentPosition(line) + 1)))
-        # print ('char3: ' + str(self.GetCharAt(self.GetLineIndentPosition(line) + 2)))
-        # print ('char4: ' + str(self.GetCharAt(self.GetLineIndentPosition(line) + 3)))
-        # print ('char5: ' + str(self.GetCharAt(self.GetLineIndentPosition(line) + 4)))
 
         if selstart == selend:
             # print('Nothing Selected - Toggle Comment Single Line')
@@ -4600,7 +4544,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rightclickmenu.AppendMenu(wx.NewId(), u'File', submenu)
 
         submenu = wx.Menu()
-        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, 1901, u'&WizBAIN Editor General', u' Help tooltip explaining general features')
+        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, 1901, u'&WizBAIN Editor General', u' Help explaining general features')
+        helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + ('help16.png'),p).ConvertToBitmap())
+        submenu.AppendItem(helpwizbaineditorgeneral)
+
+        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, 1902, u'&WizBAIN Editor API Doc Strings', u' Help explaining the function performed upon execution')
         helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + ('help16.png'),p).ConvertToBitmap())
         submenu.AppendItem(helpwizbaineditorgeneral)
         rightclickmenu.AppendMenu(wx.NewId(), u'Help', submenu)
@@ -4609,6 +4557,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, 1001, self.OnSaveAsProjectsWizard)
 
         wx.EVT_MENU(rightclickmenu, 1901, self.OnHelpWizBAINEditorGeneral)
+        wx.EVT_MENU(rightclickmenu, 1902, self.OnHelpWizBAINEditorAPIDocStrings)
 
         wx.EVT_MENU(rightclickmenu, 2001, self.OnUndo)
         wx.EVT_MENU(rightclickmenu, 2002, self.OnRedo)
@@ -4675,7 +4624,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -4686,11 +4635,18 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         rightclickmenu.AppendSeparator()
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID1', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        sort = wx.MenuItem(rightclickmenu, 1097, u'&Sort...', u' Sort selected lines in the active document')
+        sort.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'sort16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(sort)
+
+        findselectedforwards = wx.MenuItem(rightclickmenu, 1099, u'&Find Selected Forwards\tF4', u' Find selected text forwards')
+        findselectedforwards.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowdownbw16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(findselectedforwards)
 
         #events
+        wx.EVT_MENU(rightclickmenu, 1097, self.OnSort)
+        wx.EVT_MENU(rightclickmenu, 1099, self.OnFindSelectedForwards)
+
         wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
         wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
         wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
@@ -4703,6 +4659,84 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
+
+    def OnSort(self, event):
+        self.BeginUndoAction()
+        linestring = str(self.GetSelectedText())
+        linestringlist = linestring.split('\n')
+        length = len(linestringlist)
+
+        if self.GetSelectionStart() == self.GetSelectionEnd():
+            wx.MessageBox('No Text Selected!', 'Sort Error', wx.OK|wx.ICON_ERROR)
+        else:
+            dialog = wx.SingleChoiceDialog(self, "How do you want to sort the selection?", 'Sort...',
+                    ['Ascending Case Sensitive', 'Ascending Case insensitive', 'Descending Case Sensitive', 'Descending Case insensitive', 'Randomly'],
+                    wx.CHOICEDLG_STYLE)
+
+            if dialog.ShowModal() == wx.ID_OK:
+                getsel = self.GetSelection()
+                if dialog.GetStringSelection() == 'Ascending Case Sensitive':
+                    linestringlist.sort()
+                    for i in range(0,length-1):
+                        self.ReplaceSelection(linestringlist[i] + '\n')
+                    self.ReplaceSelection(linestringlist[length-1])
+                elif dialog.GetStringSelection() == 'Ascending Case insensitive':
+                    linestringlist.sort(key=str.lower)
+                    for i in range(0,length-1):
+                        self.ReplaceSelection(linestringlist[i] + '\n')
+                    self.ReplaceSelection(linestringlist[length-1])
+                elif dialog.GetStringSelection() == 'Descending Case Sensitive':
+                    linestringlist.sort()
+                    linestringlist.reverse()
+                    for i in range(0,length-1):
+                        self.ReplaceSelection(linestringlist[i] + '\n')
+                    self.ReplaceSelection(linestringlist[length-1])
+                elif dialog.GetStringSelection() == 'Descending Case insensitive':
+                    linestringlist.sort(key=str.lower)
+                    linestringlist.reverse()
+                    for i in range(0,length-1):
+                        self.ReplaceSelection(linestringlist[i] + '\n')
+                    self.ReplaceSelection(linestringlist[length-1])
+                elif dialog.GetStringSelection() == 'Randomly':
+                    r = []
+                    for i in range(self.LineFromPosition(self.GetSelectionStart()),self.LineFromPosition(self.GetSelectionEnd()) + 1):
+                        r.append(self.GetLine(i).rstrip())
+                    random.shuffle(r)
+                    self.DeleteBack()
+                    for line in r:
+                        self.AddText(line + '\n')
+                    self.DeleteBack()
+                self.SetSelection(getsel[1],getsel[0])#Keep the text selected afterwards retaining caret pos
+
+            dialog.Destroy()
+        self.EndUndoAction()
+
+    def OnFindSelectedForwards(self, event):
+        if self.GetSelectionStart() == self.GetSelectionEnd():
+            pass
+        else:
+            try:
+                val = self.GetSelectedText()
+            except:
+                val = self.GetSelectedTextUTF8()
+
+            curpos = self.GetCurrentPos()
+            findstring = self.FindText(curpos, self.GetLength(), val, flags=1)
+            # print ('QF findstring = ' + str(findstring))
+
+            if findstring != -1:
+                self.GotoPos(findstring)
+                self.SetSelection(findstring, findstring + len(val))
+            else:
+                try:
+                    findstring = self.FindText(0, self.GetLength(), val, flags=1)
+                    if findstring != -1:
+                        self.GotoPos(findstring)
+                        self.SetSelection(findstring, findstring + len(val))
+                    else: wx.Bell()
+                except:
+                    pass#print ('Quick Find String Not Found')
+
 
     def OnRMouseGestureMenu2(self, event):
         rightclickmenu = wx.Menu()
@@ -4746,7 +4780,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -4965,7 +4999,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -4976,17 +5010,17 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         rightclickmenu.AppendSeparator()
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID1', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        showcalltip = wx.MenuItem(rightclickmenu, 3097, u'&Show CallTip\tCtrl+Shift+Space', u' Show a calltip for the currently selected word.')
+        showcalltip.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'showcalltip24.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(showcalltip)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID2', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        autocomplete = wx.MenuItem(rightclickmenu, 3098, u'&WordComplete Box\tCtrl+W', u' Ctrl+W opens the WordComplete box')
+        autocomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'wordcomplete24.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(autocomplete)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID3', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        autocomplete = wx.MenuItem(rightclickmenu, 3099, u'&AutoComplete Box\tCtrl+Space', u' Ctrl+Space opens the AutoComplete box')
+        autocomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'autocomplete24.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(autocomplete)
 
         #events
         wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
@@ -4999,8 +5033,113 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
 
+        wx.EVT_MENU(rightclickmenu, 3097, self.OnShowSelectedTextCallTip)
+        wx.EVT_MENU(rightclickmenu, 3098, self.OnShowWordCompleteBox)
+        wx.EVT_MENU(rightclickmenu, 3099, self.OnShowAutoCompleteBox)
+
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
+
+    def OnShowSelectedTextCallTip(self, event):
+        pos = self.GetCurrentPos()
+
+        self.CallTipSetBackground('yellow')             #Set the background colour for the call tip.
+        self.CallTipSetForeground('#666666')            #Set the foreground colour for the call tip.
+        self.CallTipSetHighlight(2, 5)                  #Highlight a segment of the definition.(int start, int end)
+        self.CallTipSetForegroundHighlight('#FF0000')   #Set the foreground colour for the highlighted part of the call tip.
+        # self.CallTipPosAtStart()    #Retrieve the position where the caret was before displaying the call tip.
+        # self.CallTipUseStyle(48)    #Enable use of STYLE_CALLTIP and set call tip tab size in pixels.
+        # self.CallTipActive()        #Is there an active call tip? -> bool
+        # self.CallTipCancel()        #Remove the call tip from the screen.
+        # self.CallTipPosAtStart()    #Retrieve the position where the caret was before displaying the call tip.
+
+        if gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+            self.CallTipSetBackground('#D7DEEB')        #Set the background colour for the call tip.
+            self.CallTipSetForeground('#666666')        #Set the foreground colour for the call tip.
+
+            if   self.GetSelectedText() == 'SelectOne':         self.CallTipShow(pos, 'The SelectOne dialog gives you a list of options,\nwith the option to select one of them.')
+            elif self.GetSelectedText() == 'SelectMany':        self.CallTipShow(pos, 'The SelectMany dialog gives you a list of options,\nwith the option to select one or more of them,\nor even none of them.')
+            elif self.GetSelectedText() == 'EndSelect':         self.CallTipShow(pos, 'EndSelect')
+            elif self.GetSelectedText() == 'SelectAll':         self.CallTipShow(pos, 'Cause all sub-packages, esps, and\nesms to be selected for installation.')
+            elif self.GetSelectedText() == 'DeSelectAll':       self.CallTipShow(pos, 'Cause all sub-packages, esps, and\nesms to be de-selected from installation.')
+            elif self.GetSelectedText() == 'SelectSubPackage':  self.CallTipShow(pos, 'Cause the specified sub-package\nto be selected for installation')
+            elif self.GetSelectedText() == 'DeSelectSubPackage':self.CallTipShow(pos, 'Cause the specified sub-package\nto be de-selected from installation.')
+            elif self.GetSelectedText() == 'If':                self.CallTipShow(pos, 'Begins the control block.')
+            elif self.GetSelectedText() == 'Elif':              self.CallTipShow(pos, 'Elif')
+            elif self.GetSelectedText() == 'Else':              self.CallTipShow(pos, 'Else')
+            elif self.GetSelectedText() == 'EndIf':             self.CallTipShow(pos, 'Signals the end of the If control block.')
+            elif self.GetSelectedText() == 'False':             self.CallTipShow(pos, 'False')
+            elif self.GetSelectedText() == 'True':              self.CallTipShow(pos, 'True')
+            elif self.GetSelectedText() == '|Default Character':self.CallTipShow(pos, '|Default Character')
+            elif self.GetSelectedText() == '; Comment':         self.CallTipShow(pos, '; Comment')
+            elif self.GetSelectedText() == 'DataFileExists':    self.CallTipShow(pos, 'Tests for the existance of a file in the Data directory.')
+            elif self.GetSelectedText() == 'SelectEspm':        self.CallTipShow(pos, 'Cause the specified esp or esm\nto be selected for installation.')
+            elif self.GetSelectedText() == 'SelectAllEspms':    self.CallTipShow(pos, 'Cause all esps and esms to\nbe selected for installation.')
+            elif self.GetSelectedText() == 'DeSelectEspm':      self.CallTipShow(pos, 'Cause the specified esp or esm\nto be deselected from installation.')
+            elif self.GetSelectedText() == 'DeSelectAllEspms':  self.CallTipShow(pos, 'Cause all esps and esms to be\nde-selected from installation.')
+            elif self.GetSelectedText() == 'RenameEspm':        self.CallTipShow(pos, 'Change the installed name of an esp or esm.')
+            elif self.GetSelectedText() == 'ResetEspmName':     self.CallTipShow(pos, 'Resets the name of an esp or esm\nback to its default name.')
+            elif self.GetSelectedText() == 'ResetAllEspmNames': self.CallTipShow(pos, 'Resets the names of all the esps and\nesms back to their default names. ')
+            elif self.GetSelectedText() == 'RequireVersions':   self.CallTipShow(pos, 'The RequireVersions dialog will show up if the wizard \nspecified minimum version requirements, and your \nsystem doesn\'t meet those requirements.')
+            elif self.GetSelectedText() == 'Cancel':            self.CallTipShow(pos, 'The Cancel dialog will be shown if the wizard\ncancels execution for some reason.\nIf a reason is given, it will be displayed.')
+            elif self.GetSelectedText() == 'Note':              self.CallTipShow(pos, 'Add a note to the user to be displayed\nat the end of the wizard, on the finish page.')
+            elif self.GetSelectedText() == 'Return':            self.CallTipShow(pos, 'Signals completion of the wizard.\nThis will jump right to the finish page. ')
+            elif self.GetSelectedText() == 'CompareObVersion':  self.CallTipShow(pos, 'CompareObVersion')
+            elif self.GetSelectedText() == 'CompareOBSEVersion':self.CallTipShow(pos, 'CompareOBSEVersion')
+            elif self.GetSelectedText() == 'CompareOBGEVersion':self.CallTipShow(pos, 'CompareOBGEVersion')
+            elif self.GetSelectedText() == 'CompareWBVersion':  self.CallTipShow(pos, 'CompareWBVersion')
+            elif self.GetSelectedText() == 'str':               self.CallTipShow(pos, 'Used to convert a value into a string,\nfor example when trying to concantenate\na integer or decimal to a string.')
+            elif self.GetSelectedText() == 'int':               self.CallTipShow(pos, 'Used to convert a value to an integer,\nfor example converting a value held in a\nstring to a integer value. ')
+            elif self.GetSelectedText() == 'float':             self.CallTipShow(pos, 'Used to convert a value to decimal, for\nexample converting a value held in a\nstring to a decimal value. ')
+            elif self.GetSelectedText() == 'len':               self.CallTipShow(pos, 'Used to find the length of a string.')
+            elif self.GetSelectedText() == 'lower':             self.CallTipShow(pos, 'lower')
+            elif self.GetSelectedText() == 'For':               self.CallTipShow(pos, 'For')
+            elif self.GetSelectedText() == 'EndFor':            self.CallTipShow(pos, 'EndFor')
+            elif self.GetSelectedText() == 'While':             self.CallTipShow(pos, 'While')
+            elif self.GetSelectedText() == 'EndWhile':          self.CallTipShow(pos, 'EndWhile')
+            elif self.GetSelectedText() == 'Continue':          self.CallTipShow(pos, 'Continue')
+            elif self.GetSelectedText() == 'GetEspmStatus':     self.CallTipShow(pos, 'Tests the current status of an esp or espm\nin the Data directory. This function takes esp/m\nghosting into account when testing the status.')
+            else:
+                pass
+
+    def OnShowWordCompleteBox(self,event):
+        text = self.GetText()
+        replaceThisList = ['.','!','?',',',':',';',
+                           '\'','"',
+                           '/','\\',
+                           '[',']','<','>','(',')','{','}',
+                           '=','+','-',
+                           '_','@','#','$','%','^','&','*','|','`','~',
+                           '\n','\t']
+        for char in replaceThisList:
+            text = text.replace(char, ' ')
+        words = list(set(text.split(' ')))
+
+        # print words
+
+        kw = words
+        kw.sort()
+        # No need to seperate lowercase words from capitalcase or uppercase words
+        self.AutoCompSetIgnoreCase(False)
+        self.AutoCompShow(0, ' '.join(kw))
+
+    def OnShowAutoCompleteBox(self,event):
+        '''Shows the AutoComplete Box in the editor.'''
+        if gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+            kw = keywordWIZBAIN.kwlist[:] + keywordWIZBAIN2.kwlist[:]
+            # Optionally add more ...
+            kw.append('__U__SePeRaToR__l__?')
+            # Python sorts are case sensitive
+            kw.sort()
+            # So this needs to match
+            self.AutoCompSetIgnoreCase(False)
+            self.AutoCompSetChooseSingle(True) #Should a single item auto-completion list automatically choose the item.
+
+            # Registered images are specified with appended '?type'
+            for i in range(len(kw)):
+                if kw[i] in keywordWIZBAIN.kwlist or keywordWIZBAIN2.kwlist:
+                    kw[i] = kw[i] + '?5'
+            self.AutoCompShow(0, ' '.join(kw))
 
     def OnRMouseGestureMenu4(self, event):
         rightclickmenu = wx.Menu()
@@ -5044,7 +5183,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -5134,7 +5273,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -5228,7 +5367,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.Enable(False)
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -5286,7 +5425,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         p = wx.BITMAP_TYPE_PNG
 
-        rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 8', u'ContextMenu8')
+        rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 8 Line Operations', u'ContextMenu8')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
         rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
@@ -5334,39 +5473,106 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         rightclickmenu.AppendSeparator()
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID1', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        newlinebefore = wx.MenuItem(rightclickmenu, 2101, u'&New Line Before', u' Insert a new line before the current line.')
+        newlinebefore.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'newlinebefore16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(newlinebefore)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID2', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        newlineafter = wx.MenuItem(rightclickmenu, 2102, u'&New Line After', u' Insert a new line after the current line.')
+        newlineafter.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'newlineafter16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(newlineafter)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID3', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        cutline = wx.MenuItem(rightclickmenu, 2103, u'&Cut Line', u' Cut the current line to the clipboard.')
+        cutline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'cutline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(cutline)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID4', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        copyline = wx.MenuItem(rightclickmenu, 2104, u'&Copy Line', u' Copy the current line to the clipboard.')
+        copyline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'copyline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(copyline)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID5', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        deleteline = wx.MenuItem(rightclickmenu, 2105, u'&Delete Line\tCtrl+L', u' Delete the current line.')
+        deleteline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'deleteline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(deleteline)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID6', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        deletelinecontents = wx.MenuItem(rightclickmenu, 2106, u'&Delete Line Contents', u' Delete the contents of the current line.')
+        deletelinecontents.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'deleteline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(deletelinecontents)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID7', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        selectline = wx.MenuItem(rightclickmenu, 2107, u'&Select Line(without EOL)', u' Select the contents of the caret line without EOL chars.')
+        selectline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'selectline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(selectline)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID8', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        duplicateline = wx.MenuItem(rightclickmenu, 2108, u'&Duplicate Line', u' Duplicate the current line.')
+        duplicateline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'duplicateline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(duplicateline)
+
+        duplicateselectionline = wx.MenuItem(rightclickmenu, 2109, u'&Duplicate Selection/Line\tCtrl+D', u' Duplicate the selection. If the selection is empty, it duplicates the line containing the caret.')
+        duplicateselectionline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'duplicateselectionline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(duplicateselectionline)
+
+        duplicatelinentimes = wx.MenuItem(rightclickmenu, 2110, u'&Duplicate Line n Times', u' Duplicate the current line n times.')
+        duplicatelinentimes.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'duplicateselectionline16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(duplicatelinentimes)
+
+        joinlines = wx.MenuItem(rightclickmenu, 2111, u'&Join Lines', u' Join the currently selected lines.')
+        joinlines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'joinlines16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(joinlines)
+
+        splitlines = wx.MenuItem(rightclickmenu, 2112, u'&Split Lines', u' Split the lines in the target into lines that are less wide than pixelWidth where possible.')
+        splitlines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'splitlines16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(splitlines)
+
+        switcheroolinetranspose = wx.MenuItem(rightclickmenu, 2113, u'&Line Transpose\tCtrl+T', u' Switcheroo the current line with the previous.')
+        switcheroolinetranspose.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'linetranspose16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(switcheroolinetranspose)
+
+        movelineup = wx.MenuItem(rightclickmenu, 2114, u'&Move Line Up\tCtrl+Shift+Up', u' Move the current line up.')
+        movelineup.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowupbw16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(movelineup)
+
+        movelinedown = wx.MenuItem(rightclickmenu, 2115, u'&Move Line Down\tCtrl+Shift+Down', u' Move the current line down.')
+        movelinedown.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowdownbw16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(movelinedown)
+
+        appendselectedlineswithastring = wx.MenuItem(rightclickmenu, 2116, u'&Append Selected Line(s) with a string', u' Append Selected Line(s) with a string.')
+        appendselectedlineswithastring.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'append16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(appendselectedlineswithastring)
+
+        removestringfromendoflines = wx.MenuItem(rightclickmenu, 2117, u'&Remove string from end of selected lines', u' Remove a user-defined string from the end of selected lines.')
+        removestringfromendoflines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'remove16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(removestringfromendoflines)
+
+        removestringfromstartoflines = wx.MenuItem(rightclickmenu, 2118, u'&Remove string from start of lines', u' Remove a user-defined string from the start of selected lines.')
+        removestringfromstartoflines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'remove16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(removestringfromstartoflines)
+
+        padwithspaces = wx.MenuItem(rightclickmenu, 2120, u'&Pad With Spaces(selected lines)', u' Pad selected lines with spaces to the longest column width')
+        padwithspaces.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'padwithspaces16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(padwithspaces)
+
+
 
         #events
+        wx.EVT_MENU(rightclickmenu, 2101, self.OnNewLineBefore)
+        wx.EVT_MENU(rightclickmenu, 2102, self.OnNewLineAfter)
+        wx.EVT_MENU(rightclickmenu, 2103, self.OnLineCut)
+        wx.EVT_MENU(rightclickmenu, 2104, self.OnLineCopy)
+        wx.EVT_MENU(rightclickmenu, 2105, self.OnLineDelete)
+        wx.EVT_MENU(rightclickmenu, 2106, self.OnDeleteLineContents)
+        wx.EVT_MENU(rightclickmenu, 2107, self.OnLineSelect)
+        wx.EVT_MENU(rightclickmenu, 2108, self.OnLineDuplicate)
+        wx.EVT_MENU(rightclickmenu, 2109, self.OnDuplicateSelectionLine)
+        wx.EVT_MENU(rightclickmenu, 2110, self.OnLineDuplicateNTimes)
+        wx.EVT_MENU(rightclickmenu, 2111, self.OnLinesJoin)
+        wx.EVT_MENU(rightclickmenu, 2112, self.OnLinesSplit)
+        wx.EVT_MENU(rightclickmenu, 2113, self.OnLineTranspose)
+        wx.EVT_MENU(rightclickmenu, 2114, self.OnMoveLineUp)
+        wx.EVT_MENU(rightclickmenu, 2115, self.OnMoveLineDown)
+        wx.EVT_MENU(rightclickmenu, 2116, self.OnAppendSelectedLinesWithAString)
+        wx.EVT_MENU(rightclickmenu, 2117, self.OnRemoveStringFromEndOfSelectedLines)
+        wx.EVT_MENU(rightclickmenu, 2118, self.OnRemoveStringFromStartOfSelectedLines)
+
+        wx.EVT_MENU(rightclickmenu, 2120, self.OnPadWithSpacesSelectedLines)
+
         wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
         wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
         wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
@@ -5380,30 +5586,175 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
-    def OnViewWhitespace(self, event):
-        if   self.GetViewWhiteSpace() == 0: self.SetViewWhiteSpace(1)#0,1,or, 2
-        elif self.GetViewWhiteSpace() == 1: self.SetViewWhiteSpace(2)
-        elif self.GetViewWhiteSpace() == 2: self.SetViewWhiteSpace(0)
 
-    def OnShowIndentationGuides(self, event):
-        '''Toggle the indentation guides in the editor On/Off'''
-        if self.GetIndentationGuides() == True: self.SetIndentationGuides(False)
-        else: self.SetIndentationGuides(True)
+    def OnNewLineBefore(self, event):
+        ''' Insert a new line before the current line. '''
+        self.HomeDisplay()
+        self.CharLeft()
+        self.NewLine()
+        self.SetFocus()
 
-    def OnWordwrap(self, event):
-        '''Toggle Wordwrapping of the document in the editor On/Off'''
-        if self.GetWrapMode() == True: self.SetWrapMode(False)
-        else: self.SetWrapMode(True)
+    def OnNewLineAfter(self, event):
+        ''' Insert a new line after the current line. '''
+        self.LineEndDisplay()
+        self.NewLine()
+        self.SetFocus()
 
-    def OnHighlightSelectedLine(self, event):
-        '''Toggle highlighting the currently selected line(the one with the caret) in the editor On/Off'''
-        if self.GetCaretLineVisible() == True: self.SetCaretLineVisible(False)
-        else: self.SetCaretLineVisible(True)
+    def OnLineCut(self, event):
+        ''' Cut the line containing the caret. '''
+        self.LineCut()
 
-    def OnShowEOL(self, event):
-        ''' Toggle Show/Hide End of line characters '''
-        if self.GetViewEOL() == 1: self.SetViewEOL(False)
-        elif self.GetViewEOL() == 0: self.SetViewEOL(True)
+    def OnLineCopy(self, event):
+        ''' Copy the line containing the caret. '''
+        self.LineCopy()
+
+    def OnLineDelete(self, event):
+        ''' Delete the line containing the caret. '''
+        self.LineDelete()
+
+    def OnDeleteLineContents(self, event):
+        ''' Delete the contents of the line containing the caret, but not the line itself.'''
+        self.OnLineSelect(event)
+        self.DeleteBackNotLine()
+
+    def OnLineSelect(self, event):
+        ''' Select the contents of the caret line, but without the EOL char(s). '''
+        linefrompos = self.LineFromPosition(self.GetCurrentPos())
+        firstposcurline = self.PositionFromLine(linefrompos)
+        lengthline = len(self.GetLine(linefrompos))
+        if self.GetEOLMode() == 0: self.SetSelection(firstposcurline,firstposcurline+lengthline-2)#Minus 2 for Dos/Windows CRLF chars
+        else: self.SetSelection(firstposcurline,firstposcurline+lengthline-1)#Minus 1 for CR or LF EOL char
+
+    def OnLineDuplicate(self, event):
+        ''' Duplicate the current line. '''
+        self.LineDuplicate()
+
+    def OnLineDuplicateNTimes(self, event):
+        ''' Duplicate the current line n times. '''
+        dialog = wx.TextEntryDialog(self, u'Example:\n\nDuplicate this line\nDuplicate this line\nDuplicate this line\netc...\n\nEnter the number of times you want to duplicate the current line.', u'Duplicate Line n Times', u'')
+        if dialog.ShowModal() == wx.ID_OK:
+            try:
+                self.BeginUndoAction()
+                n = dialog.GetValue()
+                for i in range(0,int(n)):
+                    self.LineDuplicate()
+                self.EndUndoAction()
+            except:
+                wx.Bell()
+                self.OnLineDuplicateNTimes(event)
+
+    def OnDuplicateSelectionLine(self, event):
+        ''' Duplicate the selection. If selection empty duplicate the line containing the caret. '''
+        self.SelectionDuplicate()
+
+    def OnLinesJoin(self, event):
+        targettojoin = self.TargetFromSelection()
+        self.LinesJoin()
+
+    def OnLinesSplit(self, event):
+        ''' Split the lines in the target into lines that are less wide than pixelWidth where possible. '''
+        self.TargetFromSelection()
+        self.LinesSplit(-1)
+
+    def OnLineTranspose(self, event):
+        ''' Switch the current line with the previous. '''
+        self.BeginUndoAction()
+        self.LineTranspose()
+        self.EndUndoAction()
+
+    def OnMoveLineUp(self, event):
+        ''' Move the current line up. '''
+        linenum = self.GetCurrentLine()
+        if linenum > 0 :
+            self.BeginUndoAction()
+            self.LineTranspose()
+            self.LineUp()
+            self.EndUndoAction()
+
+    def OnMoveLineDown(self, event):
+        ''' Move the current line down. '''
+        linenum = self.GetCurrentLine()
+        if linenum < self.GetLineCount() - 1:
+            self.BeginUndoAction()
+            self.LineDown()
+            self.LineTranspose()
+            self.EndUndoAction()
+
+    def OnAppendSelectedLinesWithAString(self, event):
+        dialog = wx.TextEntryDialog(self, u'line1 Append A String\nline2 Append A String\nline3 Append A String\netc...', u'Append (selected lines) with a string', u' Append A String')
+        if dialog.ShowModal() == wx.ID_OK:
+            self.BeginUndoAction()
+            appendselstring = dialog.GetValue()
+
+            selstart = self.GetSelectionStart()
+            selend = self.GetSelectionEnd()
+            startline = self.LineFromPosition(selstart)
+            endline = self.LineFromPosition(selend)
+            for i in range(startline, endline+1):
+                self.GotoPos(self.GetLineEndPosition(i))
+                self.AddText(appendselstring)
+            self.EndUndoAction()
+        dialog.Destroy()
+
+    def OnRemoveStringFromEndOfSelectedLines(self, event):
+        dialog = wx.TextEntryDialog(self, u'ExampleString to remove:ing\n\nline(s) Remove A String\nbecomes\nline(s) Remove A Str\netc...\n\nNote: Does not strip trailing whitespace!', u'Remove String from end of Selected Lines', u' Remove End String')
+        if dialog.ShowModal() == wx.ID_OK:
+            self.BeginUndoAction()
+            removeendselstring = dialog.GetValue()
+
+            selstart = self.GetSelectionStart()
+            selend = self.GetSelectionEnd()
+            startline = self.LineFromPosition(selstart)
+            endline = self.LineFromPosition(selend)
+            for i in range(startline, endline+1):
+                self.GotoPos(self.GetLineEndPosition(i))
+                linestring = self.GetLine(i).rstrip('\n')
+                if linestring.endswith(removeendselstring):
+                    for i in range(0, len(removeendselstring)):
+                        self.DeleteBack()
+            self.EndUndoAction()
+        dialog.Destroy()
+
+    def OnRemoveStringFromStartOfSelectedLines(self, event):
+        dialog = wx.TextEntryDialog(self, u'ExampleString to remove:Rem\n\nline(s) Remove A String\nbecomes\nline(s) ove A String\netc...\n\nNote: Leading indentation/whitespace is ignored!', u'Remove String from end of Selected Lines', u' Remove End String')
+        if dialog.ShowModal() == wx.ID_OK:
+            self.BeginUndoAction()
+            removestartselstring = dialog.GetValue()
+
+            selstart = self.GetSelectionStart()
+            selend = self.GetSelectionEnd()
+            startline = self.LineFromPosition(selstart)
+            endline = self.LineFromPosition(selend)
+            for i in range(startline, endline+1):
+                self.GotoPos(self.GetLineIndentPosition(i))
+                linestring = self.GetLine(i).lstrip()
+                if linestring.startswith(removestartselstring):
+                    for i in range(0, len(removestartselstring)):
+                        self.CmdKeyExecute(wx.stc.STC_CMD_CLEAR)
+            self.EndUndoAction()
+        dialog.Destroy()
+
+    def OnPadWithSpacesSelectedLines(self, event):
+        ''' Pad selected lines with spaces to the longest column width. '''
+        selstart = self.GetSelectionStart()
+        selend = self.GetSelectionEnd()
+        startline = self.LineFromPosition(selstart)
+        endline = self.LineFromPosition(selend)
+
+        longestcolumnsonaline = 0
+        for i in range(startline, endline+1):
+            lineendpos = self.GetLineEndPosition(i)
+            columnsonline = self.GetColumn(lineendpos)
+            if columnsonline > longestcolumnsonaline:
+                longestcolumnsonaline = columnsonline
+
+        self.BeginUndoAction()
+        for i in range(startline, endline+1):
+            lineendpos = self.GetLineEndPosition(i)
+            self.GotoPos(lineendpos)
+            while self.GetColumn(self.GetCurrentPos()) < longestcolumnsonaline:
+                self.AddText(u' ')
+        self.EndUndoAction()
 
     def OnRMouseGestureMenu9(self, event):
         rightclickmenu = wx.Menu()
@@ -5445,7 +5796,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm7)
 
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8', u' Call Mouse Gesture Menu 8')
+        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
         mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
         submenu.AppendItem(mgm8)
 
@@ -5490,6 +5841,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(hmmm)
 
+        rightclickmenu.AppendSeparator()
 
         submenu_themes = wx.Menu()
 
@@ -5607,6 +5959,30 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
+    def OnViewWhitespace(self, event):
+        if   self.GetViewWhiteSpace() == 0: self.SetViewWhiteSpace(1)#0,1,or, 2
+        elif self.GetViewWhiteSpace() == 1: self.SetViewWhiteSpace(2)
+        elif self.GetViewWhiteSpace() == 2: self.SetViewWhiteSpace(0)
+
+    def OnShowIndentationGuides(self, event):
+        '''Toggle the indentation guides in the editor On/Off'''
+        if self.GetIndentationGuides() == True: self.SetIndentationGuides(False)
+        else: self.SetIndentationGuides(True)
+
+    def OnWordwrap(self, event):
+        '''Toggle Wordwrapping of the document in the editor On/Off'''
+        if self.GetWrapMode() == True: self.SetWrapMode(False)
+        else: self.SetWrapMode(True)
+
+    def OnHighlightSelectedLine(self, event):
+        '''Toggle highlighting the currently selected line(the one with the caret) in the editor On/Off'''
+        if self.GetCaretLineVisible() == True: self.SetCaretLineVisible(False)
+        else: self.SetCaretLineVisible(True)
+
+    def OnShowEOL(self, event):
+        ''' Toggle Show/Hide End of line characters '''
+        if self.GetViewEOL() == 1: self.SetViewEOL(False)
+        elif self.GetViewEOL() == 0: self.SetViewEOL(True)
 
     def OnSetFolderMarginStyle(self, event):#Called after STC is initialised MainWindow Initial Startup. Not sure why but calling it here in the class causes the fold symbols to not work quite properly at startup...
         if   gGlobalsDict['ThemeOnStartup'] == 'Default':         Color1 = '#000000'; Color2 = '#32CC99'#medium aquamarine
@@ -12569,11 +12945,23 @@ class Installer_OpenWizardInCommentsWizBAINEditor(InstallerLink):
             dir = self.data.dir
             wizpath = u'%s' %dir.join(path.s, self.data[path].hasWizard)
             gInstallers.gComments.LoadFile(wizpath)
+        else:
+            # Archive, open for viewing
+            archive = self.data[path]
+            with balt.BusyCursor():
+                # This is going to leave junk temp files behind...
+                archive.unpackToTemp(path, [archive.hasWizard])
+            wizpath = u'%s' % archive.tempDir.join(archive.hasWizard)
+            gInstallers.gComments.LoadFile(wizpath)
+        try:
+            archive.tempDir.rmtree(archive.tempDir.stail)
+        except:
+            pass
 
-            gInstallers.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-            gInstallers.gComments.AppendText(' ')#Need to set the modify flag manually so it saves when changing package selections. Also if the last word in the doc is a keyword(ex. Return) this updates the syntax highlighting.
-            gInstallers.gComments.SetFocus()
-            gInstallers.gComments.EnsureCaretVisible()
+        gInstallers.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+        gInstallers.gComments.AppendText(' ')#Need to set the modify flag manually so it saves when changing package selections. Also if the last word in the doc is a keyword(ex. Return) this updates the syntax highlighting.
+        gInstallers.gComments.SetFocus()
+        gInstallers.gComments.EnsureCaretVisible()
 
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
