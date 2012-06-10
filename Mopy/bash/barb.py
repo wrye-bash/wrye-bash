@@ -231,7 +231,7 @@ class BackupSettings(BaseBackupSettings):
 
     def PromptMismatch(self):
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
-        if basher.settings['bash.version'] == u'0': return False
+        if basher.settings['bash.version'] == 0: return False
         return not self.SameAppVersion() and self.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
             _(u'Previous Version: ')+basher.settings['bash.version']+u'\n' +
