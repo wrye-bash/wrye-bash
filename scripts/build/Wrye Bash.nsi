@@ -731,7 +731,7 @@ NoComTypes:
                 SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_pywin32 $0
                 ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
-                NSISdl::download http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fpywin32%2Ffiles%2Fpywin32%2FBuild%20217%2Fpywin32-217.win32-py2.7.exe&ts=1338158012&use_mirror=softlayer "$TEMP\PythonInstallers\pywin32.exe"
+                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20217/pywin32-217.win32-py2.7.exe?r=&ts=1339283717&use_mirror=dfn "$TEMP\PythonInstallers\pywin32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
