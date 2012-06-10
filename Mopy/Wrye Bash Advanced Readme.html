@@ -178,32 +178,84 @@
 
 <h3 id="bain-editor">The WizBAIN Editor</h3>
 <p>The WizBAIN Editor, which doubles as the Comments panel when not being used to edit Wizards, is a work-in-progress feature designed to aid in the creation and editing of Wizards. If a package already contains a Wizard, then it can be opened for viewing in the WizBAIN Editor using the <a href="#bainViewWizardInComments">View Wizard In Comments...</a> package context menu command.
-<p>The editor supports Wizard syntax highlighting, so keywords are red, functions are purple, strings are yellow and numbers are red. Comments recieve no highlighting. The editor also supports code folding for conditional code blocks such as those beginning <code>If</code>, <code>Else</code> and <code>SelectOne</code>. The beginning of a foldable section of code is given a green arrow in the grey column to the right of the line number column, and clicking this arrow will collapse or expand that section.
-<p>Most of the editor's functionality is exposed through mouse gesture context menus, of which there are nine possible variations, with each context menu displayed for a different gesture. Gestures are performed by holding down the right mouse button and moving your mouse in one direction, then releasing the right mouse button. The movement of your mouse is displayed during the gesture as a yellow trace, and on release of the right mouse button the context menu corresponding to the gesture performed is displayed. 
+<p>The editor supports Wizard syntax highlighting, so keywords are red, functions are purple, strings are yellow and numbers are red. Comments recieve no highlighting. The editor also supports code folding for conditional code blocks such as those beginning <code>If</code>, <code>Else</code> and <code>SelectOne</code>. The beginning of a foldable section of code is given a green box in the grey column to the right of the line number column, and clicking this box will collapse or expand that section. If the green box contains a minus sign, the section can be collapsed, and if it contains a plus sign, it can be expanded. 
+<p>Most of the editor's functionality is exposed through mouse gesture context menus, of which there are nine possible variations, with each context menu displayed for a different gesture. Gestures are performed within the editor panel by holding down the right mouse button and moving your mouse in one direction, then releasing the right mouse button. The movement of your mouse is displayed during the gesture as a yellow trace, and on release of the right mouse button the context menu corresponding to the gesture performed is displayed. 
 <p>The gestures and their corresponding context menu commands are detailed in the table below. All gestures are straight lines in a single direction, with the first entry in their menus being a numbered code corresponding to the keyboard numpad key that the gesture would land on if the mouse were centred on the "5" key (eg. top right has the code <q>MGM9</q>). The gesture menus have many empty entries, commonly labelled <q>Needs Label &amp; ID</q>, that have no functionality and as such are not detailed.
 <table id="bainHeaderCommands">
 	<thead>
 		<tr><th colspan="3">WizBAIN Editor Gestures &amp; Context Menus
 		<tr><th>Gesture Direction<th>Context Menu Command<td>Description
 	<tbody>
-  <tr><td rowspan="10"><i>No movement</i><td>Undo<td>Behaves as standard, undoing the last action performed.
+  <tr><td rowspan="13"><i>No movement</i><td>Mouse Gesture Menus<td>This submenu is displayed for all gesture context menus, and allows the switching between different gesture context menus without requiring their gestures to be performed.
+  <tr><td>Undo<td>Behaves as standard, undoing the last action performed.
   <tr><td>Redo<td>Behaves as standard, redoing the last undone action.
   <tr><td>Cut<td>Behaves as standard, removing the selected text from the editor panel and adding it to the clipboard.
   <tr><td>Copy<td>Behaves as standard, copying the selected text from the editor panel to the clipboard.
   <tr><td>Paste<td>Behaves as standard, pasting the text in the clipboard into the selected position in the editor.
   <tr><td>Delete<td>Removes the selected text from the editor panel, but does not copy it to the clipboard.
   <tr><td>Select All<td>Selects all the text in the editor panel.
+  <tr><td>Toggle Comment<td>Switches between commenting and uncommenting the selected line.
   <tr><td>Remove Trailing Whitespace<td>Trims any whitespace from the ends of all the lines of text in the editor panel.
   <tr><td>File->Save As This Project's Wizard<td>Saves the contents of the editor panel as the current package's Wizard, overwriting any existing Wizard that may be present.
-  <tr><td>Mouse Gesture Menus<td>This submenu is displayed for all gesture context menus, and allows the switching between different gesture context menus without requiring their gestures to be performed.
-  <tr><td rowspan="2">Right<td>Txt2Wiz (FileDrop)<td>Opens up a floating miniframe into which a file can be drag and dropped and its contents converted to a wizard string for use in the editor panel.
-  <tr><td>Txt2WWiz (TextDrop)<td>Opens up a floating miniframe into which text can be drag and dropped and it converted to a wizard string for use in the editor panel.
+  <tr><td>Help->WizBAIN Editor General<td>Displays a short description of the Editor's functionality in a new window.
+  <tr><td>Help->WizBAIN Editor API Doc Strings<td>Displays some documentation of Editor commands in a new window.
+  <tr><td rowspan="19">Top<td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
+  <tr><td><td>
   <tr><td rowspan="5">Top Right<td>Show Whitespace<td>Cycles the display of whitespace symbols between three settings. The default is to display all whitespace symbols. Selecting the option once sets the editor to display whitespace symbols outside indentation only, and selecting the option a second time turns off all display of whitespace symbols. Selecting the option a third time turns back on display of all whitespace symbols.
-  <tr><td>Toggle Indent Guides<td>Toggles the display of vertical dashed lines that are displayed in intervals equal to the default tab space size (often 4 spaces).
+  <tr><td>Toggle Indent Guides<td>Toggles the display of vertical dashed lines that are displayed in intervals of 4 spaces.
   <tr><td>Toggle Wordwrap<td>Toggles the wrapping of text to fit within the panel without any horizontal scrolling, similar to many other text editors.
   <tr><td>Highlight Selected Line<td>Toggles the highlighting of the currently selected line in the editor using a grey background.
   <tr><td>Toggle EOL View<td>Toggles the display of symbols for end-of-line characters, similar to many other text editors.
+  <tr><td rowspan="2">Right<td>Txt2Wiz (FileDrop)<td>Opens up a floating miniframe into which a file can be drag and dropped and its contents converted to a wizard string for use in the editor panel.
+  <tr><td>Txt2WWiz (TextDrop)<td>Opens up a floating miniframe into which text can be drag and dropped and it converted to a wizard string for use in the editor panel.
+  <tr><td rowspan="3">Bottom Right<td>Show CallTip<td>Shows a calltip for the currently selected word, giving some usage information for Wizard keywords and functions.
+  <tr><td>WordComplete Box<td>Opens the WordComplete box.
+  <tr><td>AutoComplete Box<td>Opens the AutoComplete box.
+  <tr><td rowspan="19">Bottom<td>RequireVersions Oblivion<td>Inserts a RequireVersions keyword at the current position and fills in the parameters with the latest known versions for Oblivion.
+  <tr><td>RequireVersions Skyrim<td>Inserts a RequireVersions keyword at the current position and fills in the parameters with the latest known versions for Skyrim.
+  <tr><td>SelectOne<td>Inserts a SelectOne keyword at the current position.
+  <tr><td>SelectMany<td>Inserts a SelectMany keyword at the current position.
+  <tr><td>"","","",\<td>Inserts the string <code>"","","",\</code> at the current position.
+  <tr><td>EndSelect<td>Inserts an EndSelect keyword at the current position.
+  <tr><td>Case<td>Inserts a Case keyword at the current position.
+  <tr><td>Break<td>Inserts a Break keyword at the current position.
+  <tr><td>SelectAll<td>Inserts a SelectAll keyword at the current position.
+  <tr><td>DeSelectAll<td>Inserts a DeSelectAll keyword at the current position.
+  <tr><td>SelectSubPackage<td>Inserts a SelectSubPackage keyword at the current position.
+  <tr><td>DeSelectSubPackage<td>Inserts a DeSelectSubPackage keyword at the current position.
+  <tr><td>SelectEspm<td>Inserts a SelectEspm keyword at the current position.
+  <tr><td>SelectAllEspms<td>Inserts a SelectAllEspms keyword at the current position.
+  <tr><td>DeSelectEspm<td>Inserts a DeSelectEspm keyword at the current position.
+  <tr><td>DeSelectAllEspms<td>Inserts a DeSelectAllEspms keyword at the current position.
+  <tr><td>RenameEspm<td>Inserts a RenameEspm keyword at the current position.
+  <tr><td>ResetEspmName<td>Inserts a ResetEspmName keyword at the current position.
+  <tr><td>ResetAllEspmNames<td>Inserts a ResetAllEspmNames keyword at the current position.
+  <tr><td rowspan="2">Bottom Left<td>Sort...<td>Displays a dialog that allows you to sort the selected lines in a variety of ways.
+  <tr><td>Find Selected Forwards<td>Finds the next occurrance of the selected string in the Editor.
+  <tr><td rowspan="4">Left<td>UPPER CASE<td>Changes the selected text to be uppercase.
+  <tr><td>lower case<td>Changes the selected text to be lowercase.
+  <tr><td>iNVERT cASE<td>Inverts the case of the characters in the selected text.
+  <tr><td>Capital Case<td>Uppercases the first letter of every word in the selected text.
 </table>
+<p>The WizBAIN Editor has a variety of colour themes available, which can by cycled through using the F12 keyboard key.
+<p>Pressing the Escape keyboard key will deselect any selected text. Pressing Ctrl + Space will display the editor's AutoComplete functionality.
 
 
 <h3 id="bain-skipped">Skipped Files</h3>
@@ -258,7 +310,7 @@
 
 
 <h3 id="bain-commands">Context Menu Commands</h3>
-<p>The tables below detail the full list of context menu commands available in the Mods tab.
+<p>The tables below detail the full list of context menu commands available in the Installers tab.
 <table id="bainHeaderCommands">
 	<thead>
 		<tr><th colspan="3">Column Header Context Menu
@@ -280,6 +332,7 @@
 		<tr><td colspan="2">Refresh Data<td>Re-scans the Data directory and all project directories. This is done once per run of Wrye Bash, when the Installers tab is first opened. If you manually alter the directories after that, you should run this command to update BAIN to reflect the changes.
 		<tr><td colspan="2">Full Refresh<td>This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
 		<tr><td colspan="2">Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
+  <tr><td colspan="2">Create New Project...<td>Displays a dialog that allows you to create a new project and select some starting files for it.
 		<tr><td colspan="2">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
 		<tr><td colspan="2" id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
 		<tr><td colspan="2">Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
