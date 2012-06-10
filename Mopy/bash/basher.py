@@ -1283,7 +1283,7 @@ class MasterList(List):
                 value = u'%02X' % (self.fileOrderItems.index(itemId),)
             elif col == 'Current Order':
                 #print itemId
-                if masterName in bosh.modInfos.LoadOrder:
+                if masterName in bosh.modInfos.plugins.LoadOrder:
                     value = u'%02X' % (self.loadOrderNames.index(masterName),)
                 else:
                     value = u''
@@ -1777,7 +1777,7 @@ class ModList(List):
                 return
         start = indexes[0]
         stop = indexes[-1] + 1
-        oldOrder = bosh.modInfos.LoadOrder
+        oldOrder = bosh.modInfos.plugins.LoadOrder
         # Dummy checks: can't move the game's master file anywhere else but position 0
         if newPos <= 0: return
         master = bosh.modInfos.masterName
@@ -1795,7 +1795,7 @@ class ModList(List):
             if e.code == bapi.BOSS_API_ERROR_INVALID_ARGS:
                 #balt.showError(self, u'Cannot load plugins before masters.')
                 pass
-        bosh.modInfos.refreshBapi(False, True)
+        bosh.modInfos.plugins.refresh(True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
 
@@ -1807,7 +1807,7 @@ class ModList(List):
         else:
             selected = set([detail])
         #--Populate
-        bosh.modInfos.refreshBapi()
+        bosh.modInfos.plugins.refresh()  #CDC is this needed here?
         if files == 'ALL':
             self.PopulateItems(selected=selected)
         elif isinstance(files,bolt.Path):
@@ -2384,7 +2384,7 @@ class ModDetails(SashPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.refreshBapi(False, True)
+        bosh.modInfos.plugins.refresh()  #CDC I don't think this is needed here
         modList.RefreshUI()
 
     def DoCancel(self,event):
@@ -10824,7 +10824,7 @@ class PatchDialog(wx.Dialog):
                         #   couldn't actually find anything to execute. This fix really belongs somewhere else
                         #   (after the patch is recreated?), but I don't know where it goes, so I'm sticking it
                         #   here until one of you come back or I find a better place.
-                        bosh.modInfos.refreshBapi(True)
+                        bosh.modInfos.plugins.refresh(True)
                         oldFiles = bosh.modInfos.ordered[:]
                         bosh.modInfos.select(patchName)
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
@@ -17435,7 +17435,6 @@ class Mod_FlipSelf(Link):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
-            bosh.modInfos.refreshBapi(False,True)
             self.window.RefreshUI(detail=fileInfo.name)
 
 
@@ -17988,7 +17987,7 @@ class Mod_Patch_Update(Link):
     def Execute(self,event):
         """Handle activation event."""
         # Create plugin dictionaries -- used later. Speeds everything up! Yay!
-        fullLoadOrder   = bosh.boss.LoadOrder
+        fullLoadOrder   = bosh.modInfos.plugins.LoadOrder   #CDC used this cached value no need to requery
 
         index = 0
         for name in fullLoadOrder:
@@ -18091,8 +18090,9 @@ class Mod_Patch_Update(Link):
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
-                            bosh.modInfos.unselect(mod,True)
+                            bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
+                        bosh.modInfos.plugins.save()
                         self.window.RefreshUI(detail=fileName)
 
         previousMods = set()
