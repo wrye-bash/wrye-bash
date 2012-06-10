@@ -3892,6 +3892,8 @@ class Plugins:
         self.sizePlugins = 0
         self.mtimeOrder = 0
         self.sizeOrder = 0
+        self.LoadOrder = [] # the masterlist load order (always sorted)
+        self.selected = []  # list of the currently active plugins (not always in order)
         #--Create dirs/files if necessary
         self.dir.makedirs()
 
@@ -3911,6 +3913,41 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
+    def loadActive(self):
+        """Get list of active plugins from plugins.txt through BAPI which cleans out bad entries."""
+        #--Read file
+        self.mtimePlugins = self.pathPlugins.mtime
+        self.sizePlugins = self.pathPlugins.size
+        self.selected = boss.GetActivePlugins() # GPath list (but not sorted)
+        #modNames.add(modName)
+        #--Done
+
+    def loadLoadOrder(self):
+        """Get list of active plugins from plugins.txt through BAPI which cleans out bad entries."""
+        #--Read file
+        self.LoadOrder = boss.GetLoadOrder() # GPath list (but not fully sorted?)
+        self.LoadOrder.sort(key=lambda a: not modInfos[a].isEsm())  #CDC Load order doesn't get fake ESMs right?
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            self.mtimeOrder = self.pathOrder.mtime
+            self.sizeOrder = self.pathOrder.size
+        #modNames.add(modName)
+        #--Done
+
+    def save(self):
+        """Write data to Plugins.txt file."""
+        try:
+            for active in self.selected:
+                if modInfos[active].isGhost:
+                    modInfos[active].setGhost(False)
+            boss.SetActivePlugins(modInfos.getOrdered(self.selected))
+        except bapi.BossError as e:
+            if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
+                raise
+        self.mtimePlugins = self.pathPlugins.mtime
+        self.sizePlugins = self.pathPlugins.size
+        self.loadActive()     # ensure we have the new up-to-date list as BAPI sees it
+
+
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
         if self.pathPlugins.exists() and (
@@ -3923,15 +3960,14 @@ class Plugins:
                 self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
 
-    def refresh(self):
-        """Usesd to update internal times/sizes for tracking"""
-        if self.pathPlugins.exists():
-            self.mtimePlugins = self.pathPlugins.mtime
-            self.sizePlugins = self.pathPlugins.size
-        if (boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and
-            self.pathOrder.exists()):
-            self.mtimeOrder = self.pathOrder.mtime
-            self.sizeOrder = self.pathOrder.size
+
+    def refresh(self,forceRefresh=False):
+        """Reload for plugins.txt or masterlist.txt changes."""
+        hasChanged = self.hasChanged()
+        if hasChanged or forceRefresh: 
+            self.loadActive()
+            self.loadLoadOrder()
+        return hasChanged
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -4810,7 +4846,7 @@ class FileInfos(DataDict):
         fileInfo = self[oldName]
         #--File system
         newPath = self.dir.join(newName)
-        oldIndex = boss.GetPluginLoadOrder(oldName)
+        oldIndex = boss.GetPluginLoadOrder(oldName)  #CDC is this wise the active list isn't being updated?
         if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
         oldPath.moveTo(newPath)
@@ -4820,7 +4856,7 @@ class FileInfos(DataDict):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
-        boss.SetPluginLoadOrder(newName, oldIndex)
+        boss.SetPluginLoadOrder(newName, oldIndex)  #CDC
         #--Done
         fileInfo.madeBackup = False
 
@@ -4898,40 +4934,11 @@ class INIInfos(FileInfos):
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
     #--------------------------------------------------------------------------
-    # Load Order stuff
+    # Load Order stuff is almost all handled in the Plugins class again
     #--------------------------------------------------------------------------
-    def refreshBapi(self,forceActiveReload=False,forceOrderReload=False):
-        if self.plugins.hasChanged() or not hasattr(self,'_plugins') or not hasattr(self,'_active'):
-            #--Get the lists
-            self._plugins = boss.GetLoadOrder()
-            self._plugins.sort(key=lambda a: not self[a].isEsm())
-            self._active = boss.GetActivePlugins()
-            #--Sort actives, since they might not be in order
-            self._active = [x for x in self._plugins if x in self._active]
-            #--Update Plugins() with new timestamps/sizes
-            self.plugins.refresh()
-        elif forceActiveReload:
-            if forceOrderReload or boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
-                self._plugins = boss.GetLoadOrder()
-                self._plugins.sort(key=lambda a: not self[a].isEsm())
-            self._active = boss.GetActivePlugins()
-            self._active = [x for x in self._plugins if x in self._active]
-        elif forceOrderReload:
-            self._plugins = boss.GetLoadOrder()
-            self._plugins.sort(key=lambda a: not self[a].isEsm())
-            self._active = [x for x in self._plugins if x in self._active]
-
-    @property
-    def ordered(self):
-        return self._active
-
-    @property
-    def LoadOrder(self):
-        return self._plugins
-
     def swapOrder(self, leftName, rightName):
         """Swaps the Load Order of two mods"""
-        order = self.LoadOrder
+        order = self.plugins.LoadOrder
         # Dummy checks
         if leftName not in order or rightName not in order: return
         if self.masterName in {leftName,rightName}: return
@@ -4943,8 +4950,8 @@ class ModInfos(FileInfos):
         #--Save
         if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
             # Whole text file will have to be rewriten anyway
-            boss.LoadOrder = order
-            self.plugins.refresh() #--mark the txt files as read
+            boss.SetLoadOrder(order)
+            self.plugins.refresh(True) #--mark the txt files as read
         else:
             # Just swap them myself for now.  It's quicker than using the BAPI
             leftInfo = self.data[leftName]
@@ -4953,9 +4960,7 @@ class ModInfos(FileInfos):
             rightmtime = rightInfo.mtime
             leftInfo.setmtime(rightmtime)
             rightInfo.setmtime(leftmtime)
-            # Only need to refresh bapi if active load order changed
-            refresh = leftName in self.ordered or rightName in self.ordered
-            self.refreshBapi(False,refresh)
+            self.plugins.refresh(True)  # force a refresh of master order
 
     def __init__(self):
         """Initialize."""
@@ -4968,6 +4973,7 @@ class ModInfos(FileInfos):
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         #--Selection state (ordered, merged, imported)
         self.plugins = Plugins()
+        self.ordered = tuple() # active mods in load order
         self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
@@ -5033,22 +5039,15 @@ class ModInfos(FileInfos):
     def refresh(self,doAutoGroup=False,doInfos=True):
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
+        oldlist = set(self.data) #CDC should this be pulled from plugins.LoadOrder instead?
         hasChanged = doInfos and FileInfos.refresh(self)
         self.refreshHeaders()
         hasChanged += self.updateBaloHeaders()
         if hasChanged:
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
-        hasChanged = hasChanged or self.plugins.hasChanged()
-        try:
-            self.refreshBapi(False,hasChanged)
-        except KeyError as e:
-            print 'Error in refreshBapi  - KeyError:', e
-            print 'results of GetLoadOrder:', boss.GetLoadOrder()
-            print 'keys of self.data:', self.data
-            print 'full contents of self.data:', self.data
-            print 'any corrupted mods:', self.corrupted
-            print 'contents of the Data dir:', dirs['mods'].list()
+        newlist = set(self.data) #CDC
+        hasChanged += self.plugins.refresh(True)  #CDC the refresh needs to run!
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
@@ -5202,6 +5201,8 @@ class ModInfos(FileInfos):
 
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected, exGroup_mods, imported, exported."""
+        #--Ordered
+        self.ordered = self.getOrdered(self.plugins.selected)
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -5460,9 +5461,8 @@ class ModInfos(FileInfos):
         except:
             deprint(u'Error sorting modnames:',modNames,traceback=True)
             raise
-        modNames.sort(key=lambda a: (a in self.LoadOrder) and self.LoadOrder.index(a))
-        #modNames.sort(key=lambda a: self[a].isEsm()) #--Sort on esm/esp
-        #modNames = [x for x in self.LoadOrder if x in modNames]
+        data = self.plugins.LoadOrder
+        modNames.sort(key=lambda a: (a in data) and data.index(a)) #--Sort on masterlist load order
         if asTuple: return tuple(modNames)
         else: return modNames
 
@@ -5484,18 +5484,14 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
-        modNames = set(modNames)
-        missing  = modNames - set(self.LoadOrder)
-        present  = modNames - missing
-        try:
-            boss.SetActivePlugins(self.getOrdered(present))
-        except bapi.BossError as e:
-            if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
-                raise
-            extra = set(present) - set(boss.ActivePlugins)
-        else:
-            extra = set()
+        missing,extra = [],[]
+        self.plugins.selected = list(modNames)
+        for modName in modNames:
+            if modName not in self.plugins.LoadOrder:
+                missing.append(modName)
+                self.plugins.selected.remove(modName)
         #--Save
+        self.plugins.save()
         self.refreshInfoLists()
         self.autoGhost()
         #--Done/Error Message
@@ -5507,6 +5503,7 @@ class ModInfos(FileInfos):
             if extra:
                 if missing: message += u'\n'
                 message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+                extra = set(modNames) - set(self.plugins.LoadOrder)
                 message += u'\n* '.join(x.s for x in extra)
             return message
         else:
@@ -5649,39 +5646,36 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self.hasBadMasterNames(fileName):
             ##    return
-            try:
-                for master in self[fileName].header.masters:
-                    if master in modSet:
-                        self.select(master,False,modSet,children)
-                #--Select in plugins
-                if fileName not in boss.ActivePlugins:
-                    boss.ActivePlugins.append(fileName)
-                    self.refreshFile(fileName)
-            except bapi.BossError as e:
-                if e.code == bapi.BOSS_API_ERROR_PLUGINS_FULL:
-                    raise PluginsFullError
-                raise
+            for master in self[fileName].header.masters:
+                if master in modSet:
+                    self.select(master,False,modSet,children)
+            #--Select in plugins
+            if fileName not in plugins.selected:
+                plugins.selected.append(fileName)
         finally:
             if doSave:
+                plugins.save()
                 self.refreshInfoLists()
                 self.autoGhost()
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
         #--Unselect self
-        toRemove = set((fileName,))
+        self.plugins.selected.remove(fileName)
         #--Unselect children
-        for selFile in boss.ActivePlugins:
-            #--Missing?
-            if selFile not in self.data:
+        for selFile in self.plugins.selected[:]:
+            #--Already unselected or missing?
+            if not self.isSelected(selFile) or selFile not in self.data:
                 continue
             #--One of selFile's masters?
-            if fileName in self[selFile].header.masters:
-                toRemove.add(selFile)
+            for master in self[selFile].header.masters:
+                if master == fileName:
+                    self.unselect(selFile,False)
+                    break
         #--Save
         if doSave:
-            boss.DeactivatePlugins(toRemove)
             self.refreshInfoLists()
+            self.plugins.save()
             self.autoGhost()
 
     def isBadFileName(self,modName):
@@ -6296,6 +6290,8 @@ class ConfigHelpers:
         """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
         # Force a rewrite of both plugins.txt and loadorder.txt
         # In other words, use what's in loadorder.txt to write plugins.txt
+        # CDC this LoadOrder object should be avoided because it's slow 
+        # but it will be OK here because this really shouldn't happen
         boss.LoadOrder = boss.LoadOrder
 
     def refresh(self,firstTime=False):
