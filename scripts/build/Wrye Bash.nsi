@@ -129,6 +129,9 @@
 
 
 ;-------------------------------- Page List:
+    !define MUI_HEADERIMAGE
+    !define MUI_HEADERIMAGE_BITMAP "Mopy\bash\images\wrye_monkey_150x57.bmp"
+    !define MUI_HEADERIMAGE_RIGHT
     !insertmacro MUI_PAGE_WELCOME
     Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
     Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
@@ -277,7 +280,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Please select game(s)/extra location(s) for/in which you would like to install Wrye Bash.$\nAlso select which version(s) to install (python and/or standalone executable version (default))."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Game(s)/Extra location(s) which you would like to install Wrye Bash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version)."
             Pop $Label
             IntOp $0 0 + 25
         ${If} $Path_OB != $Empty
