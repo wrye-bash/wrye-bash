@@ -3927,7 +3927,7 @@ class Plugins:
         #--Read file
         self.LoadOrder = boss.GetLoadOrder() # GPath list (but not fully sorted?)
         self.LoadOrder.sort(key=lambda a: not modInfos[a].isEsm())  #CDC Load order doesn't get fake ESMs right?
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
         #modNames.add(modName)
