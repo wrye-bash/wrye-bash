@@ -21385,9 +21385,11 @@ class CreateNewProject(wx.Dialog):
         self.statictext2 = wx.StaticText(self.panel, -1, u'What do you what to add to the New Project?', (-1, -1))
         self.checkboxblankesp = wx.CheckBox(self.panel, -1, u'Blank.esp', (-1, -1))
         self.checkboxblankesp.SetValue(True)
-        if bEnableWizard:
-            self.checkboxblankwizard = wx.CheckBox(self.panel, -1, u'Blank wizard.txt', (-1, -1))
-            self.checkboxwizardimagesdirectory = wx.CheckBox(self.panel, -1, u'Wizard Images Directory', (-1, -1))
+        self.checkboxblankwizard = wx.CheckBox(self.panel, -1, u'Blank wizard.txt', (-1, -1))
+        self.checkboxwizardimagesdirectory = wx.CheckBox(self.panel, -1, u'Wizard Images Directory', (-1, -1))
+        if not bEnableWizard:
+            self.checkboxblankwizard.Disable() #pyWin32 not installed
+            self.checkboxwizardimagesdirectory.Disable() #pyWin32 not installed
         self.checkboxdocsdirectory = wx.CheckBox(self.panel, -1, u'Docs Directory', (-1, -1))
         self.checkboxscreenshotnoext = wx.CheckBox(self.panel, -1, u'Preview Screenshot(No.ext)(re-enable for BAIT)', (-1, -1))
         self.checkboxscreenshotnoext.Disable() #Remove this when BAIT gets preview stuff done
@@ -21403,9 +21405,8 @@ class CreateNewProject(wx.Dialog):
         vsizer.Add(self.textctrl, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 2)
         vsizer.Add(self.statictext2, 0, wx.ALL|wx.ALIGN_CENTER, 10)
         vsizer.Add(self.checkboxblankesp, 0, wx.ALL|wx.ALIGN_TOP, 5)
-        if bEnableWizard:
-            vsizer.Add(self.checkboxblankwizard, 0, wx.ALL|wx.ALIGN_TOP, 5)
-            vsizer.Add(self.checkboxwizardimagesdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.checkboxblankwizard, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.checkboxwizardimagesdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
         vsizer.Add(self.checkboxdocsdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
         vsizer.Add(self.checkboxscreenshotnoext, 0, wx.ALL|wx.ALIGN_TOP, 5)
         vsizer.Add(self.staticline, 0, wx.ALL|wx.EXPAND, 5)
