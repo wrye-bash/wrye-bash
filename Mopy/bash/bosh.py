@@ -5661,7 +5661,8 @@ class ModInfos(FileInfos):
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
         #--Unselect self
-        self.plugins.selected.remove(fileName)
+        if fileName in self.plugins.selected:
+            self.plugins.selected.remove(fileName)
         #--Unselect children
         for selFile in self.plugins.selected[:]:
             #--Already unselected or missing?
