@@ -132,6 +132,8 @@
     !define MUI_HEADERIMAGE
     !define MUI_HEADERIMAGE_BITMAP "Mopy\bash\images\wrye_monkey_150x57.bmp"
     !define MUI_HEADERIMAGE_RIGHT
+    !define MUI_WELCOMEFINISHPAGE_BITMAP "Mopy\bash\images\wrye_monkey_164x314.bmp"
+    !define MUI_UNWELCOMEFINISHPAGE_BITMAP "Mopy\bash\images\wrye_monkey_164x314.bmp"
     !insertmacro MUI_PAGE_WELCOME
     Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
     Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
