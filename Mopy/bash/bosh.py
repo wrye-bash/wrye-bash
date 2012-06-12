@@ -5754,6 +5754,7 @@ class ModInfos(FileInfos):
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
         boss.SetPluginLoadOrder(newName, oldIndex)
+        self.plugins.loadLoadOrder()
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
