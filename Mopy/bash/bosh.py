@@ -4846,7 +4846,6 @@ class FileInfos(DataDict):
         fileInfo = self[oldName]
         #--File system
         newPath = self.dir.join(newName)
-        oldIndex = boss.GetPluginLoadOrder(oldName)  #CDC is this wise the active list isn't being updated?
         if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
         oldPath.moveTo(newPath)
@@ -4856,7 +4855,6 @@ class FileInfos(DataDict):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
-        boss.SetPluginLoadOrder(newName, oldIndex)  #CDC
         #--Done
         fileInfo.madeBackup = False
 
@@ -5751,9 +5749,11 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
+        oldIndex = boss.GetPluginLoadOrder(oldName)
         isSelected = self.isSelected(oldName)
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
+        boss.SetPluginLoadOrder(newName, oldIndex)
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
