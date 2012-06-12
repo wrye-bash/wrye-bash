@@ -101,8 +101,20 @@ class laa:
 
 # Files BAIN shouldn't skip
 dontSkip = (
+       #These are all in the Interface folder. Apart from the skyui_ files, they are all present in vanilla.
        u'skyui_cfg.txt',
-       u'skyui_translate.txt'
+       u'skyui_translate.txt',
+       u'credits.txt',
+       u'credits_french.txt',
+       u'fontconfig.txt',
+       u'controlmap.txt',
+       u'gamepad.txt',
+       u'mouse.txt',
+       u'keyboard_english.txt',
+       u'keyboard_french.txt',
+       u'keyboard_german.txt',
+       u'keyboard_spanish.txt',
+       u'keyboard_italian.txt',
 )
 
 #--Some stuff dealing with INI files
