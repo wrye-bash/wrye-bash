@@ -3945,8 +3945,6 @@ class Plugins:
                 raise
         self.mtimePlugins = self.pathPlugins.mtime
         self.sizePlugins = self.pathPlugins.size
-        self.loadActive()     # ensure we have the new up-to-date list as BAPI sees it
-
 
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
@@ -5455,12 +5453,12 @@ class ModInfos(FileInfos):
         """Sort list of mod names into their load order."""
         modNames = list(modNames)
         try:
-            modNames.sort()
+            #modNames.sort()          # CDC Why a default sort? We want them in load order!  Is try even needed?
+            data = self.plugins.LoadOrder
+            modNames.sort(key=lambda a: (a in data) and data.index(a)) #--Sort on masterlist load order
         except:
             deprint(u'Error sorting modnames:',modNames,traceback=True)
             raise
-        data = self.plugins.LoadOrder
-        modNames.sort(key=lambda a: (a in data) and data.index(a)) #--Sort on masterlist load order
         if asTuple: return tuple(modNames)
         else: return modNames
 
@@ -5673,9 +5671,9 @@ class ModInfos(FileInfos):
                     break
         #--Save
         if doSave:
-            self.refreshInfoLists()
+            #self.refreshInfoLists()
             self.plugins.save()
-            self.autoGhost()
+            #self.autoGhost()
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -6307,7 +6305,7 @@ class ConfigHelpers:
                 try:
                     boss.Load(path.s,userpath.s)
                     self.bossMasterTime = path.mtime
-                    self.bossUserTime = path.mtime
+                    self.bossUserTime = userpath.mtime
                     return
                 except bapi.BossError:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
