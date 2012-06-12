@@ -5223,6 +5223,8 @@ class ModInfos(FileInfos):
                 mods.append(modName)
         #--Refresh merged/imported lists.
         self.merged,self.imported = self.getSemiActive(self.ordered)
+        # Testing calling fileinfos.refresh here.
+        FileInfos.refresh(self)
 
     def refreshMergeable(self):
         """Refreshes set of mergeable mods."""
