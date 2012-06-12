@@ -1062,8 +1062,7 @@ class List(wx.Panel):
                         % fileName.s)
                     return
         #--Refresh
-        bosh.modInfos.refresh(doInfos=False)
-        bosh.modInfos.refreshInfoLists()
+        bosh.modInfos.refresh()
         self.RefreshUI()
         #--Mark sort as dirty
         if self.selectedFirst:
@@ -1238,7 +1237,6 @@ class MasterList(List):
             self.items.append(item)
             self.fileOrderItems.append(item)
         self.ReList()
-        self.SortItems()
         self.PopulateItems()
 
     #--Get Master Status
