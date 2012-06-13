@@ -3915,23 +3915,21 @@ class Plugins:
 
     def loadActive(self):
         """Get list of active plugins from plugins.txt through BAPI which cleans out bad entries."""
-        #--Read file
+        self.selected = boss.GetActivePlugins() # GPath list (but not sorted)
         self.mtimePlugins = self.pathPlugins.mtime
         self.sizePlugins = self.pathPlugins.size
-        self.selected = boss.GetActivePlugins() # GPath list (but not sorted)
-        #modNames.add(modName)
-        #--Done
+
 
     def loadLoadOrder(self):
-        """Get list of active plugins from plugins.txt through BAPI which cleans out bad entries."""
-        #--Read file
-        self.LoadOrder = boss.GetLoadOrder() # GPath list (but not fully sorted?)
-        self.LoadOrder.sort(key=lambda a: not modInfos[a].isEsm())  #CDC Load order doesn't get fake ESMs right?
+        """Get list of all plugins from masterlist.txt through BAPI which cleans out bad entries."""
+        self.LoadOrder = boss.GetLoadOrder()
+        # game's master might be out of place (if using timestamps for load ordering) so move it up.
+        if self.LoadOrder.index(modInfos.masterName) > 0:
+            self.LoadOrder.remove(modInfos.masterName)
+            self.LoadOrder.insert(0,modInfos.masterName)
         if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
-        #modNames.add(modName)
-        #--Done
 
     def save(self):
         """Write data to Plugins.txt file."""
@@ -3945,6 +3943,22 @@ class Plugins:
                 raise
         self.mtimePlugins = self.pathPlugins.mtime
         self.sizePlugins = self.pathPlugins.size
+
+    def saveLoadOrder(self):
+        """Write data to masterlist.txt file (and update plugins.txt too)."""
+        try:
+            boss.SetLoadOrder(self.LoadOrder)
+        except bapi.BossError as e:
+            if e.code == bapi.BOSS_API_ERROR_INVALID_ARGS:
+                #balt.showError(self, u'Cannot load plugins before masters.')
+                pass
+        # Now reset the mtimes cache or LockLO feature will revert intentional changes.
+        for name in modInfos.mtimes:
+            modInfos.mtimes[name] = modInfos[name].getPath().mtime
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
+            self.mtimeOrder = self.pathOrder.mtime
+            self.sizeOrder = self.pathOrder.size
+
 
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
@@ -4944,19 +4958,8 @@ class ModInfos(FileInfos):
         order[leftIdex] = rightName
         order[rightIdex] = leftName
         #--Save
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
-            # Whole text file will have to be rewriten anyway
-            boss.SetLoadOrder(order)
-            self.plugins.refresh(True) #--mark the txt files as read
-        else:
-            # Just swap them myself for now.  It's quicker than using the BAPI
-            leftInfo = self.data[leftName]
-            rightInfo = self.data[rightName]
-            leftmtime = leftInfo.mtime
-            rightmtime = rightInfo.mtime
-            leftInfo.setmtime(rightmtime)
-            rightInfo.setmtime(leftmtime)
-            self.plugins.refresh(True)  # force a refresh of master order
+        self.plugins.saveLoadOrder()
+        self.plugins.refresh(True)
 
     def __init__(self):
         """Initialize."""
@@ -5223,8 +5226,6 @@ class ModInfos(FileInfos):
                 mods.append(modName)
         #--Refresh merged/imported lists.
         self.merged,self.imported = self.getSemiActive(self.ordered)
-        # Testing calling fileinfos.refresh here.
-        FileInfos.refresh(self)
 
     def refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -6292,9 +6293,8 @@ class ConfigHelpers:
         """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
         # Force a rewrite of both plugins.txt and loadorder.txt
         # In other words, use what's in loadorder.txt to write plugins.txt
-        # CDC this LoadOrder object should be avoided because it's slow 
-        # but it will be OK here because this really shouldn't happen
-        boss.LoadOrder = boss.LoadOrder
+        modInfos.plugins.loadLoadOrder()
+        modInfos.plugins.saveLoadOrder()
 
     def refresh(self,firstTime=False):
         """Reloads tag info if file dates have changed."""

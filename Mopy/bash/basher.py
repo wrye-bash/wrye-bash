@@ -1775,24 +1775,17 @@ class ModList(List):
                 return
         start = indexes[0]
         stop = indexes[-1] + 1
-        oldOrder = bosh.modInfos.plugins.LoadOrder
+        order = bosh.modInfos.plugins.LoadOrder
         # Dummy checks: can't move the game's master file anywhere else but position 0
         if newPos <= 0: return
         master = bosh.modInfos.masterName
-        if master in oldOrder[start:stop]: return
-        # List of names to move
-        toMove = oldOrder[start:stop]
-        # oldOrder will only have non-moving plugins now
-        del oldOrder[start:stop]
-        # create new order
-        newOrder = oldOrder[:newPos] + toMove + oldOrder[newPos:]
+        if master in order[start:stop]: return
+        # List of names to move removed and then reinserted at new position
+        toMove = order[start:stop]
+        del order[start:stop]
+        order[newPos:newPos] = toMove
         #--Save and Refresh
-        try:
-            bosh.boss.LoadOrder = newOrder
-        except bapi.BossError as e:
-            if e.code == bapi.BOSS_API_ERROR_INVALID_ARGS:
-                #balt.showError(self, u'Cannot load plugins before masters.')
-                pass
+        bosh.modInfos.plugins.saveLoadOrder()
         bosh.modInfos.plugins.refresh(True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
@@ -17433,6 +17426,7 @@ class Mod_FlipSelf(Link):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
+            bosh.modInfos.refresh(doInfos=False)
             self.window.RefreshUI(detail=fileInfo.name)
 
 
