@@ -13032,7 +13032,7 @@ class MreHeader(MreHeaderBase):
         MelNull('DATA'),
         MelFidList('ONAM','overrides'),
         MelBase('INTV','ingv_p'),
-	MelBase('INCC', 'ingv_p'),
+        MelBase('INCC', 'ingv_p'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
