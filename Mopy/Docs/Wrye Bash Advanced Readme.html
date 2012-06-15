@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<link rel="shortcut icon" href="bash/images/bash_32.ico"/>
+<link rel="shortcut icon" href="../bash/images/bash_32.ico"/>
 <title>Wrye Bash Advanced Readme</title>
 <style>
 	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
@@ -441,7 +441,7 @@
 
 <h3 id="mods-details">The Plugin Details Panel</h3>
 <figure>
-<img src="bash/images/Mods-Plugin-Details-Panel.png" alt="plugin details panel"/>
+<img src="../bash/images/Mods-Plugin-Details-Panel.png" alt="plugin details panel"/>
 <figcaption>The plugin details panel on the right hand side of the Mods tab.</figcaption>
 </figure>
 <p>The plugin details panel contains the following:
@@ -535,7 +535,7 @@
 		<tr><td colspan="2" id="modsDontGhost">Don't Ghost<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled.
 		<tr><td colspan="2">Ghost<td>Displayed if a single plugin is selected. Ghost this plugin when it is inactive even if Auto-Ghost is disabled.
 		<tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
-		<tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="modsDontGhost">Don't Ghost</a> for the selected plugins.
+		<tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
 		<tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
 		<tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...<td>Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why mods are unmergeable.
 		<tr><td colspan="2">Mark Mergeable (CBash)...<td><i>Oblivion only.</i> Does the same thing as <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge more plugins, so the results between the two Mark Mergeable commands will differ.
@@ -585,7 +585,7 @@
 		<tr><td>Groups...<td>Imports groups for the selected plugin from a CSV file as created by the Export Groups command.
 		<tr><td id="modsImportFactions">Factions...<td><b>For advanced mod authors only.</b> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
 		<tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
-		<tr><td id="modsImportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
+		<tr><td id="modsImportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="#savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="#modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
 			<ul>
 				<li>The first column is the Form ID. <b>This must not have been edited.</b>
 				<li>The second column is the Editor ID, which is ignored on import.
@@ -603,7 +603,7 @@
 		<tr><td id="modsImportFace">Face...<td>This command relates to <a href="#saves-face">Face Importing</a>.
 		<tr><td id="modsImportFormIDs">FormIDs...<td><b>For advanced mod authors only.</b> It is useful if you want to replace the records in one master with equivalent records in another master. This command replaces the Form IDs in a plugin according to a CSV file that acts as a Form ID mapper. An example of such a file is <code>Data\Bash Patches\TI to Cobl_Formids.csv</code>. The instructions below detail how to create a Form ID mapper.
 			<ol>
-				<li>Use <a href="modsExportEditorIDs">Export Editor Ids</a> on both the plugin containing the Form IDs to be replaced and the plugin containing the replacement Form IDs. 
+				<li>Use <a href="#modsExportEditorIDs">Export Editor Ids</a> on both the plugin containing the Form IDs to be replaced and the plugin containing the replacement Form IDs. 
 				<li>Combine the two CSV files produced into a CSV file with the following columns:
 				<ul>
 					<li>Record type. This is ignored by Wrye Bash, but can be useful for reference.
@@ -655,7 +655,7 @@
 		
 		<tr><td>Deactivate<td>Should be deactivated.<td><i>N/A</i>
 		<tr><td>Delev<td>Deletes entries from Leveled Lists.<td>Removal of entries from the leveled list entries of Leveled Creature (LVLC) (<i>Oblivion only</i>), Leveled Actor (LVLI) (<i>Skyrim only</i>), Leveled Item (LVLI) or Leveled Spell (LVSP) records.
-		<tr><td>Filter<td>Does not require all its masters to be installed to function. See the <a href="patch-filter">Merge Filtering</a> section for more information.<td><i>N/A</i>
+		<tr><td>Filter<td>Does not require all its masters to be installed to function. See the <a href="#patch-filter">Merge Filtering</a> section for more information.<td><i>N/A</i>
 		<tr><td>NoMerge<td>Should not be merged even though it is technically mergeable.<td><i>N/A</i>
 		<tr><td>Relev<td>Relevels items in Leveled Lists.<td>Re-levelling of entries from the leveled list entries of Leveled Creature (LVLC) (<i>Oblivion only</i>), Leveled Actor (LVLI) (<i>Skyrim only</i>), Leveled Item (LVLI) or Leveled Spell (LVSP) records.
 </table>
@@ -850,7 +850,7 @@
 				<li>Effect Shader: Almost anything.
 			</ul>
 		<tr><td>Hair<td>Adds hairs to races.<td>The Hairs (HNAM) subrecord of Race (RACE) records.
-		<tr><td>IIM<td>Is to be used in Item Interchange Mode. See the <a href="patch-iim">Item Interchange Mode</a> section for more information.<td><i>N/A</i>
+		<tr><td>IIM<td>Is to be used in Item Interchange Mode. See the <a href="#patch-iim">Item Interchange Mode</a> section for more information.<td><i>N/A</i>
 		<tr><td>Invent<td>Changes inventories.<td>Addition, removal or change in count/number of an item in NPC (NPC_), Creature (CREA) or Container (CONT) records.
 		<tr><td>InventOnly<td><i>Deprecated. Use Invent in conjunction with IIM instead.</i><td><i>N/A</i>
 		<tr><td>Merge<td><i>Obsolete. This tag is ignored.</i><td><i>N/A</i>
@@ -1333,7 +1333,7 @@
 
 <h2 id="saves">Saves Tab</h2>
 <figure>
-<img src="bash/images/Saves.png" alt="Saves Tab"/>
+<img src="../bash/images/Saves.png" alt="Saves Tab"/>
 <figcaption>Wrye Bash's Saves tab.</figcaption>
 </figure>
 
@@ -1356,15 +1356,15 @@
 
 
 <h3 id="saves-profiles">Save Profiles</h3>
-<p>Save profiles are like player accounts, in that they consist of a load order plus a set of save files. They can be used to allow safe and easy switching between different characters than may use different combinations of mods, or between different stages of the same character's life (where different mods have been used in each stage). They can also associate different versions of Oblivion.esm with different save profiles, using <a href="tools-swapping">Oblivion.esm Swapping</a>.
-<p>To create or modify save profiles, use the <a href="savesEditProfiles">Edit Profiles...</a> command in the <q>Profile</q> submenu of the column header context menu. You can create a new save profile using <q>Add</q>, delete the selected existing save profile using <q>Remove</q> and rename the selected save profile using <q>Rename</q>. The central text field can be used to store notes on the selected save profile.
+<p>Save profiles are like player accounts, in that they consist of a load order plus a set of save files. They can be used to allow safe and easy switching between different characters than may use different combinations of mods, or between different stages of the same character's life (where different mods have been used in each stage). They can also associate different versions of Oblivion.esm with different save profiles, using <a href="#tools-swapping">Oblivion.esm Swapping</a>.
+<p>To create or modify save profiles, use the <a href="#savesEditProfiles">Edit Profiles...</a> command in the <q>Profile</q> submenu of the column header context menu. You can create a new save profile using <q>Add</q>, delete the selected existing save profile using <q>Remove</q> and rename the selected save profile using <q>Rename</q>. The central text field can be used to store notes on the selected save profile.
 <p>To select a save profile, select it from the list visible in the <q>Profile</q> submenu of the column header context menu.
 <p>To assign save files to a save profile, use the <a href="#savesMoveTo">Move To</a> or <a href="#savesCopyTo">Copy To</a> submenus in the save file context menu. This will also assign any related cosave files.
 
 
 <h3 id="saves-face">Face Import</h3>
 <figure>
-<img src="bash/images/WryeBash_03.png" alt="Face Import from Esp"/>
+<img src="../bash/images/WryeBash_03.png" alt="Face Import from Esp"/>
 <figcaption>Wrye Bash's Face Import dialog.</figcaption>
 </figure>
 <p>Faces may be imported from saves to saves or plugins, or from plugins to saves. This allows you to preserve a character's appearance should you wish to restart a character, to roleplay as a particular character, or to turn your character into an NPC that may be encountered during playing, among other uses.
@@ -1411,11 +1411,11 @@
 	<thead>
 		<tr><th>Checkbox Colour<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_purple_on.png" alt="Purple"/><td>Good. Exactly synced with the current load order.
-		<tr><td><img src="bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
-		<tr><td><img src="bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
-		<tr><td><img src="bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
-		<tr><td><img src="bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
+		<tr><td><img src="../bash/images/checkbox_purple_on.png" alt="Purple"/><td>Good. Exactly synced with the current load order.
+		<tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
+		<tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
+		<tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
+		<tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
 <h3 id="saves-commands">Context Menu Commands</h3>
@@ -1483,8 +1483,8 @@
 
 <h2 id="screenshots">Screenshots Tab</h2>
 <figure class="slideshow">
-<img src="bash/images/Screenshots-1.png" alt="Screenshots Tab"/>
-<img src="bash/images/Screenshots-2.png" alt="Screenshots Tab"/>
+<img src="../bash/images/Screenshots-1.png" alt="Screenshots Tab"/>
+<img src="../bash/images/Screenshots-2.png" alt="Screenshots Tab"/>
 <figcaption style="padding-top:655px;">Wrye Bash's Screenshots tab.</figcaption>
 </figure>
 <h3 id="screenshots-overview">Overview</h3>
@@ -1512,9 +1512,9 @@
 <h2 id="launchers">Advanced Launchers</h2>
 <h3 id="launchers-hide">Hiding Launchers</h3>
 <figure class="slideshow">
-<img src="bash/images/ToolBar-11-RClick-Hide-GameLauncher.png" alt="toolbar hide launcher"/>
-<img src="bash/images/ToolBar-12-RClick-Hide-AutoQuit.png" alt="toolbar hide launcher"/>
-<img src="bash/images/ToolBar-13-RClick-Hide-OBSE-Toggle.png" alt="toolbar hide launcher"/>
+<img src="../bash/images/ToolBar-11-RClick-Hide-GameLauncher.png" alt="toolbar hide launcher"/>
+<img src="../bash/images/ToolBar-12-RClick-Hide-AutoQuit.png" alt="toolbar hide launcher"/>
+<img src="../bash/images/ToolBar-13-RClick-Hide-OBSE-Toggle.png" alt="toolbar hide launcher"/>
 <figcaption style="padding-top:80px;">The Hide option in the right-click menu for launchers.</figcaption>
 </figure>
 <p>You can hide specific launcher icons, preventing them from being displayed, by right-clicking them and selecting <q>Hide...</q> or by inserting a semicolon before their path in the <q>bash.ini</q>. 
@@ -1541,7 +1541,7 @@
 
 <h2 id="pm">PM Archive Tab</h2>
 <figure>
-<img src="bash/images/PM-Archive-2.png" alt="PM Archive Tab"/>
+<img src="../bash/images/PM-Archive-2.png" alt="PM Archive Tab"/>
 <figcaption>Wrye Bash's PM Archive tab.</figcaption>
 </figure>
 <h3 id="pm-overview">Overview</h3>
@@ -1572,8 +1572,8 @@
 
 <h2 id="people">People Tab</h2>
 <figure class="slideshow">
-<img src="bash/images/People-1.png" alt="People tab"/>
-<img src="bash/images/People-2.png" alt="People tab"/>
+<img src="../bash/images/People-1.png" alt="People tab"/>
+<img src="../bash/images/People-2.png" alt="People tab"/>
 <figcaption style="padding-top:655px;">Wrye Bash's People tab.</figcaption>
 </figure>
 <h3 id="people-overview">Overview</h3>
@@ -1587,13 +1587,13 @@
 		<tr><th colspan="2">Checkbox Colours
 		<tr><th>Checkbox<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_purple_inc.png" alt="Purple"/><td>Person has +5 karma.
-		<tr><td><img src="bash/images/checkbox_blue_inc.png" alt="Blue"/><td>Person has +3 or +4 karma.
-		<tr><td><img src="bash/images/checkbox_green_inc.png" alt="Green"/><td>Person has +1 or +2 karma.
-		<tr><td><img src="bash/images/checkbox_grey_off.png" alt="Grey"/><td>Person has 0 karma.
-		<tr><td><img src="bash/images/checkbox_yellow_off.png" alt="Yellow"/><td>Person has -1 or -2 karma.
-		<tr><td><img src="bash/images/checkbox_orange_off.png" alt="Orange"/><td>Person has -3 or -4 karma.
-		<tr><td><img src="bash/images/checkbox_red_off.png" alt="Red"/><td>Person has -5 karma.
+		<tr><td><img src="../bash/images/checkbox_purple_inc.png" alt="Purple"/><td>Person has +5 karma.
+		<tr><td><img src="../bash/images/checkbox_blue_inc.png" alt="Blue"/><td>Person has +3 or +4 karma.
+		<tr><td><img src="../bash/images/checkbox_green_inc.png" alt="Green"/><td>Person has +1 or +2 karma.
+		<tr><td><img src="../bash/images/checkbox_grey_off.png" alt="Grey"/><td>Person has 0 karma.
+		<tr><td><img src="../bash/images/checkbox_yellow_off.png" alt="Yellow"/><td>Person has -1 or -2 karma.
+		<tr><td><img src="../bash/images/checkbox_orange_off.png" alt="Orange"/><td>Person has -3 or -4 karma.
+		<tr><td><img src="../bash/images/checkbox_red_off.png" alt="Red"/><td>Person has -5 karma.
 </table>
 
 <h3 id="people-commands">Context Menu Commands</h3>
@@ -1615,13 +1615,13 @@
 
 <h3 id="tools-settings">Settings Menu</h3>
 <figure class="slideshow">
-<img src="bash/images/Settings-1-Colour%20highlighted.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-2-Tabs%20highlighted.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-3-Status%20Bar%20and%20Icon%20size%20highlighted.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-4-Language%20highlighted.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-5-Plugin%20encoding%20highlighted.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-6-Game%20highlighted.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-7-Check%20for%20Updates%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-1-Colour%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-2-Tabs%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-3-Status%20Bar%20and%20Icon%20size%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-4-Language%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-5-Plugin%20encoding%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-6-Game%20highlighted.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-7-Check%20for%20Updates%20highlighted.png" alt="Colors Dialog"/>
 <figcaption style="padding-top:400px;">Wrye Bash's Settings menu.</figcaption>
 </figure>
 <p>The Settings menu is where Wrye Bash's global settings may be accessed. The Settings menu can be opened by clicking on the <a href="Wrye%20Bash%20General%20Readme.html#launchersSettingsMenu">Settings button</a> in the status bar. The Settings menu's items are detailed in the table below.
@@ -1663,8 +1663,8 @@
 		<tr><td colspan="2">Check for Updates...<td>Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
 </table>
 <figure class="slideshow">
-<img src="bash/images/Settings-1-Colours-Dialogue-1.png" alt="Colors Dialog"/>
-<img src="bash/images/Settings-1-Colours-Dialogue-2.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-1-Colours-Dialogue-1.png" alt="Colors Dialog"/>
+<img src="../bash/images/Settings-1-Colours-Dialogue-2.png" alt="Colors Dialog"/>
 <figcaption style="padding-top:400px;">The Colors dialog accessible through Wrye Bash's Settings menu.</figcaption>
 </figure>
 <table>
@@ -1683,9 +1683,9 @@
 
 <h3 id="tools-docs">Doc Browser</h3>
 <figure class="slideshow">
-<img src="bash/images/Doc-Browser-1.png" alt="doc browser">
-<img src="bash/images/Doc-Browser-2.png" alt="doc browser">
-<img src="bash/images/Doc-Browser-Set-Doc-Dialogue.png" alt="doc browser">
+<img src="../bash/images/Doc-Browser-1.png" alt="doc browser">
+<img src="../bash/images/Doc-Browser-2.png" alt="doc browser">
+<img src="../bash/images/Doc-Browser-Set-Doc-Dialogue.png" alt="doc browser">
 <figcaption style="padding-top:520px;">Wrye Bash's Doc Browser.</figcaption>
 </figure>
 <p>The Doc Browser allows you to quickly and easily scan through your mods' documentation. The supported document types are: text files, HTML files and MHT files (HTML archives). To display the Doc Browser, double click any plugin in the main list of the Mods tab.
@@ -1707,7 +1707,7 @@
 
 <h3 id="tools-checker">Mod Checker</h3>
 <figure>
-<img src="bash/images/Mod-Checker-1.png" alt="Mod Checker"/>
+<img src="../bash/images/Mod-Checker-1.png" alt="Mod Checker"/>
 <figcaption>Wrye Bash's Mod Checker</figcaption>
 </figure>
 <p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
@@ -1737,7 +1737,7 @@
 		<tr><td>Suggestions<td>Toggles display of the suggestions produced by plugin groups.
 		<tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
 		<tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
-		<tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.
+		<tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.
 		<tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
 		<tr><td>Update<td>Forces a refresh of the report.
 </table>
@@ -1775,11 +1775,11 @@
 <p>Wrye Bash has built-in support for translation into other languages, using text files that tell it which English strings in the source code should be translated, and into what. These text files are found in <code>Mopy\bash\l10n\</code>. New translations or updates to existing translations should be presented to the Wrye Bash team so that they may be included in future releases.
 <p>To begin translating, or to update an existing translation, use the following steps.
 <ol>
-	<li>Select <a href="settingsDumpTranslator">Dump Translator</a> from Wrye Bash's Settings menu. This generates a new version of the translation file for your locale. The new file will be named appropriately, except from the leading "NEW", and will contain any translations already done.
+	<li>Select <a href="#settingsDumpTranslator">Dump Translator</a> from Wrye Bash's Settings menu. This generates a new version of the translation file for your locale. The new file will be named appropriately, except from the leading "NEW", and will contain any translations already done.
 	<li>Delete any existing translation text file for the same language.
 	<li>Rename the new translator file, removing the leading "NEW". Do not change the rest of the filename.
 	<li>Edit the translator file, adding translations or editing existing translations.
-	<li>To test a translator file, save your changes then restart Wrye Bash, and select the language from the <a href="settingsLanguage">Language</a> submenu in Wrye Bash's Settings menu.
+	<li>To test a translator file, save your changes then restart Wrye Bash, and select the language from the <a href="#settingsLanguage">Language</a> submenu in Wrye Bash's Settings menu.
 </ol>
 
 
