@@ -3934,9 +3934,7 @@ class Plugins:
     def save(self):
         """Write data to Plugins.txt file."""
         try:
-            for active in self.selected:
-                if modInfos[active].isGhost:
-                    modInfos[active].setGhost(False)
+            # BAPI attempts to unghost files, no need to duplicate that here.
             boss.SetActivePlugins(modInfos.getOrdered(self.selected))
         except bapi.BossError as e:
             if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
@@ -3945,13 +3943,12 @@ class Plugins:
         self.sizePlugins = self.pathPlugins.size
 
     def saveLoadOrder(self):
-        """Write data to masterlist.txt file (and update plugins.txt too)."""
+        """Write data to loadorder.txt file (and update plugins.txt too)."""
         try:
             boss.SetLoadOrder(self.LoadOrder)
         except bapi.BossError as e:
             if e.code == bapi.BOSS_API_ERROR_INVALID_ARGS:
-                #balt.showError(self, u'Cannot load plugins before masters.')
-                pass
+                raise bolt.BoltError(u'Cannot load plugins before masters.')
         # Now reset the mtimes cache or LockLO feature will revert intentional changes.
         for name in modInfos.mtimes:
             modInfos.mtimes[name] = modInfos[name].getPath().mtime
@@ -5764,6 +5761,8 @@ class ModInfos(FileInfos):
         if fileName.s not in bush.game.masterFiles:
             self.unselect(fileName)
             FileInfos.delete(self,fileName,doRefresh)
+        else:
+            raise bolt.BoltError("Cannot delete the game's master file(s).")
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
