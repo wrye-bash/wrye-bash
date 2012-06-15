@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<link rel="shortcut icon" href="bash/images/bash_32.ico"/>
+<link rel="shortcut icon" href="../bash/images/bash_32.ico"/>
 <title>Wrye Bash Technical Readme</title>
 <style>
 	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
@@ -96,17 +96,17 @@
 <h3 id="wizards-dialog">Dialogues</h3>
 <p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.
 
-<p><dfn>SelectOne</dfn> - This <a href="bash/images/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#SelectOne1">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+<p><dfn>SelectOne</dfn> - This <a href="../bash/images/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#SelectOne1">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
 
-<p><dfn>SelectMany</dfn> - This <a href="bash/images/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#SelectMany1">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+<p><dfn>SelectMany</dfn> - This <a href="../bash/images/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#SelectMany1">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
 
-<p><dfn>Cancel</dfn> - This <a href="bash/images/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#Cancel1">Cancel</a> keyword.  If a reason is given, it will be displayed.
+<p><dfn>Cancel</dfn> - This <a href="../bash/images/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#Cancel1">Cancel</a> keyword.  If a reason is given, it will be displayed.
 
-<p><dfn>Error</dfn> - This <a href="bash/images/error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
+<p><dfn>Error</dfn> - This <a href="../bash/images/error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
 
-<p><dfn>Finish</dfn> - This <a href="bash/images/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#Return">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
+<p><dfn>Finish</dfn> - This <a href="../bash/images/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#Return">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
 
-<p><dfn>Version Warning</dfn> - This <a href="bash/images/versions.png">dialog</a> is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements.
+<p><dfn>Version Warning</dfn> - This <a href="../bash/images/versions.png">dialog</a> is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements.
 
 
 <h3 id="wizards-language">Language Structure</h3>
@@ -132,7 +132,7 @@
 
 
 <h3 id="wizards-functions">Functions</h3>
-<p><dfn id="CompareObVersion">CompareObVersion</dfn> - Used to test the installed version of Oblivion against the one you specify. <strong>Deprecated</strong>. Use <a href="wizardsCompareGameVersion">CompareGameVersion</a> instead.
+<p><dfn id="CompareObVersion">CompareObVersion</dfn> - Used to test the installed version of Oblivion against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareGameVersion">CompareGameVersion</a> instead.
 <p><dfn id="wizardsCompareGameVersion">CompareGameVersion</dfn> - Used to test the installed version of the game Wrye Bash is running for against the version you specify.
 <code class="box">CompareGameVersion(version_string)</code>
 <ul>
@@ -144,7 +144,7 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - Used to test the installed version of OBSE against the one you specify. <strong>Deprecated</strong>. Use <a href="wizardsCompareSEVersion">CompareSEVersion</a> instead.
+<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - Used to test the installed version of OBSE against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareSEVersion">CompareSEVersion</a> instead.
 <p><dfn id="wizardsCompareSEVersion">CompareSEVersion</dfn> - Used to test the installed version of the Script Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareSEVersion(version_string)</code>
 <ul>
@@ -156,7 +156,7 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>, or there is no Script Extender available for the game.
 </ul>
-<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - Used to test the installed version of OBGE against the one you specify. <strong>Deprecated</strong>. Use <a href="wizardsCompareGEVersion">CompareGEVersion</a> instead.
+<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - Used to test the installed version of OBGE against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareGEVersion">CompareGEVersion</a> instead.
 <p><dfn id="wizardsCompareGEVersion">CompareGEVersion</dfn> - Used to test the installed version of the Graphics Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareGEVersion(version_string)</code>
 <ul>
@@ -197,10 +197,10 @@
 <p class="indent">Return values:
 <ul class="indent">
 	<li><code>-1</code> - The esp/m does not exist.
-	<li><code>0</code> - The esp/m is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img src="bash/images/checkbox_green_off.png" alt="Inactive"/>.
-	<li><code>1</code> - The esp/m is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="bash/images/checkbox_green_imp.png" alt="Imported"/>.
-	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img src="bash/images/checkbox_green_on.png" alt="Active"/>.
-	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="bash/images/checkbox_green_inc.png" alt="Merged"/>.
+	<li><code>0</code> - The esp/m is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_off.png" alt="Inactive"/>.
+	<li><code>1</code> - The esp/m is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_imp.png" alt="Imported"/>.
+	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_on.png" alt="Active"/>.
+	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_inc.png" alt="Merged"/>.
 </ul>
 <p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually. 
 <code class="box">EditINI(file_name, section, setting, value [,comment])</code>
@@ -392,10 +392,10 @@
 <p><dfn id="wizardsRequireVersions">RequireVersions</dfn> - Tests the users system agains version requirements you specify. If the requirements are not met, a warning dialog will be shown asking if you wish to continue anyway. 
 <code class="box">RequireVersions game_version [, se_version, ge_version, wrye_bash_version]</code>
 <ul>
-	<li><var>game_version</var> - Version of the game to test for. See <a href="wizardsCompareGameVersion">CompareGameVersion</a> for the proper format of the string.
-	<li><var>se_version</var> - Optional. Version of the Script Extender to test for. See <a href="wizardsCompareSEVersion">CompareSEVersion</a> for the proper format of the string.
-	<li><var>ge_version</var> - Optional. Version of the Graphics Extender to test for. See <a href="wizardsCompareGEVersion">CompareGEVersion</a> for the proper format of the string.
-	<li><var>wrye_bash_version</var> - Optional. Version of Wrye Bash to test for. See <a href="wizardsCompareWBVersion">CompareWBVersion</a> for more info.
+	<li><var>game_version</var> - Version of the game to test for. See <a href="#wizardsCompareGameVersion">CompareGameVersion</a> for the proper format of the string.
+	<li><var>se_version</var> - Optional. Version of the Script Extender to test for. See <a href="#wizardsCompareSEVersion">CompareSEVersion</a> for the proper format of the string.
+	<li><var>ge_version</var> - Optional. Version of the Graphics Extender to test for. See <a href="#wizardsCompareGEVersion">CompareGEVersion</a> for the proper format of the string.
+	<li><var>wrye_bash_version</var> - Optional. Version of Wrye Bash to test for. See <a href="#wizardsCompareWBVersion">CompareWBVersion</a> for more info.
 </ul>
 <p><dfn>If-Elif-Else-EndIf</dfn> - A basic If control block.
 <code class="box">If statement

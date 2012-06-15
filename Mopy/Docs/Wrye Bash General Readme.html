@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<link rel="shortcut icon" href="bash/images/bash_32.ico"/>
+<link rel="shortcut icon" href="../../bash/images/bash_32.ico"/>
 <title>Wrye Bash General Readme</title>
 <style>
 	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
@@ -191,14 +191,14 @@
 
 <h2 id="bain">Installing Mods</h2>
 <figure class="slideshow">
-<img src="bash/images/Installers-1.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-2.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-3.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-4.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-5.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-6.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-7.png" alt="Installers Tab"/>
-<img src="bash/images/Installers-8.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-1.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-2.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-3.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-4.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-5.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-6.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-7.png" alt="Installers Tab"/>
+<img src="../bash/images/Installers-8.png" alt="Installers Tab"/>
 <figcaption style="padding-top:650px;">Wrye Bash's Installers tab.</figcaption>
 </figure>
 <h3 id="bain-overview">Overview</h3>
@@ -232,7 +232,7 @@
 
 <h3 id="bain-install">Installing/Uninstalling Via BAIN</h3>
 <p>Packages must first be placed in the <code>[Game] Mods\Bash Installers</code> directory. This can either be done via Windows Explorer, or by dragging and dropping the package into the Wrye Bash window when the Installers tab is open. If you drag and drop, you will be asked whether you want to copy the package or move it.
-<p>If a package contains a Wizard (ie. there is <img src="bash/images/wizard.png" alt="a wand icon"/> overlaid on its checkbox):
+<p>If a package contains a Wizard (ie. there is <img src="../bash/images/wizard.png" alt="a wand icon"/> overlaid on its checkbox):
 <ol>
 	<li>Right-click the package and select <a href="#bainWizard">Wizard</a>. You can also choose to install using the Wizard's default options by selecting <a href="#bainAutoWizard">Auto Wizard</a>.
 	<li>If you chose <a href="#bainWizard">Wizard</a>, navigate through the steps of the Wizard to install the package. Otherwise, you will be skipped to the Wizard finish screen.
@@ -263,22 +263,22 @@
 
 <h3 id="bain-symbols">What Symbols &amp; Colours Mean</h3>
 <p>BAIN uses the colours of packages in the package list and the state of their checkboxes to convey information about their status to the user. A checkbox state may be combined with any checkbox or text colour, and the possible states and colours are described in the tables below.
-<p><b>Note:</b> Installed packages are marked with a plus, eg. <img src="bash/images/checkbox_green_inc.png" width="16" height="16" alt="+"/>. Corrupt or incomplete packages are marked with a cross, eg. <img src="bash/images/checkbox_red_x.png" width="16" height="16" alt="a cross"/>. Packages that begin and end with <q>==</q>, eg. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
+<p><b>Note:</b> Installed packages are marked with a plus, eg. <img src="../bash/images/checkbox_green_inc.png" width="16" height="16" alt="+"/>. Corrupt or incomplete packages are marked with a cross, eg. <img src="../bash/images/checkbox_red_x.png" width="16" height="16" alt="a cross"/>. Packages that begin and end with <q>==</q>, eg. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
 <table>
 	<thead><tr><th>Checkbox Shape<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/diamond_white_off.png" width="16" height="16" alt="diamond"/><td>The package is a Project, ie. a directory rather than an archive.
-		<tr><td><img src="bash/images/checkbox_white_off.png" width="16" height="16" alt="checkbox"/><td>The package is an archive.
+		<tr><td><img src="../bash/images/diamond_white_off.png" width="16" height="16" alt="diamond"/><td>The package is a Project, ie. a directory rather than an archive.
+		<tr><td><img src="../bash/images/checkbox_white_off.png" width="16" height="16" alt="checkbox"/><td>The package is an archive.
 </table>
 <table>
 	<thead><tr><th>Checkbox Colour<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_green_off.png" width="16" height="16" alt="green"/><td>All the files in the package are installed as configured.
-		<tr><td><img src="bash/images/checkbox_red_off.png" width="16" height="16" alt="red"/><td>Some or all of the files in the package are not installed as configured.
-		<tr><td><img src="bash/images/checkbox_orange_off.png" width="16" height="16" alt="orange"/><td>All the package files are installed, but the .esp/.esm plugins are not identical (eg. another package has overwritten them with another version of the plugins).
-		<tr><td><img src="bash/images/checkbox_yellow_off.png" width="16" height="16" alt="yellow"/><td>All the package files are installed, but some resource (ie. non-plugin) files are not identical (eg. another package has overwritten them with another version of the files)
-		<tr><td><img src="bash/images/checkbox_white_off.png" width="16" height="16" alt="white"/><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
-		<tr><td><img src="bash/images/checkbox_grey_off.png" width="16" height="16" alt="grey"/><td>BAIN does not recognise the structure of this package so cannot install it.
+		<tr><td><img src="../bash/images/checkbox_green_off.png" width="16" height="16" alt="green"/><td>All the files in the package are installed as configured.
+		<tr><td><img src="../bash/images/checkbox_red_off.png" width="16" height="16" alt="red"/><td>Some or all of the files in the package are not installed as configured.
+		<tr><td><img src="../bash/images/checkbox_orange_off.png" width="16" height="16" alt="orange"/><td>All the package files are installed, but the .esp/.esm plugins are not identical (eg. another package has overwritten them with another version of the plugins).
+		<tr><td><img src="../bash/images/checkbox_yellow_off.png" width="16" height="16" alt="yellow"/><td>All the package files are installed, but some resource (ie. non-plugin) files are not identical (eg. another package has overwritten them with another version of the files)
+		<tr><td><img src="../bash/images/checkbox_white_off.png" width="16" height="16" alt="white"/><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
+		<tr><td><img src="../bash/images/checkbox_grey_off.png" width="16" height="16" alt="grey"/><td>BAIN does not recognise the structure of this package so cannot install it.
 </table>
 <table>
 	<thead><tr><th>Text Formatting<th>Meaning
@@ -287,7 +287,7 @@
 		<tr><td style="color:#BEBEBE;">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
 		<tr><td style="background:#FFBB33;">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
 		<tr><td style="background:yellow;">Yellow Background<td>The package has "underrides" i.e. some of its installed files <i>should</i> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-		<tr><td style="background:#E0E0E0;">Grey Background<td>Some files present in the package will <i><b>not</b></i> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu. 
+		<tr><td style="background:#E0E0E0;">Grey Background<td>Some files present in the package will <i><b>not</b></i> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="#bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu. 
 </table>
 
 <h3 id="bain-commands">Useful Context Menu Commands</h3>
@@ -342,7 +342,7 @@
 
 <h2 id="load">Setting Up Load Order</h2>
 <figure>
-<img src="bash/images/Mods-1.png" alt="Mods Tab"/>
+<img src="../bash/images/Mods-1.png" alt="Mods Tab"/>
 <figcaption>Wrye Bash's Mods tab.</figcaption>
 </figure>
 <h3 id="load-overview">Overview</h3>
@@ -364,25 +364,25 @@
 	<li><i>Oblivion only.</i> Selecting a group of plugins and choosing File->Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
 	<li>Dragging and dropping plugins will also change the load order if the plugins are being sorted by Load Order.
 </ul>
-<p>You can also lock your load order in place to prevent unintended changes to it by selecting the <a href="modsLockLoadOrder">Lock Load Order</a> option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure <a href="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
+<p>You can also lock your load order in place to prevent unintended changes to it by selecting the <a href="#modsLockLoadOrder">Lock Load Order</a> option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure <a href="#launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
 
 <h3 id="load-symbols">What Symbols &amp; Colours Mean</h3>
 <p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins. The different types of formatting used and their meanings are explained here.
 <table>
 	<thead><tr><th>Checkbox Type<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_green_on.png" width="16" height="16" alt="Active" /><td>Plugin is active.
-		<tr><td><img src="bash/images/checkbox_green_inc.png" width="16" height="16" alt="Merged" /><td>Plugin is merged into an active <a href="#patch">Bashed Patch</a>.
-		<tr><td><img src="bash/images/checkbox_green_imp.png" width="16" height="16" alt="Imported" /><td>Plugin is imported into an active <a href="#patch">Bashed Patch</a>.
-		<tr><td><img src="bash/images/checkbox_green_off.png" width="16" height="16" alt="Inactive" /><td>Plugin is not active, merged or imported.
+		<tr><td><img src="../bash/images/checkbox_green_on.png" width="16" height="16" alt="Active" /><td>Plugin is active.
+		<tr><td><img src="../bash/images/checkbox_green_inc.png" width="16" height="16" alt="Merged" /><td>Plugin is merged into an active <a href="#patch">Bashed Patch</a>.
+		<tr><td><img src="../bash/images/checkbox_green_imp.png" width="16" height="16" alt="Imported" /><td>Plugin is imported into an active <a href="#patch">Bashed Patch</a>.
+		<tr><td><img src="../bash/images/checkbox_green_off.png" width="16" height="16" alt="Inactive" /><td>Plugin is not active, merged or imported.
 </table>
 <table>
 	<thead><tr><th>Checkbox Colours<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_blue_on.png" width="16" height="16" alt="Blue" /><td>The plugin's masters are all in exactly the same order as is specified in the plugin.
-		<tr><td><img src="bash/images/checkbox_green_on.png" width="16" height="16" alt="Green" /><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (ie. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
-		<tr><td><img src="bash/images/checkbox_orange_on.png" width="16" height="16" alt="Orange" /><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will generally be handled automatically by the game, but it may result in changes in-game.
-		<tr><td><img src="bash/images/checkbox_red_on.png" width="16" height="16" alt="Red" /><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.
+		<tr><td><img src="../bash/images/checkbox_blue_on.png" width="16" height="16" alt="Blue" /><td>The plugin's masters are all in exactly the same order as is specified in the plugin.
+		<tr><td><img src="../bash/images/checkbox_green_on.png" width="16" height="16" alt="Green" /><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (ie. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
+		<tr><td><img src="../bash/images/checkbox_orange_on.png" width="16" height="16" alt="Orange" /><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will generally be handled automatically by the game, but it may result in changes in-game.
+		<tr><td><img src="../bash/images/checkbox_red_on.png" width="16" height="16" alt="Red" /><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.
 </table>
 <table>
 	<thead><tr><th>Text Formatting<th>Meaning
@@ -429,10 +429,10 @@
 
 <h2 id="patch">Setting Up A Bashed Patch</h2>
 <figure class="slideshow">
-<img src="bash/images/Bashed-Patch-Dialogue-1.png" alt="Bashed Patch"/>
-<img src="bash/images/Bashed-Patch-Dialogue-2.png" alt="Bashed Patch"/>
-<img src="bash/images/Bashed-Patch-Dialogue-3.png" alt="Bashed Patch"/>
-<img src="bash/images/Bashed-Patch-Dialogue-4.png" alt="Bashed Patch"/>
+<img src="../bash/images/Bashed-Patch-Dialogue-1.png" alt="Bashed Patch"/>
+<img src="../bash/images/Bashed-Patch-Dialogue-2.png" alt="Bashed Patch"/>
+<img src="../bash/images/Bashed-Patch-Dialogue-3.png" alt="Bashed Patch"/>
+<img src="../bash/images/Bashed-Patch-Dialogue-4.png" alt="Bashed Patch"/>
 <figcaption style="padding-top:620px;">Wrye Bash's Bashed Patch configuration dialog.</figcaption>
 </figure>
 <h3 id="patch-overview">Overview</h3>
@@ -442,7 +442,7 @@
 	<li>Importing specific types of data records from plugins. This can be used to avoid compatibility issues.
 	<li>Applying tweaks to the game. This avoids the need to use other mods to apply the same tweaks.
 </ul>
-<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><b>Bashed Patch, 0.esp</b></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
+<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><b>Bashed Patch, 0.esp</b></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked. 
 <p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
 <p><b>Note:</b> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.
@@ -524,9 +524,9 @@
 
 <h2 id="ini">Applying Ini File Edits</h2>
 <figure class="slideshow">
-<img src="bash/images/Ini-Edits-1.png" alt="INI Edits Tab" />
-<img src="bash/images/ini-oblivion.png" alt="INI Edits Tab" />
-<img src="bash/images/ini-all%20natural.png" alt="INI Edits Tab" />
+<img src="../bash/images/Ini-Edits-1.png" alt="INI Edits Tab" />
+<img src="../bash/images/ini-oblivion.png" alt="INI Edits Tab" />
+<img src="../bash/images/ini-all%20natural.png" alt="INI Edits Tab" />
 <figcaption style="padding-top:650px;">Wrye Bash's INI Edits tab, editing Oblivion.ini, Oblivion's configuration file, and All Natural.ini, a mod's configuration file. (Animated slideshow.)</figcaption>
 </figure>
 
@@ -540,11 +540,11 @@
 <table>
 	<thead><tr><th>Checkbox Style<th>Meaning
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_orange_off.png" alt="Orange"/><td>Some or all the variables the tweak sets do not exist in the current ini file.
-		<tr><td><img src="bash/images/checkbox_green_off.png" alt="Green"/><td>The variable values in the current ini file do not match the values set by the tweak.
-		<tr><td><img src="bash/images/checkbox_yellow_imp.png" alt="Yellow with Dot"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak.
-		<tr><td><img src="bash/images/checkbox_green_imp.png" alt="Green with Dot"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak. The values that don't match another tweak from the same installer.
-		<tr><td><img src="bash/images/checkbox_green_on.png" alt="Green with Check"/><td>Tweak is applied.
+		<tr><td><img src="../bash/images/checkbox_orange_off.png" alt="Orange"/><td>Some or all the variables the tweak sets do not exist in the current ini file.
+		<tr><td><img src="../bash/images/checkbox_green_off.png" alt="Green"/><td>The variable values in the current ini file do not match the values set by the tweak.
+		<tr><td><img src="../bash/images/checkbox_yellow_imp.png" alt="Yellow with Dot"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak.
+		<tr><td><img src="../bash/images/checkbox_green_imp.png" alt="Green with Dot"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak. The values that don't match another tweak from the same installer.
+		<tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green with Check"/><td>Tweak is applied.
 </table>
 <table>
 	<thead><tr><th>Text Formatting<th>Meaning
@@ -587,16 +587,16 @@
 
 <h2 id="launchers">Launching Applications</h2>
 <figure class="slideshow">
-<img src="bash/images/ToolBar-10-Hover-OBSE-Toggle.png" alt="launcher"/>
-<img src="bash/images/ToolBar-9-Hover-AutoQuit.png" alt="launcher"/>
-<img src="bash/images/ToolBar-8-Hover-LaunchGameViaOBSE.png" alt="launcher"/>
-<img src="bash/images/ToolBar-7-Hover-LaunchGame.png" alt="launcher"/>
-<img src="bash/images/ToolBar-6-Hover-LaunchBoss.png" alt="launcher"/>
-<img src="bash/images/ToolBar-5-Hover-LaunchBashMon.png" alt="launcher"/>
-<img src="bash/images/ToolBar-4-Hover-DocBrowser.png" alt="launcher"/>
-<img src="bash/images/ToolBar-3-Hover-ModChecker.png" alt="launcher"/>
-<img src="bash/images/ToolBar-2-Hover-Settings.png" alt="launcher"/>
-<img src="bash/images/ToolBar-1-Hover-HelpFile.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-10-Hover-OBSE-Toggle.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-9-Hover-AutoQuit.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-8-Hover-LaunchGameViaOBSE.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-7-Hover-LaunchGame.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-6-Hover-LaunchBoss.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-5-Hover-LaunchBashMon.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-4-Hover-DocBrowser.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-3-Hover-ModChecker.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-2-Hover-Settings.png" alt="launcher"/>
+<img src="../bash/images/ToolBar-1-Hover-HelpFile.png" alt="launcher"/>
 <figcaption style="padding-top:80px;">Wrye Bash's launcher bar, at the bottom of its main window.</figcaption>
 </figure>
 <p>At the bottom left of Bash's main window you'll find launch buttons for your game and other applications if they're installed. You'll also find a few toggle buttons and some Wrye Bash feature buttons. Each of the application buttons will be present if the corresponding application is present in the game install directory, or in their default install location if the application is not game-specific.
@@ -605,19 +605,19 @@
 <table>
 	<thead><tr><th>Icon (On)<th>Icon (Off)<th>Toggles<th>Behaviour
 	<tbody>
-		<tr><td><img src="bash/images/checkbox_green_on_32.png" width="32" height="32" alt="checked green checkbox"/><td><img src="bash/images/checkbox_green_off_32.png" width="32" height="32" alt="unchecked green checkbox"/><td>Script Extender<td>When checked this will launch the game's Script Extender when either the game or game's editor (Construction Set or Creation Kit) buttons are clicked. If the LAA Launcher also launches the game's Script Extender, then unchecking this toggle will also uncheck the LAA Launcher toggle.
-		<tr><td><img src="bash/images/checkbox_blue_on_32.png" width="32" height="32" alt="checked blue checkbox"/><td><img src="bash/images/checkbox_blue_off_32.png" width="32" height="32" alt="unchecked blue checkbox"/><td>LAA Launcher<td>When checked this will launch the LAA Launcher when the game button is clicked. If the LAA Launcher also launches the game's Script Extender, checking this will also check the Script Extender toggle.
-		<tr><td><img src="bash/images/checkbox_red_x_32.png" width="32" height="32" alt="checked red checkbox"/><td><img src="bash/images/checkbox_red_off_32.png" width="32" height="32" alt="unchecked red checkbox"/><td>Auto-Quit<td>If checked this will cause Bash to quit when launching the game. This is useful if you're concerned about memory usage.
+		<tr><td><img src="../bash/images/checkbox_green_on_32.png" width="32" height="32" alt="checked green checkbox"/><td><img src="../bash/images/checkbox_green_off_32.png" width="32" height="32" alt="unchecked green checkbox"/><td>Script Extender<td>When checked this will launch the game's Script Extender when either the game or game's editor (Construction Set or Creation Kit) buttons are clicked. If the LAA Launcher also launches the game's Script Extender, then unchecking this toggle will also uncheck the LAA Launcher toggle.
+		<tr><td><img src="../bash/images/checkbox_blue_on_32.png" width="32" height="32" alt="checked blue checkbox"/><td><img src="../bash/images/checkbox_blue_off_32.png" width="32" height="32" alt="unchecked blue checkbox"/><td>LAA Launcher<td>When checked this will launch the LAA Launcher when the game button is clicked. If the LAA Launcher also launches the game's Script Extender, checking this will also check the Script Extender toggle.
+		<tr><td><img src="../bash/images/checkbox_red_x_32.png" width="32" height="32" alt="checked red checkbox"/><td><img src="../bash/images/checkbox_red_off_32.png" width="32" height="32" alt="unchecked red checkbox"/><td>Auto-Quit<td>If checked this will cause Bash to quit when launching the game. This is useful if you're concerned about memory usage.
 </table>
 <h3 id="launchers-game">Game &amp; Editor Launchers</h3>
 <p>The game and editor icons displayed will depend on which supported game you have Wrye Bash installed for. Using Wrye Bash's game launcher opens the game itself, rather than the game's launcher.
 <table>
 	<thead><tr><th>Icon<th>Application
 	<tbody>
-		<tr><td><img src="bash/images/oblivion32.png" width="32" height="32" alt="Oblivion icon"/><td>Oblivion
-		<tr><td><img src="bash/images/tescs32.png" width="32" height="32" alt="Oblivion CS icon"/><td><a href="http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set">TES Construction Set</a>
-		<tr><td><img src="bash/images/skyrim32.png" width="32" height="32" alt="Skyrim icon"/><td>Skyrim
-		<tr><td><img src="bash/images/CreationKit32.png" width="32" height="32" alt="Creation Kit icon"/><td><a href="http://www.creationkit.com/">Skyrim Creation Kit</a>
+		<tr><td><img src="../bash/images/oblivion32.png" width="32" height="32" alt="Oblivion icon"/><td>Oblivion
+		<tr><td><img src="../bash/images/tescs32.png" width="32" height="32" alt="Oblivion CS icon"/><td><a href="http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set">TES Construction Set</a>
+		<tr><td><img src="../bash/images/skyrim32.png" width="32" height="32" alt="Skyrim icon"/><td>Skyrim
+		<tr><td><img src="../bash/images/CreationKit32.png" width="32" height="32" alt="Creation Kit icon"/><td><a href="http://www.creationkit.com/">Skyrim Creation Kit</a>
 </table>
 <h3 id="launchers-utils">Game-Specific Utilities</h3>
 <p>Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available. Tes4Gecko &amp; Oblivion Book Creator will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory. The BOSS launcher has some options:
@@ -635,41 +635,41 @@
 		<tr><th colspan="2">Oblivion<th colspan="2">Skyrim
 		<tr><th>Icon<th>Application<th>Icon<th>Application
 	<tbody>
-		<tr><td><img src="bash/images/OBMM32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/2097">Oblivion Mod Manager</a>
-			<td><img src="bash/images/Boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://skyrim.nexusmods.com/mods/6">BOSS</a>
-		<tr><td><img src="bash/images/ISOBL32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
+		<tr><td><img src="../bash/images/OBMM32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/2097">Oblivion Mod Manager</a>
+			<td><img src="../bash/images/Boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://skyrim.nexusmods.com/mods/6">BOSS</a>
+		<tr><td><img src="../bash/images/ISOBL32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
 			<td><td>
-		<tr><td><img src="bash/images/Insanity'sReadmeGenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
+		<tr><td><img src="../bash/images/Insanity'sReadmeGenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
 			<td><td>
-		<tr><td><img src="bash/images/Insanity'sRNG32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
+		<tr><td><img src="../bash/images/Insanity'sRNG32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
 			<td><td>
-		<tr><td><img src="bash/images/RandomNPC32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
+		<tr><td><img src="../bash/images/RandomNPC32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
 			<td><td>
-		<tr><td><img src="bash/images/OblivionFaceExchangerLite32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/7808">Oblivion Face Exchange Lite</a>
+		<tr><td><img src="../bash/images/OblivionFaceExchangerLite32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/7808">Oblivion Face Exchange Lite</a>
 			<td><td>
-		<tr><td><img src="bash/images/ModListGenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
+		<tr><td><img src="../bash/images/ModListGenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
 			<td><td>
-		<tr><td><img src="bash/images/OblivionBookCreator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258">Oblivion Book Creator</a>
+		<tr><td><img src="../bash/images/OblivionBookCreator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258">Oblivion Book Creator</a>
 			<td><td>
-		<tr><td><img src="bash/images/BSACommander32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3311">BSA Commander</a>
+		<tr><td><img src="../bash/images/BSACommander32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3311">BSA Commander</a>
 			<td><td>
-		<tr><td><img src="bash/images/Tabula32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/33486">Tabula</a>
+		<tr><td><img src="../bash/images/Tabula32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/33486">Tabula</a>
 			<td><td>
-		<tr><td><img src="bash/images/tes4files32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8489">Tes4Files</a>
+		<tr><td><img src="../bash/images/tes4files32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8489">Tes4Files</a>
 			<td><td>
-		<tr><td><img src="bash/images/TES4Gecko32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8665">Tes4Gecko</a>
+		<tr><td><img src="../bash/images/TES4Gecko32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8665">Tes4Gecko</a>
 			<td><td>
-		<tr><td><img src="bash/images/tes4view32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4View</a>
+		<tr><td><img src="../bash/images/tes4view32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4View</a>
 			<td><td>
-		<tr><td><img src="bash/images/TES4Edit32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Edit</a>
+		<tr><td><img src="../bash/images/TES4Edit32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Edit</a>
 			<td><td>
-		<tr><td><img src="bash/images/TES4Trans32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Trans</a>
+		<tr><td><img src="../bash/images/TES4Trans32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Trans</a>
 			<td><td>
-		<tr><td><img src="bash/images/Tes4LODGen32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/15781">Tes4LodGen</a>
+		<tr><td><img src="../bash/images/Tes4LODGen32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/15781">Tes4LodGen</a>
 			<td><td>
-		<tr><td><img src="bash/images/Boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/20516">BOSS</a>
+		<tr><td><img src="../bash/images/Boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/20516">BOSS</a>
 			<td><td>
-		<tr><td><img src="bash/images/InteractiveMapofCyrodiil32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
+		<tr><td><img src="../bash/images/InteractiveMapofCyrodiil32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
 			<td><td>
 </table>
 <h3 id="launchers-apps">Other Applications</h3>
@@ -678,128 +678,128 @@
 		<tr><th colspan="2">Model Tools<th colspan="2">Texture Tools<th colspan="2">Audio Tools<th colspan="2">Misc
 		<tr><th>Icon<th>Application<th>Icon<th>Application<th>Icon<th>Application<th>Icon<th>Application
 	<tbody>
-		<tr><td><img src="bash/images/ArtOfIllusion32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artofillusion.org/">Art of Illusion</a>
-			<td><img src="bash/images/AniFX32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/anifx/index.html">AniFX</a>
-				<td><img src="bash/images/audacity32.png" width="32" height="32" alt="tool image"/><td><a href="http://audacity.sourceforge.net/">Audacity</a>
-					<td><img src="bash/images/fraps32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.fraps.com/download.php">Fraps</a>
-		<tr><td><img src="bash/images/AutoCad32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652">AutoCad</a>
-			<td><img src="bash/images/artweaver32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artweaver.de/">Artweaver</a>
-				<td><img src="bash/images/ABCAmberAudioConverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.processtext.com/abcmp3wav.html">ABC Amber Audio Converter</a>
-					<td><img src="bash/images/LogitechKeyboard32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.logitech.com/index.cfm/434/285&amp;cl=za">Logitech G11 Keyboard Profiler</a>
-		<tr><td><img src="bash/images/Blender32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.blender.org">Blender</a>
-			<td><img src="bash/images/CrazyBump32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.crazybump.com/">CrazyBump</a>
-				<td><img src="bash/images/Switch32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nch.com.au/switch/index.html">Switch</a>
-					<td><img src="bash/images/MediaMonkey32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediamonkey.com/">Media Monkey</a>
-		<tr><td><img src="bash/images/gmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.turbosquid.com/gmax">GMax</a>
-			<td><img src="bash/images/DDSConverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://eliteforce2.filefront.com/file/DDS_Converter;29412">DDSConverter</a>
+		<tr><td><img src="../bash/images/ArtOfIllusion32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artofillusion.org/">Art of Illusion</a>
+			<td><img src="../bash/images/AniFX32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/anifx/index.html">AniFX</a>
+				<td><img src="../bash/images/audacity32.png" width="32" height="32" alt="tool image"/><td><a href="http://audacity.sourceforge.net/">Audacity</a>
+					<td><img src="../bash/images/fraps32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.fraps.com/download.php">Fraps</a>
+		<tr><td><img src="../bash/images/AutoCad32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652">AutoCad</a>
+			<td><img src="../bash/images/artweaver32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artweaver.de/">Artweaver</a>
+				<td><img src="../bash/images/ABCAmberAudioConverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.processtext.com/abcmp3wav.html">ABC Amber Audio Converter</a>
+					<td><img src="../bash/images/LogitechKeyboard32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.logitech.com/index.cfm/434/285&amp;cl=za">Logitech G11 Keyboard Profiler</a>
+		<tr><td><img src="../bash/images/Blender32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.blender.org">Blender</a>
+			<td><img src="../bash/images/CrazyBump32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.crazybump.com/">CrazyBump</a>
+				<td><img src="../bash/images/Switch32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nch.com.au/switch/index.html">Switch</a>
+					<td><img src="../bash/images/MediaMonkey32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediamonkey.com/">Media Monkey</a>
+		<tr><td><img src="../bash/images/gmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.turbosquid.com/gmax">GMax</a>
+			<td><img src="../bash/images/DDSConverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://eliteforce2.filefront.com/file/DDS_Converter;29412">DDSConverter</a>
 				<td><td>
-					<td><img src="bash/images/notepad++32.png" width="32" height="32" alt="tool image"/><td><a href="http://notepad-plus.sourceforge.net/">Notepad++</a>
-		<tr><td><img src="bash/images/Maya32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897">Maya</a>
-			<td><img src="bash/images/DeepPaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://download.chip.eu/en/Deep-Paint-2.0_132831.html">DeepPaint</a>
+					<td><img src="../bash/images/notepad++32.png" width="32" height="32" alt="tool image"/><td><a href="http://notepad-plus.sourceforge.net/">Notepad++</a>
+		<tr><td><img src="../bash/images/Maya32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897">Maya</a>
+			<td><img src="../bash/images/DeepPaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://download.chip.eu/en/Deep-Paint-2.0_132831.html">DeepPaint</a>
 				<td><td>
-					<td><img src="bash/images/Steam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.steampowered.com/">Steam</a>
-		<tr><td><img src="bash/images/3dsMax32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410">3ds Max</a>
-			<td><img src="bash/images/Dogwaffle32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
+					<td><img src="../bash/images/Steam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.steampowered.com/">Steam</a>
+		<tr><td><img src="../bash/images/3dsMax32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410">3ds Max</a>
+			<td><img src="../bash/images/Dogwaffle32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
 				<td><td>
-					<td><img src="bash/images/EVGAPrecision32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.evga.com/">EVGA Precision</a>
-		<tr><td><img src="bash/images/Milkshape3D32.png" width="32" height="32" alt="tool image"/><td><a href="http://chumbalum.swissquake.ch/">MilkShape 3D</a>
-			<td><img src="bash/images/Genetica32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/genetica.htm">Genetica</a>
+					<td><img src="../bash/images/EVGAPrecision32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.evga.com/">EVGA Precision</a>
+		<tr><td><img src="../bash/images/Milkshape3D32.png" width="32" height="32" alt="tool image"/><td><a href="http://chumbalum.swissquake.ch/">MilkShape 3D</a>
+			<td><img src="../bash/images/Genetica32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/genetica.htm">Genetica</a>
 				<td><td>
-					<td><img src="bash/images/WinMerge32.png" width="32" height="32" alt="tool image"/><td><a href="http://winmerge.org/">WinMerge</a>
-		<tr><td><img src="bash/images/Mudbox32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063">Mudbox</a>
-			<td><img src="bash/images/GeneticaViewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/viewer/">Genetica Viewer</a>
+					<td><img src="../bash/images/WinMerge32.png" width="32" height="32" alt="tool image"/><td><a href="http://winmerge.org/">WinMerge</a>
+		<tr><td><img src="../bash/images/Mudbox32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063">Mudbox</a>
+			<td><img src="../bash/images/GeneticaViewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/viewer/">Genetica Viewer</a>
 				<td><td>
-					<td><img src="bash/images/FreeMind32.png" width="32" height="32" alt="tool image"/><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
-		<tr><td><img src="bash/images/Sculptris32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.sculptris.com">Sculptris</a>
-			<td><img src="bash/images/gimp32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimp.org/downloads/">GIMP</a>
+					<td><img src="../bash/images/FreeMind32.png" width="32" height="32" alt="tool image"/><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
+		<tr><td><img src="../bash/images/Sculptris32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.sculptris.com">Sculptris</a>
+			<td><img src="../bash/images/gimp32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimp.org/downloads/">GIMP</a>
 				<td><td>
-					<td><img src="bash/images/Freeplane32.png" width="32" height="32" alt="tool image"/><td><a href="http://freeplane.sourceforge.net/wiki/index.php/Main_Page">Freeplane</a>
-		<tr><td><img src="bash/images/SoftimageModTool32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112">Softimage Mod Tool</a>
-			<td><img src="bash/images/GIMPShop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimpshop.com/">Gimp Shop</a>
+					<td><img src="../bash/images/Freeplane32.png" width="32" height="32" alt="tool image"/><td><a href="http://freeplane.sourceforge.net/wiki/index.php/Main_Page">Freeplane</a>
+		<tr><td><img src="../bash/images/SoftimageModTool32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112">Softimage Mod Tool</a>
+			<td><img src="../bash/images/GIMPShop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimpshop.com/">Gimp Shop</a>
 				<td><td>
-					<td><img src="bash/images/FileZilla32.png" width="32" height="32" alt="tool image"/><td><a href="http://filezilla-project.org/">Filezilla</a>
-		<tr><td><img src="bash/images/SpeedTree32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.speedtree.com/">SpeedTree</a>
-			<td><img src="bash/images/IcoFX32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/index.html">IcoFX</a>
+					<td><img src="../bash/images/FileZilla32.png" width="32" height="32" alt="tool image"/><td><a href="http://filezilla-project.org/">Filezilla</a>
+		<tr><td><img src="../bash/images/SpeedTree32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.speedtree.com/">SpeedTree</a>
+			<td><img src="../bash/images/IcoFX32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/index.html">IcoFX</a>
 				<td><td>
-					<td><img src="bash/images/EggTranslator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825">Egg Translator</a>
-		<tr><td><img src="bash/images/Treed32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.frecle.net/index.php?show=treed.about">Treed</a>
-			<td><img src="bash/images/Inkscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.inkscape.org/">Inkscape</a>
+					<td><img src="../bash/images/EggTranslator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825">Egg Translator</a>
+		<tr><td><img src="../bash/images/Treed32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.frecle.net/index.php?show=treed.about">Treed</a>
+			<td><img src="../bash/images/Inkscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.inkscape.org/">Inkscape</a>
 				<td><td>
-					<td><img src="bash/images/RADVideoTools32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
-		<tr><td><img src="bash/images/Wings3D32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.wings3d.com/">Wings3D</a>
-			<td><img src="bash/images/IrfanView32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.irfanview.com/">Irfan View</a>
+					<td><img src="../bash/images/RADVideoTools32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
+		<tr><td><img src="../bash/images/Wings3D32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.wings3d.com/">Wings3D</a>
+			<td><img src="../bash/images/IrfanView32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.irfanview.com/">Irfan View</a>
 				<td><td>
-					<td><img src="bash/images/WinSnap32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.filehippo.com/download_winsnap/">WinSnap</a>
-		<tr><td><img src="bash/images/nifskope32.png" width="32" height="32" alt="tool image"/><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
-			<td><img src="bash/images/FastStoneImageViewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.faststone.org/">FastStone Image Viewer</a>
-				<td><td>
-					<td><td>
-		<tr><td><td>
-			<td><img src="bash/images/MaPZone32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mapzoneeditor.com/">MaPZone</a>
+					<td><img src="../bash/images/WinSnap32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.filehippo.com/download_winsnap/">WinSnap</a>
+		<tr><td><img src="../bash/images/nifskope32.png" width="32" height="32" alt="tool image"/><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
+			<td><img src="../bash/images/FastStoneImageViewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.faststone.org/">FastStone Image Viewer</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/MyPaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://mypaint.intilinux.com/">MyPaint</a>
+			<td><img src="../bash/images/MaPZone32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mapzoneeditor.com/">MaPZone</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/NVIDIAMelody32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/melody_home.html">NVIDIAMelody</a>
+			<td><img src="../bash/images/MyPaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://mypaint.intilinux.com/">MyPaint</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/paint.net32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.getpaint.net/download.html">Paint.NET</a>
+			<td><img src="../bash/images/NVIDIAMelody32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/melody_home.html">NVIDIAMelody</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/PaintShopProX332.png" width="32" height="32" alt="tool image"/><td><a href="http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051">PaintShop Photo Pro</a>
+			<td><img src="../bash/images/paint.net32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.getpaint.net/download.html">Paint.NET</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/Photobie32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photobie.com/">Photobie Design Studio</a>
+			<td><img src="../bash/images/PaintShopProX332.png" width="32" height="32" alt="tool image"/><td><a href="http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051">PaintShop Photo Pro</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/PhotoFiltre32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photofiltre.com/">PhotoFiltre</a>
+			<td><img src="../bash/images/Photobie32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photobie.com/">Photobie Design Studio</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/PhotoScape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photoscape.org/ps/main/index.php">PhotoScape</a>
+			<td><img src="../bash/images/PhotoFiltre32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photofiltre.com/">PhotoFiltre</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/PhotoSEAM32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediachance.com/pseam/">PhotoSEAM</a>
+			<td><img src="../bash/images/PhotoScape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photoscape.org/ps/main/index.php">PhotoScape</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/photoshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.adobe.com/">Photoshop</a>
+			<td><img src="../bash/images/PhotoSEAM32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediachance.com/pseam/">PhotoSEAM</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/PixelStudioPro32.png" width="32" height="32" alt="tool image"/><td><a href="http://pixelstudiopro.com/">Pixel Studio Pro</a>
+			<td><img src="../bash/images/photoshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.adobe.com/">Photoshop</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/Pixia32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.ne.jp/asahi/mighty/knight/index.html">Pixia</a>
+			<td><img src="../bash/images/PixelStudioPro32.png" width="32" height="32" alt="tool image"/><td><a href="http://pixelstudiopro.com/">Pixel Studio Pro</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/TextureMaker32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.texturemaker.com/download.php">TextureMaker</a>
+			<td><img src="../bash/images/Pixia32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.ne.jp/asahi/mighty/knight/index.html">Pixia</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/TwistedBrush32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.pixarra.com/">Twisted Brush</a>
+			<td><img src="../bash/images/TextureMaker32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.texturemaker.com/download.php">TextureMaker</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/WTV32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/windows_texture_viewer.html">Windows Texture Viewer</a>
+			<td><img src="../bash/images/TwistedBrush32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.pixarra.com/">Twisted Brush</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/xNormal32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnormal.net/">xNormal</a>
+			<td><img src="../bash/images/WTV32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/windows_texture_viewer.html">Windows Texture Viewer</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="bash/images/XnView32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnview.com/">XnView</a>
+			<td><img src="../bash/images/xNormal32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnormal.net/">xNormal</a>
+				<td><td>
+					<td><td>
+		<tr><td><td>
+			<td><img src="../bash/images/XnView32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnview.com/">XnView</a>
 				<td><td>
 					<td><td>
 </table>
@@ -807,11 +807,11 @@
 <table>
 	<thead><tr><th>Icon<th>Feature<th>Description
 	<tbody>
-		<tr><td><img src="bash/images/bashmon32.png" width="32" height="32" alt="tool image"/><td>BashMon<td><i>Oblivion only.</i> This launches bashmon.py in a command shell window, for use with <a href="http://oblivion.nexusmods.com/mods/28563">Wrye Morph</a>.
-		<tr><td><img src="bash/images/DocBrowser32.png" width="32" height="32" alt="tool image"/><td>Doc Browser<td>Show the <a href="#DocBrowser">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
-		<tr><td id="launchersModChecker"><img src="bash/images/ModChecker32.png" width="32" height="32" alt="tool image"/><td>Mod Checker<td>Show the <a href="#ModChecker">Mod Checker</a>.
-		<tr><td id="launchersSettingsMenu"><img src="bash/images/tes4gecko32.png" width="32" height="32" alt="tool image"/><td>Settings<td>Brings up the <a href="#BashSettingsMenu">Settings Menu</a>.
-		<tr><td><img src="bash/images/help32.png" width="32" height="32" alt="tool image"/><td>Help<td>Show this help file in the default web browser.
+		<tr><td><img src="../bash/images/bashmon32.png" width="32" height="32" alt="tool image"/><td>BashMon<td><i>Oblivion only.</i> This launches bashmon.py in a command shell window, for use with <a href="http://oblivion.nexusmods.com/mods/28563">Wrye Morph</a>.
+		<tr><td><img src="../bash/images/DocBrowser32.png" width="32" height="32" alt="tool image"/><td>Doc Browser<td>Show the <a href="#DocBrowser">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
+		<tr><td id="launchersModChecker"><img src="../bash/images/ModChecker32.png" width="32" height="32" alt="tool image"/><td>Mod Checker<td>Show the <a href="#ModChecker">Mod Checker</a>.
+		<tr><td id="launchersSettingsMenu"><img src="../bash/images/tes4gecko32.png" width="32" height="32" alt="tool image"/><td>Settings<td>Brings up the <a href="#BashSettingsMenu">Settings Menu</a>.
+		<tr><td><img src="../bash/images/help32.png" width="32" height="32" alt="tool image"/><td>Help<td>Show this help file in the default web browser.
 </table>
 
 <h2 id="trouble">Troubleshooting</h2>
@@ -919,7 +919,7 @@ MemoryError</code>
 
 
 <h2 id="credits">Credits</h2>
-<img alt="Monkey God of Modding" src="bash/images/wrye_monkey_87.jpg">
+<img alt="Monkey God of Modding" src="../bash/images/wrye_monkey_87.jpg">
 <h3>Current Maintainers</h3>
 <ul>
 	<li>Pacific Morrowind: New imports, exports, tweaks, etc.
@@ -972,7 +972,7 @@ MemoryError</code>
 	<li><b>Additional Thanks</b>
 	<ul>
 		<li>ElminsterEU: Bug catching, technical suggestions.
-		<li><img width="32" height="32" alt="Metallicow's Icon" style="align: AbsMiddle;" src="bash/images/MCowAvi32.png"> Metallicow: Shiny new tool launcher icons.
+		<li><img width="32" height="32" alt="Metallicow's Icon" style="align: AbsMiddle;" src="../bash/images/MCowAvi32.png"> Metallicow: Shiny new tool launcher icons.
 		<li>Tom Suprgan: Several well researched suggestions.
 		<li>Sativarg: Proofreading.
 		<li>Kmacg94: Additional power exhaustion coverage.
