@@ -126,29 +126,21 @@ Rinse and repeat when a new svn comes out.
 [/list]
 
 [b]Changelog for Latest Version[/b]:
-297 [07/6/2012] [Trira,Daidalos,Arthmoor,wrinklyninja,alt3rn1ty,Other community members]
+297.1 [2012/06/12] [Various community members]
 [spoiler]
 [list]
-[*]Some potential lag relief for Bash's use of BAPI.
-[*]Replaced documentation with WrinklyNinja's rewritten documents.
-[*]Added an option to launch the BOSS GUI to the BOSS icon.
-[*]Added an archery distance tweak to the default ini tweaks for Skyrim.
-[*]Improved support for launching Skyrim's creation kit: Bash now displays the correct icon and supplies the correct launch parameters.
-[*]Moved default patchers and ini tweaks for Oblivion and Skyrim into the Mopy folder: user-installed patchers and tweaks will continue to go in their folders within each game's Data folder.
-[*]Fixed applying INI Tweaks via the "Apply" choice.
-[*]Fixed BAIN skipping the Data\Docs folder of packages when running for Skyrim.
-[*]Fixed BAIN skipping SkyUI files when Skip Docs was enabled.
-[*]Fixed the Bashed Patch ignoring some active plugins due to having an older timestamp in Skyrim.
-[*]Fixed Bash not reading Bash Tags from BOSS's masterlist.
-[*]Fixed Load Masters on a save in the Saves tab causing a BAPI error.
-[*]Fixed an error when switching between mod lists.
-[*]Fixed the Bash Tags box being uneditable when running for Skyrim.
-[*]Removed the Version 0.8 context menu command in the Mods tab when running for Skyrim.
-[*]Fixed manually-set Bash Tags not being remembered by Wrye Bash after it is restarted.
-[*]Fixed time format errors being displayed when the auto-update option was set.
-[*]Updated all Nexus URLs to use the new URLs.
-[*]Fixed world orphan removal command.
-[*]Fixed Bashed Patch not being activated when user chooses to do so through the post-rebuild dialog.
-[*]Fixed various installer bugs and made some improvements.
+[*]More updating of all Nexus URLs to their new formats. [Arthmoor]
+[*]Fixed autoNames error in Bashed Patch rebuilding. [Arthmoor]
+[*]Fixed Wrye Bash not prompting to back up old settings when launching a new version for the first time. [cdcooley, Alex Michael]
+[*]Various improvements for the WizBAIN Editor. [Metallicow]
+[*]Fixed load order being read incorrectly when Auto-Ghost was enabled. [WrinklyNinja]
+[*]Fixed Bash not opening due to datetime error. [Trira/Metallicow]
+[*]Added Create New Project dialog to Installers tab. [Metallicow]
+[*]Fixed Bash loading the BOSS API DLLs that are included with BOSS even if they are older than the DLLs included with Bash. [WrinklyNinja]
+[*]Fixed installer's URL for PyWin32 being invalid. [Alt3rn1ty]
+[*]Some more attempts at improving UI responsiveness. [cdcooley]
+[*]Fixed Bash not starting if loadorder.txt doesn't exist when running for Skyrim. [Anonymous submission]
+[*]Updated Russian translation. [Djk]
+[*]Fixed error that sometimes occurred when trying to deactivate a plugin. [cdcooley]
 [/list]
 [/spoiler]
