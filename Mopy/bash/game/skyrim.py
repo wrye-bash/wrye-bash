@@ -272,7 +272,7 @@ allBethFiles = set((
     u'interface\\translate_english.txt', #--probably need one for each language
     u'strings\\skyrim_english.dlstrings', #--same here
     u'strings\\skyrim_english.ilstrings',
-    u'strings\\skryim_english.strings',
+    u'strings\\skyrim_english.strings',
     u'strings\\update_english.dlstrings',
     u'strings\\update_english.ilstrings',
     u'strings\\update_english.strings',
