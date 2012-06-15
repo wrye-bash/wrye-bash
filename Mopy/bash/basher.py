@@ -1026,7 +1026,10 @@ class List(wx.Panel):
                 if checks:
                     for i,mod in enumerate(items):
                         if checks.IsChecked(i):
-                            self.data.delete(mod)
+                            try:
+                                self.data.delete(mod)
+                            except bolt.BoltError as e:
+                                balt.showError(self, _(u'%s') % e)
                 self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
@@ -1037,13 +1040,20 @@ class List(wx.Panel):
             fileName = GPath(item)
             #--Unselect?
             if self.data.isSelected(fileName):
-                self.data.unselect(fileName)
-                changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
-                if len(changed) > (fileName in changed):
-                    changed.remove(fileName)
-                    changed = [x.s for x in changed]
-                    removed += changed
-                    balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
+                try:
+                    self.data.unselect(fileName)
+                    changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
+                    if len(changed) > (fileName in changed):
+                        changed.remove(fileName)
+                        changed = [x.s for x in changed]
+                        removed += changed
+                        balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
+                except bapi.BossError as e:
+                    if (e.msg == 'BOSS_API_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.'):
+                        msg = _(u'Plugins may not be sorted before the game\'s master file.')
+                    else:
+                        msg = e.msg
+                    balt.showError(self,_(u'%s') % msg)
             #--Select?
             else:
                 ## For now, allow selecting unicode named files, for testing
@@ -1785,7 +1795,10 @@ class ModList(List):
         del order[start:stop]
         order[newPos:newPos] = toMove
         #--Save and Refresh
-        bosh.modInfos.plugins.saveLoadOrder()
+        try:
+            bosh.modInfos.plugins.saveLoadOrder()
+        except bolt.BoltError as e:
+            balt.showError(self, _(u'%s') % e)
         bosh.modInfos.plugins.refresh(True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
@@ -2035,8 +2048,10 @@ class ModList(List):
                         swapItem = self.items.index(thisFile) + moveMod
                         if swapItem < 0 or len(self.items) - 1 < swapItem: break
                         swapFile = self.items[swapItem]
-                        if bosh.modInfos[thisFile].isEsm() != bosh.modInfos[swapFile].isEsm(): break
-                        bosh.modInfos.swapOrder(thisFile,swapFile)
+                        try:
+                            bosh.modInfos.swapOrder(thisFile,swapFile)
+                        except bolt.BoltError as e:
+                            balt.showError(self, _(u'%s') % e)
                         bosh.modInfos.refreshInfoLists()
                         self.RefreshUI(refreshSaves=False)
                     self.RefreshUI([],refreshSaves=True)
@@ -12001,7 +12016,10 @@ class File_Delete(Link):
             if checks:
                 for i,mod in enumerate(self.data):
                     if checks.IsChecked(i):
-                        self.window.data.delete(mod)
+                        try:
+                            self.window.data.delete(mod)
+                        except bolt.BoltError as e:
+                            balt.showError(self.window, _(u'%s') % e)
             self.window.RefreshUI()
         dialog.Destroy()
 
