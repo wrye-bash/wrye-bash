@@ -9351,19 +9351,23 @@ class BashFrame(wx.Frame):
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
-            if bosh.modInfos.mtimesReset[0] == 'FAILED':
-                balt.showWarning(self,_(u"It appears that the current user doesn't have permissions for some or all of the files in ")
-                                        + bush.game.name+u'\\Data.\n' +
-                                      _(u"Specifically had permission denied to change the time on:")
-                                        + u'\n' + bosh.modInfos.mtimesReset[1].s)
-            if not bosh.inisettings['SkipResetTimeNotifications']:
-                message = [u'',_(u'Modified dates have been reset for some mod files')]
-                message.extend(sorted(bosh.modInfos.mtimesReset))
-                dialog = ListBoxes(self,_(u'Modified Dates Reset'),
-                         _(u'Modified dates have been reset for some mod files.'),
-                         [message],liststyle='list',Cancel=False)
-                dialog.ShowModal()
-                dialog.Destroy()
+            if bosh.modInfos.mtimesReset[0] == 'PLUGINS':
+                if not bosh.inisettings['SkipResetTimeNotifications']:
+                    balt.showWarning(self,_(u"An invalid plugin load order has been corrected."))
+            else:
+                if bosh.modInfos.mtimesReset[0] == 'FAILED':
+                    balt.showWarning(self,_(u"It appears that the current user doesn't have permissions for some or all of the files in ")
+                                            + bush.game.name+u'\\Data.\n' +
+                                            _(u"Specifically had permission denied to change the time on:")
+                                            + u'\n' + bosh.modInfos.mtimesReset[1].s)
+                if not bosh.inisettings['SkipResetTimeNotifications']:
+                    message = [u'',_(u'Modified dates have been reset for some mod files')]
+                    message.extend(sorted(bosh.modInfos.mtimesReset))
+                    dialog = ListBoxes(self,_(u'Modified Dates Reset'),
+                            _(u'Modified dates have been reset for some mod files.'),
+                            [message],liststyle='list',Cancel=False)
+                    dialog.ShowModal()
+                    dialog.Destroy()
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Mods autogrouped?

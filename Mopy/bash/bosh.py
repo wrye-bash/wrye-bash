@@ -3930,6 +3930,10 @@ class Plugins:
         if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
+            if self.selected != modInfos.getOrdered(self.selected,False):
+                modInfos.plugins.saveLoadOrder()
+                deprint("Mismatched Load Order Corrected")
+                modInfos.mtimesReset = ['PLUGINS']
 
     def save(self):
         """Write data to Plugins.txt file."""
@@ -5198,7 +5202,10 @@ class ModInfos(FileInfos):
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected, exGroup_mods, imported, exported."""
         #--Ordered
-        self.ordered = self.getOrdered(self.plugins.selected)
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            self.ordered = tuple(self.plugins.selected)
+        else:
+            self.ordered = self.getOrdered(self.plugins.selected)
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
