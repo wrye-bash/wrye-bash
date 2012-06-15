@@ -22367,7 +22367,8 @@ def InitModLinks():
     if bosh.inisettings['EnableBalo']:
         ModList.mainMenu.append(Mods_AutoGroup())
         ModList.mainMenu.append(Mods_FullBalo())
-    ModList.mainMenu.append(Mods_LockTimes())
+    if bush.game.name != u'Skyrim':
+        ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
 
     #--ModList: Item Links
