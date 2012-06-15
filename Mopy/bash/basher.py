@@ -21299,10 +21299,11 @@ class App_Help(StatusBar_Button):
 
     def Execute(self,event):
         """Handle menu selection."""
-        html = bosh.dirs['mopy'].join(u'Wrye Bash General Readme.html')
-        if not html.exists():
-            bolt.WryeText.genHtml(bosh.dirs['mopy'].join(u'Wrye Bash.txt').s, None, bosh.dirs['mopy'])
-        html.start()
+        html = bosh.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
+        if html.exists():
+            html.start()
+        else:
+            balt.showError(bashFrame, _(u'Cannot find General Readme file.'))
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
