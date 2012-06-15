@@ -36,6 +36,21 @@
 
 <p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
 
+<h2>298 [YYYY/MM/DD] [Various community members]</h2>
+<ul>
+ <li>Fixed load order bug that occurred when renaming a plugin. [trira]
+ <li>Some more UI responsiveness improvements. [cdcooley]
+ <li>Fixed BAIN's <q>Skip Docs</q> option causing Interface files to be skipped when running for Skyrim. [WrinklyNinja]
+ <li>Fixed Wrye Bash reverting its own load order changes when <q>Lock Load Order</q> is enabled. [cdcooley, WrinklyNinja]
+ <li>Some more installer improvements. [Alt3rn1ty]
+ <li>Fixed <q>Espify/Esmify Self</q> not refreshing the load order display. [cdcooley]
+ <li>Fixed BAIN's <q>Clean Data</q> command removing some Bethesda-supplied files. [Daidalos, WrinklyNinja]
+ <li>Added some UI feedback messages for certain plugin-related situations where Wrye Bash would previously silently prevent user action (eg. deleting the main master file, loading plugins before masters). [WrinklyNinja]
+ <li>Fixed Wrye Bash not ensuring plugins.txt / loadorder.txt synchronisation when it regains window focus. [cdcooley]
+ <li>Removed the <q>Lock Load Order</q> command when running for Skyrim, as this functionality is effectively taken care of by the above synchronisation fix. When running for Skyrim, Wrye Bash will now allow any changes to load order that are made in accordance with the textfile-based standard (eg. changes by BOSS, NMM), but revert any other changes made (eg. changes by the Skyrim launcher). This is to ensure data integrity.
+ <li>Moved Wrye Bash's Documentation from the Mopy folder to Mopy\Docs.
+</ul>
+
 <h2>297.1 [2012/06/12] [Various community members]</h2>
 <ul>
  <li>More updating of all Nexus URLs to their new formats. [Arthmoor]
