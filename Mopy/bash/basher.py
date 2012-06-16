@@ -1811,7 +1811,6 @@ class ModList(List):
         else:
             selected = set([detail])
         #--Populate
-        bosh.modInfos.plugins.refresh()  #CDC is this needed here?
         if files == 'ALL':
             self.PopulateItems(selected=selected)
         elif isinstance(files,bolt.Path):
@@ -2390,7 +2389,7 @@ class ModDetails(SashPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.plugins.refresh()  #CDC I don't think this is needed here
+        bosh.modInfos.plugins.refresh()
         modList.RefreshUI()
 
     def DoCancel(self,event):
