@@ -5126,7 +5126,7 @@ class ModInfos(FileInfos):
         allowGhosting = self.table.getColumn('allowGhosting')
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
-            active = self.ordered
+            active = self.plugins.selected
             for mod in self.data:
                 modInfo = self.data[mod]
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
@@ -5658,8 +5658,6 @@ class ModInfos(FileInfos):
         finally:
             if doSave:
                 plugins.save()
-                self.refreshInfoLists()
-                self.autoGhost()
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
@@ -5678,9 +5676,7 @@ class ModInfos(FileInfos):
                     break
         #--Save
         if doSave:
-            #self.refreshInfoLists()
             self.plugins.save()
-            #self.autoGhost()
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
