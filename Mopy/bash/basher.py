@@ -10166,6 +10166,8 @@ class DocBrowser(wx.Frame):
         if not self.IsIconized() and not self.IsMaximized():
             settings['bash.modDocs.pos'] = self.GetPositionTuple()
             settings['bash.modDocs.size'] = self.GetSizeTuple()
+        global docBrowser
+        docBrowser = None
         self.Destroy()
 
 #------------------------------------------------------------------------------
@@ -21374,7 +21376,7 @@ class App_ModChecker(StatusBar_Button):
         """Handle menu selection."""
         if not modChecker:
             ModChecker().Show()
-        #balt.ensureDisplayed(docBrowser)
+        #balt.ensureDisplayed(modChecker)
         modChecker.Raise()
 
 #------------------------------------------------------------------------------
