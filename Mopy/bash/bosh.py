@@ -3510,6 +3510,7 @@ class OBSEIniFile(IniFile):
                             setting = LString(match.group(1))
                             break
                     else:
+                        tmpFile.write(line)
                         continue
                     # Apply the modification
                     if section in ini_settings and setting in ini_settings[section]:
