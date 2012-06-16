@@ -12926,7 +12926,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
 
         with textPath.open('w',encoding='utf-8-sig') as out:
-            outWrite = out.wr
+            outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
                 eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
