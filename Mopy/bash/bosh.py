@@ -4406,15 +4406,7 @@ class ModInfo(FileInfo):
 
     def getBashTags(self):
         """Returns any Bash flag keys."""
-        tags = modInfos.table.getItem(self.name,'bashTags',None)
-        if tags is None:
-            tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
-            tags -= (configHelpers.getBashRemoveTags(self.name) or set())
-        # Filter and remove old tags
-        tags = tags & allTagsSet
-        if tags & oldTagsSet:
-            tags -= oldTagsSet
-            self.setBashTagsDesc(tags)
+        tags = modInfos.table.getItem(self.name,'bashTags',set([]))
         return tags
 
     def getBashTagsDesc(self):
@@ -4426,7 +4418,18 @@ class ModInfo(FileInfo):
         else:
             bashTags = maBashKeys.group(1).split(u',')
             return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
-
+    
+    def reloadBashTags(self):
+        """Reloads bash tags from mod description and BOSS"""
+        tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
+        tags -= (configHelpers.getBashRemoveTags(self.name) or set())
+        # Filter and remove old tags
+        tags = tags & allTagsSet
+        if tags & oldTagsSet:
+            tags -= oldTagsSet
+            self.setBashTagsDesc(tags)
+        self.setBashTags(tags)
+    
     def getDirtyMessage(self):
         """Returns a dirty message from BOSS."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
@@ -5052,6 +5055,7 @@ class ModInfos(FileInfos):
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
+        self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
         self.getOblivionVersions()
@@ -5289,6 +5293,23 @@ class ModInfos(FileInfos):
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                     self.mergeable.discard(fileName)
 
+    def reloadBashTags(self):
+        """Reloads bash tags for all mods set to receive automatic bash tags."""
+#        print "Output of ModInfos.data"
+        for path in self.data:
+            mod = self[path]
+            autoTag = self.table.getItem(mod.name,'autoBashTags')
+            if autoTag is None and self.table.getItem(mod.name,'bashTags') is None:
+                # A new mod, set autoBashTags to True (default)
+                self.table.setItem(mod.name,'autoBashTags',True)
+                autoTag = True
+            elif autoTag is None:
+                # An old mod that had manual bash tags added, disable autoBashTags
+                self.table.setItem(mod.name,'autoBashTags',False)
+            if autoTag:
+                mod.reloadBashTags()
+
+    
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
         """Adds/removes balo headers as necessary. This is called by refresh(),
@@ -5594,7 +5615,7 @@ class ModInfos(FileInfos):
             for modInfo in modList:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
                 if modInfo.getBashTags():
-                    if modInfos.table.getItem(modInfo.name,'bashTags',u''):
+                    if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
                         tagList += u'  * '+_(u'From Manual (if any this overrides Description/BOSS sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
                     if modInfo.getBashTagsDesc():
                         tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
@@ -5609,7 +5630,7 @@ class ModInfos(FileInfos):
             for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.mtime, y.mtime)):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
-                    if modInfos.table.getItem(modInfo.name,'bashTags',u''):
+                    if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
                         tagList += u'  * '+_(u'From Manual (if any this overrides Description/BOSS sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
                     if modInfo.getBashTagsDesc():
                         tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'

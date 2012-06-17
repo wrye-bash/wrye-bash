@@ -2238,10 +2238,11 @@ class ModDetails(SashPanel):
         self.version.SetLabel(self.versionStr)
         self.masters.SetFileInfo(modInfo)
         self.gTags.SetValue(tagsStr)
-        if fileName and bosh.modInfos.table.getItem(fileName,'bashTags', None) != None:
+        if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
             self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
         else:
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
+        self.gTags.Refresh()
         #--Edit State
         self.edited = 0
         self.save.Disable()
@@ -2405,7 +2406,7 @@ class ModDetails(SashPanel):
         menu = wx.Menu()
         #--Revert to auto
         #--Separator
-        isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'bashTags',None) is None
+        isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'autoBashTags',True)
         menuItem = wx.MenuItem(menu,ID_TAGS.AUTO,_(u'Automatic'),kind=wx.ITEM_CHECK,
             help=_(u"Use the tags from the description and masterlist/userlist."))
         menu.AppendItem(menuItem)
@@ -2423,20 +2424,26 @@ class ModDetails(SashPanel):
     def DoAutoBashTags(self,event):
         """Handle selection of automatic bash tags."""
         modInfo = self.modInfo
-        if bosh.modInfos.table.getItem(modInfo.name,'bashTags',None) is None:
-            modInfo.setBashTags(modInfo.getBashTags())
+        if bosh.modInfos.table.getItem(modInfo.name,'autoBashTags'):
+            # Disable autoBashTags
+            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',False)
         else:
-            bosh.modInfos.table.delItem(modInfo.name,'bashTags')
+            # Enable autoBashTags
+            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',True)
+            modInfo.reloadBashTags()
         modList.RefreshUI(self.modInfo.name)
 
     def DoCopyBashTags(self,event):
-        """Handle selection of automatic bash tags."""
+        """Copies manually assigned bash tags into the mod description"""
         modInfo = self.modInfo
         modInfo.setBashTagsDesc(modInfo.getBashTags())
         modList.RefreshUI(self.modInfo.name)
 
     def ToggleBashTag(self,event):
         """Toggle bash tag from menu."""
+        if bosh.modInfos.table.getItem(self.modInfo.name,'autoBashTags'):
+            # Disable autoBashTags
+            bosh.modInfos.table.setItem(self.modInfo.name,'autoBashTags',False)
         tag = self.allTags[event.GetId()-ID_TAGS.BASE]
         modTags = self.modTags ^ set((tag,))
         self.modInfo.setBashTags(modTags)
