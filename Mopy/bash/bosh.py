@@ -3922,7 +3922,7 @@ class Plugins:
 
 
     def loadLoadOrder(self):
-        """Get list of all plugins from masterlist.txt through BAPI which cleans out bad entries."""
+        """Get list of all plugins from loadorder.txt through BAPI which cleans out bad entries."""
         self.LoadOrder = boss.GetLoadOrder()
         # game's master might be out of place (if using timestamps for load ordering) so move it up.
         if self.LoadOrder.index(modInfos.masterName) > 0:
@@ -6266,10 +6266,9 @@ class ConfigHelpers:
 
         global boss
         if os.path.isfile(GPath(dirs['mods'].s).join(u'Nehrim.esm').s):
-            boss = bapi.BossDb(GPath(dirs['mods'].s).s,u'Nehrim')
+            boss = bapi.BossDb(GPath(dirs['app'].s).s,u'Nehrim')
         else:
-            boss = bapi.BossDb(GPath(dirs['mods'].s).s,bush.game.name)
-        #boss = bapi.BossDb(GPath(dirs['mods'].s).s,bush.game.name)
+            boss = bapi.BossDb(GPath(dirs['app'].s).s,bush.game.name)
         deprint(u'Using BOSS API version:', bapi.version)
         bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
                               ConfigHelpers.bossLOMismatchCallback)
