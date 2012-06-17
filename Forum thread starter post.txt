@@ -35,8 +35,8 @@
 
 [b]Documentation[/b]:
 [list]
-  [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Wrye%20Bash%20General%20Readme.html]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)
-  [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]
+  [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)
+  [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]  (For Oblivion, new guide for Skyrim pending)
   [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url]
   [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]简体中文[/url]
 [/list]
@@ -68,7 +68,7 @@ Then:
 [*]For WBSA (Wrye Bash StandAlone), run by double-clicking on Wrye Bash.exe
 [/list]
 [/spoiler]
-Remember! In Windows Vista and up, don't install Oblivion in the Program Files folder due to User Access Controls!
+Remember! In Windows Vista and up, don't install Oblivion in the Program Files folder due to User Account Control! See [url==http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html#trouble-permissions]File Permissions[/url].
 
 [b]Development[/b]:
 The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  You don't need a SourceForge account to create or add data to bug reports and feature requests -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
@@ -121,6 +121,7 @@ Rinse and repeat when a new svn comes out.
 
 [b]Related Projects[/b]:
 [list]
+[*]The Official [topic=1384740]Wrye Bash for Skyrim thread[/topic].
 [*]Load orders should be managed with [url="http://oblivion.nexusmods.com/mods/20516"]BOSS[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
