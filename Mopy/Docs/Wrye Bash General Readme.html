@@ -1118,7 +1118,7 @@ MemoryError</code>
 </ul>
 <p>The Advanced Readme is a more technical document aimed more towards mod authors and advanced users of Wrye Bash than the average user. If you find yourself wanting to know more, or not understanding why something in Wrye Bash behaves the way it does, then the answer you seek may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>.
 <script>
-function nextImage(imgs, i){
+function nextImage(imgs){
 	for(var i=0;i<imgs.length;i++){
 		if(imgs[i].style.opacity=='1' || imgs[i].style.opacity==''){
 			imgs[i].style.opacity='0';
@@ -1130,14 +1130,17 @@ function nextImage(imgs, i){
 			break;
 		}
 	}
-	t=setTimeout(nextImage, 5000, imgs);
+	setTimeout(nextImage, 5000, imgs);
 }
 
 var figures = document.getElementsByTagName('figure');
 if(figures!=null){
 	for (var i=0; i < figures.length; i++) {
 		if (figures[i].className == 'slideshow'){
-			t=setTimeout(nextImage,5000, figures[i].getElementsByTagName('img'));
+   var wrapper = function(i){
+    return function(){nextImage(figures[i].getElementsByTagName('img'));}
+   }
+			setTimeout(wrapper(i),5000);
 		}
 	}
 }
