@@ -15,15 +15,17 @@
 # Usage:
 #   mktaglist.py
 #
-# THIS SCRIPT MUST BE PLACED IN MOPY TO EXECUTE, BUT DO NOT PACKAGE FOR RELEASE
-#
 #===============================================================================
 
+import sys
 import os
 import _winreg
-import bash.bapi as bapi
 
-bapiDir = u'bash' + os.sep + u'compiled'
+sys.path.append('../Mopy/bash')
+
+import bapi
+
+bapiDir = u'../Mopy/bash/compiled'
 
 # Detect games.
 oblivionDir = None
@@ -56,8 +58,8 @@ else:
 
 if oblivionDir:
     # Convert Oblivion masterlist.
-    masterlistDir = u'Bash Patches' + os.sep + u'Oblivion' + os.sep + u'masterlist.txt'
-    taglistDir = u'Bash Patches' + os.sep + u'Oblivion' + os.sep + u'taglist.txt'
+    masterlistDir = u'../Mopy/Bash Patches/Oblivion/masterlist.txt'
+    taglistDir = u'../Mopy/Bash Patches/Oblivion/taglist.txt'
     if os.path.exists(masterlistDir):
         boss = bapi.BossDb(oblivionDir,bapi.BOSS_API_GAME_OBLIVION)
         boss.Load(masterlistDir)
@@ -70,8 +72,8 @@ if oblivionDir:
     
 if skyrimDir:
     # Convert Skyrim masterlist.
-    masterlistDir = u'Bash Patches' + os.sep + u'Skyrim' + os.sep + u'masterlist.txt'
-    taglistDir = u'Bash Patches' + os.sep + u'Skyrim' + os.sep + u'taglist.txt'
+    masterlistDir = u'../Mopy/Bash Patches/Skyrim/masterlist.txt'
+    taglistDir = u'../Mopy/Bash Patches/Skyrim/taglist.txt'
     if os.path.exists(masterlistDir):
         boss = bapi.BossDb(skyrimDir,bapi.BOSS_API_GAME_SKYRIM)
         boss.Load(masterlistDir)
