@@ -19,7 +19,7 @@ BAPI = None
 version = None
 
 # Version of BOSS API this Python script is written for.
-PythonAPIVersion = (2,0)
+PythonAPIVersion = (2,1)
 
 DebugLevel = 0
 # DebugLevel
@@ -337,12 +337,16 @@ def Init(path):
     _CGetDirtyMessage = BAPI.GetDirtyMessage
     _CGetDirtyMessage.restype = BossErrorCheck
     _CGetDirtyMessage.argtypes = [boss_db, c_uint8_p, c_uint8_p_p, c_uint32_p]
+    ## uint32_t DumpMinimal(boss_db db, const uint8_t *file, const bool overwrite)
+    _CDumpMinimal = BAPI.DumpMinimal
+    _CDumpMinimal.restype = BossErrorCheck
+    _CDumpMinimal.argtypes = [boss_db, c_uint8_p, c_bool]
 
     # =========================================================================
     # Class Wrapper
     # =========================================================================
     class BossDb(object):
-        def __init__(self,dataPath,game='Oblivion'):
+        def __init__(self,gamePath,game='Oblivion'):
             """ game can be one of the BOSS_API_GAME_*** codes, or one of the
                 aliases defined above in the 'games' dictionary."""
             if isinstance(game,basestring):
@@ -352,7 +356,7 @@ def Init(path):
                     raise Exception('Game "%s" is not recognized' % game)
             self.tags = {}   # BashTag map
             self._DB = boss_db()
-            _CCreateBossDb(byref(self._DB),game,_enc(dataPath))
+            _CCreateBossDb(byref(self._DB),game,_enc(gamePath))
             # Get Load Order Method
             method = c_uint32()
             _CGetLoadOrderMethod(self._DB,byref(method))
@@ -612,6 +616,9 @@ def Init(path):
             clean = c_uint32()
             _CGetDirtyMessage(self._DB,_enc(plugin),byref(message),byref(clean))
             return (_uni(message.value),clean.value)
+            
+        def DumpMinimal(self,file,overwrite):
+            _CDumpMinimal(self._DB,_enc(file),ovewrite)
 
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)
