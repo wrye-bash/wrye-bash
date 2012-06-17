@@ -618,7 +618,7 @@ def Init(path):
             return (_uni(message.value),clean.value)
             
         def DumpMinimal(self,file,overwrite):
-            _CDumpMinimal(self._DB,_enc(file),ovewrite)
+            _CDumpMinimal(self._DB,_enc(file),overwrite)
 
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)

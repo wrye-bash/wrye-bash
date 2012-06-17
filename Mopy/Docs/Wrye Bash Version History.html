@@ -47,8 +47,15 @@
  <li>Fixed BAIN's <q>Clean Data</q> command removing some Bethesda-supplied files. [Daidalos, WrinklyNinja]
  <li>Added some UI feedback messages for certain plugin-related situations where Wrye Bash would previously silently prevent user action (eg. deleting the main master file, loading plugins before masters). [WrinklyNinja]
  <li>Fixed Wrye Bash not ensuring plugins.txt / loadorder.txt synchronisation when it regains window focus. [cdcooley]
- <li>Removed the <q>Lock Load Order</q> command when running for Skyrim, as this functionality is effectively taken care of by the above synchronisation fix. When running for Skyrim, Wrye Bash will now allow any changes to load order that are made in accordance with the textfile-based standard (eg. changes by BOSS, NMM), but revert any other changes made (eg. changes by the Skyrim launcher). This is to ensure data integrity.
- <li>Moved Wrye Bash's Documentation from the Mopy folder to Mopy\Docs.
+ <li>Removed the <q>Lock Load Order</q> command when running for Skyrim, as this functionality is effectively taken care of by the above synchronisation fix. When running for Skyrim, Wrye Bash will now allow any changes to load order that are made in accordance with the textfile-based standard (eg. changes by BOSS, NMM), but revert any other changes made (eg. changes by the Skyrim launcher). This is to ensure data integrity. [Arthmoor]
+ <li>Moved Wrye Bash's Documentation from the Mopy folder to Mopy\Docs. [WrinklyNinja]
+ <li>Fixed the background highlighting of ghosted plugins not always being in sync with which plugins were ghosted. [cdcooley]
+ <li>Fixed crash when selecting another plugin after opening the Doc Browser. [WrinklyNinja]
+ <li>Fixed applying INI tweaks to mod ini files removing all comments from them. [cdcooley]
+ <li>Fixed bug in <q>Create BOSS Report</q>. [bluesky404]
+ <li>Fixed Wrye Bash not removing plugins deleted through the Mods tab UI from plugins.txt and loadorder.txt (the latter in Skyrim only). [WrinklyNinja]
+ <li>Updated the included BOSS API DLLs to the latest development version.  [WrinklyNinja]
+ <li>Updated the taglist files used by Wrye Bash if it cannot detect a BOSS install.  [WrinklyNinja]
 </ul>
 
 <h2>297.1 [2012/06/12] [Various community members]</h2>
