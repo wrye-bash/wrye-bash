@@ -16627,7 +16627,7 @@ class Mod_CreateBOSSReport(Link):
                 udrs,itms,fogs = udr_itm_fog[i]
                 if udrs or itms:
                     if settings['bash.CBashEnabled']:
-                        text += (u'\nUDR: %i, ITM: %i%s '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+                        text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
                     else:
                         text += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
             text += u'\n\n'
