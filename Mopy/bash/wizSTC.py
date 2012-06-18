@@ -811,13 +811,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         ''' print the doctrings of the fuction for help '''
 
         functionlist = [self.OnToggleComment,self.OnUPPERCASE,self.Onlowercase,self.OnInvertCase,self.OnCapitalCase]
-        message = ''
+        message = u''
         for function in functionlist:
-            message += function.__name__ # ''' bla bla bla docstring '''
-            message += '\n'
-            message += function.__doc__ # ''' bla bla bla docstring '''
-            message += '\n'
-            message += '\n'
+            message += u'%s' % function.__name__ # ''' bla bla bla docstring '''
+            message += u'\n'
+            message += u'%s' % function.__doc__ # ''' bla bla bla docstring '''
+            message += u'\n'
+            message += u'\n'
 
         dialog = wx.lib.dialogs.ScrolledMessageDialog(self, u'%s' %message, u'WizBAIN Editor API Doc Strings', size=(500, 350))
         dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + '..' + os.sep + 'help16.png', wx.BITMAP_TYPE_PNG))
