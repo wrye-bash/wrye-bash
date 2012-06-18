@@ -34,7 +34,7 @@ class BossVersionError(Exception):
     pass
 
 def Init(path):
-    """Called automatically by importing bapi.  Can also be called manaully
+    """Called automatically by importing bapi.  Can also be called manually
        by the user to reload BAPI, pointing to a different path to the dll.
    """
 
