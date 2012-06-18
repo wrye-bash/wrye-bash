@@ -7419,6 +7419,8 @@ class PatchDialog(wx.Dialog):
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
                         if len(changedFiles) > 1:
                             statusBar.SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
+                        bosh.modInfos[patchName].setGhost(False)
+                        bosh.modInfos.refreshInfoLists()
                     except bosh.PluginsFullError:
                         balt.showError(self,
                             _(u'Unable to add mod %s because load list is full.')
