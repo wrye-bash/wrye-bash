@@ -1952,7 +1952,7 @@ NoComTypes:
                 Delete "$Path_OB\Mopy\bash\wizSTCo"
                 Delete "$Path_OB\Mopy\macro\py\*.py"
                 Delete "$Path_OB\Mopy\macro\txt\*.txt"
-                Delete "$Path_OB\Mopy\macro\*.py
+                Delete "$Path_OB\Mopy\macro\*.py"
                 Delete "$Path_OB\Mopy\Docs\Wrye Bash Advanced Readme.html"
                 Delete "$Path_OB\Mopy\Docs\Wrye Bash General Readme.html"
                 Delete "$Path_OB\Mopy\Docs\Wrye Bash Technical Readme.html"
@@ -2164,7 +2164,7 @@ NoComTypes:
                 Delete "$Path_Nehrim\Mopy\bash\wizSTCo"
                 Delete "$Path_Nehrim\Mopy\macro\py\*.py"
                 Delete "$Path_Nehrim\Mopy\macro\txt\*.txt"
-                Delete "$Path_Nehrim\Mopy\macro\*.py
+                Delete "$Path_Nehrim\Mopy\macro\*.py"
                 Delete "$Path_Nehrim\Mopy\Docs\Wrye Bash Advanced Readme.html"
                 Delete "$Path_Nehrim\Mopy\Docs\Wrye Bash General Readme.html"
                 Delete "$Path_Nehrim\Mopy\Docs\Wrye Bash Technical Readme.html"
@@ -2394,7 +2394,7 @@ NoComTypes:
                 Delete "$Path_Skyrim\Mopy\bash\wizSTCo"
                 Delete "$Path_Skyrim\Mopy\macro\py\*.py"
                 Delete "$Path_Skyrim\Mopy\macro\txt\*.txt"
-                Delete "$Path_Skyrim\Mopy\macro\*.py
+                Delete "$Path_Skyrim\Mopy\macro\*.py"
                 Delete "$Path_Skyrim\Mopy\Docs\Wrye Bash Advanced Readme.html"
                 Delete "$Path_Skyrim\Mopy\Docs\Wrye Bash General Readme.html"
                 Delete "$Path_Skyrim\Mopy\Docs\Wrye Bash Technical Readme.html"
@@ -2614,7 +2614,7 @@ NoComTypes:
                 Delete "$Path_Ex1\Mopy\bash\wizSTCo"
                 Delete "$Path_Ex1\Mopy\macro\py\*.py"
                 Delete "$Path_Ex1\Mopy\macro\txt\*.txt"
-                Delete "$Path_Ex1\Mopy\macro\*.py
+                Delete "$Path_Ex1\Mopy\macro\*.py"
                 Delete "$Path_Ex1\Mopy\Docs\Wrye Bash Advanced Readme.html"
                 Delete "$Path_Ex1\Mopy\Docs\Wrye Bash General Readme.html"
                 Delete "$Path_Ex1\Mopy\Docs\Wrye Bash Technical Readme.html"
@@ -2836,7 +2836,7 @@ NoComTypes:
                 Delete "$Path_Ex2\Mopy\bash\wizSTCo"
                 Delete "$Path_Ex2\Mopy\macro\py\*.py"
                 Delete "$Path_Ex2\Mopy\macro\txt\*.txt"
-                Delete "$Path_Ex2\Mopy\macro\*.py
+                Delete "$Path_Ex2\Mopy\macro\*.py"
                 Delete "$Path_Ex2\Mopy\Docs\Wrye Bash Advanced Readme.html"
                 Delete "$Path_Ex2\Mopy\Docs\Wrye Bash General Readme.html"
                 Delete "$Path_Ex2\Mopy\Docs\Wrye Bash Technical Readme.html"
