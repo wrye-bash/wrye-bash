@@ -5043,15 +5043,13 @@ class ModInfos(FileInfos):
     def refresh(self,doAutoGroup=False,doInfos=True):
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
-        oldlist = set(self.data) #CDC should this be pulled from plugins.LoadOrder instead?
         hasChanged = doInfos and FileInfos.refresh(self)
         self.refreshHeaders()
         hasChanged += self.updateBaloHeaders()
         if hasChanged:
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
-        newlist = set(self.data) #CDC
-        hasChanged += self.plugins.refresh(True)  #CDC the refresh needs to run!
+        hasChanged += self.plugins.refresh()
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
