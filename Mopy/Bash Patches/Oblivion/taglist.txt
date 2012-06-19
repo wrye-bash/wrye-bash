@@ -1373,6 +1373,8 @@ Colourwheels Sexy Stock Armor & Clothing Replacer.esp
  TAG: {{BASH: Graphics}}
 Colourwheels Sexy SI Armor & Clothing Replacer.esp
  TAG: {{BASH: Graphics}}
+DMRA BBB Armamentarium Complete.esp
+ TAG: {{BASH:Graphics}}
 TGND2 Armamentarium Replacer.esp
  TAG: {{BASH: Graphics}}
 IFNOT("Colourwheels Sexy Oblivion OverHaul.esp") MOD: DMRA BBB Complete Clothing and Armor Replacer.esp
@@ -2874,8 +2876,16 @@ Cyrodiil Travel Services Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 Fairies.esp
  IF(CE62618B|"Fairies.esp") DIRTY: 62 ITM, 10 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ZOMBIES! - 28 days and a bit V2.esp
+ IF(CFC0E317|"ZOMBIES! - 28 days and a bit V2.esp") DIRTY: 53 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ZOMBIES! - 28 days and a bit V3.esp
+ IF(F8A0A417|"ZOMBIES! - 28 days and a bit V3.esp") DIRTY: 5 ITM, 6 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Zombie Island.esp
+ IF(7534A8F1|"Zombie Island.esp") DIRTY: 6 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 za_bankmod.esp
  IF(831EB9FA|"za_bankmod.esp") DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Oblivion - ZOMBIE.esp
+ IF(13C5E710|"Oblivion - ZOMBIE.esp") DIRTY: 68 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 75barena.esp
  TAG: {{BASH: NpcFaces, Actors.Stats}}
 24HrArenaAliveV2.esp
@@ -3467,6 +3477,8 @@ Colourwheels Sexy Dark brotherhood.esp
  IF(4F223F0E|"Colourwheels Sexy Dark brotherhood.esp") DIRTY: 21 ITM, 8 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Colourwheels Sexy Ayelid Shrine.esp
  IF(68F17734|"Colourwheels Sexy Ayelid Shrine.esp") DIRTY: 28 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ColourWheels Sexy Milk Maid HGEC.esp
+ IF(8947202D|"ColourWheels Sexy Milk Maid HGEC.esp") DIRTY: 0 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 The Ruins of Miscarcand.esp
  IF(9B8C026E|"The Ruins of Miscarcand.esp") DIRTY: 10 ITM, 1910 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 bartholm.esp
@@ -4313,6 +4325,8 @@ DreamWalker.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes}}
 DTC-AR-PluginElaborateEyesFix.esp
  TAG: {{BASH: Eyes}}
+AIRrace Evy.esp
+ TAG: {{BASH: Hair, Eyes}}
 Golden Saint Race.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
 PlayableSheogorathMod.esp
