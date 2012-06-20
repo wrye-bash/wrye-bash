@@ -68,6 +68,7 @@ import textwrap
 import time
 import subprocess
 import locale
+import win32gui
 import multiprocessing
 from types import *
 from operator import attrgetter,itemgetter
@@ -18745,7 +18746,11 @@ def InitStatusBar():
             if icon == u'':
                 if target.cext == u'.exe':
                     # Use the icon embedded in the exe
-                    icon = target
+                    try:
+                        win32gui.ExtractIcon(0, target.s, 0)
+                        icon = target
+                    except Exception as e:
+                        icon = u'' # Icon will be set to a red x further down.
                 else:
                     # Use the default icon for that file type
                     try:
