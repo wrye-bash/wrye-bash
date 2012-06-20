@@ -3969,7 +3969,7 @@ class Plugins:
             self.sizePlugins != self.pathPlugins.size):
             return True
         if boss.LoadOrderMethod != bapi.BOSS_API_LOMETHOD_TEXTFILE:
-            return False
+            return True  # Until we find a better way, Oblivion always needs True
         return self.pathOrder.exists() and (
                 self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
