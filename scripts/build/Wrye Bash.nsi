@@ -286,14 +286,14 @@
             Pop $Label
             IntOp $0 0 + 25
         ${If} $Path_OB != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Oblivion"
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Oblivion"
                 Pop $Check_OB
                 ${NSD_SetState} $Check_OB $CheckState_OB
-            ${NSD_CreateRadioButton} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_OB_Exe
                 ${NSD_AddStyle} $Check_OB_Exe ${WS_GROUP}
                 ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
-            ${NSD_CreateRadioButton} 70% $0u 30% 13u "Wrye Bash [Python]"
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_OB_Py
                 ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
             IntOp $0 $0 + 13
@@ -305,14 +305,14 @@
             IntOp $0 $0 + 13
         ${EndIf}
         ${If} $Path_Nehrim != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Nehrim"
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Nehrim"
                 Pop $Check_Nehrim
                 ${NSD_SetState} $Check_Nehrim $CheckState_Nehrim
-            ${NSD_CreateRadioButton} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_Nehrim_Exe
                 ${NSD_AddStyle} $Check_Nehrim_Exe ${WS_GROUP}
                 ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
-            ${NSD_CreateRadioButton} 70% $0u 30% 13u "Wrye Bash [Python]"
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_Nehrim_Py
                 ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
             IntOp $0 $0 + 13
@@ -324,14 +324,14 @@
             IntOp $0 $0 + 13
         ${EndIf}
         ${If} $Path_Skyrim != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Skyrim"
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Skyrim"
                 Pop $Check_Skyrim
                 ${NSD_SetState} $Check_Skyrim $CheckState_Skyrim
-            ${NSD_CreateRadioButton} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                 Pop $Check_Skyrim_Exe
                 ${NSD_AddStyle} $Check_Skyrim_Exe ${WS_GROUP}
                 ${NSD_SetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
-            ${NSD_CreateRadioButton} 70% $0u 30% 13u "Wrye Bash [Python]"
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_Skyrim_Py
                 ${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
             IntOp $0 $0 + 13
@@ -350,11 +350,11 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #1:"
                 Pop $Check_Ex1
                 ${NSD_SetState} $Check_Ex1 $CheckState_Ex1
-                ${NSD_CreateRadioButton} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex1_Exe
                     ${NSD_AddStyle} $Check_Ex1_Exe ${WS_GROUP}
                     ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
-                ${NSD_CreateRadioButton} 70% $0u 30% 13u "Wrye Bash [Python]"
+                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex1_Py
                     ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
                 IntOp $0 $0 + 13
@@ -367,11 +367,11 @@
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Extra Location #2:"
                 Pop $Check_Ex2
                 ${NSD_SetState} $Check_Ex2 $CheckState_Ex2
-                ${NSD_CreateRadioButton} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+                ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
                     Pop $Check_Ex2_Exe
                     ${NSD_AddStyle} $Check_Ex2_Exe ${WS_GROUP}
                     ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
-                ${NSD_CreateRadioButton} 70% $0u 30% 13u "Wrye Bash [Python]"
+                ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex2_Py
                     ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
                 IntOp $0 $0 + 13
@@ -955,6 +955,9 @@ NoComTypes:
                 RMDir  "$Path_OB\Mopy\Extras"
                 RMDir  "$Path_OB\Mopy\Data\Actor Levels"
                 RMDir  "$Path_OB\Mopy\Data"
+                ;As of 297 the below are obselete locations or files.
+                Delete "$Path_OB\Mopy\Wrye Bash.txt"
+                Delete "$Path_OB\Mopy\Wrye Bash.html"
             ${EndIf}
             ${If} $Path_Nehrim != $Empty
                 Delete "$Path_Nehrim\Mopy\Data\Actor Levels\*"
@@ -1036,6 +1039,9 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\Extras"
                 RMDir  "$Path_Nehrim\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Nehrim\Mopy\Data"
+                ;As of 297 the below are obselete locations or files.
+                Delete "$Path_Nehrim\Mopy\Wrye Bash.txt"
+                Delete "$Path_Nehrim\Mopy\Wrye Bash.html"
             ${EndIf}
             ${If} $Path_Skyrim != $Empty
                 Delete "$Path_Skyrim\Mopy\Data\Actor Levels\*"
@@ -1118,6 +1124,9 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\Extras"
                 RMDir  "$Path_Skyrim\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Skyrim\Mopy\Data"
+                ;As of 297 the below are obselete locations or files.
+                Delete "$Path_Skyrim\Mopy\Wrye Bash.txt"
+                Delete "$Path_Skyrim\Mopy\Wrye Bash.html"
             ${EndIf}
             ${If} $Path_Ex1 != $Empty
                 Delete "$Path_Ex1\Mopy\Data\Actor Levels\*"
@@ -1199,6 +1208,9 @@ NoComTypes:
                 RMDir  "$Path_Ex1\Mopy\Extras"
                 RMDir  "$Path_Ex1\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Ex1\Mopy\Data"
+                ;As of 297 the below are obselete locations or files.
+                Delete "$Path_Ex1\Mopy\Wrye Bash.txt"
+                Delete "$Path_Ex1\Mopy\Wrye Bash.html"
             ${EndIf}
             ${If} $Path_Ex2 != $Empty
                 Delete "$Path_Ex2\Mopy\Data\Actor Levels\*"
@@ -1282,6 +1294,9 @@ NoComTypes:
                 RMDir  "$Path_Ex2\Mopy\Extras"
                 RMDir  "$Path_Ex2\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Ex2\Mopy\Data"
+                ;As of 297 the below are obselete locations or files.
+                Delete "$Path_Ex2\Mopy\Wrye Bash.txt"
+                Delete "$Path_Ex2\Mopy\Wrye Bash.html"
             ${EndIf}
         ${EndIf}
     FunctionEnd
