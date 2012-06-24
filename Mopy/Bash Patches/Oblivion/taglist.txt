@@ -742,7 +742,7 @@ SkinMannequinVan.esp
 SkinMannequinVan-nosleep.esp
  IF(65249775|"SkinMannequinVan-nosleep.esp") DIRTY: 10 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Skyrim Ingredients.esp
- TAG: {{BASH: Invent}}
+ TAG: {{BASH: Invent, Relev}}
 SPARTAN VIs Diverse City Guards v1 2.esp
  TAG: {{BASH: Invent}}
 Guard Torches.esp
@@ -3163,6 +3163,8 @@ ElsweyrAnequina Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 ElsweyrAnequina v2 Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
+ElsweyrCityExtension.esp
+ IF(49534F53|"ElsweyrCityExtension.esp") DIRTY: 1 ITM, 19 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Reaper's Esmeralda's Desert Manor.esp
  IF(DB57B73|"Reaper's Esmeralda's Desert Manor.esp") DIRTY: 48 ITM, 32 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 ElsweyrAnequinaNoSpiders.esp
@@ -3690,6 +3692,7 @@ GoldItems_1C.esp
  TAG: {{BASH: Stats}}
 Golden Perch Inn.esp
  IF(444F0E35|"Golden Perch Inn.esp") DIRTY: 25 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IF(4F0086B1|"Golden Perch Inn.esp") DIRTY: 37 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide". Also makes wild edits to merchant greetings, water height levels and a vanilla script.
 Golden Perch Inn - AN Patch.esp
  TAG: {{BASH: C.Climate}}
 gq Chapel Altars become Wayshrines.esp
@@ -3736,6 +3739,8 @@ MIEO-ae.esp
  TAG: {{BASH: Stats}}
 NameReplacer-Clothing.esp
  TAG: {{BASH: Names}} - deactivate.
+Nephs Unique Thievery.esp
+ TAG: {{BASH: Invent}}
 newsheogorath.esp
  TAG: {{BASH: NpcFaces}}
 NirnrootPlants.esp

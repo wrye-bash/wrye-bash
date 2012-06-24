@@ -100,7 +100,7 @@ armorkits.esp
  TAG: {{BASH: Relev}}
 REGEX: Cloaks( - No Imperial| - Player Only)?\.esp
  TAG: {{BASH: Relev}}
-REGEX: Lorecraft - Cloaks09( No Imperial| PlayerOnly)?\.esp
+REGEX: Lorecraft - Cloaks(\d{1,3})( No Imperial| PlayerOnly)?\.esp
  TAG: {{BASH: Relev}}
 REGEX: Lorecraft - Cloaks( No Imperial| Player Only)?\.esp
  TAG: {{BASH: Relev}}
