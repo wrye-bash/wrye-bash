@@ -1,25 +1,67 @@
+# -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#
+# =============================================================================
+
+"""This module provides the majority of StyledTextCtrl(stc) stuff for the
+Comments/WizBAIN Editor located in the Bash Installers(BAIN) Tab.
+
+The module contains various functions for manipulating text such as many text
+editors do. Most of the functions are aimed specifically toward the custom
+wizard script language that was developed initially by LoJack for the
+purpose of making mod installations easy.
+
+This code originally was developed as a completely seperate application
+(TES4WizBAIN (C) 2011, 2012) and is ported(WIPz)/authored mainly by Metallicow.
+
+Time Line
+1st Era - Wrye Developed BAIN
+2nd Era - LoJack Developed The Wizard Scripting Language
+3rd Era - Metallicow Developed The WizBAIN Editor
+"""
+
 # Imports ---------------------------------------------------------------------
 #--Localization
 #..Handled by bosh, so import that.
 import bosh
 import basher
+import keywordWIZBAIN  # Keywords for BAIN Wizard stc
+import keywordWIZBAIN2 # Keywords2 for BAIN Wizard stc
 
 #--Python
 import os
 import re
 import imp #stc python macros
+import random
+from collections import OrderedDict
 
 #--wxPython
 import wx
 import wx.stc as stc
-import keywordWIZBAIN  # Keywords for BAIN Wizard stc
-import keywordWIZBAIN2 # Keywords2 for BAIN Wizard stc
-from wx.lib.gestures import MouseGestures
+import wx.lib.platebtn as platebtn
 import wx.lib.dialogs
+from wx.lib.gestures import MouseGestures
 
-#--User
+#--User Macros(located outside of the bash dir)
 from macro.py import *
-
 
 # Font Stuff - defaults, etc
 if wx.Platform == '__WXMSW__':
@@ -43,7 +85,7 @@ elif wx.Platform == '__WXMAC__':
             'size2': 8,
             }
 else:
-    # For Whatever else OS
+    # For Whatever else OS. Changed per myk reqz
     faces = {
             'times': 'serif',       # 'times': 'Times',
             'mono' : 'monospace',   # 'mono' : 'Courier',
@@ -52,6 +94,150 @@ else:
             'size' : 10,
             'size2': 8,
              }
+
+#--IDs
+# When working with code, often the programmer uses numbers for ids.
+# Typically this is fine if you have a small application, but as an
+# application grows bigger and more badass it becomes a hassle to track
+# down all these numbers, especially if there are multiple spots in the
+# code using/calling these numbers for whatever reason.
+# By defining all the IDs in one spot, this makes it easy to see where
+# both the menu items ids and bindings are. This also helps keep the programmer
+# from accidentily using the same ID twice, which if is the case, of course
+# some poor user might report a BUG causing bugfixing duties on your part.
+# Plus ID_SOMEWRYEBASHID is more readable and understandable than 18746 is for example.
+# Also for whatever reasons, numbers here can be changed easily for orginization or
+# other debugging purposes because a defined number is easier to track down than
+# a randomly generated wx.NewId() which could potentially change every instance the app is run.
+
+    # typicalexample = wx.MenuItem(rightclickmenu, 1234, u'&What the Heck is 1234', u' Can become apaininthearse')
+    # menu.AppendItem(typicalexample)
+
+    # ID_COOLFUNC = 1234
+    # goodexample = wx.MenuItem(rightclickmenu, ID_COOLFUNC, u'&Do something cool!', u' ID_COOLFUNC... ummm. Oh yeah, now I remember what this does! :)')
+    # menu.AppendItem(goodexample)
+
+# TES4WizBAIN actually has a wx.menubar unlike Wrye Bash.
+# Anywho here are my learned findings on the matter as a basic reference here also.
+#-----------------------------------------
+# Max ID number seems to be 65535 on wx2.8
+# Max ID number seems to be 32766 on wx2.9.3.1 #seems to be cut in half
+# 16-24 size icons for menuitems is fine. Anything larger will require hacking, espcially with radio/check and wx2.9
+# ####x16 size icon for menuitem titlebar screws with the width of all menus. Again resort to hacking here. Worse to fix.
+#-----------------------------------------
+
+# ID_TEST = 0909
+
+ID_RMGM1 = 3001
+ID_RMGM2 = 3002
+ID_RMGM3 = 3003
+ID_RMGM4 = 3004
+ID_RMGM5 = 3005
+ID_RMGM6 = 3006
+ID_RMGM7 = 3007
+ID_RMGM8 = 3008
+ID_RMGM9 = 3009
+
+ID_RMGM2DRAG = 3012
+
+ID_UNDO =      2001
+ID_REDO =      2002
+ID_CUT =       2004
+ID_COPY =      2005
+ID_PASTE =     2006
+ID_DELETE =    2007
+ID_SELECTALL = 2010
+
+ID_COMMENT =            4006
+ID_REMTRAILWHITESPACE = 4013
+
+ID_SAVEASPROJECTWIZARD = 1001
+ID_HELPGENERAL =         1901
+ID_HELPAPIDOCSTR =       1902
+
+ID_SORT =                1097
+ID_FINDSELECTEDFORE =    1099
+
+ID_REQVEROB =           2001
+ID_REQVERSK =           2002
+ID_SELECTONE =          2003
+ID_SELECTMANY =         2004
+ID_OPTIONS =            2005
+ID_ENDSELECT =          2006
+ID_CASE =               2007
+ID_BREAK =              2008
+ID_SELECTALLKW =        2009
+ID_DESELECTALL =        2010
+ID_SELECTSUBPACKAGE =   2011
+ID_DESELECTSUBPACKAGE = 2012
+ID_SELECTESPM =         2013
+ID_DESELECTESPM =       2014
+ID_SELECTALLESPMS =     2015
+ID_DESELECTALLESPMS =   2016
+ID_RENAMEESPM =         2017
+ID_RESETESPMNAME =      2018
+ID_RESETALLESPMNAMES =  2019
+ID_DEFAULTCHAR =        2020
+ID_WIZARDIMAGES =       2090
+ID_SCREENSHOTS =        2091
+ID_LISTSUBPACKAGES =    2101
+ID_LISTESPMS =          2102
+ID_THUMBNAILER =        2191
+
+ID_CALLTIP =      3097
+ID_WORDCOMPLETE = 3098
+ID_AUTOCOMPLETE = 3099
+
+ID_UPPERCASE =   4001
+ID_LOWERCASE =   4002
+ID_INVERTCASE =  4003
+ID_CAPITALCASE = 4004
+
+ID_TXT2WIZFILE = 3101
+ID_TXT2WIZTEXT = 3102
+
+ID_NEWLINEBEFORE =          2101
+ID_NEWLINEAFTER =           2102
+ID_CUTLINE =                2103
+ID_COPYLINE =               2104
+ID_DELETELINE =             2105
+ID_DELETELINECONTENTS =     2106
+ID_SELECTLINENOEOL =        2107
+ID_DUPLICATELINE =          2108
+ID_DUPLICATESELECTIONLINE = 2109
+ID_DUPLICATELINENTIMES =    2110
+ID_JOINLINES =              2111
+ID_SPLITLINES =             2112
+ID_LINETRANSPOSE =          2113
+ID_MOVELINEUP =             2114
+ID_MOVELINEDOWN =           2115
+ID_APPENDLINESSTR =         2116
+ID_REMOVESTRENDLINES =      2117
+ID_REMOVESTRSTARTLINES =    2118
+ID_PADWITHSPACES =          2120
+
+ID_TOGGLEWHITESPACE =    9001
+ID_TOGGLEINDENTGUIDES =  9002
+ID_TOGGLEWORDWRAP =      9003
+ID_TOGGLELINEHIGHLIGHT = 9004
+ID_TOGGLEEOLVIEW =       9005
+
+ID_THEMENONE =            9901
+ID_THEMEDEFAULT =         9902
+ID_THEMECONSOLE =         9903
+ID_THEMEOBSIDIAN =        9904
+ID_THEMEZENBURN =         9905
+ID_THEMEMONOKAI =         9906
+ID_THEMEDEEPSPACE =       9907
+ID_THEMEGREENSIDEUP =     9908
+ID_THEMETWILIGHT =        9909
+ID_THEMEULIPAD =          9910
+ID_THEMEHELLOKITTY =      9911
+ID_THEMEVIBRANTINK =      9912
+ID_THEMEBIRDSOFPARIDISE = 9913
+ID_THEMEBLACKLIGHT =      9914
+ID_THEMENOTEBOOK =        9915
+ID_TOGGLETHEMES =         9930
 
 class TextDropTargetForTextToWizardString(wx.TextDropTarget):
     ''' This object implements Drop Target functionality for Text '''
@@ -213,10 +399,10 @@ class TextToWizardStringSTC(stc.StyledTextCtrl):
         self.Bind(stc.EVT_STC_DRAG_OVER, self.OnDragOver)
 
     def OnDragOver(self, event):
-        event.SetDragResult(wx.DragNone)   # prevent dropping at the beginning of the buffer
+        event.SetDragResult(wx.DragNone)# Prevent dropping at the beginning of the buffer.
 
     def OnDoDrop(self, event):
-        event.SetDragText(event.GetDragText())  # Can change text if needed
+        event.SetDragText(event.GetDragText())# Can change text if needed.
 
 
 class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
@@ -226,47 +412,127 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         global gWizSTC
         gWizSTC = self
 
-        mopyDir = os.getcwd()
-        self.imgDir = mopyDir + os.sep + 'bash' + os.sep + 'images'
-        self.imgstcDir = mopyDir + os.sep + 'bash' + os.sep + 'images' + os.sep + 'stc'
-        # print self.imgDir
-        # print self.imgstcDir
-
+        #--- Global STC Settings To Save ---#
         global gGlobalsDict
-
-        from collections import OrderedDict
         gGlobalsDict = OrderedDict([
             ('LoadSTCLexer' , 'wizbainlexer'),
-            ('ThemeOnStartup' , 'Default'),
+            ('ThemeOnStartup' , 'No Theme'),
             ('FolderMarginStyle', 1),
             ('ShowLineNumbersMargin', 1),
             ('AutoAdjustLineMargin', 1),
+            ('CaretSpeed' , 0),
+            ('CaretPixelWidth' , 2),
+            ('CaretForegroundColor' , '#0000FF'),
             ('CaretLineBackgroundAlpha', 100),
             ('WordWrap', 0),
             ('TabsOrSpaces', 0),
             ('IndentSize', 4),
-            ('BraceCompletion', 0),
+            ('TabWidth', 4),
+            ('IndentationGuides' , 1),
+            ('ViewWhiteSpace' , 1),
+            ('TabIndents' , 1),
+            ('BackSpaceUnIndents' , 0),
+            ('BraceCompletion' , 0),
+            ('AutoIndentation' , 0),
+            ('ReadOnly' , 0),
+            ('UseAntiAliasing' , 1),
+            ('UseBufferedDraw' , 1),
+            ('OvertypeOnOff' , 0),
+            ('ViewEOL' , 0),
+            ('LongLineEdge' , 80),
+            ('LineEdgeModeAsColumnMarker' , 0),
+            ('VertEditMode' , 0),
+            ('ScrollingPastLastLine' , 1),
+            ('SetLeftRightBlankMargins' , 0),
+            ('MouseGestureWobbleTolerance' , 500), #Hmmm need to figure out how this affects usage as in low/high number
+            ('UserCustomFontFace' , 'Magic Cards'),
+            ('ModdersHandle' , 'Metallicow'),
             ])
 
+        #--- Only One Instance Open ---#
+        self.OneInstanceThumbnailer = 0
+        self.dragmenu2 = 0
+
+        #--- Images & Menu/ID Generation ---#
+        self.imgDir = u'%s' %bosh.dirs['images']
+        self.imgstcDir = u'%s' %bosh.dirs['images'].join('stc')
+        p = wx.BITMAP_TYPE_PNG
+        self.mgmImg = wx.Image(self.imgstcDir + os.sep + u'mousegesturemenu16.png',p).ConvertToBitmap()
+        self.rmbImg = wx.Image(self.imgstcDir + os.sep + u'mousebuttonright16.png',p).ConvertToBitmap()
+        self.mmbImg = wx.Image(self.imgstcDir + os.sep + u'mousebuttonmiddle16.png',p).ConvertToBitmap()
+        self.yahImg = wx.Image(self.imgstcDir + os.sep + u'youarehere16.png',p).ConvertToBitmap()
+        self.chkImg = wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap()
+
+        self.rmgmIDs = [ID_RMGM1,ID_RMGM2,ID_RMGM3,ID_RMGM4,ID_RMGM5,ID_RMGM6,ID_RMGM7,ID_RMGM8,ID_RMGM9]
+        self.rmgmLABELs = [u'',u'Wizard',u'',u'Case',u'Right Clicky!',u'Conversion',u'',u'Line Operations',u'Options',]
+
+        #--- Lexers & Keywords ---#
         self.SetLexer(stc.STC_LEX_PYTHON)
 
         self.SetKeyWords(0, u' '.join(keywordWIZBAIN.kwlist))
         self.SetKeyWords(1, u' '.join(keywordWIZBAIN2.kwlist))
 
-        self.SetEOLMode(stc.STC_EOL_LF)#UNIX
+        #--- Misc or Todo(maybe) ---#
+        self.SetEOLMode(stc.STC_EOL_LF) # UNIX
+        self.SetBufferedDraw(gGlobalsDict['UseBufferedDraw']) # If drawing is buffered then each line of text is drawn into a bitmap buffer before drawing it to the screen to avoid flicker.
+        self.SetOvertype(gGlobalsDict['OvertypeOnOff']) # Set to overtype (true) or insert mode.
 
-        self.SetCaretLineVisible(True)
-        self.SetCaretLineBackground('#D7DEEB')
-        self.SetUseTabs(0)
-        # self.SetTabIndents(4)
-        self.SetTabWidth(4)
-        self.SetViewWhiteSpace(1) # Set to 0,1,or 2
+        # #Todo# self.CmdKeyAssign(ord('C'), stc.STC_SCMOD_CTRL, stc.STC_CMD_UNDO) # Set a acellerator key to do something (Ctrl+Key)
+
+        #--- Caret Options ---#
+        self.SetCaretPeriod(gGlobalsDict['CaretSpeed'])                      # Set the time in milliseconds that the caret is on and off. 0 = steady on.
+        self.SetCaretForeground(gGlobalsDict['CaretForegroundColor'])        # The color of the caret ; 'blue' or '#0000FF'
+        self.SetCaretLineVisible(True)                                       # Default color should... be the same as the background unless SetCaretLineBackground is called to change its color. # Display the background of the line containing the caret in a different colour.
+        self.SetCaretLineBackground('#D7DEEB')                               # Set the color of the background of the line containing the caret.(Currently selected line)
+        ## self.SetCaretLineBackAlpha(gGlobalsDict['CaretLineBackgroundAlpha']) # Set background alpha of the caret line. 0-255
+        self.SetCaretWidth(gGlobalsDict['CaretPixelWidth'])                  # Set the width of the insert mode caret. 0 - 3 seems to be the max
+        self.EnsureCaretVisible()                                            # Ensure the caret is visible.
+
+        #--- Whitespace, Indentation, TAB, Properties, Indicator stuff ---#
+        self.SetViewWhiteSpace(gGlobalsDict['ViewWhiteSpace'])         # Set to 0,1,or 2
+
+        self.SetIndent(gGlobalsDict['IndentSize'])                     # Proscribed indent size for wx
+        self.SetIndentationGuides(gGlobalsDict['IndentationGuides'])   # To help beginners, show indent guides
+
+        self.SetTabIndents(gGlobalsDict['TabIndents'])                 # Tab key indents. Sets whether a tab pressed when caret is within indentation indents.
+        self.SetBackSpaceUnIndents(gGlobalsDict['BackSpaceUnIndents']) # Backspace unindents rather than delete 1 space. Sets whether a backspace pressed when caret is within indentation unindents.
+        self.SetTabWidth(gGlobalsDict['TabWidth'])                     # Prescribed tab size for wx
+        self.SetUseTabs(gGlobalsDict['TabsOrSpaces'])                  # Use spaces rather than tabs, or TabTimmy will complain!
 
         self.SetProperty('fold', '1')
         self.SetProperty('tab.timmy.whinge.level', '1')
         self.SetProperty('fold.quotes.python', '1')
         self.SetProperty('fold.comment.python', '1')
 
+        self.IndicatorSetStyle(1,1)
+        self.IndicatorSetForeground(1,'#FF0000')
+
+        #--- Setup a margin to hold bookmarks ---#
+        self.SetMarginType(1, stc.STC_MARGIN_SYMBOL)
+        self.SetMarginSensitive(1, True)
+        self.SetMarginWidth(1, 16)
+
+        #--- Define the bookmark images ---#
+        self.MarkerDefineBitmap(0, wx.Image(self.imgstcDir + os.sep + 'caretlinebm16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
+
+        #--- Setup a margin to hold line numbers ---#
+        self.SetMarginType(2, stc.STC_MARGIN_NUMBER)
+        self.SetMarginWidth(2, 40)  #5 digits using a small mono font (40 pixels). Good up to 9999
+
+        #--- Setup a margin to hold fold markers ---#
+        ## self.SetFoldFlags(16)  ###  WHAT IS THIS VALUE?  WHAT ARE THE OTHER FLAGS?  DOES IT MATTER?
+        self.SetMarginType(3, stc.STC_MARGIN_SYMBOL)
+        self.SetMarginMask(3, stc.STC_MASK_FOLDERS)
+        self.SetMarginSensitive(3, True)
+        self.SetMarginWidth(3, 16)
+
+        #--- Wordwrap ---#
+        self.SetWrapMode(gGlobalsDict['WordWrap'])
+        self.SetWrapVisualFlags(1) #0 = off. 1 = wraparrow at right. 2 = wraparrow at left. 3 = wraparrow at left and right.
+        self.SetWrapVisualFlagsLocation(stc.STC_WRAPVISUALFLAGLOC_DEFAULT) #Set the location of visual flags for wrapped lines. 0&2 = far right. 1&3 = EOL char at where the wrap starts on the right.
+
+        #--- Set Global Styles ---#
         self.StyleClearAll()
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFFFFF,face:%(mono)s,size:%(size)d' % faces)
@@ -276,32 +542,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  'fore:#FF0000,back:#0000FF,bold')
         self.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    'fore:#000000,back:#FF0000,bold')
 
-        #Setup a margin to hold bookmarks
-        self.SetMarginType(1, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginSensitive(1, True)
-        self.SetMarginWidth(1, 16)
-
-        # Define the bookmark images
-        self.MarkerDefineBitmap(0, wx.Image(self.imgstcDir + os.sep + 'caretlinebm16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-
-        # Setup a margin to hold line numbers
-        self.SetMarginType(2, stc.STC_MARGIN_NUMBER)
-        self.SetMarginWidth(2, 40)  #5 digits using a small mono font (40 pixels). Good up to 9999
-
-        # Setup a margin to hold fold markers
-        ## self.SetFoldFlags(16)  ###  WHAT IS THIS VALUE?  WHAT ARE THE OTHER FLAGS?  DOES IT MATTER?
-        self.SetMarginType(3, stc.STC_MARGIN_SYMBOL)
-        self.SetMarginMask(3, stc.STC_MASK_FOLDERS)
-        self.SetMarginSensitive(3, True)
-        self.SetMarginWidth(3, 16)
-
-        self.SetWrapMode(gGlobalsDict['WordWrap'])
-        self.SetWrapVisualFlags(1) #0 = off. 1 = wraparrow at right. 2 = wraparrow at left. 3 = wraparrow at left and right.
-        #Set the location of visual flags for wrapped lines. 0&2 = far right. 1&3 = EOL char at where the wrap starts on the right.
-        self.SetWrapVisualFlagsLocation(stc.STC_WRAPVISUALFLAGLOC_DEFAULT)
-
-        # Set Python Styles
+        #--- Set Python Styles ---#
         # default
         self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#000000,back:#FFFFFF,face:%(mono)s,size:%(size)d' % faces)
         # comments
@@ -333,12 +574,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # end of line where string is not closed
         self.StyleSetSpec(stc.STC_P_STRINGEOL,      'fore:#000000,back:#E0C0E0,face:%(mono)s,eol,size:%(size)d' % faces)
 
+        #--- Bind Events ---#
         self.Bind(stc.EVT_STC_MARGINCLICK,      self.OnMarginClick)
         self.Bind(wx.EVT_CONTEXT_MENU,          self.OnContextMenu)
         self.Bind(stc.EVT_STC_UPDATEUI,         self.OnUpdateUI)
         self.Bind(wx.EVT_KEY_DOWN,              self.OnKeyDown)
 
-        # Brace Completion stuff
+        #--- Brace Completion stuff ---#
         self.brace_dict={40:')',
                          91:']',
                          123:'}',
@@ -347,9 +589,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Bind(wx.stc.EVT_STC_CHARADDED, self.OnCharAdded) # When a character is added to the stc
 
-        # AutoComplete Images
+        #--- Register AutoComplete Images ---#
         self.RegisterImage(5, wx.Image(self.imgstcDir + os.sep + 'wizardhat16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
 
+        #--- Mouse Gestures ---#
         ''' Mouse Gestures...Visualize your numpad and start drawing from 5 to an outside number. 9 possible events
         # [7][8][9]
         # [4][5][6]
@@ -360,28 +603,28 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.rmousegesture.AddGesture('R', self.OnRMouseGestureMenu6, 'You moved right')
         self.rmousegesture.AddGesture('U', self.OnRMouseGestureMenu8, 'You moved up')
         self.rmousegesture.AddGesture('D', self.OnRMouseGestureMenu2, 'You moved down')
-        # the diag gestures
+        # The diag gestures
         self.rmousegesture.AddGesture('1', self.OnRMouseGestureMenu1, 'You moved left/down  diag1')
         self.rmousegesture.AddGesture('3', self.OnRMouseGestureMenu3, 'You moved right/down diag3')
         self.rmousegesture.AddGesture('7', self.OnRMouseGestureMenu7, 'You moved left/up    diag7')
         self.rmousegesture.AddGesture('9', self.OnRMouseGestureMenu9, 'You moved right/up   diag9')
-        self.rmousegesture.AddGesture('' , self.OnRMouseGestureMenuNone, 'Reg Context Menu')
+        self.rmousegesture.AddGesture('' , self.OnRMouseGestureMenuNone, 'Context Key/Right Mouse Context Menu')
 
         self.rmousegesture.SetGesturesVisible(True)
         self.rmousegesture.SetGesturePen(wx.Colour(230, 230, 76), 5)#(color, linepixelwidth)
+        self.rmousegesture.SetWobbleTolerance(gGlobalsDict['MouseGestureWobbleTolerance'])
 
         # mmouse
         self.mmousegesture = MouseGestures(self, Auto=True, MouseButton=wx.MOUSE_BTN_MIDDLE)
         self.mmousegesture.AddGesture('' , self.OnMMouseGestureMenuNone, 'Middle Mouse Context Menu')
         self.mmousegesture.SetGesturesVisible(True)
         self.mmousegesture.SetGesturePen(wx.Colour(255, 156, 0), 5)#Orange
+        self.mmousegesture.SetWobbleTolerance(gGlobalsDict['MouseGestureWobbleTolerance'])
 
-
+        #--- Rectangular Selection ---#
         self.rect_selection_clipboard_flag = False #Set to false initially so that if upon open user tries to paste, it won't throw an error.
 
-        self.IndicatorSetStyle(1,1)
-        self.IndicatorSetForeground(1,'#FF0000')
-
+        #--- Set Theme ---#
         self.OnSetTheme(self)
 
         self.OnFolderMarginStyle4(self, '#FFFFFF', '#000000')#Hmmmm This is having problems changing correctly on startup again...
@@ -393,6 +636,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelection(p,p)
 
     def OnKeyDown(self, event):
+        ''' Event occurs when a key is pressed down. '''
         key = event.GetKeyCode()
         # print (key)
         event.Skip()#Removing this line will cause the keyboard to NOT function properly!
@@ -407,29 +651,35 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             else:#Ctrl+Space
                 self.OnShowAutoCompleteBox(event)
 
-        if   event.ControlDown() and key == 48 or key ==324:#Ctrl+0 or NUMPad0
+        if   event.ControlDown() and key == 48 or key == 324:#Ctrl+0 or NUMPad0
             self.OnMMouseGestureMenuNone(event)
-        elif event.ControlDown() and key == 49 or key ==325:#Ctrl+1 or NUMPad1
+        elif event.ControlDown() and key == 49 or key == 325:#Ctrl+1 or NUMPad1
             self.OnRMouseGestureMenu1(event)
-        elif event.ControlDown() and key == 50 or key ==326:#Ctrl+2 or NUMPad2
+        elif event.ControlDown() and key == 50 or key == 326:#Ctrl+2 or NUMPad2
             self.OnRMouseGestureMenu2(event)
-        elif event.ControlDown() and key == 51 or key ==327:#Ctrl+3 or NUMPad3
+        elif event.ControlDown() and key == 51 or key == 327:#Ctrl+3 or NUMPad3
             self.OnRMouseGestureMenu3(event)
-        elif event.ControlDown() and key == 52 or key ==328:#Ctrl+4 or NUMPad4
+        elif event.ControlDown() and key == 52 or key == 328:#Ctrl+4 or NUMPad4
             self.OnRMouseGestureMenu4(event)
-        elif event.ControlDown() and key == 53 or key ==329:#Ctrl+5 or NUMPad5
+        elif event.ControlDown() and key == 53 or key == 329:#Ctrl+5 or NUMPad5
             self.OnRMouseGestureMenuNone(event)
-        elif event.ControlDown() and key == 54 or key ==330:#Ctrl+6 or NUMPad6
+        elif event.ControlDown() and key == 54 or key == 330:#Ctrl+6 or NUMPad6
             self.OnRMouseGestureMenu6(event)
-        elif event.ControlDown() and key == 55 or key ==331:#Ctrl+7 or NUMPad7
+        elif event.ControlDown() and key == 55 or key == 331:#Ctrl+7 or NUMPad7
             self.OnRMouseGestureMenu7(event)
-        elif event.ControlDown() and key == 56 or key ==332:#Ctrl+8 or NUMPad8
+        elif event.ControlDown() and key == 56 or key == 332:#Ctrl+8 or NUMPad8
             self.OnRMouseGestureMenu8(event)
-        elif event.ControlDown() and key == 57 or key ==333:#Ctrl+9 or NUMPad9
+        elif event.ControlDown() and key == 57 or key == 333:#Ctrl+9 or NUMPad9
             self.OnRMouseGestureMenu9(event)
+
+        if event.ControlDown() and key == 67:#Ctrl+C
+            self.OnCopy(event)
 
         if event.ControlDown() and key == 81:#Ctrl+Q
             self.OnToggleComment(event)
+
+        if event.ControlDown() and key == 86:#Ctrl+V
+            self.OnPaste(event)
 
         if event.ControlDown() and key == 87:#Ctrl+W
             self.OnShowWordCompleteBox(event)
@@ -446,25 +696,23 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if key == 351:#F12
             self.OnToggleEditorThemes(event)
 
-        ''' Auto-Adjust linenumber margin width'''
+        #--- Auto-Adjust linenumber margin width ---#
         if gGlobalsDict['ShowLineNumbersMargin'] == 1:
             if gGlobalsDict['AutoAdjustLineMargin'] == 1:
                 totallines = self.GetLineCount()
                 if totallines < 99:
-                    self.SetMarginWidth(2, 22)  #3 digits using a small mono font (22 pixels). Good up to 99
+                    self.SetMarginWidth(2, 22) #3 digits using a small mono font (22 pixels). Good up to 99
                 elif totallines < 999:
-                    self.SetMarginWidth(2, 30)  #4 digits using a small mono font (30 pixels). Good up to 999
+                    self.SetMarginWidth(2, 30) #4 digits using a small mono font (30 pixels). Good up to 999
                 elif totallines < 9999:
-                    self.SetMarginWidth(2, 40)  #5 digits using a small mono font (40 pixels). Good up to 9999
-
-
+                    self.SetMarginWidth(2, 40) #5 digits using a small mono font (40 pixels). Good up to 9999
 
     def OnUpdateUI(self, event):
         ''' If the text, the styling, or the selection has been changed, This is bound by stc.EVT_STC_UPDATEUI above.
             Used to update any GUI elements that should change as a result. Also for other tasks that can be performed using background processing. '''
 
-        '''Responsible for the bad brace check feature.'''
-        # check for matching braces
+        ''' Responsible for the bad brace check feature. '''
+        #--- Check for matching braces ---#
         braceatcaret = -1
         braceopposite = -1
         charbefore = None
@@ -472,11 +720,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if caretpos > 0:
             charbefore = self.GetCharAt(caretpos - 1)
             styleBefore = self.GetStyleAt(caretpos - 1)
-        # check before
+        # Check before
         if charbefore and chr(charbefore) in '[]{}()'\
                 and styleBefore == stc.STC_P_OPERATOR:
             braceatcaret = caretpos - 1
-        # check after
+        # Check after
         if braceatcaret < 0:
             charafter = self.GetCharAt(caretpos)
             styleafter = self.GetStyleAt(caretpos)
@@ -491,7 +739,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         else:
             self.BraceHighlight(braceatcaret, braceopposite)
 
-        # Caret Line Margin
+        #--- Caret Line Margin ---#
         lineclicked = self.LineFromPosition(event.GetPosition())
         linecount = self.GetLineCount()
         for i in range(0,linecount+1):
@@ -499,7 +747,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerAdd(self.GetCurrentLine(), 0)
 
     def OnMarginClick(self, event):
-        # Fold and unfold as needed
+        ''' Event occurs when the bookmark, line or code fold margins are clicked. '''
+        #-- Fold and unfold as needed --#
         if event.GetMargin() == 3:
             if event.GetShift() and event.GetControl():
                 self.OnFoldAll()
@@ -519,7 +768,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                             self.OnExpand(lineClicked, True, True, 100)
                     else:
                         self.ToggleFold(lineClicked)
-        # Bookmark Margin
+        #--- Bookmark Margin ---#
         if event.GetMargin() == 1:
             lineClicked = self.LineFromPosition(event.GetPosition())
             if self.MarkerGet(lineClicked):
@@ -528,7 +777,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 self.MarkerAdd(lineClicked, 1)
 
     def OnFoldAll(self):
-        ''' folding folds, marker - to + '''
+        ''' Folding folds, marker - to + '''
         lineCount = self.GetLineCount()
         expanding = True
         # Find out if folding or unfolding
@@ -594,6 +843,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 self.CharLeft()
 
     def OnSelectAll(self, event):
+        ''' Select all of the text in the document. '''
         self.SelectAll()
 
     def OnUndo(self,event):
@@ -625,8 +875,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             self.rect_selection_clipboard_flag = False
             # print ('rect_selection_clipboard_flag = False')
         self.Copy()
+        # print ('OnCopy')
 
     def OnCopyAll(self, event):
+        ''' Copy all of the text in the document to the clipboard. '''
         self.SelectAll()
         self.Copy()
 
@@ -643,6 +895,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             # print ('This Paste can\'t succeed.')
 
     def OnColumnPaste(self, event):
+        ''' Paste text into the document in a rectangular or columnar fashion. '''
         if self.rect_selection_clipboard_flag:
             self.BeginUndoAction()
             data_obj = wx.TextDataObject() # Create the data object we'll use to store the clipboard data.
@@ -667,6 +920,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 self.GotoPos(oldpos) # Move the caret back to original start pos.
             wx.TheClipboard.Close()
             self.EndUndoAction()
+        wx.CallAfter(self.Undo)#Wrye Bash Port HACK: Because... No wx.Menu RectSelection HACK , Don't paste twice;rectangular then regular, just rectangular
 
     def OnDelete(self, event):
         ''' Clear the selection. '''
@@ -705,6 +959,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.EndUndoAction()
 
     def OnSaveAsProjectsWizard(self, event):
+        ''' Save the current document text to the current project's directory as its wizard script. '''
         self.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
         try:
             dir = basher.gInstallers.data.dir
@@ -740,6 +995,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             wx.Bell()
 
     def OnTextToWizardStringFileDropMiniFrame(self, event):
+        ''' Call the TextToWizardString(FileDrop) convertor floating miniframe. '''
         texttowizardstringminiframe = wx.MiniFrame(self, -1, u'Text To Wizard String (File Drop)', style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT, size=(300, 150))
 
         texttowizardstringminiframe.SetSizeHints(200,150)
@@ -760,6 +1016,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         texttowizardstringminiframe.Show()
 
     def OnTextToWizardStringTextDropMiniFrame(self, event):
+        ''' Call the TextToWizardString(TextDrop) convertor floating miniframe. '''
         texttowizardstringtextdropminiframe = wx.MiniFrame(self, -1, u'Text To Wizard String (Text Drop)', style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT, size=(300, 150))
 
         texttowizardstringtextdropminiframe.SetSizeHints(200,150)
@@ -785,6 +1042,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print ('This is handled by OnRMouseGestureMenuNone')
 
     def OnHelpWizBAINEditorGeneral(self, event):
+        ''' Whoha and general propaganda from the TES4WizBAIN author who originally made this fine editor:
+        Mooo, Metallicow, Metalio Bovinus. '''
         message = (
         u'The WizBAIN Editor is for mod authors and players to write fancy install scripts for their packages(called wizards),'\
         u'thus easing headaches and confusion during installation by all users. The Editor is primarily mouse gesture/context '\
@@ -808,24 +1067,25 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         dialog.Destroy()
 
     def OnHelpWizBAINEditorAPIDocStrings(self, event):
-        ''' print the doctrings of the fuction for help '''
-
-        functionlist = [self.OnToggleComment,self.OnUPPERCASE,self.Onlowercase,self.OnInvertCase,self.OnCapitalCase]
+        ''' Print the doctrings of the WizBAIN Editor functions for help. '''
+        #Testing ATM - Python Version
+        functionlist = [self.OnHelpWizBAINEditorAPIDocStrings,self.OnHelpWizBAINEditorGeneral,self.OnToggleComment,self.OnUPPERCASE,self.Onlowercase,self.OnInvertCase,self.OnCapitalCase]
         message = u''
         for function in functionlist:
-            message += u'%s' % function.__name__ # ''' bla bla bla docstring '''
+            message += u'%s' %function.__name__ # ''' bla bla bla docstring '''
             message += u'\n'
-            message += u'%s' % function.__doc__ # ''' bla bla bla docstring '''
+            message += u'%s' %function.__doc__ # ''' bla bla bla docstring '''
             message += u'\n'
             message += u'\n'
 
         dialog = wx.lib.dialogs.ScrolledMessageDialog(self, u'%s' %message, u'WizBAIN Editor API Doc Strings', size=(500, 350))
-        dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + '..' + os.sep + 'help16.png', wx.BITMAP_TYPE_PNG))
+        dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + '..' + os.sep + u'help16.png', wx.BITMAP_TYPE_PNG))
         dialog.ShowModal()
         dialog.Destroy()
 
     def OnToggleComment(self, event):
-        ''' Toggle commenting on current or selected line(s) - ;#'''
+        ''' Toggle commenting on current or selected line(s) ==> ;# ini/pythonic colored comment.
+        Commenting = semicolon(;) followed by a number sign/pound/hash(#) followed by a single whitespace( ).'''
         self.BeginUndoAction()
         selstart = self.GetSelectionStart()
         selend = self.GetSelectionEnd()
@@ -941,6 +1201,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         #print ('OnCapitalCase')
 
     def OnMMouseGestureMenuNone(self, event):
+        ''' Middle Clicky! Call the Middle Mouse Gesture Menu.
+        NUMPAD:5
+        [7][8][9]
+        [4][@][6]
+        [1][2][3]
+        '''
         # print ('MMouse None')
         middleclickmenu = wx.Menu()
 
@@ -954,13 +1220,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         middleclickmenu.AppendSeparator()
 
-        mopyDir = bosh.dirs[u'mopy']
         macroTxtDir = bosh.dirs[u'mopy'].join(u'macro').join(u'txt')
         macroPyDir = bosh.dirs[u'mopy'].join(u'macro').join(u'py')
-
-        # print mopyDir
-        # print macroTxtDir
-        # print macroPyDir
 
         for filename in os.listdir(u'%s' %macroTxtDir):
             if filename.endswith(u'.txt'):
@@ -989,6 +1250,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         middleclickmenu.Destroy()
 
     def OnWriteUserTxtMacro(self, event):
+        ''' Read the text file in and add it into the document at the caret. '''
         id =  event.GetId()
         # print event.GetId()
         # print event.GetEventObject()
@@ -1004,6 +1266,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.AddText(macro + '\n')
 
     def OnLoadModule(self, name, filename):
+        ''' Load a user python macro located in the 'mopy/macro/py' directory and return it as a new module. '''
         x = imp.new_module(filename)
         x.__file__ = filename
         x.__name__ = name
@@ -1012,6 +1275,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         return x
 
     def OnPythonMacro(self, event):
+        ''' Execute the user python macro. Located in the 'mopy/macro/py' directory. '''
         id =  event.GetId()
         # print event.GetId()
         # print event.GetEventObject()
@@ -1021,11 +1285,17 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         menulabel = menuitem.GetItemLabel()
         userpymacro = menulabel.rstrip(u'.py')
 
-        filepath = bosh.dirs[u'mopy'].join(u'macro').join(u'py').join(u'%s' %menuitem.GetItemLabel())
+        filepath = bosh.dirs[u'mopy'].join(u'macro').join(u'py').join(u'%s' %menulabel)
         x = self.OnLoadModule(userpymacro, u'%s' %filepath)
         x.macro(self)
 
     def OnRMouseGestureMenuNone(self, event):
+        ''' Right Clicky! Call the Right Mouse Gesture Menu.
+        NUMPAD:5
+        [7][8][9]
+        [4][@][6]
+        [1][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -1033,138 +1303,141 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'R MGM 5', u'ContextMenu5')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + ('mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5 You Are Here!', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('youarehere16.png'),p).ConvertToBitmap())
-        mgm5.SetBackgroundColour('#F4FAB4')
-        mgm5.Enable(False)
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 5:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
-        undo = wx.MenuItem(rightclickmenu, 2001, u'&Undo\tCtrl+Z', u' Undo last modifications')
+
+        undo = wx.MenuItem(rightclickmenu, ID_UNDO, u'&Undo\tCtrl+Z', u' Undo last modifications')
         undo.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('undo16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(undo)
         if self.CanUndo() == 0:   undo.Enable(False)#trying to disable a menu item before it's appended to the menu doesn't work.
         elif self.CanUndo() == 1: undo.Enable(True)
-        redo = wx.MenuItem(rightclickmenu, 2002, u'&Redo\tCtrl+Y', u' Redo last modifications')
+        redo = wx.MenuItem(rightclickmenu, ID_REDO, u'&Redo\tCtrl+Y', u' Redo last modifications')
         redo.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('redo16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(redo)
         if self.CanRedo() == 0:   redo.Enable(False)
         elif self.CanRedo() == 1: redo.Enable(True)
         rightclickmenu.AppendSeparator()
-        cut = wx.MenuItem(rightclickmenu, 2004, u'&Cut\tCtrl+X', u' Cut selected text')
+        cut = wx.MenuItem(rightclickmenu, ID_CUT, u'&Cut\tCtrl+X', u' Cut selected text')
         cut.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('cut16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(cut)
-        copy = wx.MenuItem(rightclickmenu, 2005, u'&Copy\tCtrl+C', u' Copy selected text')
+        copy = wx.MenuItem(rightclickmenu, ID_COPY, u'&Copy\tCtrl+C', u' Copy selected text')
         copy.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('copy16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(copy)
-        paste = wx.MenuItem(rightclickmenu, 2006, u'&Paste\tCtrl+V', u' Paste from clipboard')
+        paste = wx.MenuItem(rightclickmenu, ID_PASTE, u'&Paste\tCtrl+V', u' Paste from clipboard')
         paste.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('paste16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(paste)
         if self.CanPaste() == 0:   paste.Enable(False)
         elif self.CanPaste() == 1: paste.Enable(True)
-        delete = wx.MenuItem(rightclickmenu, 2007, u'&Delete', u' Delete selected text')
+        delete = wx.MenuItem(rightclickmenu, ID_DELETE, u'&Delete', u' Delete selected text')
         delete.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('delete16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(delete)
         rightclickmenu.AppendSeparator()
-        selectall = wx.MenuItem(rightclickmenu, 2010, u'&Select All\tCtrl+A', u' Select All Text in Document')
+        selectall = wx.MenuItem(rightclickmenu, ID_SELECTALL, u'&Select All\tCtrl+A', u' Select All Text in Document')
         selectall.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('selectall2416.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(selectall)
 
         rightclickmenu.AppendSeparator()
 
-        togglecomment = wx.MenuItem(rightclickmenu, 4006, u'&Toggle Comment\tCtrl+Q', u' Toggle Commenting on the selected line(s)')
+        togglecomment = wx.MenuItem(rightclickmenu, ID_COMMENT, u'&Toggle Comment\tCtrl+Q', u' Toggle Commenting on the selected line(s)')
         togglecomment.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('togglecomment16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(togglecomment)
 
-        removetrailingwhitespace = wx.MenuItem(rightclickmenu, 4013, u'&Remove Trailing Whitespace', u' Remove trailing whitespace from end of lines in the document')
+        removetrailingwhitespace = wx.MenuItem(rightclickmenu, ID_REMTRAILWHITESPACE, u'&Remove Trailing Whitespace', u' Remove trailing whitespace from end of lines in the document')
         removetrailingwhitespace.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('removetrailingspaces16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(removetrailingwhitespace)
 
         rightclickmenu.AppendSeparator()
 
         submenu = wx.Menu()
-        saveasprojectwizard = wx.MenuItem(rightclickmenu, 1001, u'&Save as this project\'s wizard', u' Save as Project\'s wizard.txt')
+        saveasprojectwizard = wx.MenuItem(rightclickmenu, ID_SAVEASPROJECTWIZARD, u'&Save as this project\'s wizard', u' Save as Project\'s wizard.txt')
         saveasprojectwizard.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('save16.png'),p).ConvertToBitmap())
         submenu.AppendItem(saveasprojectwizard)
         rightclickmenu.AppendMenu(wx.NewId(), u'File', submenu)
 
         submenu = wx.Menu()
-        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, 1901, u'&WizBAIN Editor General', u' Help explaining general features')
+        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, ID_HELPGENERAL, u'&WizBAIN Editor General', u' Help explaining general features')
         helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + ('help16.png'),p).ConvertToBitmap())
         submenu.AppendItem(helpwizbaineditorgeneral)
 
-        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, 1902, u'&WizBAIN Editor API Doc Strings', u' Help explaining the function performed upon execution')
+        helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, ID_HELPAPIDOCSTR, u'&WizBAIN Editor API Doc Strings', u' Help explaining the function performed upon execution')
         helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + ('help16.png'),p).ConvertToBitmap())
         submenu.AppendItem(helpwizbaineditorgeneral)
+
         rightclickmenu.AppendMenu(wx.NewId(), u'Help', submenu)
 
+
+        # testnewid = wx.NewId()
+        # test = wx.MenuItem(rightclickmenu, testnewid, u'&Test wx.NewId()', u' For Testing Purposes')
+        # test.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('test16.png'),p).ConvertToBitmap())
+        # wx.EVT_MENU(rightclickmenu, testnewid, self.OnTestNewId)
+        # rightclickmenu.AppendItem(test)
+
+        # test = wx.MenuItem(rightclickmenu, ID_TEST, u'&Test permanent defined ID: ID_TEST', u' For Testing Purposes')
+        # test.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('test16.png'),p).ConvertToBitmap())
+        # rightclickmenu.AppendItem(test)
+
         #events
-        wx.EVT_MENU(rightclickmenu, 1001, self.OnSaveAsProjectsWizard)
+        # wx.EVT_MENU(rightclickmenu, ID_TEST, self.OnTest)
 
-        wx.EVT_MENU(rightclickmenu, 1901, self.OnHelpWizBAINEditorGeneral)
-        wx.EVT_MENU(rightclickmenu, 1902, self.OnHelpWizBAINEditorAPIDocStrings)
+        wx.EVT_MENU(rightclickmenu, ID_SAVEASPROJECTWIZARD, self.OnSaveAsProjectsWizard)
 
-        wx.EVT_MENU(rightclickmenu, 2001, self.OnUndo)
-        wx.EVT_MENU(rightclickmenu, 2002, self.OnRedo)
-        wx.EVT_MENU(rightclickmenu, 2004, self.OnCut)
-        wx.EVT_MENU(rightclickmenu, 2005, self.OnCopy)
-        wx.EVT_MENU(rightclickmenu, 2006, self.OnPaste)
-        wx.EVT_MENU(rightclickmenu, 2007, self.OnDelete)
-        wx.EVT_MENU(rightclickmenu, 2010, self.OnSelectAll)
-        wx.EVT_MENU(rightclickmenu, 4006, self.OnToggleComment)
-        wx.EVT_MENU(rightclickmenu, 4013, self.OnRemoveTrailingWhitespace)
+        wx.EVT_MENU(rightclickmenu, ID_HELPGENERAL, self.OnHelpWizBAINEditorGeneral)
+        wx.EVT_MENU(rightclickmenu, ID_HELPAPIDOCSTR, self.OnHelpWizBAINEditorAPIDocStrings)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_UNDO, self.OnUndo)
+        wx.EVT_MENU(rightclickmenu, ID_REDO, self.OnRedo)
+        wx.EVT_MENU(rightclickmenu, ID_CUT, self.OnCut)
+        wx.EVT_MENU(rightclickmenu, ID_COPY, self.OnCopy)
+        wx.EVT_MENU(rightclickmenu, ID_PASTE, self.OnPaste)
+        wx.EVT_MENU(rightclickmenu, ID_DELETE, self.OnDelete)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTALL, self.OnSelectAll)
+        wx.EVT_MENU(rightclickmenu, ID_COMMENT, self.OnToggleComment)
+        wx.EVT_MENU(rightclickmenu, ID_REMTRAILWHITESPACE, self.OnRemoveTrailingWhitespace)
+
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
+    def OnTestNewId(self, event):
+        print ('OnTestNewId - Everytime the menu is opened.')
+        print (event.GetId())
+
+    def OnTest(self, event):
+        print ('OnTest')
+        print ('ID_TEST')
+        print (event.GetId())
+
     def OnRMouseGestureMenu1(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:1
+        [7][8][9]
+        [4][5][6]
+        [@][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -1172,77 +1445,51 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'R MGM 1', u'ContextMenu1')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1 You Are Here!', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm1.SetBackgroundColour('#F4FAB4')
-        mgm1.Enable(False)
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 1:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        sort = wx.MenuItem(rightclickmenu, 1097, u'&Sort...', u' Sort selected lines in the active document')
+        sort = wx.MenuItem(rightclickmenu, ID_SORT, u'&Sort...', u' Sort selected lines in the active document')
         sort.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'sort16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(sort)
 
-        findselectedforwards = wx.MenuItem(rightclickmenu, 1099, u'&Find Selected Forwards\tF4', u' Find selected text forwards')
+        findselectedforwards = wx.MenuItem(rightclickmenu, ID_FINDSELECTEDFORE, u'&Find Selected Forwards\tF4', u' Find selected text forwards')
         findselectedforwards.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowdownbw16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(findselectedforwards)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 1097, self.OnSort)
-        wx.EVT_MENU(rightclickmenu, 1099, self.OnFindSelectedForwards)
+        wx.EVT_MENU(rightclickmenu, ID_SORT, self.OnSort)
+        wx.EVT_MENU(rightclickmenu, ID_FINDSELECTEDFORE, self.OnFindSelectedForwards)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
     def OnSort(self, event):
+        ''' Call a dialog with various options to sort the selected text. '''
         self.BeginUndoAction()
         linestring = str(self.GetSelectedText())
         linestringlist = linestring.split('\n')
@@ -1294,6 +1541,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.EndUndoAction()
 
     def OnFindSelectedForwards(self, event):
+        ''' Attempt to find the selected text further along in the document. Wraparound '''
         if self.GetSelectionStart() == self.GetSelectionEnd():
             pass
         else:
@@ -1321,6 +1569,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
 
     def OnRMouseGestureMenu2(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:2
+        [7][8][9]
+        [4][5][6]
+        [1][@][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -1328,87 +1582,63 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'R MGM 2 Wizard', u'ContextMenu2')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 You Are Here!', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm2.SetBackgroundColour('#F4FAB4')
-        mgm2.Enable(False)
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 2:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
+
+        ontopdragmenu = wx.MenuItem(rightclickmenu, ID_RMGM2DRAG, u'&Use OnTop Draggable Menu', u' Use OnTop Draggable Menu')
+        ontopdragmenu.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'star16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(ontopdragmenu)
+        if self.dragmenu2 == 1: ontopdragmenu.Enable(False)
 
         rightclickmenu.AppendSeparator()
 
-        # mSubListCount = gInstallers.gSubList.GetCount()
         mSubListCount = basher.gInstallers.gSubList.GetCount()
-        # mEspmListCount = gInstallers.gEspmList.GetCount()
         mEspmListCount = basher.gInstallers.gEspmList.GetCount()
 
-        reqversky = wx.MenuItem(rightclickmenu, 2001, u'&RequireVersions Oblivion', u' RequireVersions "1.2.0.416","0.0.20.6","3.0.0.0","295"')
+        reqversky = wx.MenuItem(rightclickmenu, ID_REQVEROB, u'&RequireVersions Oblivion', u' RequireVersions "1.2.0.416","0.0.20.6","3.0.0.0","295"')
         reqversky.SetBitmap(wx.Image(self.imgDir + os.sep + (u'oblivion16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(reqversky)
-        reqverob = wx.MenuItem(rightclickmenu, 2002, u'&RequireVersions Skyrim', u' RequireVersions "1.1.21.0","","","295"')
+        reqverob = wx.MenuItem(rightclickmenu, ID_REQVERSK, u'&RequireVersions Skyrim', u' RequireVersions "1.1.21.0","","","295"')
         reqverob.SetBitmap(wx.Image(self.imgDir + os.sep + (u'skyrim16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(reqverob)
 
-        selectone = wx.MenuItem(rightclickmenu, 2003, u'&SelectOne', u' SelectOne "", \\')
+        selectone = wx.MenuItem(rightclickmenu, ID_SELECTONE, u'&SelectOne', u' SelectOne "", \\')
         rightclickmenu.AppendItem(selectone)
-        selectmany = wx.MenuItem(rightclickmenu, 2004, u'&SelectMany', u' SelectMany "", \\')
+        selectmany = wx.MenuItem(rightclickmenu, ID_SELECTMANY, u'&SelectMany', u' SelectMany "", \\')
         rightclickmenu.AppendItem(selectmany)
-        choicesx2 = wx.MenuItem(rightclickmenu, 2005, u'&"","","",\\ X2', u' "","","",\\ X2')
+        choicesx2 = wx.MenuItem(rightclickmenu, ID_OPTIONS, u'&"","","",\\ X2', u' "","","",\\ X2')
         rightclickmenu.AppendItem(choicesx2)
-        endselect = wx.MenuItem(rightclickmenu, 2006, u'&EndSelect', u' EndSelect')
+        endselect = wx.MenuItem(rightclickmenu, ID_ENDSELECT, u'&EndSelect', u' EndSelect')
         rightclickmenu.AppendItem(endselect)
-        case = wx.MenuItem(rightclickmenu, 2007, u'&Case', u' Case')
+        case = wx.MenuItem(rightclickmenu, ID_CASE, u'&Case', u' Case')
         rightclickmenu.AppendItem(case)
-        bbreak = wx.MenuItem(rightclickmenu, 2008, u'&Break', u' Break')
+        bbreak = wx.MenuItem(rightclickmenu, ID_BREAK, u'&Break', u' Break')
         rightclickmenu.AppendItem(bbreak)
-        selectall = wx.MenuItem(rightclickmenu, 2009, u'&SelectAll', u' SelectAll')
+        selectall = wx.MenuItem(rightclickmenu, ID_SELECTALL, u'&SelectAll', u' SelectAll')
         rightclickmenu.AppendItem(selectall)
-        deselectall = wx.MenuItem(rightclickmenu, 2010, u'&DeSelectAll', u' DeSelectAll')
+        deselectall = wx.MenuItem(rightclickmenu, ID_DESELECTALL, u'&DeSelectAll', u' DeSelectAll')
         rightclickmenu.AppendItem(deselectall)
 
         if mSubListCount == 0:
-            selectsubpackage = wx.MenuItem(rightclickmenu, 2011, u'&SelectSubPackage', u' SelectSubPackage')
+            selectsubpackage = wx.MenuItem(rightclickmenu, ID_SELECTSUBPACKAGE, u'&SelectSubPackage', u' SelectSubPackage')
             rightclickmenu.AppendItem(selectsubpackage)
         else:
             submenu = wx.Menu()
             menuItem = wx.MenuItem(submenu, wx.NewId(), u'SelectSubPackage "[subName]"')
-            selectsubpackage = wx.MenuItem(rightclickmenu, 2011, u'&SelectSubPackage ""', u' SelectSubPackage ""')
+            selectsubpackage = wx.MenuItem(rightclickmenu, ID_SELECTSUBPACKAGE, u'&SelectSubPackage ""', u' SelectSubPackage ""')
             submenu.AppendItem(selectsubpackage)
             for index in xrange(mSubListCount):
                 newid = wx.NewId()
@@ -1421,12 +1651,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             rightclickmenu.AppendItem(menuItem)
 
         if mSubListCount == 0:
-            deselectsubpackage = wx.MenuItem(rightclickmenu, 2012, u'&DeSelectSubPackage', u' DeSelectSubPackage')
+            deselectsubpackage = wx.MenuItem(rightclickmenu, ID_DESELECTSUBPACKAGE, u'&DeSelectSubPackage', u' DeSelectSubPackage')
             rightclickmenu.AppendItem(deselectsubpackage)
         else:
             submenu = wx.Menu()
             menuItem = wx.MenuItem(submenu, wx.NewId(), u'DeSelectSubPackage "[subName]"')
-            deselectsubpackage = wx.MenuItem(rightclickmenu, 2012, u'&DeSelectSubPackage ""', u' DeSelectSubPackage ""')
+            deselectsubpackage = wx.MenuItem(rightclickmenu, ID_DESELECTSUBPACKAGE, u'&DeSelectSubPackage ""', u' DeSelectSubPackage ""')
             submenu.AppendItem(deselectsubpackage)
             for index in xrange(mSubListCount):
                 newid = wx.NewId()
@@ -1439,12 +1669,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             rightclickmenu.AppendItem(menuItem)
 
         if mEspmListCount == 0:
-            selectespm = wx.MenuItem(rightclickmenu, 2013, u'&SelectEspm', u' SelectEspm')
+            selectespm = wx.MenuItem(rightclickmenu, ID_SELECTESPM, u'&SelectEspm', u' SelectEspm')
             rightclickmenu.AppendItem(selectespm)
         else:
             submenu = wx.Menu()
             menuItem = wx.MenuItem(submenu, wx.NewId(), u'SelectEspm "[espmName]"')
-            selectespm = wx.MenuItem(rightclickmenu, 2013, u'&SelectEspm ""', u' SelectEspm ""')
+            selectespm = wx.MenuItem(rightclickmenu, ID_SELECTESPM, u'&SelectEspm ""', u' SelectEspm ""')
             submenu.AppendItem(selectespm)
             for index in xrange(mEspmListCount):
                 newid = wx.NewId()
@@ -1457,12 +1687,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             rightclickmenu.AppendItem(menuItem)
 
         if mEspmListCount == 0:
-            deselectespm = wx.MenuItem(rightclickmenu, 2014, u'&DeSelectEspm', u' DeSelectEspm')
+            deselectespm = wx.MenuItem(rightclickmenu, ID_DESELECTESPM, u'&DeSelectEspm', u' DeSelectEspm')
             rightclickmenu.AppendItem(deselectespm)
         else:
             submenu = wx.Menu()
             menuItem = wx.MenuItem(submenu, wx.NewId(), u'DeSelectEspm "[espmName]"')
-            deselectespm = wx.MenuItem(rightclickmenu, 2014, u'&DeSelectEspm ""', u' DeSelectEspm ""')
+            deselectespm = wx.MenuItem(rightclickmenu, ID_DESELECTESPM, u'&DeSelectEspm ""', u' DeSelectEspm ""')
             submenu.AppendItem(deselectespm)
             for index in xrange(mEspmListCount):
                 newid = wx.NewId()
@@ -1474,22 +1704,22 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             menuItem.SetSubMenu(submenu)
             rightclickmenu.AppendItem(menuItem)
 
-        selectallespms = wx.MenuItem(rightclickmenu, 2015, u'&SelectAllEspms', u' SelectAllEspms')
+        selectallespms = wx.MenuItem(rightclickmenu, ID_SELECTALLESPMS, u'&SelectAllEspms', u' SelectAllEspms')
         rightclickmenu.AppendItem(selectallespms)
 
-        deselectallespms = wx.MenuItem(rightclickmenu, 2016, u'&DeSelectAllEspms', u' DeSelectAllEspms')
+        deselectallespms = wx.MenuItem(rightclickmenu, ID_DESELECTALLESPMS, u'&DeSelectAllEspms', u' DeSelectAllEspms')
         rightclickmenu.AppendItem(deselectallespms)
 
-        renameespm = wx.MenuItem(rightclickmenu, 2017, u'&RenameEspm', u' RenameEspm')
+        renameespm = wx.MenuItem(rightclickmenu, ID_RENAMEESPM, u'&RenameEspm', u' RenameEspm')
         rightclickmenu.AppendItem(renameespm)
 
         if mEspmListCount == 0:
-            resetespmname = wx.MenuItem(rightclickmenu, 2018, u'&ResetEspmName', u' ResetEspmName')
+            resetespmname = wx.MenuItem(rightclickmenu, ID_RESETESPMNAME, u'&ResetEspmName', u' ResetEspmName')
             rightclickmenu.AppendItem(resetespmname)
         else:
             submenu = wx.Menu()
             menuItem = wx.MenuItem(submenu, wx.NewId(), u'ResetEspmName "[espmName]"')
-            resetespmname = wx.MenuItem(rightclickmenu, 2018, u'&ResetEspmName ""', u' ResetEspmName ""')
+            resetespmname = wx.MenuItem(rightclickmenu, ID_RESETESPMNAME, u'&ResetEspmName ""', u' ResetEspmName ""')
             submenu.AppendItem(resetespmname)
             for index in xrange(mEspmListCount):
                 newid = wx.NewId()
@@ -1501,64 +1731,264 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             menuItem.SetSubMenu(submenu)
             rightclickmenu.AppendItem(menuItem)
 
-        resetallespmnames = wx.MenuItem(rightclickmenu, 2019, u'&ResetAllEspmNames', u' ResetAllEspmNames')
+        resetallespmnames = wx.MenuItem(rightclickmenu, ID_RESETALLESPMNAMES, u'&ResetAllEspmNames', u' ResetAllEspmNames')
         rightclickmenu.AppendItem(resetallespmnames)
+
+        defaultcharselectedoptions = wx.MenuItem(rightclickmenu, ID_DEFAULTCHAR, u'&"|Default Char","Selected Options","Line(s)", \\')
+        rightclickmenu.AppendItem(defaultcharselectedoptions)
+
+        packagenamewizardimagesDir = (u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue()).join(u'Wizard Images'))
+        if os.path.isdir(packagenamewizardimagesDir):
+            submenu = wx.Menu()
+            menuItem = wx.MenuItem(submenu, wx.NewId(), u'Wizard Images\\\\[packageImg.ext]')
+            packagename = wx.MenuItem(rightclickmenu, wx.NewId(), u'%s' %basher.gInstallers.gPackage.GetValue(), u' packageName')
+            packagename.SetBitmap(wx.Image(self.imgDir + os.sep + u'diamond_white_off_wiz.png',p).ConvertToBitmap())
+            submenu.AppendItem(packagename)
+            packagename.Enable(False)
+            wizardimages = wx.MenuItem(rightclickmenu, ID_WIZARDIMAGES, u'Wizard Images\\\\', u' Wizard Images\\\\')
+            submenu.AppendItem(wizardimages)
+            packagenameWizardImagesList = os.listdir(packagenamewizardimagesDir)
+            # print (packagenameWizardImagesList)
+            # print (u'Wizard Images Dir Exists')
+            for wizardimage in packagenameWizardImagesList:
+                ext = wizardimage[wizardimage.rfind('.'):].lower()
+                # print (ext)
+                if ext in [u'.jpg',u'.jpeg',u'.png',u'.gif',u'.ico']:
+                    newid = wx.NewId()
+                    submenuitem = wx.MenuItem(rightclickmenu, newid, u'Wizard Images\\\\' + u'%s' %wizardimage, u' Wizard Images\\\\')
+                    if ext == u'.jpg' or ext == u'.jpeg':
+                        submenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'file_image16.png'),p).ConvertToBitmap())
+                    elif ext == u'.png':
+                        submenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'file_png16.png'),p).ConvertToBitmap())
+                    else:
+                        submenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+                    submenu.AppendItem(submenuitem)
+                    wx.EVT_MENU(rightclickmenu, newid, self.OnWriteImageDirectoryIMAGE)
+            menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
+            menuItem.SetBackgroundColour(u'#FFF7EE')
+            menuItem.SetSubMenu(submenu)
+            rightclickmenu.AppendItem(menuItem)
+        else:
+            wizardimages = wx.MenuItem(rightclickmenu, ID_WIZARDIMAGES, u'Wizard Images\\\\', u' Wizard Images\\\\')
+            rightclickmenu.AppendItem(wizardimages)
+
+        ####################################
+
+        packagenamewizardimagesDir = (u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue()).join(u'Screenshots'))
+        if os.path.isdir(packagenamewizardimagesDir):
+            submenu = wx.Menu()
+            menuItem = wx.MenuItem(submenu, wx.NewId(), u'Screenshots\\\\[packageImg.ext]')
+            packagename = wx.MenuItem(rightclickmenu, wx.NewId(), u'%s' %basher.gInstallers.gPackage.GetValue(), u' packageName')
+            packagename.SetBitmap(wx.Image(self.imgDir + os.sep + u'diamond_white_off_wiz.png',p).ConvertToBitmap())
+            submenu.AppendItem(packagename)
+            packagename.Enable(False)
+            screenshotsimages = wx.MenuItem(rightclickmenu, ID_SCREENSHOTS, u'Screenshots\\\\', u' Screenshots\\\\')
+            submenu.AppendItem(screenshotsimages)
+            packagenameWizardImagesList = os.listdir(packagenamewizardimagesDir)
+            # print (packagenameWizardImagesList)
+            # print (u'Wizard Images Dir Exists')
+            for wizardimage in packagenameWizardImagesList:
+                ext = wizardimage[wizardimage.rfind('.'):].lower()
+                # print (ext)
+                if ext in [u'.jpg',u'.jpeg',u'.png',u'.gif',u'.ico']:
+                    newid = wx.NewId()
+                    submenuitem = wx.MenuItem(rightclickmenu, newid, u'Screenshots\\\\' + u'%s' %wizardimage, u' Screenshots\\\\')
+                    if ext == u'.jpg' or ext == u'.jpeg':
+                        submenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'file_image16.png'),p).ConvertToBitmap())
+                    elif ext == u'.png':
+                        submenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'file_png16.png'),p).ConvertToBitmap())
+                    else:
+                        submenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+                    submenu.AppendItem(submenuitem)
+                    wx.EVT_MENU(rightclickmenu, newid, self.OnWriteImageDirectoryIMAGE)
+            menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
+            menuItem.SetBackgroundColour(u'#FFF7EE')
+            menuItem.SetSubMenu(submenu)
+            rightclickmenu.AppendItem(menuItem)
+        else:
+            screenshotsimages = wx.MenuItem(rightclickmenu, ID_SCREENSHOTS, u'Screenshots\\\\', u' Screenshots\\\\')
+            rightclickmenu.AppendItem(screenshotsimages)
 
         rightclickmenu.AppendSeparator()
 
         submenu = wx.Menu()
-        listactivesubpackages = wx.MenuItem(rightclickmenu, 2101, u'&List SubPackages... (De)/SelectSubPackages', u' List SubPackages...')
+        listactivesubpackages = wx.MenuItem(rightclickmenu, ID_LISTSUBPACKAGES, u'&List SubPackages... (De)/SelectSubPackages', u' List SubPackages...')
         listactivesubpackages.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
         submenu.AppendItem(listactivesubpackages)
 
-        listactiveespms = wx.MenuItem(rightclickmenu, 2102, u'&List Espms... (De)/SelectEspm', u' List Espms...')
+        listactiveespms = wx.MenuItem(rightclickmenu, ID_LISTESPMS, u'&List Espms... (De)/SelectEspm', u' List Espms...')
         listactiveespms.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
         submenu.AppendItem(listactiveespms)
 
         rightclickmenu.AppendMenu(wx.NewId(), u'List...', submenu)
 
-        submenu = wx.Menu()
-        for i in range(0,256):
-            testmanysubmenuitems = wx.MenuItem(rightclickmenu, wx.NewId(), u'Test "' + u'%s' %i + u'"', u' Test')
-            submenu.AppendItem(testmanysubmenuitems)
-        rightclickmenu.AppendMenu(wx.NewId(), u'Test many submenu items...', submenu)
+        thumbnailerpackagewizardimages = wx.MenuItem(rightclickmenu, ID_THUMBNAILER, u'&Thumbnailer [packageName\\Wizard Images]')
+        thumbnailerpackagewizardimages.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'python16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(thumbnailerpackagewizardimages)
+
+        # submenu = wx.Menu()
+        # for i in range(0,256):
+            # testmanysubmenuitems = wx.MenuItem(rightclickmenu, wx.NewId(), u'Test "' + u'%s' %i + u'"', u' Test')
+            # submenu.AppendItem(testmanysubmenuitems)
+        # rightclickmenu.AppendMenu(wx.NewId(), u'Test many submenu items(256)...', submenu)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 2001, self.OnRequireVersionsOblivion)
-        wx.EVT_MENU(rightclickmenu, 2002, self.OnRequireVersionsSkyrim)
-        wx.EVT_MENU(rightclickmenu, 2003, self.OnSelectOne)
-        wx.EVT_MENU(rightclickmenu, 2004, self.OnSelectMany)
-        wx.EVT_MENU(rightclickmenu, 2005, self.OnChoicesX02)
-        wx.EVT_MENU(rightclickmenu, 2006, self.OnEndSelect)
-        wx.EVT_MENU(rightclickmenu, 2007, self.OnCase)
-        wx.EVT_MENU(rightclickmenu, 2008, self.OnBreak)
-        wx.EVT_MENU(rightclickmenu, 2009, self.OnSelectAllKeyword)
-        wx.EVT_MENU(rightclickmenu, 2010, self.OnDeSelectAll)
-        wx.EVT_MENU(rightclickmenu, 2011, self.OnSelectSubPackage)
-        wx.EVT_MENU(rightclickmenu, 2012, self.OnDeSelectSubPackage)
-        wx.EVT_MENU(rightclickmenu, 2013, self.OnSelectEspm)
-        wx.EVT_MENU(rightclickmenu, 2014, self.OnDeSelectEspm)
-        wx.EVT_MENU(rightclickmenu, 2015, self.OnSelectAllEspms)
-        wx.EVT_MENU(rightclickmenu, 2016, self.OnDeSelectAllEspms)
-        wx.EVT_MENU(rightclickmenu, 2017, self.OnRenameEspm)
-        wx.EVT_MENU(rightclickmenu, 2018, self.OnResetEspmName)
-        wx.EVT_MENU(rightclickmenu, 2019, self.OnResetAllEspmNames)
+        wx.EVT_MENU(rightclickmenu, ID_REQVEROB, self.OnRequireVersionsOblivion)
+        wx.EVT_MENU(rightclickmenu, ID_REQVERSK, self.OnRequireVersionsSkyrim)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTONE, self.OnSelectOne)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTMANY, self.OnSelectMany)
+        wx.EVT_MENU(rightclickmenu, ID_OPTIONS, self.OnChoicesX02)
+        wx.EVT_MENU(rightclickmenu, ID_ENDSELECT, self.OnEndSelect)
+        wx.EVT_MENU(rightclickmenu, ID_CASE, self.OnCase)
+        wx.EVT_MENU(rightclickmenu, ID_BREAK, self.OnBreak)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTALLKW, self.OnSelectAllKeyword)
+        wx.EVT_MENU(rightclickmenu, ID_DESELECTALL, self.OnDeSelectAll)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTSUBPACKAGE, self.OnSelectSubPackage)
+        wx.EVT_MENU(rightclickmenu, ID_DESELECTSUBPACKAGE, self.OnDeSelectSubPackage)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTESPM, self.OnSelectEspm)
+        wx.EVT_MENU(rightclickmenu, ID_DESELECTESPM, self.OnDeSelectEspm)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTALLESPMS, self.OnSelectAllEspms)
+        wx.EVT_MENU(rightclickmenu, ID_DESELECTALLESPMS, self.OnDeSelectAllEspms)
+        wx.EVT_MENU(rightclickmenu, ID_RENAMEESPM, self.OnRenameEspm)
+        wx.EVT_MENU(rightclickmenu, ID_RESETESPMNAME, self.OnResetEspmName)
+        wx.EVT_MENU(rightclickmenu, ID_RESETALLESPMNAMES, self.OnResetAllEspmNames)
+        wx.EVT_MENU(rightclickmenu, ID_DEFAULTCHAR, self.OnDefaultCharacterSelectedOptions)
 
-        wx.EVT_MENU(rightclickmenu, 2101, self.OnWriteListSubPackages)
-        wx.EVT_MENU(rightclickmenu, 2102, self.OnWriteListEspms)
+        wx.EVT_MENU(rightclickmenu, ID_WIZARDIMAGES, self.OnWizardImages)
+        wx.EVT_MENU(rightclickmenu, ID_THUMBNAILER, self.OnThumbnailerPackageWizardImages)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_LISTSUBPACKAGES, self.OnWriteListSubPackages)
+        wx.EVT_MENU(rightclickmenu, ID_LISTESPMS, self.OnWriteListEspms)
+
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2DRAG, self.OnUseOnTopDraggableRMouseGestureMenu2)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
+
+    def OnUseOnTopDraggableRMouseGestureMenu2(self, event):
+        ''' Call the Always-OnTop-Draggable Version of the menu. '''
+        if self.dragmenu2 == 0:
+            win = DraggableRMouseGestureMenu2(self, wx.SIMPLE_BORDER)
+            pos = gWizSTC.ClientToScreen(self.GetPosition())
+            # print pos
+            win.Position((pos[0],pos[1]),(0, 0))
+            win.Show(True)
+            self.dragmenu2 = 1
+
+    def OnDefaultCharacterSelectedOptions(self, event):
+        ''' Add the Default Character(|) to Option Lines. Can be single or multiple lines.
+            "|Option1","","",\  ;Selected
+            "|Option2","","",\  ;Selected
+            "|Option3","","",\  ;Selected
+            "Option4","",""     ;Not Selected
+        '''
+        selstart = self.GetSelectionStart()
+        selend = self.GetSelectionEnd()
+        startline = self.LineFromPosition(selstart)
+        endline = self.LineFromPosition(selend)
+        if selstart == selend:#Nothing selected
+            indentpos = self.GetLineIndentPosition(startline)
+            if self.GetCharAt(indentpos) == 34 or self.GetCharAt(indentpos) == 39:
+                self.InsertText(indentpos + 1, '|')
+        elif startline == endline:#Some selection on the same line
+            indentpos = self.GetLineIndentPosition(startline)
+            if self.GetCharAt(indentpos) == 34 or self.GetCharAt(indentpos) == 39:
+                self.InsertText(indentpos + 1, '|')
+        elif startline != endline:#More than one line selected
+            self.BeginUndoAction()
+            if startline > endline:#Ex 20,3
+                for i in range(endline,startline + 1):
+                    indentpos = self.GetLineIndentPosition(i)
+                    if self.GetCharAt(indentpos) == 34 or self.GetCharAt(indentpos) == 39:
+                        self.InsertText(indentpos + 1, '|')
+                        # print i
+            else:
+                for i in range(startline,endline + 1):
+                    indentpos = self.GetLineIndentPosition(i)
+                    if self.GetCharAt(indentpos) == 34 or self.GetCharAt(indentpos) == 39:
+                        self.InsertText(indentpos + 1, '|')
+                        # print i
+            self.EndUndoAction()
+        self.SetFocus()
+
+    def OnThumbnailerPackageWizardImages(self, event):
+        ''' Call a floating frame with viewable wizard images from the currently active projects 'Wizard Images' directory. '''
+        if self.OneInstanceThumbnailer == 1:
+            wx.MessageBox(u'Only One Instance Allowed Open', u'WARNING', wx.ICON_EXCLAMATION | wx.OK)
+        else:
+            packagenamewizardimagesDir = (u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue()).join(u'Wizard Images'))
+            self.dialog = wx.Dialog(self, -1, title=u'%s' %basher.gInstallers.gPackage.GetValue() + os.sep + u'Wizard Images',
+                                    size=(545, 425), style=wx.DEFAULT_DIALOG_STYLE)
+            self.dialog.SetBackgroundColour('#000000') # Set the Frame Background Color
+
+            import wx.lib.agw.thumbnailctrl as TC
+            self.thumbnailer = TC.ThumbnailCtrl(self.dialog, wx.NewId(), imagehandler=TC.NativeImageHandler, thumbfilter=TC.THUMB_FILTER_IMAGES)
+            self.thumbnailer.ShowDir(packagenamewizardimagesDir)# Show this images dir
+            self.thumbnailer.SetThumbOutline(TC.THUMB_OUTLINE_FULL)
+            self.thumbnailer.SetZoomFactor(1.4)
+            # self.thumbnailer.Bind(TC.EVT_THUMBNAILS_POINTED, self.OnThumbnailPointed)
+            # self.thumbnailer.SetHighlightPointed(True)
+            self.thumbnailer.ShowComboBox(True)
+            self.thumbnailer.EnableToolTips(True)
+            self.thumbnailer.ShowFileNames(True)
+            self.thumbnailer.EnableDragging(True)
+            # thumbnailcontextmenu = self.OnThumbnailContextMenu()
+            # self.thumbnailer.SetPopupMenu(thumbnailcontextmenu)
+            # self.thumbnailer.Bind(TC.EVT_THUMBNAILS_SEL_CHANGED, self.OnThumbnailSelChanged)
+            self.thumbnailer.Bind(wx.EVT_CONTEXT_MENU, self.OnThumbnailContextMenu)
+            # self.thumbnailer.Bind(wx.EVT_RIGHT_UP, self.OnThumbnailContextMenu)
+            # self.thumbnailer.Bind(wx.EVT_RIGHT_DOWN, self.OnThumbnailSelChanged)
+            self.thumbnailer.Bind(TC.EVT_THUMBNAILS_DCLICK, self.OnThumbnailWizImage)
+            self.dialog.Bind(wx.EVT_CLOSE, self.OnDialogDestroy)
+
+            tnsizer = wx.BoxSizer(wx.VERTICAL)
+            tnsizer.Add(self.thumbnailer, 1, wx.EXPAND | wx.ALL, 3)
+            self.dialog.SetSizer(tnsizer)
+            tnsizer.Layout()
+
+            self.dialog.Centre()
+            self.dialog.Show()
+            self.OneInstanceThumbnailer = 1
+            # self.dialog.ShowModal()
+            # self.dialog.Destroy()
+
+    def OnThumbnailContextMenu(self, event):
+        print('THUMBNAIL CONTEXT')
+
+    def OnThumbnailWizImage(self, event):
+        # id =  event.GetId()
+        # evtobj = event.GetEventObject()
+        # print id
+        # print evtobj
+
+        imgpath = self.thumbnailer.GetOriginalImage(self.thumbnailer.GetSelection())
+        imgnamewithext = os.path.basename(imgpath) #Returns the final component of a pathname
+        self.AddText(u'Wizard Images\\\\%s'%str(imgnamewithext))
+        # return self.dialog.Destroy()
+
+    def OnDialogDestroy(self, event):
+        # print ('KILL.BURN.DESTROY.')
+        self.OneInstanceThumbnailer = 0
+        return self.dialog.Destroy()
+
+    def OnWriteImageDirectoryIMAGE(self, event):
+        id =  event.GetId()
+        # print event.GetId()
+        # print event.GetEventObject()
+        evtobj = event.GetEventObject()
+        menuitem = evtobj.FindItemById(id)
+        # print menuitem.GetItemLabel()
+        self.AddText(u'%s' %menuitem.GetItemLabel())
 
     def OnWriteKeywordSUBNAMEorESPMNAME(self, event):
         id =  event.GetId()
@@ -1569,7 +1999,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print menuitem.GetItemLabel()
         self.AddText(u'%s' %menuitem.GetItemLabel() + u'\n')
 
-    def OnWriteKeywordMODNAME(self, event):
+    def OnWriteKeywordMODNAME(self, event):#NOT DONE
         # print bosh.modInfos.getModList(showCRC=False,showVersion=False,fileInfo=None,wtxt=True)
         # dataDir = bosh.dirs['mods']
 
@@ -1602,11 +2032,77 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
     def OnRequireVersionsSkyrim(self, event):
         self.AddText(u'RequireVersions "1.1.21.0","","","295"')
     def OnSelectOne(self, event):
-        self.AddText(u'SelectOne "", \\')
-        for i in range(0,4): self.CharLeft()
+        # self.AddText(u'SelectOne "", \\')
+        # for i in range(0,4): self.CharLeft()
+
+        dialog = wx.TextEntryDialog(self, 'SelectOne "How Many Options?", \\\n'
+                                          '    "Option1","Description1","Wizard Images\\\\SomePic1.png",\\\n'
+                                          '    "Option2","Description2","Wizard Images\\\\SomePic2.png",\\\n'
+                                          '    Case "Option1"\n'
+                                          '        ;#Do Something\n'
+                                          '        Break\n'
+                                          '    Case "Option2"\n'
+                                          '        ;#Do Something\n'
+                                          '        Break\n'
+                                          'EndSelect\n'
+                                          '\n'
+                                          'Enter desired number of options (2 or above)', 'Add SelectOne Dialog Code', '2')
+        dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + u'wizardhat16.png', wx.BITMAP_TYPE_PNG))
+        number = ''
+        if dialog.ShowModal() == wx.ID_OK:
+            number = int(dialog.GetValue())
+            numberminusone = int(dialog.GetValue()) - 1
+        dialog.Destroy()
+
+        if number != '':
+            self.AddText(u'SelectOne "", \\\n')
+            self.AddText((' '*gGlobalsDict['IndentSize'] + '"", "", "",\\\n')*(numberminusone) +
+                          ' '*gGlobalsDict['IndentSize'] + '"", "", ""\n')
+            self.AddText((' '*gGlobalsDict['IndentSize'] + 'Case ""\n' +
+                          ' '*gGlobalsDict['IndentSize']*2 + ';#\n' +
+                          ' '*gGlobalsDict['IndentSize']*2 + 'Break\n')*(number))
+            self.SetFocus()
+            self.AddText(u'EndSelect')
+
     def OnSelectMany(self, event):
-        self.AddText(u'SelectMany "", \\')
-        for i in range(0,4): self.CharLeft()
+        # self.AddText(u'SelectMany "", \\')
+        # for i in range(0,4): self.CharLeft()
+
+        dialog = wx.TextEntryDialog(self, 'SelectMany "How Many Options?", \\\n'
+                                          '    "Option1","Description1","Wizard Images\\\\SomePic1.png",\\\n'
+                                          '    "Option2","Description2","Wizard Images\\\\SomePic2.png",\\\n'
+                                          '    "Option3","Description3","Wizard Images\\\\SomePic3.png",\\\n'
+                                          '    Case "Option1"\n'
+                                          '        ;#Do Something\n'
+                                          '        Break\n'
+                                          '    Case "Option2"\n'
+                                          '        ;#Do Something\n'
+                                          '        Break\n'
+                                          '    Case "Option3"\n'
+                                          '        ;#Do Something\n'
+                                          '        Break\n'
+                                          'EndSelect\n'
+                                          '\n'
+                                          'Enter desired number of options (2 or above)', 'Add SelectMany Dialog Code', '2')
+        dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + u'wizardhat16.png', wx.BITMAP_TYPE_PNG))
+        number = ''
+        if dialog.ShowModal() == wx.ID_OK:
+            number = int(dialog.GetValue())
+            numberminusone = int(dialog.GetValue()) - 1
+        dialog.Destroy()
+
+        if number != '':
+            self.AddText(u'SelectMany "", \\\n')
+            self.AddText((' '*gGlobalsDict['IndentSize'] + '"", "", "",\\\n')*(numberminusone) +
+                          ' '*gGlobalsDict['IndentSize'] + '"", "", ""\n')
+            self.AddText((' '*gGlobalsDict['IndentSize'] + 'Case ""\n' +
+                          ' '*gGlobalsDict['IndentSize']*2 + ';#\n' +
+                          ' '*gGlobalsDict['IndentSize']*2 + 'Break\n')*(number))
+            self.SetFocus()
+            self.AddText(u'EndSelect')
+
+
+
     def OnChoicesX02(self, event): # "", "", "" x2
         if gGlobalsDict['TabsOrSpaces'] == 1:#TABS
             self.AddText('\t"", "Description.", "Wizard Images\\\\NeedPic.jpg",\\\n'
@@ -1679,9 +2175,18 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.AddText('ResetAllEspmNames')
         self.SetFocus()
 
+    def OnWizardImages(self, event):
+        self.AddText('Wizard Images\\\\')
+        self.SetFocus()
 
 
     def OnRMouseGestureMenu3(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:3
+        [7][8][9]
+        [4][5][6]
+        [1][2][@]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -1689,82 +2194,56 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 3', u'ContextMenu3')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3 You Are Here!', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm3.SetBackgroundColour('#F4FAB4')
-        mgm3.Enable(False)
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 3:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        showcalltip = wx.MenuItem(rightclickmenu, 3097, u'&Show CallTip\tCtrl+Shift+Space', u' Show a calltip for the currently selected word.')
+        showcalltip = wx.MenuItem(rightclickmenu, ID_CALLTIP, u'&Show CallTip\tCtrl+Shift+Space', u' Show a calltip for the currently selected word.')
         showcalltip.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'showcalltip24.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(showcalltip)
 
-        autocomplete = wx.MenuItem(rightclickmenu, 3098, u'&WordComplete Box\tCtrl+W', u' Ctrl+W opens the WordComplete box')
+        autocomplete = wx.MenuItem(rightclickmenu, ID_WORDCOMPLETE, u'&WordComplete Box\tCtrl+W', u' Ctrl+W opens the WordComplete box')
         autocomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'wordcomplete24.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(autocomplete)
 
-        autocomplete = wx.MenuItem(rightclickmenu, 3099, u'&AutoComplete Box\tCtrl+Space', u' Ctrl+Space opens the AutoComplete box')
+        autocomplete = wx.MenuItem(rightclickmenu, ID_AUTOCOMPLETE, u'&AutoComplete Box\tCtrl+Space', u' Ctrl+Space opens the AutoComplete box')
         autocomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'autocomplete24.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(autocomplete)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
-        wx.EVT_MENU(rightclickmenu, 3097, self.OnShowSelectedTextCallTip)
-        wx.EVT_MENU(rightclickmenu, 3098, self.OnShowWordCompleteBox)
-        wx.EVT_MENU(rightclickmenu, 3099, self.OnShowAutoCompleteBox)
+        wx.EVT_MENU(rightclickmenu, ID_CALLTIP, self.OnShowSelectedTextCallTip)
+        wx.EVT_MENU(rightclickmenu, ID_WORDCOMPLETE, self.OnShowWordCompleteBox)
+        wx.EVT_MENU(rightclickmenu, ID_AUTOCOMPLETE, self.OnShowAutoCompleteBox)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
     def OnShowSelectedTextCallTip(self, event):
+        ''' Show a CallTip for the currently selected wizard script keyword. '''
         pos = self.GetCurrentPos()
 
         self.CallTipSetBackground('yellow')             #Set the background colour for the call tip.
@@ -1827,6 +2306,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 pass
 
     def OnShowWordCompleteBox(self, event):
+        ''' Show a Auto-Completeion box with all the words in the document. '''
         text = self.GetText()
         replaceThisList = ['.','!','?',',',':',';',
                            '\'','"',
@@ -1848,7 +2328,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.AutoCompShow(0, ' '.join(kw))
 
     def OnShowAutoCompleteBox(self, event):
-        '''Shows the AutoComplete Box in the editor.'''
+        '''Shows the Auto-Complete Box in the editor filled with wizard script keywords.'''
         if gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
             kw = keywordWIZBAIN.kwlist[:] + keywordWIZBAIN2.kwlist[:]
             # Optionally add more ...
@@ -1866,6 +2346,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             self.AutoCompShow(0, ' '.join(kw))
 
     def OnRMouseGestureMenu4(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:4
+        [7][8][9]
+        [@][5][6]
+        [1][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -1873,84 +2359,63 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 4 Case', u'ContextMenu4')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 You Are Here!', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm4.SetBackgroundColour('#F4FAB4')
-        mgm4.Enable(False)
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 4:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        uppercase = wx.MenuItem(rightclickmenu, 4001, '&UPPER CASE', ' Change Selected text to all UPPER CASE')
+        uppercase = wx.MenuItem(rightclickmenu, ID_UPPERCASE, '&UPPER CASE', ' Change Selected text to all UPPER CASE')
         uppercase.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'uppercase16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(uppercase)
-        lowercase = wx.MenuItem(rightclickmenu, 4002, '&lower case', ' Change Selected text to all lower case')
+        lowercase = wx.MenuItem(rightclickmenu, ID_LOWERCASE, '&lower case', ' Change Selected text to all lower case')
         lowercase.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'lowercase16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(lowercase)
-        invertcase = wx.MenuItem(rightclickmenu, 4003, '&iNVERT cASE', ' Invert Case of Selected text')
+        invertcase = wx.MenuItem(rightclickmenu, ID_INVERTCASE, '&iNVERT cASE', ' Invert Case of Selected text')
         invertcase.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'invertcase2416.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(invertcase)
-        capitalcase = wx.MenuItem(rightclickmenu, 4004, '&Capital Case', ' Change Selected text to all Capital Case(words)')
+        capitalcase = wx.MenuItem(rightclickmenu, ID_CAPITALCASE, '&Capital Case', ' Change Selected text to all Capital Case(words)')
         capitalcase.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'capitalcase16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(capitalcase)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 4001, self.OnUPPERCASE)
-        wx.EVT_MENU(rightclickmenu, 4002, self.Onlowercase)
-        wx.EVT_MENU(rightclickmenu, 4003, self.OnInvertCase)
-        wx.EVT_MENU(rightclickmenu, 4004, self.OnCapitalCase)
+        wx.EVT_MENU(rightclickmenu, ID_UPPERCASE, self.OnUPPERCASE)
+        wx.EVT_MENU(rightclickmenu, ID_LOWERCASE, self.Onlowercase)
+        wx.EVT_MENU(rightclickmenu, ID_INVERTCASE, self.OnInvertCase)
+        wx.EVT_MENU(rightclickmenu, ID_CAPITALCASE, self.OnCapitalCase)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
     def OnRMouseGestureMenu6(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:6
+        [7][8][9]
+        [4][5][@]
+        [1][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -1958,56 +2423,29 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 6 Conversion', u'ContextMenu6')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 You Are Here!', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm6.SetBackgroundColour('#F4FAB4')
-        mgm6.Enable(False)
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 6:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        txt2wizfiledrop = wx.MenuItem(rightclickmenu, 3101, u'& Txt2Wiz (FileDrop)', u' Txt2Wiz (FileDrop)')
+        txt2wizfiledrop = wx.MenuItem(rightclickmenu, ID_TXT2WIZFILE, u'& Txt2Wiz (FileDrop)', u' Txt2Wiz (FileDrop)')
         txt2wizfiledrop.SetBitmap(wx.Image(self.imgDir + os.sep + 'wizard.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(txt2wizfiledrop)
 
-        txt2wiztextdrop = wx.MenuItem(rightclickmenu, 3102, u'& Txt2Wiz (TextDrop)', u' Txt2Wiz (TextDrop)')
+        txt2wiztextdrop = wx.MenuItem(rightclickmenu, ID_TXT2WIZTEXT, u'& Txt2Wiz (TextDrop)', u' Txt2Wiz (TextDrop)')
         txt2wiztextdrop.SetBitmap(wx.Image(self.imgDir + os.sep + 'wizard.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(txt2wiztextdrop)
 
@@ -2028,23 +2466,29 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rightclickmenu.AppendItem(hmmm)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 3101, self.OnTextToWizardStringFileDropMiniFrame)
-        wx.EVT_MENU(rightclickmenu, 3102, self.OnTextToWizardStringTextDropMiniFrame)
+        wx.EVT_MENU(rightclickmenu, ID_TXT2WIZFILE, self.OnTextToWizardStringFileDropMiniFrame)
+        wx.EVT_MENU(rightclickmenu, ID_TXT2WIZTEXT, self.OnTextToWizardStringTextDropMiniFrame)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
     def OnRMouseGestureMenu7(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:7
+        [@][8][9]
+        [4][5][6]
+        [1][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -2052,47 +2496,20 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 7', u'ContextMenu7')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7 You Are Here!', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm7.SetBackgroundColour('#F4FAB4')
-        mgm7.Enable(False)
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 7:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
@@ -2126,20 +2543,26 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rightclickmenu.AppendItem(hmmm)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
     def OnRMouseGestureMenu8(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:8
+        [7][@][9]
+        [4][5][6]
+        [1][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -2147,160 +2570,133 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 8 Line Operations', u'ContextMenu8')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 You Are Here!', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm8.SetBackgroundColour('#F4FAB4')
-        mgm8.Enable(False)
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 Options', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 8:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        newlinebefore = wx.MenuItem(rightclickmenu, 2101, u'&New Line Before', u' Insert a new line before the current line.')
+        newlinebefore = wx.MenuItem(rightclickmenu, ID_NEWLINEBEFORE, u'&New Line Before', u' Insert a new line before the current line.')
         newlinebefore.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'newlinebefore16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(newlinebefore)
 
-        newlineafter = wx.MenuItem(rightclickmenu, 2102, u'&New Line After', u' Insert a new line after the current line.')
+        newlineafter = wx.MenuItem(rightclickmenu, ID_NEWLINEAFTER, u'&New Line After', u' Insert a new line after the current line.')
         newlineafter.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'newlineafter16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(newlineafter)
 
-        cutline = wx.MenuItem(rightclickmenu, 2103, u'&Cut Line', u' Cut the current line to the clipboard.')
+        cutline = wx.MenuItem(rightclickmenu, ID_CUTLINE, u'&Cut Line', u' Cut the current line to the clipboard.')
         cutline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'cutline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(cutline)
 
-        copyline = wx.MenuItem(rightclickmenu, 2104, u'&Copy Line', u' Copy the current line to the clipboard.')
+        copyline = wx.MenuItem(rightclickmenu, ID_COPYLINE, u'&Copy Line', u' Copy the current line to the clipboard.')
         copyline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'copyline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(copyline)
 
-        deleteline = wx.MenuItem(rightclickmenu, 2105, u'&Delete Line\tCtrl+L', u' Delete the current line.')
+        deleteline = wx.MenuItem(rightclickmenu, ID_DELETELINE, u'&Delete Line\tCtrl+L', u' Delete the current line.')
         deleteline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'deleteline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(deleteline)
 
-        deletelinecontents = wx.MenuItem(rightclickmenu, 2106, u'&Delete Line Contents', u' Delete the contents of the current line.')
+        deletelinecontents = wx.MenuItem(rightclickmenu, ID_DELETELINECONTENTS, u'&Delete Line Contents', u' Delete the contents of the current line.')
         deletelinecontents.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'deleteline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(deletelinecontents)
 
-        selectline = wx.MenuItem(rightclickmenu, 2107, u'&Select Line(without EOL)', u' Select the contents of the caret line without EOL chars.')
+        selectline = wx.MenuItem(rightclickmenu, ID_SELECTLINENOEOL, u'&Select Line(without EOL)', u' Select the contents of the caret line without EOL chars.')
         selectline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'selectline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(selectline)
 
-        duplicateline = wx.MenuItem(rightclickmenu, 2108, u'&Duplicate Line', u' Duplicate the current line.')
+        duplicateline = wx.MenuItem(rightclickmenu, ID_DUPLICATELINE, u'&Duplicate Line', u' Duplicate the current line.')
         duplicateline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'duplicateline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(duplicateline)
 
-        duplicateselectionline = wx.MenuItem(rightclickmenu, 2109, u'&Duplicate Selection/Line\tCtrl+D', u' Duplicate the selection. If the selection is empty, it duplicates the line containing the caret.')
+        duplicateselectionline = wx.MenuItem(rightclickmenu, ID_DUPLICATESELECTIONLINE, u'&Duplicate Selection/Line\tCtrl+D', u' Duplicate the selection. If the selection is empty, it duplicates the line containing the caret.')
         duplicateselectionline.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'duplicateselectionline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(duplicateselectionline)
 
-        duplicatelinentimes = wx.MenuItem(rightclickmenu, 2110, u'&Duplicate Line n Times', u' Duplicate the current line n times.')
+        duplicatelinentimes = wx.MenuItem(rightclickmenu, ID_DUPLICATELINENTIMES, u'&Duplicate Line n Times', u' Duplicate the current line n times.')
         duplicatelinentimes.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'duplicateselectionline16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(duplicatelinentimes)
 
-        joinlines = wx.MenuItem(rightclickmenu, 2111, u'&Join Lines', u' Join the currently selected lines.')
+        joinlines = wx.MenuItem(rightclickmenu, ID_JOINLINES, u'&Join Lines', u' Join the currently selected lines.')
         joinlines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'joinlines16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(joinlines)
 
-        splitlines = wx.MenuItem(rightclickmenu, 2112, u'&Split Lines', u' Split the lines in the target into lines that are less wide than pixelWidth where possible.')
+        splitlines = wx.MenuItem(rightclickmenu, ID_SPLITLINES, u'&Split Lines', u' Split the lines in the target into lines that are less wide than pixelWidth where possible.')
         splitlines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'splitlines16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(splitlines)
 
-        switcheroolinetranspose = wx.MenuItem(rightclickmenu, 2113, u'&Line Transpose\tCtrl+T', u' Switcheroo the current line with the previous.')
+        switcheroolinetranspose = wx.MenuItem(rightclickmenu, ID_LINETRANSPOSE, u'&Line Transpose\tCtrl+T', u' Switcheroo the current line with the previous.')
         switcheroolinetranspose.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'linetranspose16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(switcheroolinetranspose)
 
-        movelineup = wx.MenuItem(rightclickmenu, 2114, u'&Move Line Up\tCtrl+Shift+Up', u' Move the current line up.')
+        movelineup = wx.MenuItem(rightclickmenu, ID_MOVELINEUP, u'&Move Line Up\tCtrl+Shift+Up', u' Move the current line up.')
         movelineup.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowupbw16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(movelineup)
 
-        movelinedown = wx.MenuItem(rightclickmenu, 2115, u'&Move Line Down\tCtrl+Shift+Down', u' Move the current line down.')
+        movelinedown = wx.MenuItem(rightclickmenu, ID_MOVELINEDOWN, u'&Move Line Down\tCtrl+Shift+Down', u' Move the current line down.')
         movelinedown.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowdownbw16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(movelinedown)
 
-        appendselectedlineswithastring = wx.MenuItem(rightclickmenu, 2116, u'&Append Selected Line(s) with a string', u' Append Selected Line(s) with a string.')
+        appendselectedlineswithastring = wx.MenuItem(rightclickmenu, ID_APPENDLINESSTR, u'&Append Selected Line(s) with a string', u' Append Selected Line(s) with a string.')
         appendselectedlineswithastring.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'append16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(appendselectedlineswithastring)
 
-        removestringfromendoflines = wx.MenuItem(rightclickmenu, 2117, u'&Remove string from end of selected lines', u' Remove a user-defined string from the end of selected lines.')
+        removestringfromendoflines = wx.MenuItem(rightclickmenu, ID_REMOVESTRENDLINES, u'&Remove string from end of selected lines', u' Remove a user-defined string from the end of selected lines.')
         removestringfromendoflines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'remove16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(removestringfromendoflines)
 
-        removestringfromstartoflines = wx.MenuItem(rightclickmenu, 2118, u'&Remove string from start of lines', u' Remove a user-defined string from the start of selected lines.')
+        removestringfromstartoflines = wx.MenuItem(rightclickmenu, ID_REMOVESTRSTARTLINES, u'&Remove string from start of lines', u' Remove a user-defined string from the start of selected lines.')
         removestringfromstartoflines.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'remove16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(removestringfromstartoflines)
 
-        padwithspaces = wx.MenuItem(rightclickmenu, 2120, u'&Pad With Spaces(selected lines)', u' Pad selected lines with spaces to the longest column width')
+        padwithspaces = wx.MenuItem(rightclickmenu, ID_PADWITHSPACES, u'&Pad With Spaces(selected lines)', u' Pad selected lines with spaces to the longest column width')
         padwithspaces.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'padwithspaces16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(padwithspaces)
 
 
 
         #events
-        wx.EVT_MENU(rightclickmenu, 2101, self.OnNewLineBefore)
-        wx.EVT_MENU(rightclickmenu, 2102, self.OnNewLineAfter)
-        wx.EVT_MENU(rightclickmenu, 2103, self.OnLineCut)
-        wx.EVT_MENU(rightclickmenu, 2104, self.OnLineCopy)
-        wx.EVT_MENU(rightclickmenu, 2105, self.OnLineDelete)
-        wx.EVT_MENU(rightclickmenu, 2106, self.OnDeleteLineContents)
-        wx.EVT_MENU(rightclickmenu, 2107, self.OnLineSelect)
-        wx.EVT_MENU(rightclickmenu, 2108, self.OnLineDuplicate)
-        wx.EVT_MENU(rightclickmenu, 2109, self.OnDuplicateSelectionLine)
-        wx.EVT_MENU(rightclickmenu, 2110, self.OnLineDuplicateNTimes)
-        wx.EVT_MENU(rightclickmenu, 2111, self.OnLinesJoin)
-        wx.EVT_MENU(rightclickmenu, 2112, self.OnLinesSplit)
-        wx.EVT_MENU(rightclickmenu, 2113, self.OnLineTranspose)
-        wx.EVT_MENU(rightclickmenu, 2114, self.OnMoveLineUp)
-        wx.EVT_MENU(rightclickmenu, 2115, self.OnMoveLineDown)
-        wx.EVT_MENU(rightclickmenu, 2116, self.OnAppendSelectedLinesWithAString)
-        wx.EVT_MENU(rightclickmenu, 2117, self.OnRemoveStringFromEndOfSelectedLines)
-        wx.EVT_MENU(rightclickmenu, 2118, self.OnRemoveStringFromStartOfSelectedLines)
+        wx.EVT_MENU(rightclickmenu, ID_NEWLINEBEFORE, self.OnNewLineBefore)
+        wx.EVT_MENU(rightclickmenu, ID_NEWLINEAFTER, self.OnNewLineAfter)
+        wx.EVT_MENU(rightclickmenu, ID_CUTLINE, self.OnLineCut)
+        wx.EVT_MENU(rightclickmenu, ID_COPYLINE, self.OnLineCopy)
+        wx.EVT_MENU(rightclickmenu, ID_DELETELINE, self.OnLineDelete)
+        wx.EVT_MENU(rightclickmenu, ID_DELETELINECONTENTS, self.OnDeleteLineContents)
+        wx.EVT_MENU(rightclickmenu, ID_SELECTLINENOEOL, self.OnLineSelect)
+        wx.EVT_MENU(rightclickmenu, ID_DUPLICATELINE, self.OnLineDuplicate)
+        wx.EVT_MENU(rightclickmenu, ID_DUPLICATESELECTIONLINE, self.OnDuplicateSelectionLine)
+        wx.EVT_MENU(rightclickmenu, ID_DUPLICATELINENTIMES, self.OnLineDuplicateNTimes)
+        wx.EVT_MENU(rightclickmenu, ID_JOINLINES, self.OnLinesJoin)
+        wx.EVT_MENU(rightclickmenu, ID_SPLITLINES, self.OnLinesSplit)
+        wx.EVT_MENU(rightclickmenu, ID_LINETRANSPOSE, self.OnLineTranspose)
+        wx.EVT_MENU(rightclickmenu, ID_MOVELINEUP, self.OnMoveLineUp)
+        wx.EVT_MENU(rightclickmenu, ID_MOVELINEDOWN, self.OnMoveLineDown)
+        wx.EVT_MENU(rightclickmenu, ID_APPENDLINESSTR, self.OnAppendSelectedLinesWithAString)
+        wx.EVT_MENU(rightclickmenu, ID_REMOVESTRENDLINES, self.OnRemoveStringFromEndOfSelectedLines)
+        wx.EVT_MENU(rightclickmenu, ID_REMOVESTRSTARTLINES, self.OnRemoveStringFromStartOfSelectedLines)
 
-        wx.EVT_MENU(rightclickmenu, 2120, self.OnPadWithSpacesSelectedLines)
+        wx.EVT_MENU(rightclickmenu, ID_PADWITHSPACES, self.OnPadWithSpacesSelectedLines)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
@@ -2327,9 +2723,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         ''' Copy the line containing the caret. '''
         self.LineCopy()
 
-    def OnLineDelete(self, event):
+    def OnLineDelete(self, event, nTimes=1):
         ''' Delete the line containing the caret. '''
-        self.LineDelete()
+        for i in range(0,nTimes):
+            self.LineDelete()
 
     def OnDeleteLineContents(self, event):
         ''' Delete the contents of the line containing the caret, but not the line itself.'''
@@ -2400,6 +2797,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             self.EndUndoAction()
 
     def OnAppendSelectedLinesWithAString(self, event):
+        ''' Call a dialog asking the user for a string to append to the end of selected line(s) '''
         dialog = wx.TextEntryDialog(self, u'line1 Append A String\nline2 Append A String\nline3 Append A String\netc...', u'Append (selected lines) with a string', u' Append A String')
         if dialog.ShowModal() == wx.ID_OK:
             self.BeginUndoAction()
@@ -2416,6 +2814,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         dialog.Destroy()
 
     def OnRemoveStringFromEndOfSelectedLines(self, event):
+        ''' Call a dialog asking the user for a string to remove from the end of selected line(s) '''
         dialog = wx.TextEntryDialog(self, u'ExampleString to remove:ing\n\nline(s) Remove A String\nbecomes\nline(s) Remove A Str\netc...\n\nNote: Does not strip trailing whitespace!', u'Remove String from end of Selected Lines', u' Remove End String')
         if dialog.ShowModal() == wx.ID_OK:
             self.BeginUndoAction()
@@ -2435,6 +2834,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         dialog.Destroy()
 
     def OnRemoveStringFromStartOfSelectedLines(self, event):
+        ''' Call a dialog asking the user for a string to remove from the beginning of selected line(s) '''
         dialog = wx.TextEntryDialog(self, u'ExampleString to remove:Rem\n\nline(s) Remove A String\nbecomes\nline(s) ove A String\netc...\n\nNote: Leading indentation/whitespace is ignored!', u'Remove String from end of Selected Lines', u' Remove End String')
         if dialog.ShowModal() == wx.ID_OK:
             self.BeginUndoAction()
@@ -2476,6 +2876,12 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.EndUndoAction()
 
     def OnRMouseGestureMenu9(self, event):
+        ''' Call the Right Mouse Gesture Menu.
+        NUMPAD:9
+        [7][8][@]
+        [4][5][6]
+        [1][2][3]
+        '''
         rightclickmenu = wx.Menu()
 
         p = wx.BITMAP_TYPE_PNG
@@ -2483,68 +2889,41 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 9 Options', u'ContextMenu9')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
-        rcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonright16.png'),p).ConvertToBitmap())
+        rcheader1.SetDisabledBitmap(self.rmbImg)
         rcheader1.Enable(False)
 
         submenu = wx.Menu()
-        mgm1 = wx.MenuItem(rightclickmenu, 3001, u'&R MGM 1', u' Call Mouse Gesture Menu 1')
-        mgm1.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm1)
-
-        mgm2 = wx.MenuItem(rightclickmenu, 3002, u'&R MGM 2 Wizard', u' Call Mouse Gesture Menu 2')
-        mgm2.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm2)
-
-        mgm3 = wx.MenuItem(rightclickmenu, 3003, u'&R MGM 3', u' Call Mouse Gesture Menu 3')
-        mgm3.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm3)
-
-        mgm4 = wx.MenuItem(rightclickmenu, 3004, u'&R MGM 4 Case', u' Call Mouse Gesture Menu 4')
-        mgm4.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm4)
-
-        mgm5 = wx.MenuItem(rightclickmenu, 3005, u'&R MGM 5', u' Call Mouse Gesture Menu 5')
-        mgm5.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm5)
-
-        mgm6 = wx.MenuItem(rightclickmenu, 3006, u'&R MGM 6 Conversion', u' Call Mouse Gesture Menu 6')
-        mgm6.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm6)
-
-        mgm7 = wx.MenuItem(rightclickmenu, 3007, u'&R MGM 7', u' Call Mouse Gesture Menu 7')
-        mgm7.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm7)
-
-        mgm8 = wx.MenuItem(rightclickmenu, 3008, u'&R MGM 8 Line Operations', u' Call Mouse Gesture Menu 8')
-        mgm8.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousegesturemenu16.png'),p).ConvertToBitmap())
-        submenu.AppendItem(mgm8)
-
-        mgm9 = wx.MenuItem(rightclickmenu, 3009, u'&R MGM 9 You Are Here!', u' Call Mouse Gesture Menu 9')
-        mgm9.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'youarehere16.png'),p).ConvertToBitmap())
-        mgm9.SetBackgroundColour('#F4FAB4')
-        mgm9.Enable(False)
-        submenu.AppendItem(mgm9)
+        for i in range(1,10):
+            if i == 9:#The currently open menu
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s You Are Here!'%str(i), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.yahImg)
+                mgm.SetBackgroundColour('#F4FAB4')
+                mgm.Enable(False)
+            else:
+                mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+                mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        togglewhitespace = wx.MenuItem(rightclickmenu, 9001, u'&Toggle Whitespace', u' Toggle Whitespace')
+        togglewhitespace = wx.MenuItem(rightclickmenu, ID_TOGGLEWHITESPACE, u'&Toggle Whitespace', u' Toggle Whitespace')
         togglewhitespace.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'showwhitespace16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(togglewhitespace)
 
-        toggleindentguides = wx.MenuItem(rightclickmenu, 9002, u'&Toggle Indent Guides', u' Toggle Indent Guides On/Off')
+        toggleindentguides = wx.MenuItem(rightclickmenu, ID_TOGGLEINDENTGUIDES, u'&Toggle Indent Guides', u' Toggle Indent Guides On/Off')
         toggleindentguides.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'showindentationguide16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(toggleindentguides)
 
-        togglewordwrap = wx.MenuItem(rightclickmenu, 9003, u'&Toggle Wordwrap', u' Toggle Wordwrap On/Off')
+        togglewordwrap = wx.MenuItem(rightclickmenu, ID_TOGGLEWORDWRAP, u'&Toggle Wordwrap', u' Toggle Wordwrap On/Off')
         togglewordwrap.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'wordwrap16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(togglewordwrap)
 
-        highlightselectedline = wx.MenuItem(rightclickmenu, 9004, u'&Highlight Selected Line', u' Highlight Selected Line')
+        highlightselectedline = wx.MenuItem(rightclickmenu, ID_TOGGLELINEHIGHLIGHT, u'&Highlight Selected Line', u' Highlight Selected Line')
         highlightselectedline.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'highlightcurrentline16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(highlightselectedline)
 
-        toggleeolview = wx.MenuItem(rightclickmenu, 9005, u'&Toggle EOL View', u' Toggle Show/Hide End of line characters ')
+        toggleeolview = wx.MenuItem(rightclickmenu, ID_TOGGLEEOLVIEW, u'&Toggle EOL View', u' Toggle Show/Hide End of line characters ')
         toggleeolview.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'eollf16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(toggleeolview)
 
@@ -2563,117 +2942,48 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rightclickmenu.AppendSeparator()
 
         submenu_themes = wx.Menu()
-
-        self.themedefault = wx.MenuItem(rightclickmenu, 7901, u'&Default Theme', u' Default Theme', kind = wx.ITEM_CHECK)
-        self.themedefault.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themedefault)
-        if gGlobalsDict['ThemeOnStartup'] == 'Default': self.themedefault.Check(True)
-
-        self.themeconsole = wx.MenuItem(rightclickmenu, 7902, u'&Console', u' Console Theme', kind = wx.ITEM_CHECK)
-        self.themeconsole.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themeconsole)
-        if gGlobalsDict['ThemeOnStartup'] == 'Console': self.themeconsole.Check(True)
-
-        self.themeobsidian = wx.MenuItem(rightclickmenu, 7903, u'&Obsidian', u' Obsidian Theme', kind = wx.ITEM_CHECK)
-        self.themeobsidian.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themeobsidian)
-        if gGlobalsDict['ThemeOnStartup'] == 'Obsidian': self.themeobsidian.Check(True)
-
-        self.themezenburn = wx.MenuItem(rightclickmenu, 7904, u'&Zenburn', u' Zenburn Theme', kind = wx.ITEM_CHECK)
-        self.themezenburn.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themezenburn)
-        if gGlobalsDict['ThemeOnStartup'] == 'Zenburn': self.themezenburn.Check(True)
-
-        self.thememonokai = wx.MenuItem(rightclickmenu, 7905, u'&Monokai', u' Monokai Theme', kind = wx.ITEM_CHECK)
-        self.thememonokai.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.thememonokai)
-        if gGlobalsDict['ThemeOnStartup'] == 'Monokai': self.thememonokai.Check(True)
-
-        self.themedeepspace = wx.MenuItem(rightclickmenu, 7906, u'&Deep Space', u' Deep Space Theme', kind = wx.ITEM_CHECK)
-        self.themedeepspace.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themedeepspace)
-        if gGlobalsDict['ThemeOnStartup'] == 'DeepSpace': self.themedeepspace.Check(True)
-
-        self.themegreensideup = wx.MenuItem(rightclickmenu, 7907, u'&Green Side Up', u' Green Side Up Theme', kind = wx.ITEM_CHECK)
-        self.themegreensideup.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themegreensideup)
-        if gGlobalsDict['ThemeOnStartup'] == 'GreenSideUp': self.themegreensideup.Check(True)
-
-        self.themetwilight = wx.MenuItem(rightclickmenu, 7908, u'&Twilight', u' Twilight Theme', kind = wx.ITEM_CHECK)
-        self.themetwilight.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themetwilight)
-        if gGlobalsDict['ThemeOnStartup'] == 'Twilight': self.themetwilight.Check(True)
-
-        self.themeulipad = wx.MenuItem(rightclickmenu, 7909, u'&UliPad', u' UliPad Theme', kind = wx.ITEM_CHECK)
-        self.themeulipad.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themeulipad)
-        if gGlobalsDict['ThemeOnStartup'] == 'Ulipad': self.themeulipad.Check(True)
-
-        self.themehellokitty = wx.MenuItem(rightclickmenu, 7910, u'&Hello Kitty', u' Hello Kitty Theme', kind = wx.ITEM_CHECK)
-        self.themehellokitty.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themehellokitty)
-        if gGlobalsDict['ThemeOnStartup'] == 'HelloKitty': self.themehellokitty.Check(True)
-
-        self.themevibrantink = wx.MenuItem(rightclickmenu, 7911, u'&Vibrant Ink', u' Vibrant Ink Theme', kind = wx.ITEM_CHECK)
-        self.themevibrantink.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themevibrantink)
-        if gGlobalsDict['ThemeOnStartup'] == 'VibrantInk': self.themevibrantink.Check(True)
-
-        self.themebirdsofparidise = wx.MenuItem(rightclickmenu, 7912, u'&Birds of Paridise', u' Birds of Paridise Theme', kind = wx.ITEM_CHECK)
-        self.themebirdsofparidise.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themebirdsofparidise)
-        if gGlobalsDict['ThemeOnStartup'] == 'BirdsOfParidise': self.themebirdsofparidise.Check(True)
-
-        self.themeblacklight = wx.MenuItem(rightclickmenu, 7913, u'&BlackLight', u' BlackLight Theme', kind = wx.ITEM_CHECK)
-        self.themeblacklight.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themeblacklight)
-        if gGlobalsDict['ThemeOnStartup'] == 'BlackLight': self.themeblacklight.Check(True)
-
-        self.themenotebook = wx.MenuItem(rightclickmenu, 7914, u'&Notebook', u' Notebook Theme', kind = wx.ITEM_CHECK)
-        self.themenotebook.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(self.themenotebook)
-        if gGlobalsDict['ThemeOnStartup'] == 'Notebook': self.themenotebook.Check(True)
-
-        submenu_themes.AppendSeparator()
-
-        toggleeditortheme = wx.MenuItem(rightclickmenu, 7930, u'&Toggle Editor Themes\tF12', u' Toggle thru the various editor themes.')
-        toggleeditortheme.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'toggletheme24.png',p).ConvertToBitmap())
-        submenu_themes.AppendItem(toggleeditortheme)
-
+        self.themeIDs = [ID_THEMENONE,ID_THEMEDEFAULT,ID_THEMECONSOLE,ID_THEMEOBSIDIAN,ID_THEMEZENBURN,ID_THEMEMONOKAI,ID_THEMEDEEPSPACE,ID_THEMEGREENSIDEUP,ID_THEMETWILIGHT,ID_THEMEULIPAD,ID_THEMEHELLOKITTY,ID_THEMEVIBRANTINK,ID_THEMEBIRDSOFPARIDISE,ID_THEMEBLACKLIGHT,ID_THEMENOTEBOOK]
+        self.themeLABELs = ['No Theme','Default','Console','Obsidian','Zenburn','Monokai','Deep Space','Green Side Up','Twilight','UliPad','Hello Kitty','Vibrant Ink','Birds Of Paridise','BlackLight','Notebook']
+        for i in range(1,len(self.themeIDs)+1):
+            theme = wx.MenuItem(rightclickmenu, self.themeIDs[i-1], u'&%s'%self.themeLABELs[i-1], u' %s Theme'%self.themeLABELs[i-1], kind = wx.ITEM_CHECK)
+            theme.SetBitmap(self.chkImg)
+            submenu_themes.AppendItem(theme)
+            if gGlobalsDict['ThemeOnStartup'] == u'%s' %self.themeLABELs[i-1]: theme.Check(True)
         rightclickmenu.AppendMenu(7900, u'Themes', submenu_themes)
 
         #events
-        wx.EVT_MENU(rightclickmenu, 7901, self.OnDefaultTheme)
-        wx.EVT_MENU(rightclickmenu, 7902, self.OnConsoleTheme)
-        wx.EVT_MENU(rightclickmenu, 7903, self.OnObsidianTheme)
-        wx.EVT_MENU(rightclickmenu, 7904, self.OnZenburnTheme)
-        wx.EVT_MENU(rightclickmenu, 7905, self.OnMonokaiTheme)
-        wx.EVT_MENU(rightclickmenu, 7906, self.OnDeepSpaceTheme)
-        wx.EVT_MENU(rightclickmenu, 7907, self.OnGreenSideUpTheme)
-        wx.EVT_MENU(rightclickmenu, 7908, self.OnTwilightTheme)
-        wx.EVT_MENU(rightclickmenu, 7909, self.OnUliPadTheme)
-        wx.EVT_MENU(rightclickmenu, 7910, self.OnHelloKittyTheme)
-        wx.EVT_MENU(rightclickmenu, 7911, self.OnVibrantInkTheme)
-        wx.EVT_MENU(rightclickmenu, 7912, self.OnBirdsOfParidiseTheme)
-        wx.EVT_MENU(rightclickmenu, 7913, self.OnBlackLightTheme)
-        wx.EVT_MENU(rightclickmenu, 7914, self.OnNotebookTheme)
-        wx.EVT_MENU(rightclickmenu, 7930, self.OnToggleEditorThemes)
+        wx.EVT_MENU(rightclickmenu, ID_THEMENONE, self.OnNoTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEDEFAULT, self.OnDefaultTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMECONSOLE, self.OnConsoleTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEOBSIDIAN, self.OnObsidianTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEZENBURN, self.OnZenburnTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEMONOKAI, self.OnMonokaiTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEDEEPSPACE, self.OnDeepSpaceTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEGREENSIDEUP, self.OnGreenSideUpTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMETWILIGHT, self.OnTwilightTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEULIPAD, self.OnUliPadTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEHELLOKITTY, self.OnHelloKittyTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEVIBRANTINK, self.OnVibrantInkTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEBIRDSOFPARIDISE, self.OnBirdsOfParidiseTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMEBLACKLIGHT, self.OnBlackLightTheme)
+        wx.EVT_MENU(rightclickmenu, ID_THEMENOTEBOOK, self.OnNotebookTheme)
+        wx.EVT_MENU(rightclickmenu, ID_TOGGLETHEMES, self.OnToggleEditorThemes)
 
-        wx.EVT_MENU(rightclickmenu, 9001, self.OnViewWhitespace)
-        wx.EVT_MENU(rightclickmenu, 9002, self.OnShowIndentationGuides)
-        wx.EVT_MENU(rightclickmenu, 9003, self.OnWordwrap)
-        wx.EVT_MENU(rightclickmenu, 9004, self.OnHighlightSelectedLine)
-        wx.EVT_MENU(rightclickmenu, 9005, self.OnShowEOL)
+        wx.EVT_MENU(rightclickmenu, ID_TOGGLEWHITESPACE, self.OnViewWhitespace)
+        wx.EVT_MENU(rightclickmenu, ID_TOGGLEINDENTGUIDES, self.OnShowIndentationGuides)
+        wx.EVT_MENU(rightclickmenu, ID_TOGGLEWORDWRAP, self.OnWordwrap)
+        wx.EVT_MENU(rightclickmenu, ID_TOGGLELINEHIGHLIGHT, self.OnHighlightSelectedLine)
+        wx.EVT_MENU(rightclickmenu, ID_TOGGLEEOLVIEW, self.OnShowEOL)
 
-        wx.EVT_MENU(rightclickmenu, 3001, self.OnRMouseGestureMenu1)
-        wx.EVT_MENU(rightclickmenu, 3002, self.OnRMouseGestureMenu2)
-        wx.EVT_MENU(rightclickmenu, 3003, self.OnRMouseGestureMenu3)
-        wx.EVT_MENU(rightclickmenu, 3004, self.OnRMouseGestureMenu4)
-        wx.EVT_MENU(rightclickmenu, 3005, self.OnRMouseGestureMenuNone)
-        wx.EVT_MENU(rightclickmenu, 3006, self.OnRMouseGestureMenu6)
-        wx.EVT_MENU(rightclickmenu, 3007, self.OnRMouseGestureMenu7)
-        wx.EVT_MENU(rightclickmenu, 3008, self.OnRMouseGestureMenu8)
-        wx.EVT_MENU(rightclickmenu, 3009, self.OnRMouseGestureMenu9)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
@@ -2704,40 +3014,42 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         elif self.GetViewEOL() == 0: self.SetViewEOL(True)
 
     def OnSetFolderMarginStyle(self, event):#Called after STC is initialised MainWindow Initial Startup. Not sure why but calling it here in the class causes the fold symbols to not work quite properly at startup...
-        if   gGlobalsDict['ThemeOnStartup'] == 'Default':         Color1 = '#000000'; Color2 = '#32CC99'#medium aquamarine
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':         Color1 = '#BBBBBB'; Color2 = '#000000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':        Color1 = '#293134'; Color2 = '#66747B'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':         Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':         Color1 = '#272822'; Color2 = '#75715E'
-        elif gGlobalsDict['ThemeOnStartup'] == 'DeepSpace':       Color1 = '#0D0D0D'; Color2 = '#483C45'
-        elif gGlobalsDict['ThemeOnStartup'] == 'GreenSideUp':     Color1 = '#12362B'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':        Color1 = '#2E3436'; Color2 = '#F9EE98'
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':          Color1 = '#FFFFFF'; Color2 = '#F0804F'
-        elif gGlobalsDict['ThemeOnStartup'] == 'HelloKitty':      Color1 = '#FF0000'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'VibrantInk':      Color1 = '#333333'; Color2 = '#999999'
-        elif gGlobalsDict['ThemeOnStartup'] == 'BirdsOfParidise': Color1 = '#423230'; Color2 = '#D9D458'
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':      Color1 = '#FF7800'; Color2 = '#535AE9'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':        Color1 = '#000000'; Color2 = '#A0D6E2'
+        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          Color1 = '#000000'; Color2 = '#FFFFFF'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           Color1 = '#000000'; Color2 = '#32CC99'#medium aquamarine
+        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           Color1 = '#BBBBBB'; Color2 = '#000000'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          Color1 = '#293134'; Color2 = '#66747B'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           Color1 = '#272822'; Color2 = '#75715E'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        Color1 = '#0D0D0D'; Color2 = '#483C45'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     Color1 = '#12362B'; Color2 = '#FFFFFF'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          Color1 = '#2E3436'; Color2 = '#F9EE98'
+        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            Color1 = '#FFFFFF'; Color2 = '#F0804F'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       Color1 = '#FF0000'; Color2 = '#FFFFFF'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       Color1 = '#333333'; Color2 = '#999999'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': Color1 = '#423230'; Color2 = '#D9D458'
+        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        Color1 = '#FF7800'; Color2 = '#535AE9'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          Color1 = '#000000'; Color2 = '#A0D6E2'
 
         elif gGlobalsDict['FolderMarginStyle'] == 1: self.OnFolderMarginStyle1(event, Color1, Color2)
         elif gGlobalsDict['FolderMarginStyle'] == 2: self.OnFolderMarginStyle2(event, Color1, Color2)
         elif gGlobalsDict['FolderMarginStyle'] == 5: self.OnFolderMarginStyle5(event, Color1, Color2)
         elif gGlobalsDict['FolderMarginStyle'] == 6: self.OnFolderMarginStyle6(event, Color1, Color2)
 
-        if   gGlobalsDict['ThemeOnStartup'] == 'Default':         Color1 = '#32CC99'; Color2 = '#000000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':         Color1 = '#000000'; Color2 = '#BBBBBB'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':        Color1 = '#293134'; Color2 = '#66747B'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':         Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':         Color1 = '#75715E'; Color2 = '#272822'
-        elif gGlobalsDict['ThemeOnStartup'] == 'DeepSpace':       Color1 = '#483C45'; Color2 = '#0D0D0D'
-        elif gGlobalsDict['ThemeOnStartup'] == 'GreenSideUp':     Color1 = '#FFFFFF'; Color2 = '#12362B'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':        Color1 = '#F9EE98'; Color2 = '#2E3436'
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':          Color1 = '#F0804F'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'HelloKitty':      Color1 = '#FFFFFF'; Color2 = '#FF0000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'VibrantInk':      Color1 = '#999999'; Color2 = '#333333'
-        elif gGlobalsDict['ThemeOnStartup'] == 'BirdsOfParidise': Color1 = '#D9D458'; Color2 = '#423230'
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':      Color1 = '#535AE9'; Color2 = '#FF7800'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':        Color1 = '#A0D6E2'; Color2 = '#000000'
+        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          Color1 = '#FFFFFF'; Color2 = '#000000'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           Color1 = '#32CC99'; Color2 = '#000000'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           Color1 = '#000000'; Color2 = '#BBBBBB'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          Color1 = '#293134'; Color2 = '#66747B'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           Color1 = '#75715E'; Color2 = '#272822'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        Color1 = '#483C45'; Color2 = '#0D0D0D'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     Color1 = '#FFFFFF'; Color2 = '#12362B'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          Color1 = '#F9EE98'; Color2 = '#2E3436'
+        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            Color1 = '#F0804F'; Color2 = '#FFFFFF'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       Color1 = '#FFFFFF'; Color2 = '#FF0000'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       Color1 = '#999999'; Color2 = '#333333'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': Color1 = '#D9D458'; Color2 = '#423230'
+        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        Color1 = '#535AE9'; Color2 = '#FF7800'
+        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          Color1 = '#A0D6E2'; Color2 = '#000000'
 
         if   gGlobalsDict['FolderMarginStyle'] == 3: self.OnFolderMarginStyle3(event, Color1, Color2)
         elif gGlobalsDict['FolderMarginStyle'] == 4: self.OnFolderMarginStyle4(event, Color1, Color2)
@@ -2804,38 +3116,96 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY,      Color1 , Color2)
 
     def OnSetTheme(self, event):
-        if   gGlobalsDict['ThemeOnStartup'] == 'Default':         self.OnDefaultTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':         self.OnConsoleTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':        self.OnObsidianTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':         self.OnZenburnTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':         self.OnMonokaiTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'DeepSpace':       self.OnDeepSpaceTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'GreenSideUp':     self.OnGreenSideUpTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':        self.OnTwilightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':          self.OnUliPadTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'HelloKitty':      self.OnHelloKittyTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'VibrantInk':      self.OnVibrantInkTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'BirdsOfParidise': self.OnBirdsOfParidiseTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':      self.OnBlackLightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':        self.OnNotebookTheme(event)
+        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          self.OnNoTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           self.OnDefaultTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           self.OnConsoleTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          self.OnObsidianTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           self.OnZenburnTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           self.OnMonokaiTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        self.OnDeepSpaceTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     self.OnGreenSideUpTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          self.OnTwilightTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            self.OnUliPadTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       self.OnHelloKittyTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       self.OnVibrantInkTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': self.OnBirdsOfParidiseTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        self.OnBlackLightTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          self.OnNotebookTheme(event)
         else:
             print ('ThemeOnStartup ERROR!!!!!!!!!!!!\nOnSetTheme')
 
     def OnToggleEditorThemes(self, event):
-        if   gGlobalsDict['ThemeOnStartup'] == 'Default':         self.OnConsoleTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':         self.OnObsidianTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':        self.OnZenburnTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':         self.OnMonokaiTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':         self.OnDeepSpaceTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'DeepSpace':       self.OnGreenSideUpTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'GreenSideUp':     self.OnTwilightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':        self.OnUliPadTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':          self.OnHelloKittyTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'HelloKitty':      self.OnVibrantInkTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'VibrantInk':      self.OnBirdsOfParidiseTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'BirdsOfParidise': self.OnBlackLightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':      self.OnNotebookTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':        self.OnDefaultTheme(event)
+        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          self.OnDefaultTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           self.OnConsoleTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           self.OnObsidianTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          self.OnZenburnTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           self.OnMonokaiTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           self.OnDeepSpaceTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        self.OnGreenSideUpTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     self.OnTwilightTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          self.OnUliPadTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            self.OnHelloKittyTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       self.OnVibrantInkTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       self.OnBirdsOfParidiseTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': self.OnBlackLightTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        self.OnNotebookTheme(event)
+        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          self.OnNoTheme(event)
+
+    def OnNoTheme(self, event):
+        gGlobalsDict['ThemeOnStartup'] = 'No Theme'
+
+        self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFFFFF,face:%(mono)s,size:%(size)d' % faces)
+        self.ClearDocumentStyle()
+        self.StyleClearAll()
+        self.SetCaretLineBackground('#DDDDDD')
+        self.SetCaretForeground('#000000')
+
+        self.rmousegesture.SetGesturePen('Black', 5)
+
+        self.SetFoldMarginHiColour(True, '#FFFFFF')
+        self.SetFoldMarginColour(True, '#000000')
+
+        self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFFFFF,face:%(mono)s,size:%(size)d' % faces)
+        self.StyleSetSpec(stc.STC_STYLE_INDENTGUIDE, 'fore:#000000,back:#FFFFFF')
+        self.StyleSetSpec(stc.STC_STYLE_LINENUMBER,  'fore:#FFFFFF,back:#000000,face:%(mono)s,size:%(size2)d' % faces)
+        self.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, 'fore:#000000,back:#FFFFFF')
+        self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT,  'fore:#000000,back:#FFFFFF')
+        self.StyleSetSpec(stc.STC_STYLE_BRACEBAD,    'fore:#000000,back:#FFFFFF')
+
+        self.SetWhitespaceForeground(True, '#000000')
+        self.SetWhitespaceBackground(False,'#FFFFFF')
+
+        self.SetSelForeground(False, '#000000')
+        self.SetSelBackground(True,  '#999999')
+
+        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+            # Make the Python styles ...
+            self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_NUMBER,         'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_STRING,         'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_CHARACTER,      'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_WORD,           'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_WORD2,          'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_TRIPLE,         'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE,   'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_CLASSNAME,      'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_DEFNAME,        'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_OPERATOR,       'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_IDENTIFIER,     'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_COMMENTBLOCK,   'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_STRINGEOL,      'fore:#000000,back:#FFFFFF')
+            self.StyleSetSpec(stc.STC_P_DECORATOR,      'fore:#000000,back:#FFFFFF')
+
+            self.StyleSetHotSpot(stc.STC_P_WORD, True)
+            self.StyleSetHotSpot(stc.STC_P_WORD2, True)
+
+        self.Colourise(0, self.GetLength())
+        self.OnSetFolderMarginStyle(event)
+        for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#000000')
+
+        self.SetMarginWidth(3, 0)
+        # print('No Theme')
 
     def OnDefaultTheme(self, event):
         gGlobalsDict['ThemeOnStartup'] = 'Default'
@@ -2890,6 +3260,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Default Theme')
 
     def OnConsoleTheme(self, event):
@@ -2944,6 +3315,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Console Theme')
 
     def OnObsidianTheme(self, event):
@@ -2998,6 +3370,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Obsidian Theme')
 
     def OnZenburnTheme(self, event):
@@ -3052,6 +3425,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Zenburn Theme')
 
     def OnMonokaiTheme(self, event):
@@ -3106,10 +3480,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Monokai Theme')
 
     def OnDeepSpaceTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'DeepSpace'
+        gGlobalsDict['ThemeOnStartup'] = 'Deep Space'
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#FFFFFF,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3160,10 +3535,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF00FF')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Deep Space Theme')
 
     def OnGreenSideUpTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'GreenSideUp'
+        gGlobalsDict['ThemeOnStartup'] = 'Green Side Up'
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#00FF00,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3214,6 +3590,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#8000FF')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Green Side Up Theme')
 
     def OnTwilightTheme(self, event):
@@ -3268,6 +3645,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#4526DD')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Twilight Theme')
 
     def OnUliPadTheme(self, event):
@@ -3322,10 +3700,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('UliPad Theme')
 
     def OnHelloKittyTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'HelloKitty'
+        gGlobalsDict['ThemeOnStartup'] = 'Hello Kitty'
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFB0FF,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3376,10 +3755,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Hello Kitty Theme')
 
     def OnVibrantInkTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'VibrantInk'
+        gGlobalsDict['ThemeOnStartup'] = 'Vibrant Ink'
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#FFFFFF,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3430,10 +3810,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Vibrant Ink Theme')
 
     def OnBirdsOfParidiseTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'BirdsOfParidise'
+        gGlobalsDict['ThemeOnStartup'] = 'Birds Of Paridise'
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#E6E1C4,back:#423230,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3484,6 +3865,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Birds of Paridise Theme')
 
     def OnBlackLightTheme(self, event):
@@ -3538,6 +3920,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#535AE9')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('BlackLight Theme')
 
     def OnNotebookTheme(self, event):
@@ -3593,4 +3976,139 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
+        if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Notebook Theme')
+
+
+class DraggableRMouseGestureMenu2(wx.PopupTransientWindow):
+    ''' Since this was intended for text and also sizers don't work here...
+        gonna have to revert to good ol fashoned absolute positioning.
+        The goal here is to make a draggable menu that can be moved.
+        Look into fixing... Side effect - Always OnTop instead of floating ontop in app.
+        Maybe will alter a miniframe for this or make it into a user macro.'''
+    def __init__(self, parent, style):
+        wx.PopupTransientWindow.__init__(self, parent, style)
+        self.menucolor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENU)
+        self.menubarcolor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUBAR)
+        self.menuhilightcolor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUHILIGHT)
+        self.menutextcolor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_MENUTEXT)
+        self.buttonfacecolor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+
+        self.SetBackgroundColour(self.menucolor)
+
+        self.imgDir = u'%s' %bosh.dirs['images']
+        self.imgstcDir = u'%s' %bosh.dirs['images'].join(u'stc')
+
+        # 1st entry is the disabled header, the rest are...
+        # String buttonNames : functionToBind = to numOfButns
+        buttonNames = OrderedDict([
+            ('R MGM 2 Wizard' , self.OnPass),
+            ('RequireVersions' , gWizSTC.OnRequireVersionsSkyrim),
+            ('SelectSubPackage' , gWizSTC.OnSelectSubPackage),#d1
+            ('DeSelectSubPackage' , gWizSTC.OnDeSelectSubPackage),#d1
+            ('SelectAll' , gWizSTC.OnSelectAllKeyword),#d2
+            ('DeSelectAll' , gWizSTC.OnDeSelectAll),#d2
+            ('SelectEspm' , gWizSTC.OnSelectEspm),#d3
+            ('DeSelectEspm' , gWizSTC.OnDeSelectEspm),#d3
+            ('SelectOne' , gWizSTC.OnSelectOne),#d4
+            ('SelectMany' , gWizSTC.OnSelectMany),#d4
+            ('"","","",\\' , gWizSTC.OnChoicesX02),
+            ('Case ""' , gWizSTC.OnCase),
+            ('Break' , gWizSTC.OnBreak),
+            ('EndSelect' , gWizSTC.OnEndSelect),
+            # ('b15' , self.OnPass),
+            # ('b16' , self.OnPass),
+            # ('b17' , self.OnPass),
+            # ('b18' , self.OnPass),
+            # ('b19' , self.OnPass),
+            # ('b20' , self.OnPass),
+            # ('b21' , self.OnPass),
+            # ('b22' , self.OnPass),
+            # ('b23' , self.OnPass),
+            # ('b24' , self.OnPass),
+            # ('b25' , self.OnPass),
+            ])
+
+        i = 0
+        btnsz = (240, 20)
+        numOfButns = 1
+        border = 4
+        pxInbetween = 4
+        disableMenuTitle = 0
+        cont2b = -1
+        for key, value in buttonNames.iteritems():
+            if cont2b == 1:
+                key = wx.Button(self, -1, u' %s' %str(key), pos=(btnsz[0]/2 + border, pxInbetween), size=(btnsz[0]/2,btnsz[1]), style=wx.BU_LEFT)
+                key.Bind(wx.EVT_BUTTON, value)
+                pxInbetween += 24
+                cont2b = 0
+                continue
+            if i in [1,2,3,4,5,6,7,8,9]:#grouped opposites/doubles
+                key = wx.Button(self, -1, u' %s' %str(key), pos=(4, pxInbetween), size=(btnsz[0]/2-border/2,btnsz[1]), style=wx.BU_LEFT)
+                cont2b = 1
+            else:
+                key = wx.Button(self, -1, u' %s' %str(key), pos=(4, pxInbetween), size=btnsz, style=wx.BU_LEFT)
+            key.Bind(wx.EVT_BUTTON, value)
+            numOfButns += 1
+            if cont2b == 1:
+                continue
+            pxInbetween += 24
+            if disableMenuTitle == 0:
+                key.SetBackgroundColour(self.menubarcolor)
+                key.Enable(False)
+                disableMenuTitle = 1
+            i += 1
+
+        menuheight = (numOfButns*(border+btnsz[1])-btnsz[1]+(border/2))
+        # print menuheight
+
+        self.SetSize((btnsz[0]+border*4+20, menuheight))
+        self.SetPosition((20,20))
+
+        dragpic = wx.StaticBitmap(self, -1, wx.Bitmap(self.imgstcDir + os.sep + u'wizbain20x100.png', wx.BITMAP_TYPE_PNG), pos=(btnsz[0]+border*2, border))
+        dragpic.SetBackgroundColour(self.menucolor)
+
+        self.closebutton = wx.StaticBitmap(self, -1, wx.Bitmap(self.imgstcDir + os.sep + u'stopsign20.png', wx.BITMAP_TYPE_PNG), pos=(btnsz[0]+border*2, menuheight-border*2-20))
+        self.closebutton.SetBackgroundColour(self.menucolor)
+
+        for draggableobject in [self, dragpic]:
+            draggableobject.Bind(wx.EVT_LEFT_DOWN, self.OnMouseLeftDown)
+            draggableobject.Bind(wx.EVT_MOTION, self.OnMouseMotion)
+            draggableobject.Bind(wx.EVT_LEFT_UP, self.OnMouseLeftUp)
+            # draggableobject.Bind(wx.EVT_RIGHT_UP, self.OnDestroyMenu)
+
+        self.closebutton.Bind(wx.EVT_LEFT_DOWN, self.OnDestroyMenu)
+
+        wx.CallAfter(self.Refresh)
+
+    def OnPass(self, event): pass
+
+    def OnMouseLeftDown(self, event):
+        try:
+            self.Refresh()
+            self.ldPos = event.GetEventObject().ClientToScreen(event.GetPosition())
+            self.wPos = self.ClientToScreen((0,0))
+            self.CaptureMouse()
+        except:#DCLICK error
+            pass
+
+    def OnMouseMotion(self, event):
+        try:
+            if event.Dragging() and event.LeftIsDown():
+                dPos = event.GetEventObject().ClientToScreen(event.GetPosition())
+                nPos = (self.wPos.x + (dPos.x - self.ldPos.x),
+                        self.wPos.y + (dPos.y - self.ldPos.y))
+                self.Move(nPos)
+        except:#DCLICK error
+            pass
+
+    def OnMouseLeftUp(self, event):
+        try:
+            self.ReleaseMouse()
+        except:#DCLICK error
+            pass
+
+    def OnDestroyMenu(self, event):
+        self.Show(False)
+        self.Destroy()
+        gWizSTC.dragmenu2 = 0
