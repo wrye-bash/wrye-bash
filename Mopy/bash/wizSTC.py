@@ -59,6 +59,7 @@ import wx.stc as stc
 import wx.lib.platebtn as platebtn
 import wx.lib.dialogs
 from wx.lib.gestures import MouseGestures
+import wx.lib.imagebrowser as ib #alternate to thumbnailer
 
 #--User Macros(located outside of the bash dir)
 from macro.py import *
@@ -140,20 +141,24 @@ ID_RMGM9 = 3009
 
 ID_RMGM2DRAG = 3012
 
-ID_UNDO =      2001
-ID_REDO =      2002
-ID_CUT =       2004
-ID_COPY =      2005
-ID_PASTE =     2006
-ID_DELETE =    2007
-ID_SELECTALL = 2010
+ID_MMGM5 = 3025
 
-ID_COMMENT =            4006
-ID_REMTRAILWHITESPACE = 4013
+ID_TOOLBAR =   5000
+ID_UNDO =      5001
+ID_REDO =      5002
+ID_CUT =       5003
+ID_COPY =      5004
+ID_PASTE =     5005
+ID_DELETE =    5006
+ID_SELECTALL = 5007
+ID_COMMENT =   5008
+ID_REMTRAILWHITESPACE =  5009
 
-ID_SAVEASPROJECTWIZARD = 1001
-ID_HELPGENERAL =         1901
-ID_HELPAPIDOCSTR =       1902
+ID_SAVEASPROJECTWIZARD = 5100
+
+ID_HELPGENERAL =         5201
+ID_HELPAPIDOCSTR =       5202
+ID_TIPSINSTALLERS =      5211
 
 ID_SORT =                1097
 ID_FINDSELECTEDFORE =    1099
@@ -178,11 +183,15 @@ ID_RENAMEESPM =         2017
 ID_RESETESPMNAME =      2018
 ID_RESETALLESPMNAMES =  2019
 ID_DEFAULTCHAR =        2020
+ID_DATAFILEEXISTS =     2021
+ID_IFELIFELSEENDIF =    2022
+
 ID_WIZARDIMAGES =       2090
 ID_SCREENSHOTS =        2091
 ID_LISTSUBPACKAGES =    2101
 ID_LISTESPMS =          2102
 ID_THUMBNAILER =        2191
+ID_IMAGEBROWSER =       2192
 
 ID_CALLTIP =      3097
 ID_WORDCOMPLETE = 3098
@@ -193,34 +202,38 @@ ID_LOWERCASE =   4002
 ID_INVERTCASE =  4003
 ID_CAPITALCASE = 4004
 
-ID_TXT2WIZFILE = 3101
-ID_TXT2WIZTEXT = 3102
+ID_TXT2WIZSTRFILE = 6001
+ID_TXT2WIZSTRTEXT = 6002
 
-ID_NEWLINEBEFORE =          2101
-ID_NEWLINEAFTER =           2102
-ID_CUTLINE =                2103
-ID_COPYLINE =               2104
-ID_DELETELINE =             2105
-ID_DELETELINECONTENTS =     2106
-ID_SELECTLINENOEOL =        2107
-ID_DUPLICATELINE =          2108
-ID_DUPLICATESELECTIONLINE = 2109
-ID_DUPLICATELINENTIMES =    2110
-ID_JOINLINES =              2111
-ID_SPLITLINES =             2112
-ID_LINETRANSPOSE =          2113
-ID_MOVELINEUP =             2114
-ID_MOVELINEDOWN =           2115
-ID_APPENDLINESSTR =         2116
-ID_REMOVESTRENDLINES =      2117
-ID_REMOVESTRSTARTLINES =    2118
-ID_PADWITHSPACES =          2120
+ID_NEWLINEBEFORE =          8001
+ID_NEWLINEAFTER =           8002
+ID_CUTLINE =                8003
+ID_COPYLINE =               8004
+ID_DELETELINE =             8005
+ID_DELETELINECONTENTS =     8006
+ID_SELECTLINENOEOL =        8007
+ID_DUPLICATELINE =          8008
+ID_DUPLICATESELECTIONLINE = 8009
+ID_DUPLICATELINENTIMES =    8010
+ID_JOINLINES =              8011
+ID_SPLITLINES =             8012
+ID_LINETRANSPOSE =          8013
+ID_MOVELINEUP =             8014
+ID_MOVELINEDOWN =           8015
+ID_APPENDLINESSTR =         8016
+ID_REMOVESTRENDLINES =      8017
+ID_REMOVESTRSTARTLINES =    8018
+ID_PADWITHSPACES =          8019
 
 ID_TOGGLEWHITESPACE =    9001
 ID_TOGGLEINDENTGUIDES =  9002
 ID_TOGGLEWORDWRAP =      9003
 ID_TOGGLELINEHIGHLIGHT = 9004
 ID_TOGGLEEOLVIEW =       9005
+ID_BACKSPACEUNINDENTS =  9006
+ID_BRACECOMPLETION =     9007
+ID_AUTOINDENTATION =     9008
+ID_EDGECOLUMN =          9009
 
 ID_THEMENONE =            9901
 ID_THEMEDEFAULT =         9902
@@ -413,44 +426,57 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         gWizSTC = self
 
         #--- Global STC Settings To Save ---#
-        global gGlobalsDict
-        gGlobalsDict = OrderedDict([
-            ('LoadSTCLexer' , 'wizbainlexer'),
-            ('ThemeOnStartup' , 'No Theme'),
-            ('FolderMarginStyle', 1),
-            ('ShowLineNumbersMargin', 1),
-            ('AutoAdjustLineMargin', 1),
-            ('CaretSpeed' , 0),
-            ('CaretPixelWidth' , 2),
-            ('CaretForegroundColor' , '#0000FF'),
-            ('CaretLineBackgroundAlpha', 100),
-            ('WordWrap', 0),
-            ('TabsOrSpaces', 0),
-            ('IndentSize', 4),
-            ('TabWidth', 4),
-            ('IndentationGuides' , 1),
-            ('ViewWhiteSpace' , 1),
-            ('TabIndents' , 1),
-            ('BackSpaceUnIndents' , 0),
-            ('BraceCompletion' , 0),
-            ('AutoIndentation' , 0),
-            ('ReadOnly' , 0),
-            ('UseAntiAliasing' , 1),
-            ('UseBufferedDraw' , 1),
-            ('OvertypeOnOff' , 0),
-            ('ViewEOL' , 0),
-            ('LongLineEdge' , 80),
-            ('LineEdgeModeAsColumnMarker' , 0),
-            ('VertEditMode' , 0),
-            ('ScrollingPastLastLine' , 1),
-            ('SetLeftRightBlankMargins' , 0),
-            ('MouseGestureWobbleTolerance' , 500), #Hmmm need to figure out how this affects usage as in low/high number
-            ('UserCustomFontFace' , 'Magic Cards'),
-            ('ModdersHandle' , 'Metallicow'),
-            ])
+        # Note to self. REMOVE gGlobalsDict stuff when settings dialog is implemented and users comfirm *Wow it works* and/or something didnt get forgotten.
+        # converted most of gGlobals Dict to basher.settings['bash.installers.wizSTC.SETTING'] so far...
+        # TODO:
+        # 1. Implement color options also in settings dialog
+        # BUGGISH ON STARTUP
+        # 1. Review TES4WizBAIN Code to see how I fixed the startup folder marker code. IIRC there needed to be a call to change it after calling __init__ in basher.py. Not sure why it has to be this way...
+
+        # global gGlobalsDict
+        # gGlobalsDict = OrderedDict([
+            # ('LoadSTCLexer' , 'wizbainlexer'),
+            # ('ThemeOnStartup' , 'No Theme'),
+            # ('FolderMarginStyle', 1),
+            # ('ShowLineNumbersMargin', 1),
+            # ('AutoAdjustLineMargin', 1),
+            # ('CaretSpeed' , 0),
+            # ('CaretPixelWidth' , 2),
+            # ('CaretForegroundColor' , '#0000FF'),
+            # ('CaretLineBackgroundAlpha', 100),
+            # ('CaretLineVisible', 1),
+            # ('WordWrap', 0),
+            # ('TabsOrSpaces', 0),
+            # ('IndentSize', 4),
+            # ('TabWidth', 4),
+            # ('IndentationGuides' , 1),
+            # ('ViewWhiteSpace' , 1),
+            # ('TabIndents' , 1),
+            # ('BackSpaceUnIndents' , 0),
+            # ('BraceCompletion' , 0),
+            # ('AutoIndentation' , 0),
+            # ('ReadOnly' , 0),
+            # ('UseAntiAliasing' , 1),
+            # ('UseBufferedDraw' , 1),
+            # ('OvertypeOnOff' , 0),
+            # ('ViewEOL' , 0),
+            # ('LongLineEdge' , 80),
+            # ('LineEdgeModeAsColumnMarker' , 0),
+            # ('VertEditMode' , 0),
+            # ('ScrollingPastLastLine' , 1),
+            # ('SetLeftRightBlankMargins' , 0),
+            # ('MouseGestureWobbleTolerance' , 500), #Hmmm need to figure out how this affects usage as in low/high number
+            # ('UserCustomFontFace' , 'Magic Cards'),
+            # ('ModdersHandle' , 'Metallicow'),
+            # ])
+
+        # print basher.settings['bash.installers.wizSTC.LoadSTCLexer']
+        # print basher.settings['bash.installers.wizSTC.ThemeOnStartup']
 
         #--- Only One Instance Open ---#
         self.OneInstanceThumbnailer = 0
+        self.OneInstanceImageBrowser = 0
+        self.OneInstanceToolbar = 0
         self.dragmenu2 = 0
 
         #--- Images & Menu/ID Generation ---#
@@ -464,7 +490,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.chkImg = wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap()
 
         self.rmgmIDs = [ID_RMGM1,ID_RMGM2,ID_RMGM3,ID_RMGM4,ID_RMGM5,ID_RMGM6,ID_RMGM7,ID_RMGM8,ID_RMGM9]
-        self.rmgmLABELs = [u'',u'Wizard',u'',u'Case',u'Right Clicky!',u'Conversion',u'',u'Line Operations',u'Options',]
+        self.rmgmLABELs = [u'',u'Wizard',u'',u'Case',u'Right Clicky!',u'Conversion',u'Project Manipulation(NOT DONE)',u'Line Operations',u'Options',]
 
         #--- Lexers & Keywords ---#
         self.SetLexer(stc.STC_LEX_PYTHON)
@@ -474,30 +500,30 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         #--- Misc or Todo(maybe) ---#
         self.SetEOLMode(stc.STC_EOL_LF) # UNIX
-        self.SetBufferedDraw(gGlobalsDict['UseBufferedDraw']) # If drawing is buffered then each line of text is drawn into a bitmap buffer before drawing it to the screen to avoid flicker.
-        self.SetOvertype(gGlobalsDict['OvertypeOnOff']) # Set to overtype (true) or insert mode.
-
+        self.SetBufferedDraw(basher.settings['bash.installers.wizSTC.UseBufferedDraw']) # If drawing is buffered then each line of text is drawn into a bitmap buffer before drawing it to the screen to avoid flicker.
+        self.SetOvertype(basher.settings['bash.installers.wizSTC.OvertypeOnOff']) # Set to overtype (true) or insert mode.
+        self.SetEndAtLastLine(basher.settings['bash.installers.wizSTC.ScrollingPastLastLine'])
         # #Todo# self.CmdKeyAssign(ord('C'), stc.STC_SCMOD_CTRL, stc.STC_CMD_UNDO) # Set a acellerator key to do something (Ctrl+Key)
 
         #--- Caret Options ---#
-        self.SetCaretPeriod(gGlobalsDict['CaretSpeed'])                      # Set the time in milliseconds that the caret is on and off. 0 = steady on.
-        self.SetCaretForeground(gGlobalsDict['CaretForegroundColor'])        # The color of the caret ; 'blue' or '#0000FF'
-        self.SetCaretLineVisible(True)                                       # Default color should... be the same as the background unless SetCaretLineBackground is called to change its color. # Display the background of the line containing the caret in a different colour.
-        self.SetCaretLineBackground('#D7DEEB')                               # Set the color of the background of the line containing the caret.(Currently selected line)
-        ## self.SetCaretLineBackAlpha(gGlobalsDict['CaretLineBackgroundAlpha']) # Set background alpha of the caret line. 0-255
-        self.SetCaretWidth(gGlobalsDict['CaretPixelWidth'])                  # Set the width of the insert mode caret. 0 - 3 seems to be the max
+        self.SetCaretPeriod(basher.settings['bash.installers.wizSTC.CaretSpeed'])                  # Set the time in milliseconds that the caret is on and off. 0 = steady on.
+        self.SetCaretForeground(basher.settings['bash.installers.wizSTC.CaretForegroundColor'])    # The color of the caret ; 'blue' or '#0000FF'
+        self.SetCaretLineVisible(basher.settings['bash.installers.wizSTC.CaretLineVisible'])       # Default color should... be the same as the background unless SetCaretLineBackground is called to change its color. # Display the background of the line containing the caret in a different colour.
+        self.SetCaretLineBackground(basher.settings['bash.installers.wizSTC.CaretLineBackground']) # Set the color of the background of the line containing the caret.(Currently selected line)
+        ## self.SetCaretLineBackAlpha(basher.settings['bash.installers.wizSTC.CaretLineBackgroundAlpha']) # Set background alpha of the caret line. 0-255
+        self.SetCaretWidth(basher.settings['bash.installers.wizSTC.CaretPixelWidth'])              # Set the width of the insert mode caret. 0 - 3 seems to be the max
         self.EnsureCaretVisible()                                            # Ensure the caret is visible.
 
         #--- Whitespace, Indentation, TAB, Properties, Indicator stuff ---#
-        self.SetViewWhiteSpace(gGlobalsDict['ViewWhiteSpace'])         # Set to 0,1,or 2
+        self.SetViewWhiteSpace(basher.settings['bash.installers.wizSTC.ViewWhiteSpace']) # Set to 0,1,or 2
 
-        self.SetIndent(gGlobalsDict['IndentSize'])                     # Proscribed indent size for wx
-        self.SetIndentationGuides(gGlobalsDict['IndentationGuides'])   # To help beginners, show indent guides
+        self.SetIndent(basher.settings['bash.installers.wizSTC.IndentSize'])                   # Proscribed indent size for wx
+        self.SetIndentationGuides(basher.settings['bash.installers.wizSTC.IndentationGuides']) # To help beginners, show indent guides
 
-        self.SetTabIndents(gGlobalsDict['TabIndents'])                 # Tab key indents. Sets whether a tab pressed when caret is within indentation indents.
-        self.SetBackSpaceUnIndents(gGlobalsDict['BackSpaceUnIndents']) # Backspace unindents rather than delete 1 space. Sets whether a backspace pressed when caret is within indentation unindents.
-        self.SetTabWidth(gGlobalsDict['TabWidth'])                     # Prescribed tab size for wx
-        self.SetUseTabs(gGlobalsDict['TabsOrSpaces'])                  # Use spaces rather than tabs, or TabTimmy will complain!
+        self.SetTabIndents(basher.settings['bash.installers.wizSTC.TabIndents']) # Tab key indents. Sets whether a tab pressed when caret is within indentation indents.
+        self.SetBackSpaceUnIndents(basher.settings['bash.installers.wizSTC.BackSpaceUnIndents']) # Backspace unindents rather than delete 1 space. Sets whether a backspace pressed when caret is within indentation unindents.
+        self.SetTabWidth(basher.settings['bash.installers.wizSTC.TabWidth'])    # Prescribed tab size for wx
+        self.SetUseTabs(basher.settings['bash.installers.wizSTC.TabsOrSpaces']) # Use spaces rather than tabs, or TabTimmy will complain!
 
         self.SetProperty('fold', '1')
         self.SetProperty('tab.timmy.whinge.level', '1')
@@ -506,6 +532,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.IndicatorSetStyle(1,1)
         self.IndicatorSetForeground(1,'#FF0000')
+
+        self.SetEdgeColumn(basher.settings['bash.installers.wizSTC.LongLineEdge'])#Set the column number of the edge. If text goes past the edge then it is highlighted.
+        self.SetEdgeMode(basher.settings['bash.installers.wizSTC.LongLineEdgeMode'])
+
+        self.SetViewEOL(basher.settings['bash.installers.wizSTC.ViewEOL'])
 
         #--- Setup a margin to hold bookmarks ---#
         self.SetMarginType(1, stc.STC_MARGIN_SYMBOL)
@@ -528,7 +559,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetMarginWidth(3, 16)
 
         #--- Wordwrap ---#
-        self.SetWrapMode(gGlobalsDict['WordWrap'])
+        self.SetWrapMode(basher.settings['bash.installers.wizSTC.WordWrap'])
         self.SetWrapVisualFlags(1) #0 = off. 1 = wraparrow at right. 2 = wraparrow at left. 3 = wraparrow at left and right.
         self.SetWrapVisualFlagsLocation(stc.STC_WRAPVISUALFLAGLOC_DEFAULT) #Set the location of visual flags for wrapped lines. 0&2 = far right. 1&3 = EOL char at where the wrap starts on the right.
 
@@ -579,6 +610,16 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(wx.EVT_CONTEXT_MENU,          self.OnContextMenu)
         self.Bind(stc.EVT_STC_UPDATEUI,         self.OnUpdateUI)
         self.Bind(wx.EVT_KEY_DOWN,              self.OnKeyDown)
+        self.Bind(wx.EVT_KEY_UP,                self.OnKeyUp)
+        ## self.Bind(stc.EVT_STC_ZOOM,            self.OnSTCZoom)
+        ## self.Bind(stc.EVT_STC_HOTSPOT_DCLICK,  self.OnHotSpotDClick)
+        self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,  self.OnAutoCompSelection)
+
+        # self.Bind(stc.EVT_STC_ROMODIFYATTEMPT,  self.OnReadOnlyModifyAttempt)
+        self.Bind(wx.EVT_SET_FOCUS,             self.OnSTCGainFocus)
+        self.Bind(wx.EVT_KILL_FOCUS,            self.OnSTCLoseFocus)
+        # self.Bind(stc.EVT_STC_DWELLSTART,       self.OnMouseDwellStart)
+        # self.Bind(stc.EVT_STC_DWELLEND,         self.OnMouseDwellEnd)
 
         #--- Brace Completion stuff ---#
         self.brace_dict={40:')',
@@ -588,6 +629,14 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                          34:'"'}
 
         self.Bind(wx.stc.EVT_STC_CHARADDED, self.OnCharAdded) # When a character is added to the stc
+
+        #--- Flags ---#
+        self.autocompflag = 0 #Off by default
+
+        #--- Macro Recording ---#
+        ## self.Bind(stc.EVT_STC_MACRORECORD,  self.OnRecordingTheMacro)
+        self.macrorecordingflag = 0 #Off by default
+        ## self.macrostring = []
 
         #--- Register AutoComplete Images ---#
         self.RegisterImage(5, wx.Image(self.imgstcDir + os.sep + 'wizardhat16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
@@ -612,14 +661,14 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.rmousegesture.SetGesturesVisible(True)
         self.rmousegesture.SetGesturePen(wx.Colour(230, 230, 76), 5)#(color, linepixelwidth)
-        self.rmousegesture.SetWobbleTolerance(gGlobalsDict['MouseGestureWobbleTolerance'])
+        self.rmousegesture.SetWobbleTolerance(basher.settings['bash.installers.wizSTC.MouseGestureWobbleTolerance'])
 
         # mmouse
         self.mmousegesture = MouseGestures(self, Auto=True, MouseButton=wx.MOUSE_BTN_MIDDLE)
         self.mmousegesture.AddGesture('' , self.OnMMouseGestureMenuNone, 'Middle Mouse Context Menu')
         self.mmousegesture.SetGesturesVisible(True)
         self.mmousegesture.SetGesturePen(wx.Colour(255, 156, 0), 5)#Orange
-        self.mmousegesture.SetWobbleTolerance(gGlobalsDict['MouseGestureWobbleTolerance'])
+        self.mmousegesture.SetWobbleTolerance(basher.settings['bash.installers.wizSTC.MouseGestureWobbleTolerance'])
 
         #--- Rectangular Selection ---#
         self.rect_selection_clipboard_flag = False #Set to false initially so that if upon open user tries to paste, it won't throw an error.
@@ -627,6 +676,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         #--- Set Theme ---#
         self.OnSetTheme(self)
 
+
+
+        #--- NEEDS WORK ---#
         self.OnFolderMarginStyle4(self, '#FFFFFF', '#000000')#Hmmmm This is having problems changing correctly on startup again...
         self.OnSetFolderMarginStyle(self)#Hmmmm
 
@@ -635,8 +687,43 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         p = self.GetCurrentPos()
         self.SetSelection(p,p)
 
+    def OnKeyUp(self, event):
+        ''' The Auto-indentation Feature. '''
+        key = event.GetKeyCode()
+        if self.autocompflag == 1:
+            self.autocompflag = 0
+            pass #Word Completion or AutoCompletion is open
+        elif event.ControlDown() and key == 87 or event.ControlDown() and key == wx.WXK_RETURN:#87 = W
+        # # if self.AutoCompActive():
+            pass #pre Word Completion
+        elif key == wx.WXK_NUMPAD_ENTER or key == wx.WXK_RETURN:
+            if self.macrorecordingflag == 1:
+                pass
+            elif basher.settings['bash.installers.wizSTC.AutoIndentation'] == 1:
+                try:
+                    self.BeginUndoAction()
+                    line = self.GetCurrentLine()
+                    linecontents = self.GetLine(self.GetCurrentLine())
+                    # print ('AutoIndentNoSelection: Line:' + str(line) + '\n' + 'PrevLineIndent:' + str(self.GetLineIndentation(line - 1)))
+                    if line != '':
+                        if self.GetCharAt(self.GetLineIndentPosition(line - 1)) == 10 or 13:
+                            self.SetLineIndentation(line, self.GetLineIndentation(line - 1))
+                        # print('LineContents:' + str(self.GetLine(self.GetCurrentLine())))
+                        # print('LF or CR This Line Is Not Empty. Do not SetLineIndentation')
+                    else:
+                        self.SetLineIndentation(line, self.GetLineIndentation(line - 1))
+
+                    if basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 0: self.GotoPos(self.GetCurrentPos() + self.GetLineIndentation(line - 1)) #Spaces
+                    elif basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 1: self.GotoPos(self.GetCurrentPos() + self.GetLineIndentation(line - 1)/self.GetIndent()) #TABS
+                    self.EndUndoAction()
+                except: pass
+
     def OnKeyDown(self, event):
         ''' Event occurs when a key is pressed down. '''
+        if self.CallTipActive():
+            self.CallTipCancel()
+        if self.autocompflag == 1:
+            self.autocompflag = 0
         key = event.GetKeyCode()
         # print (key)
         event.Skip()#Removing this line will cause the keyboard to NOT function properly!
@@ -645,7 +732,6 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if key == 27: self.OnSelectNone(event) #Escape doesn't like accelerators on windows for some reason...
 
         if event.ControlDown() and key == 32:
-
             if event.ShiftDown():#Ctrl+Shift+Space
                 self.OnShowSelectedTextCallTip(event)
             else:#Ctrl+Space
@@ -697,8 +783,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             self.OnToggleEditorThemes(event)
 
         #--- Auto-Adjust linenumber margin width ---#
-        if gGlobalsDict['ShowLineNumbersMargin'] == 1:
-            if gGlobalsDict['AutoAdjustLineMargin'] == 1:
+        if basher.settings['bash.installers.wizSTC.ShowLineNumbersMargin'] == 1:
+            if basher.settings['bash.installers.wizSTC.AutoAdjustLineMargin'] == 1:
                 totallines = self.GetLineCount()
                 if totallines < 99:
                     self.SetMarginWidth(2, 22) #3 digits using a small mono font (22 pixels). Good up to 99
@@ -837,7 +923,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
     def OnCharAdded(self, event):
         ''' Brace Completion. If the feature is enabled, it adds a closing brace at the current caret/cursor position. '''
         key = event.GetKey()
-        if gGlobalsDict['BraceCompletion'] == 1:
+        # print key
+        if basher.settings['bash.installers.wizSTC.BraceCompletion'] == 1:
             if key in [40,91,123,39,34]: #These numbers are the keycodes of the braces defined above: ( [ { ' " (the first half of them)
                 self.AddText(self.brace_dict[key])
                 self.CharLeft()
@@ -890,6 +977,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 self.OnColumnPaste(event)
             else:
                 self.Paste() # or self.CmdKeyExecute(stc.STC_CMD_PASTE)
+                wx.CallAfter(self.Undo)#Wrye Bash Port HACK: Because... No wx.Menu RectSelection HACK , Don't paste twice;rectangular then regular, just rectangular
         elif self.CanPaste() == 0:
             wx.Bell()
             # print ('This Paste can\'t succeed.')
@@ -921,6 +1009,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             wx.TheClipboard.Close()
             self.EndUndoAction()
         wx.CallAfter(self.Undo)#Wrye Bash Port HACK: Because... No wx.Menu RectSelection HACK , Don't paste twice;rectangular then regular, just rectangular
+        # print('OnColumnPaste')
 
     def OnDelete(self, event):
         ''' Clear the selection. '''
@@ -1069,7 +1158,20 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
     def OnHelpWizBAINEditorAPIDocStrings(self, event):
         ''' Print the doctrings of the WizBAIN Editor functions for help. '''
         #Testing ATM - Python Version
-        functionlist = [self.OnHelpWizBAINEditorAPIDocStrings,self.OnHelpWizBAINEditorGeneral,self.OnToggleComment,self.OnUPPERCASE,self.Onlowercase,self.OnInvertCase,self.OnCapitalCase]
+
+        # text_file = open(u'%s' %bosh.dirs['bash'].join(u'wizSTC.py'), 'r')
+        # str = text_file.read()
+        # text_file.close()
+
+        # findall = re.findall(r'def\s.*\(.*\):', str)
+
+        # if findall:
+            # print (findall)
+        # else:
+            # print ('did not find')
+
+        functionlist = [self.OnHelpWizBAINEditorAPIDocStrings,self.OnSelectNone,self.OnKeyDown,self.OnUpdateUI,self.OnMarginClick,self.OnFoldAll,self.OnExpand,self.OnCharAdded,self.OnSelectAll,self.OnUndo,self.OnRedo,self.OnCut,self.OnCopy,self.OnCopyAll,self.OnPaste,self.OnColumnPaste,self.OnDelete,self.OnRemoveTrailingWhitespace,self.OnSaveAsProjectsWizard,self.OnTextToWizardStringFileDropMiniFrame,self.OnTextToWizardStringTextDropMiniFrame,self.OnContextMenu,self.OnHelpWizBAINEditorGeneral,self.OnToggleComment,self.OnUPPERCASE,self.Onlowercase,self.OnInvertCase,self.OnCapitalCase,self.OnMMouseGestureMenuNone,self.OnWriteUserTxtMacro,self.OnLoadModule,self.OnPythonMacro,self.OnRMouseGestureMenuNone,self.OnTestNewId,self.OnTest,self.OnRMouseGestureMenu1,self.OnSort,self.OnFindSelectedForwards,self.OnRMouseGestureMenu2,self.OnUseOnTopDraggableRMouseGestureMenu2,self.OnDefaultCharacterSelectedOptions,self.OnThumbnailerPackageWizardImages,self.OnThumbnailContextMenu,self.OnThumbnailWizImage,self.OnDialogDestroy,self.OnImageBrowserPackageWizardImages,self.OnWriteImageDirectoryIMAGE,self.OnWriteKeywordSUBNAMEorESPMNAME,self.OnWriteKeywordMODNAME,self.OnWriteListSubPackages,self.OnWriteListEspms,self.OnDeleteIfSelectedText,self.OnRequireVersionsOblivion,self.OnRequireVersionsSkyrim,self.OnSelectOne,self.OnSelectMany,self.OnChoicesX02,self.OnEndSelect,self.OnCase,self.OnBreak,self.OnSelectAllKeyword,self.OnDeSelectAll,self.OnSelectSubPackage,self.OnDeSelectSubPackage,self.OnSelectEspm,self.OnSelectAllEspms,self.OnDeSelectEspm,self.OnDeSelectAllEspms,self.OnRenameEspm,self.OnResetEspmName,self.OnResetAllEspmNames,self.OnWizardImages,self.OnRMouseGestureMenu3,self.OnShowSelectedTextCallTip,self.OnShowWordCompleteBox,self.OnShowAutoCompleteBox,self.OnRMouseGestureMenu4,self.OnRMouseGestureMenu6,self.OnRMouseGestureMenu7,self.OnRMouseGestureMenu8,self.OnNewLineBefore,self.OnNewLineAfter,self.OnLineCut,self.OnLineCopy,self.OnLineDelete,self.OnDeleteLineContents,self.OnLineSelect,self.OnLineDuplicate,self.OnLineDuplicateNTimes,self.OnDuplicateSelectionLine,self.OnLinesJoin,self.OnLinesSplit,self.OnLineTranspose,self.OnMoveLineUp,self.OnMoveLineDown,self.OnAppendSelectedLinesWithAString,self.OnRemoveStringFromEndOfSelectedLines,self.OnRemoveStringFromStartOfSelectedLines,self.OnPadWithSpacesSelectedLines,self.OnRMouseGestureMenu9,self.OnViewWhitespace,self.OnShowIndentationGuides,self.OnWordwrap,self.OnHighlightSelectedLine,self.OnShowEOL,self.OnSetFolderMarginStyle,self.OnFolderMarginStyle1,self.OnFolderMarginStyle2,self.OnFolderMarginStyle3,self.OnFolderMarginStyle4,self.OnFolderMarginStyle5,self.OnFolderMarginStyle6,self.OnSetTheme,self.OnToggleEditorThemes,self.OnNoTheme,self.OnDefaultTheme,self.OnConsoleTheme,self.OnObsidianTheme,self.OnZenburnTheme,self.OnMonokaiTheme,self.OnDeepSpaceTheme,self.OnGreenSideUpTheme,self.OnTwilightTheme,self.OnUliPadTheme,self.OnHelloKittyTheme,self.OnVibrantInkTheme,self.OnBirdsOfParidiseTheme,self.OnBlackLightTheme,self.OnNotebookTheme,]
+
         message = u''
         for function in functionlist:
             message += u'%s' %function.__name__ # ''' bla bla bla docstring '''
@@ -1078,7 +1180,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             message += u'\n'
             message += u'\n'
 
-        dialog = wx.lib.dialogs.ScrolledMessageDialog(self, u'%s' %message, u'WizBAIN Editor API Doc Strings', size=(500, 350))
+        # import wizSTC
+        # message += u'%s' %help(wizSTC)
+        # message += u'%s' %dir(wizSTC)
+        # message += u'%s' %dir('wizSTC')
+
+        dialog = wx.lib.dialogs.ScrolledMessageDialog(self, u'%s' %message, u'WizBAIN Editor API Doc Strings', size=(500, 400))
+        # dialog.SetFont(wx.Font(12, wx.DECORATIVE, wx.NORMAL, wx.NORMAL, False, u'%(mono)s' % faces))
         dialog.SetIcon(wx.Icon(self.imgstcDir + os.sep + '..' + os.sep + u'help16.png', wx.BITMAP_TYPE_PNG))
         dialog.ShowModal()
         dialog.Destroy()
@@ -1104,7 +1212,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             elif self.GetCharAt(self.GetLineIndentPosition(line)) == 0:
                 pass
                 # print ('line:' + str(line+1) + ' is blank nothing') # char is nothing. end of doc
-            elif gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+            elif basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
                 if self.GetCharAt(self.GetLineIndentPosition(line)) == 59: # char is ;
                     if self.GetCharAt(self.GetLineIndentPosition(line) + 1) == 35: # char is #
                         if self.GetCharAt(self.GetLineIndentPosition(line) + 2) == 32: # char is space
@@ -1133,7 +1241,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 elif self.GetCharAt(self.GetLineIndentPosition(i)) == 0:
                     pass
                     # print ('line:' + str(i+1) + ' is blank nothing') # char is nothing. end of doc
-                elif gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+                elif basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
                     if self.GetCharAt(self.GetLineIndentPosition(i)) == 59: # char is ;
                         if self.GetCharAt(self.GetLineIndentPosition(i) + 1) == 35: # char is #
                             if self.GetCharAt(self.GetLineIndentPosition(i) + 2) == 32: # char is space
@@ -1218,6 +1326,19 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         mcheader1.SetDisabledBitmap(wx.Image(self.imgstcDir + os.sep + (u'mousebuttonmiddle16.png'),p).ConvertToBitmap())
         mcheader1.Enable(False)
 
+        submenu = wx.Menu()
+        for i in range(1,10):
+            mgm = wx.MenuItem(middleclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
+            mgm.SetBitmap(self.mgmImg)
+            submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(middleclickmenu, ID_MMGM5, u'&M MGM 5 You Are Here!', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.yahImg)
+        mgm.SetBackgroundColour('#F4FAB4')
+        mgm.Enable(False)
+        submenu.AppendItem(mgm)
+        middleclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
+
         middleclickmenu.AppendSeparator()
 
         macroTxtDir = bosh.dirs[u'mopy'].join(u'macro').join(u'txt')
@@ -1245,6 +1366,19 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                     pymacro.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('file_py16.png'),p).ConvertToBitmap())
                     middleclickmenu.AppendItem(pymacro)
                     wx.EVT_MENU(middleclickmenu, newid, self.OnPythonMacro)
+
+        # events
+        wx.EVT_MENU(middleclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM3, self.OnRMouseGestureMenu3)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM4, self.OnRMouseGestureMenu4)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM5, self.OnRMouseGestureMenuNone)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM6, self.OnRMouseGestureMenu6)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
+        wx.EVT_MENU(middleclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(middleclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
 
         self.PopupMenu(middleclickmenu)
         middleclickmenu.Destroy()
@@ -1317,7 +1451,17 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
+
+        floatingtoolbar = wx.MenuItem(rightclickmenu, ID_TOOLBAR, u'&Use Floating Toolbar', u' Use Floating Toolbar')
+        floatingtoolbar.SetBitmap(wx.Image(self.imgstcDir + os.sep + ('star16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(floatingtoolbar)
+        if self.OneInstanceToolbar == 1:
+            floatingtoolbar.Enable(False)
 
         rightclickmenu.AppendSeparator()
 
@@ -1371,12 +1515,18 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         submenu = wx.Menu()
         helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, ID_HELPGENERAL, u'&WizBAIN Editor General', u' Help explaining general features')
-        helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + ('help16.png'),p).ConvertToBitmap())
+        helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + (u'help16.png'),p).ConvertToBitmap())
         submenu.AppendItem(helpwizbaineditorgeneral)
 
         helpwizbaineditorgeneral = wx.MenuItem(rightclickmenu, ID_HELPAPIDOCSTR, u'&WizBAIN Editor API Doc Strings', u' Help explaining the function performed upon execution')
-        helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgDir + os.sep + ('help16.png'),p).ConvertToBitmap())
+        helpwizbaineditorgeneral.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'python16.png'),p).ConvertToBitmap())
         submenu.AppendItem(helpwizbaineditorgeneral)
+
+        installerstabtips = wx.MenuItem(rightclickmenu, ID_TIPSINSTALLERS, u'&Installers Tab Tips', u' Tnstallers Tab Tips')
+        installerstabtips.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'lightbulb16.png'),p).ConvertToBitmap())
+        submenu.AppendItem(installerstabtips)
+
+
 
         rightclickmenu.AppendMenu(wx.NewId(), u'Help', submenu)
 
@@ -1394,10 +1544,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         #events
         # wx.EVT_MENU(rightclickmenu, ID_TEST, self.OnTest)
 
+        wx.EVT_MENU(rightclickmenu, ID_TOOLBAR, self.OnShowFloatingToolbar)
+
         wx.EVT_MENU(rightclickmenu, ID_SAVEASPROJECTWIZARD, self.OnSaveAsProjectsWizard)
 
         wx.EVT_MENU(rightclickmenu, ID_HELPGENERAL, self.OnHelpWizBAINEditorGeneral)
         wx.EVT_MENU(rightclickmenu, ID_HELPAPIDOCSTR, self.OnHelpWizBAINEditorAPIDocStrings)
+        wx.EVT_MENU(rightclickmenu, ID_TIPSINSTALLERS, self.OnShowInstallersTabTipsDialog)
 
         wx.EVT_MENU(rightclickmenu, ID_UNDO, self.OnUndo)
         wx.EVT_MENU(rightclickmenu, ID_REDO, self.OnRedo)
@@ -1419,6 +1572,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
+
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
@@ -1430,6 +1585,16 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         print ('OnTest')
         print ('ID_TEST')
         print (event.GetId())
+
+    def OnShowFloatingToolbar(self, event):
+        if self.OneInstanceToolbar == 0:
+            customtoolbar = FloatingToolbar(self, -1)
+            customtoolbar.Show()
+            self.OneInstanceToolbar = 1
+
+    def OnShowInstallersTabTipsDialog(self, event):
+        customframe = InstallersTabTips(self, -1, 'Installers Tab Tips')
+        customframe.Show()
 
     def OnRMouseGestureMenu1(self, event):
         ''' Call the Right Mouse Gesture Menu.
@@ -1459,6 +1624,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
@@ -1484,6 +1653,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
@@ -1596,6 +1767,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         ontopdragmenu = wx.MenuItem(rightclickmenu, ID_RMGM2DRAG, u'&Use OnTop Draggable Menu', u' Use OnTop Draggable Menu')
@@ -1615,10 +1790,45 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         reqverob.SetBitmap(wx.Image(self.imgDir + os.sep + (u'skyrim16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(reqverob)
 
-        selectone = wx.MenuItem(rightclickmenu, ID_SELECTONE, u'&SelectOne', u' SelectOne "", \\')
+        submenu = wx.Menu()
+        menuItem = wx.MenuItem(submenu, wx.NewId(), u'&DataFileExists ("[modName]")')
+        datafileexists = wx.MenuItem(rightclickmenu, ID_DATAFILEEXISTS, u'&DataFileExists ""', u' DataFileExists ""')
+        submenu.AppendItem(datafileexists)
+        for filename in os.listdir(u'%s' %bosh.dirs['mods']):
+            newid = wx.NewId()
+            if u'Bashed Patch' in filename:
+                # print filename
+                datafileexists = wx.MenuItem(rightclickmenu, newid, u'DataFileExists ("%s")' %filename, u' DataFileExists ("[modName]")')
+                datafileexists.SetBitmap(wx.Image(self.imgDir + os.sep + (u'wryemonkey16.png'),p).ConvertToBitmap())
+                submenu.AppendItem(datafileexists)
+                wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
+            elif filename.endswith(u'.esp'):
+                # print filename
+                datafileexists = wx.MenuItem(rightclickmenu, newid, u'DataFileExists ("%s")' %filename, u' DataFileExists ("[modName]")')
+                datafileexists.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esp16.png'),p).ConvertToBitmap())
+                submenu.AppendItem(datafileexists)
+                wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
+            elif filename.endswith(u'.esm'):
+                # print filename
+                datafileexists = wx.MenuItem(rightclickmenu, newid, u'DataFileExists ("%s")' %filename, u' DataFileExists ("[modName]")')
+                datafileexists.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esm16.png'),p).ConvertToBitmap())
+                submenu.AppendItem(datafileexists)
+                wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
+        menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
+        menuItem.SetBackgroundColour(u'#FFF7EE')
+        menuItem.SetSubMenu(submenu)
+        rightclickmenu.AppendItem(menuItem)
+
+        selectone = wx.MenuItem(rightclickmenu, ID_SELECTONE, u'&SelectOne "Dialog...", \\', u' SelectOne "Dialog...", \\')
+        selectone.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'dialog16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(selectone)
-        selectmany = wx.MenuItem(rightclickmenu, ID_SELECTMANY, u'&SelectMany', u' SelectMany "", \\')
+        selectmany = wx.MenuItem(rightclickmenu, ID_SELECTMANY, u'&SelectMany "Dialog...", \\', u' SelectMany "Dialog...", \\')
+        selectmany.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'dialog16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(selectmany)
+
+        ifelifelseendif = wx.MenuItem(rightclickmenu, ID_IFELIFELSEENDIF, u'&If-Elif-Else-EndIf')
+        rightclickmenu.AppendItem(ifelifelseendif)
+
         choicesx2 = wx.MenuItem(rightclickmenu, ID_OPTIONS, u'&"","","",\\ X2', u' "","","",\\ X2')
         rightclickmenu.AppendItem(choicesx2)
         endselect = wx.MenuItem(rightclickmenu, ID_ENDSELECT, u'&EndSelect', u' EndSelect')
@@ -1627,7 +1837,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rightclickmenu.AppendItem(case)
         bbreak = wx.MenuItem(rightclickmenu, ID_BREAK, u'&Break', u' Break')
         rightclickmenu.AppendItem(bbreak)
-        selectall = wx.MenuItem(rightclickmenu, ID_SELECTALL, u'&SelectAll', u' SelectAll')
+        selectall = wx.MenuItem(rightclickmenu, ID_SELECTALLKW, u'&SelectAll', u' SelectAll')
         rightclickmenu.AppendItem(selectall)
         deselectall = wx.MenuItem(rightclickmenu, ID_DESELECTALL, u'&DeSelectAll', u' DeSelectAll')
         rightclickmenu.AppendItem(deselectall)
@@ -1678,7 +1888,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             submenu.AppendItem(selectespm)
             for index in xrange(mEspmListCount):
                 newid = wx.NewId()
-                selectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'SelectEspm "' + u'%s' %basher.gInstallers.gEspmList.GetString(index) + u'"', u' SelectEspm "[espmName]"')
+                filename = u'%s' %basher.gInstallers.gEspmList.GetString(index)
+                if filename.endswith(u'.esp'):
+                    selectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'SelectEspm "' + u'%s' %filename + u'"', u' SelectEspm "[espmName]"')
+                    selectespmsubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esp16.png'),p).ConvertToBitmap())
+                elif filename.endswith(u'.esm'):
+                    selectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'SelectEspm "' + u'%s' %filename + u'"', u' SelectEspm "[espmName]"')
+                    selectespmsubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esm16.png'),p).ConvertToBitmap())
                 submenu.AppendItem(selectespmsubmenuitem)
                 wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
             menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
@@ -1696,7 +1912,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             submenu.AppendItem(deselectespm)
             for index in xrange(mEspmListCount):
                 newid = wx.NewId()
-                deselectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'DeSelectEspm "' + u'%s' %basher.gInstallers.gEspmList.GetString(index) + u'"', u' DeSelectEspm "[espmName]"')
+                filename = u'%s' %basher.gInstallers.gEspmList.GetString(index)
+                if filename.endswith(u'.esp'):
+                    deselectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'DeSelectEspm "' + u'%s' %filename + u'"', u' DeSelectEspm "[espmName]"')
+                    deselectespmsubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esp16.png'),p).ConvertToBitmap())
+                elif filename.endswith(u'.esm'):
+                    deselectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'DeSelectEspm "' + u'%s' %filename + u'"', u' DeSelectEspm "[espmName]"')
+                    deselectespmsubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esm16.png'),p).ConvertToBitmap())
                 submenu.AppendItem(deselectespmsubmenuitem)
                 wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
             menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
@@ -1723,8 +1945,14 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             submenu.AppendItem(resetespmname)
             for index in xrange(mEspmListCount):
                 newid = wx.NewId()
-                deselectespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'ResetEspmName "' + u'%s' %basher.gInstallers.gEspmList.GetString(index) + u'"', u' ResetEspmName "[espmName]"')
-                submenu.AppendItem(deselectespmsubmenuitem)
+                filename = u'%s' %basher.gInstallers.gEspmList.GetString(index)
+                if filename.endswith(u'.esp'):
+                    resetespmnamesubmenuitem = wx.MenuItem(rightclickmenu, newid, u'ResetEspmName "' + u'%s' %filename + u'"', u' ResetEspmName "[espmName]"')
+                    resetespmnamesubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esp16.png'),p).ConvertToBitmap())
+                elif filename.endswith(u'.esm'):
+                    resetespmnamesubmenuitem = wx.MenuItem(rightclickmenu, newid, u'ResetEspmName "' + u'%s' %filename + u'"', u' ResetEspmName "[espmName]"')
+                    resetespmnamesubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esm16.png'),p).ConvertToBitmap())
+                submenu.AppendItem(resetespmnamesubmenuitem)
                 wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
             menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
             menuItem.SetBackgroundColour(u'#FFF7EE')
@@ -1822,6 +2050,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         rightclickmenu.AppendMenu(wx.NewId(), u'List...', submenu)
 
+        imagebrowserpackagewizardimages = wx.MenuItem(rightclickmenu, ID_IMAGEBROWSER, u'&ImageBrowser [packageName\\Wizard Images]')
+        imagebrowserpackagewizardimages.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'file_image16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(imagebrowserpackagewizardimages)
+
         thumbnailerpackagewizardimages = wx.MenuItem(rightclickmenu, ID_THUMBNAILER, u'&Thumbnailer [packageName\\Wizard Images]')
         thumbnailerpackagewizardimages.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'python16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(thumbnailerpackagewizardimages)
@@ -1835,12 +2067,19 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         #events
         wx.EVT_MENU(rightclickmenu, ID_REQVEROB, self.OnRequireVersionsOblivion)
         wx.EVT_MENU(rightclickmenu, ID_REQVERSK, self.OnRequireVersionsSkyrim)
+
+        wx.EVT_MENU(rightclickmenu, ID_DATAFILEEXISTS, self.OnDataFileExists)
+
+
         wx.EVT_MENU(rightclickmenu, ID_SELECTONE, self.OnSelectOne)
         wx.EVT_MENU(rightclickmenu, ID_SELECTMANY, self.OnSelectMany)
         wx.EVT_MENU(rightclickmenu, ID_OPTIONS, self.OnChoicesX02)
         wx.EVT_MENU(rightclickmenu, ID_ENDSELECT, self.OnEndSelect)
         wx.EVT_MENU(rightclickmenu, ID_CASE, self.OnCase)
         wx.EVT_MENU(rightclickmenu, ID_BREAK, self.OnBreak)
+
+        wx.EVT_MENU(rightclickmenu, ID_IFELIFELSEENDIF, self.OnIfElifElseEndIf)
+
         wx.EVT_MENU(rightclickmenu, ID_SELECTALLKW, self.OnSelectAllKeyword)
         wx.EVT_MENU(rightclickmenu, ID_DESELECTALL, self.OnDeSelectAll)
         wx.EVT_MENU(rightclickmenu, ID_SELECTSUBPACKAGE, self.OnSelectSubPackage)
@@ -1856,6 +2095,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         wx.EVT_MENU(rightclickmenu, ID_WIZARDIMAGES, self.OnWizardImages)
         wx.EVT_MENU(rightclickmenu, ID_THUMBNAILER, self.OnThumbnailerPackageWizardImages)
+        wx.EVT_MENU(rightclickmenu, ID_IMAGEBROWSER, self.OnImageBrowserPackageWizardImages)
 
         wx.EVT_MENU(rightclickmenu, ID_LISTSUBPACKAGES, self.OnWriteListSubPackages)
         wx.EVT_MENU(rightclickmenu, ID_LISTESPMS, self.OnWriteListEspms)
@@ -1870,10 +2110,22 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
+
         wx.EVT_MENU(rightclickmenu, ID_RMGM2DRAG, self.OnUseOnTopDraggableRMouseGestureMenu2)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
+
+    def OnIfElifElseEndIf(self, event):
+        indentSz = basher.settings['bash.installers.wizSTC.IndentSize']
+        self.AddText(u'If\n' +
+                     u' '*indentSz + ';#\n'
+                     u'Elif\n' +
+                     u' '*indentSz + ';#\n'
+                     u'Else\n' +
+                     u' '*indentSz + ';#\n'
+                     u'EndIf\n')
 
     def OnUseOnTopDraggableRMouseGestureMenu2(self, event):
         ''' Call the Always-OnTop-Draggable Version of the menu. '''
@@ -1926,46 +2178,52 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if self.OneInstanceThumbnailer == 1:
             wx.MessageBox(u'Only One Instance Allowed Open', u'WARNING', wx.ICON_EXCLAMATION | wx.OK)
         else:
-            packagenamewizardimagesDir = (u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue()).join(u'Wizard Images'))
-            self.dialog = wx.Dialog(self, -1, title=u'%s' %basher.gInstallers.gPackage.GetValue() + os.sep + u'Wizard Images',
-                                    size=(545, 425), style=wx.DEFAULT_DIALOG_STYLE)
-            self.dialog.SetBackgroundColour('#000000') # Set the Frame Background Color
+            package = u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue())
+            if not os.path.isdir(package):
+                wx.MessageBox(u'The Thumbnailer is for projects ONLY,\nNOT archives. Extract to a project first!', u'WARNING', wx.ICON_EXCLAMATION | wx.OK)
+            else:
+                packagenamewizardimagesDir = (u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue()).join(u'Wizard Images'))
+                self.dialog = wx.Dialog(self, -1, title=u'%s' %basher.gInstallers.gPackage.GetValue() + os.sep + u'Wizard Images',
+                                        size=(545, 425), style=wx.DEFAULT_DIALOG_STYLE)
+                self.dialog.SetBackgroundColour('#000000') # Set the Frame Background Color
 
-            import wx.lib.agw.thumbnailctrl as TC
-            self.thumbnailer = TC.ThumbnailCtrl(self.dialog, wx.NewId(), imagehandler=TC.NativeImageHandler, thumbfilter=TC.THUMB_FILTER_IMAGES)
-            self.thumbnailer.ShowDir(packagenamewizardimagesDir)# Show this images dir
-            self.thumbnailer.SetThumbOutline(TC.THUMB_OUTLINE_FULL)
-            self.thumbnailer.SetZoomFactor(1.4)
-            # self.thumbnailer.Bind(TC.EVT_THUMBNAILS_POINTED, self.OnThumbnailPointed)
-            # self.thumbnailer.SetHighlightPointed(True)
-            self.thumbnailer.ShowComboBox(True)
-            self.thumbnailer.EnableToolTips(True)
-            self.thumbnailer.ShowFileNames(True)
-            self.thumbnailer.EnableDragging(True)
-            # thumbnailcontextmenu = self.OnThumbnailContextMenu()
-            # self.thumbnailer.SetPopupMenu(thumbnailcontextmenu)
-            # self.thumbnailer.Bind(TC.EVT_THUMBNAILS_SEL_CHANGED, self.OnThumbnailSelChanged)
-            self.thumbnailer.Bind(wx.EVT_CONTEXT_MENU, self.OnThumbnailContextMenu)
-            # self.thumbnailer.Bind(wx.EVT_RIGHT_UP, self.OnThumbnailContextMenu)
-            # self.thumbnailer.Bind(wx.EVT_RIGHT_DOWN, self.OnThumbnailSelChanged)
-            self.thumbnailer.Bind(TC.EVT_THUMBNAILS_DCLICK, self.OnThumbnailWizImage)
-            self.dialog.Bind(wx.EVT_CLOSE, self.OnDialogDestroy)
+                import wx.lib.agw.thumbnailctrl as TC
+                self.thumbnailer = TC.ThumbnailCtrl(self.dialog, wx.NewId(), imagehandler=TC.NativeImageHandler, thumbfilter=TC.THUMB_FILTER_IMAGES)
+                self.thumbnailer.ShowDir(packagenamewizardimagesDir)# Show this images dir
+                self.thumbnailer.SetThumbOutline(TC.THUMB_OUTLINE_FULL)
+                self.thumbnailer.SetZoomFactor(1.4)
+                # self.thumbnailer.Bind(TC.EVT_THUMBNAILS_POINTED, self.OnThumbnailPointed)
+                # self.thumbnailer.SetHighlightPointed(True)
+                self.thumbnailer.ShowComboBox(True)
+                self.thumbnailer.EnableToolTips(True)
+                self.thumbnailer.ShowFileNames(True)
+                self.thumbnailer.EnableDragging(True)
+                # thumbnailcontextmenu = self.OnThumbnailContextMenu()
+                # self.thumbnailer.SetPopupMenu(thumbnailcontextmenu)
+                # self.thumbnailer.Bind(TC.EVT_THUMBNAILS_SEL_CHANGED, self.OnThumbnailSelChanged)
+                self.thumbnailer.Bind(wx.EVT_CONTEXT_MENU, self.OnThumbnailContextMenu)
+                # self.thumbnailer.Bind(wx.EVT_RIGHT_UP, self.OnThumbnailContextMenu)
+                # self.thumbnailer.Bind(wx.EVT_RIGHT_DOWN, self.OnThumbnailSelChanged)
+                self.thumbnailer.Bind(TC.EVT_THUMBNAILS_DCLICK, self.OnThumbnailWizImage)
+                self.dialog.Bind(wx.EVT_CLOSE, self.OnDialogDestroy)
 
-            tnsizer = wx.BoxSizer(wx.VERTICAL)
-            tnsizer.Add(self.thumbnailer, 1, wx.EXPAND | wx.ALL, 3)
-            self.dialog.SetSizer(tnsizer)
-            tnsizer.Layout()
+                tnsizer = wx.BoxSizer(wx.VERTICAL)
+                tnsizer.Add(self.thumbnailer, 1, wx.EXPAND | wx.ALL, 3)
+                self.dialog.SetSizer(tnsizer)
+                tnsizer.Layout()
 
-            self.dialog.Centre()
-            self.dialog.Show()
-            self.OneInstanceThumbnailer = 1
-            # self.dialog.ShowModal()
-            # self.dialog.Destroy()
+                self.dialog.Centre()
+                self.dialog.Show()
+                self.OneInstanceThumbnailer = 1
+                # self.dialog.ShowModal()
+                # self.dialog.Destroy()
 
     def OnThumbnailContextMenu(self, event):
+        ''' Brings up a Thumbnailer context menu with various options: Ex Open Selected Thumbnail(Image) in Photoshop. '''
         print('THUMBNAIL CONTEXT')
 
     def OnThumbnailWizImage(self, event):
+        ''' Adds text 'Wizard Images\\\\image.ext' a the caret. '''
         # id =  event.GetId()
         # evtobj = event.GetEventObject()
         # print id
@@ -1977,11 +2235,32 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # return self.dialog.Destroy()
 
     def OnDialogDestroy(self, event):
+        ''' Destroys the thumbnailer dialog. Needed because of the Only One Instance Open check '''
         # print ('KILL.BURN.DESTROY.')
         self.OneInstanceThumbnailer = 0
         return self.dialog.Destroy()
 
+    def OnImageBrowserPackageWizardImages(self, event):
+        ''' Call a floating frame with viewable wizard images from the currently active projects 'Wizard Images' directory. '''
+        if self.OneInstanceImageBrowser == 1:
+            wx.MessageBox(u'Only One Instance Allowed Open', u'WARNING', wx.ICON_EXCLAMATION | wx.OK)
+        else:
+            package = u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue())
+            if not os.path.isdir(package):
+                wx.MessageBox(u'The Image Browser is for projects ONLY,\nNOT archives. Extract to a project first!', u'WARNING', wx.ICON_EXCLAMATION | wx.OK)
+            else:
+                packagenamewizardimagesDir = (u'%s' %bosh.dirs[u'installers'].join(u'%s' %basher.gInstallers.gPackage.GetValue()).join(u'Wizard Images'))
+                dialog = ib.ImageDialog(self, packagenamewizardimagesDir)
+                dialog.Centre()
+                if dialog.ShowModal() == wx.ID_OK:
+                    basename = os.path.basename(dialog.GetFile())
+                    self.AddText(u'Wizard Images\\\\%s' %basename)
+                else:
+                    pass
+                dialog.Destroy()
+
     def OnWriteImageDirectoryIMAGE(self, event):
+        ''' This function adds text to the document from the dynamically generated menuitems by getting the menuitems's label. '''
         id =  event.GetId()
         # print event.GetId()
         # print event.GetEventObject()
@@ -1991,6 +2270,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.AddText(u'%s' %menuitem.GetItemLabel())
 
     def OnWriteKeywordSUBNAMEorESPMNAME(self, event):
+        ''' This function adds text to the document from the dynamically generated menuitems by getting the menuitems's label. '''
         id =  event.GetId()
         # print event.GetId()
         # print event.GetEventObject()
@@ -1999,39 +2279,51 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print menuitem.GetItemLabel()
         self.AddText(u'%s' %menuitem.GetItemLabel() + u'\n')
 
-    def OnWriteKeywordMODNAME(self, event):#NOT DONE
-        # print bosh.modInfos.getModList(showCRC=False,showVersion=False,fileInfo=None,wtxt=True)
-        # dataDir = bosh.dirs['mods']
+    # def OnWriteKeywordMODNAME(self, event):#NOT DONE
+        # ''' This function adds text to the document from the dynamically generated menuitems by getting the menuitems's label. '''
+        # # print bosh.modInfos.getModList(showCRC=False,showVersion=False,fileInfo=None,wtxt=True)
+        # # dataDir = bosh.dirs['mods']
 
-        for filename in os.listdir(u'%s' %bosh.dirs['mods']):
-            if filename.endswith(u'.esp') or filename.endswith(u'.esm'):
-                print filename
+        # for filename in os.listdir(u'%s' %bosh.dirs['mods']):
+            # if filename.endswith(u'.esp') or filename.endswith(u'.esm'):
+                # print filename
+
+    def OnDataFileExists(self, event):
+        ''' Write DataFileExists "" to the editor. '''
+        self.OnDeleteIfSelectedText(event)
+        self.AddText('DataFileExists ""')
+        self.CharLeft()
+        self.SetFocus()
 
     def OnWriteListSubPackages(self, event):
-        ''' Write (De)/SelectSubPackage"[subName]" for currently unselected/selected SubPackages. '''
+        ''' Write (De)/SelectSubPackage "[subName]" for currently unselected/selected SubPackages. '''
         subs = _(u'')
         for index in xrange(basher.gInstallers.gSubList.GetCount()):
             subs += [u'DeSelectSubPackage "',u'SelectSubPackage "'][basher.gInstallers.gSubList.IsChecked(index)] + basher.gInstallers.gSubList.GetString(index) + u'"\n'
         self.AddText(subs)
 
     def OnWriteListEspms(self, event):
-        ''' Write (De)/SelectEspm"[espmName]" for currently unselected/selected Espms. '''
+        ''' Write (De)/SelectEspm "[espmName]" for currently unselected/selected Espms. '''
         espms = _(u'')
         for index in xrange(basher.gInstallers.gEspmList.GetCount()):
             espms += [u'DeSelectEspm "',u'SelectEspm "'][basher.gInstallers.gEspmList.IsChecked(index)] + basher.gInstallers.gEspmList.GetString(index) + u'"\n'
         self.AddText(espms)
 
     def OnDeleteIfSelectedText(self, event):
+        ''' This function deletes any selected text. Usually called from another function. '''
         if self.GetSelectionStart() == self.GetSelectionEnd():
             pass
         else:
             self.DeleteBack()
 
     def OnRequireVersionsOblivion(self, event):
+        ''' Adds text RequireVersions "GameVersion","ScriptExtenderVersion","GraphicsExtenderVersion","WryeBashVersion" '''
         self.AddText(u'RequireVersions "1.2.0.416","0.0.20.6","3.0.0.0","295"')
     def OnRequireVersionsSkyrim(self, event):
+        ''' Adds text RequireVersions "GameVersion","ScriptExtenderVersion","GraphicsExtenderVersion","WryeBashVersion" '''
         self.AddText(u'RequireVersions "1.1.21.0","","","295"')
     def OnSelectOne(self, event):
+        ''' Adds text for a SelectOne dialog to the editor. '''
         # self.AddText(u'SelectOne "", \\')
         # for i in range(0,4): self.CharLeft()
 
@@ -2056,15 +2348,16 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         if number != '':
             self.AddText(u'SelectOne "", \\\n')
-            self.AddText((' '*gGlobalsDict['IndentSize'] + '"", "", "",\\\n')*(numberminusone) +
-                          ' '*gGlobalsDict['IndentSize'] + '"", "", ""\n')
-            self.AddText((' '*gGlobalsDict['IndentSize'] + 'Case ""\n' +
-                          ' '*gGlobalsDict['IndentSize']*2 + ';#\n' +
-                          ' '*gGlobalsDict['IndentSize']*2 + 'Break\n')*(number))
+            self.AddText((' '*basher.settings['bash.installers.wizSTC.IndentSize'] + '"", "", "",\\\n')*(numberminusone) +
+                          ' '*basher.settings['bash.installers.wizSTC.IndentSize'] + '"", "", ""\n')
+            self.AddText((' '*basher.settings['bash.installers.wizSTC.IndentSize'] + 'Case ""\n' +
+                          ' '*basher.settings['bash.installers.wizSTC.IndentSize']*2 + ';#\n' +
+                          ' '*basher.settings['bash.installers.wizSTC.IndentSize']*2 + 'Break\n')*(number))
             self.SetFocus()
             self.AddText(u'EndSelect')
 
     def OnSelectMany(self, event):
+        ''' Adds text for a SelectMany dialog to the editor. '''
         # self.AddText(u'SelectMany "", \\')
         # for i in range(0,4): self.CharLeft()
 
@@ -2093,89 +2386,105 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         if number != '':
             self.AddText(u'SelectMany "", \\\n')
-            self.AddText((' '*gGlobalsDict['IndentSize'] + '"", "", "",\\\n')*(numberminusone) +
-                          ' '*gGlobalsDict['IndentSize'] + '"", "", ""\n')
-            self.AddText((' '*gGlobalsDict['IndentSize'] + 'Case ""\n' +
-                          ' '*gGlobalsDict['IndentSize']*2 + ';#\n' +
-                          ' '*gGlobalsDict['IndentSize']*2 + 'Break\n')*(number))
+            self.AddText((' '*basher.settings['bash.installers.wizSTC.IndentSize'] + '"", "", "",\\\n')*(numberminusone) +
+                          ' '*basher.settings['bash.installers.wizSTC.IndentSize'] + '"", "", ""\n')
+            self.AddText((' '*basher.settings['bash.installers.wizSTC.IndentSize'] + 'Case ""\n' +
+                          ' '*basher.settings['bash.installers.wizSTC.IndentSize']*2 + ';#\n' +
+                          ' '*basher.settings['bash.installers.wizSTC.IndentSize']*2 + 'Break\n')*(number))
             self.SetFocus()
             self.AddText(u'EndSelect')
 
 
 
     def OnChoicesX02(self, event): # "", "", "" x2
-        if gGlobalsDict['TabsOrSpaces'] == 1:#TABS
+        ''' Adds (indented)text for some SelectOne/Many dialog options to the editor. '''
+        if basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 1:#TABS
             self.AddText('\t"", "Description.", "Wizard Images\\\\NeedPic.jpg",\\\n'
                          '\t"", "Description.", "Wizard Images\\\\NeedPic.jpg"\n')
-        elif gGlobalsDict['TabsOrSpaces'] == 0:#Spaces
-            indent1 = ' '*(gGlobalsDict['IndentSize'])
+        elif basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 0:#Spaces
+            indent1 = ' '*(basher.settings['bash.installers.wizSTC.IndentSize'])
             self.AddText('%s"", "Description.", "Wizard Images\\\\NeedPic.jpg",\\\n' % indent1 +
                          '%s"", "Description.", "Wizard Images\\\\NeedPic.jpg"\n' % indent1)
         self.SetFocus()
     def OnEndSelect(self, event):
+        ''' Adds text EndSelect to the editor. '''
         self.AddText('EndSelect\n')
         self.SetFocus()
     def OnCase(self, event):
-        if gGlobalsDict['TabsOrSpaces'] == 1:#TABS
+        ''' Adds (indented)text Case to the editor. '''
+        if basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 1:#TABS
             self.AddText('\tCase ""\n')
-        elif gGlobalsDict['TabsOrSpaces'] == 0:#Spaces
-            indent1 = ' '*(gGlobalsDict['IndentSize'])
+        elif basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 0:#Spaces
+            indent1 = ' '*(basher.settings['bash.installers.wizSTC.IndentSize'])
             self.AddText('%sCase ""\n' %indent1)
         self.SetFocus()
     def OnBreak(self, event):
-        if gGlobalsDict['TabsOrSpaces'] == 1:#TABS
+        ''' Adds (indented)text Break to the editor. '''
+        if basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 1:#TABS
             self.AddText('\tBreak\n')
-        elif gGlobalsDict['TabsOrSpaces'] == 0:#Spaces
-            indent1 = ' '*(gGlobalsDict['IndentSize'])
+        elif basher.settings['bash.installers.wizSTC.TabsOrSpaces'] == 0:#Spaces
+            indent1 = ' '*(basher.settings['bash.installers.wizSTC.IndentSize'])
             self.AddText('%sBreak\n' %indent1)
         self.SetFocus()
     def OnSelectAllKeyword(self, event):
+        ''' Adds text SelectAll to the editor. '''
         self.AddText('SelectAll')
         self.SetFocus()
     def OnDeSelectAll(self, event):
+        ''' Adds text DeSelectAll to the editor. '''
         self.AddText('DeSelectAll')
         self.SetFocus()
     def OnSelectSubPackage(self, event):
+        ''' Adds text SelectSubPackage "" to the editor. '''
         self.OnDeleteIfSelectedText(event)
         self.AddText('SelectSubPackage ""')
         self.CharLeft()
         self.SetFocus()
     def OnDeSelectSubPackage(self, event):
+        ''' Adds text DeSelectSubPackage "" to the editor. '''
         self.OnDeleteIfSelectedText(event)
         self.AddText('DeSelectSubPackage ""')
         self.CharLeft()
         self.SetFocus()
     def OnSelectEspm(self, event):
+        ''' Adds text SelectEspm "" to the editor. '''
         self.OnDeleteIfSelectedText(event)
         self.AddText('SelectEspm ""')
         self.CharLeft()
         self.SetFocus()
     def OnSelectAllEspms(self, event):
+        ''' Adds text SelectAllEspms to the editor. '''
         self.AddText('SelectAllEspms')
         self.SetFocus()
     def OnDeSelectEspm(self, event):
+        ''' Adds text DeSelectEspm "" to the editor. '''
         self.OnDeleteIfSelectedText(event)
         self.AddText('DeSelectEspm ""')
         self.CharLeft()
         self.SetFocus()
     def OnDeSelectAllEspms(self, event):
+        ''' Adds text DeSelectAllEspms to the editor. '''
         self.AddText('DeSelectAllEspms')
         self.SetFocus()
     def OnRenameEspm(self, event):
+        ''' Adds text RenameEspm "" to the editor. '''
         self.OnDeleteIfSelectedText(event)
         self.AddText('RenameEspm ""')
         self.CharLeft()
         self.SetFocus()
     def OnResetEspmName(self, event):
+        ''' Adds text ResetEspmName "" to the editor. '''
         self.OnDeleteIfSelectedText(event)
         self.AddText('ResetEspmName ""')
         self.CharLeft()
         self.SetFocus()
     def OnResetAllEspmNames(self, event):
+        ''' Adds text ResetAllEspmNames to the editor. '''
         self.AddText('ResetAllEspmNames')
         self.SetFocus()
 
     def OnWizardImages(self, event):
+        ''' Adds text Wizard Images\\\\ to the editor. '''
         self.AddText('Wizard Images\\\\')
         self.SetFocus()
 
@@ -2208,6 +2517,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
@@ -2216,9 +2529,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         showcalltip.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'showcalltip24.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(showcalltip)
 
-        autocomplete = wx.MenuItem(rightclickmenu, ID_WORDCOMPLETE, u'&WordComplete Box\tCtrl+W', u' Ctrl+W opens the WordComplete box')
-        autocomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'wordcomplete24.png',p).ConvertToBitmap())
-        rightclickmenu.AppendItem(autocomplete)
+        wordcomplete = wx.MenuItem(rightclickmenu, ID_WORDCOMPLETE, u'&WordComplete Box\tCtrl+W', u' Ctrl+W opens the WordComplete box')
+        wordcomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'wordcomplete24.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(wordcomplete)
 
         autocomplete = wx.MenuItem(rightclickmenu, ID_AUTOCOMPLETE, u'&AutoComplete Box\tCtrl+Space', u' Ctrl+Space opens the AutoComplete box')
         autocomplete.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'autocomplete24.png',p).ConvertToBitmap())
@@ -2234,6 +2547,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
 
         wx.EVT_MENU(rightclickmenu, ID_CALLTIP, self.OnShowSelectedTextCallTip)
         wx.EVT_MENU(rightclickmenu, ID_WORDCOMPLETE, self.OnShowWordCompleteBox)
@@ -2256,7 +2571,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # self.CallTipCancel()        #Remove the call tip from the screen.
         # self.CallTipPosAtStart()    #Retrieve the position where the caret was before displaying the call tip.
 
-        if gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             self.CallTipSetBackground('#D7DEEB')        #Set the background colour for the call tip.
             self.CallTipSetForeground('#666666')        #Set the foreground colour for the call tip.
 
@@ -2305,6 +2620,19 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             else:
                 pass
 
+    def OnSTCGainFocus(self, event):
+        self.SetSTCFocus(True)
+        # print ('GetSTCFocus = ' + str(self.GetSTCFocus()))
+
+    def OnSTCLoseFocus(self, event):
+        ''' Cancel any modes such as call tip or auto-completion list display.
+        This Closes the calltips and auto completion boxes from always staying on
+        top if switching to another application window OutofApp(such as photoshop, etc).
+        Also works for other dialogs InApp. '''
+        self.SetSTCFocus(False)
+        # print ('GetSTCFocus = ' + str(self.GetSTCFocus()))
+        self.Cancel()
+
     def OnShowWordCompleteBox(self, event):
         ''' Show a Auto-Completeion box with all the words in the document. '''
         text = self.GetText()
@@ -2323,13 +2651,23 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         kw = words
         kw.sort()
+
+        # # print self.AutoCompGetMaxWidth()
+        # self.AutoCompSetMaxWidth(0)
+        # # print self.AutoCompGetMaxHeight()
+        # self.AutoCompSetMaxHeight(9)
+
         # No need to seperate lowercase words from capitalcase or uppercase words
         self.AutoCompSetIgnoreCase(False)
         self.AutoCompShow(0, ' '.join(kw))
 
+    def OnAutoCompSelection(self, event):
+        self.autocompflag = 1
+        # print ('OnAutoCompSelection')
+
     def OnShowAutoCompleteBox(self, event):
         '''Shows the Auto-Complete Box in the editor filled with wizard script keywords.'''
-        if gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             kw = keywordWIZBAIN.kwlist[:] + keywordWIZBAIN2.kwlist[:]
             # Optionally add more ...
             kw.append('__U__SePeRaToR__l__?')
@@ -2338,6 +2676,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             # So this needs to match
             self.AutoCompSetIgnoreCase(False)
             self.AutoCompSetChooseSingle(True) #Should a single item auto-completion list automatically choose the item.
+
+            # # print self.AutoCompGetMaxWidth()
+            # self.AutoCompSetMaxWidth(0)
+            # # print self.AutoCompGetMaxHeight()
+            # self.AutoCompSetMaxHeight(9)
 
             # Registered images are specified with appended '?type'
             for i in range(len(kw)):
@@ -2373,6 +2716,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
@@ -2406,6 +2753,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
+
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
@@ -2437,37 +2786,33 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        txt2wizfiledrop = wx.MenuItem(rightclickmenu, ID_TXT2WIZFILE, u'& Txt2Wiz (FileDrop)', u' Txt2Wiz (FileDrop)')
-        txt2wizfiledrop.SetBitmap(wx.Image(self.imgDir + os.sep + 'wizard.png',p).ConvertToBitmap())
-        rightclickmenu.AppendItem(txt2wizfiledrop)
+        txt2wizstrfiledrop = wx.MenuItem(rightclickmenu, ID_TXT2WIZSTRFILE, u'& Txt2WizStr (FileDrop)', u' Txt2WizStr (FileDrop)')
+        txt2wizstrfiledrop.SetBitmap(wx.Image(self.imgDir + os.sep + 'wizard.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(txt2wizstrfiledrop)
 
-        txt2wiztextdrop = wx.MenuItem(rightclickmenu, ID_TXT2WIZTEXT, u'& Txt2Wiz (TextDrop)', u' Txt2Wiz (TextDrop)')
-        txt2wiztextdrop.SetBitmap(wx.Image(self.imgDir + os.sep + 'wizard.png',p).ConvertToBitmap())
-        rightclickmenu.AppendItem(txt2wiztextdrop)
+        txt2wizstrtextdrop = wx.MenuItem(rightclickmenu, ID_TXT2WIZSTRTEXT, u'& Txt2WizStr (TextDrop)', u' Txt2WizStr (TextDrop)')
+        txt2wizstrtextdrop.SetBitmap(wx.Image(self.imgDir + os.sep + 'wizard.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(txt2wizstrtextdrop)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID3', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        ## hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID', u' StatusText Description Here')
+        ## hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+        ## rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID4', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
-
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID5', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
-
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID6', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        ## hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID', u' StatusText Description Here')
+        ## hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+        ## rightclickmenu.AppendItem(hmmm)
 
         #events
-        wx.EVT_MENU(rightclickmenu, ID_TXT2WIZFILE, self.OnTextToWizardStringFileDropMiniFrame)
-        wx.EVT_MENU(rightclickmenu, ID_TXT2WIZTEXT, self.OnTextToWizardStringTextDropMiniFrame)
+        wx.EVT_MENU(rightclickmenu, ID_TXT2WIZSTRFILE, self.OnTextToWizardStringFileDropMiniFrame)
+        wx.EVT_MENU(rightclickmenu, ID_TXT2WIZSTRTEXT, self.OnTextToWizardStringTextDropMiniFrame)
 
         wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
         wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
@@ -2478,6 +2823,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
@@ -2493,7 +2840,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         p = wx.BITMAP_TYPE_PNG
 
-        rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 7', u'ContextMenu7')
+        rcheader1 = wx.MenuItem(rightclickmenu, 0000, u'&R MGM 7 Project Manipulation (NOT DONE)', u'ContextMenu7')
         rcheader1.SetBackgroundColour('#000000')
         rightclickmenu.AppendItem(rcheader1)
         rcheader1.SetDisabledBitmap(self.rmbImg)
@@ -2510,37 +2857,59 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID1', u' StatusText Description Here')
+        currentpackagename = u'%s' %basher.gInstallers.gPackage.GetValue()
+
+        # > Can't be a directory or filename character...at least on windows...so
+        currentpackage = wx.MenuItem(rightclickmenu, wx.NewId(), u'&Current Package>>> %s' %currentpackagename, u' Current Package Name')
+        currentpackage.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'test16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(currentpackage)
+        currentpackage.Enable(False)
+
+        activeproject = wx.MenuItem(rightclickmenu, 9999, u'&Active Project>>> %s' %basher.settings['bash.installers.wizSTC.ActiveProject'], u' Active Project')
+        activeproject.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'test16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(activeproject)
+        activeproject.Enable(False)
+
+        submenu = wx.Menu()
+        setactiveproject = wx.MenuItem(rightclickmenu, 9999, u'&None Needs Label && ID', u' Set Active Project To None')
+        setactiveproject.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'test16.png'),p).ConvertToBitmap())
+        submenu.AppendItem(setactiveproject)
+        rightclickmenu.AppendMenu(wx.NewId(), u'Set Active Project To... Needs Label && ID', submenu)
+
+        createnewproject = wx.MenuItem(rightclickmenu, 9999, u'&Create New Project...Needs Label && ID', u' StatusText Description Here')
+        createnewproject.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'test16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(createnewproject)
+
+        rightclickmenu.AppendSeparator()
+
+        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy SubPackage to Active Project...Needs Label && ID', u' StatusText Description Here')
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID2', u' StatusText Description Here')
+        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy Espm to Active Project...Needs Label && ID', u' StatusText Description Here')
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID3', u' StatusText Description Here')
+        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy All to Active Project(exc. wizard)...Needs Label && ID', u' StatusText Description Here')
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID4', u' StatusText Description Here')
+        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Append Current Package\'s wizard.txt to Active Project\'s blizzard.wiz Needs Label && ID', u' Mergify wiz/blizz')
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID5', u' StatusText Description Here')
+        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID', u' StatusText Description Here')
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID6', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
-
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID7', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
 
         #events
         wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
@@ -2552,6 +2921,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
@@ -2584,6 +2955,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
@@ -2697,6 +3072,8 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM7, self.OnRMouseGestureMenu7)
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
+
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
 
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
@@ -2903,41 +3280,73 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 mgm = wx.MenuItem(rightclickmenu, self.rmgmIDs[i-1], u'&R MGM %s %s'%(str(i),self.rmgmLABELs[i-1]), u' Call Mouse Gesture Menu %s'%str(i))
                 mgm.SetBitmap(self.mgmImg)
             submenu.AppendItem(mgm)
+        submenu.AppendSeparator()
+        mgm = wx.MenuItem(rightclickmenu, ID_MMGM5, u'&M MGM 5 Macro', u' Call M Mouse Gesture Menu 5')
+        mgm.SetBitmap(self.mgmImg)
+        submenu.AppendItem(mgm)
         rightclickmenu.AppendMenu(wx.NewId(), u'Mouse Gesture Menus', submenu)
 
         rightclickmenu.AppendSeparator()
 
-        togglewhitespace = wx.MenuItem(rightclickmenu, ID_TOGGLEWHITESPACE, u'&Toggle Whitespace', u' Toggle Whitespace')
+        if basher.settings['bash.installers.wizSTC.ViewWhiteSpace'] == 1: IO = u'On*'
+        elif basher.settings['bash.installers.wizSTC.ViewWhiteSpace'] == 2: IO = u'Off'
+        else: IO = u'On'
+        togglewhitespace = wx.MenuItem(rightclickmenu, ID_TOGGLEWHITESPACE, u'&Toggle Whitespace\t%s'%IO, u' Toggle Whitespace')
         togglewhitespace.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'showwhitespace16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(togglewhitespace)
 
-        toggleindentguides = wx.MenuItem(rightclickmenu, ID_TOGGLEINDENTGUIDES, u'&Toggle Indent Guides', u' Toggle Indent Guides On/Off')
+        if basher.settings['bash.installers.wizSTC.IndentationGuides'] == 1: IO = u'Off'
+        else: IO = u'On'
+        toggleindentguides = wx.MenuItem(rightclickmenu, ID_TOGGLEINDENTGUIDES, u'&Toggle Indent Guides\t%s'%IO, u' Toggle Indent Guides On/Off')
         toggleindentguides.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'showindentationguide16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(toggleindentguides)
 
-        togglewordwrap = wx.MenuItem(rightclickmenu, ID_TOGGLEWORDWRAP, u'&Toggle Wordwrap', u' Toggle Wordwrap On/Off')
+        if basher.settings['bash.installers.wizSTC.WordWrap'] == 1: IO = u'Off'
+        else: IO = u'On'
+        togglewordwrap = wx.MenuItem(rightclickmenu, ID_TOGGLEWORDWRAP, u'&Toggle Wordwrap\t%s'%IO, u' Toggle Wordwrap On/Off')
         togglewordwrap.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'wordwrap16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(togglewordwrap)
 
-        highlightselectedline = wx.MenuItem(rightclickmenu, ID_TOGGLELINEHIGHLIGHT, u'&Highlight Selected Line', u' Highlight Selected Line')
-        highlightselectedline.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'highlightcurrentline16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(highlightselectedline)
+        if basher.settings['bash.installers.wizSTC.CaretLineVisible'] == 1: IO = u'Off'
+        else: IO = u'On'
+        togglehighlightselectedline = wx.MenuItem(rightclickmenu, ID_TOGGLELINEHIGHLIGHT, u'&Toggle Highlight Selected Line\t%s'%IO, u' Toggle Highlight Selected Line')
+        togglehighlightselectedline.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'highlightcurrentline16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(togglehighlightselectedline)
 
-        toggleeolview = wx.MenuItem(rightclickmenu, ID_TOGGLEEOLVIEW, u'&Toggle EOL View', u' Toggle Show/Hide End of line characters ')
+        if basher.settings['bash.installers.wizSTC.ViewEOL'] == 1: IO = u'Off'
+        else: IO = u'On'
+        toggleeolview = wx.MenuItem(rightclickmenu, ID_TOGGLEEOLVIEW, u'&Toggle EOL View\t%s'%IO, u' Toggle Show/Hide End of line characters ')
         toggleeolview.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'eollf16.png'),p).ConvertToBitmap())
         rightclickmenu.AppendItem(toggleeolview)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID6', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        if basher.settings['bash.installers.wizSTC.BackSpaceUnIndents'] == 1: IO = u'Off'
+        else: IO = u'On'
+        togglebackspaceunindents = wx.MenuItem(rightclickmenu, ID_BACKSPACEUNINDENTS, u'&Toggle BackSpace Unindents\t%s'%IO, u' Toggle BackSpace Unindents')
+        togglebackspaceunindents.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'backspaceunindents16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(togglebackspaceunindents)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID7', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'showlinenumbers16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        if basher.settings['bash.installers.wizSTC.BraceCompletion'] == 1: IO = u'Off'
+        else: IO = u'On'
+        togglebracecompletion = wx.MenuItem(rightclickmenu, ID_BRACECOMPLETION, u'&Toggle Brace Completion \'"({[]})"\'\t%s'%IO, u' Toggle Brace Completion \'"({[]})"\'')
+        togglebracecompletion.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'bracecompletion16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(togglebracecompletion)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID8', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        if basher.settings['bash.installers.wizSTC.AutoIndentation'] == 1: IO = u'Off'
+        else: IO = u'On'
+        toggleautoindentation = wx.MenuItem(rightclickmenu, ID_AUTOINDENTATION, u'&Toggle Auto-Indentation\t%s'%IO, u' Toggle Auto-Indentation')
+        toggleautoindentation.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'autoindentation16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(toggleautoindentation)
+
+        if basher.settings['bash.installers.wizSTC.LongLineEdgeMode'] == 1: IO = u'=On'
+        elif basher.settings['bash.installers.wizSTC.LongLineEdgeMode'] == 2: IO = u'Off'
+        else: IO = u'|On'
+        toggleedgecolumn = wx.MenuItem(rightclickmenu, ID_EDGECOLUMN, u'&Toggle Edge Column\t%s'%IO, u' Toggle Edge Column')
+        toggleedgecolumn.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'edgecolumn16.png'),p).ConvertToBitmap())
+        rightclickmenu.AppendItem(toggleedgecolumn)
+
+        ## hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label,Func && ID', u' StatusText Description Here')
+        ## hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'showlinenumbers16.png'),p).ConvertToBitmap())
+        ## rightclickmenu.AppendItem(hmmm)
 
         rightclickmenu.AppendSeparator()
 
@@ -2948,7 +3357,11 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             theme = wx.MenuItem(rightclickmenu, self.themeIDs[i-1], u'&%s'%self.themeLABELs[i-1], u' %s Theme'%self.themeLABELs[i-1], kind = wx.ITEM_CHECK)
             theme.SetBitmap(self.chkImg)
             submenu_themes.AppendItem(theme)
-            if gGlobalsDict['ThemeOnStartup'] == u'%s' %self.themeLABELs[i-1]: theme.Check(True)
+            if basher.settings['bash.installers.wizSTC.ThemeOnStartup'] == u'%s' %self.themeLABELs[i-1]: theme.Check(True)
+        submenu_themes.AppendSeparator()
+        togglethemes = wx.MenuItem(rightclickmenu, ID_TOGGLETHEMES, u'&Toggle Editor Themes\tF12', u' Toggle Editor Themes')
+        togglethemes.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'toggletheme24.png'),p).ConvertToBitmap())
+        submenu_themes.AppendItem(togglethemes)
         rightclickmenu.AppendMenu(7900, u'Themes', submenu_themes)
 
         #events
@@ -2974,6 +3387,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_TOGGLEWORDWRAP, self.OnWordwrap)
         wx.EVT_MENU(rightclickmenu, ID_TOGGLELINEHIGHLIGHT, self.OnHighlightSelectedLine)
         wx.EVT_MENU(rightclickmenu, ID_TOGGLEEOLVIEW, self.OnShowEOL)
+        wx.EVT_MENU(rightclickmenu, ID_BACKSPACEUNINDENTS, self.OnBackSpaceUnindents)
+        wx.EVT_MENU(rightclickmenu, ID_BRACECOMPLETION, self.OnBraceCompletion)
+        wx.EVT_MENU(rightclickmenu, ID_AUTOINDENTATION, self.OnAutoIndentation)
+        wx.EVT_MENU(rightclickmenu, ID_EDGECOLUMN, self.OnEdgeColumn)
 
         wx.EVT_MENU(rightclickmenu, ID_RMGM1, self.OnRMouseGestureMenu1)
         wx.EVT_MENU(rightclickmenu, ID_RMGM2, self.OnRMouseGestureMenu2)
@@ -2985,78 +3402,159 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         wx.EVT_MENU(rightclickmenu, ID_RMGM8, self.OnRMouseGestureMenu8)
         wx.EVT_MENU(rightclickmenu, ID_RMGM9, self.OnRMouseGestureMenu9)
 
+        wx.EVT_MENU(rightclickmenu, ID_MMGM5, self.OnMMouseGestureMenuNone)
+
         self.PopupMenu(rightclickmenu)
         rightclickmenu.Destroy()
 
     def OnViewWhitespace(self, event):
-        if   self.GetViewWhiteSpace() == 0: self.SetViewWhiteSpace(1)#0,1,or, 2
-        elif self.GetViewWhiteSpace() == 1: self.SetViewWhiteSpace(2)
-        elif self.GetViewWhiteSpace() == 2: self.SetViewWhiteSpace(0)
+        ''' Toggle whitespace inbetween three modes: Off,On, and On within Indentation. '''
+        if   self.GetViewWhiteSpace() == 0:
+            self.SetViewWhiteSpace(1)#0,1,or, 2
+            basher.settings['bash.installers.wizSTC.ViewWhiteSpace'] = 1
+        elif self.GetViewWhiteSpace() == 1:
+            self.SetViewWhiteSpace(2)
+            basher.settings['bash.installers.wizSTC.ViewWhiteSpace'] = 2
+        elif self.GetViewWhiteSpace() == 2:
+            self.SetViewWhiteSpace(0)
+            basher.settings['bash.installers.wizSTC.ViewWhiteSpace'] = 0
+        basher.settings.setChanged('bash.installers.wizSTC.ViewWhiteSpace')
 
     def OnShowIndentationGuides(self, event):
         '''Toggle the indentation guides in the editor On/Off'''
-        if self.GetIndentationGuides() == True: self.SetIndentationGuides(False)
-        else: self.SetIndentationGuides(True)
+        if self.GetIndentationGuides() == True:
+            self.SetIndentationGuides(False)
+            basher.settings['bash.installers.wizSTC.IndentationGuides'] = 0
+        else:
+            self.SetIndentationGuides(True)
+            basher.settings['bash.installers.wizSTC.IndentationGuides'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.IndentationGuides')
 
     def OnWordwrap(self, event):
         '''Toggle Wordwrapping of the document in the editor On/Off'''
-        if self.GetWrapMode() == True: self.SetWrapMode(False)
-        else: self.SetWrapMode(True)
+        if self.GetWrapMode() == True:
+            self.SetWrapMode(False)
+            basher.settings['bash.installers.wizSTC.WordWrap'] = 0
+        else:
+            self.SetWrapMode(True)
+            basher.settings['bash.installers.wizSTC.WordWrap'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.WordWrap')
 
     def OnHighlightSelectedLine(self, event):
         '''Toggle highlighting the currently selected line(the one with the caret) in the editor On/Off'''
-        if self.GetCaretLineVisible() == True: self.SetCaretLineVisible(False)
-        else: self.SetCaretLineVisible(True)
+        if self.GetCaretLineVisible() == True:
+            self.SetCaretLineVisible(False)
+            basher.settings['bash.installers.wizSTC.CaretLineVisible'] = 0
+        else:
+            self.SetCaretLineVisible(True)
+            basher.settings['bash.installers.wizSTC.CaretLineVisible'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.CaretLineVisible')
 
     def OnShowEOL(self, event):
         ''' Toggle Show/Hide End of line characters '''
-        if self.GetViewEOL() == 1: self.SetViewEOL(False)
-        elif self.GetViewEOL() == 0: self.SetViewEOL(True)
+        if self.GetViewEOL() == 1:
+            self.SetViewEOL(False)
+            basher.settings['bash.installers.wizSTC.ViewEOL'] = 0
+        elif self.GetViewEOL() == 0:
+            self.SetViewEOL(True)
+            basher.settings['bash.installers.wizSTC.ViewEOL'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.ViewEOL')
+
+    def OnBackSpaceUnindents(self, event):
+        ''' Toggle option that sets whether a backspace pressed when caret is within indentation unindents. '''
+        if self.GetBackSpaceUnIndents() == 1:
+            self.SetBackSpaceUnIndents(False)
+            basher.settings['bash.installers.wizSTC.BackSpaceUnIndents'] = 0
+        elif self.GetBackSpaceUnIndents() == 0:
+            self.SetBackSpaceUnIndents(True)
+            basher.settings['bash.installers.wizSTC.BackSpaceUnIndents'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.BackSpaceUnIndents')
+
+    def OnBraceCompletion(self, event):
+        ''' Toggle brace completion on and off. Baces: '"{([])}"' '''
+        bc = basher.settings['bash.installers.wizSTC.BraceCompletion']
+        if bc == 1:
+            basher.settings['bash.installers.wizSTC.BraceCompletion'] = 0
+        elif bc == 0:
+            basher.settings['bash.installers.wizSTC.BraceCompletion'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.BraceCompletion')
+
+    def OnAutoIndentation(self, event):
+        ''' Toggle auto-indentation on and off. '''
+        ai = basher.settings['bash.installers.wizSTC.AutoIndentation']
+        if ai == 1:
+            basher.settings['bash.installers.wizSTC.AutoIndentation'] = 0
+        elif ai == 0:
+            basher.settings['bash.installers.wizSTC.AutoIndentation'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.AutoIndentation')
+
+    def OnEdgeColumn(self, event):
+        ''' Toggle the long line edge column in the editor On/Off through the three different modes.
+        The edge may be displayed by a line (EDGE_LINE) or by highlighting text that goes beyond
+        it (EDGE_BACKGROUND) or not displayed at all (EDGE_NONE).'''
+        if basher.settings['bash.installers.wizSTC.LineEdgeModeAsColumnMarker'] == 1: pass
+        else:
+            self.SetEdgeColumn(basher.settings['bash.installers.wizSTC.LongLineEdge'])
+
+            if self.GetEdgeMode() == 0:   #stc.STC_EDGE_NONE
+                self.SetEdgeMode(stc.STC_EDGE_LINE)
+                basher.settings['bash.installers.wizSTC.LongLineEdgeMode'] = stc.STC_EDGE_LINE
+            elif self.GetEdgeMode() == 1: #stc.STC_EDGE_LINE
+                self.SetEdgeMode(stc.STC_EDGE_BACKGROUND)
+                basher.settings['bash.installers.wizSTC.LongLineEdgeMode'] = stc.STC_EDGE_BACKGROUND
+            elif self.GetEdgeMode() == 2: #stc.STC_EDGE_BACKGROUND
+                self.SetEdgeMode(stc.STC_EDGE_NONE)
+                basher.settings['bash.installers.wizSTC.LongLineEdgeMode'] = stc.STC_EDGE_NONE
+            basher.settings.setChanged('bash.installers.wizSTC.LongLineEdgeMode')
 
     def OnSetFolderMarginStyle(self, event):#Called after STC is initialised MainWindow Initial Startup. Not sure why but calling it here in the class causes the fold symbols to not work quite properly at startup...
-        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          Color1 = '#000000'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           Color1 = '#000000'; Color2 = '#32CC99'#medium aquamarine
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           Color1 = '#BBBBBB'; Color2 = '#000000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          Color1 = '#293134'; Color2 = '#66747B'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           Color1 = '#272822'; Color2 = '#75715E'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        Color1 = '#0D0D0D'; Color2 = '#483C45'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     Color1 = '#12362B'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          Color1 = '#2E3436'; Color2 = '#F9EE98'
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            Color1 = '#FFFFFF'; Color2 = '#F0804F'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       Color1 = '#FF0000'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       Color1 = '#333333'; Color2 = '#999999'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': Color1 = '#423230'; Color2 = '#D9D458'
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        Color1 = '#FF7800'; Color2 = '#535AE9'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          Color1 = '#000000'; Color2 = '#A0D6E2'
+        ''' Setup of fold margin colors and styles before calling on of the OnFolderMarginStyle# functions. '''
+        tos = basher.settings['bash.installers.wizSTC.ThemeOnStartup']
+        fms = basher.settings['bash.installers.wizSTC.FolderMarginStyle']
+        if   tos == 'No Theme':          Color1 = '#000000'; Color2 = '#FFFFFF'
+        elif tos == 'Default':           Color1 = '#000000'; Color2 = '#32CC99'#medium aquamarine
+        elif tos == 'Console':           Color1 = '#BBBBBB'; Color2 = '#000000'
+        elif tos == 'Obsidian':          Color1 = '#293134'; Color2 = '#66747B'
+        elif tos == 'Zenburn':           Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
+        elif tos == 'Monokai':           Color1 = '#272822'; Color2 = '#75715E'
+        elif tos == 'Deep Space':        Color1 = '#0D0D0D'; Color2 = '#483C45'
+        elif tos == 'Green Side Up':     Color1 = '#12362B'; Color2 = '#FFFFFF'
+        elif tos == 'Twilight':          Color1 = '#2E3436'; Color2 = '#F9EE98'
+        elif tos == 'UliPad':            Color1 = '#FFFFFF'; Color2 = '#F0804F'
+        elif tos == 'Hello Kitty':       Color1 = '#FF0000'; Color2 = '#FFFFFF'
+        elif tos == 'Vibrant Ink':       Color1 = '#333333'; Color2 = '#999999'
+        elif tos == 'Birds Of Paridise': Color1 = '#423230'; Color2 = '#D9D458'
+        elif tos == 'BlackLight':        Color1 = '#FF7800'; Color2 = '#535AE9'
+        elif tos == 'Notebook':          Color1 = '#000000'; Color2 = '#A0D6E2'
 
-        elif gGlobalsDict['FolderMarginStyle'] == 1: self.OnFolderMarginStyle1(event, Color1, Color2)
-        elif gGlobalsDict['FolderMarginStyle'] == 2: self.OnFolderMarginStyle2(event, Color1, Color2)
-        elif gGlobalsDict['FolderMarginStyle'] == 5: self.OnFolderMarginStyle5(event, Color1, Color2)
-        elif gGlobalsDict['FolderMarginStyle'] == 6: self.OnFolderMarginStyle6(event, Color1, Color2)
+        elif fms == 1: self.OnFolderMarginStyle1(event, Color1, Color2)
+        elif fms == 2: self.OnFolderMarginStyle2(event, Color1, Color2)
+        elif fms == 5: self.OnFolderMarginStyle5(event, Color1, Color2)
+        elif fms == 6: self.OnFolderMarginStyle6(event, Color1, Color2)
 
-        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          Color1 = '#FFFFFF'; Color2 = '#000000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           Color1 = '#32CC99'; Color2 = '#000000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           Color1 = '#000000'; Color2 = '#BBBBBB'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          Color1 = '#293134'; Color2 = '#66747B'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           Color1 = '#75715E'; Color2 = '#272822'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        Color1 = '#483C45'; Color2 = '#0D0D0D'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     Color1 = '#FFFFFF'; Color2 = '#12362B'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          Color1 = '#F9EE98'; Color2 = '#2E3436'
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            Color1 = '#F0804F'; Color2 = '#FFFFFF'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       Color1 = '#FFFFFF'; Color2 = '#FF0000'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       Color1 = '#999999'; Color2 = '#333333'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': Color1 = '#D9D458'; Color2 = '#423230'
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        Color1 = '#535AE9'; Color2 = '#FF7800'
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          Color1 = '#A0D6E2'; Color2 = '#000000'
+        if   tos == 'No Theme':          Color1 = '#FFFFFF'; Color2 = '#000000'
+        elif tos == 'Default':           Color1 = '#32CC99'; Color2 = '#000000'
+        elif tos == 'Console':           Color1 = '#000000'; Color2 = '#BBBBBB'
+        elif tos == 'Obsidian':          Color1 = '#293134'; Color2 = '#66747B'
+        elif tos == 'Zenburn':           Color1 = '#DCDCCC'; Color2 = '#3F3F3F'
+        elif tos == 'Monokai':           Color1 = '#75715E'; Color2 = '#272822'
+        elif tos == 'Deep Space':        Color1 = '#483C45'; Color2 = '#0D0D0D'
+        elif tos == 'Green Side Up':     Color1 = '#FFFFFF'; Color2 = '#12362B'
+        elif tos == 'Twilight':          Color1 = '#F9EE98'; Color2 = '#2E3436'
+        elif tos == 'UliPad':            Color1 = '#F0804F'; Color2 = '#FFFFFF'
+        elif tos == 'Hello Kitty':       Color1 = '#FFFFFF'; Color2 = '#FF0000'
+        elif tos == 'Vibrant Ink':       Color1 = '#999999'; Color2 = '#333333'
+        elif tos == 'Birds Of Paridise': Color1 = '#D9D458'; Color2 = '#423230'
+        elif tos == 'BlackLight':        Color1 = '#535AE9'; Color2 = '#FF7800'
+        elif tos == 'Notebook':          Color1 = '#A0D6E2'; Color2 = '#000000'
 
-        if   gGlobalsDict['FolderMarginStyle'] == 3: self.OnFolderMarginStyle3(event, Color1, Color2)
-        elif gGlobalsDict['FolderMarginStyle'] == 4: self.OnFolderMarginStyle4(event, Color1, Color2)
+        if   fms == 3: self.OnFolderMarginStyle3(event, Color1, Color2)
+        elif fms == 4: self.OnFolderMarginStyle4(event, Color1, Color2)
 
     def OnFolderMarginStyle1(self, event, Color1, Color2):
-        gGlobalsDict['FolderMarginStyle'] = 1
-        # Arrow pointing right for contracted folders, arrow pointing down for expanded
+        ''' Arrow pointing right for contracted folders, arrow pointing down for expanded. '''
+        basher.settings['bash.installers.wizSTC.FolderMarginStyle'] = 1
+        basher.settings.setChanged('bash.installers.wizSTC.FolderMarginStyle')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_ARROWDOWN, Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_ARROW,     Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY,     Color1 , Color2)
@@ -3065,8 +3563,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY,     Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY,     Color1 , Color2)
     def OnFolderMarginStyle2(self, event, Color1, Color2):
-        gGlobalsDict['FolderMarginStyle'] = 2
-        # Plus for contracted folders, minus for expanded
+        ''' Plus for contracted folders, minus for expanded. '''
+        basher.settings['bash.installers.wizSTC.FolderMarginStyle'] = 2
+        basher.settings.setChanged('bash.installers.wizSTC.FolderMarginStyle')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_MINUS, Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_PLUS,  Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY, Color1 , Color2)
@@ -3075,8 +3574,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY, Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY, Color1 , Color2)
     def OnFolderMarginStyle3(self, event, Color1, Color2):
-        gGlobalsDict['FolderMarginStyle'] = 3
-        # Like a flattened tree control using circular headers and curved joins
+        ''' Like a flattened tree control using circular headers and curved joins. '''
+        basher.settings['bash.installers.wizSTC.FolderMarginStyle'] = 3
+        basher.settings.setChanged('bash.installers.wizSTC.FolderMarginStyle')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_CIRCLEMINUS,          Color1, Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_CIRCLEPLUS,           Color1, Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,                Color1, Color2)
@@ -3085,8 +3585,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_CIRCLEMINUSCONNECTED, Color1, Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_TCORNERCURVE,         Color1, Color2)
     def OnFolderMarginStyle4(self, event, Color1, Color2):
-        gGlobalsDict['FolderMarginStyle'] = 4
-        # Like a flattened tree control using square headers
+        ''' Like a flattened tree control using square headers. '''
+        basher.settings['bash.installers.wizSTC.FolderMarginStyle'] = 4
+        basher.settings.setChanged('bash.installers.wizSTC.FolderMarginStyle')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_BOXMINUS,          Color1, Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_BOXPLUS,           Color1, Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_VLINE,             Color1, Color2)
@@ -3095,8 +3596,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_BOXMINUSCONNECTED, Color1, Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_TCORNER,           Color1, Color2)
     def OnFolderMarginStyle5(self, event, Color1, Color2):
-        gGlobalsDict['FolderMarginStyle'] = 5
-        # Arrows >>> pointing right for contracted folders, dotdotdot ... for expanded
+        ''' Arrows >>> pointing right for contracted folders, dotdotdot ... for expanded. '''
+        basher.settings['bash.installers.wizSTC.FolderMarginStyle'] = 5
+        basher.settings.setChanged('bash.installers.wizSTC.FolderMarginStyle')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_ARROWS,    Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_DOTDOTDOT, Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY,     Color1 , Color2)
@@ -3105,8 +3607,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_EMPTY,     Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY,     Color1 , Color2)
     def OnFolderMarginStyle6(self, event, Color1, Color2):
-        gGlobalsDict['FolderMarginStyle'] = 6
-        # Arrows >>> pointing right for contracted folders, dotdotdot ... for expanded
+        ''' Short arrow -> pointing right for contracted folders, circle ... for expanded. '''
+        basher.settings['bash.installers.wizSTC.FolderMarginStyle'] = 6
+        basher.settings.setChanged('bash.installers.wizSTC.FolderMarginStyle')
         self.MarkerDefine(stc.STC_MARKNUM_FOLDEROPEN,    stc.STC_MARK_SHORTARROW, Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDER,        stc.STC_MARK_CIRCLE,     Color1 , Color2)
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERSUB,     stc.STC_MARK_EMPTY,      Color1 , Color2)
@@ -3116,43 +3619,49 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY,      Color1 , Color2)
 
     def OnSetTheme(self, event):
-        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          self.OnNoTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           self.OnDefaultTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           self.OnConsoleTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          self.OnObsidianTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           self.OnZenburnTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           self.OnMonokaiTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        self.OnDeepSpaceTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     self.OnGreenSideUpTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          self.OnTwilightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            self.OnUliPadTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       self.OnHelloKittyTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       self.OnVibrantInkTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': self.OnBirdsOfParidiseTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        self.OnBlackLightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          self.OnNotebookTheme(event)
+        ''' Called on initialization to set the users saved theme setting. '''
+        tos = basher.settings['bash.installers.wizSTC.ThemeOnStartup']
+        if   tos == 'No Theme':          self.OnNoTheme(event)
+        elif tos == 'Default':           self.OnDefaultTheme(event)
+        elif tos == 'Console':           self.OnConsoleTheme(event)
+        elif tos == 'Obsidian':          self.OnObsidianTheme(event)
+        elif tos == 'Zenburn':           self.OnZenburnTheme(event)
+        elif tos == 'Monokai':           self.OnMonokaiTheme(event)
+        elif tos == 'Deep Space':        self.OnDeepSpaceTheme(event)
+        elif tos == 'Green Side Up':     self.OnGreenSideUpTheme(event)
+        elif tos == 'Twilight':          self.OnTwilightTheme(event)
+        elif tos == 'UliPad':            self.OnUliPadTheme(event)
+        elif tos == 'Hello Kitty':       self.OnHelloKittyTheme(event)
+        elif tos == 'Vibrant Ink':       self.OnVibrantInkTheme(event)
+        elif tos == 'Birds Of Paridise': self.OnBirdsOfParidiseTheme(event)
+        elif tos == 'BlackLight':        self.OnBlackLightTheme(event)
+        elif tos == 'Notebook':          self.OnNotebookTheme(event)
         else:
             print ('ThemeOnStartup ERROR!!!!!!!!!!!!\nOnSetTheme')
 
     def OnToggleEditorThemes(self, event):
-        if   gGlobalsDict['ThemeOnStartup'] == 'No Theme':          self.OnDefaultTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Default':           self.OnConsoleTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Console':           self.OnObsidianTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Obsidian':          self.OnZenburnTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Zenburn':           self.OnMonokaiTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Monokai':           self.OnDeepSpaceTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Deep Space':        self.OnGreenSideUpTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Green Side Up':     self.OnTwilightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Twilight':          self.OnUliPadTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'UliPad':            self.OnHelloKittyTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Hello Kitty':       self.OnVibrantInkTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Vibrant Ink':       self.OnBirdsOfParidiseTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Birds Of Paridise': self.OnBlackLightTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'BlackLight':        self.OnNotebookTheme(event)
-        elif gGlobalsDict['ThemeOnStartup'] == 'Notebook':          self.OnNoTheme(event)
+        ''' Toggles through the various built-in themes. Default keyboard shortcut: F12. '''
+        tos = basher.settings['bash.installers.wizSTC.ThemeOnStartup']
+        if   tos == 'No Theme':          self.OnDefaultTheme(event)
+        elif tos == 'Default':           self.OnConsoleTheme(event)
+        elif tos == 'Console':           self.OnObsidianTheme(event)
+        elif tos == 'Obsidian':          self.OnZenburnTheme(event)
+        elif tos == 'Zenburn':           self.OnMonokaiTheme(event)
+        elif tos == 'Monokai':           self.OnDeepSpaceTheme(event)
+        elif tos == 'Deep Space':        self.OnGreenSideUpTheme(event)
+        elif tos == 'Green Side Up':     self.OnTwilightTheme(event)
+        elif tos == 'Twilight':          self.OnUliPadTheme(event)
+        elif tos == 'UliPad':            self.OnHelloKittyTheme(event)
+        elif tos == 'Hello Kitty':       self.OnVibrantInkTheme(event)
+        elif tos == 'Vibrant Ink':       self.OnBirdsOfParidiseTheme(event)
+        elif tos == 'Birds Of Paridise': self.OnBlackLightTheme(event)
+        elif tos == 'BlackLight':        self.OnNotebookTheme(event)
+        elif tos == 'Notebook':          self.OnNoTheme(event)
 
     def OnNoTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'No Theme'
+        ''' A black and white only theme. Use this theme if you don't want syntax highlighting. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'No Theme'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFFFFF,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3178,7 +3687,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#000000')
         self.SetSelBackground(True,  '#999999')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Make the Python styles ...
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#000000,back:#FFFFFF')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#000000,back:#FFFFFF')
@@ -3208,7 +3717,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('No Theme')
 
     def OnDefaultTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Default'
+        ''' This is the default theme made originally for TES4WizBAIN. Colors are based off utumno's Notepad++ BAIN Wizard syntax highlighting theme. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Default'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFFFFF,face:%(mono)s,size:%(size)d' % faces)#Always call this twice. before and after StyleClearAll()
         self.ClearDocumentStyle()
@@ -3234,8 +3745,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#000000')
         self.SetSelBackground(True,  '#C0C0C0')
 
-        # print ('LoadSTCLexer : ', gGlobalsDict['LoadSTCLexer'])
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Make the Python styles ...
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#000000,back:#FFFFFF')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#007F00,back:#EAFFE9')
@@ -3264,7 +3774,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Default Theme')
 
     def OnConsoleTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Console'
+        ''' A dark version of the Default theme. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Console'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#BBBBBB,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3290,7 +3802,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#43BBE2')
         self.SetSelBackground(True,  '#444444')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#BBBBBB,back:#000000')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#007F00,back:#000000')
@@ -3319,7 +3831,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Console Theme')
 
     def OnObsidianTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Obsidian'
+        ''' A popular theme found in various code editors. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Obsidian'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#E0E2E4,back:#293134,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3345,7 +3859,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#C00000')
         self.SetSelBackground(True,  '#404E51')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#E0E2E4,back:#293134')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#66747B,back:#293134')
@@ -3374,7 +3888,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Obsidian Theme')
 
     def OnZenburnTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Zenburn'
+        ''' A popular theme found in various code editors. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Zenburn'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#DCDCCC,back:#3F3F3F,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3400,7 +3916,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#C00000')
         self.SetSelBackground(True,  '#585858')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#DCDCCC,back:#3F3F3F')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#7F9F7F,back:#3F3F3F')
@@ -3429,7 +3945,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Zenburn Theme')
 
     def OnMonokaiTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Monokai'
+        ''' A popular theme found in various code editors. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Monokai'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#F8F8F2,back:#272822,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3455,7 +3973,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#8000FF')
         self.SetSelBackground(True,  '#49483E')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#F8F8F2,back:#272822')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#75715E,back:#272822')
@@ -3484,7 +4002,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Monokai Theme')
 
     def OnDeepSpaceTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Deep Space'
+        ''' A dark theme inspired by Transcendence, a cool little totally random & moddable space shooter RPG by George Morisomoto. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Deep Space'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#FFFFFF,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3510,7 +4030,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#8000FF')
         self.SetSelBackground(True,  '#26061E')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#F8F8F2,back:#0D0D0D')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#483C45,back:#0D0D0D')
@@ -3539,7 +4059,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Deep Space Theme')
 
     def OnGreenSideUpTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Green Side Up'
+        ''' A strangely greenish/purplish theme developed by an alien I met once. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Green Side Up'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#00FF00,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3565,7 +4087,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(True, '#8000FF')
         self.SetSelBackground(True, '#333333')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#BBBBBB,back:#000000')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#00AA00,back:#3B5930')
@@ -3594,7 +4116,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Green Side Up Theme')
 
     def OnTwilightTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Twilight'
+        ''' A popular theme found in various code editors. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Twilight'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#FFFFFF,back:#141414,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3620,7 +4144,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#8000FF')
         self.SetSelBackground(True,  '#3E3E3E')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#F8F8F8,back:#141414')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#5F5A60,back:#141414')
@@ -3649,7 +4173,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Twilight Theme')
 
     def OnUliPadTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'UliPad'
+        ''' The default UliPad code editor theme. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'UliPad'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,       'fore:#FFFFFF,back:#112435,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3675,7 +4201,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#8000FF')
         self.SetSelBackground(True,  '#2E9F27')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             # Python styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#8DB0D3,back:#112435')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#00CFCB,back:#112435')
@@ -3704,7 +4230,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('UliPad Theme')
 
     def OnHelloKittyTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Hello Kitty'
+        ''' A theme for all the lady coders out there. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Hello Kitty'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#FFB0FF,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3730,7 +4258,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#FFD5FF')
         self.SetSelBackground(True,  '#FFD5FF')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             #Python Styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#000000,back:#FFB0FF')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#008000,back:#FFB0FF')
@@ -3759,7 +4287,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Hello Kitty Theme')
 
     def OnVibrantInkTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Vibrant Ink'
+        ''' A popular theme found in various code editors. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Vibrant Ink'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#FFFFFF,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3785,7 +4315,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#8000FF')
         self.SetSelBackground(True,  '#6699CC')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             #Python Styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#FFFFFF,back:#000000')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#9933CC,back:#000000')
@@ -3814,7 +4344,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Vibrant Ink Theme')
 
     def OnBirdsOfParidiseTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Birds Of Paridise'
+        ''' A similarly colored/unique theme found floating around the net somewhere. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Birds Of Paridise'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#E6E1C4,back:#423230,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3840,7 +4372,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(False, '#8000FF')
         self.SetSelBackground(True,  '#393126')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             #Python Styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#E6E1C4,back:#423230')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#6B4A31,back:#423230,bold,italic')
@@ -3869,7 +4401,9 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('Birds of Paridise Theme')
 
     def OnBlackLightTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'BlackLight'
+        ''' Metallicow's personal version of a blacklight looking theme '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'BlackLight'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#DDDDDD,back:#000000,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
@@ -3895,7 +4429,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(True,  '#535AE9')
         self.SetSelBackground(True,  '#24276E')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             #Python Styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#E6E1C4,back:#000000')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#3F5456,back:#000000,bold,italic')
@@ -3924,13 +4458,15 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # print('BlackLight Theme')
 
     def OnNotebookTheme(self, event):
-        gGlobalsDict['ThemeOnStartup'] = 'Notebook'
+        ''' A similarly colored/whimsical theme found floating around the net somewhere based off actual notebook and highlighter markers colors. '''
+        basher.settings['bash.installers.wizSTC.ThemeOnStartup'] = 'Notebook'
+        basher.settings.setChanged('bash.installers.wizSTC.ThemeOnStartup')
 
         self.StyleSetSpec(stc.STC_STYLE_DEFAULT,     'fore:#000000,back:#CAC2AD,face:%(mono)s,size:%(size)d' % faces)
         self.ClearDocumentStyle()
         self.StyleClearAll()
         self.SetCaretLineBackground('#BBB09C')
-        self.SetCaretLineBackAlpha(gGlobalsDict['CaretLineBackgroundAlpha'])
+        self.SetCaretLineBackAlpha(basher.settings['bash.installers.wizSTC.CaretLineBackgroundAlpha'])
         self.SetCaretForeground('#7C7563')
 
         self.rmousegesture.SetGesturePen('Black', 5)
@@ -3951,7 +4487,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.SetSelForeground(True, '#000000')
         self.SetSelBackground(True,  '#9A9384')
 
-        if gGlobalsDict['LoadSTCLexer'] == 'pythonlexer' or gGlobalsDict['LoadSTCLexer'] == 'wizbainlexer':
+        if basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'pythonlexer' or basher.settings['bash.installers.wizSTC.LoadSTCLexer'] == 'wizbainlexer':
             #Python Styles
             self.StyleSetSpec(stc.STC_P_DEFAULT,        'fore:#E6E1C4,back:#CAC2AD')
             self.StyleSetSpec(stc.STC_P_COMMENTLINE,    'fore:#000000,back:#B0EE65,bold')
@@ -3979,6 +4515,145 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Notebook Theme')
 
+
+
+class FloatingToolbar(wx.MiniFrame):
+    ''' General Floating Toolbar. '''
+    def __init__(self, parent, id):
+        wx.MiniFrame.__init__(self, parent, -1, title='Toolbar', size=(-1, -1), style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT)
+
+        p = wx.BITMAP_TYPE_PNG
+
+        undotool = wx.BitmapButton(self, ID_UNDO, wx.Image(gWizSTC.imgstcDir + os.sep + u'undo16.png',p).ConvertToBitmap())
+        undotool.SetToolTipString(u'Undo')
+        undotool.Bind(wx.EVT_BUTTON, gWizSTC.OnUndo)
+        redotool = wx.BitmapButton(self, ID_REDO, wx.Image(gWizSTC.imgstcDir + os.sep + u'redo16.png',p).ConvertToBitmap())
+        redotool.SetToolTipString(u'Redo')
+        redotool.Bind(wx.EVT_BUTTON, gWizSTC.OnRedo)
+        cuttool = wx.BitmapButton(self, ID_CUT, wx.Image(gWizSTC.imgstcDir + os.sep + u'cut16.png',p).ConvertToBitmap())
+        cuttool.SetToolTipString(u'Cut')
+        cuttool.Bind(wx.EVT_BUTTON, gWizSTC.OnCut)
+        copytool = wx.BitmapButton(self, ID_COPY, wx.Image(gWizSTC.imgstcDir + os.sep + u'copy16.png',p).ConvertToBitmap())
+        copytool.SetToolTipString(u'Copy')
+        copytool.Bind(wx.EVT_BUTTON, gWizSTC.OnCopy)
+        pastetool = wx.BitmapButton(self, ID_PASTE, wx.Image(gWizSTC.imgstcDir + os.sep + u'paste16.png',p).ConvertToBitmap())
+        pastetool.SetToolTipString(u'Paste')
+        pastetool.Bind(wx.EVT_BUTTON, gWizSTC.OnPaste)
+        selectalltool = wx.BitmapButton(self, ID_SELECTALL, wx.Image(gWizSTC.imgstcDir + os.sep + u'selectall16.png',p).ConvertToBitmap())
+        selectalltool.SetToolTipString(u'Select All')
+        selectalltool.Bind(wx.EVT_BUTTON, gWizSTC.OnSelectAll)
+        togglecommenttool = wx.BitmapButton(self, ID_COMMENT, wx.Image(gWizSTC.imgstcDir + os.sep + u'togglecomment16.png',p).ConvertToBitmap())
+        togglecommenttool.SetToolTipString(u'Toggle Comment')
+        togglecommenttool.Bind(wx.EVT_BUTTON, gWizSTC.OnToggleComment)
+        removetrailingwhitespacetool = wx.BitmapButton(self, ID_REMTRAILWHITESPACE, wx.Image(gWizSTC.imgstcDir + os.sep + u'removetrailingspaces16.png',p).ConvertToBitmap())
+        removetrailingwhitespacetool.SetToolTipString(u'Remove Trailing Whitespace')
+        removetrailingwhitespacetool.Bind(wx.EVT_BUTTON, gWizSTC.OnRemoveTrailingWhitespace)
+
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer1.Add(undotool, 0)
+        hsizer1.Add(redotool, 0)
+        hsizer1.Add(cuttool, 0)
+        hsizer1.Add(copytool, 0)
+        hsizer1.Add(pastetool, 0)
+        hsizer1.Add(selectalltool, 0)
+        hsizer1.Add(togglecommenttool, 0)
+        hsizer1.Add(removetrailingwhitespacetool, 0)
+        self.SetSizer(hsizer1)
+        self.Fit()
+
+        self.SetClientSize(hsizer1.GetSize())
+        self.SetMinSize(self.GetSize())
+        self.SetMaxSize(self.GetSize())
+        self.Centre()
+
+    def OnClose(self, event):
+        gWizSTC.OneInstanceToolbar = 0
+        self.Destroy()
+
+class InstallersTabTips(wx.Frame):
+    ''' The tip of the day dialog. '''
+    def __init__(self, parent, id, title):
+        wx.Frame.__init__(self, parent, -1, title='Installers Tab Tips', size=(400, 400), style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT)
+
+        useWXVER = '2.8'
+
+        p = wx.BITMAP_TYPE_PNG
+
+        # Read this data file in as a list
+        tipsin = open(u'%s' %bosh.dirs['bash'].join(u'installerstabtips.txt'), 'r' )
+        self.tips_list = tipsin.readlines()
+        tipsin.close()
+
+        self.tipnum = random.randint(0, len(self.tips_list)) #Set tipnum to start on a random tip
+
+        self.tipbox = wx.TextCtrl(self, wx.NewId(), str(self.tips_list[self.tipnum]), (-1, -1), (-1, 200), style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_NOHIDESEL)
+
+        staticline = wx.StaticLine(self, -1, (-1, -1), (-1, -1), wx.LI_HORIZONTAL)
+
+        self.nexttipbutton = wx.Button(self, wx.NewId(), 'Next Tip', (-1, -1), wx.DefaultSize)
+        self.closebutton = wx.Button(self, wx.NewId(), 'Close', (-1, -1), wx.DefaultSize)
+
+        # The seamless tiling background image.
+        self.backgroundbitmap = wx.Bitmap(gWizSTC.imgstcDir + os.sep + u'seamlessbackgroundtile256.png',p)
+
+        hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer1.AddStretchSpacer()
+        hsizer1.Add(self.nexttipbutton, 0, wx.ALIGN_RIGHT | wx.LEFT, 5)
+        hsizer1.Add(self.closebutton, 0, wx.ALIGN_RIGHT | wx.LEFT, 10)
+
+        vsizer1 = wx.BoxSizer(wx.VERTICAL)
+        vsizer1.Add(self.tipbox, 1, wx.EXPAND | wx.ALL, 8)
+        vsizer1.Add(staticline, 0, wx.GROW | wx.ALL , 8)
+        vsizer1.Add(hsizer1, 0, wx.EXPAND | wx.ALL, 8)
+        vsizer1.SetMinSize((350, -1))
+        self.SetSizerAndFit(vsizer1)
+
+        self.SetClientSize(vsizer1.GetSize())
+        self.SetMinSize(self.GetSize())
+        self.Centre()
+
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+        self.nexttipbutton.Bind(wx.EVT_BUTTON, self.OnNextTip)
+        self.closebutton.Bind(wx.EVT_BUTTON, self.OnClose)
+        if useWXVER == '2.8':
+            self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
+        elif useWXVER == '2.9':
+            self.SetBackgroundStyle(wx.BG_STYLE_ERASE)
+        self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnDrawBackground)
+
+        self.SetIcon(wx.Icon(gWizSTC.imgstcDir + os.sep + u'lightbulb16.png',p))
+
+    def OnNextTip(self, event):
+        self.tipnum = self.tipnum + 1
+        if self.tipnum == len(self.tips_list):
+            self.tipnum = 0
+            self.tipbox.SetValue(str(self.tips_list[0]))
+        else:
+            self.tipbox.SetValue(str(self.tips_list[self.tipnum]))
+        # print self.tipnum
+
+    def OnDrawBackground(self, event):
+        dc = wx.ClientDC(self)
+
+        sz = self.GetClientSize()
+        w = self.backgroundbitmap.GetWidth()
+        h = self.backgroundbitmap.GetHeight()
+        x = 0
+        y = 0
+
+        while x < sz.width:#sz.width
+            y = 0
+            while y < sz.height:#sz.height
+                dc.DrawBitmap(self.backgroundbitmap, x, y)
+                y = y + h
+            dc.DrawBitmap(self.backgroundbitmap, x, y)
+            x = x + w
+        # print('TiledBackground')
+
+    def OnClose(self, event):
+        self.Destroy()
 
 class DraggableRMouseGestureMenu2(wx.PopupTransientWindow):
     ''' Since this was intended for text and also sizers don't work here...
