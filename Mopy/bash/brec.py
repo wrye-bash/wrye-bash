@@ -102,7 +102,7 @@ def getObjectIndex(fid):
 
 def getFormIndices(fid):
     """Returns tuple of modIndex and ObjectIndex of fid."""
-    return (int(fid >> 14),int(fid & 0x00FFFFFFL))
+    return (int(fid >> 24),int(fid & 0x00FFFFFFL))
 
 # Mod I/O Errors ---------------------------------------------------------------
 #-------------------------------------------------------------------------------
