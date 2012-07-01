@@ -441,6 +441,8 @@ settingDefaults = {
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
     #--Installers Comments/WizBAIN Editor
+    'bash.installers.wizSTC.DisableCommentsWizBAINEditor':0,
+    'bash.installers.wizSTC.StdOutDebugWindow':0,
     'bash.installers.wizSTC.LoadSTCLexer':'wizbainlexer',
     'bash.installers.wizSTC.ThemeOnStartup':'Default',
     'bash.installers.wizSTC.FolderMarginStyle':1,
@@ -474,8 +476,19 @@ settingDefaults = {
     'bash.installers.wizSTC.SetLeftRightBlankMargins':0,
     'bash.installers.wizSTC.MouseGestureWobbleTolerance':500, #Hmmm need to figure out how this affects usage as in low/high number
     'bash.installers.wizSTC.UserCustomFontFace':'Magic Cards',
-    'bash.installers.wizSTC.ModdersHandle':'ModdersHandle',#Ex:Wrye,Metallicow,LoJack,PacificMorrowind,etc...
-    'bash.installers.wizSTC.ActiveProject':'None',
+    'bash.installers.wizSTC.ModdersHandle':u'ModdersHandle',#Ex:Wrye,Metallicow,LoJack,PacificMorrowind,etc...
+    'bash.installers.wizSTC.IntelliWiz':0,
+    'bash.installers.wizSTC.IntelliCallTip':1,
+    'bash.installers.wizSTC.ActiveProject':u'None',
+    'bash.installers.wizSTC.FindList':[u'Add/Delete from list with the buttons ==>'],
+    'bash.installers.wizSTC.ReplaceList':[u'Add/Delete from list with the buttons ==>'],
+    'bash.installers.wizSTC.SetFindReplaceTransparency':255,
+    'bash.installers.wizSTC.FindReplaceComboBoxsAutoSort':1,
+    'bash.installers.wizSTC.FindReplaceWholeWordCB':0,
+    'bash.installers.wizSTC.FindReplaceMatchCaseCB':0,
+    'bash.installers.wizSTC.FindReplaceWrapAroundCB':1,
+    'bash.installers.wizSTC.MiniMemoText':u'Woot it\'s a memo!',
+    'bash.installers.wizSTC.MiniMemoSavedSize':(75, 75),
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': wx.DefaultPosition,
@@ -3617,96 +3630,191 @@ class InstallersPanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
-        commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-        subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-        checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
-        #--Refreshing
-        self.refreshed = False
-        self.refreshing = False
-        self.frameActivated = False
-        self.fullRefresh = False
-        #--Contents
-        self.gList = InstallersList(left,data,
-            installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
-            details=self, style=wx.LC_REPORT)
-        self.gList.SetSizeHints(100,100)
-        #--Package
-        self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
-        self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
-        #--Info Tabs
-        self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
-        self.gNotebook.SetSizeHints(100,100)
-        self.infoPages = []
-        infoTitles = (
-            ('gGeneral',_(u'General')),
-            ('gMatched',_(u'Matched')),
-            ('gMissing',_(u'Missing')),
-            ('gMismatched',_(u'Mismatched')),
-            ('gConflicts',_(u'Conflicts')),
-            ('gUnderrides',_(u'Underridden')),
-            ('gDirty',_(u'Dirty')),
-            ('gSkipped',_(u'Skipped')),
-            )
-        for name,title in infoTitles:
-            gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
-            self.gNotebook.AddPage(gPage,title)
-            self.infoPages.append([gPage,False])
-        self.gNotebook.SetSelection(settings['bash.installers.page'])
-        self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
-        #--Sub-Installers
-        subPackagesPanel = wx.Panel(checkListSplitter)
-        subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
-        self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
-        self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
-        self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
-        #--Espms
-        espmsPanel = wx.Panel(checkListSplitter)
-        espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
-        self.espms = []
-        self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
-        self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
-        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
-        #--Comments
-        commentsPanel = wx.Panel(commentsSplitter)
-        self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
-        ## self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
-        self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
-        #--Splitter settings
-        checkListSplitter.SetMinimumPaneSize(50)
-        checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
-        checkListSplitter.SetSashGravity(0.5)
-        subSplitter.SetMinimumPaneSize(50)
-        subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
-        subSplitter.SetSashGravity(0.5)
-        commentsHeight = self.gPackage.GetSize()[1]
-        commentsSplitter.SetMinimumPaneSize(commentsHeight)
-        commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
-        commentsSplitter.SetSashGravity(1.0)
-        #--Layout
-        subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
-        subPackagesSizer.SetSizeHints(subPackagesPanel)
-        subPackagesPanel.SetSizer(subPackagesSizer)
-        espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
-        espmsSizer.SetSizeHints(espmsPanel)
-        espmsPanel.SetSizer(espmsSizer)
-        commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
-        commentsSizer.SetSizeHints(commentsPanel)
-        commentsPanel.SetSizer(commentsSizer)
-        rightSizer = vSizer(
-            (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
-            (commentsSplitter,1,wx.EXPAND,2))
-        rightSizer.SetSizeHints(right)
-        right.SetSizer(rightSizer)
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
-        commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
-        # restore saved comments text box size
-        if 0 == commentsSplitterSavedSashPos:
-            commentsSplitter.SetSashPosition(-commentsHeight)
-        else:
-            commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-        commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
+        #0 = Comments/WizBAIN Editor On as default, 1 for Off
+        self.NoCommentsOption = settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor']
+        if self.NoCommentsOption == 0:
+            commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+            subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
+            checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+            #--Refreshing
+            self.refreshed = False
+            self.refreshing = False
+            self.frameActivated = False
+            self.fullRefresh = False
+            #--Contents
+            self.gList = InstallersList(left,data,
+                installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
+                details=self, style=wx.LC_REPORT)
+            self.gList.SetSizeHints(100,100)
+            #--Package
+            self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
+            self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+            #--Info Tabs
+            self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
+            self.gNotebook.SetSizeHints(100,100)
+            self.infoPages = []
+            infoTitles = (
+                ('gGeneral',_(u'General')),
+                ('gMatched',_(u'Matched')),
+                ('gMissing',_(u'Missing')),
+                ('gMismatched',_(u'Mismatched')),
+                ('gConflicts',_(u'Conflicts')),
+                ('gUnderrides',_(u'Underridden')),
+                ('gDirty',_(u'Dirty')),
+                ('gSkipped',_(u'Skipped')),
+                )
+            for name,title in infoTitles:
+                gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
+                self.gNotebook.AddPage(gPage,title)
+                self.infoPages.append([gPage,False])
+            self.gNotebook.SetSelection(settings['bash.installers.page'])
+            self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+            #--Sub-Installers
+            subPackagesPanel = wx.Panel(checkListSplitter)
+            subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+            self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
+            self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+            self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
+            #--Espms
+            espmsPanel = wx.Panel(checkListSplitter)
+            espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+            self.espms = []
+            self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
+            self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+            self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+            #--Comments
+            commentsPanel = wx.Panel(commentsSplitter)
+            self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
+            ## self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+            self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
+            #--Splitter settings
+            checkListSplitter.SetMinimumPaneSize(50)
+            checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+            checkListSplitter.SetSashGravity(0.5)
+            subSplitter.SetMinimumPaneSize(50)
+            subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+            subSplitter.SetSashGravity(0.5)
+            commentsHeight = self.gPackage.GetSize()[1]
+            commentsSplitter.SetMinimumPaneSize(commentsHeight)
+            commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
+            commentsSplitter.SetSashGravity(1.0)
+            #--Layout
+            subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+            subPackagesSizer.SetSizeHints(subPackagesPanel)
+            subPackagesPanel.SetSizer(subPackagesSizer)
+            espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+            espmsSizer.SetSizeHints(espmsPanel)
+            espmsPanel.SetSizer(espmsSizer)
+            commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
+            commentsSizer.SetSizeHints(commentsPanel)
+            commentsPanel.SetSizer(commentsSizer)
+            rightSizer = vSizer(
+                (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
+                (commentsSplitter,1,wx.EXPAND,2))
+            rightSizer.SetSizeHints(right)
+            right.SetSizer(rightSizer)
+            wx.LayoutAlgorithm().LayoutWindow(self, right)
+            commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
+            # restore saved comments text box size
+            if 0 == commentsSplitterSavedSashPos:
+                commentsSplitter.SetSashPosition(-commentsHeight)
+            else:
+                commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+            #--Events
+            self.Bind(wx.EVT_SIZE,self.OnSize)
+            commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
+        elif self.NoCommentsOption == 1:
+            print('Comment/WizBAIN Editor Disabled')
+            ### commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+            subSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+            checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+            #--Refreshing
+            self.refreshed = False
+            self.refreshing = False
+            self.frameActivated = False
+            self.fullRefresh = False
+            #--Contents
+            self.gList = InstallersList(left,data,
+                installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
+                details=self, style=wx.LC_REPORT)
+            self.gList.SetSizeHints(100,100)
+            #--Package
+            self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
+            self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+            #--Info Tabs
+            self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
+            self.gNotebook.SetSizeHints(100,100)
+            self.infoPages = []
+            infoTitles = (
+                ('gGeneral',_(u'General')),
+                ('gMatched',_(u'Matched')),
+                ('gMissing',_(u'Missing')),
+                ('gMismatched',_(u'Mismatched')),
+                ('gConflicts',_(u'Conflicts')),
+                ('gUnderrides',_(u'Underridden')),
+                ('gDirty',_(u'Dirty')),
+                ('gSkipped',_(u'Skipped')),
+                )
+            for name,title in infoTitles:
+                gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
+                self.gNotebook.AddPage(gPage,title)
+                self.infoPages.append([gPage,False])
+            self.gNotebook.SetSelection(settings['bash.installers.page'])
+            self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+            #--Sub-Installers
+            subPackagesPanel = wx.Panel(checkListSplitter)
+            subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+            self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
+            self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+            self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
+            #--Espms
+            espmsPanel = wx.Panel(checkListSplitter)
+            espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+            self.espms = []
+            self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
+            self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+            self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+            #--Comments
+            ### commentsPanel = wx.Panel(commentsSplitter)
+            ### self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
+            ### self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+            ### self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
+            #--Splitter settings
+            checkListSplitter.SetMinimumPaneSize(50)
+            checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+            checkListSplitter.SetSashGravity(0.5)
+            subSplitter.SetMinimumPaneSize(50)
+            subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+            subSplitter.SetSashGravity(0.5)
+            commentsHeight = self.gPackage.GetSize()[1]
+            ### commentsSplitter.SetMinimumPaneSize(commentsHeight)
+            ### commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
+            ### commentsSplitter.SetSashGravity(1.0)
+            #--Layout
+            subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+            subPackagesSizer.SetSizeHints(subPackagesPanel)
+            subPackagesPanel.SetSizer(subPackagesSizer)
+            espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+            espmsSizer.SetSizeHints(espmsPanel)
+            espmsPanel.SetSizer(espmsSizer)
+            ### commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
+            ### commentsSizer.SetSizeHints(commentsPanel)
+            ### commentsPanel.SetSizer(commentsSizer)
+            rightSizer = vSizer(
+                (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
+                (subSplitter,1,wx.EXPAND,2))
+            rightSizer.SetSizeHints(right)
+            right.SetSizer(rightSizer)
+            wx.LayoutAlgorithm().LayoutWindow(self, right)
+            commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
+            # restore saved comments text box size
+            if 0 == commentsSplitterSavedSashPos:
+                subSplitter.SetSashPosition(-commentsHeight)
+            else:
+                subSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+            #--Events
+            self.Bind(wx.EVT_SIZE,self.OnSize)
+            subSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -3803,6 +3911,7 @@ class InstallersPanel(SashTankPanel):
                 self.data.refreshStatus()
                 self.RefreshUIMods()
         self.SetStatusCount()
+        
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3833,12 +3942,15 @@ class InstallersPanel(SashTankPanel):
         settings['bash.installers.page'] = self.gNotebook.GetSelection()
         if not self.detailsItem: return
         if self.detailsItem not in self.data: return
-        ## if not self.gComments.IsModified(): return
-        if not self.gComments.GetModify(): return
-        installer = self.data[self.detailsItem]
-        ## installer.comments = self.gComments.GetValue()
-        self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-        installer.comments = self.gComments.GetTextUTF8()
+        if self.NoCommentsOption == 1:
+            pass
+        else:
+            ## if not self.gComments.IsModified(): return
+            if not self.gComments.GetModify(): return
+            installer = self.data[self.detailsItem]
+            ## installer.comments = self.gComments.GetValue()
+            self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+            installer.comments = self.gComments.GetTextUTF8()
         self.data.setChanged()
 
     def RefreshUIMods(self):
@@ -3886,13 +3998,16 @@ class InstallersPanel(SashTankPanel):
                 balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
                     [x not in installer.espmNots for x in names])
             #--Comments
-            ## self.gComments.SetValue(installer.comments)
-            try:
-                self.gComments.SetText(installer.comments)
-            except:
-                self.gComments.SetTextUTF8(installer.comments)
-            self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-            self.gComments.EmptyUndoBuffer()
+            if self.NoCommentsOption == 1:
+                pass
+            else:
+                ## self.gComments.SetValue(installer.comments)
+                try:
+                    self.gComments.SetText(installer.comments)
+                except:
+                    self.gComments.SetTextUTF8(installer.comments)
+                self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+                self.gComments.EmptyUndoBuffer()
         else:
             self.gPackage.SetValue(u'')
             for index,(gPage,state) in enumerate(self.infoPages):
@@ -3900,13 +4015,16 @@ class InstallersPanel(SashTankPanel):
                 gPage.SetValue(u'')
             self.gSubList.Clear()
             self.gEspmList.Clear()
-            ## self.gComments.SetValue(u'')
-            try:
-                self.gComments.SetText(u'')
-            except:
-                self.gComments.SetTextUTF8(u'')
-            self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-            self.gComments.EmptyUndoBuffer()
+            if self.NoCommentsOption == 1:
+                pass
+            else:
+                ## self.gComments.SetValue(u'')
+                try:
+                    self.gComments.SetText(u'')
+                except:
+                    self.gComments.SetTextUTF8(u'')
+                self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+                self.gComments.EmptyUndoBuffer()
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -12682,6 +12800,34 @@ class Settings_Game(Link):
         bashFrame.Restart(('--game',self.game))
 
 #------------------------------------------------------------------------------
+class Settings_DisableWidget(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_(u'Disable Widget'),subMenu)
+        Settings_DisableCommentsWizBAINEditor().AppendToMenu(subMenu,window,data)
+        
+class Settings_DisableCommentsWizBAINEditor(Link):
+    """Show/Hide Comments/WizBAINEditor on the Installers Tab."""
+    def __init__(self):
+        Link.__init__(self)
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'),kind=wx.ITEM_CHECK,
+            help=_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'))
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'])
+            
+    def Execute(self,event):
+        if settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] == 0:
+            settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 1
+            settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
+        else:
+            settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 0
+            settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
+            
+#------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
     """Menu to unhide a StatusBar button."""
     def AppendToMenu(self,menu,window,data):
@@ -19433,6 +19579,7 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_Languages())
     SettingsMenu.append(Settings_PluginEncodings())
     SettingsMenu.append(Settings_Games())
+    SettingsMenu.append(Settings_DisableWidget())
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Mods_Deprint())

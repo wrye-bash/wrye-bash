@@ -14,36 +14,65 @@ __all__ = ["iskeyword", "kwlist"]
 
 kwlist = [
 #--start keywords2--
-        'CompareGameVersion',
-        'CompareGEVersion',
-        'CompareOBGEVersion', #Deprecated
-        'CompareOBSEVersion', #Deprecated
-        'CompareObVersion',   #Deprecated
-        'CompareSEVersion',
-        'CompareWBVersion',
-        'DataFileExists',
-        'Elif',
-        'Else',
-        'EndFor',
-        'EndIf',
-        'endswith',
-        'EndWhile',
-        'Exec',
-        'False',
-        'find',
-        'float',
-        'For',
-        'If',
-        'int',
-        'len',
-        'lower',
-        'rfind',
-        'snip',
-        'snipend',
-        'startswith',
-        'str',
-        'True',
-        'While'
+        'CompareGameVersion',   #Function
+        'CompareGEVersion',     #Function
+        'CompareOBGEVersion',   #Deprecated Function
+        'CompareOBSEVersion',   #Deprecated Function
+        'CompareObVersion',     #Deprecated Function
+        'CompareSEVersion',     #Function
+        'CompareWBVersion',     #Function
+        'DataFileExists',       #Function
+        'Elif',                 #Keyword
+        'Else',                 #Keyword
+        'EndFor',               #Keyword
+        'EndIf',                #Keyword
+        'endswith',             #Function
+        'EndWhile',             #Keyword
+        'False',                #Built-In Constant
+        'find',                 #Function & Dot Operator
+        'float',                #Function
+        'For',                  #Keyword
+        'If',                   #Keyword
+        'int',                  #Function
+        'len',                  #Function & Dot Operator
+        'lower',                #Function & Dot Operator
+        'rfind',                #Function & Dot Operator
+        'startswith',           #Function & Dot Operator
+        'str',                  #Function & Dot Operator
+        'True',                 #Built-In Constant
+        'While'                 #Keyword
+        #########################
+        # '=',                  #Assignment Operator
+        # '+=',                 #Assignment Operator
+        # '-=',                 #Assignment Operator
+        # '*=',                 #Assignment Operator
+        # '/=',                 #Assignment Operator
+        # '^=',                 #Assignment Operator
+        # '+',                  #Math Operator
+        # '-',                  #Math Operator
+        # '*',                  #Math Operator
+        # '/',                  #Math Operator
+        # '^',                  #Math Operator
+        # '&',                  #Boolean Operator
+        # 'and',                #Boolean Operator
+        # '|',                  #Boolean Operator
+        # 'or',                 #Boolean Operator
+        # '!',                  #Boolean Operator
+        # 'not',                #Boolean Operator
+        # 'in',                 #Boolean Operator
+        # 'in:',                #Boolean Operator Case Insensitive
+        # '==',                 #Comparison Operator
+        # '==:',                #Comparison Operator Case Insensitive
+        # '!=',                 #Comparison Operator
+        # '!=:',                #Comparison Operator Case Insensitive
+        # '>=',                 #Comparison Operator
+        # '>=:',                #Comparison Operator Case Insensitive
+        # '>',                  #Comparison Operator
+        # '>:',                 #Comparison Operator Case Insensitive
+        # '<=',                 #Comparison Operator
+        # '<=:',                #Comparison Operator Case Insensitive
+        # '<',                  #Comparison Operator
+        # '<:',                 #Comparison Operator Case Insensitive
 #--end keywords2--
         ]
 

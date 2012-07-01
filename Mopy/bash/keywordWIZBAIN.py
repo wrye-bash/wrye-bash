@@ -14,62 +14,34 @@ __all__ = ["iskeyword", "kwlist"]
 
 kwlist = [
 #--start keywords1--
-        '!',
-        'Break',
-        'Cancel',
-        'Case',
-        'Continue',
-        'Default',
-        'DeSelectAll',
-        'DeSelectAllEspms',
-        'DeSelectEspm',
-        'DeSelectSubPackage',
-        'DisableINILine',
-        'EditINI',
-        'EndSelect',
-        'Exec',
-        'GetEspmStatus',
-        'GetFilename',
-        'GetFolder',
-        'Note',
-        'RemoveINILine',
-        'RenameEspm',
-        'RequireVersions',
-        'ResetAllEspmNames',
-        'ResetEspmName',
-        'Return',
-        'SelectAll',
-        'SelectAllEspms',
-        'SelectEspm',
-        'SelectMany',
-        'SelectOne',
-        'SelectSubPackage',
-        ## Directory Names For Games
-        # 'Bash Patches',   #WryeBash
-        # 'DialogueViews',  #
-        # 'DistantLOD',     #Oblivion
-        # 'Docs',           #WryeBash
-        # 'Facegen',        #Oblivion
-        # 'Fonts',          #Oblivion
-        # 'Images',         #
-        # 'Ini',            #
-        # 'INI Tweaks',     #WryeBash
-        # 'Interface',      #Skyrim
-        # 'LSData',         #
-        # 'Menus',          #Oblivion
-        # 'Meshes',         #Oblivion,Skyrim
-        # 'Music',          #Oblivion
-        # 'OBSE',           #Oblivion
-        # '--Screenshots',  #
-        # 'Screenshots',    #
-        # 'Scripts',        #Skyrim
-        # 'Shaders',        #Oblivion
-        # 'shadersfx',      #
-        # 'SKSE',           #Skyrim
-        # 'Sound',          #Oblivion,Skyrim
-        # 'Strings',        #
-        # 'Textures',       #Oblivion,Skyrim
-        # 'Video',          #Oblivion,Skyrim
+        'Break',                #Keyword
+        'Cancel',               #Keyword
+        'Case',                 #Keyword
+        'Continue',             #Keyword
+        'Default',              #Keyword
+        'DeSelectAll',          #Keyword
+        'DeSelectAllEspms',     #Keyword
+        'DeSelectEspm',         #Keyword
+        'DeSelectSubPackage',   #Keyword
+        'DisableINILine',       #Function
+        'EditINI',              #Function
+        'EndSelect',            #Keyword
+        'Exec',                 #Function
+        'GetEspmStatus',        #Function
+        'GetFilename',          #Function
+        'GetFolder',            #Function
+        'Note',                 #Keyword
+        'RenameEspm',           #Keyword
+        'RequireVersions',      #Keyword
+        'ResetAllEspmNames',    #Keyword
+        'ResetEspmName',        #Keyword
+        'Return',               #Keyword
+        'SelectAll',            #Keyword
+        'SelectAllEspms',       #Keyword
+        'SelectEspm',           #Keyword
+        'SelectMany',           #Keyword
+        'SelectOne',            #Keyword
+        'SelectSubPackage',     #Keyword
 #--end keywords1--
         ]
 
