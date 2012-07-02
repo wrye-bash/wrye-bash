@@ -7158,6 +7158,22 @@ def GetBashVersion():
     #return settings['bash.readme'] #readme file not found or not changed
 
 #------------------------------------------------------------------------------
+class WryeBashSplashScreen(wx.SplashScreen):
+    """This Creates the Splash Screen widget. (The first image you see when starting the Application.)"""
+    def __init__(self, parent=None):
+        splashScreenBitmap = wx.Image(name = u'%s' %bosh.dirs['images'] + os.sep + u'wryesplash.png').ConvertToBitmap()
+        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT # wx.SPLASH_NO_TIMEOUT #This centers the image on the screen and controls whether you have to click the splashscreen or not.
+        splashDuration = 3000 # Duration in milliseconds that the splash screen will stay on the screen before the Main Window Pops up.
+        # Call the constructor with the above arguments in exactly the following order.
+        wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
+        self.Bind(wx.EVT_CLOSE, self.OnExit)
+        wx.Yield()
+
+    def OnExit(self, event):
+        self.Hide()
+        # The program might/will freeze without this line.
+        event.Skip() # Make sure the default handler runs too...
+#------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instanced
@@ -7170,6 +7186,16 @@ class BashApp(wx.App):
         progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing Data')+u' '*10,
             style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
         self.InitData(progress)
+        #--OnStartup SplashScreen
+        #If user renames wryesplash.png to anything else, for example to _wryesplash.png, the splashscreen option silently passes
+        if os.path.exists(u'%s' %bosh.dirs['images'] + os.sep + u'wryesplash.png'):
+            try:
+                    splashScreen = WryeBashSplashScreen()
+                    splashScreen.Show()
+            except:
+                    pass
+        else:
+                pass
         progress.Update(70,_(u'Initializing Version'))
         self.InitVersion()
         #--MWFrame
