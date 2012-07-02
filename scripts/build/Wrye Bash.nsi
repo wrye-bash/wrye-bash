@@ -130,10 +130,10 @@
 
 ;-------------------------------- Page List:
     !define MUI_HEADERIMAGE
-    !define MUI_HEADERIMAGE_BITMAP "Mopy\bash\images\wrye_monkey_150x57.bmp"
+    !define MUI_HEADERIMAGE_BITMAP "Mopy\bash\images\nsis\wrye_monkey_150x57.bmp"
     !define MUI_HEADERIMAGE_RIGHT
-    !define MUI_WELCOMEFINISHPAGE_BITMAP "Mopy\bash\images\wrye_monkey_164x314.bmp"
-    !define MUI_UNWELCOMEFINISHPAGE_BITMAP "Mopy\bash\images\wrye_monkey_164x314.bmp"
+    !define MUI_WELCOMEFINISHPAGE_BITMAP "Mopy\bash\images\nsis\wrye_monkey_164x314.bmp"
+    !define MUI_UNWELCOMEFINISHPAGE_BITMAP "Mopy\bash\images\nsis\wrye_monkey_164x314.bmp"
     !insertmacro MUI_PAGE_WELCOME
     Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
     Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
@@ -1923,6 +1923,7 @@ NoComTypes:
                 Delete "$Path_OB\Mopy\bash\keywordWIZBAIN.p*"
                 Delete "$Path_OB\Mopy\bash\images\stc\*.*"
                 Delete "$Path_OB\Mopy\bash\images\readme\*.*"
+                Delete "$Path_OB\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_OB\Mopy\bash\images\*"
                 Delete "$Path_OB\Mopy\bash\gpl.txt"
                 Delete "$Path_OB\Mopy\bash\game\*"
@@ -1987,6 +1988,7 @@ NoComTypes:
                 RMDir  "$Path_OB\Mopy\bash\l10n"
                 RMDir  "$Path_OB\Mopy\bash\images\stc"
                 RMDir  "$Path_OB\Mopy\bash\images\readme"
+                RMDir  "$Path_OB\Mopy\bash\images\nsis"
                 RMDir  "$Path_OB\Mopy\bash\images"
                 RMDir  "$Path_OB\Mopy\bash\game"
                 RMDir  "$Path_OB\Mopy\bash\db"
@@ -2141,6 +2143,7 @@ NoComTypes:
                 Delete "$Path_Nehrim\Mopy\bash\keywordWIZBAIN.p*"
                 Delete "$Path_Nehrim\Mopy\bash\images\stc\*.*"
                 Delete "$Path_Nehrim\Mopy\bash\images\readme\*.*"
+                Delete "$Path_Nehrim\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Nehrim\Mopy\bash\images\*"
                 Delete "$Path_Nehrim\Mopy\bash\gpl.txt"
                 Delete "$Path_Nehrim\Mopy\bash\game\*"
@@ -2205,6 +2208,7 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\bash\l10n"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\stc"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\readme"
+                RMDir  "$Path_Nehrim\Mopy\bash\images\nsis"
                 RMDir  "$Path_Nehrim\Mopy\bash\images"
                 RMDir  "$Path_Nehrim\Mopy\bash\game"
                 RMDir  "$Path_Nehrim\Mopy\bash\db"
@@ -2375,6 +2379,7 @@ NoComTypes:
                 Delete "$Path_Skyrim\Mopy\bash\keywordWIZBAIN.p*"
                 Delete "$Path_Skyrim\Mopy\bash\images\stc\*.*"
                 Delete "$Path_Skyrim\Mopy\bash\images\readme\*.*"
+                Delete "$Path_Skyrim\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Skyrim\Mopy\bash\images\*"
                 Delete "$Path_Skyrim\Mopy\bash\gpl.txt"
                 Delete "$Path_Skyrim\Mopy\bash\game\*"
@@ -2439,6 +2444,7 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\bash\l10n"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\stc"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\readme"
+                RMDir  "$Path_Skyrim\Mopy\bash\images\nsis"
                 RMDir  "$Path_Skyrim\Mopy\bash\images"
                 RMDir  "$Path_Skyrim\Mopy\bash\game"
                 RMDir  "$Path_Skyrim\Mopy\bash\db"
@@ -2591,6 +2597,7 @@ NoComTypes:
                 Delete "$Path_Ex1\Mopy\bash\keywordWIZBAIN.p*"
                 Delete "$Path_Ex1\Mopy\bash\images\stc\*.*"
                 Delete "$Path_Ex1\Mopy\bash\images\readme\*.*"
+                Delete "$Path_Ex1\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Ex1\Mopy\bash\images\*"
                 Delete "$Path_Ex1\Mopy\bash\gpl.txt"
                 Delete "$Path_Ex1\Mopy\bash\game\*"
@@ -2655,6 +2662,7 @@ NoComTypes:
                 RMDir  "$Path_Ex1\Mopy\bash\l10n"
                 RMDir  "$Path_Ex1\Mopy\bash\images\stc"
                 RMDir  "$Path_Ex1\Mopy\bash\images\readme"
+                RMDir  "$Path_Ex1\Mopy\bash\images\nsis"
                 RMDir  "$Path_Ex1\Mopy\bash\images"
                 RMDir  "$Path_Ex1\Mopy\bash\game"
                 RMDir  "$Path_Ex1\Mopy\bash\db"
@@ -2807,6 +2815,7 @@ NoComTypes:
                 Delete "$Path_Ex2\Mopy\bash\keywordWIZBAIN.p*"
                 Delete "$Path_Ex2\Mopy\bash\images\stc\*.*"
                 Delete "$Path_Ex2\Mopy\bash\images\readme\*.*"
+                Delete "$Path_Ex2\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Ex2\Mopy\bash\images\*"
                 Delete "$Path_Ex2\Mopy\bash\gpl.txt"
                 Delete "$Path_Ex2\Mopy\bash\game\*"
@@ -2871,6 +2880,7 @@ NoComTypes:
                 RMDir  "$Path_Ex2\Mopy\bash\l10n"
                 RMDir  "$Path_Ex2\Mopy\bash\images\stc"
                 RMDir  "$Path_Ex2\Mopy\bash\images\readme"
+                RMDir  "$Path_Ex2\Mopy\bash\images\nsis"
                 RMDir  "$Path_Ex2\Mopy\bash\images"
                 RMDir  "$Path_Ex2\Mopy\bash\game"
                 RMDir  "$Path_Ex2\Mopy\bash\db"
