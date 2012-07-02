@@ -62,7 +62,7 @@ class cs:
     longName = u'Creation Kit'       # Full name
     exe = u'CreationKit.exe'         # Executable to run
     seArgs = None # u'-editor'       # Argument to pass to the SE to load the CS # Not yet needed
-    imageName = u'CreationKit%s.png' # Image name template for the status bar
+    imageName = u'creationkit%s.png' # Image name template for the status bar
 
 #--Script Extender information
 class se:
