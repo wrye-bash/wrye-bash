@@ -8,6 +8,8 @@ SurvivalistIngenuity.esp
  TAG: {{BASH: Delev, Relev}}
 SIRW.esp
  TAG: {{BASH: Delev, Relev}} not tested
+Economics of Skyrim.esp
+ TAG: {{ BASH: Delev,Relev }}
 REGEX: 83Willows_101BUGs_.+\.esp
  TAG: {{BASH: Delev, Relev}}
 Bandits Wear Helmets.esp
