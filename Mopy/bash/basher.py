@@ -7163,7 +7163,7 @@ class WryeBashSplashScreen(wx.SplashScreen):
     def __init__(self, parent=None):
         splashScreenBitmap = wx.Image(name = u'%s' %bosh.dirs['images'] + os.sep + u'wryesplash.png').ConvertToBitmap()
         splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT # wx.SPLASH_NO_TIMEOUT #This centers the image on the screen and controls whether you have to click the splashscreen or not.
-        splashDuration = 3000 # Duration in milliseconds that the splash screen will stay on the screen before the Main Window Pops up.
+        splashDuration = 3500 # Duration in milliseconds that the splash screen will stay on the screen before the Main Window Pops up.
         # Call the constructor with the above arguments in exactly the following order.
         wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
