@@ -176,6 +176,11 @@ ID_GOTOPOS =             1096
 ID_FINDREPLACE =         1098
 ID_FINDSELECTEDFORE =    1099
 
+ID_BOOKMARK =            1101
+ID_BOOKMARKPREVIOUS =    1102
+ID_BOOKMARKNEXT =        1103
+ID_REMOVEALLBOOKMARKS =  1104
+
 ID_REQVEROB =                   2001
 ID_REQVERSK =                   2002
 ID_SELECTONE =                  2003
@@ -483,6 +488,10 @@ class TextToWizardStringSTC(stc.StyledTextCtrl):
     def OnDoDrop(self, event):
         event.SetDragText(event.GetDragText())# Can change text if needed.
 
+class PlainSTC(stc.StyledTextCtrl):
+    def __init__(self, parent):
+        stc.StyledTextCtrl.__init__(self, parent, wx.ID_ANY)
+        self.SetMarginWidth(1, 0)# This makes it look like just a simple textctrl.
 
 class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
     def __init__(self, parent, ID):
@@ -861,7 +870,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.Bind(stc.EVT_STC_HOTSPOT_DCLICK,  self.OnHotSpotDClick)
         self.Bind(stc.EVT_STC_AUTOCOMP_SELECTION,  self.OnAutoCompSelection)
 
-        self.Bind(stc.EVT_STC_CALLTIP_CLICK,  self.OnCallTipClick)
+
+        self.Bind(wx.EVT_LEFT_DOWN,             self.OnLeftDown)
+        # self.Bind(wx.EVT_LEFT_UP,               self.OnLeftUp)
+        # self.Bind(wx.EVT_RIGHT_DOWN,            self.OnRightDown)
+        # self.Bind(wx.EVT_RIGHT_UP,              self.OnRightUp)
+
+        self.Bind(stc.EVT_STC_CALLTIP_CLICK,    self.OnCallTipClick)
         self.Bind(stc.EVT_STC_ROMODIFYATTEMPT,  self.OnReadOnlyModifyAttempt)
         self.Bind(wx.EVT_SET_FOCUS,             self.OnSTCGainFocus)
         self.Bind(wx.EVT_KILL_FOCUS,            self.OnSTCLoseFocus)
@@ -928,6 +943,29 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.OnSetFolderMarginStyle(self)#Hmmmm. This might have problems working on startup. I think it is fixed.
 
     def OnPass(self, event): pass
+
+    def OnLeftDown(self, event):
+        # print('OnLeftDown')
+        event.Skip()
+
+        if self.OneInstanceFindReplace == 1:
+            #losing focus trancparency handles these wigets[self.findwhatcomboctrl,self.findallfulllist,self.replacewithcomboctrl]
+            if gFindReplaceMiniFrame.transparencyradiobox.GetSelection() == 0:#only on losing focus
+                gFindReplaceMiniFrame.SetTransparent(basher.settings['bash.installers.wizSTC.SetFindReplaceTransparency'])
+
+        # pass
+
+    def OnLeftUp(self, event):
+        print('OnLeftUp')
+        pass
+
+    def OnRightDown(self, event):
+        print('OnRightDown')
+        pass
+
+    def OnRightUp(self, event):
+        print('OnRightUp')
+        pass
 
     def OnCallTipClick(self, event):
         ''' Binding this will cancel the CallTip when clicked on, instead of default behaivior which is nothing. '''
@@ -1017,6 +1055,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
             self.OnRMouseGestureMenu8(event)
         elif event.ControlDown() and key == 57 or key == 333:#Ctrl+9 or NUMPad9
             self.OnRMouseGestureMenu9(event)
+
+        if event.ControlDown() and event.ShiftDown() and key == 66:#Ctrl+B
+            self.OnHopPreviousBookmark(event)
+        elif event.ControlDown() and event.AltDown() and key == 66:#Ctrl+B
+            self.OnHopNextBookmark(event)
+        elif event.ControlDown() and key == 66:#Ctrl+B
+            self.OnToggleBookmark(event)
 
         if event.ControlDown() and key == 67:#Ctrl+C
             self.OnCopy(event)
@@ -1173,13 +1218,19 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                             self.OnExpand(lineClicked, True, True, 100)
                     else:
                         self.ToggleFold(lineClicked)
+
         #--- Bookmark Margin ---#
-        if event.GetMargin() == 1:
-            lineClicked = self.LineFromPosition(event.GetPosition())
-            if self.MarkerGet(lineClicked):
-                self.MarkerDelete(lineClicked, 1)
+        linenum = self.LineFromPosition(event.GetPosition())
+        # print self.MarkerGet(self.GetCurrentLine())
+        if self.MarkerGet(linenum) == 1:
+            self.MarkerAdd(linenum, 1)
+        elif self.MarkerGet(linenum) == 3:
+            self.MarkerDelete(linenum, 1)#Mark with user bookmark
+        else:
+            if self.MarkerGet(linenum) != 2:
+                self.MarkerAdd(linenum, 1)
             else:
-                self.MarkerAdd(lineClicked, 1)
+                self.MarkerDelete(linenum, 1)
 
     def OnFoldAll(self):
         ''' Folding folds, marker - to + '''
@@ -2289,6 +2340,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         rightclickmenu.AppendMenu(wx.NewId(), u'File', submenu)
 
         submenu = wx.Menu()
+        minimemo = wx.MenuItem(rightclickmenu, ID_MINIMEMO, u'&Mini Memo', u' Mini Memo')
+        minimemo.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'memo16.png',p).ConvertToBitmap())
+        submenu.AppendItem(minimemo)
+
         reminderchecklist = wx.MenuItem(rightclickmenu, ID_REMINDERCHECKLIST, u'&Reminder Checklist...', u' Reminder Checklist for mod authors.')
         reminderchecklist.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'check16.png',p).ConvertToBitmap())
         submenu.AppendItem(reminderchecklist)
@@ -2337,17 +2392,18 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # wx.EVT_MENU(rightclickmenu, testnewid, self.OnTestNewId)
         # rightclickmenu.AppendItem(test)
 
-        test = wx.MenuItem(rightclickmenu, ID_TEST, u'&Test permanent defined ID: ID_TEST', u' For Testing Purposes')
-        test.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'test16.png',p).ConvertToBitmap())
-        rightclickmenu.AppendItem(test)
+        # test = wx.MenuItem(rightclickmenu, ID_TEST, u'&Test permanent defined ID: ID_TEST', u' For Testing Purposes')
+        # test.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'test16.png',p).ConvertToBitmap())
+        # rightclickmenu.AppendItem(test)
 
         #events
-        wx.EVT_MENU(rightclickmenu, ID_TEST, self.OnTest)
+        # wx.EVT_MENU(rightclickmenu, ID_TEST, self.OnTest)
 
         wx.EVT_MENU(rightclickmenu, ID_TOOLBAR, self.OnShowFloatingToolbar)
 
         wx.EVT_MENU(rightclickmenu, ID_SAVEASPROJECTWIZARD, self.OnSaveAsProjectsWizard)
 
+        wx.EVT_MENU(rightclickmenu, ID_MINIMEMO, self.OnMiniMemo)
         wx.EVT_MENU(rightclickmenu, ID_REMINDERCHECKLIST, self.OnShowReminderChecklist)
 
         wx.EVT_MENU(rightclickmenu, ID_HELPGENERAL, self.OnHelpWizBAINEditorGeneral)
@@ -2379,18 +2435,14 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         dprint (event.GetId())
 
     def OnTest(self, event):
-        # print ('OnTest')
-        # print ('ID_TEST')
-        # print (event.GetId())
+        print ('OnTest')
+        print ('ID_TEST')
+        print (event.GetId())
 
         # for keyword in self.allkeywords:
             # self.AddText(keyword + '\n')
 
         # dprint('mwahaha')
-
-        # basher.Installer_Wizard(False)
-        # basher.Installer_Wizard.Execute(event)
-        # basher.Installer_Wizard(True)
 
         # if self.OneInstanceDebugWindow == 0:
             # win = DebugStdOutStdErrMiniFrame(self, wx.SIMPLE_BORDER)
@@ -2401,13 +2453,13 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # else:
             # gDebugFrame.Show()
 
+    def causeTraceback(self, event):
+        causeTraceback
+
+    def OnMiniMemo(self, event):
         win = MemoMiniFrame(self, wx.SIMPLE_BORDER)
         win.Centre()
         win.Show(True)
-
-
-    def causeTraceback(self, event):
-        causeTraceback
 
     def OnShowReminderChecklist(self, event):
         win = ChecklistBeforePackageingYourMod(self, wx.SIMPLE_BORDER)
@@ -2491,11 +2543,32 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         findselectedforwards.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'arrowdownbw16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(findselectedforwards)
 
+        togglebookmark = wx.MenuItem(rightclickmenu, ID_BOOKMARK, u'&Bookmark Line\tCtrl+B', u' Add/Remove bookmark for the current line')
+        togglebookmark.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'bookmark16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(togglebookmark)
+
+        previousbookmark = wx.MenuItem(rightclickmenu, ID_BOOKMARKPREVIOUS, u'&Previous Bookmark\tCtrl+Shift+B', u' Hop to the previous bookmark in this document')
+        previousbookmark.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'bookmarkfindprevious16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(previousbookmark)
+
+        nextbookmark = wx.MenuItem(rightclickmenu, ID_BOOKMARKNEXT, u'&Next Bookmark\tCtrl+Alt+B', u' Hop to the next bookmark in this document')
+        nextbookmark.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'bookmarkfindnext16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(nextbookmark)
+
+        removeallbookmarks = wx.MenuItem(rightclickmenu, ID_REMOVEALLBOOKMARKS, u'&Remove All Bookmarks', u' Remove all bookmarks from document')
+        removeallbookmarks.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'removeallbookmarks16.png',p).ConvertToBitmap())
+        rightclickmenu.AppendItem(removeallbookmarks)
+
         #events
         wx.EVT_MENU(rightclickmenu, ID_GOTOLINE, self.OnGoToLine)
         wx.EVT_MENU(rightclickmenu, ID_GOTOPOS, self.OnGoToPosition)
         wx.EVT_MENU(rightclickmenu, ID_FINDREPLACE, self.OnFindReplaceOneInstanceChecker)
         wx.EVT_MENU(rightclickmenu, ID_FINDSELECTEDFORE, self.OnFindSelectedForwards)
+
+        wx.EVT_MENU(rightclickmenu, ID_BOOKMARK, self.OnToggleBookmark)
+        wx.EVT_MENU(rightclickmenu, ID_BOOKMARKPREVIOUS, self.OnHopPreviousBookmark)
+        wx.EVT_MENU(rightclickmenu, ID_BOOKMARKNEXT, self.OnHopNextBookmark)
+        wx.EVT_MENU(rightclickmenu, ID_REMOVEALLBOOKMARKS, self.OnRemoveAllBookmarks)
 
         for i in range(0,len(self.rmgmIDs)):
             wx.EVT_MENU(rightclickmenu, self.rmgmIDs[i], self.rmgmDEFs[i])
@@ -2559,6 +2632,51 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
                 except:
                     pass#print ('Quick Find String Not Found')
 
+    def OnToggleBookmark(self,event):
+        '''Add or remove a bookmark from the current line int the bookmark margin.'''
+        linenum = self.GetCurrentLine()
+        if self.MarkerGet(linenum):
+            if self.MarkerGet(linenum) == 3:
+                self.MarkerDelete(linenum, 1)
+            elif self.MarkerGet(linenum) == 1 :
+                self.MarkerAdd(linenum, 1)
+        else:
+            self.MarkerAdd(linenum, 1)
+
+    def OnHopPreviousBookmark(self, event):
+        '''Move caret to the previous bookmarked line in the file.'''
+        currentline = self.GetCurrentLine()
+        linecount = self.GetLineCount()
+        marker = self.MarkerGet(currentline)
+        dprint (marker)
+        if marker == 0 or marker == 1 or marker == 3:
+            currentline -= 1
+        findbookmark = self.MarkerPrevious(currentline, 2)
+        if findbookmark > -1:
+            self.GotoLine(findbookmark)
+        else:
+            findbookmark = self.MarkerPrevious(linecount, 2)
+            if findbookmark > -1:
+                self.GotoLine(findbookmark)
+
+    def OnHopNextBookmark(self, event):
+        '''Move caret to the next bookmarked line in the file.'''
+        currentline = self.GetCurrentLine()
+        marker = self.MarkerGet(currentline)
+        if marker == 0 or marker == 1 or marker == 3:
+            currentline += 1
+        findbookmark = self.MarkerNext(currentline, 2)
+        if findbookmark > -1:
+            self.GotoLine(findbookmark)
+        else:
+            findbookmark = self.MarkerNext(0, 2)
+            if findbookmark > -1:
+                self.GotoLine(findbookmark)
+
+    def OnRemoveAllBookmarks(self, event):
+        '''Remove all bookmarks from everyline in the document in the bookmark margin.'''
+        for i in range(0,3):
+            self.MarkerDeleteAll(i)
 
     def OnRMouseGestureMenu2(self, event):
         ''' Call the Right Mouse Gesture Menu.
@@ -2765,8 +2883,29 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         deselectallespms = wx.MenuItem(rightclickmenu, ID_DESELECTALLESPMS, u'&DeSelectAllEspms', u' DeSelectAllEspms')
         rightclickmenu.AppendItem(deselectallespms)
 
-        renameespm = wx.MenuItem(rightclickmenu, ID_RENAMEESPM, u'&RenameEspm', u' RenameEspm')
-        rightclickmenu.AppendItem(renameespm)
+        if mEspmListCount == 0:
+            renameespm = wx.MenuItem(rightclickmenu, ID_RENAMEESPM, u'RenameEspm "",""', u' RenameEspm "",""')
+            rightclickmenu.AppendItem(renameespm)
+        else:
+            submenu = wx.Menu()
+            menuItem = wx.MenuItem(submenu, wx.NewId(), u'RenameEspm "[espmName]",""')
+            renameespm = wx.MenuItem(rightclickmenu, ID_RENAMEESPM, u'RenameEspm "",""', u' RenameEspm "",""')
+            submenu.AppendItem(renameespm)
+            for index in xrange(mEspmListCount):
+                newid = wx.NewId()
+                filename = u'%s' %basher.gInstallers.gEspmList.GetString(index)
+                if filename.endswith(u'.esp'):
+                    renameespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'RenameEspm "' + u'%s' %filename + u'",""', u' RenameEspm "[espmName]",""')
+                    renameespmsubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esp16.png'),p).ConvertToBitmap())
+                elif filename.endswith(u'.esm'):
+                    renameespmsubmenuitem = wx.MenuItem(rightclickmenu, newid, u'RenameEspm "' + u'%s' %filename + u'",""', u' RenameEspm "[espmName]",""')
+                    renameespmsubmenuitem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'esm16.png'),p).ConvertToBitmap())
+                submenu.AppendItem(renameespmsubmenuitem)
+                wx.EVT_MENU(rightclickmenu, newid, self.OnWriteKeywordSUBNAMEorESPMNAME)
+            menuItem.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'list16.png'),p).ConvertToBitmap())
+            menuItem.SetBackgroundColour(u'#FFF7EE')
+            menuItem.SetSubMenu(submenu)
+            rightclickmenu.AppendItem(menuItem)
 
         if mEspmListCount == 0:
             resetespmname = wx.MenuItem(rightclickmenu, ID_RESETESPMNAME, u'&ResetEspmName', u' ResetEspmName')
@@ -3884,21 +4023,21 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         rightclickmenu.AppendSeparator()
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy SubPackage to Active Project...Needs Label && ID', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        # hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy SubPackage to Active Project...Needs Label && ID', u' StatusText Description Here')
+        # hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+        # rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy Espm to Active Project...Needs Label && ID', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        # hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy Espm to Active Project...Needs Label && ID', u' StatusText Description Here')
+        # hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+        # rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy All to Active Project(exc. wizard)...Needs Label && ID', u' StatusText Description Here')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        # hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Copy All to Active Project(exc. wizard)...Needs Label && ID', u' StatusText Description Here')
+        # hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+        # rightclickmenu.AppendItem(hmmm)
 
-        hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Append Current Package\'s wizard.txt to Active Project\'s wipz.wiz Needs Label && ID', u' Mergify wiz')
-        hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
-        rightclickmenu.AppendItem(hmmm)
+        # hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Append Current Package\'s wizard.txt to Active Project\'s wipz.wiz Needs Label && ID', u' Mergify wiz')
+        # hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
+        # rightclickmenu.AppendItem(hmmm)
 
         hmmm = wx.MenuItem(rightclickmenu, 9999, u'&Needs Label && ID', u' StatusText Description Here')
         hmmm.SetBitmap(wx.Image(self.imgstcDir + os.sep + (u'black16.png'),p).ConvertToBitmap())
@@ -4069,7 +4208,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         sort = wx.MenuItem(rightclickmenu, ID_SORT, u'&Sort Selected Lines...', u' Sort selected lines in the active document')
         sort.SetBitmap(wx.Image(self.imgstcDir + os.sep + u'sort16.png',p).ConvertToBitmap())
         rightclickmenu.AppendItem(sort)
-        
+
         #events
         wx.EVT_MENU(rightclickmenu, ID_NEWLINEBEFORE, self.OnNewLineBefore)
         wx.EVT_MENU(rightclickmenu, ID_NEWLINEAFTER, self.OnNewLineAfter)
@@ -4138,7 +4277,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         ''' Delete the contents of the line containing the caret, but not the line itself.'''
         self.OnLineSelect(event)
         self.DeleteBackNotLine()
-        
+
     def OnDeleteLineLeft(self, event):
         ''' Delete back from the current position to the start of the line. '''
         self.DelLineLeft()
@@ -4347,7 +4486,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         self.AddText(string.rstrip())#rstrip the eol char off so the editor doesn't jump to the next line.
         self.SetFocus()
         # print next,'\n',startpos,'\n',endpos,'\n',string
-        
+
     def OnSort(self, event):
         ''' Call a dialog with various options to sort the selected text lines. '''
         self.BeginUndoAction()
@@ -4399,7 +4538,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
             dialog.Destroy()
         self.EndUndoAction()
-        
+
     def OnRMouseGestureMenu9(self, event):
         ''' Call the Right Mouse Gesture Menu.
         NUMPAD:9
@@ -4965,6 +5104,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#000000')
 
         self.SetMarginWidth(3, 0)
@@ -5023,6 +5163,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Default Theme')
@@ -5080,6 +5221,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Console Theme')
@@ -5137,6 +5279,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Obsidian Theme')
@@ -5194,6 +5337,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Zenburn Theme')
@@ -5251,6 +5395,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Monokai Theme')
@@ -5308,6 +5453,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF00FF')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Deep Space Theme')
@@ -5365,6 +5511,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#8000FF')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Green Side Up Theme')
@@ -5422,6 +5569,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#4526DD')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Twilight Theme')
@@ -5479,6 +5627,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('UliPad Theme')
@@ -5536,6 +5685,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Hello Kitty Theme')
@@ -5593,6 +5743,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Vibrant Ink Theme')
@@ -5650,6 +5801,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Birds of Paridise Theme')
@@ -5707,6 +5859,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmarkblacklight16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#535AE9')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('BlackLight Theme')
@@ -5765,6 +5918,7 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
 
         self.Colourise(0, self.GetLength())
         self.OnSetFolderMarginStyle(event)
+        self.MarkerDefineBitmap(1, wx.Image(self.imgstcDir + os.sep + 'bookmark16.png', wx.BITMAP_TYPE_PNG).ConvertToBitmap())
         for i in range(0,stc.STC_INDIC_MAX + 1): self.IndicatorSetForeground(i,'#FF0000')
         if self.GetMarginWidth(3) == 0: self.SetMarginWidth(3, 16)
         # print('Notebook Theme')
@@ -5829,10 +5983,7 @@ class FindReplaceMiniFrame(wx.MiniFrame):
 
         gWizSTC.OneInstanceFindReplace = 1
 
-
-        # nppfindreplaceminiframe = wx.MiniFrame(self, -1, 'Find & Replace "Notepad++" style', style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT, size=(560, 330))
-
-        # nppfindreplaceminiframe.SetDoubleBuffered(True)#Hmmm need to look into overlapping issues with the staticboxes and the inviso slider
+        # self.SetDoubleBuffered(True)#Hmmm need to look into overlapping issues with the staticboxes and the inviso slider
 
         self.SetSizeHints(560,330,560,560)
 
@@ -5862,14 +6013,12 @@ class FindReplaceMiniFrame(wx.MiniFrame):
         else:
             self.checkboxinselection.SetValue(True)
         self.checkboxbookmarkline = wx.CheckBox(self, -1, u'Bookmark Line',         pos=(275, 35), style=wx.NO_BORDER)
-        # self.cb2.SetValue(True)
 
         self.standardbookmarkbmpbtn = wx.BitmapButton(self,     -1, (wx.Image(gWizSTC.imgstcDir + os.sep + u'bookmark16.png',wx.BITMAP_TYPE_PNG).ConvertToBitmap()) , (265, 265))
         self.findpreviousbookmarkbmpbtn = wx.BitmapButton(self, -1, (wx.Image(gWizSTC.imgstcDir + os.sep + u'bookmarkfindprevious16.png',wx.BITMAP_TYPE_PNG).ConvertToBitmap()) , (290, 265))
         self.findnextbookmarkbmpbtn = wx.BitmapButton(self,     -1, (wx.Image(gWizSTC.imgstcDir + os.sep + u'bookmarkfindnext16.png',wx.BITMAP_TYPE_PNG).ConvertToBitmap()) , (315, 265))
 
         self.removeallbookmarksbmpbtn = wx.BitmapButton(self,   -1, (wx.Image(gWizSTC.imgstcDir + os.sep + u'removeallbookmarks16.png',wx.BITMAP_TYPE_PNG).ConvertToBitmap()) , (340, 265))
-        # self.removeallbookmarksbmpbtn.SetBackgroundColour('#FF0000')
 
         self.appenditemfindlistbmpbtn = wx.BitmapButton(self,       -1, wx.Bitmap(gWizSTC.imgstcDir + os.sep + u'listappend16.png', wx.BITMAP_TYPE_PNG) , (364, 4))
         self.appenditemfindlistbmpbtn.SetToolTipString(u'Append To Find List')
@@ -5882,10 +6031,9 @@ class FindReplaceMiniFrame(wx.MiniFrame):
 
         self.findallfulllist = wx.TextCtrl(self, -1, u'Find All Full List', (10, 310), (400,215), style=wx.VSCROLL | wx.HSCROLL | wx.TE_MULTILINE | wx.TE_RICH2 | wx.TE_READONLY)
 
-        self.searchmoderadiobox = wx.RadioBox(self, -1, u'Search Mode(Normal ONLY)', choices=[u'Normal',u'Extended (\\n, \\r, \\t, \\0, \\x...)', u'Regular Expression'], majorDimension=3, style=wx.RA_SPECIFY_ROWS, pos=(10, 220),  size=(170, 80))
-        # # # wx.RadioBox(self, -1, 'Direction', choices=['&Up','&Down'], majorDimension=2, style=wx.RA_SPECIFY_ROWS, pos=(140, 135), size=(120, 80))
+        self.searchmoderadiobox = wx.RadioBox(self, -1, u'Search Mode', choices=[u'Normal'], majorDimension=3, style=wx.RA_SPECIFY_ROWS, pos=(10, 220),  size=(170, 80))
+        # self.searchmoderadiobox = wx.RadioBox(self, -1, u'Search Mode(Normal ONLY)', choices=[u'Normal',u'Extended (\\n, \\r, \\t, \\0, \\x...)', u'Regular Expression'], majorDimension=3, style=wx.RA_SPECIFY_ROWS, pos=(10, 220),  size=(170, 80))
         self.transparencyradiobox = wx.RadioBox(self, -1, u'Transparency', choices=['On losing focus','Always'], majorDimension=2, style=wx.RA_SPECIFY_ROWS, pos=(380, 220), size=(120, 80))
-        # self.searchmoderadiobox.Disable()
 
         self.transparencyslider = wx.Slider(self, 100, basher.settings['bash.installers.wizSTC.SetFindReplaceTransparency'], 30, 255, (382, 280), (90, 18), wx.SL_BOTH )
         # Slider initial position is set to 255. The min value is 30, max value is 255
@@ -6006,10 +6154,17 @@ class FindReplaceMiniFrame(wx.MiniFrame):
             widget.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)
             widget.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
         #the losing focus part of these widgets are handled in gWizSTC.OnUpdateUI def
-        for widget in [self.findwhatcomboctrl,self.findallfulllist,self.replacewithcomboctrl]:
+        # for widget in [self.findwhatcomboctrl,self.findallfulllist,self.replacewithcomboctrl]:
             #### widget.Bind(wx.EVT_SET_FOCUS, self.OnSetFocus)#BUGGY. Doesnt work right graphically, use wx.EVT_LEFT_DOWN for combo boxes and textctrls
-            widget.Bind(wx.EVT_LEFT_DOWN, self.OnSetFocus)
-            widget.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+            # widget.Bind(wx.EVT_LEFT_DOWN, self.OnSetFocus)
+            # widget.Bind(wx.EVT_ENTER_WINDOW, self.OnSetFocus)
+            # widget.Bind(wx.EVT_LEAVE_WINDOW, self.OnKillFocus)
+            # widget.Bind(wx.EVT_LEAVE_WINDOW, self.OnComboBoxTextCtrlLeaveWindow)
+            # widget.Bind(wx.EVT_TEXT, self.OnSetFocus)
+            # widget.Bind(wx.EVT_UPDATE_UI, self.OnSetFocus)
+            # widget.Bind(wx.EVT_KILL_FOCUS, self.OnKillFocus)
+        # self.Bind(wx.EVT_LEAVE_WINDOW, self.OnKillFocus)
+
 
         self.transparencyradiobox.Bind(wx.EVT_RADIOBOX, self.OnEvtTransparencyRadioBox, id=-1)
         self.transparencyslider.Bind(wx.EVT_SLIDER, self.OnAdjustFindReplaceTransparency, id=-1)
@@ -6070,17 +6225,22 @@ class FindReplaceMiniFrame(wx.MiniFrame):
 
     def OnFRGoToLine(self, event):
         gWizSTC.GotoLine(self.spinnerctrl1.GetValue()-1)
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
 
     def OnFRGoToColumn(self, event):
         currentline = gWizSTC.GetCurrentLine()             #Returns the line number of the line with the caret.
         linestart = gWizSTC.PositionFromLine(currentline)  #Retrieve the position at the start of a line.
         gWizSTC.GotoPos(linestart + self.spinnerctrl2.GetValue())
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
 
     def OnFRGoToPos(self, event):
         gWizSTC.GotoPos(self.spinnerctrl3.GetValue())
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
+
+    # # def OnComboBoxTextCtrlLeaveWindow(self, event):
+        # # if event.GetEventObject() == self.findwhatcomboctrl or event.GetEventObject() == self.replacewithcomboctrl:
+            # # if self.transparencyradiobox.GetSelection() == 0:#only on losing focus
+                # # self.SetTransparent(basher.settings['bash.installers.wizSTC.SetFindReplaceTransparency'])
 
     def OnSetFocus(self, event):
         if self.transparencyradiobox.GetSelection() == 0:#only on losing focus
@@ -6093,6 +6253,7 @@ class FindReplaceMiniFrame(wx.MiniFrame):
         if event.GetWindow() == None:
         # if self.findwhatcomboctrl.GetWindow():
             event.Skip()
+
         elif event.GetEventObject() == self.findallfulllist:
             if self.transparencyradiobox.GetSelection() == 0:#only on losing focus
                 self.SetTransparent(basher.settings['bash.installers.wizSTC.SetFindReplaceTransparency'])
@@ -6408,7 +6569,7 @@ class FindReplaceMiniFrame(wx.MiniFrame):
                 gWizSTC.MarkerAdd(linenum, 1)
         else:
             gWizSTC.MarkerAdd(linenum, 1)#Mark with user bookmark
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
         # dprint ('Toggle Bookmark')
 
     def OnRemoveAllBookmarks(self, event):
@@ -6432,7 +6593,7 @@ class FindReplaceMiniFrame(wx.MiniFrame):
             findbookmark = gWizSTC.MarkerPrevious(linecount, 2)
             if findbookmark > -1:
                 gWizSTC.GotoLine(findbookmark)
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
         # dprint ('OnHopPreviousBookmark')
 
     def OnHopNextBookmark(self, event):
@@ -6448,7 +6609,7 @@ class FindReplaceMiniFrame(wx.MiniFrame):
             findbookmark = gWizSTC.MarkerNext(0, 2)
             if findbookmark > -1:
                 gWizSTC.GotoLine(findbookmark)
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
         # dprint ('OnHopNextBookmark')
 
     def OnSetDefaultBookmarkNumber(self, event):
@@ -6463,7 +6624,7 @@ class FindReplaceMiniFrame(wx.MiniFrame):
                 gWizSTC.MarkerDefineBitmap( 1, wx.Image(gWizSTC.imgstcDir + os.sep + 'bookmark16.png' %num, wx.BITMAP_TYPE_PNG).ConvertToBitmap())
             elif num <= int(30):
                 gWizSTC.MarkerDefineBitmap( 1, wx.Image(gWizSTC.imgstcDir + os.sep + 'bookmark0%s.png' %num, wx.BITMAP_TYPE_PNG).ConvertToBitmap())
-        gWizSTC.SetFocus()
+        # gWizSTC.SetFocus()
 
         # print ('Set Default Bookmark to ' + str(num))
 
@@ -6588,8 +6749,6 @@ NOT IMPLEMENTED YET!
 NOT IMPLEMENTED YET!
 
 ---Bookmarks Options---
-The top row of bookmark buttons bookmark the current line. Bookmark the current line with a bookmark.
-
 The bottom row of bookmark buttons are duplicates from the regular bookmark options.
 The Set bookmark opens up a dialog to set a particular bookmark you would like to use as the default.
 The next button to the right of that is the default bookmark.
@@ -6915,7 +7074,7 @@ class ChecklistBeforePackageingYourMod(wx.Frame):
 class InstallersTabTips(wx.Frame):
     ''' The tip of the day dialog. '''
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, parent, -1, title='Installers Tab Tips', size=(400, 400), style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT)
+        wx.Frame.__init__(self, parent, -1, title='Installers Tab Tips', size=(400, 400), style=wx.DEFAULT_FRAME_STYLE | wx.STAY_ON_TOP)#| wx.FRAME_FLOAT_ON_PARENT
 
         useWXVER = '2.8'
 
@@ -6937,7 +7096,7 @@ class InstallersTabTips(wx.Frame):
         self.closebutton = wx.Button(self, wx.NewId(), 'Close', (-1, -1), wx.DefaultSize)
 
         # The seamless tiling background image.
-        self.backgroundbitmap = wx.Bitmap(gWizSTC.imgstcDir + os.sep + u'seamlessbackgroundtile256.png',p)
+        self.backgroundbitmap = wx.Bitmap(u'%s' %bosh.dirs['images'] + os.sep + u'stc' + os.sep + u'seamlessbackgroundtile256.png',p)
 
         hsizer1 = wx.BoxSizer(wx.HORIZONTAL)
         hsizer1.AddStretchSpacer()
@@ -6964,7 +7123,7 @@ class InstallersTabTips(wx.Frame):
             self.SetBackgroundStyle(wx.BG_STYLE_ERASE)
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.OnDrawBackground)
 
-        self.SetIcon(wx.Icon(gWizSTC.imgstcDir + os.sep + u'lightbulb16.png',p))
+        self.SetIcon(wx.Icon(u'%s' %bosh.dirs['images'] + os.sep + u'stc' + os.sep + u'lightbulb16.png',p))
 
     def OnNextTip(self, event):
         # test = random.randint(0, len(self.tips_list))
@@ -7258,7 +7417,7 @@ class DraggableScrolledPanel(wx.MiniFrame):
 
         self.dragonscrollpanel.SetSizer(dragonscroll_vsizer)
         self.dragonscrollpanel.SetupScrolling()
-        self.dragonscrollpanel.Fit()
+        # self.dragonscrollpanel.Fit()
 
         vsizer1 = wx.BoxSizer(wx.VERTICAL)
         vsizer1.Add(self.dragonscrollpanel, 1, wx.EXPAND | wx.RIGHT, 24 + border)
