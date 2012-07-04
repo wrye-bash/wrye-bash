@@ -475,6 +475,7 @@ settingDefaults = {
     'bash.installers.wizSTC.ScrollingPastLastLine':1,
     'bash.installers.wizSTC.SetLeftRightBlankMargins':0,
     'bash.installers.wizSTC.MouseGestureWobbleTolerance':500, #Hmmm need to figure out how this affects usage as in low/high number
+    'bash.installers.wizSTC.UseCustomFont':0,
     'bash.installers.wizSTC.UserCustomFontFace':'Magic Cards',
     'bash.installers.wizSTC.ModdersHandle':u'ModdersHandle',#Ex:Wrye,Metallicow,LoJack,PacificMorrowind,etc...
     'bash.installers.wizSTC.IntelliWiz':0,
@@ -6796,10 +6797,14 @@ class DocBrowser(wx.Frame):
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
         docPath = docPath or GPath(self.data.get(self.modName,u''))
-        if not docPath.exists(): return False
-        with docPath.open('r',encoding='utf-8-sig') as textFile:
-            maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
-        return (maText != None)
+        if not docPath.exists(): 
+            return False
+        try:
+            with docPath.open('r',encoding='utf-8-sig') as textFile:
+                maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
+            return (maText != None)
+        except UnicodeDecodeError:
+            return False
 
     def DoHome(self, event):
         """Handle "Home" button click."""
@@ -6969,8 +6974,12 @@ class DocBrowser(wx.Frame):
             else:
                 # Oddly, wxPython's LoadFile function doesn't read unicode correctly,
                 # even in unicode builds
-                with docPath.open('r',encoding='utf-8-sig') as ins:
-                    data = ins.read()
+                try:
+                    with docPath.open('r',encoding='utf-8-sig') as ins:
+                        data = ins.read()
+                except UnicodeDecodeError:
+                    with docPath.open('r') as ins:
+                        data = ins.read()
                 self.plainText.SetValue(data)
                 self.SetDocType('txt')
 
