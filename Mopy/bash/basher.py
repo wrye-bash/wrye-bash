@@ -490,6 +490,145 @@ settingDefaults = {
     'bash.installers.wizSTC.FindReplaceWrapAroundCB':1,
     'bash.installers.wizSTC.MiniMemoText':u'Woot it\'s a memo!',
     'bash.installers.wizSTC.MiniMemoSavedSize':(75, 75),
+    #--Wrye Bash: Bash.ini Settings
+    'bash.bashini.general.sOblivionMods':ur'../Skyrim Mods',
+    'bash.bashini.general.sInstallersData':ur'../Skyrim Mods/Bash Installers/Bash',
+    'bash.bashini.general.sBashModData':ur'../Skyrim Mods/Bash Mod Data',
+    'bash.bashini.general.sOblivionPath':ur'.',
+    'bash.bashini.general.sUserPath':ur'.',
+    'bash.bashini.general.sPersonalPath':ur'.',
+    'bash.bashini.general.sLocalAppDataPath':ur'.',
+    'bash.bashini.general.bSteamInstall':ur'.',#(1 or 0 or True or False, or . for autodetect)
+
+    'bash.bashini.settings.sScriptFileExt':ur'.txt',
+    'bash.bashini.settings.iKeepLog':0,#with 0 being no log, and 4 being maximum logging (not fully implemented yet)
+    'bash.bashini.settings.sLogFile':ur'Mopy/bash.log',
+    'bash.bashini.settings.bEnableBalo':False,
+    'bash.bashini.settings.bResetBSATimestamps':True,
+    'bash.bashini.settings.bEnsurePatchExists':True,
+    'bash.bashini.settings.sOblivionTexturesBSAName':ur'.',
+    'bash.bashini.settings.bSkipResetTimeNotifications':False,
+    'bash.bashini.settings.bShowDevTools':False,
+
+    # Not sure, If these have been taken care of...
+    # 'bash.bashini.settings.bShowTextDifferenceMergeable':True,
+    # 'bash.bashini.settings.bShowTextDifferenceNoMerge':True,
+    # 'bash.bashini.settings.bShowTextDifferenceRegular':True,
+    # 'bash.bashini.settings.bShowTextDifferenceESM':True,
+    # LoJack took care of these in the colors dialog...
+    # # 'bash.bashini.settings.oDeactivateTextColour':wx.BLACK,
+    # # 'bash.bashini.settings.oESMTextColour':wx.BLUE,
+    # # 'bash.bashini.settings.oMergeableTextColour':wx.Colour(0x00,0x99,0x00),
+    # # 'bash.bashini.settings.oNoMergeTextColour':wx.Colour(153,0,153),
+    # # 'bash.bashini.settings.oRegularTextColour':wx.BLACK,
+    # Not sure, If these have been taken care of...
+    # 'bash.bashini.settings.oDeactivateTextStyle':(8, wx.NORMAL, wx.SLANT, wx.NORMAL),
+    # 'bash.bashini.settings.oESMTextStyle':u'Default',
+    # 'bash.bashini.settings.oMergeableTextStyle':u'Default',
+    # 'bash.bashini.settings.oNoMergeTextStyle':u'Default',
+    # 'bash.bashini.settings.oRegularTextStyle':u'Default',
+
+    'bash.bashini.settings.bAutoItemCheck':True,
+    'bash.bashini.settings.bSkipHideConfirmation':False,
+    'bash.bashini.settings.s7zExtraCompressionArguments':u'-ms=on -ms=1m',
+    'bash.bashini.settings.iAutoSizeListColumns':0,
+    'bash.bashini.settings.sSoundError':ur'.',
+    'bash.bashini.settings.sSoundSuccess':ur'.',
+
+    'bash.bashini.tooloptions.bShowTextureToolLaunchers':True,
+    'bash.bashini.tooloptions.bShowModelingToolLaunchers':True,
+    'bash.bashini.tooloptions.bShowAudioToolLaunchers':True,
+    #ESM/ESP/LOD/NIF Tool Launchers
+    'bash.bashini.tooloptions.sTes4GeckoPath':ur'Tes4Gecko.jar',
+    'bash.bashini.tooloptions.sTes4GeckoJavaArg':ur'-Xmx1024m',
+    'bash.bashini.tooloptions.sTes4FilesPath':ur'Tools/Tes4Files.exe',
+    'bash.bashini.tooloptions.sTes4EditPath':ur'Tes4Edit.exe',
+    'bash.bashini.tooloptions.sTes4LodGenPath':ur'Tes4LodGen.exe',
+    'bash.bashini.tooloptions.sNifskopePath':ur'C:/Program Files/NifTools/NifSkope/nifskope.exe',
+    #3D Modeling Tool Launchers
+    'bash.bashini.tooloptions.sArtOfIllusion':ur'C:/Program Files/ArtOfIllusion/Art of Illusion.exe',
+    'bash.bashini.tooloptions.sAutoCad':ur'C:/Program Files/Autodesk Architectural Desktop 3/acad.exe',
+    'bash.bashini.tooloptions.sBlenderPath':ur'C:/Program Files/Blender Foundation/Blender/Blender.exe',
+    'bash.bashini.tooloptions.sGmaxPath':ur'C:/GMAX/gmax.exe',
+    'bash.bashini.tooloptions.sMaxPath':ur'C:/Program Files/Autodesk/3ds Max 2010/3dsmax.exe',
+    'bash.bashini.tooloptions.sMayaPath':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sMilkShape3D':ur'C:/Program Files/MilkShape 3D 1.8.4/ms3d.exe',
+    'bash.bashini.tooloptions.sMudbox':ur'C:/Program Files/Autodesk/Mudbox2011/mudbox.exe',
+    'bash.bashini.tooloptions.sSculptris':ur'C:/Program Files/sculptris/Sculptris.exe',
+    'bash.bashini.tooloptions.sSoftimage':ur'C:/Softimage/Softimage_Mod_Tool_7.5/Application/bin/XSI.bat -mod',
+    'bash.bashini.tooloptions.sSpeedTree':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sTreed':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sWings3D':ur'C:/Program Files/wings3d_1.2/Wings3D.exe',
+    #Texturing/DDS Tool Launchers
+    'bash.bashini.tooloptions.sAniFX':ur'C:/Program Files/AniFX 1.0/AniFX.exe',
+    'bash.bashini.tooloptions.sArtweaver':ur'C:/Program Files/Artweaver 1.0/Artweaver.exe',
+    'bash.bashini.tooloptions.sCrazyBump':ur'C:/Program Files/Crazybump/CrazyBump.exe',
+    'bash.bashini.tooloptions.sDDSConverter':ur'C:/Program Files/DDS Converter 2/DDS Converter 2.exe',
+    'bash.bashini.tooloptions.sDeepPaint':ur'C:/Program Files/Right Hemisphere/Deep Paint/DeepPaint.exe',
+    'bash.bashini.tooloptions.sDogwaffle':ur'C:/Program Files/project dogwaffle/dogwaffle.exe',
+    'bash.bashini.tooloptions.sGenetica':ur'C:/Program Files/Spiral Graphics/Genetica 3.5/Genetica.exe',
+    'bash.bashini.tooloptions.sGeneticaViewer':ur'C:/Program Files/Spiral Graphics/Genetica Viewer 3/Genetica Viewer 3.exe',
+    'bash.bashini.tooloptions.sGIMP':ur'C:/Program Files/GIMP 2/bin/gimp-2.8.exe',
+    'bash.bashini.tooloptions.sGimpShop':ur'C:/Program Files/GIMPshop/bin/gimp-2.2.exe',
+    'bash.bashini.tooloptions.sIcoFX':ur'C:/Program Files/IcoFX 1.6/IcoFX.exe',
+    'bash.bashini.tooloptions.sInkscape':ur'C:/Program Files/Inkscape/inkscape.exe',
+    'bash.bashini.tooloptions.sMaPZone':ur'C:/Program Files/Allegorithmic/MaPZone 2.6/MaPZone2.exe',
+    'bash.bashini.tooloptions.sMyPaint':ur'C:/Program Files/MyPaint/mypaint.exe',
+    'bash.bashini.tooloptions.sNVIDIAMelody':ur'C:/Program Files/NVIDIA Corporation/Melody/Melody.exe',
+    'bash.bashini.tooloptions.sPaintNET':ur'C:/Program Files/Paint.NET/PaintDotNet.exe',
+    'bash.bashini.tooloptions.sPaintShopPhotoPro':ur'C:/Program Files/Corel/Corel PaintShop Photo Pro/X3/PSPClassic/Corel Paint Shop Pro Photo.exe',
+    'bash.bashini.tooloptions.sPhotobie':ur'C:/Program Files/Photobie/Photobie.exe',
+    'bash.bashini.tooloptions.sPhotoFiltre':ur'C:/Program Files/PhotoFiltre/PhotoFiltre.exe',
+    'bash.bashini.tooloptions.sPhotoScape':ur'C:/Program Files/PhotoScape/PhotoScape.exe',
+    'bash.bashini.tooloptions.sPhotoSEAM':ur'C:/Program Files/PhotoSEAM/PhotoSEAM.exe',
+    'bash.bashini.tooloptions.sPhotoshopPath':ur'C:/Program Files/Adobe/Adobe Photoshop CS3/Photoshop.exe',
+    'bash.bashini.tooloptions.sPixelStudio':ur'C:/Program Files/Pixel/Pixel.exe',
+    'bash.bashini.tooloptions.sPixia':ur'C:/Program Files/Pixia/pixia.exe',
+    'bash.bashini.tooloptions.sTextureMaker':ur'C:/Program Files/Texture Maker/texturemaker.exe',
+    'bash.bashini.tooloptions.sTwistedBrush':ur'C:/Program Files/Pixarra/TwistedBrush Open Studio/tbrush_open_studio.exe',
+    'bash.bashini.tooloptions.sWTV':ur'C:/Program Files/WindowsTextureViewer/WTV.exe',
+    'bash.bashini.tooloptions.sxNormal':ur'C:/Program Files/Santiago Orgaz/xNormal/3.17.3/x86/xNormal.exe',
+    #General/Modding Tool Launchers
+    'bash.bashini.tooloptions.sBSACMD':ur'C:/Program Files/BSACommander/bsacmd.exe',
+    'bash.bashini.tooloptions.sEggTranslator':ur'C:/Program Files/Egg Translator/EggTranslator.exe',
+    'bash.bashini.tooloptions.sISOBL':ur'ISOBL.exe',
+    'bash.bashini.tooloptions.sISRMG':ur'Insanitys ReadMe Generator.exe',
+    'bash.bashini.tooloptions.sISRNG':ur'Random Name Generator.exe',
+    'bash.bashini.tooloptions.sISRNPCG':ur'Random NPC.exe',
+    'bash.bashini.tooloptions.sMAP':ur'Modding Tools/Interactive Map of Cyrodiil and Shivering Isles 3.52/Mapa v 3.52.exe',
+    'bash.bashini.tooloptions.sOblivionBookCreatorPath':ur'Data/OblivionBookCreator.jar',
+    'bash.bashini.tooloptions.sOblivionBookCreatorJavaArg':ur'-Xmx1024m',
+    'bash.bashini.tooloptions.sOBMLG':ur'Modding Tools/Oblivion Mod List Generator/Oblivion Mod List Generator.exe',
+    'bash.bashini.tooloptions.sOBFEL':ur'C:/Program Files/Oblivion Face Exchange Lite/OblivionFaceExchangeLite.exe',
+    'bash.bashini.tooloptions.sRADVideo':ur'C:/Program Files/RADVideo/radvideo.exe',
+    'bash.bashini.tooloptions.sTabula':ur'Modding Tools/Tabula.exe',
+    #Screenshot/Benchmarking Tool Launchers
+    'bash.bashini.tooloptions.sFastStone':ur'C:/Program Files/FastStone Image Viewer/FSViewer.exe',
+    'bash.bashini.tooloptions.sFraps':ur'C:/Fraps/Fraps.exe',
+    'bash.bashini.tooloptions.sIrfanView':ur'C:/Program Files/IrfanView/i_view32.exe',
+    'bash.bashini.tooloptions.sWinSnap':ur'C:/Program Files/WinSnap/WinSnap.exe',
+    'bash.bashini.tooloptions.sXnView':ur'C:/Program Files/XnView/xnview.exe',
+    #Sound/Audio Tool Launchers
+    'bash.bashini.tooloptions.sABCAmberAudioConverter':ur'C:/Program Files/ABC Amber Audio Converter/abcaudio.exe',
+    'bash.bashini.tooloptions.sAudacity':ur'C:/Program Files/Audacity/Audacity.exe',
+    'bash.bashini.tooloptions.sMediaMonkey':ur'C:/Program Files/MediaMonkey/MediaMonkey.exe',
+    'bash.bashini.tooloptions.sSwitch':ur'C:/Program Files/NCH Swift Sound/Switch/switch.exe',
+    #Text/Development Tool Launchers
+    'bash.bashini.tooloptions.sFreeMind':ur'C:/Program Files/FreeMind/Freemind.exe',
+    'bash.bashini.tooloptions.sFreeplane':ur'C:/Program Files/Freeplane/freeplane.exe',
+    'bash.bashini.tooloptions.sNPP':ur'C:/Program Files/Notepad++/notepad++.exe',
+    'bash.bashini.tooloptions.sWinMerge':ur'C:/Program Files/WinMerge/WinMergeU.exe',
+    #Other/Miscellaneous Tool Launchers
+    'bash.bashini.tooloptions.sEVGAPrecision':ur'',
+    'bash.bashini.tooloptions.sFileZilla':ur'',
+    'bash.bashini.tooloptions.sLogitechKeyboard':ur'',
+    'bash.bashini.tooloptions.sSteam':ur'',
+    #Users personal Mods archives seperate from bash installers
+    'bash.bashini.mymodsdirs.MySkyrimModsDir':ur'C:/Games/Skyrim Mods',
+    'bash.bashini.mymodsdirs.MyOblivionModsDir':ur'C:/Games/Oblivion Mods',
+    'bash.bashini.mymodsdirs.MyMorrowindModsDir':ur'C:/Games/Morrowind Mods',
+    'bash.bashini.mymodsdirs.MyFallout3ModsDir':ur'C:/Games/Fallout 3 Mods',
+    'bash.bashini.mymodsdirs.MyFalloutNVModsDir':ur'C:/Games/Fallout New Vegas Mods',
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': wx.DefaultPosition,
@@ -3912,7 +4051,7 @@ class InstallersPanel(SashTankPanel):
                 self.data.refreshStatus()
                 self.RefreshUIMods()
         self.SetStatusCount()
-        
+
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -6797,7 +6936,7 @@ class DocBrowser(wx.Frame):
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
         docPath = docPath or GPath(self.data.get(self.modName,u''))
-        if not docPath.exists(): 
+        if not docPath.exists():
             return False
         try:
             with docPath.open('r',encoding='utf-8-sig') as textFile:
@@ -7172,7 +7311,7 @@ class WryeBashSplashScreen(wx.SplashScreen):
     def __init__(self, parent=None):
         splashScreenBitmap = wx.Image(name = u'%s' %bosh.dirs['images'] + os.sep + u'wryesplash.png').ConvertToBitmap()
         splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT # wx.SPLASH_NO_TIMEOUT #This centers the image on the screen and controls whether you have to click the splashscreen or not.
-        splashDuration = 3500 # Duration in milliseconds that the splash screen will stay on the screen before the Main Window Pops up.
+        splashDuration = 3000 # Duration in milliseconds that the splash screen will stay on the screen before the Main Window Pops up.
         # Call the constructor with the above arguments in exactly the following order.
         wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
@@ -12841,7 +12980,7 @@ class Settings_DisableWidget(Link):
         subMenu = wx.Menu()
         menu.AppendMenu(self.id,_(u'Disable Widget'),subMenu)
         Settings_DisableCommentsWizBAINEditor().AppendToMenu(subMenu,window,data)
-        
+
 class Settings_DisableCommentsWizBAINEditor(Link):
     """Show/Hide Comments/WizBAINEditor on the Installers Tab."""
     def __init__(self):
@@ -12853,7 +12992,7 @@ class Settings_DisableCommentsWizBAINEditor(Link):
             help=_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'))
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'])
-            
+
     def Execute(self,event):
         if settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] == 0:
             settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 1
@@ -12861,7 +13000,7 @@ class Settings_DisableCommentsWizBAINEditor(Link):
         else:
             settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 0
             settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
-            
+
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
     """Menu to unhide a StatusBar button."""
