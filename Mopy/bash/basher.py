@@ -7309,10 +7309,11 @@ def GetBashVersion():
 class WryeBashSplashScreen(wx.SplashScreen):
     """This Creates the Splash Screen widget. (The first image you see when starting the Application.)"""
     def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name = u'%s' %bosh.dirs['images'] + os.sep + u'wryesplash.png').ConvertToBitmap()
-        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_TIMEOUT # wx.SPLASH_NO_TIMEOUT #This centers the image on the screen and controls whether you have to click the splashscreen or not.
-        splashDuration = 3000 # Duration in milliseconds that the splash screen will stay on the screen before the Main Window Pops up.
-        # Call the constructor with the above arguments in exactly the following order.
+        splashScreenBitmap = wx.Image(name = bosh.dirs['images'].join(u'wryesplash.png').s).ConvertToBitmap()
+        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT  #This centers the image on the screen
+        # image will stay until clicked by user or is explicitly destroyed when the main window is ready
+        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then you have to guess how long it should last
+        splashDuration = 3500 # Duration in ms the splash screen will be visible (only used with the TIMEOUT option)
         wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
         self.Bind(wx.EVT_CLOSE, self.OnExit)
         wx.Yield()
@@ -7328,15 +7329,13 @@ class BashApp(wx.App):
         global appRestart
         appRestart = False
         """wxWindows: Initialization handler."""
-        #--Constants
-        self.InitResources()
-        #--Init Data
-        progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing Data')+u' '*10,
-            style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
-        self.InitData(progress)
-        #--OnStartup SplashScreen
-        #If user renames wryesplash.png to anything else, for example to _wryesplash.png, the splashscreen option silently passes
-        if os.path.exists(u'%s' %bosh.dirs['images'] + os.sep + u'wryesplash.png'):
+        #--OnStartup SplashScreen and/or Progress
+        #   Progress gets hidden behind splash by default, since it's not very informative anyway
+        splashScreen = None
+        progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
+             style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
+        #   Any users who prefer the progress dialog can rename or delete wryesplash.png
+        if bosh.dirs['images'].join(u'wryesplash.png').exists():
             try:
                     splashScreen = WryeBashSplashScreen()
                     splashScreen.Show()
@@ -7344,6 +7343,11 @@ class BashApp(wx.App):
                     pass
         else:
                 pass
+        #--Constants
+        self.InitResources()
+        #--Init Data
+        progress.Update(20,_(u'Initializing Data'))
+        self.InitData(progress)
         progress.Update(70,_(u'Initializing Version'))
         self.InitVersion()
         #--MWFrame
@@ -7352,6 +7356,8 @@ class BashApp(wx.App):
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
         progress.Destroy()
+        if splashScreen:
+            splashScreen.Destroy()
         self.SetTopWindow(frame)
         frame.Show()
         balt.ensureDisplayed(frame)
