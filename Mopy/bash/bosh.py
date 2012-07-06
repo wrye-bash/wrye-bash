@@ -5205,10 +5205,7 @@ class ModInfos(FileInfos):
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected, exGroup_mods, imported, exported."""
         #--Ordered
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
-            self.ordered = tuple(self.plugins.selected)
-        else:
-            self.ordered = self.getOrdered(self.plugins.selected)
+        self.ordered = self.getOrdered(self.plugins.selected)
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
