@@ -491,6 +491,19 @@ settingDefaults = {
     'bash.installers.wizSTC.MiniMemoText':u'Woot it\'s a memo!',
     'bash.installers.wizSTC.MiniMemoSavedSize':(75, 75),
     #--Wrye Bash: Bash.ini Settings
+    
+    
+    
+    
+    'bash.bashini.general.sTest':ur'hmmm',
+    
+    'bash.bashini.general.sMorrowindDir':ur'C:/Program Files/Bethesda Softworks/Morrowind',
+    'bash.bashini.general.sMorrowindBashInstallersDir':ur'C:/Program Files/Bethesda Softworks/Morrowind Mods',
+    'bash.bashini.general.sOblivionDir':ur'C:/Program Files/Bethesda Softworks/Oblivion',
+    'bash.bashini.general.sOblivionBashInstallersDir':ur'C:/Program Files/Bethesda Softworks/Oblivion Mods',
+    'bash.bashini.general.sSkyrimDir':ur'C:/Program Files/Steam/steamapps/common/skyrim',
+    'bash.bashini.general.sSkyrimBashInstallersDir':ur'C:/Program Files/Steam/steamapps/common/Skyrim Mods/Bash Installers',
+    
     'bash.bashini.general.sOblivionMods':ur'../Skyrim Mods',
     'bash.bashini.general.sInstallersData':ur'../Skyrim Mods/Bash Installers/Bash',
     'bash.bashini.general.sBashModData':ur'../Skyrim Mods/Bash Mod Data',
@@ -546,83 +559,85 @@ settingDefaults = {
     'bash.bashini.tooloptions.sTes4LodGenPath':ur'Tes4LodGen.exe',
     'bash.bashini.tooloptions.sNifskopePath':ur'C:/Program Files/NifTools/NifSkope/nifskope.exe',
     #3D Modeling Tool Launchers
-    'bash.bashini.tooloptions.sArtOfIllusion':ur'C:/Program Files/ArtOfIllusion/Art of Illusion.exe',
-    'bash.bashini.tooloptions.sAutoCad':ur'C:/Program Files/Autodesk Architectural Desktop 3/acad.exe',
+    'bash.bashini.tooloptions.sArtOfIllusionPath':ur'C:/Program Files/ArtOfIllusion/Art of Illusion.exe',
+    'bash.bashini.tooloptions.sAutoCadPath':ur'C:/Program Files/Autodesk Architectural Desktop 3/acad.exe',
     'bash.bashini.tooloptions.sBlenderPath':ur'C:/Program Files/Blender Foundation/Blender/Blender.exe',
     'bash.bashini.tooloptions.sGmaxPath':ur'C:/GMAX/gmax.exe',
     'bash.bashini.tooloptions.sMaxPath':ur'C:/Program Files/Autodesk/3ds Max 2010/3dsmax.exe',
     'bash.bashini.tooloptions.sMayaPath':ur'C:/not/a/valid/path.exe',
-    'bash.bashini.tooloptions.sMilkShape3D':ur'C:/Program Files/MilkShape 3D 1.8.4/ms3d.exe',
-    'bash.bashini.tooloptions.sMudbox':ur'C:/Program Files/Autodesk/Mudbox2011/mudbox.exe',
-    'bash.bashini.tooloptions.sSculptris':ur'C:/Program Files/sculptris/Sculptris.exe',
-    'bash.bashini.tooloptions.sSoftimage':ur'C:/Softimage/Softimage_Mod_Tool_7.5/Application/bin/XSI.bat -mod',
-    'bash.bashini.tooloptions.sSpeedTree':ur'C:/not/a/valid/path.exe',
-    'bash.bashini.tooloptions.sTreed':ur'C:/not/a/valid/path.exe',
-    'bash.bashini.tooloptions.sWings3D':ur'C:/Program Files/wings3d_1.2/Wings3D.exe',
+    'bash.bashini.tooloptions.sMilkShape3DPath':ur'C:/Program Files/MilkShape 3D 1.8.4/ms3d.exe',
+    'bash.bashini.tooloptions.sMudboxPath':ur'C:/Program Files/Autodesk/Mudbox2011/mudbox.exe',
+    'bash.bashini.tooloptions.sSculptrisPath':ur'C:/Program Files/sculptris/Sculptris.exe',
+    'bash.bashini.tooloptions.sSoftimageModToolPath':ur'C:/Softimage/Softimage_Mod_Tool_7.5/Application/bin/XSI.bat -mod',
+    'bash.bashini.tooloptions.sSpeedTreePath':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sTreedPath':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sWings3DPath':ur'C:/Program Files/wings3d_1.2/Wings3D.exe',
     #Texturing/DDS Tool Launchers
-    'bash.bashini.tooloptions.sAniFX':ur'C:/Program Files/AniFX 1.0/AniFX.exe',
-    'bash.bashini.tooloptions.sArtweaver':ur'C:/Program Files/Artweaver 1.0/Artweaver.exe',
-    'bash.bashini.tooloptions.sCrazyBump':ur'C:/Program Files/Crazybump/CrazyBump.exe',
-    'bash.bashini.tooloptions.sDDSConverter':ur'C:/Program Files/DDS Converter 2/DDS Converter 2.exe',
-    'bash.bashini.tooloptions.sDeepPaint':ur'C:/Program Files/Right Hemisphere/Deep Paint/DeepPaint.exe',
-    'bash.bashini.tooloptions.sDogwaffle':ur'C:/Program Files/project dogwaffle/dogwaffle.exe',
-    'bash.bashini.tooloptions.sGenetica':ur'C:/Program Files/Spiral Graphics/Genetica 3.5/Genetica.exe',
-    'bash.bashini.tooloptions.sGeneticaViewer':ur'C:/Program Files/Spiral Graphics/Genetica Viewer 3/Genetica Viewer 3.exe',
-    'bash.bashini.tooloptions.sGIMP':ur'C:/Program Files/GIMP 2/bin/gimp-2.8.exe',
-    'bash.bashini.tooloptions.sGimpShop':ur'C:/Program Files/GIMPshop/bin/gimp-2.2.exe',
-    'bash.bashini.tooloptions.sIcoFX':ur'C:/Program Files/IcoFX 1.6/IcoFX.exe',
-    'bash.bashini.tooloptions.sInkscape':ur'C:/Program Files/Inkscape/inkscape.exe',
-    'bash.bashini.tooloptions.sMaPZone':ur'C:/Program Files/Allegorithmic/MaPZone 2.6/MaPZone2.exe',
-    'bash.bashini.tooloptions.sMyPaint':ur'C:/Program Files/MyPaint/mypaint.exe',
-    'bash.bashini.tooloptions.sNVIDIAMelody':ur'C:/Program Files/NVIDIA Corporation/Melody/Melody.exe',
-    'bash.bashini.tooloptions.sPaintNET':ur'C:/Program Files/Paint.NET/PaintDotNet.exe',
-    'bash.bashini.tooloptions.sPaintShopPhotoPro':ur'C:/Program Files/Corel/Corel PaintShop Photo Pro/X3/PSPClassic/Corel Paint Shop Pro Photo.exe',
-    'bash.bashini.tooloptions.sPhotobie':ur'C:/Program Files/Photobie/Photobie.exe',
-    'bash.bashini.tooloptions.sPhotoFiltre':ur'C:/Program Files/PhotoFiltre/PhotoFiltre.exe',
-    'bash.bashini.tooloptions.sPhotoScape':ur'C:/Program Files/PhotoScape/PhotoScape.exe',
-    'bash.bashini.tooloptions.sPhotoSEAM':ur'C:/Program Files/PhotoSEAM/PhotoSEAM.exe',
+    'bash.bashini.tooloptions.sAniFXPath':ur'C:/Program Files/AniFX 1.0/AniFX.exe',
+    'bash.bashini.tooloptions.sArtweaverPath':ur'C:/Program Files/Artweaver 1.0/Artweaver.exe',
+    'bash.bashini.tooloptions.sBricksNTilesPath':ur'C:/Program Files/BricksNTiles/BricksNTiles.exe',
+    'bash.bashini.tooloptions.sCrazyBumpPath':ur'C:/Program Files/Crazybump/CrazyBump.exe',
+    'bash.bashini.tooloptions.sDDSConverter2Path':ur'C:/Program Files/DDS Converter 2/DDS Converter 2.exe',
+    'bash.bashini.tooloptions.sDeepPaintPath':ur'C:/Program Files/Right Hemisphere/Deep Paint/DeepPaint.exe',
+    'bash.bashini.tooloptions.sDogwafflePath':ur'C:/Program Files/project dogwaffle/dogwaffle.exe',
+    'bash.bashini.tooloptions.sGeneticaPath':ur'C:/Program Files/Spiral Graphics/Genetica 3.5/Genetica.exe',
+    'bash.bashini.tooloptions.sGeneticaViewerPath':ur'C:/Program Files/Spiral Graphics/Genetica Viewer 3/Genetica Viewer 3.exe',
+    'bash.bashini.tooloptions.sGeniuXPhotoEFXPath':ur'C:/Program Files/GeniuXPhotoEFX/GeniuXPhotoEFX.exe',
+    'bash.bashini.tooloptions.sGIMPPath':ur'C:/Program Files/GIMP 2/bin/gimp-2.8.exe',
+    'bash.bashini.tooloptions.sGimpShopPath':ur'C:/Program Files/GIMPshop/bin/gimp-2.2.exe',
+    'bash.bashini.tooloptions.sIcoFXPath':ur'C:/Program Files/IcoFX 1.6/IcoFX.exe',
+    'bash.bashini.tooloptions.sInkscapePath':ur'C:/Program Files/Inkscape/inkscape.exe',
+    'bash.bashini.tooloptions.sMaPZonePath':ur'C:/Program Files/Allegorithmic/MaPZone 2.6/MaPZone2.exe',
+    'bash.bashini.tooloptions.sMyPaintPath':ur'C:/Program Files/MyPaint/mypaint.exe',
+    'bash.bashini.tooloptions.sNVIDIAMelodyPath':ur'C:/Program Files/NVIDIA Corporation/Melody/Melody.exe',
+    'bash.bashini.tooloptions.sPaintNETPath':ur'C:/Program Files/Paint.NET/PaintDotNet.exe',
+    'bash.bashini.tooloptions.sPaintShopPhotoProPath':ur'C:/Program Files/Corel/Corel PaintShop Photo Pro/X3/PSPClassic/Corel Paint Shop Pro Photo.exe',
+    'bash.bashini.tooloptions.sPhotobieDesignStudioPath':ur'C:/Program Files/Photobie/Photobie.exe',
+    'bash.bashini.tooloptions.sPhotoFiltrePath':ur'C:/Program Files/PhotoFiltre/PhotoFiltre.exe',
+    'bash.bashini.tooloptions.sPhotoScapePath':ur'C:/Program Files/PhotoScape/PhotoScape.exe',
+    'bash.bashini.tooloptions.sPhotoSEAMPath':ur'C:/Program Files/PhotoSEAM/PhotoSEAM.exe',
     'bash.bashini.tooloptions.sPhotoshopPath':ur'C:/Program Files/Adobe/Adobe Photoshop CS3/Photoshop.exe',
-    'bash.bashini.tooloptions.sPixelStudio':ur'C:/Program Files/Pixel/Pixel.exe',
-    'bash.bashini.tooloptions.sPixia':ur'C:/Program Files/Pixia/pixia.exe',
-    'bash.bashini.tooloptions.sTextureMaker':ur'C:/Program Files/Texture Maker/texturemaker.exe',
-    'bash.bashini.tooloptions.sTwistedBrush':ur'C:/Program Files/Pixarra/TwistedBrush Open Studio/tbrush_open_studio.exe',
-    'bash.bashini.tooloptions.sWTV':ur'C:/Program Files/WindowsTextureViewer/WTV.exe',
-    'bash.bashini.tooloptions.sxNormal':ur'C:/Program Files/Santiago Orgaz/xNormal/3.17.3/x86/xNormal.exe',
+    'bash.bashini.tooloptions.sPixelStudioProPath':ur'C:/Program Files/Pixel/Pixel.exe',
+    'bash.bashini.tooloptions.sPixiaPath':ur'C:/Program Files/Pixia/pixia.exe',
+    'bash.bashini.tooloptions.sTextureMakerPath':ur'C:/Program Files/Texture Maker/texturemaker.exe',
+    'bash.bashini.tooloptions.sTwistedBrushPath':ur'C:/Program Files/Pixarra/TwistedBrush Open Studio/tbrush_open_studio.exe',
+    'bash.bashini.tooloptions.sWTVPath':ur'C:/Program Files/WindowsTextureViewer/WTV.exe',
+    'bash.bashini.tooloptions.sxNormalPath':ur'C:/Program Files/Santiago Orgaz/xNormal/3.17.3/x86/xNormal.exe',
     #General/Modding Tool Launchers
-    'bash.bashini.tooloptions.sBSACMD':ur'C:/Program Files/BSACommander/bsacmd.exe',
-    'bash.bashini.tooloptions.sEggTranslator':ur'C:/Program Files/Egg Translator/EggTranslator.exe',
-    'bash.bashini.tooloptions.sISOBL':ur'ISOBL.exe',
-    'bash.bashini.tooloptions.sISRMG':ur'Insanitys ReadMe Generator.exe',
-    'bash.bashini.tooloptions.sISRNG':ur'Random Name Generator.exe',
-    'bash.bashini.tooloptions.sISRNPCG':ur'Random NPC.exe',
-    'bash.bashini.tooloptions.sMAP':ur'Modding Tools/Interactive Map of Cyrodiil and Shivering Isles 3.52/Mapa v 3.52.exe',
-    'bash.bashini.tooloptions.sOblivionBookCreatorPath':ur'Data/OblivionBookCreator.jar',
+    'bash.bashini.tooloptions.sBSACMDPath':ur'C:/Program Files/BSACommander/bsacmd.exe',
+    'bash.bashini.tooloptions.sEggTranslatorPath':ur'C:/Program Files/Egg Translator/EggTranslator.exe',
+    'bash.bashini.tooloptions.sISOBLPath':ur'ISOBL.exe',
+    'bash.bashini.tooloptions.sISRMGPath':ur'Insanitys ReadMe Generator.exe',
+    'bash.bashini.tooloptions.sISRNGPath':ur'Random Name Generator.exe',
+    'bash.bashini.tooloptions.sISRNPCGPath':ur'Random NPC.exe',
+    'bash.bashini.tooloptions.sMAPPath':ur'Modding Tools/Interactive Map of Cyrodiil and Shivering Isles 3.52/Mapa v 3.52.exe',
+    'bash.bashini.tooloptions.sOblivionBookCreatorPathPath':ur'Data/OblivionBookCreator.jar',
     'bash.bashini.tooloptions.sOblivionBookCreatorJavaArg':ur'-Xmx1024m',
-    'bash.bashini.tooloptions.sOBMLG':ur'Modding Tools/Oblivion Mod List Generator/Oblivion Mod List Generator.exe',
-    'bash.bashini.tooloptions.sOBFEL':ur'C:/Program Files/Oblivion Face Exchange Lite/OblivionFaceExchangeLite.exe',
-    'bash.bashini.tooloptions.sRADVideo':ur'C:/Program Files/RADVideo/radvideo.exe',
-    'bash.bashini.tooloptions.sTabula':ur'Modding Tools/Tabula.exe',
+    'bash.bashini.tooloptions.sOBMLGPath':ur'Modding Tools/Oblivion Mod List Generator/Oblivion Mod List Generator.exe',
+    'bash.bashini.tooloptions.sOBFELPath':ur'C:/Program Files/Oblivion Face Exchange Lite/OblivionFaceExchangeLite.exe',
+    'bash.bashini.tooloptions.sRADVideoPath':ur'C:/Program Files/RADVideo/radvideo.exe',
+    'bash.bashini.tooloptions.sTabulaPath':ur'Modding Tools/Tabula.exe',
     #Screenshot/Benchmarking Tool Launchers
-    'bash.bashini.tooloptions.sFastStone':ur'C:/Program Files/FastStone Image Viewer/FSViewer.exe',
-    'bash.bashini.tooloptions.sFraps':ur'C:/Fraps/Fraps.exe',
-    'bash.bashini.tooloptions.sIrfanView':ur'C:/Program Files/IrfanView/i_view32.exe',
-    'bash.bashini.tooloptions.sWinSnap':ur'C:/Program Files/WinSnap/WinSnap.exe',
-    'bash.bashini.tooloptions.sXnView':ur'C:/Program Files/XnView/xnview.exe',
+    'bash.bashini.tooloptions.sFastStonePath':ur'C:/Program Files/FastStone Image Viewer/FSViewer.exe',
+    'bash.bashini.tooloptions.sFrapsPath':ur'C:/Fraps/Fraps.exe',
+    'bash.bashini.tooloptions.sIrfanViewPath':ur'C:/Program Files/IrfanView/i_view32.exe',
+    'bash.bashini.tooloptions.sWinSnapPath':ur'C:/Program Files/WinSnap/WinSnap.exe',
+    'bash.bashini.tooloptions.sXnViewPath':ur'C:/Program Files/XnView/xnview.exe',
     #Sound/Audio Tool Launchers
-    'bash.bashini.tooloptions.sABCAmberAudioConverter':ur'C:/Program Files/ABC Amber Audio Converter/abcaudio.exe',
-    'bash.bashini.tooloptions.sAudacity':ur'C:/Program Files/Audacity/Audacity.exe',
-    'bash.bashini.tooloptions.sMediaMonkey':ur'C:/Program Files/MediaMonkey/MediaMonkey.exe',
-    'bash.bashini.tooloptions.sSwitch':ur'C:/Program Files/NCH Swift Sound/Switch/switch.exe',
+    'bash.bashini.tooloptions.sABCAmberAudioConverterPath':ur'C:/Program Files/ABC Amber Audio Converter/abcaudio.exe',
+    'bash.bashini.tooloptions.sAudacityPath':ur'C:/Program Files/Audacity/Audacity.exe',
+    'bash.bashini.tooloptions.sMediaMonkeyPath':ur'C:/Program Files/MediaMonkey/MediaMonkey.exe',
+    'bash.bashini.tooloptions.sSwitchPath':ur'C:/Program Files/NCH Swift Sound/Switch/switch.exe',
     #Text/Development Tool Launchers
-    'bash.bashini.tooloptions.sFreeMind':ur'C:/Program Files/FreeMind/Freemind.exe',
-    'bash.bashini.tooloptions.sFreeplane':ur'C:/Program Files/Freeplane/freeplane.exe',
-    'bash.bashini.tooloptions.sNPP':ur'C:/Program Files/Notepad++/notepad++.exe',
-    'bash.bashini.tooloptions.sWinMerge':ur'C:/Program Files/WinMerge/WinMergeU.exe',
+    'bash.bashini.tooloptions.sFreeMindPath':ur'C:/Program Files/FreeMind/Freemind.exe',
+    'bash.bashini.tooloptions.sFreeplanePath':ur'C:/Program Files/Freeplane/freeplane.exe',
+    'bash.bashini.tooloptions.sNPPPath':ur'C:/Program Files/Notepad++/notepad++.exe',
+    'bash.bashini.tooloptions.sWinMergePath':ur'C:/Program Files/WinMerge/WinMergeU.exe',
     #Other/Miscellaneous Tool Launchers
-    'bash.bashini.tooloptions.sEVGAPrecision':ur'',
-    'bash.bashini.tooloptions.sFileZilla':ur'',
-    'bash.bashini.tooloptions.sLogitechKeyboard':ur'',
-    'bash.bashini.tooloptions.sSteam':ur'',
+    'bash.bashini.tooloptions.sEVGAPrecisionPath':ur'C:/Program Files/EVGA Precision/EVGAPrecision.exe',
+    'bash.bashini.tooloptions.sFileZillaPath':ur'C:/Program Files/FileZilla FTP Client/filezilla.exe',
+    'bash.bashini.tooloptions.sLogitechKeyboardPath':ur'C:/Program Files/Logitech Gaming Software/LCore.exe',
+    'bash.bashini.tooloptions.sSteamPath':ur'C:/Program Files/Steam/steam.exe',
     #Users personal Mods archives seperate from bash installers
     'bash.bashini.mymodsdirs.MySkyrimModsDir':ur'C:/Games/Skyrim Mods',
     'bash.bashini.mymodsdirs.MyOblivionModsDir':ur'C:/Games/Oblivion Mods',
@@ -18692,53 +18707,53 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #ISOBL
         Tooldir_Button(
             u'ISOBL',
-            imageList(u'isobl%s.png'),
+            imageList(u'tools/isobl%s.png'),
             _(u"Launch InsanitySorrow's Oblivion Launcher")))
     BashStatusBar.buttons.append( #ISRMG
         Tooldir_Button(
             u'ISRMG',
-            imageList(u"insanity'sreadmegenerator%s.png"),
+            imageList(u"tools/insanity'sreadmegenerator%s.png"),
             _(u"Launch InsanitySorrow's Readme Generator")))
     BashStatusBar.buttons.append( #ISRNG
         Tooldir_Button(
             u'ISRNG',
-            imageList(u"insanity'srng%s.png"),
+            imageList(u"tools/insanity'srng%s.png"),
             _(u"Launch InsanitySorrow's Random Name Generator")))
     BashStatusBar.buttons.append( #ISRNPCG
         Tooldir_Button(
             u'ISRNPCG',
-            imageList(u'randomnpc%s.png'),
+            imageList(u'tools/randomnpc%s.png'),
             _(u"Launch InsanitySorrow's Random NPC Generator")))
     BashStatusBar.buttons.append( #OBFEL
         Tooldir_Button(
             u'OBFEL',
-            imageList(u'oblivionfaceexchangerlite%s.png'),
+            imageList(u'tools/oblivionfaceexchangerlite%s.png'),
             _(u"Oblivion Face Exchange Lite")))
     BashStatusBar.buttons.append( #OBMLG
         Tooldir_Button(
             u'OBMLG',
-            imageList(u'modlistgenerator%s.png'),
+            imageList(u'tools/modlistgenerator%s.png'),
             _(u"Oblivion Mod List Generator")))
     BashStatusBar.buttons.append( #OblivionBookCreator
         App_Button(
             (bosh.tooldirs['OblivionBookCreatorPath'],bosh.inisettings['OblivionBookCreatorJavaArg']),
-            imageList(u'oblivionbookcreator%s.png'),
+            imageList(u'tools/oblivionbookcreator%s.png'),
             _(u"Launch Oblivion Book Creator"),
             uid=u'OblivionBookCreator'))
     BashStatusBar.buttons.append( #BSACommander
         Tooldir_Button(
             u'BSACMD',
-            imageList(u'bsacommander%s.png'),
+            imageList(u'tools/bsacommander%s.png'),
             _(u"Launch BSA Commander")))
     BashStatusBar.buttons.append( #Tabula
         Tooldir_Button(
             u'Tabula',
-            imageList(u'tabula%s.png'),
+            imageList(u'tools/tabula%s.png'),
             _(u"Launch Tabula")))
     BashStatusBar.buttons.append( #Tes4Files
         Tooldir_Button(
             u'Tes4FilesPath',
-            imageList(u'tes4files%s.png'),
+            imageList(u'tools/tes4files%s.png'),
             _(u"Launch TES4Files")))
     BashStatusBar.buttons.append( #Tes4Gecko
         App_Button(
@@ -18749,25 +18764,25 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bosh.tooldirs['Tes4ViewPath'],u'-TES4'), #no cmd argument to force view mode
-            imageList(u'tes4view%s.png'),
+            imageList(u'tools/tes4view%s.png'),
             _(u"Launch TES4View"),
             uid=u'TES4View'))
     BashStatusBar.buttons.append( #Tes4Edit
         App_Tes4View(
             (bosh.tooldirs['Tes4EditPath'],u'-TES4 -edit'),
-            imageList(u'tes4edit%s.png'),
+            imageList(u'tools/tes4edit%s.png'),
             _(u"Launch TES4Edit"),
             uid=u'TES4Edit'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
-            imageList(u'tes4trans%s.png'),
+            imageList(u'tools/tes4trans%s.png'),
             _(u"Launch TES4Trans"),
             uid=u'TES4Trans'))
     BashStatusBar.buttons.append( #Tes4LODGen
         App_Tes4View(
             (bosh.tooldirs['Tes4LodGenPath'],u'-TES4 -lodgen'),
-            imageList(u'tes4lodgen%s.png'),
+            imageList(u'tools/tes4lodgen%s.png'),
             _(u"Launch Tes4LODGen"),
             uid=u'TES4LODGen'))
     BashStatusBar.buttons.append( #BOSS
@@ -18780,271 +18795,271 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #AutoCad
             Tooldir_Button(
                 'AutoCad',
-                imageList(u'autocad%s.png'),
+                imageList(u'tools/autocad%s.png'),
                 _(u"Launch AutoCad")))
         BashStatusBar.buttons.append( #Blender
             Tooldir_Button(
                 'BlenderPath',
-                imageList(u'blender%s.png'),
+                imageList(u'tools/blender%s.png'),
                 _(u"Launch Blender")))
         BashStatusBar.buttons.append( #Dogwaffle
             Tooldir_Button(
                 'Dogwaffle',
-                imageList(u'dogwaffle%s.png'),
+                imageList(u'tools/dogwaffle%s.png'),
                 _(u"Launch Dogwaffle")))
         BashStatusBar.buttons.append( #GMax
             Tooldir_Button(
                 'GmaxPath',
-                imageList(u'gmax%s.png'),
+                imageList(u'tools/gmax%s.png'),
                 _(u"Launch Gmax")))
         BashStatusBar.buttons.append( #Maya
             Tooldir_Button(
                 'MayaPath',
-                imageList(u'maya%s.png'),
+                imageList(u'tools/maya%s.png'),
                 _(u"Launch Maya")))
         BashStatusBar.buttons.append( #Max
             Tooldir_Button(
                 'MaxPath',
-                imageList(u'3dsmax%s.png'),
+                imageList(u'tools/3dsmax%s.png'),
                 _(u"Launch 3dsMax")))
         BashStatusBar.buttons.append( #Milkshape3D
             Tooldir_Button(
                 'Milkshape3D',
-                imageList(u'milkshape3d%s.png'),
+                imageList(u'tools/milkshape3d%s.png'),
                 _(u"Launch Milkshape 3D")))
         BashStatusBar.buttons.append( #Mudbox
             Tooldir_Button(
                 'Mudbox',
-                imageList(u'mudbox%s.png'),
+                imageList(u'tools/mudbox%s.png'),
                 _(u"Launch Mudbox")))
         BashStatusBar.buttons.append( #Sculptris
             Tooldir_Button(
                 'Sculptris',
-                imageList(u'sculptris%s.png'),
+                imageList(u'tools/sculptris%s.png'),
                 _(u"Launch Sculptris")))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             App_Button(
                 (bosh.tooldirs['SoftimageModTool'],u'-mod'),
-                imageList(u'softimagemodtool%s.png'),
+                imageList(u'tools/softimagemodtool%s.png'),
                 _(u"Launch Softimage Mod Tool"),
                 uid=u'SoftimageModTool'))
         BashStatusBar.buttons.append( #SpeedTree
             Tooldir_Button(
                 'SpeedTree',
-                imageList(u'speedtree%s.png'),
+                imageList(u'tools/speedtree%s.png'),
                 _(u"Launch SpeedTree")))
         BashStatusBar.buttons.append( #Tree[d]
             Tooldir_Button(
                 'Treed',
-                imageList(u'treed%s.png'),
+                imageList(u'tools/treed%s.png'),
                 _(u"Launch Tree\[d\]")))
         BashStatusBar.buttons.append( #Wings3D
             Tooldir_Button(
                 'Wings3D',
-                imageList(u'wings3d%s.png'),
+                imageList(u'tools/wings3d%s.png'),
                 _(u"Launch Wings 3D")))
     if bosh.inisettings['ShowModelingToolLaunchers'] or bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
             Tooldir_Button(
                 'NifskopePath',
-                imageList(u'nifskope%s.png'),
+                imageList(u'tools/nifskope%s.png'),
                 _(u"Launch Nifskope")))
     if bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #AniFX
             Tooldir_Button(
                 'AniFX',
-                imageList(u'anifx%s.png'),
+                imageList(u'tools/anifx%s.png'),
                 _(u"Launch AniFX")))
         BashStatusBar.buttons.append( #Art Of Illusion
             Tooldir_Button(
                 'ArtOfIllusion',
-                imageList(u'artofillusion%s.png'),
+                imageList(u'tools/artofillusion%s.png'),
                 _(u"Launch Art Of Illusion")))
         BashStatusBar.buttons.append( #Artweaver
             Tooldir_Button(
                 'Artweaver',
-                imageList(u'artweaver%s.png'),
+                imageList(u'tools/artweaver%s.png'),
                 _(u"Launch Artweaver")))
         BashStatusBar.buttons.append( #CrazyBump
             Tooldir_Button(
                 'CrazyBump',
-                imageList(u'crazybump%s.png'),
+                imageList(u'tools/crazybump%s.png'),
                 _(u"Launch CrazyBump")))
         BashStatusBar.buttons.append( #DDSConverter
             Tooldir_Button(
                 'DDSConverter',
-                imageList(u'ddsconverter%s.png'),
+                imageList(u'tools/ddsconverter%s.png'),
                 _(u"Launch DDSConverter")))
         BashStatusBar.buttons.append( #DeepPaint
             Tooldir_Button(
                 'DeepPaint',
-                imageList(u'deeppaint%s.png'),
+                imageList(u'tools/deeppaint%s.png'),
                 _(u"Launch DeepPaint")))
         BashStatusBar.buttons.append( #FastStone Image Viewer
             Tooldir_Button(
                 'FastStone',
-                imageList(u'faststoneimageviewer%s.png'),
+                imageList(u'tools/faststoneimageviewer%s.png'),
                 _(u"Launch FastStone Image Viewer")))
         BashStatusBar.buttons.append( #Genetica
             Tooldir_Button(
                 'Genetica',
-                imageList(u'genetica%s.png'),
+                imageList(u'tools/genetica%s.png'),
                 _(u"Launch Genetica")))
         BashStatusBar.buttons.append( #Genetica Viewer
             Tooldir_Button(
                 'GeneticaViewer',
-                imageList(u'geneticaviewer%s.png'),
+                imageList(u'tools/geneticaviewer%s.png'),
                 _(u"Launch Genetica Viewer")))
         BashStatusBar.buttons.append( #GIMP
             Tooldir_Button(
                 'GIMP',
-                imageList(u'gimp%s.png'),
+                imageList(u'tools/gimp%s.png'),
                 _(u"Launch GIMP")))
         BashStatusBar.buttons.append( #GIMP Shop
             Tooldir_Button(
                 'GimpShop',
-                imageList(u'gimpshop%s.png'),
+                imageList(u'tools/gimpshop%s.png'),
                 _(u"Launch GIMP Shop")))
         BashStatusBar.buttons.append( #IcoFX
             Tooldir_Button(
                 'IcoFX',
-                imageList(u'icofx%s.png'),
+                imageList(u'tools/icofx%s.png'),
                 _(u"Launch IcoFX")))
         BashStatusBar.buttons.append( #Inkscape
             Tooldir_Button(
                 'Inkscape',
-                imageList(u'inkscape%s.png'),
+                imageList(u'tools/inkscape%s.png'),
                 _(u"Launch Inkscape")))
         BashStatusBar.buttons.append( #IrfanView
             Tooldir_Button(
                 'IrfanView',
-                imageList(u'irfanview%s.png'),
+                imageList(u'tools/irfanview%s.png'),
                 _(u"Launch IrfanView")))
         BashStatusBar.buttons.append( #MaPZone
             Tooldir_Button(
                 'MaPZone',
-                imageList(u'mapzone%s.png'),
+                imageList(u'tools/mapzone%s.png'),
                 _(u"Launch MaPZone")))
         BashStatusBar.buttons.append( #MyPaint
             Tooldir_Button(
                 'MyPaint',
-                imageList(u'mypaint%s.png'),
+                imageList(u'tools/mypaint%s.png'),
                 _(u"Launch MyPaint")))
         BashStatusBar.buttons.append( #NVIDIAMelody
             Tooldir_Button(
                 'NVIDIAMelody',
-                imageList(u'nvidiamelody%s.png'),
+                imageList(u'tools/nvidiamelody%s.png'),
                 _(u"Launch Nvidia Melody")))
         BashStatusBar.buttons.append( #Paint.net
             Tooldir_Button(
                 'PaintNET',
-                imageList(u'paint.net%s.png'),
+                imageList(u'tools/paint.net%s.png'),
                 _(u"Launch Paint.NET")))
         BashStatusBar.buttons.append( #PaintShop Photo Pro
             Tooldir_Button(
                 'PaintShopPhotoPro',
-                imageList(u'paintshopprox3%s.png'),
+                imageList(u'tools/paintshopprox3%s.png'),
                 _(u"Launch PaintShop Photo Pro")))
         BashStatusBar.buttons.append( #Photoshop
             Tooldir_Button(
                 'PhotoshopPath',
-                imageList(u'photoshop%s.png'),
+                imageList(u'tools/photoshop%s.png'),
                 _(u"Launch Photoshop")))
         BashStatusBar.buttons.append( #PhotoScape
             Tooldir_Button(
                 'PhotoScape',
-                imageList(u'photoscape%s.png'),
+                imageList(u'tools/photoscape%s.png'),
                 _(u"Launch PhotoScape")))
         BashStatusBar.buttons.append( #PhotoSEAM
             Tooldir_Button(
                 'PhotoSEAM',
-                imageList(u'photoseam%s.png'),
+                imageList(u'tools/photoseam%s.png'),
                 _(u"Launch PhotoSEAM")))
         BashStatusBar.buttons.append( #Photobie Design Studio
             Tooldir_Button(
                 'Photobie',
-                imageList(u'photobie%s.png'),
+                imageList(u'tools/photobie%s.png'),
                 _(u"Launch Photobie")))
         BashStatusBar.buttons.append( #PhotoFiltre
             Tooldir_Button(
                 'PhotoFiltre',
-                imageList(u'photofiltre%s.png'),
+                imageList(u'tools/photofiltre%s.png'),
                 _(u"Launch PhotoFiltre")))
         BashStatusBar.buttons.append( #Pixel Studio Pro
             Tooldir_Button(
                 'PixelStudio',
-                imageList(u'pixelstudiopro%s.png'),
+                imageList(u'tools/pixelstudiopro%s.png'),
                 _(u"Launch Pixel Studio Pro")))
         BashStatusBar.buttons.append( #Pixia
             Tooldir_Button(
                 'Pixia',
-                imageList(u'pixia%s.png'),
+                imageList(u'tools/pixia%s.png'),
                 _(u"Launch Pixia")))
         BashStatusBar.buttons.append( #TextureMaker
             Tooldir_Button(
                 'TextureMaker',
-                imageList(u'texturemaker%s.png'),
+                imageList(u'tools/texturemaker%s.png'),
                 _(u"Launch TextureMaker")))
         BashStatusBar.buttons.append( #Twisted Brush
             Tooldir_Button(
                 'TwistedBrush',
-                imageList(u'twistedbrush%s.png'),
+                imageList(u'tools/twistedbrush%s.png'),
                 _(u"Launch TwistedBrush")))
         BashStatusBar.buttons.append( #Windows Texture Viewer
             Tooldir_Button(
                 'WTV',
-                imageList(u'wtv%s.png'),
+                imageList(u'tools/wtv%s.png'),
                 _(u"Launch Windows Texture Viewer")))
         BashStatusBar.buttons.append( #xNormal
             Tooldir_Button(
                 'xNormal',
-                imageList(u'xnormal%s.png'),
+                imageList(u'tools/xnormal%s.png'),
                 _(u"Launch xNormal")))
         BashStatusBar.buttons.append( #XnView
             Tooldir_Button(
                 'XnView',
-                imageList(u'xnview%s.png'),
+                imageList(u'tools/xnview%s.png'),
                 _(u"Launch XnView")))
     if bosh.inisettings['ShowAudioToolLaunchers']:
         BashStatusBar.buttons.append( #Audacity
             Tooldir_Button(
                 'Audacity',
-                imageList(u'audacity%s.png'),
+                imageList(u'tools/audacity%s.png'),
                 _(u"Launch Audacity")))
         BashStatusBar.buttons.append( #ABCAmberAudioConverter
             Tooldir_Button(
                 'ABCAmberAudioConverter',
-                imageList(u'abcamberaudioconverter%s.png'),
+                imageList(u'tools/abcamberaudioconverter%s.png'),
                 _(u"Launch ABC Amber Audio Converter")))
         BashStatusBar.buttons.append( #Switch
             Tooldir_Button(
                 'Switch',
-                imageList(u'switch%s.png'),
+                imageList(u'tools/switch%s.png'),
                 _(u"Launch Switch")))
     BashStatusBar.buttons.append( #Fraps
         Tooldir_Button(
             'Fraps',
-            imageList(u'fraps%s.png'),
+            imageList(u'tools/fraps%s.png'),
             _(u"Launch Fraps")))
     BashStatusBar.buttons.append( #MAP
         Tooldir_Button(
             'MAP',
-            imageList(u'interactivemapofcyrodiil%s.png'),
+            imageList(u'tools/interactivemapofcyrodiil%s.png'),
             _(u"Interactive Map of Cyrodiil and Shivering Isles")))
     BashStatusBar.buttons.append( #LogitechKeyboard
         Tooldir_Button(
             'LogitechKeyboard',
-            imageList(u'logitechkeyboard%s.png'),
+            imageList(u'tools/logitechkeyboard%s.png'),
             _(u"Launch LogitechKeyboard")))
     BashStatusBar.buttons.append( #MediaMonkey
         Tooldir_Button(
             'MediaMonkey',
-            imageList(u'mediamonkey%s.png'),
+            imageList(u'tools/mediamonkey%s.png'),
             _(u"Launch MediaMonkey")))
     BashStatusBar.buttons.append( #NPP
         Tooldir_Button(
             'NPP',
-            imageList(u'notepad++%s.png'),
+            imageList(u'tools/notepad++%s.png'),
             _(u"Launch Notepad++")))
     BashStatusBar.buttons.append( #Steam
         Tooldir_Button(
@@ -19054,42 +19069,42 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #EVGA Precision
         Tooldir_Button(
             'EVGAPrecision',
-            imageList(u'evgaprecision%s.png'),
+            imageList(u'tools/evgaprecision%s.png'),
             _(u"Launch EVGA Precision")))
     BashStatusBar.buttons.append( #WinMerge
         Tooldir_Button(
             'WinMerge',
-            imageList(u'winmerge%s.png'),
+            imageList(u'tools/winmerge%s.png'),
             _(u"Launch WinMerge")))
     BashStatusBar.buttons.append( #Freemind
         Tooldir_Button(
             'FreeMind',
-            imageList(u'freemind%s.png'),
+            imageList(u'tools/freemind%s.png'),
             _(u"Launch FreeMind")))
     BashStatusBar.buttons.append( #Freeplane
         Tooldir_Button(
             'Freeplane',
-            imageList(u'freeplane%s.png'),
+            imageList(u'tools/freeplane%s.png'),
             _(u"Launch Freeplane")))
     BashStatusBar.buttons.append( #FileZilla
         Tooldir_Button(
             'FileZilla',
-            imageList(u'filezilla%s.png'),
+            imageList(u'tools/filezilla%s.png'),
             _(u"Launch FileZilla")))
     BashStatusBar.buttons.append( #EggTranslator
         Tooldir_Button(
             'EggTranslator',
-            imageList(u'eggtranslator%s.png'),
+            imageList(u'tools/eggtranslator%s.png'),
             _(u"Launch Egg Translator")))
     BashStatusBar.buttons.append( #RADVideoTools
         Tooldir_Button(
             'RADVideo',
-            imageList(u'radvideotools%s.png'),
+            imageList(u'tools/radvideotools%s.png'),
             _(u"Launch RAD Video Tools")))
     BashStatusBar.buttons.append( #WinSnap
         Tooldir_Button(
             'WinSnap',
-            imageList(u'winsnap%s.png'),
+            imageList(u'tools/winsnap%s.png'),
             _(u"Launch WinSnap")))
     #--Custom Apps
     dirApps = bosh.dirs['mopy'].join(u'Apps')
