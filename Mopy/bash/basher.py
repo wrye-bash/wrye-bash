@@ -18393,7 +18393,7 @@ class App_Settings(StatusBar_Button):
         if not self.id: self.id = wx.NewId()
         self.createButton(
             window,
-            Image(GPath(bosh.dirs['images'].join(u'tes4gecko%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
+            Image(GPath(bosh.dirs['images'].join(u'settingsbutton%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
             style=style,
             tip=_(u'Settings'),
             onRClick=self.Execute)
@@ -18758,7 +18758,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #Tes4Gecko
         App_Button(
             (bosh.tooldirs['Tes4GeckoPath'],bosh.inisettings['Tes4GeckoJavaArg']),
-            imageList(u'tes4gecko%s.png'),
+            imageList(u'tools/tes4gecko%s.png'),
             _(u"Launch Tes4Gecko"),
             uid=u'Tes4Gecko'))
     BashStatusBar.buttons.append( #Tes4View
