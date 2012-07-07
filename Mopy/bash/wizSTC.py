@@ -334,9 +334,10 @@ ID_OPENMACRODIR = 10001
 
 def globals_gImgIdx():
     #--- Images & PopupMenu/ID Generation ---#
-    global gImgDir,gImgStcDir
+    global gImgDir,gImgStcDir,gImgToolsDir
     gImgDir = u'%s' %bosh.dirs['images']
     gImgStcDir = u'%s' %bosh.dirs['images'].join('stc')
+    gImgToolsDir = u'%s' %bosh.dirs['images'].join('tools')
     p = wx.BITMAP_TYPE_PNG
 
     global gMgmImg,gRmbImg,gMmbImg,gYahImg,gChkImg
@@ -348,18 +349,22 @@ def globals_gImgIdx():
 
     global gRmgmIDs,gRmgmDEFs,gRmgmLABELs
     gRmgmIDs = [ID_RMGM1,ID_RMGM2,ID_RMGM3,ID_RMGM4,ID_RMGM5,ID_RMGM6,ID_RMGM7,ID_RMGM8,ID_RMGM9]
-    w = WizBAINStyledTextCtrl
-    gRmgmDEFs = [w.OnRMouseGestureMenu1,w.OnRMouseGestureMenu2,w.OnRMouseGestureMenu3,w.OnRMouseGestureMenu4,w.OnRMouseGestureMenuNone,w.OnRMouseGestureMenu6,w.OnRMouseGestureMenu7,w.OnRMouseGestureMenu8,w.OnRMouseGestureMenu9]
+    gRmgmDEFs = [gWizSTC.OnRMouseGestureMenu1,gWizSTC.OnRMouseGestureMenu2,gWizSTC.OnRMouseGestureMenu3,gWizSTC.OnRMouseGestureMenu4,gWizSTC.OnRMouseGestureMenuNone,gWizSTC.OnRMouseGestureMenu6,gWizSTC.OnRMouseGestureMenu7,gWizSTC.OnRMouseGestureMenu8,gWizSTC.OnRMouseGestureMenu9]
     gRmgmLABELs = [u'Find/Replace/Mark\tCtrl+1',u'Wizard\tCtrl+2',u'\tCtrl+3',u'Case\tCtrl+4',u'Right Clicky!\tCtrl+5',u'Conversion\tCtrl+6',u'Project Manipulation(NOT DONE)\tCtrl+7',u'Line Operations\tCtrl+8',u'Options\tCtrl+9',]
 
     global gImgIdx
     gImgIdx = {}
+    for filename in os.listdir(gImgDir):
+        if filename.endswith('.png'):
+            gImgIdx[u'%s'%filename] = wx.Bitmap(u'%s'%gImgDir + os.sep + u'%s'%filename,p)
     for filename in os.listdir(gImgStcDir):
         if filename.endswith('.png'):
             gImgIdx[u'%s'%filename] = wx.Bitmap(u'%s'%gImgStcDir + os.sep + u'%s'%filename,p)
+    for filename in os.listdir(gImgToolsDir):
+        if filename.endswith('.png'):
+            gImgIdx[u'%s'%filename] = wx.Bitmap(u'%s'%gImgToolsDir + os.sep + u'%s'%filename,p)
         # print filename
     # print gImgIdx
-
 def dprint(debugText):
     '''
     Usage: dprint(string)
