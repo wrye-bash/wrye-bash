@@ -51,10 +51,11 @@ If you're using the Standalone version, the only other thing you need to install
 If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:
 [spoiler]
 [list]
-  [*][url=http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi]Python 2.7.3[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
-  [*][url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe]wxPython 2.8.12.1 unicode for Python 2.7[/url]
-  [*][url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
-  [*][url=http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download]PyWin32 for Python 2.7[/url]
+  [*][url="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi"]Python 2.7.3[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
+  [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe"]wxPython 2.8.12.1 unicode for Python 2.7[/url]
+  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2[/url]
+  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url]
+  [*][url="http://effbot.org/downloads/#pil"]PIL 1.1.7 Win32 for Python 2.7[/url]
   [*]Other setups [i]may[/i] work, but this is the only officially supported setup.
   [*]Python 3.x: [b][u]NOT supported[/u][/b]
 [/list]
@@ -68,6 +69,7 @@ Then:
 [/list]
 [/spoiler]
 Remember! In Windows Vista and up, don't install Skyrim in the Program Files folder due to User Account Control! See [url==http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html#trouble-permissions]File Permissions[/url].
+See Also [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html#trouble-permissions"]File Permissions[/url]
 
 [b]Development[/b]:
 The project is hosted at [url=https://sourceforge.net/projects/oblivionworks/develop]SourceForge[/url]. You don't need a SourceForge account to create or add data to bug reports and feature requests  -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
@@ -122,21 +124,18 @@ Rinse and repeat when a new svn comes out.
 [/list]
 
 [b]Changelog for Latest Version[/b]:
-297.1 [2012/06/12] [Various community members]
-[spoiler]
-[list]
-[*]More updating of all Nexus URLs to their new formats. [Arthmoor]
-[*]Fixed autoNames error in Bashed Patch rebuilding. [Arthmoor]
-[*]Fixed Wrye Bash not prompting to back up old settings when launching a new version for the first time. [cdcooley, Alex Michael]
-[*]Various improvements for the WizBAIN Editor. [Metallicow]
-[*]Fixed load order being read incorrectly when Auto-Ghost was enabled. [WrinklyNinja]
-[*]Fixed Bash not opening due to datetime error. [Trira/Metallicow]
-[*]Added Create New Project dialog to Installers tab. [Metallicow]
-[*]Fixed Bash loading the BOSS API DLLs that are included with BOSS even if they are older than the DLLs included with Bash. [WrinklyNinja]
-[*]Fixed installer's URL for PyWin32 being invalid. [Alt3rn1ty]
-[*]Some more attempts at improving UI responsiveness. [cdcooley]
-[*]Fixed Bash not starting if loadorder.txt doesn't exist when running for Skyrim. [Anonymous submission]
-[*]Updated Russian translation. [Djk]
-[*]Fixed error that sometimes occurred when trying to deactivate a plugin. [cdcooley]
+[size=5]299 [2012/07/01] [Various community members][/size]
+[spoiler][list]
+[*]Fixed bug 3536117 (launcher icon error). [trira]
+[*]Bash fails to reorder the UI after running BOSS. [cdcooley]
+[*]Ongoing improvements to the installer system. [alt3rn1ty]
+[*]New INI Tweak: Large Interiors Static Limit Fix. Prevents CTDs with mods that have large custom interiors when trying to exit to a worldspace. [Arthmoor]
+[*]Updated path for GIMP in bash_default.ini for GIMP 2.8. [wrinklyninja]
+[*]Updated BAPI DLLs. This update adds load order / active plugins caching. Helps with UI lag issues. [wrinklyninja]
+[*]Further updates to the WizBAIN editor. [Metallicow]
+[*]Bug #3535826 No spells listed in Delete Spells... [trira]
+[*]Images relocated for readme files. [Metallicow]
+[*]Enhancement 3400257 Startup splash screen? [Metallicow]
 [/list]
+It looks small but it's definitely a major improvement.
 [/spoiler]
