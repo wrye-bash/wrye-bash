@@ -45,6 +45,7 @@ import bosh
 import basher
 import keywordWIZBAIN  # Keywords for BAIN Wizard stc
 import keywordWIZBAIN2 # Keywords2 for BAIN Wizard stc
+import settingsModule
 
 #--Python
 import os
@@ -2205,7 +2206,10 @@ class WizBAINStyledTextCtrl(stc.StyledTextCtrl):
         # else:
             # gDebugFrame.Show()
 
-
+            
+        win = settingsModule.SettingsDialog(self, -1, 'Settings')
+        win.Centre()
+        win.Show(True)
 
 
     def causeTraceback(self, event):
