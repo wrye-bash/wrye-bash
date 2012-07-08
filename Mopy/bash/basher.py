@@ -70,6 +70,7 @@ import subprocess
 import locale
 import win32gui
 import multiprocessing
+import webbrowser
 from types import *
 from operator import attrgetter,itemgetter
 
@@ -10560,7 +10561,7 @@ class Installer_OpenTesNexus(InstallerLink):
         message = _(u"Attempt to open this as a mod at TES Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_(u'Open at TES Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://oblivion.nexusmods.com/mods/'+id)
+            webbrowser.open(u'http://oblivion.nexusmods.com/mods/'+id)
 
 class Installer_OpenSkyrimNexus(InstallerLink):
     def AppendToMenu(self,menu,window,data):
@@ -10574,7 +10575,7 @@ class Installer_OpenSkyrimNexus(InstallerLink):
         message = _(u"Attempt to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_(u'Open at Skyrim Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://skyrim.nexusmods.com/mods/'+id)
+            webbrowser.open(u'http://skyrim.nexusmods.com/mods/'+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
@@ -10589,7 +10590,7 @@ class Installer_OpenSearch(InstallerLink):
         """Handle selection."""
         message = _(u"Open a search for this on Google?")
         if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_(u'Open a search')):
-            os.startfile(u'http://www.google.com/search?hl=en&q='+u'+'.join(re.split(ur'\W+|_+',bosh.reTesNexus.search(self.selected[0].s).group(1))))
+            webbrowser.open(u'http://www.google.com/search?hl=en&q='+u'+'.join(re.split(ur'\W+|_+',bosh.reTesNexus.search(self.selected[0].s).group(1))))
 
 class Installer_OpenTESA(InstallerLink):
     """Open selected file(s)."""
@@ -10605,7 +10606,7 @@ class Installer_OpenTESA(InstallerLink):
         message = _(u"Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_(u'Open at TES Alliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(2)
-            os.startfile(u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+id)
+            webbrowser.open(u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+id)
 
 class Installer_OpenPES(InstallerLink):
     """Open selected file(s)."""
@@ -10621,7 +10622,7 @@ class Installer_OpenPES(InstallerLink):
         message = _(u"Attempt to open this as a mod at Planet Elderscrolls? This assumes that the trailing digits in the package's name are actually the id number of the mod at Planet Elderscrolls. If this assumption is wrong, you'll just get a random mod page (or error notice) at Planet Elderscrolls.")
         if balt.askContinue(self.gTank,message,'bash.installers.openPES',_(u'Open at Planet Elderscrolls')):
             id = bosh.reTESA.search(self.selected[0].s).group(2)
-            os.startfile(u'http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
+            webbrowser.open(u'http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
 
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
@@ -12762,7 +12763,7 @@ class Settings_CheckForUpdates(Link):
                        ) % (currentStr, mainStr)
         if msg:
             if balt.askYes(self.window,msg,title):
-                os.startfile(u'http://oblivion.nexusmods.com/mods/22368')
+                webbrowser.open(u'http://oblivion.nexusmods.com/mods/22368')
 
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
@@ -17924,7 +17925,7 @@ class App_Button(StatusBar_Button):
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
-                os.startfile(self.exePath.s)
+                webbrowser.open(self.exePath.s)
             elif self.isJava:
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
@@ -18022,13 +18023,14 @@ class App_Button(StatusBar_Button):
                 except Exception, error:
                     # Most likely we're here because FindExecutable failed (no file association)
                     # Or because win32api import failed.  Try doing it using os.startfile
+                    # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
                     cwd = bolt.Path.getcwd()
                     if self.workingDir:
                         self.workingDir.setcwd()
                     else:
                         self.exePath.head.setcwd()
                     try:
-                        os.startfile(self.exePath.s)
+                        webbrowser.open(self.exePath.s)
                     except UnicodeError:
                         balt.showError(bashFrame,
                                        _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
