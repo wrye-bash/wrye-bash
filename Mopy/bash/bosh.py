@@ -7310,6 +7310,8 @@ class Installer(object):
         obseDir = bush.game.se.shortName.lower()+u'\\'
         skipSd = bush.game.sd.shortName and skipObse
         sdDir = bush.game.sd.installDir.lower()+u'\\'
+        skipSp = bush.game.sp.shortName and skipObse
+        spDir = bush.game.sp.installDir.lower()+u'\\'
         hasExtraData = self.hasExtraData
         type = self.type
         if type == 2:
@@ -7490,6 +7492,30 @@ class Installer(object):
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install an asi by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
                     if not balt.askYes(installersWindow,message,bush.game.sd.longName + _(u' ASI Warning')):
+                        badDlls.setdefault(fileLower,[])
+                        badDlls[fileLower].append([archiveRoot,size,crc])
+                        continue
+                    goodDlls.setdefault(fileLower,[])
+                    goodDlls[fileLower].append([archiveRoot,size,crc])
+            elif fileExt == u'.jar':
+                if skipSp: continue
+                if not fileStartsWith(spDir): continue
+                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
+                if not checkOBSE:
+                    pass
+                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
+                elif checkOBSE:
+                    message = u'\n'.join((
+                        _(u'This intaller (%s) has an %s patcher JAR.'),
+                        _(u'The file is %s'),
+                        _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
+                        _(u'Are you sure you want to install this?'),
+                        )) % (archiveRoot, bush.game.sp.longName, full)
+                    if fileLower in goodDlls:
+                        message += _(u' You have previously chosen to install a jar by this name but with a different size, crc and or source archive name.')
+                    elif fileLower in badDlls:
+                        message += _(u' You have previously chosen to NOT install a jar by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
+                    if not balt.askYes(installersWindow,message,bush.game.sp.longName + _(u' JAR Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue

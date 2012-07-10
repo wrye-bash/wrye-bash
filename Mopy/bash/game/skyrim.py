@@ -79,6 +79,12 @@ class sd:
     longName = u'Script Dragon'
     installDir = u'asi'
 
+#--SkyProc Patchers
+class sp:
+    shortName = u'SP'
+    longName = u'SkyProc'
+    installDir = u'SkyProc Patchers'
+
 #--Quick shortcut for combining both the SE and SD names
 se_sd = se.shortName+u'/'+sd.longName
 
@@ -11899,6 +11905,7 @@ dataDirsPlus = set((
     u'skse',
     u'ini',
     u'asi',
+    u'skyproc patchers',
     ))
 
 # Installer -------------------------------------------------------------------
