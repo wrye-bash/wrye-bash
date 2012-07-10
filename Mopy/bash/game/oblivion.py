@@ -81,6 +81,12 @@ class sd:
     longName = u''
     installDir = u''
 
+#--SkyProc Patchers
+class sp:
+    shortName = u''
+    longName = u''
+    installDir = u''
+
 #--Quick shortcut for combining the SE and SD names
 se_sd = se.shortName
 
