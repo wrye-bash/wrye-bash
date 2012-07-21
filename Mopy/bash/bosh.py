@@ -3974,6 +3974,17 @@ class Plugins:
                 self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
 
+    def removeMods(self, plugins, refresh=False):
+        """Removes the specified mods from the load order."""
+        # Use set to remove any duplicates
+        plugins = set(plugins,)
+        # Remove mods from cache
+        self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
+        self.selected  = [x for x in self.selected  if x not in plugins]
+        # Refresh BAPI
+        if refresh:
+            self.saveLoadOrder()
+            self.save()
 
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
@@ -9349,12 +9360,17 @@ class InstallersData(bolt.TankData, DataDict):
         emptyDirs = set()
         modsDir = dirs['mods']
         InstallersData.updateTable(removes, u'')
+        removedPlugins = []
         for file in removes:
+            if reModExt.search(file.s):
+                removedPlugins.append(file)
             path = modsDir.join(file)
             path.remove()
             (path+u'.ghost').remove()
             del data_sizeCrcDate[file]
             emptyDirs.add(path.head)
+        #--Remove mods from load order
+        modInfos.plugins.removeMods(removedPlugins, True)
         #--Remove empties
         for emptyDir in emptyDirs:
             if emptyDir.isdir() and not emptyDir.list():
