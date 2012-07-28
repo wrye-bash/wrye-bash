@@ -2243,6 +2243,16 @@ class ModList(List):
         ##Ctrl+A
         elif event.CmdDown() and code == ord('A'):
             self.SelectAll()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for mod in selected:
+                    clipData.AddFile(self.data[mod].getPath().s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
 
     def OnColumnResize(self,event):
@@ -3087,9 +3097,20 @@ class SaveList(List):
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
+        code = event.GetKeyCode()
         ##Ctrl+A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and code == ord('A'):
             self.SelectAll()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for save in selected:
+                    clipData.AddFile(self.data[save].getPath().s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3767,6 +3788,16 @@ class InstallersList(balt.Tank):
                 self.ClearSelected()
                 self.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
                 self.gList.EditLabel(index)
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for installer in selected:
+                    clipData.AddFile(bosh.dirs['installers'].join(installer).s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
 
 
@@ -4532,9 +4563,20 @@ class ScreensList(List):
 
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
+        code = event.GetKeyCode()
         ##Ctrl-A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and code == ord('A'):
             self.SelectAll()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for screenshot in selected:
+                    clipData.AddFile(bosh.screensData.dir.join(screenshot).s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
 
     #--Column Resize
