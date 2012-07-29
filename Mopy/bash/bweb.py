@@ -37,11 +37,7 @@ import subprocess
 startupinfo = None
 if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
-    try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    except:
-        import _subprocess
-        startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
-
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
 class Nexus:
     #--Regex's for parsing Nexus site URLs
@@ -70,6 +66,7 @@ class Nexus:
         reFileGroupStart = self.reFileGroupStart
         reFileStart = self.reFileStart
         reFileEnd = self.reFileEnd
+        reFileName = self.reFileName
         reFileVersion = self.reFileVersion
 
         inGroup = {}
@@ -88,7 +85,7 @@ class Nexus:
         currentVersion = None
         currentUrl = None
 
-        url = urllib2.urlopen(url)
+        url = urllib2.urlopen(urlFiles)
         for line in url:
             maFileGroupStart = reFileGroupStart.match(line)
             if maFileGroupStart:

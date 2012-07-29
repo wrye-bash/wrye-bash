@@ -322,6 +322,17 @@ def joinModGroup(group,offset):
     else:
         return group
 
+def PrintFormID(fid):
+    # PBash short Fid
+    if isinstance(fid,(long,int)):
+        print '%08X' % fid
+    # PBash long FId
+    elif isinstance(fid, tuple):
+        print '(%s, %06X)' % (fid[0],fid[1])
+    # CBash / other(error)
+    else:
+        print repr(fid)
+
 # Mod Blocks, File ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MasterMapError(BoltError):
@@ -3917,8 +3928,12 @@ class Plugins:
     def loadActive(self):
         """Get list of active plugins from plugins.txt through BAPI which cleans out bad entries."""
         self.selected = boss.GetActivePlugins() # GPath list (but not sorted)
-        self.mtimePlugins = self.pathPlugins.mtime
-        self.sizePlugins = self.pathPlugins.size
+        if self.pathPlugins.exists():
+            self.mtimePlugins = self.pathPlugins.mtime
+            self.sizePlugins = self.pathPlugins.size
+        else:
+            self.mtimePlugins = 0
+            self.sizePlugins = 0
 
 
     def loadLoadOrder(self):
@@ -5221,7 +5236,8 @@ class ModInfos(FileInfos):
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
         self.bashed_patches.clear()
-        for modName in self.keys():
+        selfKeys = self.keys()
+        for modName in selfKeys:
             modInfo = modInfos[modName]
             mtime = modInfo.mtime
             mtime_mods.setdefault(mtime,[]).append(modName)
@@ -12111,6 +12127,8 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
     def readEffectsFromText(self, fields):
         effects = []
         _effects = fields[12:]
+        actorValueName_Number = UsesEffectsMixin.actorValueName_Number
+        aliases = self.aliases
         while len(_effects) >= 13:
             _effect, _effects = _effects[1:13], _effects[13:]
             name,magnitude,area,duration,range,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
@@ -14062,7 +14080,7 @@ class ModCleaner:
                                     copy(size)
                 #--Save
                 if changed:
-                    modInfo.makeBackup()
+                    cleaner.modInfo.makeBackup()
                     try:
                         path.untemp()
                     except WindowsError, werr:
@@ -14074,7 +14092,7 @@ class ModCleaner:
                                                 _(u'Please close the other program that is accessing %s.')
                                                 + u'\n\n' +
                                                 _(u'Try again?')
-                                                ) % (modPath.stail,modPath.stail),modPath.stail+_(u' - Save Error')):
+                                                ) % (path.stail,path.stail),path.stail+_(u' - Save Error')):
                             try:
                                 path.untemp()
                             except WindowsError,werr:
@@ -14082,7 +14100,7 @@ class ModCleaner:
                             break
                         else:
                             raise
-                    modInfo.setmtime()
+                    cleaner.modInfo.setmtime()
                 else:
                     path.temp.remove()
 
