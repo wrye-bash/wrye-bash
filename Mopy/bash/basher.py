@@ -12736,76 +12736,6 @@ class Settings_CheckForUpdates(Link):
 
     def Execute(self,event):
         bashFrame.updater.InitiateUpdate(True)
-        return
-
-        if main:
-            maxMain = max([x[1] for x in main])
-        else:
-            maxMain = (0,)
-        beta = versions.get('optional files',[])
-        if beta:
-            maxBeta = max([x[1] for x in beta])
-        else:
-            maxBeta = (0,)
-        currentStr = u'.'.join([u'%s'%x for x in currentVersion])
-        mainStr = u'.'.join([u'%s'%x for x in maxMain])
-        betaStr = u'.'.join([u'%s'%x for x in maxBeta])
-
-        msg = None
-        title = _(u'Check for updates')
-        if currentVersion > maxMain:
-            # User has a Beta/RC/SVN version
-            if currentVersion > maxBeta:
-                # SVN
-                balt.showOk(self.window,
-                    _(u"No new versions of Wrye Bash are available at TESNexus, however you appear to be using an SVN release (%s).  Be sure to check for updates with your SVN client.")
-                    % currentStr,
-                    title)
-                return
-            elif currentVersion == maxBeta:
-                # Beta/RC, up to date
-                balt.showOk(self.window,
-                    _(u"Wrye Bash is currently up to date (%s).")
-                    % currentStr,
-                    title)
-                return
-            else: # currentVersion < maxBeta
-                # Beta/RC, not up to date
-                msg = (_(u"You appear to be using a Beta/RC release of Wrye Bash (%s).  A newer Beta/RC is available (%s).")
-                       + u'\n\n' +
-                       _(u'Would you like to visit TESNexus to download the Beta/RC version?')
-                       ) % (currentStr,betaStr)
-        elif currentVersion == maxMain:
-            # User has current Stable version
-            if currentVersion >= maxBeta:
-                # And it's >= whatever Beta/RC is available
-                balt.showOk(self.window,
-                    _(u"Wrye Bash is currently up to date (%s).")
-                    % currentStr,
-                    title)
-                return
-            else: # currentVersion < maxBeta
-                # But there's a 'better' Beta/RC available
-                msg = (_(u"Wrye Bash is currently up to date (%s), but a newer Beta/RC is available (%s).")
-                       + u'\n\n' +
-                       _(u'Would you like to visit TESNexus to download the Beta/RC version?')
-                       ) % (currentStr, betaStr)
-        else: # currentVersion < maxMain
-            # Using an older version
-            if currentVersion < maxBeta and maxBeta > maxMain:
-                # There's also a new Beta/RC available
-                msg = (_(u"You are using an older version of Wrye Bash (%s).  There is a newer stable release (%s) and a newer Beta/RC release (%s).")
-                       + u'\n\n' +
-                       _(u'Would you like to visit TESNexus to download one of these versions?')
-                       ) % (currentStr, mainStr, betaStr)
-            else:
-                msg = (_(u'You are using an older version of Wrye Bash (%s).  There is a newer stable release available (%s).')
-                       + u'\n\n' +
-                       _(u'Would you like to visit TESNexus to download the updated version?')
-                       ) % (currentStr, mainStr)
-        if msg:
-            if balt.askYes(self.window,msg,title):
-                webbrowser.open(u'http://oblivion.nexusmods.com/mods/22368')
 
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
@@ -13304,7 +13234,7 @@ class MasterList_CleanMasters(Link):
                 group = [removeKey,
                               _(u'These master files are not referenced within the mod, and can safely be removed.'),
                               ]
-                group.extend(remove)
+                group.extend(removed)
                 checklists = [group]
                 dialog = ListBoxes(bashFrame,_(u'Remove these masters?'),
                                         _(u'The following master files can be safely removed.'),
@@ -13315,15 +13245,14 @@ class MasterList_CleanMasters(Link):
                 id = dialog.ids[removeKey]
                 checks = dialog.FindWindowById(id)
                 if checks:
-                    for i,mod in enumerate(remove):
+                    for i,mod in enumerate(removed):
                         if not checks.IsChecked(i):
                             newMasters.append(mod)
 
                 modFile.TES4.masters = newMasters
                 modFile.save()
                 dialog.Destroy()
-                if toRemove:
-                    print _(u'to remove:'), toRemove
+                deprint(u'to remove:', removed)
             else:
                 balt.showOk(self.window,_(u'No Masters to clean.'),
                             _(u'Clean Masters'))
@@ -13964,7 +13893,7 @@ class Mod_SkipDirtyCheckInvert(Link):
             fileInfo = bosh.modInfos[fileName]
             ignoreDiry = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDiry)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(self.data)
 
 #------------------------------------------------------------------------------
 class Mod_SkipDirtyCheck(Link):
