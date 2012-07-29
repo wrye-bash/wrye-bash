@@ -260,6 +260,7 @@ class ModReader:
         zero-terminated string."""
         if self.hasStrings:
             if size != 4:
+                endPos = self.ins.tell() + size
                 raise ModReadError(self.inName,recType,endPos,self.size)
             id, = self.unpack('I',4,recType)
             if id == 0: return u''

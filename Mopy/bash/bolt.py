@@ -51,10 +51,7 @@ import chardet
 startupinfo = None
 if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
-    try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-    except:
-        import _subprocess
-        startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
 #-- Forward declarations
 class Path(object): pass
@@ -1642,7 +1639,14 @@ class DataDict:
                     import bush
                     return self.data[Path(bush.game.masterFiles[0])]
                 except:
-                    return self.data[Path(u'Oblivion.esm')]
+                    try:
+                        return self.data[Path(u'Oblivion.esm')]
+                    except:
+                        print
+                        print "An error occurred trying to access data for mod file:", key
+                        print "This can occur when the game's main ESM file is corrupted."
+                        print
+                        raise
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):

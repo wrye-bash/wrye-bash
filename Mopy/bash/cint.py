@@ -2888,7 +2888,7 @@ class FNVDestructable(BaseComponent):
         FieldID = self._FieldID + 4
         length = _CGetFieldAttribute(self._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1)
         _CSetField(self._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0, c_ulong(length + 1))
-        return Stage(self._RecordID, FieldID, length)
+        return self.Stage(self._RecordID, FieldID, length)
     stages = CBashLIST_GROUP(4, Stage)
     stages_list = CBashLIST_GROUP(4, Stage, True)
     IsVATSTargetable = CBashBasicFlag('flags', 0x01)
@@ -6515,7 +6515,7 @@ class FnvSCOLRecord(FnvBaseRecord):
         def create_placement(self):
             length = _CGetFieldAttribute(self._RecordID, self._FieldID, self._ListIndex, 2, 0, 0, 0, 0, 1)
             _CSetField(self._RecordID, self._FieldID, self._ListIndex, 2, 0, 0, 0, 0, 0, c_ulong(length + 1))
-            return Placement(self._RecordID, self._FieldID, self._ListIndex, 2, length)
+            return self.Placement(self._RecordID, self._FieldID, self._ListIndex, 2, length)
         placements = CBashLIST_LIST(2, Placement)
         placements_list = CBashLIST_LIST(2, Placement, True)
 
@@ -6543,7 +6543,7 @@ class FnvSCOLRecord(FnvBaseRecord):
     def create_static(self):
         length = _CGetFieldAttribute(self._RecordID, 18, 0, 0, 0, 0, 0, 0, 1)
         _CSetField(self._RecordID, 18, 0, 0, 0, 0, 0, 0, 0, c_ulong(length + 1))
-        return Static(self._RecordID, 18, length)
+        return self.Static(self._RecordID, 18, length)
     statics = CBashLIST(18, Static)
     statics_list = CBashLIST(18, Static, True)
 
@@ -7687,7 +7687,7 @@ class FnvCREARecord(FnvBaseRecord):
     def create_soundTyp(self):
         length = _CGetFieldAttribute(self._RecordID, 82, 0, 0, 0, 0, 0, 0, 1)
         _CSetField(self._RecordID, 82, 0, 0, 0, 0, 0, 0, 0, c_ulong(length + 1))
-        return SoundType(self._RecordID, 82, length)
+        return self.SoundType(self._RecordID, 82, length)
     soundTypes = CBashLIST(82, SoundType)
     soundTypes_list = CBashLIST(82, SoundType, True)
 
