@@ -1408,59 +1408,6 @@ def createLSCR(*args):
 """Very temporary functions."""
 #--Temp
 @mainfunc
-def temp(fileName=None):
-    import psyco
-    psyco.full()
-    init(3)
-    testClasses = (bosh.MreWrld,bosh.MreCell,bosh.MreAcre,bosh.MreAchr,bosh.MreRefr)
-    loadFactory = bosh.LoadFactory(False,*testClasses)
-    modInfo = bosh.modInfos[GPath(fileName)]
-    modFile = bosh.ModFile(modInfo,loadFactory)
-    modFile.load(True)
-    strf = bosh.strFid
-    for cb in modFile.CELL.cellBlocks:
-        print cb.cell.full,strf(cb.cell.fid)
-        cb.cell.setChanged()
-        for attr in ('persistent','temp','distant'):
-            #print ' ',attr
-            for record in getattr(cb,attr):
-                #print '   ',strf(record.fid)
-                record.setChanged()
-    for wb in modFile.WRLD.worldBlocks:
-        print wb.world.full,strf(wb.world.fid)
-        for cb in wb.cellBlocks:
-            print '.',cb.cell.full,strf(cb.cell.fid)
-            cb.cell.setChanged()
-            for attr in ('persistent','temp','distant'):
-                #print ' ',attr
-                for record in getattr(cb,attr):
-                    #print '   ',strf(record.fid)
-                    record.setChanged()
-    modFile.tes4.masters.append(modInfo.name)
-    modFile.tes4.setChanged()
-    outInfo = bosh.ModInfo(modInfo.dir,GPath("Wrye Dump.esp"))
-    modFile.fileInfo = outInfo
-    loadFactory.keepAll = True
-    modFile.askSave()
-    return
-    for record in modFile.SCPT.getActiveRecords():
-        print record.eid
-        out = GPath(record.eid+'.mws').open('w')
-        out.write(record.scriptText)
-        out.close()
-    return
-    #--Save to test file
-    for testClass in testClasses:
-        print testClass.classType
-        for record in getattr(modFile,testClass.classType).records:
-            #print record.eid
-            if reBarExt.match(record.model.modPath):
-                record.model.modPath = reBarExt.sub(r'Architecture\\BarabusCrypt',record.model.modPath)
-                print record.eid, record.model.modPath
-                record.setChanged()
-    modFile.askSave(True)
-
-@mainfunc
 def balancer(fileName=None):
     """Generates part of the balancing scripts for Cobl Races Balanced."""
     init(3)
@@ -1564,7 +1511,7 @@ class Archive:
         path = size = crc = isDir = 0
 
         command = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
-        command = Encode(command,'mbcs')
+        command = command.encode('mbcs')
         out = Popen(command, stdout=PIPE).stdout
         for line in out:
             print line,
@@ -1590,7 +1537,7 @@ class Archive:
     def extract(self):
         """Extracts specified files from archive."""
         command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.exe7z,self.path.s)
-        command = Encode(command,'mbcs')
+        command = command.encode('mbcs')
         out = Popen(command, stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         for line in out:

@@ -820,7 +820,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator(u'<:', self.opLc, ScriptParser.OP.CO1, passTokens=False)   # Case insensitive <
         #Membership operators
         self.SetOperator(u'in', self.opIn, ScriptParser.OP.MEM, passTokens=False)
-        self.SetOperator(u'in:', self.opInc, ScriptParser.OP.MEM, passTokens=False) # Case insensitive in
+        self.SetOperator(u'in:', self.opInCase, ScriptParser.OP.MEM, passTokens=False) # Case insensitive in
         #Boolean
         self.SetOperator(u'&' , self.opAnd, ScriptParser.OP.AND)
         self.SetOperator(u'and', self.opAnd, ScriptParser.OP.AND)
@@ -1075,7 +1075,7 @@ class WryeParser(ScriptParser.Parser):
             return l < r
     # Membership tests
     def opIn(self, l, r): return l in r
-    def opInc(self, l, r):
+    def opInCase(self, l, r):
         try:
             l.lower() in r.lower()
         except:
