@@ -6225,13 +6225,6 @@ class ModRuleSet:
 
 #------------------------------------------------------------------------------
 
-# Not sure if Bash (or Python) has a version comparison function, here's one courtesy of 
-# stack overflow. http://stackoverflow.com/questions/1714027/version-number-comparison
-def BapiVersionCmp(version1, version2):
-    def normalize(v):
-        return [int(x) for x in re.sub(r'(\.0+)*$','', v).split(".")]
-    return cmp(normalize(version1), normalize(version2))
-
 class ConfigHelpers:
     """Encapsulates info from mod configuration helper files (BOSS masterlist, etc.)"""
 
@@ -6239,11 +6232,7 @@ class ConfigHelpers:
         """Initialialize."""
         #--Boss Master List or if that doesn't exist use the taglist
         # version notes:
-        #  Support for < 1.8 is dropped.  Support is for
-        #  1.8+, additionally, the BOSS API v2.0 is bundled with
-        #  Wrye Bash.  If a higher version of the BOSS API is detected
-        #  as installed, and it's compatibly with Wrye Bash's bapi.py,
-        #  Wrye Bash will use the higher version.
+        #  Support for < 1.8 is dropped. Support is for 1.8+.
 
         # Detect locally installed (into game folder) BOSS
         if dirs['app'].join(u'BOSS',u'BOSS.exe').exists():
@@ -6271,40 +6260,11 @@ class ConfigHelpers:
         except ImportError:
             pass
 
-        # Need to compare the API in BOSS's directory with the API Bash has and choose the newest (compatible) one.
-        localBapiVersion = u'0.0.0'
-        remoteBapiVersion = u'0.0.0'
-        # Load local API and set its version string.
+        
         bapi.Init(dirs['compiled'].s)
-        if bapi.BAPI:
-            deprint(u'Loaded the BOSS API from:',dirs['compiled'].s)
-            localBapiVersion = bapi.version
-        # Now load up the API from the BOSS directory and set its version string.
-        try:
-            bapi.Init(dirs['boss'].join(u'API').s)
-            if bapi.BAPI:
-                deprint(u'Loaded the BOSS API from:',dirs['boss'].join(u'API').s)
-                remoteBapiVersion = bapi.version
-        except bapi.BossVersionError:
-            deprint(u"The BOSS API found in BOSS's installation directory (%s) is not compatible with Wrye Bash's usage." % dirs['boss'].s)
-        # Now compare the two versions.
-        deprint(u'Comparing version strings from the two (if the API is included in a detected BOSS install) loaded BOSS APIs.')
-        deprint(u'Remote BAPI vesion: ', remoteBapiVersion)
-        deprint(u'Local BAPI version: ', localBapiVersion)
-        if (BapiVersionCmp(remoteBapiVersion, localBapiVersion) > 0): # Use remote version.
-            try:
-                bapi.Init(dirs['boss'].join(u'API').s)
-                if bapi.BAPI:
-                    deprint(u'Loaded the BOSS API from:',dirs['boss'].join(u'API').s)
-            except bapi.BossVersionError:
-                deprint(u"The BOSS API found in BOSS's installation directory (%s) is not compatible with Wrye Bash's usage." % dirs['boss'].s)
-        else:
-            bapi.Init(dirs['compiled'].s)
-            if bapi.BAPI:
-                deprint(u'Loaded the BOSS API from:',dirs['compiled'].s)
-        # That didn't work either - Wrye Bash isn't installed correctly
+        # That didn't work - Wrye Bash isn't installed correctly
         if not bapi.BAPI:
-            raise bolt.BoltError(u'A compatible BOSS API could not be loaded.')
+            raise bolt.BoltError(u'The BOSS API could not be loaded.')
             
 
         global boss
