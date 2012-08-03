@@ -247,6 +247,14 @@ def dumpTranslator(outPath,language,*files):
     return outTxt
 
 def initTranslator(language=None,path=None):
+    if not language:
+        try:
+            language = locale.getlocale()[0].split('_',1)[0]
+            language = _encode(language)
+        except UnicodeError:
+            deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
+            # Default to English
+            language = u'English'
     language = language or locale.getlocale()[0].split(u'_',1)[0]
     path = path or os.path.join(u'bash',u'l10n')
     if language.lower() == u'german': language = u'de'
@@ -284,9 +292,7 @@ def initTranslator(language=None,path=None):
 #--Do translator test and set
 if locale.getlocale() == (None,None):
     locale.setlocale(locale.LC_ALL,u'')
-language = bass.language or locale.getlocale()[0].split(u'_',1)[0]
-if language.lower() == u'german': language = u'de' #--Hack for German speakers who aren't 'DE'.
-initTranslator(language)
+initTranslator(bass.language)
 
 CBash = 0
 images_list = {
