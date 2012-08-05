@@ -255,7 +255,6 @@ def initTranslator(language=None,path=None):
             deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
             # Default to English
             language = u'English'
-    language = language or locale.getlocale()[0].split(u'_',1)[0]
     path = path or os.path.join(u'bash',u'l10n')
     if language.lower() == u'german': language = u'de'
     txt,po,mo = (os.path.join(path,language+ext)
