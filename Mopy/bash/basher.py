@@ -1005,10 +1005,7 @@ class SashTankPanel(NotebookPanel):
         """Panel is shown. Update self.data."""
         if self.gList.data.refresh():
             self.gList.RefreshUI()
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.gList.gList.GetColumnCount()):
-                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
-        self.SetStatusCount()
+        super(SashTankPanel).OnShow()
 
     def OnSashDrag(self,event):
         """Handle sash moved."""
@@ -5431,6 +5428,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def OnShowPage(self,event):
         """Call page's OnShow command."""
         if event.GetId() == self.GetId():
+            bolt.GPathPurge()
             self.GetPage(event.GetSelection()).OnShow()
             event.Skip()
 
@@ -6567,6 +6565,9 @@ class BashFrame(wx.Frame):
 
     def SaveSettings(self):
         """Save application data."""
+        # Purge some memory
+        bolt.GPathPurge()
+        # Clean out unneeded settings
         self.CleanSettings()
         if docBrowser: docBrowser.DoSave()
         if not (self.IsIconized() or self.IsMaximized()):
@@ -7957,7 +7958,7 @@ class PatchDialog(wx.Dialog):
         patchConfigs = {'ImportedMods':set()}
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
-        table.setItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',patchConfigs)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',patchConfigs)
         table.save()
 
     def ImportConfig(self,event=None):
@@ -7972,15 +7973,15 @@ class PatchDialog(wx.Dialog):
         table = bolt.Table(bosh.PickleDict(
             textPath, pklPath))
         #try the current Bashed Patch mode.
-        patchConfigs = table.getItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
+        patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
         if not patchConfigs: #try the old format:
-            patchConfigs = table.getItem(bolt.Path(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
+            patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
             if patchConfigs:
                 configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
                 if configIsCBash != self.doCBash:
                     patchConfigs = self.UpdateConfig(patchConfigs)
             else:   #try the non-current Bashed Patch mode:
-                patchConfigs = table.getItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
+                patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
                 if patchConfigs:
                     patchConfigs = self.UpdateConfig(patchConfigs)
         if patchConfigs is None:
@@ -12032,6 +12033,13 @@ class Mods_Deprint(Link):
         deprint(_(u'Debug Printing: Off'))
         bolt.deprintOn = not bolt.deprintOn
         deprint(_(u'Debug Printing: On'))
+        bolt.GPath_RefCount()
+        print
+        print 'Cleaning'
+        bolt.GPath_Clean()
+        print
+        print 'After cleaning:'
+        bolt.GPath_RefCount()
 
 #------------------------------------------------------------------------------
 class Mods_FullBalo(BoolLink):
@@ -12850,7 +12858,7 @@ class Settings_Languages(Link):
             menu.AppendMenu(self.id,_(u'Language'),subMenu)
             for language in languages:
                 Settings_Language(language.s).AppendToMenu(subMenu,window,data)
-            if bolt.Path('english') not in languages:
+            if GPath('english') not in languages:
                 Settings_Language('English').AppendToMenu(subMenu,window,data)
         else:
             menuItem = wx.MenuItem(menu,self.id,_(u'Language'),
@@ -15034,6 +15042,8 @@ class Mod_Patch_Update(Link):
 
     def Execute(self,event):
         """Handle activation event."""
+        # Clean up some memory
+        bolt.GPathPurge()
         # Create plugin dictionaries -- used later. Speeds everything up! Yay!
         fullLoadOrder   = bosh.modInfos.plugins.LoadOrder   #CDC used this cached value no need to requery
 
@@ -15308,7 +15318,7 @@ class Mod_ExportPatchConfig(Link):
         if not outPath: return
         pklPath = outPath+u'.pkl'
         table = bolt.Table(bosh.PickleDict(outPath, pklPath))
-        table.setItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
         table.save()
 
 #------------------------------------------------------------------------------
