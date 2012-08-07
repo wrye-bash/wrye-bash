@@ -12033,13 +12033,6 @@ class Mods_Deprint(Link):
         deprint(_(u'Debug Printing: Off'))
         bolt.deprintOn = not bolt.deprintOn
         deprint(_(u'Debug Printing: On'))
-        bolt.GPath_RefCount()
-        print
-        print 'Cleaning'
-        bolt.GPath_Clean()
-        print
-        print 'After cleaning:'
-        bolt.GPath_RefCount()
 
 #------------------------------------------------------------------------------
 class Mods_FullBalo(BoolLink):
