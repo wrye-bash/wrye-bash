@@ -9340,6 +9340,8 @@ class InstallersData(bolt.TankData, DataDict):
         for file in removes:
             if reModExt.search(file.s):
                 removedPlugins.append(file)
+				# Line below added to hopefully stop mtime error for ghosted plugins.
+                removedPlugins.append(file+u'.ghost')
             path = modsDir.join(file)
             path.remove()
             (path+u'.ghost').remove()
