@@ -681,7 +681,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
                 bolt.WryeText.genHtml(ins,out,cssDir)
             ins.close()
             logText = logPath
-        os.startfile(logText.s)
+        webbrowser.open(logText.s)
         return
 
     #--Sizing
