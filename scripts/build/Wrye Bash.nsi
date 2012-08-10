@@ -1435,7 +1435,6 @@ NoComTypes:
                 SetOutPath "$Path_OB\Mopy\Bash Patches\Oblivion"
                 File /r "Mopy\Bash Patches\Oblivion\*.*"
                 SetOutPath $Path_OB\Data\Docs
-                File /r "Data\Docs\*.*"
                 SetOutPath "$Path_OB\Mopy\INI Tweaks\Oblivion"
                 File /r "Mopy\INI Tweaks\Oblivion\*.*"
                 ; Write the installation path into the registry
@@ -1472,7 +1471,6 @@ NoComTypes:
                 SetOutPath "$Path_Nehrim\Mopy\Bash Patches\Oblivion"
                 File /r "Mopy\Bash Patches\Oblivion\*.*"
                 SetOutPath $Path_Nehrim\Data\Docs
-                File /r "Data\Docs\*.*"
                 SetOutPath "$Path_Nehrim\Mopy\INI Tweaks\Oblivion"
                 File /r "Mopy\INI Tweaks\Oblivion\*.*"
                 ; Write the installation path into the registry
@@ -1507,7 +1505,6 @@ NoComTypes:
                 SetOutPath "$Path_Skyrim\Mopy\Bash Patches\Skyrim"
                 File /r "Mopy\Bash Patches\Skyrim\*.*"
                 SetOutPath $Path_Skyrim\Data\Docs
-                File /r "Data\Docs\*.*"
                 SetOutPath "$Path_Skyrim\Mopy\INI Tweaks\Skyrim"
                 File /r "Mopy\INI Tweaks\Skyrim\*.*"
                 ; Write the installation path into the registry
