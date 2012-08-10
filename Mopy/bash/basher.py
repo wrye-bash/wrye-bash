@@ -6530,7 +6530,7 @@ class BashFrame(wx.Frame):
             message = _(u"Lock Load Order is now %s.  To change it in the future, right click on the main list header on the Mods tab and select 'Lock Load Order'.")
             balt.showOk(self,message % ((_(u'off'),_(u'on'))[lockTimes],),_(u'Lock Load Order'))
         #--Missing docs directory?
-        testFile = GPath(bosh.dirs['app']).join(u'Data',u'Docs',u'wtxt_teal.css')
+        testFile = GPath(bosh.dirs['mopy']).join(u'Docs',u'wtxt_teal.css')
         if not self.incompleteInstallError and not testFile.exists():
             self.incompleteInstallError = True
             message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
@@ -7800,7 +7800,7 @@ class PatchDialog(wx.Dialog):
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
-                docsDir = bosh.modInfos.dir.join(u'Docs')
+                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
@@ -7896,7 +7896,7 @@ class PatchDialog(wx.Dialog):
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
-                docsDir = bosh.modInfos.dir.join(u'Docs')
+                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
@@ -18569,7 +18569,7 @@ def InitSettings():
     settings.loadDefaults(settingDefaults)
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join(u'WryeLogTemp.html')
-    settings['balt.WryeLog.cssDir'] = bosh.dirs['mods'].join(u'Docs')
+    settings['balt.WryeLog.cssDir'] = bosh.dirs['mopy'].join(u'Docs')
     #--StandAlone version?
     settings['bash.standalone'] = hasattr(sys,'frozen')
     initPatchers()
