@@ -265,7 +265,7 @@ Unofficial Oblivion Patch DV.esp
 Unofficial Oblivion Patch-mobs.esp
  TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackages, Actors.CombatStyle, Actors.DeathItem, Actors.Stats, C.Climate, C.Light, C.Music, C.Name, C.Owner, Creatures.Blood, Delev, Factions, Invent, NPC.Class, Names, Relations, Relev, Scripts, Stats}} and remove [C.Water] tag.
 UOPS Additional Changes.esp
- TAG: {{BASH: Actors.ACBS, Actors.AIPackages, Actors.Stats, NPC.Class, Relev, Stats}}
+ TAG: {{BASH: Relev, Stats}}
 Primate Rank Fix.esp
  TAG: {{BASH: Factions}}
 Obl-IM.esp
@@ -328,16 +328,16 @@ Beautiful Women Vwalk Full UOS.esp
  TAG: {{BASH: Actors.Anims, NpcFaces, NoMerge}}
 Colourwheels Sexy Female NPCs Vwalk UOS.esp
  TAG: {{BASH: Actors.Anims, NpcFaces, NoMerge}}
-IF ($FCOM) MOD: Francesco's Optional Chance of Stronger Enemies.esp
- IF($FCOM)&&IF(4F003DB0|"Francesco's Optional Chance of Stronger Enemies.esp") DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-IF ($FCOM) MOD: Francesco's Optional Leveled Guards.esp
- IF ($FCOM) TAG: {{BASH: Actors.ACBS, Actors.Stats}}
-IF ($FCOM) MOD: Francesco's Dark Seducer Weapons Patch.esp
- IF ($FCOM) TAG: {{BASH: Delev, Relev}}
-IF ($FCOM) MOD: Francescos Dark Seducer Weapons Patch.esp
- IF ($FCOM) TAG: {{BASH: Delev, Relev}}
-IF ($FCOM) MOD: FranDarkSeducerWeapFix.esp
- IF ($FCOM) TAG: {{BASH: Delev, Relev}}
+IF($FCOM) MOD: Francesco's Optional Chance of Stronger Enemies.esp
+ IF(4F003DB0|"Francesco's Optional Chance of Stronger Enemies.esp") DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+IF($FCOM) MOD: Francesco's Optional Leveled Guards.esp
+ TAG: {{BASH: Actors.ACBS, Actors.Stats}}
+IF($FCOM) MOD: Francesco's Dark Seducer Weapons Patch.esp
+ TAG: {{BASH: Delev, Relev}}
+IF($FCOM) MOD: Francescos Dark Seducer Weapons Patch.esp
+ TAG: {{BASH: Delev, Relev}}
+IF($FCOM) MOD: FranDarkSeducerWeapFix.esp
+ TAG: {{BASH: Delev, Relev}}
 OMOBS_FRAN.esp
  TAG: {{BASH: NoMerge, Stats}}
 7roads_screens.esp
@@ -501,7 +501,7 @@ OBSE-Storms & Sound SI.esp
  IF(3E9AC1E2|"OBSE-Storms & Sound SI.esp") DIRTY: 46 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 SnakeLightningSpeed.esp
  TAG: {{BASH: Graphics}}
-Rainbows.esp
+REGEX: Rainbows(_1C)?\.esp
  IF(71BDDEC0|"Rainbows.esp") DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Better Rainbows.esp
  IF(71BDDEC0|"Better Rainbows.esp") DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -980,6 +980,8 @@ bbClothesFinal.esp
  TAG: {{BASH: Graphics}}
 BetterBedroll.esp
  TAG: {{BASH: Invent}}
+Better Unique Items.esp
+ TAG: {{BASH: Graphics}}
 Belles Bouteilles.esp
  TAG: {{BASH: Graphics}}
 BlackGlovesEng.esp
@@ -1046,6 +1048,8 @@ dwr.esp
 dragon weapons.esp
  TAG: {{BASH: Invent}}
 doofdillas_potions_recolored_unsorted_v0_2_1.esp
+ TAG: {{BASH: Graphics, Names}}
+doofdillas_potions_recolored_sorted_v0_2_1.esp
  TAG: {{BASH: Graphics, Names}}
 doofdillas_potions_recolored_sorted_v0_3_1.esp
  TAG: {{BASH: Graphics, Names}}
@@ -1165,13 +1169,7 @@ Nicoroshi Creations DW heavy.esp
  IF(99B70AED|"Nicoroshi Creations DW heavy.esp") DIRTY: 1 ITM, 20 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Obsidian armor.esp
  TAG: {{BASH: Graphics}}
-Oddbasket Glass Replace NoEnch.esp
- TAG: {{BASH: Graphics}}
-Oddbasket Glass Replace.esp
- TAG: {{BASH: Graphics}}
-Oddbasket Glass Replace NoEnch ALT.esp
- TAG: {{BASH: Graphics}}
-Oddbasket Glass Replace ALT.esp
+REGEX: Oddbasket Glass Replace(RU)?( NoEnch)?( ALT)?\.esp
  TAG: {{BASH: Graphics}}
 pale_rider's Paladin Equipment_enchanted_eng.esp
  IF(A277829D|"pale_rider's Paladin Equipment_enchanted_eng.esp") DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -1374,7 +1372,7 @@ Colourwheels Sexy Stock Armor & Clothing Replacer.esp
 Colourwheels Sexy SI Armor & Clothing Replacer.esp
  TAG: {{BASH: Graphics}}
 DMRA BBB Armamentarium Complete.esp
- TAG: {{BASH:Graphics}}
+ TAG: {{BASH: Graphics, NoMerge}}
 TGND2 Armamentarium Replacer.esp
  TAG: {{BASH: Graphics}}
 IFNOT("Colourwheels Sexy Oblivion OverHaul.esp") MOD: DMRA BBB Complete Clothing and Armor Replacer.esp
@@ -1547,9 +1545,6 @@ RealBanditsAndHighwaymen.esp
  TAG: {{BASH: Invent}}
 SIRMS.esp
  TAG: {{BASH: Invent, Names}}
-Weapon Expansion Pack for Oblivion Nthusiasts.esp
- TAG: {{BASH: Delev, Graphics, Invent, Names, Relev, Scripts, Stats}}
- IF(13F4CF76|"Weapon Expansion Pack for Oblivion Nthusiasts.esp") DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Ranokoas Organized Potions.esp
  TAG: {{BASH: Names, Deactivate}} If not using Wrye Bash load with overrides but then incompatible with most overhauls etc.
 DLCThievesDen.esp
@@ -1567,11 +1562,9 @@ ThievesDen_MOBS.esp
  TAG: {{BASH: Deactivate, NoMerge, Stats}}
 ORM-TamriellicGlassDLC7.esp
  TAG: {{BASH: Graphics}}
-IFNOT ($FCOM) MOD: Fran Armor Add-on.esp
- IFNOT ($FCOM) TAG: {{BASH: Invent}}
-IFNOT ($FCOM) MOD: Francesco's Optional Chance of Stronger Enemies.esp
- IFNOT($FCOM)&&IF(4F003DB0|"Francesco's Optional Chance of Stronger Enemies.esp") DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-IFNOT ($FCOM) MOD: Francesco's Optional Leveled Guards.esp
+IFNOT($FCOM) MOD: Fran Armor Add-on.esp
+ TAG: {{BASH: Invent}}
+IFNOT($FCOM) MOD: Francesco's Optional Leveled Guards.esp
  TAG: {{BASH: Actors.ACBS, Actors.Stats}}
 Francesco's Optional Files.esp
  TAG: {{BASH: Delev, Relev}}
@@ -1583,12 +1576,12 @@ Francesco's Optional Files 3.esp
  TAG: {{BASH: Delev, Relev}}
 Francesco's Optional Files 4.esp
  TAG: {{BASH: Delev, Relev}}
-IFNOT ($FCOM) MOD: Francesco's Dark Seducer Weapons Patch.esp
- IFNOT ($FCOM) TAG: {{BASH: Delev, Relev}}
-IFNOT ($FCOM) MOD: Francescos Dark Seducer Weapons Patch.esp
- IFNOT ($FCOM) TAG: {{BASH: Delev, Relev}}
-IFNOT ($FCOM) MOD: FranDarkSeducerWeapFix.esp
- IFNOT ($FCOM) TAG: {{BASH: Delev, Relev}}
+IFNOT($FCOM) MOD: Francesco's Dark Seducer Weapons Patch.esp
+ TAG: {{BASH: Delev, Relev}}
+IFNOT($FCOM) MOD: Francescos Dark Seducer Weapons Patch.esp
+ TAG: {{BASH: Delev, Relev}}
+IFNOT($FCOM) MOD: FranDarkSeducerWeapFix.esp
+ TAG: {{BASH: Delev, Relev}}
 Slof's Oblivion Robe Trader.esp
  TAG: {{BASH: Graphics}}
  IF(2613C2F9|"Slof's Oblivion Robe Trader.esp") DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -1617,8 +1610,7 @@ FCOM_WarCry.esp
  TAG: {{BASH: Delev, Relev, Stats}}
 FCOM_WarCryNoSpawn.esp
  TAG: {{BASH: Stats}}
-Oscuro's_Oblivion_Overhaul.esp
- TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackages, Actors.CombatStyle, Actors.Spells, Actors.Stats, Delev, Factions, Graphics, Invent, Names, R.ChangeSpells, Relations, Relev, Scripts, Stats}}
+% {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackages, Actors.CombatStyle, Actors.Spells, Actors.Stats, Delev, Factions, Graphics, Invent, Names, R.ChangeSpells, Relations, Relev, Scripts, Stats}}
  IF("Mart's Monster Mod for OOO.esm")||IF($FCOM) TAG: Remove [Factions, Relations] tag, when used as part of FCOM or with MMM for OOO. More info("http://u.to/PCQMAg")
  DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
 OMOBS_OOO_missing_Oblivion_Bow_Ammo.esp
@@ -1750,13 +1742,13 @@ FCOM_Cobl.esp
 MTCDirtierBandits.esp
  TAG: {{BASH: Invent}}
  IF(2AB190D0|"MTCDirtierBandits.esp") DIRTY: 0 ITM, 10 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-IF ($FCOM) MOD: Mart's Monster Mod - Additional Enemy NPC Vars.esp
- IF ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-FCOM_Convergence.esp
- TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackagesForceAdd, Actors.CombatStyle, Actors.DeathItem, Actors.Spells, Actors.SpellsForceAdd, Actors.Stats, Delev, Factions, Graphics, Invent, Names, Relations, Relev, Scripts, Stats}}
+IF($FCOM) MOD: Mart's Monster Mod - Additional Enemy NPC Vars.esp
  DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IF ($FCOM) MOD: Mart's Monster Mod - Diverse Runeskulls.esp
- IF ($FCOM) TAG: {{BASH: Delev, Relev}}
+FCOM_Convergence.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackages, Actors.CombatStyle, Actors.DeathItem, Actors.Spells, Actors.SpellsForceAdd, Actors.Stats, Delev, Factions, Graphics, Invent, Names, Relations, Relev, Scripts, Stats}}
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IF($FCOM) MOD: Mart's Monster Mod - Diverse Runeskulls.esp
+ TAG: {{BASH: Delev, Relev}}
 FCOM_RealSwords.esp
  TAG: {{BASH: Delev, Relev}}
 FCOM_SpawnRatesReduced.esp
@@ -1765,19 +1757,21 @@ FCOM_SpawnRatesSlightlyReduced.esp
  TAG: {{BASH: Delev, Relev}}
 FCOM_SpawnRatesStronger.esp
  TAG: {{BASH: Delev, Relev}}
-IF ($FCOM) MOD: Mart's Monster Mod - More Wilderness Life No Gates.esp
- IF ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IF($FCOM) MOD: Mart's Monster Mod - More Wilderness Life No Gates.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
 FCOM_SaferRoads.esp
  TAG: {{BASH: Delev, Relev}}
-IF ($FCOM) MOD: Mart's Monster Mod - Gems & Gem Dust.esp
- IF ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IF ($FCOM) MOD: Mart's Monster Mod - Hunting & Crafting.esp
- IF ($FCOM) TAG: {{BASH: Invent, Scripts, Stats}}
- IF ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IF ($FCOM) MOD: MMM - Playable Undead Armors.esp
- IF ($FCOM) TAG: {{BASH: Invent}}
-IF ($FCOM) MOD: MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
- IF ($FCOM) TAG: {{BASH: Invent}}
+IF($FCOM) MOD: Mart's Monster Mod - Gems & Gem Dust.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IF($FCOM) MOD: Mart's Monster Mod - Hunting & Crafting.esp
+ TAG: {{BASH: Invent, Scripts, Stats}}
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IF($FCOM) MOD: Mart's Monster Mod - Farm Animals.esp
+ IF(A00E61D1|"Mart's Monster Mod - Farm Animals.esp") DIRTY: 8 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+IF($FCOM) MOD: MMM - Playable Undead Armors.esp
+ TAG: {{BASH: Invent}}
+IF($FCOM) MOD: MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
+ TAG: {{BASH: Invent}}
 Mart's Monster Mod.esp
  TAG: {{BASH: Actors.AIData, Actors.AIPackages, Actors.Stats, Delev, Factions, Graphics, Invent, Names, Relations, Relev, Scripts, Stats}}
 Mart's Monster Mod for Fran.esp
@@ -1798,24 +1792,26 @@ Mart's Monster Mod for OOO COBL Races TNR.esp
  TAG: {{BASH: NpcFaces, NoMerge}}
 Mart's Monster Mod for OOO - COBL Races TNR.esp
  TAG: {{BASH: NpcFaces, NoMerge}}
-IFNOT ($FCOM) MOD: Mart's Monster Mod - Shivering Isles.esp
- IFNOT ($FCOM) TAG: {{BASH: Actors.AIData, Actors.AIPackages, Actors.Stats, Delev, Factions, Graphics, Invent, Names, Relations, Relev, Scripts, Stats}}
-IFNOT ($FCOM) MOD: Mart's Monster Mod - Additional Enemy NPC Vars.esp
- IFNOT ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IFNOT ($FCOM) MOD: Mart's Monster Mod - Diverse Runeskulls.esp
- IFNOT ($FCOM) TAG: {{BASH: Delev, Relev}}
-IFNOT ($FCOM) MOD: Mart's Monster Mod - Gems & Gem Dust.esp
- IFNOT ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IFNOT ($FCOM) MOD: Mart's Monster Mod - Hunting & Crafting.esp
- IFNOT ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IFNOT ($FCOM) MOD: Mart's Monster Mod - More Wilderness Life No Gates.esp
- IFNOT ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IFNOT ($FCOM) MOD: ^ Incompatible with Better Cities - City Defences.
- IFNOT ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
-IFNOT ($FCOM) MOD: MMM - Playable Undead Armors.esp
- IFNOT ($FCOM) TAG: {{BASH: Invent}}
-IFNOT ($FCOM) MOD: MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
- IFNOT ($FCOM) TAG: {{BASH: Invent}}
+IFNOT($FCOM) MOD: Mart's Monster Mod - Shivering Isles.esp
+ TAG: {{BASH: Actors.AIData, Actors.AIPackages, Actors.Stats, Delev, Factions, Graphics, Invent, Names, Relations, Relev, Scripts, Stats}}
+IFNOT($FCOM) MOD: Mart's Monster Mod - Additional Enemy NPC Vars.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IFNOT($FCOM) MOD: Mart's Monster Mod - Diverse Runeskulls.esp
+ TAG: {{BASH: Delev, Relev}}
+IFNOT($FCOM) MOD: Mart's Monster Mod - Gems & Gem Dust.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IFNOT($FCOM) MOD: Mart's Monster Mod - Hunting & Crafting.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IFNOT($FCOM) MOD: Mart's Monster Mod - More Wilderness Life No Gates.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IFNOT($FCOM) MOD: Mart's Monster Mod - City Defences.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IFNOT($FCOM) MOD: Mart's Monster Mod - Farm Animals.esp
+ IF(A00E61D1|"Mart's Monster Mod - Farm Animals.esp") DIRTY: 8 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+IFNOT($FCOM) MOD: MMM - Playable Undead Armors.esp
+ TAG: {{BASH: Invent}}
+IFNOT($FCOM) MOD: MMM - Playable Undead Armors - Oblivion WarCry Compatability Patch.esp
+ TAG: {{BASH: Invent}}
 Mart's Monster Mod - Slof Horses Complete.esp
  TAG: {{BASH: Actors.AIPackages, Graphics, Scripts, Names}}
 Marts Monster Mod - DLCHorseArmor+Slof.esp
@@ -1954,7 +1950,7 @@ Balance Settings.esp
  TAG: {{BASH: Delev, Relev}}
 Sagerbliv Weapons v20.esp
  TAG: {{BASH: Stats, Names}}
-IF ($FCOM) MOD: Mart's Monster Mod - Shivering Isles.esp
+IF($FCOM) MOD: Mart's Monster Mod - Shivering Isles.esp
  TAG: {{BASH: Actors.AIData, Actors.AIPackages, Actors.Stats, Delev, Factions, Graphics, Invent, Names, Relations, Relev, Scripts, Stats}}
 Mart's Monster Mod - Legion Shield Replacer.esp
  TAG: {{BASH: Graphics}}
@@ -2159,6 +2155,9 @@ IABaneOils 100.esp
  TAG: {{BASH: Factions}}
 Modified Bandits.esp
  TAG: {{BASH: Delev}}
+Weapon Expansion Pack for Oblivion Nthusiasts.esp
+ TAG: {{BASH: Delev, Graphics, Invent, Names, Relev, Scripts, Stats}}
+ IF(13F4CF76|"Weapon Expansion Pack for Oblivion Nthusiasts.esp") DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Morroblivion item rebalance.esp
  TAG: {{BASH: Stats}}
 Enhanced Quest Roleplaying.esp
@@ -2249,6 +2248,8 @@ ArtifactsFemaleArmor.esp
  TAG: {{BASH: Graphics, NoMerge}}
 dmra_bbb_artifacts.esp
  TAG: {{BASH: Graphics, NoMerge}}
+DMRA BBB Artifacts Complete.esp
+ TAG: {{BASH:Graphics, NoMerge}}
 ATW_Castle_Vet_v1.3.esp
  IF(AB48455D|"ATW_Castle_Vet_v1.3.esp") DIRTY: 0 ITM, 14 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Auriel's_Retreat.esp
@@ -2276,6 +2277,8 @@ Better Abandoned House - Interior Only.esp
  TAG: {{BASH: C.Name, C.Owner, Graphics, Names}}
 Better Abandoned House - Complete.esp
  TAG: {{BASH: C.Name, C.Owner, Graphics, Names}}
+Better Camps.esp
+ IF(79278151|"Better Camps.esp") DIRTY: 21 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Better Dark Brotherhood Sanctuary.esp
  TAG: {{BASH: Names, NpcFaces}}
  IF(C208F695|"Better Dark Brotherhood Sanctuary.esp") DIRTY: 0 ITM, 3 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -2406,8 +2409,6 @@ Fireflys Extended Cities Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 _Faithless_EV.esp
  IF(FAF6592A|"_Faithless_EV.esp") DIRTY: 99 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-Fighters Guild Quests.esp
- TAG: {{BASH: Actors.ACBS, Actors.AIPackages}}
 FHWS.esp
  IF(1F1BB9FC|"FHWS.esp") DIRTY: 422 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Fort Ferrion.esp
@@ -2555,6 +2556,8 @@ LetThePeopleDrink-fountainonly-Cobl.esp
 LordKain_Adash_World Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 Lost_Happ.esp
+ TAG: {{BASH: Names}}
+ IF(F65694F1|"Lost_Happ.esp") DIRTY: 450 ITM, 36 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IF(42EFBD66|"Lost_Happ.esp") DIRTY: 447 ITM, 36 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 LostSwordOfTheAylied.esp
  IF(DD4B7009|"LostSwordOfTheAylied.esp") DIRTY: 2 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -2761,6 +2764,8 @@ The Dragon Citadel.esp
  TAG: {{BASH: SpellStats}}
 The forgotten Castle.esp
  TAG: {{BASH: Hair}}
+The Retreat-AN compatible.esp
+ TAG: {{BASH: C.Climate}}
 TLC2.esp
  IF(8AC7051F|"TLC2.esp") DIRTY: 113 ITM, 5 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 TheElderCouncil.esp
@@ -2777,6 +2782,9 @@ TheStorytellersBrotherQuest.esp
  IF(2414A8EF|"TheStorytellersBrotherQuest.esp")||IF(3B237D7C|"TheStorytellersBrotherQuest.esp") DIRTY: 17 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 thievery.esp
  IF(D5951BC9|"thievery.esp") DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ToiletMod.esp
+ IF(873BFCF0|"ToiletMod.esp") DIRTY: 74 ITM, 88 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide".
+ IF(83840533|"ToiletMod.esp") DIRTY: 74 ITM, 89 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide".
 TolawaylAyleidCity_Quest.esp
  IF(C5C868BD|"TolawaylAyleidCity_Quest.esp") DIRTY: 26 ITM, 18 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide". Also deletes a door in the Cheydinhal Castle Private Quarters. 
 tq3-Blood-and-Gold.esp
@@ -3125,8 +3133,8 @@ Shadowcrest_Vineyard.esp
  IF(497EDBA5|"Shadowcrest_Vineyard.esp") DIRTY: 34 ITM, 57 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Shadowcrest_Vineyard_COBL.esp
  IF(9FD89158|"Shadowcrest_Vineyard_COBL.esp") DIRTY: 34 ITM, 57 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-IF ($FCOM) MOD: ^ Incompatible with Better Cities - City Defences.
- IF ($FCOM) DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+IF($FCOM) MOD: Mart's Monster Mod - City Defences.esp
+ DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
 FCOM_Knights.esp
  TAG: {{BASH: Delev, Factions, Relations, Relev}}
 FCOM_SlofsHorses.esp
@@ -3729,7 +3737,11 @@ Shadow's Balance Price Fixv2.0.esp
  TAG: {{BASH: Stats, Deactivate}}
 Shadow's Merged Value FixesNOBLOODPOTv2.0.esp
  TAG: {{BASH: Stats, Deactivate}}
+Shadow's Merged Value Fixesv1.1.esp
+ TAG: {{BASH: Stats, Deactivate}}
 Shadow's Merged Value Fixesv2.0.esp
+ TAG: {{BASH: Stats, Deactivate}}
+Shadow's Merged Value Fixesv3.0.esp
  TAG: {{BASH: Stats, Deactivate}}
 Mage_Guild_Teleport.esp
  IF(E5DFD452|"Mage_Guild_Teleport.esp") DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -4356,6 +4368,8 @@ Kaleencolors.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
 KaleencolorsP2.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
+Labidori.esp
+ TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
 lady_of_the_lake.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
 Lima.esp
@@ -4953,6 +4967,10 @@ KendoGirl_Final.esp
  TAG: {{BASH: Hair, Eyes}}
 MarcAntony.esp
  TAG: {{BASH: Hair, Eyes}}
+Marg Lena V5.esp
+ TAG: {{BASH: Hair, Eyes}}
+ IF(7C97A712|"Marg Lena V5.esp") DIRTY: 65 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IF(D7869FF8|"Marg Lena V5.esp") DIRTY: 65 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Nec-Character_Eva.esp
  TAG: {{BASH: Hair, Eyes}}
 Nec Character Eva-Remake.esp

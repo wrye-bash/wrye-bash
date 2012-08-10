@@ -9,7 +9,7 @@ SurvivalistIngenuity.esp
 SIRW.esp
  TAG: {{BASH: Delev, Relev}} not tested
 Economics of Skyrim.esp
- TAG: {{ BASH: Delev,Relev }}
+ TAG: {{BASH: Delev, Relev}}
 REGEX: 83Willows_101BUGs_.+\.esp
  TAG: {{BASH: Delev, Relev}}
 Bandits Wear Helmets.esp
@@ -17,8 +17,8 @@ Bandits Wear Helmets.esp
 Barrels and Crates.esp
  TAG: {{BASH: Relev}}
 BetterFishAdded.esp
- TAG: {{BASH: Relev}} not tested
-Crafting300.esp
+ TAG: {{BASH: Relev}}
+IFNOT(FFCC056A|"Crafting300.esp")&&IFNOT(50142D0D|"Crafting300.esp") MOD: Crafting300.esp
  TAG: {{BASH: Delev, Relev}}
 DecorativeTrophies.esp
  TAG: {{BASH: Relev}}
@@ -30,16 +30,6 @@ Deleveled Skyrim - Enemies Wildlife.esp
  TAG: {{BASH: Delev, Relev}}
 Deleveled Skyrim - Enemies (No Dragons).esp
  TAG: {{BASH: Delev, Relev}}
-Deleveled Skyrim - SkyMoMod_list.esp
- TAG: {{BASH: Delev, Relev}}
-Deleveled Skyrim - SkyMoMod_list (No EleTri).esp
- TAG: {{BASH: Delev, Relev}}
-Deleveled Skyrim - SkyMoMod_list (No EleTriSta).esp
- TAG: {{BASH: Delev, Relev}}
-Deleveled Skyrim - 3rdEraWeaponsMoS.esp
- TAG: {{BASH: Delev, Relev}}
-Deleveled Skyrim - JSwords.esp
- TAG: {{BASH: Delev, Relev}}
 Deleveled Skyrim - TCOSS.esp
  TAG: {{BASH: Delev, Relev}}
 Dragons in the Wild.esp
@@ -49,6 +39,8 @@ GenebrisTreasureChests.esp
 GlaiceLootMod.esp
  TAG: {{BASH: Delev, Relev}}
 HigherLevelEnemies.esp
+ TAG: {{BASH: Relev}}
+HighlandFarmMilk.esp
  TAG: {{BASH: Relev}}
 Ish's Respec Mod.esp
  TAG: {{BASH: Relev}}
@@ -68,7 +60,7 @@ REGEX: Prides of Skyrim( weak)?\.esp
  TAG: {{BASH: Delev, Relev}} not tested
 REGEX: Realistic Wildlife Loot V.+\.esp
  TAG: {{BASH: Delev, Relev}}
-Realistic Wildlife Loot - IMCN.esp
+REGEX: Realistic Wildlife Loot -( IMCN)?( Realistic| Reduced)\.esp
  TAG: {{BASH: Delev, Relev}}
 REGEX: Real Wildlife Skyrim.*\.esp
  TAG: {{BASH: Relev}}
@@ -82,6 +74,8 @@ SkyMoMod.esp
  TAG: {{BASH: Delev, Relev}}
 SkyMoMod_lists.esp
  TAG: {{BASH: Delev, Relev}}
+REGEX: Deleveled Skyrim - SkyMoMod_list( \(No EleTri\)| \(No EleTriSta\))\.esp
+ TAG: {{BASH: Delev, Relev}}
 Skyrim Scaling Stopper - Misc Edits.esp
  TAG: {{BASH: Delev, Relev}}
 Skyrim Scaling Stopper - Vanilla Dragon Scaling Patch.esp
@@ -90,13 +84,13 @@ smithingextended.esp
  TAG: {{BASH: Delev, Relev}}
 SPTDiverseGuardsSkyrim.esp
  TAG: {{BASH: Delev}}
-REGEX: Tamriel Compendium( Skill Book Version)?\.esp
+REGEX: Tamriel Compendium( -)?( Skill Book Version)?\.esp
  TAG: {{BASH: Relev}}
 REGEX: Tytanis\w{0,2}(GER)?\.esp
  TAG: {{BASH: Delev, Relev}}
 xFenWSOWAF.esp
  TAG: {{BASH: Delev, Relev}}
-Arcania_armory.esp
+REGEX: Arcania_armory( \(base\))?\.esp
  TAG: {{BASH: Relev}}
 armorkits.esp
  TAG: {{BASH: Relev}}
@@ -108,9 +102,15 @@ REGEX: Lorecraft - Cloaks( No Imperial| Player Only)?\.esp
  TAG: {{BASH: Relev}}
 1nivWICCloaks.esp
  TAG: {{BASH: Relev}}
-1nivWICCloaksCRAFT.esp
+IFNOT($BFNIAP) MOD: hothtrooper44_ArmorCompilation.esp
  TAG: {{BASH: Relev}}
+Deleveled Skyrim - JSwords.esp
+ TAG: {{BASH: Delev, Relev}}
+SkyRe_Plugin_JaySuSSwords_1.3D.esp
+ TAG: {{BASH: Delev}}
 Omegared99-LvLList-CompOnly.esp
+ TAG: {{BASH: Relev}}
+REGEX: (High|Medium|Standard|Uber)-..Percent\.esp
  TAG: {{BASH: Relev}}
 Omegared99-Compilation-NPC Plugin.esp
  TAG: {{BASH: Relev}}
@@ -118,26 +118,36 @@ PIVariety.esp
  TAG: {{BASH: Delev, Relev}}
 ShShortswords.esp
  TAG: {{BASH: Delev, Relev}}
+stalhrimstandalone2.esp
+ TAG: {{BASH: Relev}}
 StormcloakArmorVariety.esp
  TAG: {{BASH: Relev}}
 TCOSS.esp
  TAG: {{BASH: Delev, Relev}}
+ThalmorNoGlass.esp
+ TAG: {{BASH: Delev}}
+ThalmorEliteArmor.esp
+ TAG: {{BASH: Delev}}
 REGEX: Weapons of the Third Era.+\.esp
  TAG: {{BASH: Relev}}
 REGEX: WeaponsOf3E(-alpha|-beta|_Replacer)?\.esp
  TAG: {{BASH: Relev}}
 3rdEraWeaponsMoS.esp
  TAG: {{BASH: Delev, Relev}}
+3rdEraWeapMoS-lvlList.esp
+ TAG: {{BASH: Delev, Relev}}
+Deleveled Skyrim - 3rdEraWeaponsMoS.esp
+ TAG: {{BASH: Delev, Relev}}
 Wyrmslayer.esp
  TAG: {{BASH: Delev, Relev}}
 WVExpansion.esp
  TAG: {{BASH: Delev, Relev}}
+IF($BFNIAP) MOD: hothtrooper44_ArmorCompilation.esp
+ TAG: {{BASH: Relev}}
 Crafting 300 Basic.esp
  TAG: {{BASH: Delev, Relev}}
 EpicEndeavours.esp
  TAG: {{BASH: Delev, Relev}}
-Mighty Dragons.esp
- TAG: {{BASH: Delev, Relev}} not tested
 PISE.esp
  TAG: {{BASH: Delev, Relev}}
 WeaponsOf3E Beta PISE Compatibility Plugin.esp
@@ -176,9 +186,17 @@ REGEX: DeadlyDragonsPISE( DV)?\.esp
  TAG: {{BASH: Delev, Relev}} not tested
 REGEX: DeadlyDragonsHardPISE( DV)?\.esp
  TAG: {{BASH: Delev, Relev}} not tested
+Odahviing Mighty Dragons.esp
+ TAG: {{BASH: Delev, Relev}}
+REGEX: (Soft)?(Super)?(Nightmare)?(Slighty| Slighty)?(Mighty| Mighty)? Dragons( Unleveled)?\.esp
+ TAG: {{BASH: Delev, Relev}}
 REGEX: SkyrimCoinReplacer.*\.esp
  TAG: {{BASH: Delev}}
+IFNOT("SkyRe_Main.esp") MOD: Morrowloot.esp
+ TAG: {{BASH: Delev, Relev}}
 xFenWSOWAFW3E.esp
+ TAG: {{BASH: Delev, Relev}}
+armorLegion.esp
  TAG: {{BASH: Delev, Relev}}
 Fast Respawns And Rich Merchants.esp
  TAG: {{BASH: Relev}}
@@ -194,8 +212,6 @@ REGEX: RichMerchants\w*\.esp
  TAG: {{BASH: Relev}}
 Skyrim_Dragon Update.esp
  TAG: {{BASH: Delev, Relev}}
-SkyRe_Main.esp
- TAG: {{BASH: Relev, Delev}}
 Skyrim Creatures Alive.esp
  TAG: {{BASH: Relev, Delev}}
 Unlevelled World.esp
@@ -205,9 +221,9 @@ Unlevelled World - War in Skyrim II Patch.esp
 Skyrim Creatures Alive.esp
  TAG: {{BASH: Relev, Delev}}
 WiS IV - Double ArrowDamage.esp
- TAG: {{BASH: NoMerge}}
+ TAG: {{BASH: Stats}}
 WiS IV - Double Arrow Damage.esp
- TAG: {{BASH: NoMerge}}
+ TAG: {{BASH: Stats}}
 Ancient Spells.esp
  TAG: {{BASH: Relev}}
 PISE-Reduced Potions.esp
@@ -217,6 +233,14 @@ Enchanted Items Overhaul.esp
 NightEye_Ench+Potion+Spell.esp
  TAG: {{BASH: Relev}}
 Skyrim Scaling Stopper.esp
+ TAG: {{BASH: Delev, Relev}}
+SkyRe_Main.esp
+ TAG: {{BASH: Relev, Delev}}
+SkyRe_EnemyScaling.esp
+ TAG: {{BASH: Relev}}
+SkyRe_Enemies.esp
+ TAG: {{BASH: Relev}}
+IF("SkyRe_Main.esp") MOD: Morrowloot.esp
  TAG: {{BASH: Delev, Relev}}
 Water FX - Get Wet.esp
  IF("Chesko_Frostfall.esp") TAG: {{BASH: Deactivate, NoMerge}} already included in 'Chesko_Frostfall.esp'
