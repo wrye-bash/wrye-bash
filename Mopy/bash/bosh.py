@@ -3948,8 +3948,8 @@ class Plugins:
             self.sizeOrder = self.pathOrder.size
             if self.selected != modInfos.getOrdered(self.selected,False):
                 modInfos.plugins.saveLoadOrder()
+                self.selected = modInfos.getOrdered(self.selected,False)
                 deprint("Mismatched Load Order Corrected")
-                modInfos.mtimesReset = ['PLUGINS']
 
     def save(self):
         """Write data to Plugins.txt file."""
