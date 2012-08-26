@@ -13457,7 +13457,7 @@ class MreLvsp(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-#COED handler needs added to LVLO
+#COED handler needs added to LVLO but is unused with LVSP
 #Once COED handler is added this is correct
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
@@ -13571,6 +13571,28 @@ class MreVtyp(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DNAM','B',(MreVtyp.VtypTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DNAM Needs syntax verification for flags
+# If DNAM syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreEyes(MelRecord):
+
+    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'playable'),
+            (1, 'not_male'),
+            (2, 'not_female'),
+        ))
+
+    """Eyes Item"""
+    classType = 'EYES'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelString('ICON','icon'),
+        MelStruct('DNAM','B',(MreEyes.EyesTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
