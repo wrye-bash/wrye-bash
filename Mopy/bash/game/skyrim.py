@@ -12749,7 +12749,7 @@ class MelColorN(MelStruct):
         def __init__(self):
                 MelStruct.__init__(self,'CNAM','=4Bs',
                         'red','green','blue','unused')
-												
+
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
 #var
 #  Container  : IwbContainer;
@@ -12927,45 +12927,45 @@ class MelMODS(MelBase):
 class MelBODT(MelStruct):
     """Body Type data"""
     btFlags = bolt.Flags(0L,bolt.Flags.getNames(
-			(0, 'head'),
-			(1, 'hair'),
-			(2, 'body'),
-			(3, 'hands'),
-			(4, 'forearms'),
-			(5, 'amulet'),
-			(6, 'ring'),
-			(7, 'feet'),
-			(8, 'calves'),
-			(9, 'shield'),
-			(10, 'body addon 1 / tail'),
-			(11, 'long hair'),
-			(12, 'circlet'),
-			(13, 'bodyaddon2'),
-			(14, 'dragon_head'),
-			(15, 'dragon_lwing'),
-			(16, 'dragon_rwing'),
-			(17, 'dragon_body'),
-			(18, 'bodyaddon7'),
-			(19, 'bodyaddon8'),
-			(20, 'decapate head'),
-			(21, 'decapate'),
-			(22, 'bodyaddon9'),
-			(23, 'bodyaddon10'),
-			(24, 'bodyaddon11'),
-			(25, 'bodyaddon12'),
-			(26, 'bodyaddon13'),
-			(27, 'bodyaddon14'),
-			(28, 'bodyaddon15'),
-			(29, 'bodyaddon16'),
-			(30, 'bodyaddon17'),
-			(31, 'fx01'),
+            (0, 'head'),
+            (1, 'hair'),
+            (2, 'body'),
+            (3, 'hands'),
+            (4, 'forearms'),
+            (5, 'amulet'),
+            (6, 'ring'),
+            (7, 'feet'),
+            (8, 'calves'),
+            (9, 'shield'),
+            (10, 'bodyaddon1/tail'),
+            (11, 'long_hair'),
+            (12, 'circlet'),
+            (13, 'bodyaddon2'),
+            (14, 'dragon_head'),
+            (15, 'dragon_lwing'),
+            (16, 'dragon_rwing'),
+            (17, 'dragon_body'),
+            (18, 'bodyaddon7'),
+            (19, 'bodyaddon8'),
+            (20, 'decapate_head'),
+            (21, 'decapate'),
+            (22, 'bodyaddon9'),
+            (23, 'bodyaddon10'),
+            (24, 'bodyaddon11'),
+            (25, 'bodyaddon12'),
+            (26, 'bodyaddon13'),
+            (27, 'bodyaddon14'),
+            (28, 'bodyaddon15'),
+            (29, 'bodyaddon16'),
+            (30, 'bodyaddon17'),
+            (31, 'fx01'),
         ))
     otherFlags = bolt.Flags(0L,bolt.Flags.getNames(
-			(0, 'modulates_voice'), #{>>> From ARMA <<<}
-			(1, 'unknown_2'),
-			(2, 'unknown_3'),
-			(3, 'unknown_4'),
-			(4, 'non_playable'), #{>>> From ARMO <<<}
+            (0, 'modulates_voice'), #{>>> From ARMA <<<}
+            (1, 'unknown_2'),
+            (2, 'unknown_3'),
+            (3, 'unknown_4'),
+            (4, 'non_playable'), #{>>> From ARMO <<<}
         ))
     armorTypes = {
         0:'Light Armor',
@@ -13115,7 +13115,7 @@ class MreAact(MelRecord):
     classType = 'AACT'
     melSet = MelSet(
         MelString('EDID','eid'),
-				MelColorN(),
+        MelColorN(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -13158,7 +13158,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelBase('DATA','data_p'),
-				MelOptStruct('SNAM','I',(FID,'foodSound')),
+        MelOptStruct('SNAM','I',(FID,'foodSound')),
         MelBase('DNAM','flags'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -13212,7 +13212,7 @@ class MreArmo(MelRecord):
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-				MelString('BMCT','ragcontemp'), #Ragdoll Constraint Template
+        MelString('BMCT','ragcontemp'), #Ragdoll Constraint Template
         MelOptStruct('ETYP','I',(FID,'equipType')),
         MelOptStruct('BIDS','I',(FID,'bashImpact')),
         MelOptStruct('BAMT','I',(FID,'material')),
@@ -13234,7 +13234,7 @@ class MreAmmo(MelRecord):
     classType = 'AMMO'
     # TODO: verify these flags for Skyrim
     _flags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon'))
-		#{0x00000001} 'Ignores Normal Weapon Resistance',
+    #{0x00000001} 'Ignores Normal Weapon Resistance',
     #{0x00000002} 'Non-Playable', -- If set it is not Playable
     #{0x00000004} 'Non-Bolt' -- If set it is not a Bolt / This would not be set for Bolts in Dawnguard  
 
@@ -13243,7 +13243,7 @@ class MreAmmo(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-				MelString('ICON','icon'),
+        MelString('ICON','icon'),
         MelString('MICO','mico_n'),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -13251,7 +13251,7 @@ class MreAmmo(MelRecord):
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','fIff','projectileformID',(_flags,'flags',0L),'damage','value'),
-				MelString('ONAM','short_name'),
+        MelString('ONAM','short_name'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -13267,18 +13267,18 @@ class MreAnio(MelRecord):
         MelString('BNAM','unk'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-		
+
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAppa(MelRecord):
     """Appa record (Alchemical Apparatus)"""
-		#QUAL is an Enum
-		#  0, 'Novice',
+    #QUAL is an Enum
+    #  0, 'Novice',
     #  1, 'Apprentice',
     #  2, 'Journeyman',
     #  3, 'Expert',
     #  4, 'Master'
-		#DATA is Value and Weight
+    #DATA is Value and Weight
     #  Integer ('Value', itU32), (4 Bytes)
     #  Float ('Weight'), (4 Bytes)
 
@@ -13309,8 +13309,8 @@ class MreAppa(MelRecord):
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
     """Arto record (Art effect object)"""
-		#DNAM Flags
-		#{0x00000001} 'Magic Casting',
+    #DNAM Flags
+    #{0x00000001} 'Magic Casting',
     #{0x00000002} 'Magic Hit Effect',
     #{0x00000004} 'Enchantment Effect'
     classType = 'ARTO'
@@ -13340,8 +13340,8 @@ class MreAspc(MelRecord):
 #------------------------------------------------------------------------------
 class MreAstp(MelRecord):
     """Astp record (Association type)"""
-		#DATA Flags
-		#{0x00000001} 'Related'
+    #DATA Flags
+    #{0x00000001} 'Related'
 
     classType = 'ASTP'
     _flags = bolt.Flags(0L,bolt.Flags.getNames('related'))
@@ -13478,6 +13478,104 @@ class MreMisc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+#------------------------------------------------------------------------------
+
+class MreSpgd(MelRecord):
+    """Spgd Item"""
+    classType = 'SPGD'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # When 48 Bytes
+        # fffffffIIIIf
+        # Type is an Enum 0 = Rain; 1 = Snow
+        MelStruct('DATA','7f4If','Gravity Velocity','Rotation Velocity','Particle Size X','Particle Size Y',
+                  'Center Offset Min','Center Offset Max','Initial Rotation Range','# of Subtextures X','# of Subtextures Y',
+                  'Type','Box Size','Particle Density'),
+        # When 40 Bytes
+        # When ICON is not present 'Box Size' and 'Particle Density' are not in Skyrim.esm.
+        # They can be in a user created plugin but might be ignored by Skyrim
+        # fffffffIII
+        # MelStruct('DATA','7f3I','Gravity Velocity','Rotation Velocity','Particle Size X','Particle Size Y',
+        # 'Center Offset Min','Center Offset Max','Initial Rotation Range','# of Subtextures X','# of Subtextures Y',
+        # 'Type'),
+        MelString('ICON','icon'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Needs routine to get the size or amount of bytes of DATA.  If 48 then do the Top routine, if 40 then do the bottom routine. 
+#------------------------------------------------------------------------------
+
+class MreFlst(MelRecord):
+    """Flst Item"""
+    classType = 'FLST'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is repeating
+        MelOptStruct('LNAM','I',(FID,'pickupSound')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# LNAM Needs to be repeating
+#------------------------------------------------------------------------------
+
+class MreIpds(MelRecord):
+    """Ipds Item"""
+    classType = 'IPDS'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
+        MelOptStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# PNAM Needs to be repeating
+#------------------------------------------------------------------------------
+
+class MreLgtm(MelRecord):
+    """Lgtm Item"""
+    classType = 'LGTM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','23I', 'various'),
+        MelStruct('DALC','8I', 'various'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DATA Needs proper names from UESP Wiki
+# DALC Needs proper names from UESP Wiki
+#------------------------------------------------------------------------------
+
+class MreOtft(MelRecord):
+    """Otft Item"""
+    classType = 'OTFT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is one subrecord with repeating FormIDs of 1 or more
+        MelOptStruct('INAM','I',(FID,'items')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# INAM Needs to have repeating FormIDs of 1 or more
+#------------------------------------------------------------------------------
+
+class MreVtyp(MelRecord):
+
+    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'male'),
+            (1, 'allow_default_dialog'),
+            (2, 'female'),
+        ))
+
+    """Vtyp Item"""
+    classType = 'VTYP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DNAM','B',(MreVtyp.VtypTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DNAM Needs syntax verification for flags
+# If DNAM syntax is correct this record is correct for Skyrim
 #------------------------------------------------------------------------------
 
 #--Mergeable record types
