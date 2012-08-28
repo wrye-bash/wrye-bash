@@ -13600,6 +13600,25 @@ class MreEyes(MelRecord):
 # If DNAM syntax is correct this record is correct for Skyrim
 #------------------------------------------------------------------------------
 
+class MreEyes(MelRecord):
+    """Movt Item"""
+    classType = 'MOVT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MNAM','mnam_n'),
+        # Some values may need to be multiplied by a Scale, or 57.296 I need to verify this
+        MelStruct('SPED','11f','leftwalk','leftrun','rightwalk','rightrun','forwardwalk','forwardrun','backwalk',
+                  'backrun','rotateinplacewalk','rotateinplacerun','rotatewhilemovingrun'),
+        # These values will need to be multiplied by a Scale, or 57.296
+        MelStruct('INAM','3f','directional','movementspeed','rotationspeed'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# MNAM Syntax needs syntax check.  Scale may not be necessary
+# INAM Syntax needs syntax check.  Scale may not be necessary
+# If MNAM and INAM syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
 #--Mergeable record types
 mergeClasses = (
     MreAact, MreActi, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
