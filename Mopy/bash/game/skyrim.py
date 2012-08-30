@@ -13308,6 +13308,13 @@ class MreAppa(MelRecord):
 # QUAL, DATA Needs Verification
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
+
+    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'magic_casting'),
+            (1, 'magic_hit_effect'),
+            (2, 'enchantment_effect'),
+        ))
+
     """Arto record (Art effect object)"""
     #DNAM Flags
     #{0x00000001} 'Magic Casting',
@@ -13318,7 +13325,7 @@ class MreArto(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelModel(),
-        MelStruct('DNAM','I','flags'),
+        MelStruct('DNAM','I',(MreArto.ArtoTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -13560,6 +13567,10 @@ class MreOtft(MelRecord):
 
 class MreVtyp(MelRecord):
 
+    # {0x00} 'Magic Casting',
+    # {0x01} Not Used
+    # {0x02} 'Allow Default Dialog',
+    # {0x04} 'Female',
     VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
             (0, 'male'),
             (1, 'allow_default_dialog'),
@@ -13580,6 +13591,9 @@ class MreVtyp(MelRecord):
 
 class MreEyes(MelRecord):
 
+    # {0x01} 'Magic Casting',
+    # {0x02} 'Magic Hit Effect',
+    # {0x04} 'Enchantment Effect',
     EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
             (0, 'playable'),
             (1, 'not_male'),
@@ -13617,6 +13631,96 @@ class MreEyes(MelRecord):
 # MNAM Syntax needs syntax check.  Scale may not be necessary
 # INAM Syntax needs syntax check.  Scale may not be necessary
 # If MNAM and INAM syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreBook(MelRecord):
+
+    # {0x01} 'Teaches Skill',
+    # {0x02} 'Can''t be Taken',
+    # {0x04} 'Teaches Spell',
+    BookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'teaches_skill'),
+            (1, 'can''t_be_taken'),
+            (2, 'teaches_spell'),
+        ))
+
+    bookTypes = {
+        0:'book_tome',
+        255:'note_scroll',
+        }
+
+    skillTypes = {
+        1 :'Unknown 1',
+        2 :'Unknown 2',
+        3 :'Unknown 3',
+        4 :'Unknown 4',
+        5 :'Unknown 5',
+        6 :'Unknown 6',
+        7 :'One Handed',
+        8 :'Two Handed',
+        9 :'Archery',
+        10:'Block',
+        11:'Smithing',
+        12:'Heavy Armor',
+        13:'Light Armor',
+        14:'Pickpocket',
+        15:'Lockpicking',
+        16:'Sneak',
+        17:'Alchemy',
+        18:'Speech',
+        19:'Alteration',
+        20:'Conjuration',
+        21:'Destruction',
+        22:'Illusion',
+        23:'Restoration',
+        24:'Enchanting',
+    # ], [
+    # -1 in Dump is sometimes from a signed intS32 of FF FF FF FF
+    # -1, 'None'
+    # ]);
+        }
+
+    """Book Item"""
+    classType = 'BOOK'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelModel(),
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelLString('DESC','book-text'),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelStruct('DATA','B',
+                  # flags are a 'B'
+                  (MreBook.BookTypeFlags,'flags',0L) 
+                  # 'B' of bookTypes
+                  # '2B' 2 Unused Bytes
+                  # Funtion: If Flag - 'teaches_spell' is set -- FormID 'Spell' of [SPEL]
+                  #   MelFids('','spell'),
+                  # Else 'I' of skillTypes
+                  # 'I' 'value
+                  # 'f' Float 'weight'
+        ),
+        MelFids('INAM','races'),
+        MelString('CNAM','cnam_n'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DATA needs syntax check.
+# BookTypeFlags needs syntax check.
+# bookTypes needs syntax check.
+# skillTypes needs syntax check.
+# After syntax checks and DATA is formated correctly, this record is correct for Skyrim
 #------------------------------------------------------------------------------
 
 #--Mergeable record types
