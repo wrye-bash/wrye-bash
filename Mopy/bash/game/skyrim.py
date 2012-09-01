@@ -13723,6 +13723,21 @@ class MreBook(MelRecord):
 # After syntax checks and DATA is formated correctly, this record is correct for Skyrim
 #------------------------------------------------------------------------------
 
+class MreEqup(MelRecord):
+    """Equp Item"""
+    classType = 'EQUP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFids('PNAM','equpment'),
+        # Data Needs to be a boolean false;0 true;1
+        MelStruct('DATA','I','useall_parents'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DATA needs syntax check
+# If DATA syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
 #--Mergeable record types
 mergeClasses = (
     MreAact, MreActi, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
