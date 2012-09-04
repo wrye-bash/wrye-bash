@@ -7619,7 +7619,7 @@ msgstr "Области/Миры изменены"
 
 #: bash\bosh.py:16305
 msgid "Cells/Worlds Patched: %d"
-msgstr "Областей/Миров изменено:"
+msgstr "Областей/Миров изменено: %d"
 
 #: bash\bosh.py:16313 bash\bosh.py:16495
 msgid "Import Graphics"
