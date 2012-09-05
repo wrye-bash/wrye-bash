@@ -69,6 +69,33 @@ import bapi
 
 startupinfo = bolt.startupinfo
 
+#--Settings
+dirs = {} #--app, user, mods, saves, userApp
+tooldirs = {}
+inisettings = {}
+defaultExt = u'.7z'
+writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
+readExts = set((u'.rar',u'.7z.001',u'.001'))
+readExts.update(set(writeExts))
+noSolidExts = set((u'.zip',))
+settings = None
+installersWindow = None
+
+allTags = bush.game.allTags
+allTagsSet = set(allTags)
+oldTags = sorted((u'Merge',))
+oldTagsSet = set(oldTags)
+
+reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$',re.U)
+
+undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
+undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
+
+#--Default settings
+settingDefaults = {
+    'bosh.modInfos.resetMTimes':True,
+    }
+
 #--Unicode
 exe7z = u'7zUnicode.exe'
 
@@ -129,33 +156,6 @@ def listArchiveContents(fileName):
     command = ur'"%s" l -slt "%s"' % (exe7z, fileName)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
-
-#--Settings
-dirs = {} #--app, user, mods, saves, userApp
-tooldirs = {}
-inisettings = {}
-defaultExt = u'.7z'
-writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
-readExts = set((u'.rar',u'.7z.001',u'.001'))
-readExts.update(set(writeExts))
-noSolidExts = set((u'.zip',))
-settings = None
-installersWindow = None
-
-allTags = bush.game.allTags
-allTagsSet = set(allTags)
-oldTags = sorted((u'Merge',))
-oldTagsSet = set(oldTags)
-
-reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$',re.U)
-
-undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
-undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
-
-#--Default settings
-settingDefaults = {
-    'bosh.modInfos.resetMTimes':True,
-    }
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -9340,7 +9340,7 @@ class InstallersData(bolt.TankData, DataDict):
         for file in removes:
             if reModExt.search(file.s):
                 removedPlugins.append(file)
-				# Line below added to hopefully stop mtime error for ghosted plugins.
+                # Line below added to hopefully stop mtime error for ghosted plugins.
                 removedPlugins.append(file+u'.ghost')
             path = modsDir.join(file)
             path.remove()
