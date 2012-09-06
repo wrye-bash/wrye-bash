@@ -2434,35 +2434,35 @@ def deprint(*args,**keyargs):
         # Nope, it's going somewhere else
         print msg.encode('mbcs')
 
-def delist(header,items,on=False):
-    """Prints list as header plus items."""
-    if not deprintOn and not on: return
-    import inspect
-    stack = inspect.stack()
-    file,line,function = stack[1][1:4]
-    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,header)
-    try:
-        print msg
-    except UnicodeError:
-        print msg.encode('mbcs')
-    if items == None:
-        print u'> None'
-    else:
-        for indexItem in enumerate(items):
-            msg = u'>%2d: %s' % indexItem
-            try:
-                print msg
-            except UnicodeError:
-                print msg.encode('mbcs')
+#def delist(header,items,on=False):
+#    """Prints list as header plus items."""
+#    if not deprintOn and not on: return
+#    import inspect
+#    stack = inspect.stack()
+#    file,line,function = stack[1][1:4]
+#    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,header)
+#    try:
+#        print msg
+#    except UnicodeError:
+#        print msg.encode('mbcs')
+#    if items == None:
+#        print u'> None'
+#    else:
+#        for indexItem in enumerate(items):
+#            msg = u'>%2d: %s' % indexItem
+#            try:
+#                print msg
+#            except UnicodeError:
+#                print msg.encode('mbcs')
 
-def dictFromLines(lines,sep=None):
-    """Generate a dictionary from a string with lines, stripping comments and skipping empty strings."""
-    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
-    if sep == None or type(sep) == type(u''):
-        temp = dict([x.split(sep,1) for x in temp if x])
-    else: #--Assume re object.
-        temp = dict([sep.split(x,1) for x in temp if x])
-    return temp
+#def dictFromLines(lines,sep=None):
+#    """Generate a dictionary from a string with lines, stripping comments and skipping empty strings."""
+#    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
+#    if sep == None or type(sep) == type(u''):
+#        temp = dict([x.split(sep,1) for x in temp if x])
+#    else: #--Assume re object.
+#        temp = dict([sep.split(x,1) for x in temp if x])
+#    return temp
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -2479,11 +2479,11 @@ def invertDict(indict):
     """Invert a dictionary."""
     return dict((y,x) for x,y in indict.iteritems())
 
-def listFromLines(lines):
-    """Generate a list from a string with lines, stripping comments and skipping empty strings."""
-    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
-    temp = [x for x in temp if x]
-    return temp
+#def listFromLines(lines):
+#    """Generate a list from a string with lines, stripping comments and skipping empty strings."""
+#    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
+#    temp = [x for x in temp if x]
+#    return temp
 
 def listSubtract(alist,blist):
     """Return a copy of first list minus items in second list."""
@@ -2493,32 +2493,32 @@ def listSubtract(alist,blist):
             result.append(item)
     return result
 
-def listJoin(*inLists):
-    """Joins multiple lists into a single list."""
-    outList = []
-    for inList in inLists:
-        outList.extend(inList)
-    return outList
+#def listJoin(*inLists):
+#    """Joins multiple lists into a single list."""
+#    outList = []
+#    for inList in inLists:
+#        outList.extend(inList)
+#    return outList
 
-def listGroup(items):
-    """Joins items into a list for use in a regular expression.
-    E.g., a list of ('alpha','beta') becomes '(alpha|beta)'"""
-    return u'('+(u'|'.join(items))+u')'
+#def listGroup(items):
+#    """Joins items into a list for use in a regular expression.
+#    E.g., a list of ('alpha','beta') becomes '(alpha|beta)'"""
+#    return u'('+(u'|'.join(items))+u')'
 
-def rgbString(red,green,blue):
-    """Converts red, green blue ints to rgb string."""
-    return chr(red)+chr(green)+chr(blue)
+#def rgbString(red,green,blue):
+#    """Converts red, green blue ints to rgb string."""
+#    return chr(red)+chr(green)+chr(blue)
 
-def rgbTuple(rgb):
-    """Converts red, green, blue string to tuple."""
-    return struct.unpack('BBB',rgb)
+#def rgbTuple(rgb):
+#    """Converts red, green, blue string to tuple."""
+#    return struct.unpack('BBB',rgb)
 
-def unQuote(inString):
-    """Removes surrounding quotes from string."""
-    if len(inString) >= 2 and inString[0] == u'"' and inString[-1] == u'"':
-        return inString[1:-1]
-    else:
-        return inString
+#def unQuote(inString):
+#    """Removes surrounding quotes from string."""
+#    if len(inString) >= 2 and inString[0] == u'"' and inString[-1] == u'"':
+#        return inString[1:-1]
+#    else:
+#        return inString
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""

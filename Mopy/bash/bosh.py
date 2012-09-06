@@ -59,7 +59,7 @@ import balt
 import bolt
 import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError, FileError
-from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, delist, sio
+from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, sio
 from bolt import _unicode, _encode
 from cint import *
 from brec import *
@@ -12135,7 +12135,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         uses = _coerce(uses, int)
         value = _coerce(value, int)
         weight = _coerce(weight, float)
-        effects = readEffectsFromText(self,fields)
+        effects = self.readEffectsFromText(self,fields)
         return [eid, full, weight, value, uses, iconPath, modPath, modb, sid, effects]
 
     def readFromText(self,textPath):
