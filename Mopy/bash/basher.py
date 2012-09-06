@@ -49,7 +49,7 @@ import wizSTC
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
-from bolt import LString, GPath, SubProgress, deprint, delist, sio
+from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -12863,12 +12863,12 @@ class Settings_Languages(Link):
 class Settings_Language(Link):
     """Specific language for Wrye Bash."""
     languageMap = {
-        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
-        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁體中文)',
+        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (ç®€ä½“ä¸­æ–‡)',
+        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (ç¹�é«”ä¸­æ–‡)',
         u'de': _(u'German') + u' (Deutsch)',
-        u'pt_opt': _(u'Portuguese') + u' (português)',
+        u'pt_opt': _(u'Portuguese') + u' (portuguÃªs)',
         u'italian': _(u'Italian') + u' (italiano)',
-        u'russian': _(u'Russian') + u' (русский язык)',
+        u'russian': _(u'Russian') + u' (Ñ€ÑƒÑ�Ñ�ÐºÐ¸Ð¹ Ñ�Ð·Ñ‹Ðº)',
         u'english': _(u'English') + u' (English)',
         }
 
@@ -19267,10 +19267,10 @@ def InitInstallerLinks():
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"))
         openAtMenu.links.append(Installer_OpenSearch())
-	if bush.game.name == u'Oblivion':
-	    openAtMenu.links.append(Installer_OpenTesNexus())
-	elif bush.game.name == u'Skyrim':
-	    openAtMenu.links.append(Installer_OpenSkyrimNexus())
+    if bush.game.name == u'Oblivion':
+        openAtMenu.links.append(Installer_OpenTesNexus())
+    elif bush.game.name == u'Skyrim':
+        openAtMenu.links.append(Installer_OpenSkyrimNexus())
         openAtMenu.links.append(Installer_OpenTESA())
         openAtMenu.links.append(Installer_OpenPES())
         InstallersPanel.itemMenu.append(openAtMenu)

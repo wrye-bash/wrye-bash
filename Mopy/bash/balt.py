@@ -26,7 +26,7 @@
 #..Handled by bolt, so import that.
 import bolt
 import bosh
-from bolt import GPath, deprint, delist
+from bolt import GPath, deprint
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 
 #--Python
