@@ -13544,6 +13544,9 @@ class MreIpds(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
+        MelGroups('data',
+            MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
+            ),
         MelOptStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
