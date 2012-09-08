@@ -13361,11 +13361,9 @@ class MreCobj(MelRecord):
                 )
 
         def dumpData(self,record,out):
-            components = record.__getattribute__(self.attr)
-            if components:
-                # Only write the COCT/CNTO/COED subrecords if count > 0
-                out.packSub('COCT','I',len(components))
-                MelGroups.dumpData(self,record,out)
+            # Only write the COCT/CNTO/COED subrecords if count > 0
+            out.packSub('COCT','I',len(record.components))
+            MelGroups.dumpData(self,record,out)
 
     melSet = MelSet(
         MelString('EDID','eid'),
