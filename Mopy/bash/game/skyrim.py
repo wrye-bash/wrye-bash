@@ -13383,16 +13383,14 @@ class MreCobj(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-#COED handler shown above needs written
-#COCT and COED is an array grouped together
-#In a plugin the pattern would be this: COCT COED COCT COED
-#In a plugin the pattern would not be this: COCT COCT COCT COCT COCT COED COED COED COED COED
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
@@ -13406,15 +13404,10 @@ class MreLeveledList(MreLeveledListBase):
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
             MelGroups.dumpData(self,record,out)
-        #Needs COED record handler here
 
     __slots__ = MreLeveledListBase.__slots__
 
-#COED handler shown above needs written
-#LVLO and COED is an array grouped together
-#In a plugin the pattern would be this: LVLO COED LVLO COED
-#In a plugin the pattern would not be this: LVLO LVLO LVLO LVLO LVLO COED COED COED COED COED
-##Also The order is LLCT (Count) Array of (LVLO, COED) of LLCT
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     classType = 'LVLI'
@@ -13431,8 +13424,7 @@ class MreLvli(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-#COED handler needs added to LVLO
-#Once COED handler is added this is correct
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
@@ -13450,8 +13442,7 @@ class MreLvln(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-#COED handler needs added to LVLO
-#Once COED handler is added this is correct
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
@@ -13467,8 +13458,7 @@ class MreLvsp(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-#COED handler needs added to LVLO but is unused with LVSP
-#Once COED handler is added this is correct
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
@@ -13488,11 +13478,22 @@ class MreMisc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# If VMAD correct then Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreSpgd(MelRecord):
     """Spgd Item"""
     classType = 'SPGD'
+
+    def __init__(self,type='DATA'):
+        MelStruct.__init__(self,type,'=7f4If',
+                           ('gravityVelocity','rotationVelocity','particleSizeX','particleSizeY',
+                            'centerOffsetMin','centerOffsetMax','initialRotationRange',
+                            'numSubtexturesX','numSubtexturesY','type'),
+                           ('boxSize',0)
+                           ('particleDensity',0)
+                           )
+
     melSet = MelSet(
         MelString('EDID','eid'),
         # When 48 Bytes
