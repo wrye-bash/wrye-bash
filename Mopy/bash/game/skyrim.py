@@ -13547,7 +13547,6 @@ class MreIpds(MelRecord):
         MelGroups('data',
             MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
             ),
-        MelOptStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
