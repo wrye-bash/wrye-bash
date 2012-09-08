@@ -13572,12 +13572,11 @@ class MreOtft(MelRecord):
     classType = 'OTFT'
     melSet = MelSet(
         MelString('EDID','eid'),
-        # This is one subrecord with repeating FormIDs of 1 or more
-        MelOptStruct('INAM','I',(FID,'items')),
+        MelFidList('INAM','items'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# INAM Needs to have repeating FormIDs of 1 or more
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreVtyp(MelRecord):
@@ -13600,8 +13599,7 @@ class MreVtyp(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# DNAM Needs syntax verification for flags
-# If DNAM syntax is correct this record is correct for Skyrim
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreEyes(MelRecord):
@@ -13625,27 +13623,22 @@ class MreEyes(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# DNAM Needs syntax verification for flags
-# If DNAM syntax is correct this record is correct for Skyrim
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
-class MreEyes(MelRecord):
+class MreMovt(MelRecord):
     """Movt Item"""
     classType = 'MOVT'
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('MNAM','mnam_n'),
-        # Some values may need to be multiplied by a Scale, or 57.296 I need to verify this
         MelStruct('SPED','11f','leftwalk','leftrun','rightwalk','rightrun','forwardwalk','forwardrun','backwalk',
                   'backrun','rotateinplacewalk','rotateinplacerun','rotatewhilemovingrun'),
-        # These values will need to be multiplied by a Scale, or 57.296
         MelStruct('INAM','3f','directional','movementspeed','rotationspeed'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# MNAM Syntax needs syntax check.  Scale may not be necessary
-# INAM Syntax needs syntax check.  Scale may not be necessary
-# If MNAM and INAM syntax is correct this record is correct for Skyrim
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreBook(MelRecord):
@@ -13655,7 +13648,7 @@ class MreBook(MelRecord):
     # {0x04} 'Teaches Spell',
     BookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
             (0, 'teaches_skill'),
-            (1, 'can''t_be_taken'),
+            (1, 'cant_be_taken'),
             (2, 'teaches_spell'),
         ))
 
@@ -13744,13 +13737,11 @@ class MreEqup(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFids('PNAM','equpment'),
-        # Data Needs to be a boolean false;0 true;1
         MelStruct('DATA','I','useall_parents'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# DATA needs syntax check
-# If DATA syntax is correct this record is correct for Skyrim
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 #--Mergeable record types
