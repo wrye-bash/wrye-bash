@@ -13517,19 +13517,7 @@ class MreSpgd(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        # When 48 Bytes
-        # fffffffIIIIf
-        # Type is an Enum 0 = Rain; 1 = Snow
-        MelStruct('DATA','7f4If','Gravity Velocity','Rotation Velocity','Particle Size X','Particle Size Y',
-                  'Center Offset Min','Center Offset Max','Initial Rotation Range','# of Subtextures X','# of Subtextures Y',
-                  'Type','Box Size','Particle Density'),
-        # When 40 Bytes
-        # When ICON is not present 'Box Size' and 'Particle Density' are not in Skyrim.esm.
-        # They can be in a user created plugin but might be ignored by Skyrim
-        # fffffffIII
-        # MelStruct('DATA','7f3I','Gravity Velocity','Rotation Velocity','Particle Size X','Particle Size Y',
-        # 'Center Offset Min','Center Offset Max','Initial Rotation Range','# of Subtextures X','# of Subtextures Y',
-        # 'Type'),
+        MelSpgdData(),
         MelString('ICON','icon'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
