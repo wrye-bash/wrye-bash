@@ -13497,7 +13497,7 @@ class MelSpgdData(MelStruct):
             # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
             # fffffffIIIIf
             # Type is an Enum 0 = Rain; 1 = Snow
-            unpacked = ins.unpack('=7f4If',size,readId) + (0,0,)
+            unpacked = ins.unpack('=7f3I',size,readId) + (0,0,)
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
                 if action: value = action(value)
