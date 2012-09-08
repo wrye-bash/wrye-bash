@@ -12750,6 +12750,13 @@ class MelColorN(MelStruct):
                 MelStruct.__init__(self,'CNAM','=4B',
                         'red','green','blue','unused')
 
+#------------------------------------------------------------------------------
+class MelCoed(MelOptStruct):
+    def __init__(self):
+        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'rank_or_glob_or_unk'), ('rank'))
+
+#------------------------------------------------------------------------------
+
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
 #var
 #  Container  : IwbContainer;
@@ -13357,7 +13364,7 @@ class MreCobj(MelRecord):
         def __init__(self):
             MelGroups.__init__(self,'components',
                 MelStruct('CNTO','=2I',(FID,'item',None),'count'),
-                MelOptStruct('COED','=IIf',(FID,'owner'),(FID,'rank_or_glob'), ('rank')),
+                MelCoed(),
                 )
 
         def dumpData(self,record,out):
@@ -13394,7 +13401,7 @@ class MreLeveledList(MreLeveledListBase):
         def __init__(self):
             MelGroups.__init__(self,'entries',
                 MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
-                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
+                MelCoed(),
                 )
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
