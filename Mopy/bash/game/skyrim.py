@@ -13357,7 +13357,7 @@ class MreCobj(MelRecord):
         def __init__(self):
             MelGroups.__init__(self,'components',
                 MelStruct('CNTO','=2I',(FID,'item',None),'count'),
-                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
+                MelOptStruct('COED','=IIf',(FID,'owner'),(FID,'rank_or_glob'), ('rank')),
                 )
 
         def dumpData(self,record,out):
