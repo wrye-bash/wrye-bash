@@ -13658,12 +13658,7 @@ class MreBook(MelRecord):
         }
 
     skillTypes = {
-        1 :'Unknown 1',
-        2 :'Unknown 2',
-        3 :'Unknown 3',
-        4 :'Unknown 4',
-        5 :'Unknown 5',
-        6 :'Unknown 6',
+        -1 :'None',
         7 :'One Handed',
         8 :'Two Handed',
         9 :'Archery',
@@ -13682,10 +13677,6 @@ class MreBook(MelRecord):
         22:'Illusion',
         23:'Restoration',
         24:'Enchanting',
-    # ], [
-    # -1 in Dump is sometimes from a signed intS32 of FF FF FF FF
-    # -1, 'None'
-    # ]);
         }
 
     """Book Item"""
