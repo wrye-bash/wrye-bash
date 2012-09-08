@@ -12796,16 +12796,6 @@ class MelKeywords(MelFidList):
             out.packSub('KSIZ','I',len(keywords))
             MelFidList.dumpData(self,record,out)
 
-#-------------------------------------------------------------------------------
-class MelComponents(MelStructs):
-    """Handle writing COCT subrecord for the CNTO subrecord"""
-    def dumpData(self,record,out):
-        components = record.__getattribute__(self.attr)
-        if components:
-            # Only write the COCT/CNTO subrecords if count > 0
-            out.packSub('COCT','I',len(components))
-            MelStructs.dumpData(self,record,out)
-
 #------------------------------------------------------------------------------
 class MelString16(MelString):
     """Represents a mod record string element."""
@@ -13358,14 +13348,26 @@ class MreAstp(MelRecord):
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
+    class MelCobjCnto(MelGroups):
+        def __init__(self):
+            MelGroups.__init__(self,'components',
+                MelStruct('CNTO','=2I',(FID,'item',None),'count'),
+                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
+                )
+        def dumpData(self,record,out):
+        components = record.__getattribute__(self.attr)
+        if components:
+            # Only write the COCT/CNTO/COED subrecords if count > 0
+            out.packSub('COCT','I',len(components))
+            MelGroups.dumpData(self,record,out)
+
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
     isKeyedByEid = True # NULL fids are acceptible
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelNull('COCT'), # Handled by MelComponents
-        MelComponents('CNTO','=2I','components',(FID,'item',None),'count'),
-        #Needs COED record handler here
+        MelNull('COCT'), # Handled by MelCobjCnto
+        MelCobjCnto(),
         MelConditions(),
         MelFid('CNAM','resultingItem'),
         MelFid('BNAM','craftingStation'),
