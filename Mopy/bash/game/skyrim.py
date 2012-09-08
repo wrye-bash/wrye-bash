@@ -13491,6 +13491,26 @@ class MelSpgdData(MelStruct):
                            ('particleDensity',0),
                            )
 
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        if size == 40:
+            # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
+            # fffffffIIIIf
+            # Type is an Enum 0 = Rain; 1 = Snow
+            unpacked = ins.unpack('=7f4If',size,readId) + (0,0,)
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if action: value = action(value)
+                setter(attr,value)
+            if self._debug:
+                print u' ',zip(self.attrs,unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ',unpacked
+        elif size != 48:
+            raise ModSizeError(ins.inName,readId,48,size,True)
+        else:
+            MelStruct.loadData(self,record,ins,type,size,readId)
+
 class MreSpgd(MelRecord):
     """Spgd Item"""
     classType = 'SPGD'
