@@ -13348,22 +13348,25 @@ class MreAstp(MelRecord):
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
+    """Constructible Object record (recipies)"""
+    classType = 'COBJ'
+    isKeyedByEid = True # NULL fids are acceptible
+
+
     class MelCobjCnto(MelGroups):
         def __init__(self):
             MelGroups.__init__(self,'components',
                 MelStruct('CNTO','=2I',(FID,'item',None),'count'),
                 MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
                 )
-        def dumpData(self,record,out):
-        components = record.__getattribute__(self.attr)
-        if components:
-            # Only write the COCT/CNTO/COED subrecords if count > 0
-            out.packSub('COCT','I',len(components))
-            MelGroups.dumpData(self,record,out)
 
-    """Constructible Object record (recipies)"""
-    classType = 'COBJ'
-    isKeyedByEid = True # NULL fids are acceptible
+        def dumpData(self,record,out):
+            components = record.__getattribute__(self.attr)
+            if components:
+                # Only write the COCT/CNTO/COED subrecords if count > 0
+                out.packSub('COCT','I',len(components))
+                MelGroups.dumpData(self,record,out)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelNull('COCT'), # Handled by MelCobjCnto
