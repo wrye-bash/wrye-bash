@@ -13522,7 +13522,7 @@ class MreSpgd(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Needs routine to get the size or amount of bytes of DATA.  If 48 then do the Top routine, if 40 then do the bottom routine. 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreFlst(MelRecord):
@@ -13535,7 +13535,7 @@ class MreFlst(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# LNAM Needs to be repeating
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreIpds(MelRecord):
@@ -13550,7 +13550,7 @@ class MreIpds(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# PNAM Needs to be repeating
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreLgtm(MelRecord):
