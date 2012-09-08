@@ -12747,7 +12747,7 @@ class MelBounds(MelStruct):
 #------------------------------------------------------------------------------
 class MelColorN(MelStruct):
         def __init__(self):
-                MelStruct.__init__(self,'CNAM','=4Bs',
+                MelStruct.__init__(self,'CNAM','=4B',
                         'red','green','blue','unused')
 
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
@@ -13119,7 +13119,6 @@ class MreAact(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# CNAM Needs Verification
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
     """Activator."""
@@ -13158,12 +13157,11 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelBase('DATA','data_p'),
-        MelOptStruct('SNAM','I',(FID,'foodSound')),
+        MelOptStruct('SNAM','I',(FID,'ambientSound')),
         MelBase('DNAM','flags'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# SNAM Needs Verification
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
     """Armor addon?"""
@@ -13181,13 +13179,13 @@ class MreArma(MelRecord):
         MelOptStruct('NAM1','I',(FID,'skin1')),
         MelOptStruct('NAM2','I',(FID,'skin2')),
         MelOptStruct('NAM3','I',(FID,'skin3')),
-        MelFids('MODL','races'), #Needs to be an array of FormID [RACE]
-        MelOptStruct('SNDD','I',(FID,'footstep_sound')), #Needs to be an array of FormID [FSTS]
-        MelOptStruct('ONAM','I',(FID,'art_object')), #Needs to be an array of FormID [ARTO]
+        MelFids('MODL','races'),
+        MelOptStruct('SNDD','I',(FID,'footstepSound')),
+        MelOptStruct('ONAM','I',(FID,'art_object')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# SNDD, ONAM Needs Verification
+# Assume correct if not Use MelFidList
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
     """Armor"""
@@ -13227,16 +13225,12 @@ class MreArmo(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
     classType = 'AMMO'
-    # TODO: verify these flags for Skyrim
-    _flags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon'))
-    #{0x00000001} 'Ignores Normal Weapon Resistance',
-    #{0x00000002} 'Non-Playable', -- If set it is not Playable
-    #{0x00000004} 'Non-Bolt' -- If set it is not a Bolt / This would not be set for Bolts in Dawnguard  
+
+    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon','nonPlayable','nonBolt'))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -13250,13 +13244,11 @@ class MreAmmo(MelRecord):
         MelLString('DESC','description'),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','fIff','projectileformID',(_flags,'flags',0L),'damage','value'),
-        MelString('ONAM','short_name'),
+        MelStruct('DATA','IIff',(FID,'projectile'),(MreAmmo.AmmoTypeFlags,'flags',0L),'damage','value'),
+        MelString('ONAM','shortName'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# ONAM Needs Verification
-# Flags Needs Updated
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
     """Anio record (Animated Object)"""
