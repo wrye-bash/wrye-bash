@@ -13119,6 +13119,7 @@ class MreAact(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
     """Activator."""
@@ -13162,6 +13163,7 @@ class MreAddn(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
     """Armor addon?"""
@@ -13225,6 +13227,7 @@ class MreArmo(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
@@ -13249,6 +13252,7 @@ class MreAmmo(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
     """Anio record (Animated Object)"""
@@ -13270,9 +13274,6 @@ class MreAppa(MelRecord):
     #  2, 'Journeyman',
     #  3, 'Expert',
     #  4, 'Master'
-    #DATA is Value and Weight
-    #  Integer ('Value', itU32), (4 Bytes)
-    #  Float ('Weight'), (4 Bytes)
 
     classType = 'APPA'
     melSet = MelSet(
@@ -13293,25 +13294,23 @@ class MreAppa(MelRecord):
         MelFid('ZNAM','dropSound'),
         MelStruct('QUAL','I','quality'),
         MelLString('DESC','description'),
-        MelBase('DATA','data_p'),
+        MelStruct('DATA','If','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# QUAL, DATA Needs Verification
+# Verified Correct for Skyrim
+# Note To Self -- MelBase('DATA','data_p'), = Blob
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
 
     ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'magic_casting'),
-            (1, 'magic_hit_effect'),
-            (2, 'enchantment_effect'),
+            (0, 'magic_casting'), #{0x00000001} 'Magic Casting',
+            (1, 'magic_hit_effect'), #{0x00000002} 'Magic Hit Effect',
+            (2, 'enchantment_effect'), #{0x00000004} 'Enchantment Effect'
         ))
 
     """Arto record (Art effect object)"""
-    #DNAM Flags
-    #{0x00000001} 'Magic Casting',
-    #{0x00000002} 'Magic Hit Effect',
-    #{0x00000004} 'Enchantment Effect'
+
     classType = 'ARTO'
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -13321,7 +13320,7 @@ class MreArto(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# DNAM Needs Verification
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
     """Aspc record (Acoustic Space)"""
@@ -13339,22 +13338,24 @@ class MreAspc(MelRecord):
 #------------------------------------------------------------------------------
 class MreAstp(MelRecord):
     """Astp record (Association type)"""
-    #DATA Flags
-    #{0x00000001} 'Related'
 
     classType = 'ASTP'
-    _flags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+
+    # DATA Flags
+    # {0x00000001} 'Related'
+    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('MPRT','maleParent'),
         MelString('FPRT','femaleParent'),
         MelString('MCHT','maleChild'),
         MelString('FCHT','femaleChild'),
-        MelStruct('DATA','I',(_flags,'flags',0L)),
+        MelStruct('DATA','I',(MreAstp.AstpTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# DATA Needs Verification
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
