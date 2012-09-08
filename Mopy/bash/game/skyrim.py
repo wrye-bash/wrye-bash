@@ -13481,18 +13481,19 @@ class MreMisc(MelRecord):
 # If VMAD correct then Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
+class MelSpgdData(MelStruct):
+    def __init__(self,type='DATA'):
+        MelStruct.__init__(self,type,'=7f4If',
+                           'gravityVelocity','rotationVelocity','particleSizeX','particleSizeY',
+                           'centerOffsetMin','centerOffsetMax','initialRotationRange',
+                           'numSubtexturesX','numSubtexturesY','type',
+                           ('boxSize',0),
+                           ('particleDensity',0),
+                           )
+
 class MreSpgd(MelRecord):
     """Spgd Item"""
     classType = 'SPGD'
-
-    def __init__(self,type='DATA'):
-        MelStruct.__init__(self,type,'=7f4If',
-                           ('gravityVelocity','rotationVelocity','particleSizeX','particleSizeY',
-                            'centerOffsetMin','centerOffsetMax','initialRotationRange',
-                            'numSubtexturesX','numSubtexturesY','type'),
-                           ('boxSize',0)
-                           ('particleDensity',0)
-                           )
 
     melSet = MelSet(
         MelString('EDID','eid'),
