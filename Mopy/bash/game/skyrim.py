@@ -12375,6 +12375,7 @@ conditionFunctionData = ( #--0: no param; 1: int param; 2 formid param
     (724, 'EffectWasDualCast', 0, 0),
     (725, 'GetKnockStateEnum', 0, 0),
     )
+
 allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
@@ -12391,6 +12392,7 @@ weaponTypes = (
 
 #--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
+
 gmstEids = [
     # None
     ]
@@ -12755,8 +12757,6 @@ class MelCoed(MelOptStruct):
     def __init__(self):
         MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'rank_or_glob_or_unk'), ('rank'))
 
-#------------------------------------------------------------------------------
-
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
 #var
 #  Container  : IwbContainer;
@@ -13098,14 +13098,18 @@ class MreHeader(MreHeaderBase):
         MelStruct('HEDR','f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
+        # How do I know this is an array MAST DATA MAST DATA MAST DATA MAST DATA
+        # For each Master File in the esm/esp
+        # Why is MelGroups Not needed?
         MreHeaderBase.MelMasterName('MAST','masters'),
-        MelNull('DATA'),
+        MelNull('DATA'), # 8 Bytes in Length
         MelFidList('ONAM','overrides'),
         MelBase('INTV','ingv_p'),
         MelBase('INCC', 'ingv_p'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
+# MAST and DATA need to be grouped together like MAST DATA MAST DATA, are they that way already?
 #------------------------------------------------------------------------------
 class MreAact(MelRecord):
     """Action record."""
@@ -13184,6 +13188,7 @@ class MreArma(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Check FormIDs to make sure they are only 4 and not 8, 12, or 16, bytes.		
 # Assume correct if not Use MelFidList
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
@@ -13553,18 +13558,44 @@ class MreIpds(MelRecord):
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
+class MelLgtmData(MelStruct):
+    def __init__(self,type='DALC'):
+        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
+                           'red','green','blue','unknown', # 'X+'
+                           'red','green','blue','unknown', # 'X-'
+                           'red','green','blue','unknown', # 'Y+'
+                           'red','green','blue','unknown', # 'Y-'
+                           'red','green','blue','unknown', # 'Z+'
+                           'red','green','blue','unknown', # 'Z-'
+                           'red','green','blue','unknown', # Specular Color Values
+                           'fresnelPower' # Fresnel Power
+                           )
+
 class MreLgtm(MelRecord):
     """Lgtm Item"""
     classType = 'LGTM'
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('DATA','23I', 'various'),
-        MelStruct('DALC','8I', 'various'),
+        # 92 Bytes
+        MelStruct('DATA','4B4B4B2f2i3f8I4B3fI',
+            'red','green','blue','unknown',
+            'red','green','blue','unknown',
+            'red','green','blue','unknown',
+            'fogNear','fogFar',
+            'dirRotXY','dirRotZ',
+            'directionalFade','fogClipDist','fogPower',
+            'unknown','unknown','unknown','unknown',
+            'unknown','unknown','unknown','unknown',
+            'red','green','blue','unknown',
+            'fogMax',
+            'lightFaceStart','lightFadeEnd',
+            'unknown',),
+        # 32 Bytes
+        MelLgtmData(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# DATA Needs proper names from UESP Wiki
-# DALC Needs proper names from UESP Wiki
+# If Syntax Correct, Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 
 class MreOtft(MelRecord):
@@ -13658,7 +13689,7 @@ class MreBook(MelRecord):
         }
 
     skillTypes = {
-        -1 :'None',
+       -1 :'None',
         7 :'One Handed',
         8 :'Two Handed',
         9 :'Archery',
@@ -13699,16 +13730,17 @@ class MreBook(MelRecord):
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','B',
-                  # flags are a 'B'
-                  (MreBook.BookTypeFlags,'flags',0L) 
-                  # 'B' of bookTypes
-                  # '2B' 2 Unused Bytes
-                  # Funtion: If Flag - 'teaches_spell' is set -- FormID 'Spell' of [SPEL]
-                  #   MelFids('','spell'),
-                  # Else 'I' of skillTypes
-                  # 'I' 'value
-                  # 'f' Float 'weight'
+        # flags are : 'B' -- (MreBook.BookTypeFlags,'flags',0L) 
+        # 'B' of bookTypes
+        # '2B' 2 Unused Bytes
+        # ---------------------------------------------------------------------
+        # Funtion: If Flag - 'teaches_spell' is set -- FormID 'Spell' of [SPEL]
+        #   MelFids('','spell'),
+        # Else 'I' of skillTypes
+        # ---------------------------------------------------------------------
+        # 'I' 'value
+        # 'f' Float 'weight'
+        MelStruct('DATA','4B2If','flags','bookType','unused','unused','skillOrSpell','value','weight',
         ),
         MelFids('INAM','races'),
         MelString('CNAM','cnam_n'),
@@ -13734,13 +13766,19 @@ class MreEqup(MelRecord):
     
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
-
+# Contains VMAD Can't be merged at this time:
+# MreActi, MreAppa, MreMisc, MreBook, 
+#
+# Can't be merged at this time:
+# 
+# 
 #--Mergeable record types
 mergeClasses = (
-    MreAact, MreActi, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
-    MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln, MreLvsp,
-    MreMisc,
-    )
+        MreAact, MreAddn, MreAmmo, MreAnio, MreArma, MreArmo,
+        MreArto, MreAspc, MreAstp, MreCobj, MreEqup, MreEyes, MreFlst,
+        MreGmst, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMovt,
+        MreOtft, MreSpgd, MreVtyp,
+        )
 
 #--Extra read/write classes
 readClasses = ()
@@ -13757,10 +13795,11 @@ def init():
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreArto, MreAspc, MreAstp, MreBook, MreCobj, MreEqup, MreEyes, MreFlst,
+        MreGmst, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMisc, MreMovt,
+        MreOtft, MreSpgd, MreVtyp,
         MreHeader,
-        ))
+    ))
 
     #--Simple records
     brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
