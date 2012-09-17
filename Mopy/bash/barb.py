@@ -30,6 +30,7 @@ import cPickle
 import StringIO
 from subprocess import Popen, PIPE
 import bash
+import bass
 import bosh
 import basher
 import bolt
@@ -59,7 +60,7 @@ class BaseBackupSettings:
         #end if
         self.parent = parent
         self.verDat = basher.settings['bash.version']
-        self.verApp = basher.settings['bash.readme'][1].split(u'.')[0]
+        self.verApp = bass.AppVersion
         self.files = {}
         self.tmp = None
 
@@ -92,7 +93,8 @@ class BaseBackupSettings:
 
     def CmpAppVersion(self):
         # Changed to prompt updating on any version change
-        return cmp(self.verApp.split(u'.'), basher.settings['bash.readme'][1].split(u'.'))
+        # Needs to check the cached value in settings for the initial upgrade check
+        return cmp(self.verApp, basher.settings['bash.version'])
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
@@ -133,7 +135,7 @@ class BackupSettings(BaseBackupSettings):
             #end for
         #end for
 
-        #backup all files in Mopy\Data, Data\Bash Patches and Data\INI Tweaks
+        #backup all files in Mopy\Data, Data\Bash Patches\ and Data\INI Tweaks
         for path, tmpdir in (
               (dirs['l10n'],                      game+u'\\Mopy\\bash\\l10n'),
               (dirs['mods'].join(u'Bash Patches'),game+u'\\Data\\Bash Patches'),
@@ -229,10 +231,10 @@ class BackupSettings(BaseBackupSettings):
 
     def PromptMismatch(self):
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
-        if basher.settings['bash.readme'][1] == u'0': return False
+        if basher.settings['bash.version'] == 0: return False
         return not self.SameAppVersion() and self.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
-            _(u'Previous Version: ')+basher.settings['bash.readme'][1]+u'\n' +
+            _(u'Previous Version: ')+basher.settings['bash.version']+u'\n' +
             _(u'Current Version: ')+self.verApp+u'\n'+
             _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
@@ -372,13 +374,14 @@ class RestoreSettings(BaseBackupSettings):
     def PromptConfirm(self,msg=None):
         # returns False if user cancels
         msg = msg or _(u'Do you want to restore your Bash settings from a backup?')
+        msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your settings are restored.')
         return askYes(self.parent,msg,_(u'Restore Bash Settings?'))
 
     def PromptMismatch(self):
         # return True if same app version or user confirms
         return self.SameAppVersion() or askWarning(self.parent,
               _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
-              _(u'Backup v%s does not match v%s') % (self.verApp, basher.settings['bash.readme'][1]) + u'\n' +
+              _(u'Backup v%s does not match v%s') % (self.verApp, basher.settings['bash.version']) + u'\n' +
               u'\n' +
               _(u'Do you want to restore this backup anyway?'),
               _(u'Warning: Version Mismatch!'))
@@ -388,7 +391,7 @@ class RestoreSettings(BaseBackupSettings):
         if self.CmpDataVersion() > 0:
             showError(self.parent,
                   _(u'The data format of the selected backup file is newer than the current Bash version!')+u'\n' +
-                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, basher.settings['bash.readme'][1]) + u'\n' +
+                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, basher.settings['bash.version']) + u'\n' +
                   u'\n' +
                   _(u'You cannot use this backup with this version of Bash.'),
                   _(u'Error: Version Conflict!'))
@@ -404,14 +407,14 @@ class RestoreSettings(BaseBackupSettings):
 
     def WarnRestart(self):
         if self.quit: return
-        basher.appRestart = True
         showWarning(self.parent,
-            _(u'Your Bash settings have been successfuly restored.')+u'\n' +
+            _(u'Your Bash settings have been successfully restored.')+u'\n' +
             _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n' +
             u'\n' +
             _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
             _(u'Click OK to restart now.'),
             _(u'Bash Settings Restored'))
+        basher.bashFrame.Restart()
 
 #------------------------------------------------------------------------------
 def pack7z(dstFile, srcDir, progress=None):
@@ -437,6 +440,7 @@ def pack7z(dstFile, srcDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
+        line = unicode(line,'utf8')
         maCompressing = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
@@ -486,6 +490,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
+        line = unicode(line,'utf8')
         maExtracting = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)

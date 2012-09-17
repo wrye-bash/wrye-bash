@@ -33,24 +33,19 @@ import _winreg
 from bolt import GPath,Path,deprint
 
 # Setup -----------------------------------------------------------------------
-# Call this with the name of the game to setup bush.game for.
 game = None
 gamePath = None
+fullLoadOrder = {}
 
-def setGame(gameName,workingDir=''):
-    """If gameName is specified:
-        - Try to find that game's intall path via windows registry
-        - Try to find that game at "workingDir"
-        - Try to find that game one directory up from the cwd
-       If gameName is not specified:
-        - Use the game found at "workingDir"
-        - Use the game found one directory up from the cwd."""
+def detectGames(workingDir=u''):
+    """Detect which supported games are intalled.
+       - First, read the windows registry, checking for the install keys for the
+         games.
+       - Next, check for a valid game at "workingDir"
+       - Finally, also look one directory up from the cwd."""
     #--First: Find all supported games via the registry
-    gameName = gameName.lower()
     import pkgutil
     import game as _game
-    global game
-    global gamePath
     foundGames = {}
     allGames = {}
     # Detect the known games
@@ -59,6 +54,7 @@ def setGame(gameName,workingDir=''):
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
         except:
+            deprint(u'Error in game support file:', modname, traceback=True)
             continue
         submod = getattr(module,modname)
         if not hasattr(submod,'name') or not hasattr(submod,'exe'): continue
@@ -83,8 +79,8 @@ def setGame(gameName,workingDir=''):
     del pkgutil
     del _game
     deprint(u'Detected the following supported games via Windows Registry:')
-    for name in foundGames:
-        deprint(u' %s:' % name, foundGames[name])
+    for foundName in foundGames:
+        deprint(u' %s:' % foundName, foundGames[foundName])
     #--Second: Detect what game is installed on directory up from Mopy
     path = Path.getcwd()
     if path.cs[-4:] == u'mopy':
@@ -97,12 +93,14 @@ def setGame(gameName,workingDir=''):
             path = Path.getcwd().join(path)
         installPaths.insert(0,path)
     deprint(u'Detecting games via relative path and the -o argument:')
+    name = None
     for path in installPaths:
-        name = path.tail.cs
-        if name in allGames:
+        _name = path.tail.cs
+        if _name in allGames:
             # We have a config for that game
-            deprint(u' %s:' % name, path)
-            foundGames[name] = path
+            deprint(u' %s:' % _name, path)
+            foundGames[_name] = path
+            name = _name
             break
         else:
             # Folder name wasn't found, try looking by exe name
@@ -120,6 +118,13 @@ def setGame(gameName,workingDir=''):
             else:
                 continue
             break
+    return foundGames,allGames,name
+
+def setGame(gameName,workingDir=u''):
+    global gamePath
+    global game
+    foundGames,allGames,name = detectGames(workingDir)
+    gameName = gameName.lower()
     #--See if the specified game is one that was found
     if gameName in foundGames:
         # The game specified was found
@@ -130,6 +135,7 @@ def setGame(gameName,workingDir=''):
         for i in allGames.keys():
             if i != gameName:
                 del allGames[i]
+        game.init()
         return False
     #--Specified game not found, or game was not specified,
     #  so use the game found via workingDir or the cwd
@@ -148,55 +154,12 @@ def setGame(gameName,workingDir=''):
             for i in allGames.keys():
                 if i != name:
                     del allGames[i]
+            game.init()
             return False
     # No match found return the list of possible games
     # Unload all the modules
     del allGames
     return foundGames.keys()
-
-# Installer -------------------------------------------------------------------
-# ensure all path strings are prefixed with 'r' to avoid interpretation of
-#   accidental escape sequences
-wryeBashDataFiles = set((
-    u'Bashed Patch.esp',
-    u'Bashed Patch, 0.esp',
-    u'Bashed Patch, 1.esp',
-    u'Bashed Patch, 2.esp',
-    u'Bashed Patch, 3.esp',
-    u'Bashed Patch, 4.esp',
-    u'Bashed Patch, 5.esp',
-    u'Bashed Patch, 6.esp',
-    u'Bashed Patch, 7.esp',
-    u'Bashed Patch, 8.esp',
-    u'Bashed Patch, 9.esp',
-    u'Bashed Patch, CBash.esp',
-    u'Bashed Patch, Python.esp',
-    u'Bashed Patch, FCOM.esp',
-    u'Bashed Patch, Warrior.esp',
-    u'Bashed Patch, Thief.esp',
-    u'Bashed Patch, Mage.esp',
-    u'Bashed Patch, Test.esp',
-    u'ArchiveInvalidationInvalidated!.bsa',
-    u'Docs\\Bash Readme Template.html',
-    u'Docs\\wtxt_sand_small.css',
-    u'Docs\\wtxt_teal.css',
-    u'Docs\\Bash Readme Template.txt'
-    ))
-wryeBashDataDirs = set((
-    u'Bash Patches',
-    u'INI Tweaks'
-    ))
-ignoreDataFiles = set((
-    u'OBSE\\Plugins\\Construction Set Extender.dll',
-    u'OBSE\\Plugins\\Construction Set Extender.ini'
-    ))
-ignoreDataFilePrefixes = set((
-    u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
-    ))
-ignoreDataDirs = set((
-    u'OBSE\\Plugins\\ComponentDLLs\\CSE',
-    u'LSData'
-    ))
 
 # Balo Canonical Groups -------------------------------------------------------
 baloGroups = (
@@ -226,23 +189,10 @@ groupTypes = [
     _(u'Ext Cell Sub-Block'),
     _(u'Cell Children'),
     _(u'Topic Children'),
-    _(u'Cell Persistent Childen'),
+    _(u'Cell Persistent Children'),
     _(u'Cell Temporary Children'),
     _(u'Cell Visible Distant Children'),
 ]
-
-#--Top types in Oblivion order.
-topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
-    'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI', 'APPA', 'ARMO', 'BOOK',
-    'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'STAT', 'GRAS', 'TREE', 'FLOR',
-    'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM', 'KEYM', 'ALCH', 'SBSP',
-    'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE',
-    'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH']
-
-#--Dict mapping 'ignored' top types to un-ignored top types.
-topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
-
-recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
 
 # Id Functions ----------------------------------------------------------------
 def getIdFunc(modName):
@@ -250,60 +200,6 @@ def getIdFunc(modName):
 
 ob = getIdFunc(u'Oblivion.esm')
 cobl = getIdFunc(u'Cobl Main.esm')
-
-# Race Info -------------------------------------------------------------------
-raceNames = {
-    0x23fe9 : _(u'Argonian'),
-    0x224fc : _(u'Breton'),
-    0x191c1 : _(u'Dark Elf'),
-    0x19204 : _(u'High Elf'),
-    0x00907 : _(u'Imperial'),
-    0x22c37 : _(u'Khajiit'),
-    0x224fd : _(u'Nord'),
-    0x191c0 : _(u'Orc'),
-    0x00d43 : _(u'Redguard'),
-    0x00019 : _(u'Vampire'),
-    0x223c8 : _(u'Wood Elf'),
-    }
-
-raceShortNames = {
-    0x23fe9 : u'Arg',
-    0x224fc : u'Bre',
-    0x191c1 : u'Dun',
-    0x19204 : u'Alt',
-    0x00907 : u'Imp',
-    0x22c37 : u'Kha',
-    0x224fd : u'Nor',
-    0x191c0 : u'Orc',
-    0x00d43 : u'Red',
-    0x223c8 : u'Bos',
-    }
-
-raceHairMale = {
-    0x23fe9 : 0x64f32, #--Arg
-    0x224fc : 0x90475, #--Bre
-    0x191c1 : 0x64214, #--Dun
-    0x19204 : 0x7b792, #--Alt
-    0x00907 : 0x90475, #--Imp
-    0x22c37 : 0x653d4, #--Kha
-    0x224fd : 0x1da82, #--Nor
-    0x191c0 : 0x66a27, #--Orc
-    0x00d43 : 0x64215, #--Red
-    0x223c8 : 0x690bc, #--Bos
-    }
-
-raceHairFemale = {
-    0x23fe9 : 0x64f33, #--Arg
-    0x224fc : 0x1da83, #--Bre
-    0x191c1 : 0x1da83, #--Dun
-    0x19204 : 0x690c2, #--Alt
-    0x00907 : 0x1da83, #--Imp
-    0x22c37 : 0x653d0, #--Kha
-    0x224fd : 0x1da83, #--Nor
-    0x191c0 : 0x64218, #--Orc
-    0x00d43 : 0x64210, #--Red
-    0x223c8 : 0x69473, #--Bos
-    }
 
 # Default Eyes/Hair -----------------------------------------------------------
 standardEyes = [ob(x) for x in (0x27306,0x27308,0x27309)] + [cobl(x) for x in (0x000821, 0x000823, 0x000825, 0x000828, 0x000834, 0x000837, 0x000839, 0x00084F, )]
@@ -343,192 +239,7 @@ defaultEyes = {
         [cobl(x) for x in (0x01F437, 0x00531B, 0x00531C, 0x00531D, 0x00531E, 0x00531F, 0x005320, 0x005321, 0x01F43B, 0x00DBE1, )],
     }
 
-# Function Info ---------------------------------------------------------------
-conditionFunctionData = ( #--0: no param; 1: int param; 2: formid param
-    (153, 'CanHaveFlames', 0, 0),
-    (127, 'CanPayCrimeGold', 0, 0),
-    ( 14, 'GetActorValue', 1, 0),
-    ( 61, 'GetAlarmed', 0, 0),
-    (190, 'GetAmountSoldStolen', 0, 0),
-    (  8, 'GetAngle', 1, 0),
-    ( 81, 'GetArmorRating', 0, 0),
-    (274, 'GetArmorRatingUpperBody', 0, 0),
-    ( 63, 'GetAttacked', 0, 0),
-    (264, 'GetBarterGold', 0, 0),
-    (277, 'GetBaseActorValue', 1, 0),
-    (229, 'GetClassDefaultMatch', 0, 0),
-    ( 41, 'GetClothingValue', 0, 0),
-    (122, 'GetCrime', 2, 1),
-    (116, 'GetCrimeGold', 0, 0),
-    (110, 'GetCurrentAIPackage', 0, 0),
-    (143, 'GetCurrentAIProcedure', 0, 0),
-    ( 18, 'GetCurrentTime', 0, 0),
-    (148, 'GetCurrentWeatherPercent', 0, 0),
-    (170, 'GetDayOfWeek', 0, 0),
-    ( 46, 'GetDead', 0, 0),
-    ( 84, 'GetDeadCount', 2, 0),
-    (203, 'GetDestroyed', 0, 0),
-    ( 45, 'GetDetected', 2, 0),
-    (180, 'GetDetectionLevel', 2, 0),
-    ( 35, 'GetDisabled', 0, 0),
-    ( 39, 'GetDisease', 0, 0),
-    ( 76, 'GetDisposition', 2, 0),
-    (  1, 'GetDistance', 2, 0),
-    (215, 'GetDoorDefaultOpen', 0, 0),
-    (182, 'GetEquipped', 2, 0),
-    ( 73, 'GetFactionRank', 2, 0),
-    ( 60, 'GetFactionRankDifference', 2, 2),
-    (128, 'GetFatiguePercentage', 0, 0),
-    (288, 'GetFriendHit', 2, 0),
-    (160, 'GetFurnitureMarkerID', 0, 0),
-    ( 74, 'GetGlobalValue', 2, 0),
-    ( 48, 'GetGold', 0, 0),
-    ( 99, 'GetHeadingAngle', 2, 0),
-    (318, 'GetIdleDoneOnce', 0, 0),
-    (338, 'GetIgnoreFriendlyHits', 0, 0),
-    ( 67, 'GetInCell', 2, 0),
-    (230, 'GetInCellParam', 2, 2),
-    ( 71, 'GetInFaction', 2, 0),
-    ( 32, 'GetInSameCell', 2, 0),
-    (305, 'GetInvestmentGold', 0, 0),
-    (310, 'GetInWorldspace', 2, 0),
-    ( 91, 'GetIsAlerted', 0, 0),
-    ( 68, 'GetIsClass', 2, 0),
-    (228, 'GetIsClassDefault', 2, 0),
-    ( 64, 'GetIsCreature', 0, 0),
-    (161, 'GetIsCurrentPackage', 2, 0),
-    (149, 'GetIsCurrentWeather', 2, 0),
-    (237, 'GetIsGhost', 0, 0),
-    ( 72, 'GetIsID', 2, 0),
-    (254, 'GetIsPlayableRace', 0, 0),
-    (224, 'GetIsPlayerBirthsign', 2, 0),
-    ( 69, 'GetIsRace', 2, 0),
-    (136, 'GetIsReference', 2, 0),
-    ( 70, 'GetIsSex', 1, 0),
-    (246, 'GetIsUsedItem', 2, 0),
-    (247, 'GetIsUsedItemType', 1, 0),
-    ( 47, 'GetItemCount', 2, 0),
-    (107, 'GetKnockedState', 0, 0),
-    ( 80, 'GetLevel', 0, 0),
-    ( 27, 'GetLineOfSight', 2, 0),
-    (  5, 'GetLocked', 0, 0),
-    ( 65, 'GetLockLevel', 0, 0),
-    (320, 'GetNoRumors', 0, 0),
-    (255, 'GetOffersServicesNow', 0, 0),
-    (157, 'GetOpenState', 0, 0),
-    (193, 'GetPCExpelled', 2, 0),
-    (199, 'GetPCFactionAttack', 2, 0),
-    (195, 'GetPCFactionMurder', 2, 0),
-    (197, 'GetPCFactionSteal', 2, 0),
-    (201, 'GetPCFactionSubmitAuthority', 2, 0),
-    (249, 'GetPCFame', 0, 0),
-    (132, 'GetPCInFaction', 2, 0),
-    (251, 'GetPCInfamy', 0, 0),
-    (129, 'GetPCIsClass', 2, 0),
-    (130, 'GetPCIsRace', 2, 0),
-    (131, 'GetPCIsSex', 1, 0),
-    (312, 'GetPCMiscStat', 1, 0),
-    (225, 'GetPersuasionNumber', 0, 0),
-    ( 98, 'GetPlayerControlsDisabled', 0, 0),
-    (365, 'GetPlayerInSEWorld',0,0),
-    (362, 'GetPlayerHasLastRiddenHorse', 0, 0),
-    (  6, 'GetPos', 1, 0),
-    ( 56, 'GetQuestRunning', 2, 0),
-    ( 79, 'GetQuestVariable', 2, 1),
-    ( 77, 'GetRandomPercent', 0, 0),
-    (244, 'GetRestrained', 0, 0),
-    ( 24, 'GetScale', 0, 0),
-    ( 53, 'GetScriptVariable', 2, 1),
-    ( 12, 'GetSecondsPassed', 0, 0),
-    ( 66, 'GetShouldAttack', 2, 0),
-    (159, 'GetSitting', 0, 0),
-    ( 49, 'GetSleeping', 0, 0),
-    ( 58, 'GetStage', 2, 0),
-    ( 59, 'GetStageDone', 2, 1),
-    ( 11, 'GetStartingAngle', 1, 0),
-    ( 10, 'GetStartingPos', 1, 0),
-    ( 50, 'GetTalkedToPC', 0, 0),
-    (172, 'GetTalkedToPCParam', 2, 0),
-    (361, 'GetTimeDead', 0, 0),
-    (315, 'GetTotalPersuasionNumber', 0, 0),
-    (144, 'GetTrespassWarningLevel', 0, 0),
-    (242, 'GetUnconscious', 0, 0),
-    (259, 'GetUsedItemActivate', 0, 0),
-    (258, 'GetUsedItemLevel', 0, 0),
-    ( 40, 'GetVampire', 0, 0),
-    (142, 'GetWalkSpeed', 0, 0),
-    (108, 'GetWeaponAnimType', 0, 0),
-    (109, 'GetWeaponSkillType', 0, 0),
-    (147, 'GetWindSpeed', 0, 0),
-    (154, 'HasFlames', 0, 0),
-    (214, 'HasMagicEffect', 2, 0),
-    (227, 'HasVampireFed', 0, 0),
-    (353, 'IsActor', 0, 0),
-    (314, 'IsActorAVictim', 0, 0),
-    (313, 'IsActorEvil', 0, 0),
-    (306, 'IsActorUsingATorch', 0, 0),
-    (280, 'IsCellOwner', 2, 2),
-    (267, 'IsCloudy', 0, 0),
-    (150, 'IsContinuingPackagePCNear', 0, 0),
-    (163, 'IsCurrentFurnitureObj', 2, 0),
-    (162, 'IsCurrentFurnitureRef', 2, 0),
-    (354, 'IsEssential', 0, 0),
-    (106, 'IsFacingUp', 0, 0),
-    (125, 'IsGuard', 0, 0),
-    (282, 'IsHorseStolen', 0, 0),
-    (112, 'IsIdlePlaying', 0, 0),
-    (289, 'IsInCombat', 0, 0),
-    (332, 'IsInDangerousWater', 0, 0),
-    (300, 'IsInInterior', 0, 0),
-    (146, 'IsInMyOwnedCell', 0, 0),
-    (285, 'IsLeftUp', 0, 0),
-    (278, 'IsOwner', 2, 0),
-    (176, 'IsPCAMurderer', 0, 0),
-    (175, 'IsPCSleeping', 0, 0),
-    (171, 'IsPlayerInJail', 0, 0),
-    (358, 'IsPlayerMovingIntoNewSpace', 0, 0),
-    (339, 'IsPlayersLastRiddenHorse', 0, 0),
-    (266, 'IsPleasant', 0, 0),
-    ( 62, 'IsRaining', 0, 0),
-    (327, 'IsRidingHorse', 0, 0),
-    (287, 'IsRunning', 0, 0),
-    (103, 'IsShieldOut', 0, 0),
-    (286, 'IsSneaking', 0, 0),
-    ( 75, 'IsSnowing', 0, 0),
-    (223, 'IsSpellTarget', 2, 0),
-    (185, 'IsSwimming', 0, 0),
-    (141, 'IsTalking', 0, 0),
-    (265, 'IsTimePassing', 0, 0),
-    (102, 'IsTorchOut', 0, 0),
-    (145, 'IsTrespassing', 0, 0),
-    (329, 'IsTurnArrest', 0, 0),
-    (111, 'IsWaiting', 0, 0),
-    (101, 'IsWeaponOut', 0, 0),
-    (309, 'IsXBox', 0, 0),
-    (104, 'IsYielding', 0, 0),
-    ( 36, 'MenuMode', 1, 0),
-    ( 42, 'SameFaction', 2, 0),
-    (133, 'SameFactionAsPC', 0, 0),
-    ( 43, 'SameRace', 2, 0),
-    (134, 'SameRaceAsPC', 0, 0),
-    ( 44, 'SameSex', 2, 0),
-    (135, 'SameSexAsPC', 0, 0),
-    (323, 'WhichServiceMenu', 0, 0),
-    )
-allConditions = set(entry[0] for entry in conditionFunctionData)
-fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
-fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
-
 # Magic Info ------------------------------------------------------------------
-weaponTypes = (
-    _(u'Blade (1 Handed)'),
-    _(u'Blade (2 Handed)'),
-    _(u'Blunt (1 Handed)'),
-    _(u'Blunt (2 Handed)'),
-    _(u'Staff'),
-    _(u'Bow'),
-    )
-
 magicEffects = {
     'ABAT': [5,_(u'Absorb Attribute'),0.95],
     'ABFA': [5,_(u'Absorb Fatigue'),6],
@@ -869,7 +580,7 @@ acbs = {
     u'Luck': 32,
     }
 
- # Save File Info --------------------------------------------------------------
+#Save File Info --------------------------------------------------------------
 saveRecTypes = {
     6 : _(u'Faction'),
     19: _(u'Apparatus'),

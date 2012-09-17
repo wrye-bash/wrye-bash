@@ -36,17 +36,20 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
-from __future__ import with_statement   # Python 2.5 with statement
 #--Localization
 #..Handled by bosh, so import that.
 import bush
 import bosh
 import bolt
+import bapi
 import barb
+import bass
+import bweb
+import wizSTC
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
-from bolt import LString, GPath, SubProgress, deprint, delist
+from bolt import LString, GPath, SubProgress, deprint, delist, sio
 from cint import *
 startupinfo = bolt.startupinfo
 
@@ -54,6 +57,7 @@ startupinfo = bolt.startupinfo
 import ConfigParser
 import StringIO
 import copy
+import datetime
 import os
 import re
 import shutil
@@ -63,6 +67,10 @@ import sys
 import textwrap
 import time
 import subprocess
+import locale
+import win32gui
+import multiprocessing
+import webbrowser
 from types import *
 from operator import attrgetter,itemgetter
 
@@ -118,7 +126,7 @@ settings = None
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
     'default.text': (_(u'Default Text'),
-                     _(u'This is the text color used for list items when no other is specifid.  For example, an ESP that is not mergeable or ghosted, and has no other problems.'),
+                     _(u'This is the text color used for list items when no other is specified.  For example, an ESP that is not mergeable or ghosted, and has no other problems.'),
                      ),
     'default.bkgd': (_(u'Default Background'),
                      _(u'This is the text background color used for list items when no other is specified.  For example, an ESM that is not ghosted.'),
@@ -250,8 +258,17 @@ settingDefaults = {
     'bash.framePos': (-1,-1),
     'bash.frameSize': (1024,600),
     'bash.frameSize.min': (400,600),
+    'bash.frameMax': False, # True if maximized
     'bash.page':1,
     'bash.useAltName':True,
+    'bash.pluginEncoding': 'cp1252',    # Western European
+    #--Auto-Update information
+    'bash.update.frequency': False, # Don't check for updates
+    'bash.update.last': 0,
+    'bash.update.defs': set(),      # List of Game Definitions installed
+    'bash.update.lang': set(),      # List of Language updates installed
+    'bash.update.dontAsk': False,   # If True, Wrye Bash won't ask to download updates, just to install
+    'bash.update.backupSFX': True,  # Make the backup file an SFX archive
     #--Colors
     'bash.colors': {
         #--Common Colors
@@ -404,6 +421,7 @@ settingDefaults = {
     'bash.installers.fastStart': True,
     'bash.installers.autoRefreshBethsoft': False,
     'bash.installers.autoRefreshProjects': True,
+    'bash.installers.autoApplyEmbeddedBCFs': True,
     'bash.installers.removeEmptyDirs':True,
     'bash.installers.skipScreenshots':False,
     'bash.installers.skipImages':False,
@@ -413,6 +431,7 @@ settingDefaults = {
     'bash.installers.skipLandscapeLODTextures':False,
     'bash.installers.skipLandscapeLODNormals':False,
     'bash.installers.allowOBSEPlugins':True,
+    'bash.installers.renameStrings':True,
     'bash.installers.sortProjects':False,
     'bash.installers.sortActive':False,
     'bash.installers.sortStructure':False,
@@ -422,6 +441,210 @@ settingDefaults = {
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
+    #--Installers Comments/WizBAIN Editor
+    'bash.installers.wizSTC.DisableCommentsWizBAINEditor':0,
+    'bash.installers.wizSTC.StdOutDebugWindow':0,
+    'bash.installers.wizSTC.LoadSTCLexer':'wizbainlexer',
+    'bash.installers.wizSTC.ThemeOnStartup':'Default',
+    'bash.installers.wizSTC.FolderMarginStyle':1,
+    'bash.installers.wizSTC.ShowLineNumbersMargin':1,
+    'bash.installers.wizSTC.AutoAdjustLineMargin':1,
+    'bash.installers.wizSTC.CaretSpeed':0,
+    'bash.installers.wizSTC.CaretPixelWidth':2,
+    'bash.installers.wizSTC.CaretForegroundColor':'#0000FF',
+    'bash.installers.wizSTC.CaretLineBackgroundAlpha':100,
+    'bash.installers.wizSTC.CaretLineVisible':1,
+    'bash.installers.wizSTC.WordWrap':0,
+    'bash.installers.wizSTC.TabsOrSpaces':0,
+    'bash.installers.wizSTC.IndentSize':4,
+    'bash.installers.wizSTC.TabWidth':4,
+    'bash.installers.wizSTC.IndentationGuides':1,
+    'bash.installers.wizSTC.ViewWhiteSpace':1,
+    'bash.installers.wizSTC.TabIndents':1,
+    'bash.installers.wizSTC.BackSpaceUnIndents':0,
+    'bash.installers.wizSTC.BraceCompletion':1,
+    'bash.installers.wizSTC.AutoIndentation':0,
+    'bash.installers.wizSTC.ReadOnly':0,
+    'bash.installers.wizSTC.UseAntiAliasing':1,
+    'bash.installers.wizSTC.UseBufferedDraw':1,
+    'bash.installers.wizSTC.OvertypeOnOff':0,
+    'bash.installers.wizSTC.ViewEOL':0,
+    'bash.installers.wizSTC.LongLineEdgeMode':0,
+    'bash.installers.wizSTC.LongLineEdge':80,
+    'bash.installers.wizSTC.LineEdgeModeAsColumnMarker':0,
+    'bash.installers.wizSTC.VertEditMode':0,
+    'bash.installers.wizSTC.ScrollingPastLastLine':1,
+    'bash.installers.wizSTC.SetLeftRightBlankMargins':0,
+    'bash.installers.wizSTC.MouseGestureWobbleTolerance':500, #Hmmm need to figure out how this affects usage as in low/high number
+    'bash.installers.wizSTC.UseCustomFont':0,
+    'bash.installers.wizSTC.UserCustomFontFace':'Magic Cards',
+    'bash.installers.wizSTC.ModdersHandle':u'ModdersHandle',#Ex:Wrye,Metallicow,LoJack,PacificMorrowind,etc...
+    'bash.installers.wizSTC.IntelliWiz':0,
+    'bash.installers.wizSTC.IntelliCallTip':1,
+    'bash.installers.wizSTC.ActiveProject':u'None',
+    'bash.installers.wizSTC.FindList':[u'Add/Delete from list with the buttons ==>'],
+    'bash.installers.wizSTC.ReplaceList':[u'Add/Delete from list with the buttons ==>'],
+    'bash.installers.wizSTC.SetFindReplaceTransparency':255,
+    'bash.installers.wizSTC.FindReplaceComboBoxsAutoSort':1,
+    'bash.installers.wizSTC.FindReplaceWholeWordCB':0,
+    'bash.installers.wizSTC.FindReplaceMatchCaseCB':0,
+    'bash.installers.wizSTC.FindReplaceWrapAroundCB':1,
+    'bash.installers.wizSTC.MiniMemoText':u'Woot it\'s a memo!',
+    'bash.installers.wizSTC.MiniMemoSavedSize':(75, 75),
+    #--Wrye Bash: Bash.ini Settings
+    
+    
+    
+    
+    'bash.bashini.general.sTest':ur'hmmm',
+    
+    'bash.bashini.general.sMorrowindDir':ur'C:/Program Files/Bethesda Softworks/Morrowind',
+    'bash.bashini.general.sMorrowindBashInstallersDir':ur'C:/Program Files/Bethesda Softworks/Morrowind Mods',
+    'bash.bashini.general.sOblivionDir':ur'C:/Program Files/Bethesda Softworks/Oblivion',
+    'bash.bashini.general.sOblivionBashInstallersDir':ur'C:/Program Files/Bethesda Softworks/Oblivion Mods',
+    'bash.bashini.general.sSkyrimDir':ur'C:/Program Files/Steam/steamapps/common/skyrim',
+    'bash.bashini.general.sSkyrimBashInstallersDir':ur'C:/Program Files/Steam/steamapps/common/Skyrim Mods/Bash Installers',
+    
+    'bash.bashini.general.sOblivionMods':ur'../Skyrim Mods',
+    'bash.bashini.general.sInstallersData':ur'../Skyrim Mods/Bash Installers/Bash',
+    'bash.bashini.general.sBashModData':ur'../Skyrim Mods/Bash Mod Data',
+    'bash.bashini.general.sOblivionPath':ur'.',
+    'bash.bashini.general.sUserPath':ur'.',
+    'bash.bashini.general.sPersonalPath':ur'.',
+    'bash.bashini.general.sLocalAppDataPath':ur'.',
+    'bash.bashini.general.bSteamInstall':ur'.',#(1 or 0 or True or False, or . for autodetect)
+
+    'bash.bashini.settings.sScriptFileExt':ur'.txt',
+    'bash.bashini.settings.iKeepLog':0,#with 0 being no log, and 4 being maximum logging (not fully implemented yet)
+    'bash.bashini.settings.sLogFile':ur'Mopy/bash.log',
+    'bash.bashini.settings.bEnableBalo':False,
+    'bash.bashini.settings.bResetBSATimestamps':True,
+    'bash.bashini.settings.bEnsurePatchExists':True,
+    'bash.bashini.settings.sOblivionTexturesBSAName':ur'.',
+    'bash.bashini.settings.bSkipResetTimeNotifications':False,
+    'bash.bashini.settings.bShowDevTools':False,
+
+    # Not sure, If these have been taken care of...
+    # 'bash.bashini.settings.bShowTextDifferenceMergeable':True,
+    # 'bash.bashini.settings.bShowTextDifferenceNoMerge':True,
+    # 'bash.bashini.settings.bShowTextDifferenceRegular':True,
+    # 'bash.bashini.settings.bShowTextDifferenceESM':True,
+    # LoJack took care of these in the colors dialog...
+    # # 'bash.bashini.settings.oDeactivateTextColour':wx.BLACK,
+    # # 'bash.bashini.settings.oESMTextColour':wx.BLUE,
+    # # 'bash.bashini.settings.oMergeableTextColour':wx.Colour(0x00,0x99,0x00),
+    # # 'bash.bashini.settings.oNoMergeTextColour':wx.Colour(153,0,153),
+    # # 'bash.bashini.settings.oRegularTextColour':wx.BLACK,
+    # Not sure, If these have been taken care of...
+    # 'bash.bashini.settings.oDeactivateTextStyle':(8, wx.NORMAL, wx.SLANT, wx.NORMAL),
+    # 'bash.bashini.settings.oESMTextStyle':u'Default',
+    # 'bash.bashini.settings.oMergeableTextStyle':u'Default',
+    # 'bash.bashini.settings.oNoMergeTextStyle':u'Default',
+    # 'bash.bashini.settings.oRegularTextStyle':u'Default',
+
+    'bash.bashini.settings.bAutoItemCheck':True,
+    'bash.bashini.settings.bSkipHideConfirmation':False,
+    'bash.bashini.settings.s7zExtraCompressionArguments':u'-ms=on -ms=1m',
+    'bash.bashini.settings.iAutoSizeListColumns':0,
+    'bash.bashini.settings.sSoundError':ur'.',
+    'bash.bashini.settings.sSoundSuccess':ur'.',
+
+    'bash.bashini.tooloptions.bShowTextureToolLaunchers':True,
+    'bash.bashini.tooloptions.bShowModelingToolLaunchers':True,
+    'bash.bashini.tooloptions.bShowAudioToolLaunchers':True,
+    #ESM/ESP/LOD/NIF Tool Launchers
+    'bash.bashini.tooloptions.sTes4GeckoPath':ur'Tes4Gecko.jar',
+    'bash.bashini.tooloptions.sTes4GeckoJavaArg':ur'-Xmx1024m',
+    'bash.bashini.tooloptions.sTes4FilesPath':ur'Tools/Tes4Files.exe',
+    'bash.bashini.tooloptions.sTes4EditPath':ur'Tes4Edit.exe',
+    'bash.bashini.tooloptions.sTes4LodGenPath':ur'Tes4LodGen.exe',
+    'bash.bashini.tooloptions.sNifskopePath':ur'C:/Program Files/NifTools/NifSkope/nifskope.exe',
+    #3D Modeling Tool Launchers
+    'bash.bashini.tooloptions.sArtOfIllusionPath':ur'C:/Program Files/ArtOfIllusion/Art of Illusion.exe',
+    'bash.bashini.tooloptions.sAutoCadPath':ur'C:/Program Files/Autodesk Architectural Desktop 3/acad.exe',
+    'bash.bashini.tooloptions.sBlenderPath':ur'C:/Program Files/Blender Foundation/Blender/Blender.exe',
+    'bash.bashini.tooloptions.sGmaxPath':ur'C:/GMAX/gmax.exe',
+    'bash.bashini.tooloptions.sMaxPath':ur'C:/Program Files/Autodesk/3ds Max 2010/3dsmax.exe',
+    'bash.bashini.tooloptions.sMayaPath':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sMilkShape3DPath':ur'C:/Program Files/MilkShape 3D 1.8.4/ms3d.exe',
+    'bash.bashini.tooloptions.sMudboxPath':ur'C:/Program Files/Autodesk/Mudbox2011/mudbox.exe',
+    'bash.bashini.tooloptions.sSculptrisPath':ur'C:/Program Files/sculptris/Sculptris.exe',
+    'bash.bashini.tooloptions.sSoftimageModToolPath':ur'C:/Softimage/Softimage_Mod_Tool_7.5/Application/bin/XSI.bat -mod',
+    'bash.bashini.tooloptions.sSpeedTreePath':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sTreedPath':ur'C:/not/a/valid/path.exe',
+    'bash.bashini.tooloptions.sWings3DPath':ur'C:/Program Files/wings3d_1.2/Wings3D.exe',
+    #Texturing/DDS Tool Launchers
+    'bash.bashini.tooloptions.sAniFXPath':ur'C:/Program Files/AniFX 1.0/AniFX.exe',
+    'bash.bashini.tooloptions.sArtweaverPath':ur'C:/Program Files/Artweaver 1.0/Artweaver.exe',
+    'bash.bashini.tooloptions.sBricksNTilesPath':ur'C:/Program Files/BricksNTiles/BricksNTiles.exe',
+    'bash.bashini.tooloptions.sCrazyBumpPath':ur'C:/Program Files/Crazybump/CrazyBump.exe',
+    'bash.bashini.tooloptions.sDDSConverter2Path':ur'C:/Program Files/DDS Converter 2/DDS Converter 2.exe',
+    'bash.bashini.tooloptions.sDeepPaintPath':ur'C:/Program Files/Right Hemisphere/Deep Paint/DeepPaint.exe',
+    'bash.bashini.tooloptions.sDogwafflePath':ur'C:/Program Files/project dogwaffle/dogwaffle.exe',
+    'bash.bashini.tooloptions.sGeneticaPath':ur'C:/Program Files/Spiral Graphics/Genetica 3.5/Genetica.exe',
+    'bash.bashini.tooloptions.sGeneticaViewerPath':ur'C:/Program Files/Spiral Graphics/Genetica Viewer 3/Genetica Viewer 3.exe',
+    'bash.bashini.tooloptions.sGeniuXPhotoEFXPath':ur'C:/Program Files/GeniuXPhotoEFX/GeniuXPhotoEFX.exe',
+    'bash.bashini.tooloptions.sGIMPPath':ur'C:/Program Files/GIMP 2/bin/gimp-2.8.exe',
+    'bash.bashini.tooloptions.sGimpShopPath':ur'C:/Program Files/GIMPshop/bin/gimp-2.2.exe',
+    'bash.bashini.tooloptions.sIcoFXPath':ur'C:/Program Files/IcoFX 1.6/IcoFX.exe',
+    'bash.bashini.tooloptions.sInkscapePath':ur'C:/Program Files/Inkscape/inkscape.exe',
+    'bash.bashini.tooloptions.sMaPZonePath':ur'C:/Program Files/Allegorithmic/MaPZone 2.6/MaPZone2.exe',
+    'bash.bashini.tooloptions.sMyPaintPath':ur'C:/Program Files/MyPaint/mypaint.exe',
+    'bash.bashini.tooloptions.sNVIDIAMelodyPath':ur'C:/Program Files/NVIDIA Corporation/Melody/Melody.exe',
+    'bash.bashini.tooloptions.sPaintNETPath':ur'C:/Program Files/Paint.NET/PaintDotNet.exe',
+    'bash.bashini.tooloptions.sPaintShopPhotoProPath':ur'C:/Program Files/Corel/Corel PaintShop Photo Pro/X3/PSPClassic/Corel Paint Shop Pro Photo.exe',
+    'bash.bashini.tooloptions.sPhotobieDesignStudioPath':ur'C:/Program Files/Photobie/Photobie.exe',
+    'bash.bashini.tooloptions.sPhotoFiltrePath':ur'C:/Program Files/PhotoFiltre/PhotoFiltre.exe',
+    'bash.bashini.tooloptions.sPhotoScapePath':ur'C:/Program Files/PhotoScape/PhotoScape.exe',
+    'bash.bashini.tooloptions.sPhotoSEAMPath':ur'C:/Program Files/PhotoSEAM/PhotoSEAM.exe',
+    'bash.bashini.tooloptions.sPhotoshopPath':ur'C:/Program Files/Adobe/Adobe Photoshop CS3/Photoshop.exe',
+    'bash.bashini.tooloptions.sPixelStudioProPath':ur'C:/Program Files/Pixel/Pixel.exe',
+    'bash.bashini.tooloptions.sPixiaPath':ur'C:/Program Files/Pixia/pixia.exe',
+    'bash.bashini.tooloptions.sTextureMakerPath':ur'C:/Program Files/Texture Maker/texturemaker.exe',
+    'bash.bashini.tooloptions.sTwistedBrushPath':ur'C:/Program Files/Pixarra/TwistedBrush Open Studio/tbrush_open_studio.exe',
+    'bash.bashini.tooloptions.sWTVPath':ur'C:/Program Files/WindowsTextureViewer/WTV.exe',
+    'bash.bashini.tooloptions.sxNormalPath':ur'C:/Program Files/Santiago Orgaz/xNormal/3.17.3/x86/xNormal.exe',
+    #General/Modding Tool Launchers
+    'bash.bashini.tooloptions.sBSACMDPath':ur'C:/Program Files/BSACommander/bsacmd.exe',
+    'bash.bashini.tooloptions.sEggTranslatorPath':ur'C:/Program Files/Egg Translator/EggTranslator.exe',
+    'bash.bashini.tooloptions.sISOBLPath':ur'ISOBL.exe',
+    'bash.bashini.tooloptions.sISRMGPath':ur'Insanitys ReadMe Generator.exe',
+    'bash.bashini.tooloptions.sISRNGPath':ur'Random Name Generator.exe',
+    'bash.bashini.tooloptions.sISRNPCGPath':ur'Random NPC.exe',
+    'bash.bashini.tooloptions.sMAPPath':ur'Modding Tools/Interactive Map of Cyrodiil and Shivering Isles 3.52/Mapa v 3.52.exe',
+    'bash.bashini.tooloptions.sOblivionBookCreatorPathPath':ur'Data/OblivionBookCreator.jar',
+    'bash.bashini.tooloptions.sOblivionBookCreatorJavaArg':ur'-Xmx1024m',
+    'bash.bashini.tooloptions.sOBMLGPath':ur'Modding Tools/Oblivion Mod List Generator/Oblivion Mod List Generator.exe',
+    'bash.bashini.tooloptions.sOBFELPath':ur'C:/Program Files/Oblivion Face Exchange Lite/OblivionFaceExchangeLite.exe',
+    'bash.bashini.tooloptions.sRADVideoPath':ur'C:/Program Files/RADVideo/radvideo.exe',
+    'bash.bashini.tooloptions.sTabulaPath':ur'Modding Tools/Tabula.exe',
+    #Screenshot/Benchmarking Tool Launchers
+    'bash.bashini.tooloptions.sFastStonePath':ur'C:/Program Files/FastStone Image Viewer/FSViewer.exe',
+    'bash.bashini.tooloptions.sFrapsPath':ur'C:/Fraps/Fraps.exe',
+    'bash.bashini.tooloptions.sIrfanViewPath':ur'C:/Program Files/IrfanView/i_view32.exe',
+    'bash.bashini.tooloptions.sWinSnapPath':ur'C:/Program Files/WinSnap/WinSnap.exe',
+    'bash.bashini.tooloptions.sXnViewPath':ur'C:/Program Files/XnView/xnview.exe',
+    #Sound/Audio Tool Launchers
+    'bash.bashini.tooloptions.sABCAmberAudioConverterPath':ur'C:/Program Files/ABC Amber Audio Converter/abcaudio.exe',
+    'bash.bashini.tooloptions.sAudacityPath':ur'C:/Program Files/Audacity/Audacity.exe',
+    'bash.bashini.tooloptions.sMediaMonkeyPath':ur'C:/Program Files/MediaMonkey/MediaMonkey.exe',
+    'bash.bashini.tooloptions.sSwitchPath':ur'C:/Program Files/NCH Swift Sound/Switch/switch.exe',
+    #Text/Development Tool Launchers
+    'bash.bashini.tooloptions.sFreeMindPath':ur'C:/Program Files/FreeMind/Freemind.exe',
+    'bash.bashini.tooloptions.sFreeplanePath':ur'C:/Program Files/Freeplane/freeplane.exe',
+    'bash.bashini.tooloptions.sNPPPath':ur'C:/Program Files/Notepad++/notepad++.exe',
+    'bash.bashini.tooloptions.sWinMergePath':ur'C:/Program Files/WinMerge/WinMergeU.exe',
+    #Other/Miscellaneous Tool Launchers
+    'bash.bashini.tooloptions.sEVGAPrecisionPath':ur'C:/Program Files/EVGA Precision/EVGAPrecision.exe',
+    'bash.bashini.tooloptions.sFileZillaPath':ur'C:/Program Files/FileZilla FTP Client/filezilla.exe',
+    'bash.bashini.tooloptions.sLogitechKeyboardPath':ur'C:/Program Files/Logitech Gaming Software/LCore.exe',
+    'bash.bashini.tooloptions.sSteamPath':ur'C:/Program Files/Steam/steam.exe',
+    #Users personal Mods archives seperate from bash installers
+    'bash.bashini.mymodsdirs.MySkyrimModsDir':ur'C:/Games/Skyrim Mods',
+    'bash.bashini.mymodsdirs.MyOblivionModsDir':ur'C:/Games/Oblivion Mods',
+    'bash.bashini.mymodsdirs.MyMorrowindModsDir':ur'C:/Games/Morrowind Mods',
+    'bash.bashini.mymodsdirs.MyFallout3ModsDir':ur'C:/Games/Fallout 3 Mods',
+    'bash.bashini.mymodsdirs.MyFalloutNVModsDir':ur'C:/Games/Fallout New Vegas Mods',
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': wx.DefaultPosition,
@@ -437,6 +660,7 @@ settingDefaults = {
     'bash.ini.colAligns': {},
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
+    'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
     'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Mod Status'],
     'bash.mods.esmsFirst': 1,
@@ -781,10 +1005,7 @@ class SashTankPanel(NotebookPanel):
         """Panel is shown. Update self.data."""
         if self.gList.data.refresh():
             self.gList.RefreshUI()
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.gList.gList.GetColumnCount()):
-                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
-        self.SetStatusCount()
+        super(SashTankPanel).OnShow()
 
     def OnSashDrag(self,event):
         """Handle sash moved."""
@@ -841,7 +1062,9 @@ class List(wx.Panel):
         #--Events: Columns
         wx.EVT_LIST_COL_CLICK(self, listId, self.DoItemSort)
         wx.EVT_LIST_COL_RIGHT_CLICK(self, listId, self.DoColumnMenu)
+        self.checkcol = []
         wx.EVT_LIST_COL_END_DRAG(self,listId, self.OnColumnResize)
+        wx.EVT_UPDATE_UI(self, listId, self.onUpdateUI)
         #--Mouse movement
         self.list.Bind(wx.EVT_MOTION,self.OnMouse)
         self.list.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
@@ -873,8 +1096,10 @@ class List(wx.Panel):
         """Create/name columns in ListCtrl."""
         cols = self.cols
         self.numCols = len(cols)
+        colDict = self.colDict = {}
         for colDex in xrange(self.numCols):
             colKey = cols[colDex]
+            colDict[colKey] = colDex
             colName = self.colNames.get(colKey,colKey)
             wxListAlign = wxListAligns[self.colAligns.get(colKey,0)]
             if colDex >= self.list.GetColumnCount():
@@ -967,8 +1192,12 @@ class List(wx.Panel):
                 checks = dialog.FindWindowById(id)
                 if checks:
                     for i,mod in enumerate(items):
-                         if checks.IsChecked(i):
-                            self.data.delete(mod)
+                        if checks.IsChecked(i):
+                            try:
+                                self.data.delete(mod)
+                            except bolt.BoltError as e:
+                                balt.showError(self, _(u'%s') % e)
+                bosh.modInfos.plugins.saveLoadOrder()
                 self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
@@ -979,13 +1208,20 @@ class List(wx.Panel):
             fileName = GPath(item)
             #--Unselect?
             if self.data.isSelected(fileName):
-                self.data.unselect(fileName)
-                changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
-                if len(changed) > (fileName in changed):
-                    changed.remove(fileName)
-                    changed = [x.s for x in changed]
-                    removed += changed
-                    balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
+                try:
+                    self.data.unselect(fileName)
+                    changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
+                    if len(changed) > (fileName in changed):
+                        changed.remove(fileName)
+                        changed = [x.s for x in changed]
+                        removed += changed
+                        balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
+                except bapi.BossError as e:
+                    if (e.msg == 'BOSS_API_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.'):
+                        msg = _(u'Plugins may not be sorted before the game\'s master file.')
+                    else:
+                        msg = e.msg
+                    balt.showError(self,_(u'%s') % msg)
             #--Select?
             else:
                 ## For now, allow selecting unicode named files, for testing
@@ -1004,6 +1240,7 @@ class List(wx.Panel):
                         % fileName.s)
                     return
         #--Refresh
+        bosh.modInfos.refresh()
         self.RefreshUI()
         #--Mark sort as dirty
         if self.selectedFirst:
@@ -1038,6 +1275,19 @@ class List(wx.Panel):
         return (col,reverse)
 
     #--Event Handlers -------------------------------------
+    def onUpdateUI(self,event):
+        if self.checkcol:
+            colDex = self.checkcol[0]
+            colName = self.cols[colDex]
+            width = self.list.GetColumnWidth(colDex)
+            if width < 25:
+                width = 25
+                self.list.SetColumnWidth(colDex, 25)
+                self.list.resizeLastColumn(0)
+            self.colWidths[colName] = width
+            self.checkcol = []
+        event.Skip()
+
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
@@ -1067,17 +1317,11 @@ class List(wx.Panel):
 
     #--Column Resize
     def OnColumnResize(self,event):
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        width = self.list.GetColumnWidth(colDex)
-        if width < 5:
-            width = 5
-            self.list.SetColumnWidth(colDex, 5)
-            event.Veto()
-            self.list.resizeLastColumn(0)
-        else:
-            event.Skip()
-        self.colWidths[colName] = width
+        """Due to a nastyness that ListCtrl.GetColumnWidth(col) returns
+        the old size before this event completes just save what
+        column is being edited and process after in OnUpdateUI()"""
+        self.checkcol = [event.GetColumn()]
+        event.Skip()
 
     #--Item Sort
     def DoItemSort(self, event):
@@ -1101,6 +1345,8 @@ class List(wx.Panel):
     #--Event: Left Down
     def OnLeftDown(self,event):
         #self.hitTest = self.list.HitTest((event.GetX(),event.GetY()))
+        #self.pos[0] = event.GetX()
+        #deprint(event.GetX())
         event.Skip()
 
     def OnScroll(self,event):
@@ -1169,7 +1415,6 @@ class MasterList(List):
             self.items.append(item)
             self.fileOrderItems.append(item)
         self.ReList()
-        self.SortItems()
         self.PopulateItems()
 
     #--Get Master Status
@@ -1214,7 +1459,10 @@ class MasterList(List):
                 value = u'%02X' % (self.fileOrderItems.index(itemId),)
             elif col == 'Current Order':
                 #print itemId
-                value = u'%02X' % (self.loadOrderNames.index(masterName),)
+                if masterName in bosh.modInfos.plugins.LoadOrder:
+                    value = u'%02X' % (self.loadOrderNames.index(masterName),)
+                else:
+                    value = u''
             #--Insert/Set Value
             if mode and (colDex == 0):
                 self.list.InsertStringItem(itemDex, value)
@@ -1268,7 +1516,7 @@ class MasterList(List):
         elif col == 'Group':
             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',u''))
         elif col == 'Installer':
-             self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
+            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
         elif col == 'Modified':
             self.items.sort(key=lambda a: data[a].mtime)
         elif col in ['Save Order','Num']:
@@ -1421,7 +1669,7 @@ class INIList(List):
         tweaks.sort()
         for tweak in tweaks:
             if not self.data[tweak].status == 20: continue
-            tweaklist+= tweak + u'\n'
+            tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
@@ -1482,7 +1730,8 @@ class INIList(List):
             mousetext = _(u'Some settings are changed.')
         elif status == -10:
             # Bad tweak
-            icon = 20
+            if not settings['bash.ini.allowNewLines']: icon = 20
+            else: icon = 0
             mousetext = _(u'Tweak is invalid')
         self.mouseTexts[itemDex] = mousetext
         self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
@@ -1519,49 +1768,30 @@ class INIList(List):
         if self.sortValid:
             self.items.sort(key=lambda a: self.data[a].status < 0)
 
-    def OnDoubleClick(self,event):
-        """Handle doubclick event."""
+    def OnLeftDown(self,event):
+        """Handle click on icon events"""
+        event.Skip()
         (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
-        if hitItem < 0: return
+        if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
+        tweak = bosh.iniInfos[self.items[hitItem]]
+        if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
-        if self.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
-            message = (_(u"Apply an ini tweak to Oblivion.ini?")
+        iniPanel = self.GetParent().GetParent().GetParent()
+        choice = iniPanel.GetChoice().tail
+        if choice in bush.game.iniFiles:
+            message = (_(u"Apply an ini tweak to %s?") % choice
                        + u'\n\n' +
                        _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                        )
             if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
                 return
-        dir = self.data.dir
+        dir = tweak.dir
         #--No point applying a tweak that's already applied
-        if bosh.iniInfos[self.items[hitItem]].status == 20: return
         file = dir.join(self.items[hitItem])
         iniList.data.ini.applyTweakFile(file)
         iniList.RefreshUI('VALID')
-        self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
-        self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
-
-    def OnLeftDown(self,event):
-        """Left Down: Apply edit if not applied."""
-        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
-        if hitItem >= 0 and hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            #-- If we're applying to Oblivion.ini, show the warning
-            if self.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
-                message = (_(u"Apply an ini tweak to Oblivion.ini?")
-                           + u'\n\n' +
-                           _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
-                           )
-                if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
-                    return
-            dir = self.data.dir
-            #--No point applying a tweak that's already applied
-            if bosh.iniInfos[self.items[hitItem]].status != 20:
-                file = dir.join(self.items[hitItem])
-                iniList.data.ini.applyTweakFile(file)
-                iniList.RefreshUI('VALID')
-                self.GetParent().GetParent().GetParent().iniContents.RefreshUI()
-                self.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
-        #--Pass Event onward
-        event.Skip()
+        iniPanel.iniContents.RefreshUI()
+        iniPanel.tweakContents.RefreshUI(self.data[0])
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
@@ -1602,7 +1832,7 @@ class INITweakLineCtrl(wx.ListCtrl):
             self.DeleteAllItems()
             return
         ini = bosh.iniInfos.ini
-        tweakPath = bosh.iniInfos.dir.join(tweakPath)
+        tweakPath = bosh.iniInfos[tweakPath].dir.join(tweakPath)
         self.tweakLines = ini.getTweakFileLines(tweakPath)
         num = self.GetItemCount()
         updated = []
@@ -1613,15 +1843,18 @@ class INITweakLineCtrl(wx.ListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            if line[4] == -10: color = colors['tweak.bkgd.invalid']
-            elif line[4] == 10: color = colors['tweak.bkgd.mismatched']
-            elif line[4] == 20: color = colors['tweak.bkgd.matched']
+            status = line[4]
+            if status == -10: color = colors['tweak.bkgd.invalid']
+            elif status == 10: color = colors['tweak.bkgd.mismatched']
+            elif status == 20: color = colors['tweak.bkgd.matched']
+            elif line[6]: color = colors['tweak.bkgd.mismatched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
-            if line[5] != -1:
-                self.iniContents.SetItemBackgroundColour(line[5],color)
-                updated.append(line[5])
+            lineNo = line[5]
+            if lineNo != -1:
+                self.iniContents.SetItemBackgroundColour(lineNo,color)
+                updated.append(lineNo)
         #--Delete extra lines
         for i in range(len(self.tweakLines),num):
             self.DeleteItem(len(self.tweakLines))
@@ -1699,6 +1932,8 @@ class ModList(List):
         List.__init__(self,parent,wx.ID_ANY,ctrlStyle=(wx.LC_REPORT), dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
         #--Image List
         checkboxesIL = colorChecks.GetImageList()
+        self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
+        self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
         self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
         #--Events
         wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
@@ -1716,47 +1951,23 @@ class ModList(List):
             if GPath(thisFile) in bosh.modInfos.autoSorted:
                 balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
                 return
-        # Watch out for errors in range
-        if newPos > indexes[0]:   inc = 1
-        elif newPos < indexes[0]: inc = -1
-        else: return
-        howMany = indexes[-1]-indexes[0]
-        # Make sure we don't go out of bounds
-        target = indexes[0]
-        thisFile = self.items[target]
-        while True:
-            if target < 0: break
-            if target + howMany >= len(self.items) - inc: break
-            if target == newPos: break
-            swapFile = self.items[target]
-            if thisFile.cext != swapFile.cext: break
-            target += inc
-        if inc == 1 and target + howMany <= indexes[-1]: return
-        if inc == -1 and target >= indexes[0]: return
-        # Adjust for going up/down
-        if inc > 0:
-            target += howMany
-        else:
-            indexes.reverse()
-        # Gather time codes
-        i = indexes[0]
-        times = []
-        while i != target + inc:
-            info = bosh.modInfos[self.items[i]]
-            times.append(info.mtime)
-            i += inc
-        # Rearrange them for the new load order
-        times.reverse()
-        newThisTimes = times[:howMany+1]
-        newSwapTimes = times[howMany+1:]
-        times = newSwapTimes + newThisTimes
-        # Apply new times
-        i = indexes[0]
-        while i != target + inc:
-            info = bosh.modInfos[self.items[i]]
-            info.setmtime(times.pop())
-            i += inc
-        # Refresh
+        start = indexes[0]
+        stop = indexes[-1] + 1
+        order = bosh.modInfos.plugins.LoadOrder
+        # Dummy checks: can't move the game's master file anywhere else but position 0
+        if newPos <= 0: return
+        master = bosh.modInfos.masterName
+        if master in order[start:stop]: return
+        # List of names to move removed and then reinserted at new position
+        toMove = order[start:stop]
+        del order[start:stop]
+        order[newPos:newPos] = toMove
+        #--Save and Refresh
+        try:
+            bosh.modInfos.plugins.saveLoadOrder()
+        except bolt.BoltError as e:
+            balt.showError(self, _(u'%s') % e)
+        bosh.modInfos.plugins.refresh(True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
 
@@ -1789,6 +2000,7 @@ class ModList(List):
             itemDex = self.items.index(itemDex)
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
+        fileBashTags = bosh.modInfos[fileName].getBashTags()
         cols = self.cols
         for colDex in range(self.numCols):
             col = cols[colDex]
@@ -1804,7 +2016,7 @@ class ModList(List):
             elif col == 'Installer':
                 value = bosh.modInfos.table.getItem(fileName,'installer',u'')
             elif col == 'Modified':
-                value = formatDate(fileInfo.mtime)
+                value = formatDate(fileInfo.getPath().mtime)
             elif col == 'Size':
                 value = formatInteger(fileInfo.size/1024)+u' KB'
             elif col == 'Author' and fileInfo.header:
@@ -1812,7 +2024,7 @@ class ModList(List):
             elif col == 'Load Order':
                 ordered = bosh.modInfos.ordered
                 if fileName in ordered:
-                    value = u'%02X' % list(ordered).index(fileName)
+                    value = u'%02X' % ordered.index(fileName)
                 else:
                     value = u''
             elif col == 'CRC':
@@ -1831,20 +2043,23 @@ class ModList(List):
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
-            (fileName in bosh.modInfos.ordered and 1) or
-            (fileName in bosh.modInfos.merged and 2) or
-            (fileName in bosh.modInfos.imported and 3))
+            1 if fileName in bosh.modInfos.ordered
+            else 2 if fileName in bosh.modInfos.merged
+            else 3 if fileName in bosh.modInfos.imported
+            else 0)
         self.list.SetItemImage(itemDex,self.checkboxes.Get(status,checkMark))
         #--Font color
         item = self.list.GetItem(itemDex)
         mouseText = u''
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
+        if fileName in bosh.modInfos.missing_strings:
+            mouseText += _(u'Plugin is missing String Localization files.  ')
         if fileInfo.isEsm():
             item.SetTextColour(colors['mods.text.esm'])
             mouseText += _(u"Master file. ")
         elif fileName in bosh.modInfos.mergeable:
-            if u'NoMerge' in bosh.modInfos[fileName].getBashTags():
+            if u'NoMerge' in fileBashTags:
                 item.SetTextColour(colors['mods.text.noMerge'])
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
             else:
@@ -1862,13 +2077,18 @@ class ModList(List):
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
 
         #should mod be deactivated
-        if u'Deactivate' in bosh.modInfos[fileName].getBashTags():
+        if u'Deactivate' in fileBashTags:
             item.SetFont(fonts[2])
         else:
             item.SetFont(fonts[0])
         #--Text BG
         if fileName in bosh.modInfos.bad_names:
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+        elif fileName in bosh.modInfos.missing_strings:
+            if fileName in bosh.modInfos.ordered:
+                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+            else:
+                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif fileInfo.hasBadMasterNames():
             if bosh.modInfos.isSelected(fileName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
@@ -1878,7 +2098,7 @@ class ModList(List):
         elif fileInfo.hasActiveTimeConflict():
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             mouseText += _(u"WARNING: Has same load order as another mod.  ")
-        elif u'Deactivate' in bosh.modInfos[fileName].getBashTags() and checkMark == 1:
+        elif u'Deactivate' in fileBashTags and checkMark == 1:
             item.SetBackgroundColour(colors['mods.bkgd.deactivate'])
             mouseText += _(u"Mod should be imported and deactivated.  ")
         elif fileInfo.isExOverLoaded():
@@ -1914,6 +2134,7 @@ class ModList(List):
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
         (col, reverse) = self.GetSortSettings(col,reverse)
+        oldcol = settings['bash.mods.sort']
         settings['bash.mods.sort'] = col
         selected = bosh.modInfos.ordered
         data = self.data
@@ -1933,7 +2154,7 @@ class ModList(List):
         elif col == 'Load Order':
             self.items = bosh.modInfos.getOrdered(self.items,False)
         elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
+            self.items.sort(key=lambda a: data[a].getPath().mtime)
         elif col == 'Size':
             self.items.sort(key=lambda a: data[a].size)
         elif col == 'Status':
@@ -1946,15 +2167,18 @@ class ModList(List):
             raise BashError(u'Unrecognized sort key: '+col)
         #--Ascending
         if reverse: self.items.reverse()
-        #--ESMs First?
-        settings['bash.mods.esmsFirst'] = self.esmsFirst
-        if self.esmsFirst or col == 'Load Order':
-            self.items.sort(key = lambda x: x.cext)
         #--Selected First?
         settings['bash.mods.selectedFirst'] = self.selectedFirst
         if self.selectedFirst:
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
+        #set column sort image
+        try:
+            try: self.list.ClearColumnImage(self.colDict[oldcol])
+            except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
+            if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
+            else: self.list.SetColumnImage(self.colDict[col], self.sm_dn)
+        except: pass
 
     #--Events ---------------------------------------------
     def OnDoubleClick(self,event):
@@ -1991,14 +2215,10 @@ class ModList(List):
                         swapItem = self.items.index(thisFile) + moveMod
                         if swapItem < 0 or len(self.items) - 1 < swapItem: break
                         swapFile = self.items[swapItem]
-                        if thisFile.cext != swapFile.cext: break
-                        thisInfo, swapInfo = bosh.modInfos[thisFile], bosh.modInfos[swapFile]
-                        thisTime, swapTime = thisInfo.mtime, swapInfo.mtime
-                        if thisTime == swapTime:
-                            thisTime = bosh.modInfos.getFreeTime(thisTime,thisTime,reverse=isReversed)
-                            #swapTime = bosh.modInfos.getFreeTime(swapTime,swapTime,reverse=isReversed)
-                        thisInfo.setmtime(swapTime)
-                        swapInfo.setmtime(thisTime)
+                        try:
+                            bosh.modInfos.swapOrder(thisFile,swapFile)
+                        except bolt.BoltError as e:
+                            balt.showError(self, _(u'%s') % e)
                         bosh.modInfos.refreshInfoLists()
                         self.RefreshUI(refreshSaves=False)
                     self.RefreshUI([],refreshSaves=True)
@@ -2020,6 +2240,16 @@ class ModList(List):
         ##Ctrl+A
         elif event.CmdDown() and code == ord('A'):
             self.SelectAll()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for mod in selected:
+                    clipData.AddFile(self.data[mod].getPath().s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
 
     def OnColumnResize(self,event):
@@ -2185,10 +2415,11 @@ class ModDetails(SashPanel):
         self.version.SetLabel(self.versionStr)
         self.masters.SetFileInfo(modInfo)
         self.gTags.SetValue(tagsStr)
-        if fileName and bosh.modInfos.table.getItem(fileName,'bashTags', None) != None:
+        if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
             self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
         else:
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
+        self.gTags.Refresh()
         #--Edit State
         self.edited = 0
         self.save.Disable()
@@ -2220,13 +2451,7 @@ class ModDetails(SashPanel):
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.modInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % (fileStr,))
-            self.file.SetValue(self.fileStr)
-        #--Else bad name?
-        elif bosh.modInfos.isBadFileName(fileStr):
-            balt.showError(self,
-                _(u"File name %s cannot be used.  It cannot be encoded to the proper format in plugins.txt for %s to load it.")
-                % (fileStr,bush.game.name))
+            balt.showError(self,_(u"File %s already exists.") % fileStr)
             self.file.SetValue(self.fileStr)
         #--Okay?
         else:
@@ -2309,7 +2534,14 @@ class ModDetails(SashPanel):
         #--Change Name?
         fileName = modInfo.name
         if changeName:
-            (oldName,newName) = (modInfo.name,GPath(self.fileStr.strip()))
+            oldName,newName = modInfo.name,GPath(self.fileStr.strip())
+            #--Bad name?
+            if (bosh.modInfos.isBadFileName(newName.s) and
+                not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
+                                     % (newName.s,bush.game.name),
+                                     'bash.rename.isBadFileName')
+                ):
+                return
             modList.items[modList.items.index(oldName)] = newName
             settings.getChanged('bash.mods.renames')[oldName] = newName
             bosh.modInfos.rename(oldName,newName)
@@ -2336,6 +2568,7 @@ class ModDetails(SashPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
+        bosh.modInfos.plugins.refresh()
         modList.RefreshUI()
 
     def DoCancel(self,event):
@@ -2350,8 +2583,9 @@ class ModDetails(SashPanel):
         menu = wx.Menu()
         #--Revert to auto
         #--Separator
-        isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'bashTags',None) is None
-        menuItem = wx.MenuItem(menu,ID_TAGS.AUTO,_(u'Automatic'),kind=wx.ITEM_CHECK)
+        isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'autoBashTags',True)
+        menuItem = wx.MenuItem(menu,ID_TAGS.AUTO,_(u'Automatic'),kind=wx.ITEM_CHECK,
+            help=_(u"Use the tags from the description and masterlist/userlist."))
         menu.AppendItem(menuItem)
         menuItem.Check(isAuto)
         menuItem = wx.MenuItem(menu,ID_TAGS.COPY,_(u'Copy to Description'))
@@ -2359,7 +2593,7 @@ class ModDetails(SashPanel):
         menuItem.Enable(not isAuto and self.modTags != self.modInfo.getBashTagsDesc())
         menu.AppendSeparator()
         for id,tag in zip(ID_TAGS,self.allTags):
-            menu.AppendCheckItem(id,tag)
+            menu.AppendCheckItem(id,tag,help=_(u"Add %(tag)s to %(modname)s") % ({'tag':tag,'modname':self.modInfo.name}))
             menu.Check(id,tag in self.modTags)
         self.gTags.PopupMenu(menu)
         menu.Destroy()
@@ -2367,20 +2601,26 @@ class ModDetails(SashPanel):
     def DoAutoBashTags(self,event):
         """Handle selection of automatic bash tags."""
         modInfo = self.modInfo
-        if bosh.modInfos.table.getItem(modInfo.name,'bashTags',None) is None:
-            modInfo.setBashTags(modInfo.getBashTags())
+        if bosh.modInfos.table.getItem(modInfo.name,'autoBashTags'):
+            # Disable autoBashTags
+            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',False)
         else:
-            bosh.modInfos.table.delItem(modInfo.name,'bashTags')
+            # Enable autoBashTags
+            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',True)
+            modInfo.reloadBashTags()
         modList.RefreshUI(self.modInfo.name)
 
     def DoCopyBashTags(self,event):
-        """Handle selection of automatic bash tags."""
+        """Copies manually assigned bash tags into the mod description"""
         modInfo = self.modInfo
         modInfo.setBashTagsDesc(modInfo.getBashTags())
         modList.RefreshUI(self.modInfo.name)
 
     def ToggleBashTag(self,event):
         """Toggle bash tag from menu."""
+        if bosh.modInfos.table.getItem(self.modInfo.name,'autoBashTags'):
+            # Disable autoBashTags
+            bosh.modInfos.table.setItem(self.modInfo.name,'autoBashTags',False)
         tag = self.allTags[event.GetId()-ID_TAGS.BASE]
         modTags = self.modTags ^ set((tag,))
         self.modInfo.setBashTags(modTags)
@@ -2475,6 +2715,7 @@ class INIPanel(SashPanel):
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshUI()
+        self.SetStatusCount()
 
     def RefreshUI(self,what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
@@ -2853,9 +3094,20 @@ class SaveList(List):
 
     def OnKeyUp(self,event):
         """Char event: select all items"""
+        code = event.GetKeyCode()
         ##Ctrl+A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and code == ord('A'):
             self.SelectAll()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for save in selected:
+                    clipData.AddFile(self.data[save].getPath().s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3295,14 +3547,18 @@ class InstallersList(balt.Tank):
             if refreshNeeded:
                 self.data.refresh(what='I')
                 modList.RefreshUI()
-                iniList.RefreshUI()
+                if iniList is not None:
+                    # It will be None if the INI Edits Tab was hidden at startup,
+                    # and never initialized
+                    iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
 
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if not x.isdir() and x.cext == u'.omod']
-        filenames = [x for x in filenames if x.isdir() or x.cext in bosh.readExts]
+        converters = [x for x in filenames if self.data.validConverterName(x)]
+        filenames = [x for x in filenames if x.isdir() or x.cext in bosh.readExts and x not in converters]
         if len(omodnames) > 0:
             failed = []
             completed = []
@@ -3313,7 +3569,7 @@ class InstallersList(balt.Tank):
                     progress(i,omod.stail)
                     outDir = bosh.dirs['installers'].join(omod.body)
                     if outDir.exists():
-                        if balt.askYes(progress.dialog,_(u"The project '%s' already exitsts.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
+                        if balt.askYes(progress.dialog,_(u"The project '%s' already exists.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
                             outDir.rmtree(omod.sbody)
                         else:
                             continue
@@ -3332,7 +3588,7 @@ class InstallersList(balt.Tank):
                             bolt.deprint(_(u'Failed to clean up temp dir:')+u'\n', traceback=True)
                         raise
                     except:
-                        bolt.deprint(_(u"Failed to extract '%s'.")+u'\n\n' % omod.stail, traceback=True)
+                        bolt.deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
 
                         # Clean up
                         failed.append(u' * ' + omod.stail)
@@ -3349,7 +3605,7 @@ class InstallersList(balt.Tank):
                 msg = u''
                 if len(completed) > 0:
                     completed = [u' * ' + x.stail for x in completed]
-                    msg += _(u'The following OMOds were unpacked:')+u'\n%s\n\n' % u'\n'.join(completed)
+                    msg += _(u'The following OMODs were unpacked:')+u'\n%s\n\n' % u'\n'.join(completed)
                 if len(skipped) > 0:
                     skipped = [u' * ' + x.stail for x in skipped]
                     msg += _(u'The following OMODs were skipped:')+u'\n%s\n\n' % u'\n'.join(skipped)
@@ -3366,7 +3622,7 @@ class InstallersList(balt.Tank):
                 self.data.refresh(what='I')
                 self.RefreshUI()
                 progress.Destroy()
-        if len(filenames) == 0:
+        if not filenames and not converters:
             return
         action = settings['bash.installers.onDropFiles.action']
         if action not in ['COPY','MOVE']:
@@ -3408,13 +3664,18 @@ class InstallersList(balt.Tank):
                 #--Copy the dropped files
                 for file in filenames:
                     file.copyTo(bosh.dirs['installers'].join(file.tail))
+                for file in converters:
+                    file.copyTo(bosh.dirs['converters'].join(file.tail))
             elif action == 'MOVE':
                 for file in filenames:
                     file.moveTo(bosh.dirs['installers'].join(file.tail))
+                for file in converters:
+                    file.copyTo(bosh.dirs['converters'].join(file.tail))
             else:
                 return
             modList.RefreshUI()
-            iniList.RefreshUI()
+            if iniList:
+                iniList.RefreshUI()
         gInstallers.frameActivated = True
         gInstallers.OnShow()
 
@@ -3524,7 +3785,18 @@ class InstallersList(balt.Tank):
                 self.ClearSelected()
                 self.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
                 self.gList.EditLabel(index)
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for installer in selected:
+                    clipData.AddFile(bosh.dirs['installers'].join(installer).s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
+
 
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
@@ -3542,95 +3814,191 @@ class InstallersPanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
-        commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-        subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-        checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
-        #--Refreshing
-        self.refreshed = False
-        self.refreshing = False
-        self.frameActivated = False
-        self.fullRefresh = False
-        #--Contents
-        self.gList = InstallersList(left,data,
-            installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
-            details=self, style=wx.LC_REPORT)
-        self.gList.SetSizeHints(100,100)
-        #--Package
-        self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
-        self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
-        #--Info Tabs
-        self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
-        self.gNotebook.SetSizeHints(100,100)
-        self.infoPages = []
-        infoTitles = (
-            ('gGeneral',_(u'General')),
-            ('gMatched',_(u'Matched')),
-            ('gMissing',_(u'Missing')),
-            ('gMismatched',_(u'Mismatched')),
-            ('gConflicts',_(u'Conflicts')),
-            ('gUnderrides',_(u'Underridden')),
-            ('gDirty',_(u'Dirty')),
-            ('gSkipped',_(u'Skipped')),
-            )
-        for name,title in infoTitles:
-            gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
-            self.gNotebook.AddPage(gPage,title)
-            self.infoPages.append([gPage,False])
-        self.gNotebook.SetSelection(settings['bash.installers.page'])
-        self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
-        #--Sub-Installers
-        subPackagesPanel = wx.Panel(checkListSplitter)
-        subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
-        self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
-        self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
-        self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
-        #--Espms
-        espmsPanel = wx.Panel(checkListSplitter)
-        espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
-        self.espms = []
-        self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
-        self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
-        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
-        #--Comments
-        commentsPanel = wx.Panel(commentsSplitter)
-        commentsLabel = staticText(commentsPanel, _(u'Comments'))
-        self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
-        #--Splitter settings
-        checkListSplitter.SetMinimumPaneSize(50)
-        checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
-        checkListSplitter.SetSashGravity(0.5)
-        subSplitter.SetMinimumPaneSize(50)
-        subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
-        subSplitter.SetSashGravity(0.5)
-        commentsHeight = self.gPackage.GetSize()[1]
-        commentsSplitter.SetMinimumPaneSize(commentsHeight)
-        commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
-        commentsSplitter.SetSashGravity(1.0)
-        #--Layout
-        subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
-        subPackagesSizer.SetSizeHints(subPackagesPanel)
-        subPackagesPanel.SetSizer(subPackagesSizer)
-        espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
-        espmsSizer.SetSizeHints(espmsPanel)
-        espmsPanel.SetSizer(espmsSizer)
-        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND,2))
-        commentsSizer.SetSizeHints(commentsPanel)
-        commentsPanel.SetSizer(commentsSizer)
-        rightSizer = vSizer(
-            (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
-            (commentsSplitter,1,wx.EXPAND,2))
-        rightSizer.SetSizeHints(right)
-        right.SetSizer(rightSizer)
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
-        commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
-        # restore saved comments text box size
-        if 0 == commentsSplitterSavedSashPos:
-            commentsSplitter.SetSashPosition(-commentsHeight)
-        else:
-            commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-        commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
+        #0 = Comments/WizBAIN Editor On as default, 1 for Off
+        self.NoCommentsOption = settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor']
+        if self.NoCommentsOption == 0:
+            commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+            subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
+            checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+            #--Refreshing
+            self.refreshed = False
+            self.refreshing = False
+            self.frameActivated = False
+            self.fullRefresh = False
+            #--Contents
+            self.gList = InstallersList(left,data,
+                installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
+                details=self, style=wx.LC_REPORT)
+            self.gList.SetSizeHints(100,100)
+            #--Package
+            self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
+            self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+            #--Info Tabs
+            self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
+            self.gNotebook.SetSizeHints(100,100)
+            self.infoPages = []
+            infoTitles = (
+                ('gGeneral',_(u'General')),
+                ('gMatched',_(u'Matched')),
+                ('gMissing',_(u'Missing')),
+                ('gMismatched',_(u'Mismatched')),
+                ('gConflicts',_(u'Conflicts')),
+                ('gUnderrides',_(u'Underridden')),
+                ('gDirty',_(u'Dirty')),
+                ('gSkipped',_(u'Skipped')),
+                )
+            for name,title in infoTitles:
+                gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
+                self.gNotebook.AddPage(gPage,title)
+                self.infoPages.append([gPage,False])
+            self.gNotebook.SetSelection(settings['bash.installers.page'])
+            self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+            #--Sub-Installers
+            subPackagesPanel = wx.Panel(checkListSplitter)
+            subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+            self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
+            self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+            self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
+            #--Espms
+            espmsPanel = wx.Panel(checkListSplitter)
+            espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+            self.espms = []
+            self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
+            self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+            self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+            #--Comments
+            commentsPanel = wx.Panel(commentsSplitter)
+            self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
+            ## self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+            self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
+            #--Splitter settings
+            checkListSplitter.SetMinimumPaneSize(50)
+            checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+            checkListSplitter.SetSashGravity(0.5)
+            subSplitter.SetMinimumPaneSize(50)
+            subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+            subSplitter.SetSashGravity(0.5)
+            commentsHeight = self.gPackage.GetSize()[1]
+            commentsSplitter.SetMinimumPaneSize(commentsHeight)
+            commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
+            commentsSplitter.SetSashGravity(1.0)
+            #--Layout
+            subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+            subPackagesSizer.SetSizeHints(subPackagesPanel)
+            subPackagesPanel.SetSizer(subPackagesSizer)
+            espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+            espmsSizer.SetSizeHints(espmsPanel)
+            espmsPanel.SetSizer(espmsSizer)
+            commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
+            commentsSizer.SetSizeHints(commentsPanel)
+            commentsPanel.SetSizer(commentsSizer)
+            rightSizer = vSizer(
+                (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
+                (commentsSplitter,1,wx.EXPAND,2))
+            rightSizer.SetSizeHints(right)
+            right.SetSizer(rightSizer)
+            wx.LayoutAlgorithm().LayoutWindow(self, right)
+            commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
+            # restore saved comments text box size
+            if 0 == commentsSplitterSavedSashPos:
+                commentsSplitter.SetSashPosition(-commentsHeight)
+            else:
+                commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+            #--Events
+            self.Bind(wx.EVT_SIZE,self.OnSize)
+            commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
+        elif self.NoCommentsOption == 1:
+            print('Comment/WizBAIN Editor Disabled')
+            ### commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+            subSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+            checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+            #--Refreshing
+            self.refreshed = False
+            self.refreshing = False
+            self.frameActivated = False
+            self.fullRefresh = False
+            #--Contents
+            self.gList = InstallersList(left,data,
+                installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
+                details=self, style=wx.LC_REPORT)
+            self.gList.SetSizeHints(100,100)
+            #--Package
+            self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
+            self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+            #--Info Tabs
+            self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
+            self.gNotebook.SetSizeHints(100,100)
+            self.infoPages = []
+            infoTitles = (
+                ('gGeneral',_(u'General')),
+                ('gMatched',_(u'Matched')),
+                ('gMissing',_(u'Missing')),
+                ('gMismatched',_(u'Mismatched')),
+                ('gConflicts',_(u'Conflicts')),
+                ('gUnderrides',_(u'Underridden')),
+                ('gDirty',_(u'Dirty')),
+                ('gSkipped',_(u'Skipped')),
+                )
+            for name,title in infoTitles:
+                gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
+                self.gNotebook.AddPage(gPage,title)
+                self.infoPages.append([gPage,False])
+            self.gNotebook.SetSelection(settings['bash.installers.page'])
+            self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+            #--Sub-Installers
+            subPackagesPanel = wx.Panel(checkListSplitter)
+            subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+            self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
+            self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+            self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
+            #--Espms
+            espmsPanel = wx.Panel(checkListSplitter)
+            espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+            self.espms = []
+            self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
+            self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+            self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+            #--Comments
+            ### commentsPanel = wx.Panel(commentsSplitter)
+            ### self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
+            ### self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+            ### self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
+            #--Splitter settings
+            checkListSplitter.SetMinimumPaneSize(50)
+            checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+            checkListSplitter.SetSashGravity(0.5)
+            subSplitter.SetMinimumPaneSize(50)
+            subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+            subSplitter.SetSashGravity(0.5)
+            commentsHeight = self.gPackage.GetSize()[1]
+            ### commentsSplitter.SetMinimumPaneSize(commentsHeight)
+            ### commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
+            ### commentsSplitter.SetSashGravity(1.0)
+            #--Layout
+            subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+            subPackagesSizer.SetSizeHints(subPackagesPanel)
+            subPackagesPanel.SetSizer(subPackagesSizer)
+            espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+            espmsSizer.SetSizeHints(espmsPanel)
+            espmsPanel.SetSizer(espmsSizer)
+            ### commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
+            ### commentsSizer.SetSizeHints(commentsPanel)
+            ### commentsPanel.SetSizer(commentsSizer)
+            rightSizer = vSizer(
+                (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
+                (subSplitter,1,wx.EXPAND,2))
+            rightSizer.SetSizeHints(right)
+            right.SetSizer(rightSizer)
+            wx.LayoutAlgorithm().LayoutWindow(self, right)
+            commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
+            # restore saved comments text box size
+            if 0 == commentsSplitterSavedSashPos:
+                subSplitter.SetSashPosition(-commentsHeight)
+            else:
+                subSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+            #--Events
+            self.Bind(wx.EVT_SIZE,self.OnSize)
+            subSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -3653,6 +4021,32 @@ class InstallersPanel(SashTankPanel):
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
+        if self.frameActivated and data.extractOmodsNeeded():
+            self.refreshing = True
+            try:
+                with balt.Progress(_(u'Extracting OMODs...'),u'\n'+u' '*60) as progress:
+                    dirInstallers = bosh.dirs['installers']
+                    dirInstallersJoin = dirInstallers.join
+                    omods = [dirInstallersJoin(x) for x in dirInstallers.list() if x.cext == u'.omod']
+                    progress.setFull(max(len(omods),1))
+                    for i,omod in enumerate(omods):
+                        progress(i,x.stail)
+                        outDir = dirInstallersJoin(omod.body)
+                        num = 0
+                        while outDir.exists():
+                            outDir = dirInstallersJoin(u'%s%s' % (omod.sbody,num))
+                            num += 1
+                        try:
+                            bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
+                            omod.remove()
+                        except:
+                            deprint(_(u"Error extracting OMOD '%s':") % omod.stail,traceback=True)
+                            # Ensures we don't infinitely refresh if moving the omod fails
+                            data.failedOmods.add(omod.body)
+                            outDir.rmtree(omod.sbody)
+                            omod.moveTo(dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body))
+            finally:
+                self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
             self.refreshing = True
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=True) as progress:
@@ -3702,6 +4096,7 @@ class InstallersPanel(SashTankPanel):
                 self.RefreshUIMods()
         self.SetStatusCount()
 
+
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
         if event.GetId() == self.gNotebook.GetId():
@@ -3731,9 +4126,15 @@ class InstallersPanel(SashTankPanel):
         settings['bash.installers.page'] = self.gNotebook.GetSelection()
         if not self.detailsItem: return
         if self.detailsItem not in self.data: return
-        if not self.gComments.IsModified(): return
-        installer = self.data[self.detailsItem]
-        installer.comments = self.gComments.GetValue()
+        if self.NoCommentsOption == 1:
+            pass
+        else:
+            ## if not self.gComments.IsModified(): return
+            if not self.gComments.GetModify(): return
+            installer = self.data[self.detailsItem]
+            ## installer.comments = self.gComments.GetValue()
+            self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+            installer.comments = self.gComments.GetTextUTF8()
         self.data.setChanged()
 
     def RefreshUIMods(self):
@@ -3741,7 +4142,6 @@ class InstallersPanel(SashTankPanel):
         self.gList.RefreshUI()
         if bosh.modInfos.refresh(doAutoGroup=True):
             del bosh.modInfos.mtimesReset[:]
-            del bosh.modInfos.plugins.selectedBad[:]
             bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
         if iniList is not None:
@@ -3782,7 +4182,16 @@ class InstallersPanel(SashTankPanel):
                 balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
                     [x not in installer.espmNots for x in names])
             #--Comments
-            self.gComments.SetValue(installer.comments)
+            if self.NoCommentsOption == 1:
+                pass
+            else:
+                ## self.gComments.SetValue(installer.comments)
+                try:
+                    self.gComments.SetText(installer.comments)
+                except:
+                    self.gComments.SetTextUTF8(installer.comments)
+                self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+                self.gComments.EmptyUndoBuffer()
         else:
             self.gPackage.SetValue(u'')
             for index,(gPage,state) in enumerate(self.infoPages):
@@ -3790,7 +4199,16 @@ class InstallersPanel(SashTankPanel):
                 gPage.SetValue(u'')
             self.gSubList.Clear()
             self.gEspmList.Clear()
-            self.gComments.SetValue(u'')
+            if self.NoCommentsOption == 1:
+                pass
+            else:
+                ## self.gComments.SetValue(u'')
+                try:
+                    self.gComments.SetText(u'')
+                except:
+                    self.gComments.SetTextUTF8(u'')
+                self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+                self.gComments.EmptyUndoBuffer()
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -4142,9 +4560,20 @@ class ScreensList(List):
 
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
+        code = event.GetKeyCode()
         ##Ctrl-A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+        if event.CmdDown() and code == ord('A'):
             self.SelectAll()
+        # Ctrl+C: Copy file(s) to clipboard
+        elif event.CmdDown() and code == ord('C'):
+            selected = self.GetSelected()
+            if selected and not wx.TheClipboard.IsOpened():
+                wx.TheClipboard.Open()
+                clipData = wx.FileDataObject()
+                for screenshot in selected:
+                    clipData.AddFile(bosh.screensData.dir.join(screenshot).s)
+                wx.TheClipboard.SetData(clipData)
+                wx.TheClipboard.Close()
         event.Skip()
 
     #--Column Resize
@@ -4999,6 +5428,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def OnShowPage(self,event):
         """Call page's OnShow command."""
         if event.GetId() == self.GetId():
+            bolt.GPathPurge()
             self.GetPage(event.GetSelection()).OnShow()
             event.Skip()
 
@@ -5029,6 +5459,7 @@ class BashStatusBar(wx.StatusBar):
             # DnD events
             gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
             gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
+            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST,self.OnDragEndForced)
             gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
@@ -5157,10 +5588,23 @@ class BashStatusBar(wx.StatusBar):
             button.CaptureMouse()
         event.Skip()
 
+    def OnDragEndForced(self,event):
+        if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
+            # The even for clicking the button sends a force capture loss
+            # message.  Ignore lost capture messages if we're the active
+            # window.  If we're not, that means something else forced the
+            # loss of mouse capture.
+            self.dragging = wx.NOT_FOUND
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        event.Skip()
+
     def OnDragEnd(self,event):
         if self.dragging != wx.NOT_FOUND:
             button = self.buttons[self.dragging]
-            button.ReleaseMouse()
+            try:
+                button.ReleaseMouse()
+            except:
+                pass
             # -*- Hacky code! -*-
             # Since we've got to CaptureMouse to do DnD properly,
             # The button will never get a EVT_BUTTON event if you
@@ -5221,6 +5665,597 @@ class BashStatusBar(wx.StatusBar):
         self.SetStatusText(u'',1)
 
 #------------------------------------------------------------------------------
+class Updater(object):
+    """Class to handle checking, getting, and applying Wrye Bash updates."""
+    __slots__ = ('parent','pool','result','manual','updates','status')
+
+    # Template for batch file for installing program updates
+    batchTemplate = """@ECHO OFF
+PUSHD "%%~dp0"
+TITLE Updating Wrye Bash
+
+ECHO Waiting for Wrye Bash process to terminate... > update.log
+:: Wait 5 seconds
+PING 127.0.0.1 -n 1 > NUL
+
+ECHO. >> update.log
+ECHO Applying Wrye Bash update... >> update.log
+
+XCOPY download\Mopy\*.* "%%CD%%" /E /R /Y >> update.log
+RMDIR download /S /Q >> update.log
+
+ECHO. >> update.log
+ECHO Update complete.  Wrye Bash will now restart. >> update.log
+
+%sSTART "Staring Wrye Bash" %s
+
+DEL %%0"""
+
+    def __init__(self,parent):
+        self.parent = parent
+        self.pool = None
+        self.result = None
+        self.manual = False
+        self.updates = (set(),set(),set())
+        self.status = None
+        Updater.intervalDic = {
+            '00-01-0000 00:00' : (0, 0, 1, 0, 0, 0, 0, 0, 0), # Every day
+            '00-07-0000 00:00' : (0, 0, 7, 0, 0, 0, 0, 0, 0), # Every week
+            '01-00-0000 00:00' : (0, 1, 0, 0, 0, 0, 0, 0, 0)  # Every month
+        }
+
+    def GetStatus(self):
+        """Returns a text to be used to display the current status"""
+        if self.status is None:
+            # Not doing anything
+            return None
+        elif self.status == 1:
+            # Contacting SourceForge
+            return _(u'Contacting SourceForge')
+        elif self.status == 2:
+            # Downloading Updates
+            return _(u'Downloading Updates')
+        elif self.status == 3:
+            return _(u'Extracting Updates')
+        elif self.status == 4:
+            return _(u'Creating Backup')
+        elif self.status == 5:
+            return _(u'Installing')
+        elif self.status == 0:
+            return _(u'Restart Required')
+        else:
+            return None
+
+    def Start(self):
+        """Initiates an update if necessary.  Otherwise, sets up a delayed
+           call to initate the update at the appropriate time."""
+        if self.pool: return
+        self.status = None
+        freq = settings['bash.update.frequency']
+        if freq is False: return
+        elif freq is True:
+            secondsToUpdate = 0
+        else:
+            last = datetime.datetime.fromtimestamp( settings['bash.update.last'] ).timetuple()
+            next = tuple( [item1 + item2 for item1, item2 in zip( last, Updater.intervalDic[freq] )] )
+            nextUpdate = time.mktime( next )
+            secondsToUpdate = nextUpdate - time.time()
+
+        secondsToUpdate = max(0,secondsToUpdate)
+        deprint(u'Updater: Next update in %s seconds.' % secondsToUpdate,trace=False)
+        if secondsToUpdate == 0:
+            wx.CallLater(100,self.InitiateUpdate)
+        else:
+            if secondsToUpdate > 2147483:   # ~1/1000 max value for a C int/long, since wx.CallLater's first arg is limited to 32 bit signed integers (apparently -- anything above crashed for me)
+                secondsToUpdate = 2147483   # This leads to an incredibly minor bug: if auto-update is set to every month and the user leaves Wrye Bash open for the whole month, it'll update a few
+                                            # days earlier than expected. If there's a better way to check for overflow, feel free to change accordingly.
+
+            wx.CallLater(secondsToUpdate*1000,self.InitiateUpdate)
+
+    def InitiateUpdate(self,manual=False):
+        """Startup the update checking process, set a timer to check
+           for results"""
+        if self.pool: return
+        self.manual = manual
+        self.status = 1
+        if manual:
+            deprint('Updater: Manually initiating update check.',trace=False)
+        else:
+            deprint('Updater: Automatically initiating update check.',trace=False)
+        self.pool = multiprocessing.Pool(processes=1)
+        func = bweb.getAllUpdates
+        args = (settings['bash.version'],)
+        self.result = self.pool.apply_async(func,args)
+        # Check for results in 1 second
+        wx.CallLater(1000,self.CheckUpdateStatus)
+
+    def CheckUpdateStatus(self):
+        """Check to see if any results are back from the update
+           process"""
+        if self.result.ready():
+            # Results are back
+            title = _(u'Check for Updates')
+            try:
+                updates = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while checking for updates:', traceback=True,trace=False)
+                if self.manual:
+                    balt.showError(self.parent,
+                        _(u'An error occurred while contacting SourceForge:')
+                        + u'\n\n%s' % e,
+                        title)
+                wx.CallAfter(self.Start)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            settings['bash.update.last'] = time.time()
+            self.FilterUpdates(updates)
+            if updates:
+                self.HandleUpdates(updates)
+            else:
+                deprint(u'Updater: No updates available.',trace=False)
+                if self.manual:
+                    balt.showOk(self.parent,
+                        _(u'There are no updates available for Wrye Bash on SourceForge.  If you are using the SVN however, be sure to check for updates with your SVN client.'),
+                        title)
+                wx.CallAfter(self.Start)
+                return
+        else:
+            # Check again in 1 seconds
+            wx.CallLater(1000,self.CheckUpdateStatus)
+
+    def FilterUpdates(self,updates):
+        """Filter out updates that are already installed"""
+        currentVersion = settings['bash.version']
+        installedDefs = settings['bash.update.defs']
+        installedLangs = settings['bash.update.lang']
+        for version in updates:
+            if version != currentVersion: continue
+            verUpdates = updates[version]
+            verUpdates['definitions'] = [x for x in verUpdates['definitions'] if GPath(x[0]) not in installedDefs]
+            verUpdates['languages'] = [x for x in verUpdates['languages'] if GPath(x[0]) not in installedLangs]
+            if not verUpdates['definitions'] and not verUpdates['languages'] and not verUpdates['programs']:
+                del updates[version]
+            break
+
+    def HandleUpdates(self,updates):
+        active = self.parent.IsActive()
+        dialog = UpdateDialog(self.parent,_(u'Check for Updates'),updates)
+        if not active:
+            self.parent.RequestUserAttention()
+        if dialog.ShowModal() == wx.ID_CANCEL:
+            dialog.Destroy()
+            wx.CallAfter(self.Start)
+            return
+        selections = dialog.GetSelections()
+        installed = dialog.GetInstalled()
+        deprint(u'Updater: User selected to mark the following as already installed:', installed,trace=False)
+        for x in installed:
+            x = GPath(x)
+            if u'game definition' in x.cs:
+                settings['bash.update.defs'].add(x)
+                settings.setChanged('bash.update.defs')
+            elif (u'translation' in x.cs or
+                  u'language' in x.cs):
+                settings['bash.update.lang'].add(x)
+                settings.setChanged('bash.update.lang')
+        dialog.Destroy()
+        if not selections:
+            deprint(u'Updater: User opted to not install any updates.  Update session complete.',trace=False)
+            wx.CallAfter(self.Start)
+            return
+        else:
+            deprint(u'Updater: User selected the following updates to be installed:', selections[selections.keys()[0]],trace=False)
+        # Clear out old folders
+        outDir = bosh.dirs['mopy'].join(u'download')
+        error = False
+        for file in outDir.list():
+            file = outDir.join(file)
+            if file.isdir():
+                try: file.rmtree(file.s)
+                except: error = True
+        if error:
+            deprint(u'Updater: An error occured while cleaning out the downloads folder, update aborted.',trace=False)
+            balt.showError(self.parent,
+                _(u'Wrye Bash could not clean out the Mopy\\downloads folder of loose files.  Please ensure there are no open files in the Mopy\\downloads folder, and try again.'),
+                _(u'Download Updates'))
+            wx.CallAfter(self.Start)
+            return
+        # Initiate download
+        self.status = 2
+        deprint(u'Updater: Initiating download.',trace=False)
+        version = selections.keys()[0]
+        updates = selections[version]
+        self.pool = multiprocessing.Pool(processes=1)
+        func = bweb.downloadUpdates
+        outDir = bosh.dirs['mopy'].join(u'download')
+        outDir.makedirs()
+        # Setup callback functions
+        args = (updates,outDir.s)
+        self.result = self.pool.apply_async(func,args)
+        # Check for results in 10 seconds
+        wx.CallLater(10000,self.CheckDownloadStatus)
+
+    def CheckDownloadStatus(self):
+        if self.result.ready():
+            # Results are back
+            title = _(u'Download Updates')
+            try:
+                fileNames = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while downloading files:', traceback=True,trace=False)
+                balt.showError(self.parent,
+                    _(u'An error occured while downloading files from SourceForge.')
+                    + u'\n\n%s' % e,
+                    title)
+                wx.CallAfter(self.Start)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            # Re-verify downlods folder is empty, in case the user extracted some files
+            outDir = bosh.dirs['mopy'].join(u'download')
+            error = False
+            for file in outDir.list():
+                file = outDir.join(file)
+                if file.isdir():
+                    try: file.rmtree(file.s)
+                    except: error = True
+            if error:
+                deprint(u'Updater: An error occured while re-verifying the downloads folder empty of loose files:', traceback=True,trace=False)
+                balt.showError(self.parent,
+                    _(u'Wrye Bash could not clean out the Mopy\\downloads folder of loose files.  Please ensure there are no open files in the Mopy\\downloads folder, and try again.'),
+                    _(u'Download Updates'))
+                wx.CallAfter(self.Start)
+                return
+            # Determine backup type
+            deprint(u'Updater: Extracting updates.',trace=False)
+            self.updates = (set(),set(),set())
+            extract_last = []
+            extract_first = []
+            for file in fileNames:
+                gFile = GPath(file).relpath(outDir)
+                if u'game definition' in gFile.cs:
+                    extract_last.insert(0,file)
+                    self.updates[0].add(gFile)   # Definition (Partial)
+                elif ('language' in gFile.cs or
+                     u'translation' in gFile.cs):
+                    extract_last.insert(0,file)
+                    self.updates[1].add(gFile)   # Language (Partial)
+                else:
+                    extract_first.insert(0,file)
+                    self.updates[2].add(gFile)   # Program (Semi-Full)
+            fileNames = extract_first + extract_last
+            deprint(u'Updater: Extraction order:', fileNames,trace=False)
+            # Initiate extraction
+            self.status = 3
+            self.pool = multiprocessing.Pool(processes=1)
+            func = bweb.extractUpdates
+            exe7z = bosh.dirs['compiled'].join(u'7zUnicode.exe').s
+            cmd7zTemplate = '"%s" x "%s" -y -r -o"%s"'
+            args = (fileNames,exe7z,cmd7zTemplate,outDir.s)
+            self.result = self.pool.apply_async(func,args)
+            # Check results every second
+            wx.CallLater(1000,self.CheckExtractStatus)
+        else:
+            # Check again in 1 second
+            wx.CallLater(1000,self.CheckDownloadStatus)
+
+    def CheckExtractStatus(self):
+        if self.result.ready():
+            # Extraction is complete
+            title = _(u'Install Updates')
+            try:
+                failed = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while extracting files:', traceback=True,trace=False)
+                balt.showError(self.parent,
+                    _(u'An error occured while extracting update files.')
+                    + u'\n\n%s' % e,
+                    title)
+                wx.CallAfter(self.Start)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            download = bosh.dirs['mopy'].join(u'download')
+            if failed:
+                msg = _(u'Errors occurred while extracting update files.') + u'\n\n'
+                for fileName,errors in failed:
+                    msg += u' * '+fileName+u':\n'
+                    msg += u'\n'.join(u'   '+x for x in errors)
+                deprint(u'Updater:',msg,trace=False)
+                balt.showError(self.parent,msg,title)
+                deprint(u'Updater: Removing extracted update files from the downloads folder.',trace=False)
+                for file in download.list():
+                    file = download.join(file)
+                    if file.isdir():
+                        try: file.rmtree(file.s)
+                        except: pass
+                wx.CallAfter(self.Start)
+                return
+            # Delete old files
+            deprint(u'Updater: Removing non-update files from the downloads folder.',trace=False)
+            for file in download.list():
+                file = download.join(file)
+                if not file.isdir():
+                    try: file.remove()
+                    except: pass
+            # Backup old Wrye Bash install
+            self.InitiateBackup(not bool(self.updates[2]))
+        else:
+            # Check again in a second
+            wx.CallLater(1000,self.CheckExtractStatus)
+
+    def InitiateBackup(self,backupType):
+        """Backup all of Wrye Bash's files in case there's a problem
+           with the update.  Ensure 7z.exe,7z.dll,and restore_<version>bat
+           are all in the Mopy\backup directory."""
+        deprint(u'Updater: Initiating Backup.',trace=False)
+        self.status = 4
+        self.pool = multiprocessing.Pool(processes=1)
+        func = bweb.createBackup
+        exe7z = bosh.dirs['compiled'].join(u'7zUnicode.exe').s
+        outDir = bosh.dirs['mopy'].join(u'backup')
+        if not backupType:
+            deprint(u'Updater: Backup type: Semi-Full',trace=False)
+            # Semi-Full (Full Mopy)
+            kind = u''
+            #--This section needs to be updated whenever the file layout of Wrye
+            #  Bash changes
+            excludes = '-x!".svn" -x!"*.tmp" -x!"*.log" -x!"*.mo" -x!"*.bak" -x!"backup" -x!"download"'
+            if settings['bash.standalone']:
+                excludes += ' -x!"*.py*" -x!"Wrye Bash Debug.bat"'
+            else:
+                excludes += ' -x!"*.pyc" -x!"Wrye Bash.exe" -x!"w9xpopen.exe"'
+            includes = '"*"'
+        else:
+            deprint(u'Updater: Backup type: Partial',trace=False)
+            # Language & Game Defintions
+            kind = u'_partial'
+            includes = '"bash\\game\\*.py" "bash\\l10n\\*.txt"'
+            dir = bosh.dirs['mopy'].join(u'bash',u'game')
+            excludes = '-x!"__init__.*"'
+            for file in dir.list():
+                file = dir.join(file)
+                if not file.isdir() and file.cext == u'':
+                    excludes += ' -x!"%s"' % file.stail
+        args7z = 'a -y -r'
+        if settings['bash.update.backupSFX']:
+            backupExt = u'.exe'
+            args7z += ' -sfx'
+        else:
+            backupExt = u'.7z'
+        backup  = u'Wrye_Bash_%s%s_backup_%s%s' % (
+            settings['bash.version'],kind,
+            time.strftime(u'%d-%m-%Y-%H%M',time.localtime()),
+            backupExt)
+        backup = outDir.join(backup).s
+        cmd7zTemplate = '"%s" '+args7z+' '+excludes+' "%s" '+includes
+        args = (backup,exe7z,cmd7zTemplate)
+        self.result = self.pool.apply_async(func,args)
+        # Check results every second
+        wx.CallLater(1000,self.CheckBackupStatus)
+
+    def CheckBackupStatus(self):
+        if self.result.ready():
+            # Backup complete
+            title = _(u'Install Update')
+            try:
+                failed = self.result.get()
+            except Exception as e:
+                deprint(u'Updater: An error occured while backing up:', traceback=True,trace=False)
+                balt.showError(self.parent,
+                    _(u'An error occurred while backing up the current Wrye Bash files.')
+                    + u'\n\n%s' % e,
+                    title)
+                wx.CallAfter(self.Start)
+                return
+            finally:
+                self.pool.terminate()
+                self.pool = None
+                self.result = None
+            if failed:
+                balt.showError(self.parent,
+                    _(u'An error occurred while backing up the current Wrye Bash files.')
+                    + u'\n\n' +
+                    ' * %s' % failed,
+                    title)
+                deprint(u'Updater: An error occurred while backing up:', traceback=True,trace=False)
+                wx.CallAfter(self.Start)
+                return
+            # Ask if the user wants to install the updates
+            msg =  _(u'Wrye Bash is ready to install the following updates:')
+            msg += u'\n\n'
+            for updates in reversed(self.updates):
+                msg += u'\n'.join(u' * '+x.stail for x in updates)
+                if updates: msg += u'\n'
+            msg += u'\n'
+            msg += _(u'If you choose not to install this update at this time, you can manually install the files in Mopy\\downloads.  However, Wrye Bash will not be aware of any updated Game Definition or Translation updates that were installed in this manner.')
+            msg += u'\n\n'
+            msg += _(u'Install these updates?')
+            if balt.askYes(self.parent,msg,_(u'Install Updates')):
+                self.InstallUpdates()
+            else:
+                deprint(u'Updater: User opted to not install the prepared update.',trace=False)
+                # Don't restart the update checker, since there's a valid update
+                # waiting to be installed
+        else:
+            wx.CallLater(1000,self.CheckBackupStatus)
+
+    def InstallUpdates(self):
+        # Move files that can be moved
+        self.status = 5
+        fromDir = bosh.dirs['mopy'].join(u'download')
+        fromDirJoin = fromDir.join
+        mopyDir = bosh.dirs['mopy']
+        mopyDirJoin = mopyDir.join
+        dataDirJoin = bosh.dirs['mods'].join
+        # Clean out junk files before installing:
+        # - .tmp
+        # - .log
+        # Standalone:
+        # - .py
+        # - .pyc
+        # - .pyw
+        # - files without extension (compiled .py files)
+        removeExts = set((u'.tmp',u'.log',u'.pyc'))
+        if settings['bash.standalone']:
+            removeExts |= set((u'.py',u'.pyw',u''))
+        deprint(u'Updater: Cleaning installation of the following files:', removeExts,trace=False)
+        skipDirs = (mopyDirJoin(u'download'),mopyDirJoin(u'backup'))
+        with balt.Progress(_(u'Updating'),_(u'Cleaning old files...')+u'\n'+' '*60) as progress:
+            count = sum(len(z) for x,y,z in mopyDir.walk())
+            progress.setFull(count)
+            i = 0
+            for file in mopyDir.list():
+                fullFile = mopyDirJoin(file)
+                if fullFile.isdir():
+                    if file == u'download' or file ==u'backup':
+                        continue
+                    for root,dirs,files in fullFile.walk():
+                        for file in files:
+                            progress(i)
+                            if file.cext in removeExts:
+                                file = root.join(file)
+                                progress(i,_(u'Cleaning old files...')+u'\n'+file.relpath(mopyDir).s)
+                                deprint(u'Updater: Cleaning:', file.relpath(mopyDir).s,trace=False)
+                                try: file.remove()
+                                except: pass
+                            i += 1
+                elif file.cext in removeExts:
+                    progress(i,_(u'Cleaning old files...')+u'\n'+file.s)
+                    deprint(u'Updater: Cleaning:', file.s,trace=False)
+                    i += 1
+                    try: fullFile.remove()
+                    except: pass
+            # Now copy the new files in
+            progress(i,_(u'Installing new files...'))
+            deprint(u'Updater: Installing new files.',trace=False)
+            failedFiles = []
+            for item in fromDir.list():
+                item = fromDirJoin(item)
+                if not item.isdir(): continue
+                if item.tail == u'Mopy': destRootJoin = mopyDirJoin
+                elif item.tail == u'Data': destRootJoin = dataDirJoin
+                else: continue
+                for root,dirs,files in item.walk(False):
+                    relRoot = root.relpath(item)
+                    empty = not dirs
+                    for file in files:
+                        try:
+                            dest = destRootJoin(relRoot,file)
+                            destRel = root.join(file).relpath(fromDir)
+                            progress(i,_(u'Installing new files...')+u'\n'+destRel.s)
+                            i += 1
+                            deprint(u'Updater: Source file:', destRel.s,trace=False)
+                            deprint(u'Updater:        dest:', dest.s,trace=False)
+                            root.join(file).moveTo(dest)
+                        except:
+                            empty = False
+                            failedFiles.append(destRel)
+                    if empty:
+                        try: root.removedirs()
+                        except: pass
+            if self.updates[2]:
+                # Program update, so lang and def files the only ones installed now
+                settings['bash.update.defs'] = self.updates[0]
+                settings['bash.update.lang'] = self.updates[1]
+                deprint(u'Updater: Recorded updates as only updates installed (program update).',trace=False)
+            else:
+                # Non-program update, so lang and def files are in addition to those already installed
+                settings['bash.update.defs'] |= self.updates[0]
+                settings['bash.update.lang'] |= self.updates[1]
+                settings.setChanged('bash.update.defs')
+                settings.setChanged('bash.update.defs')
+                deprint(u'Updater: Recorded updates added to those already installed (non-program update).',trace=False)
+            # Updates are installed, restart is required
+            self.status = 0
+        if failedFiles:
+            # Some files couldn't be copied, because they were in use
+            # for example, CBash.dll, or Wrye Bash.exe
+            deprint(u'Updater: Not all update files could be applied.  The following files will be installed via apply_updates.bat:', failedFiles,trace=False)
+            self.WriteBatchFile('')
+            apply_updates = bosh.dirs['mopy'].join(u'apply_updates.bat')
+            restart_args = (set((apply_updates.s,)),)
+            if not balt.askYes(self.parent,
+                _(u"The following updated files were unable to be applied, because they are currently in use.  Wrye Bash needs to restart to install these files.  If you choose not to restart, they will be installed when you quit.")
+                + u'\n\n' +
+                u'\n'.join(u' * '+x.s for x in failedFiles)
+                + u'\n\n' +
+                _(u'Restart now?'),
+                _(u'Install Updates')):
+                deprint(u'Updater: User choose not to restart in order to apply the update.  apply_updates.bat will be run at exit.',trace=False)
+                # Re-write apply_update.bat to not execute Wrye Bash after it's run
+                self.WriteBatchFile()
+                global appRestart
+                appRestart = restart_args[0]
+                return
+            deprint(u'Updater: Restarting Wrye Bash to apply the update.')
+        else:
+            # All files were copied successfully, now we just need to restart
+            # and remove the updates folder
+            try: fromDir.rmtree(fromDir.stail)
+            except: pass
+            deprint(u'Updater: Update successful.  Restart required',trace=False)
+            if not balt.askYes(self.parent,
+                    _(u'Wrye Bash has successfully installed the updates.  Wrye Bash needs to restart for this update to take effect.')
+                    + u'\n\n' +
+                    _(u'Restart now?'),
+                    _(u'Update Complete')):
+                deprint(u'Updater: User opted to not restart Wrye Bash.  Update will take effect next time Wrye Bash is launched.',trace=False)
+                self.WriteBatchFile()
+                return
+            deprint(u'Updater: Restarting Wrye Bash.',trace=False)
+            restart_args = ()
+        bashFrame.Restart(*restart_args)
+
+    def WriteBatchFile(self,addArgs=None):
+        apply_updates = bosh.dirs['mopy'].join(u'apply_updates.bat')
+        if addArgs is None:
+            with apply_updates.open('w') as out:
+                out.write(Updater.batchTemplate % ('::',''))
+        else:
+            args = sys.argv[:]
+            def updateArgs(newArgs):
+                if isinstance(newArgs,(list,tuple)):
+                    if len(newArgs) > 0 and isinstance(newArgs[0],(list,tuple)):
+                        for arg in newArgs:
+                            updateArgs(arg)
+                    else:
+                        found = 0
+                        for i in xrange(len(args)):
+                            if not found and args[i] == newArgs[0]:
+                                found = 1
+                            elif found:
+                                if found < len(newArgs):
+                                    args[i] = newArgs[found]
+                                    found += 1
+                                else:
+                                    break
+                        else:
+                            args.extend(newArgs)
+            updateArgs(addArgs)
+
+            if settings['bash.standalone']:
+                commandLine = '"'+args[0]+'"'
+            else:
+                commandLine = '"%s" "%s"' % (sys.executable,args[0])
+            if len(args) > 1:
+                for arg in args[1:]:
+                    if arg == '--restarting': continue
+                    if ' ' in arg:
+                        commandLine += ' "'+arg+'"'
+                    else:
+                        commandLine += ' '+arg
+            with apply_updates.open('w') as out:
+                out.write(Updater.batchTemplate % ('',commandLine))
+
+#------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
     """Main application frame."""
     def __init__(self, parent=None,pos=wx.DefaultPosition,size=(400,500),
@@ -5235,6 +6270,7 @@ class BashFrame(wx.Frame):
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
+        self.Maximize(settings['bash.frameMax'])
         #--Application Icons
         self.SetIcons(bashRed)
         #--Status Bar
@@ -5245,6 +6281,7 @@ class BashFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.Bind(wx.EVT_ACTIVATE, self.RefreshData)
         #--Data
+        self.updater = Updater(self)
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
@@ -5254,14 +6291,41 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
-        wxver = wx.version()
-        if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
-            balt.showWarning(bashFrame,_(u'Warning you appear to be using a non-unicode version of wxPython (%s).  This will cause problems, it is reccomended you use a unicode version of wxPython instead.') % wxver)
         if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
             message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.name
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.name
             balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
+
+    def Restart(self,args=True):
+        if not args: return
+
+        def argConvert(arg):
+            """Converts --args into -a args"""
+            if not isinstance(arg,basestring): return arg
+            elif arg in sys.argv: return arg
+            elif arg[:2] == '--': return '-'+arg[2]
+            else: return arg
+
+        newargs = []
+        if isinstance(args,(list,tuple)):
+            args = [[argConvert(x) for x in arg] if isinstance(arg,(list,tuple))
+                    else argConvert(arg)
+                    for arg in args]
+        elif isinstance(args,set):
+            # Special case for restarting for an update: args passed in as set()
+            pass
+        else:
+            args = argConvert(args)
+
+        global appRestart
+        if isinstance(appRestart,set):
+            # appRestart has already been setup to run apply_updates.bat on
+            # on shutdown.  Rewrite that file to also start Wrye Bash at the end
+            self.updater.WriteBatchFile(args)
+        else:
+            appRestart = args
+        self.Close(True)
 
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""
@@ -5271,7 +6335,7 @@ class BashFrame(wx.Frame):
                 title = bush.game.altName + u' %s%s'
             else:
                 title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.name
-            title = title % (settings['bash.readme'][1],
+            title = title % (settings['bash.version'],
                 _(u'(Standalone)') if settings['bash.standalone'] else u'')
             if CBash:
                 title += u', CBash v%u.%u.%u: ' % (
@@ -5312,28 +6376,33 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refresh()
         #--Check plugins.txt and mods directory...
-        if bosh.modInfos.refresh(doAutoGroup=True):
+        modInfosChanged = bosh.modInfos.refresh(doAutoGroup=True)
+        if modInfosChanged:
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
-            if bosh.modInfos.mtimesReset[0] == 'FAILED':
-                balt.showWarning(self,_(u"It appears that the current user doesn't have permissions for some or all of the files in ")
-                                        + bush.game.name+u'\\Data.\n' +
-                                      _(u"Specifically had permission denied to change the time on:")
-                                        + u'\n' + bosh.modInfos.mtimesReset[1].s)
-            if not bosh.inisettings['SkipResetTimeNotifications']:
-                message = [u'',_(u'Modified dates have been reset for some mod files')]
-                message.extend(sorted(bosh.modInfos.mtimesReset))
-                dialog = ListBoxes(self,_(u'Modified Dates Reset'),
-                         _(u'Modified dates have been reset for some mod files.'),
-                         [message],liststyle='list',Cancel=False)
-                dialog.ShowModal()
-                dialog.Destroy()
+            if bosh.modInfos.mtimesReset[0] == 'PLUGINS':
+                if not bosh.inisettings['SkipResetTimeNotifications']:
+                    balt.showWarning(self,_(u"An invalid plugin load order has been corrected."))
+            else:
+                if bosh.modInfos.mtimesReset[0] == 'FAILED':
+                    balt.showWarning(self,_(u"It appears that the current user doesn't have permissions for some or all of the files in ")
+                                            + bush.game.name+u'\\Data.\n' +
+                                            _(u"Specifically had permission denied to change the time on:")
+                                            + u'\n' + bosh.modInfos.mtimesReset[1].s)
+                if not bosh.inisettings['SkipResetTimeNotifications']:
+                    message = [u'',_(u'Modified dates have been reset for some mod files')]
+                    message.extend(sorted(bosh.modInfos.mtimesReset))
+                    dialog = ListBoxes(self,_(u'Modified Dates Reset'),
+                            _(u'Modified dates have been reset for some mod files.'),
+                            [message],liststyle='list',Cancel=False)
+                    dialog.ShowModal()
+                    dialog.Destroy()
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Mods autogrouped?
         if bosh.modInfos.autoGrouped:
-            message = [u'',_('Auto-grouped files')]
+            message = [u'',_(u'Auto-grouped files')]
             agDict = bosh.modInfos.autoGrouped
             ordered = bosh.modInfos.getOrdered(agDict.keys())
             message.extend(ordered)
@@ -5365,37 +6434,39 @@ class BashFrame(wx.Frame):
         self.notebook.GetPage(self.notebook.GetSelection()).OnShow()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
-        if bosh.modInfos.plugins.selectedBad:
-            message = [u'',_(u'Missing files have been removed from load list:')]
-            message.extend(sorted(bosh.modInfos.plugins.selectedBad))
-            dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-                     _(u'Missing files have been removed from load list:'),
-                     [message],liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
-            del bosh.modInfos.plugins.selectedBad[:]
-            bosh.modInfos.plugins.save()
+        ## Not applicable now with BOSS API - perhaps find a way to simulate this warning
+        #if bosh.modInfos.plugins.selectedBad:
+        #    message = [u'',_(u'Missing files have been removed from load list:')]
+        #    message.extend(sorted(bosh.modInfos.plugins.selectedBad))
+        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
+        #             _(u'Missing files have been removed from load list:'),
+        #             [message],liststyle='list',Cancel=False)
+        #    dialog.ShowModal()
+        #    dialog.Destroy()
+        #    del bosh.modInfos.plugins.selectedBad[:]
+        #    bosh.modInfos.plugins.save()
         #--Was load list too long? or bad filenames?
-        if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
-            message = []
-            ## Disable this message for now, until we're done testing if
-            ## we can get the game to load these files
-            #if bosh.modInfos.activeBad:
-            #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
-            #    msg.extend(bosh.modInfos.bad_names)
-            #    bosh.modInfos.activeBad = set()
-            #    message.append(msg)
-            if bosh.modInfos.plugins.selectedExtra:
-                msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
-                msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
-                message.append(msg)
-            dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-                     _(u'Files have been remobed from load list:'),
-                     message,liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
-            del bosh.modInfos.plugins.selectedExtra[:]
-            bosh.modInfos.plugins.save()
+        ## Net to recode this with the BOSS API as well
+        #if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
+        #    message = []
+        #    ## Disable this message for now, until we're done testing if
+        #    ## we can get the game to load these files
+        #    #if bosh.modInfos.activeBad:
+        #    #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
+        #    #    msg.extend(bosh.modInfos.bad_names)
+        #    #    bosh.modInfos.activeBad = set()
+        #    #    message.append(msg)
+        #    if bosh.modInfos.plugins.selectedExtra:
+        #        msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
+        #        msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
+        #        message.append(msg)
+        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
+        #             _(u'Files have been removed from load list:'),
+        #             message,liststyle='list',Cancel=False)
+        #    dialog.ShowModal()
+        #    dialog.Destroy()
+        #    del bosh.modInfos.plugins.selectedExtra[:]
+        #    bosh.modInfos.plugins.save()
         #--Any new corrupted files?
         message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
@@ -5416,6 +6487,11 @@ class BashFrame(wx.Frame):
             m.extend(sorted(invalidVersions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
+        if bosh.modInfos.new_missing_strings:
+            m = [_(u'Missing String Localization files:'),_(u'This will cause CTDs if activated.')]
+            m.extend(sorted(bosh.modInfos.missing_strings))
+            message.append(m)
+            bosh.modInfos.new_missing_strings.clear()
         if message:
             dialog = ListBoxes(self,_(u'Warning: Corrupt/Unrecognized Files'),
                      _(u'Some files have corrupted headers or TES4 header versions:'),
@@ -5433,7 +6509,7 @@ class BashFrame(wx.Frame):
             message = [u'',_(u"Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: ")]
             message.extend(sorted(bolt.Path.mtimeResets))
             dialog = ListBoxes(self,_(u'Warning: Dates Reset'),
-                     _(u'Modified dates have been reste to an earlier date for  these files'),
+                     _(u'Modified dates have been reset to an earlier date for  these files'),
                      [message],liststyle='list',Cancel=False)
             dialog.ShowModal()
             dialog.Destroy()
@@ -5441,26 +6517,26 @@ class BashFrame(wx.Frame):
         #--OBMM Warning?
         if settings['bosh.modInfos.obmmWarn'] == 1:
             settings['bosh.modInfos.obmmWarn'] = 2
-            message = (_(u'Turn Lock Times Off?')
+            message = (_(u'Turn Lock Load Order Off?')
                        + u'\n\n' +
-                       _(u'Lock Times a feature which resets load order to a previously memorized state.  While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM.')
+                       _(u'Lock Load Order is a feature which resets load order to a previously memorized state.  While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM.')
                        )
-            lockTimes = not balt.askYes(self,message,_(u'Lock Times'))
+            lockTimes = not balt.askYes(self,message,_(u'Lock Load Order'))
             bosh.modInfos.lockTimes = settings['bosh.modInfos.resetMTimes'] = lockTimes
             if lockTimes:
                 bosh.modInfos.resetMTimes()
             else:
                 bosh.modInfos.mtimes.clear()
-            message = _(u"Lock Times is now %s.  To change it in the future, right click on the main list header on the Mods tab and select 'Lock Times'.")
-            balt.showOk(self,message % ((_(u'off'),_(u'on'))[lockTimes],),_(u'Lock Times'))
+            message = _(u"Lock Load Order is now %s.  To change it in the future, right click on the main list header on the Mods tab and select 'Lock Load Order'.")
+            balt.showOk(self,message % ((_(u'off'),_(u'on'))[lockTimes],),_(u'Lock Load Order'))
         #--Missing docs directory?
-        testFile = GPath(bosh.dirs['app']).join(u'Data',u'Docs',u'wtxt_teal.css')
+        testFile = GPath(bosh.dirs['mopy']).join(u'Docs',u'wtxt_teal.css')
         if not self.incompleteInstallError and not testFile.exists():
             self.incompleteInstallError = True
             message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
                        + u'\n\n' +
-                       _(u'Correct installation will create %s\\Mopy, %s\\Data\\Docs and %s\\Data\\INI Tweaks directories.')
-                       % (bush.game.name,bush.game.name,bush.game.name)
+                       _(u'Correct installation will create %s\\Mopy and %s\\Data\\Docs directories.')
+                       % (bush.game.name,bush.game.name)
                        )
             balt.showWarning(self,message,_(u'Incomplete Installation'))
         #--Merge info
@@ -5481,17 +6557,23 @@ class BashFrame(wx.Frame):
         try:
             self.SaveSettings()
         except:
-            deprint(u'An error occured while trying to save settings:', traceback=True)
+            deprint(u'An error occurred while trying to save settings:', traceback=True)
             pass
+        if self.updater.pool:
+            self.updater.pool.terminate()
         self.Destroy()
 
     def SaveSettings(self):
         """Save application data."""
+        # Purge some memory
+        bolt.GPathPurge()
+        # Clean out unneeded settings
         self.CleanSettings()
         if docBrowser: docBrowser.DoSave()
-        if not self.IsIconized() or self.IsMaximized():
+        if not (self.IsIconized() or self.IsMaximized()):
             settings['bash.framePos'] = self.GetPositionTuple()
             settings['bash.frameSize'] = self.GetSizeTuple()
+        settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         for index in range(self.notebook.GetPageCount()):
             self.notebook.GetPage(index).OnCloseWindow()
@@ -5766,7 +6848,7 @@ class ColorDialog(wx.Dialog):
                         color = colors[key]
                     file.write(key+u': '+color+u'\n')
         except Exception,e:
-            balt.showError(self,_(u'An error occured writing to ')+outPahth.stail+u':\n\n%s'%e)
+            balt.showError(self,_(u'An error occurred writing to ')+outPath.stail+u':\n\n%s'%e)
 
     def OnImport(self,event):
         event.Skip()
@@ -5806,7 +6888,7 @@ class ColorDialog(wx.Dialog):
                     if color == colors[key]: continue
                     self.changes[key] = color
         except Exception, e:
-            balt.showError(bashFrame,_(u'An error occured reading from ')+inPath.stail+u':\n\n%s'%e)
+            balt.showError(bashFrame,_(u'An error occurred reading from ')+inPath.stail+u':\n\n%s'%e)
         self.UpdateUIButtons()
 
     def OnComboBox(self,event):
@@ -5912,12 +6994,15 @@ class DocBrowser(wx.Frame):
 
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
-        docPath = docPath or GPath(self.data.get(self.modName,''))
-        if not docPath.exists(): return False
-        textFile = docPath.open()
-        maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
-        textFile.close()
-        return (maText != None)
+        docPath = docPath or GPath(self.data.get(self.modName,u''))
+        if not docPath.exists():
+            return False
+        try:
+            with docPath.open('r',encoding='utf-8-sig') as textFile:
+                maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
+            return (maText != None)
+        except UnicodeDecodeError:
+            return False
 
     def DoHome(self, event):
         """Handle "Home" button click."""
@@ -6010,7 +7095,8 @@ class DocBrowser(wx.Frame):
         self.plainText.DiscardEdits()
         if not docPath:
             raise BoltError(_(u'Filename not defined.'))
-        self.plainText.SaveFile(docPath.s)
+        with docPath.open('w',encoding='utf-8-sig') as out:
+            out.write(self.plainText.GetValue())
         if self.docIsWtxt:
             docsDir = bosh.modInfos.dir.join(u'Docs')
             bolt.WryeText.genHtml(docPath, None, docsDir)
@@ -6086,8 +7172,12 @@ class DocBrowser(wx.Frame):
             else:
                 # Oddly, wxPython's LoadFile function doesn't read unicode correctly,
                 # even in unicode builds
-                with docPath.open('r',encoding='utf-8-sig') as ins:
-                    data = ins.read()
+                try:
+                    with docPath.open('r',encoding='utf-8-sig') as ins:
+                        data = ins.read()
+                except UnicodeDecodeError:
+                    with docPath.open('r') as ins:
+                        data = ins.read()
                 self.plainText.SetValue(data)
                 self.SetDocType('txt')
 
@@ -6118,6 +7208,8 @@ class DocBrowser(wx.Frame):
         if not self.IsIconized() and not self.IsMaximized():
             settings['bash.modDocs.pos'] = self.GetPositionTuple()
             settings['bash.modDocs.size'] = self.GetSizeTuple()
+        global docBrowser
+        docBrowser = None
         self.Destroy()
 
 #------------------------------------------------------------------------------
@@ -6197,7 +7289,7 @@ class ModChecker(wx.Frame):
 
     def OnCopyText(self,event=None):
         """Copies text of report to clipboard."""
-        text = u'[spoiler]'+self.text+u'[/spoiler]'
+        text = u'[spoiler]\n'+self.text+u'[/spoiler]'
         text = re.sub(ur'\[\[.+?\|\s*(.+?)\]\]',ur'\1',text,re.U)
         text = re.sub(u'(__|\*\*|~~)',u'',text,re.U)
         text = re.sub(u'&bull; &bull;',u'**',text,re.U)
@@ -6237,7 +7329,7 @@ class ModChecker(wx.Frame):
         logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
         cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
         ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w') as out:
+        with logPath.open('w',encoding='utf-8-sig') as out:
             bolt.WryeText.genHtml(ins,out,cssDir)
         self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
 
@@ -6260,16 +7352,35 @@ class ModChecker(wx.Frame):
 
 #------------------------------------------------------------------------------
 def GetBashVersion():
-    #--Version from readme
-    readme = bosh.dirs['mopy'].join(u'Wrye Bash.txt')
-    if readme.exists() and readme.mtime != settings['bash.readme'][0]:
-        reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
-        for line in readme.open(encoding='utf-8-sig'):
-            maVersion = reVersion.match(line)
-            if maVersion:
-                return (readme.mtime,maVersion.group(1))
-    return settings['bash.readme'] #readme file not found or not changed
+    return bass.AppVersion
 
+    #--Version from readme
+    #readme = bosh.dirs['mopy'].join(u'Wrye Bash.txt')
+    #if readme.exists() and readme.mtime != settings['bash.readme'][0]:
+    #    reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
+    #    for line in readme.open(encoding='utf-8-sig'):
+    #        maVersion = reVersion.match(line)
+    #        if maVersion:
+    #            return (readme.mtime,maVersion.group(1))
+    #return settings['bash.readme'] #readme file not found or not changed
+
+#------------------------------------------------------------------------------
+class WryeBashSplashScreen(wx.SplashScreen):
+    """This Creates the Splash Screen widget. (The first image you see when starting the Application.)"""
+    def __init__(self, parent=None):
+        splashScreenBitmap = wx.Image(name = bosh.dirs['images'].join(u'wryesplash.png').s).ConvertToBitmap()
+        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT  #This centers the image on the screen
+        # image will stay until clicked by user or is explicitly destroyed when the main window is ready
+        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then you have to guess how long it should last
+        splashDuration = 3500 # Duration in ms the splash screen will be visible (only used with the TIMEOUT option)
+        wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
+        self.Bind(wx.EVT_CLOSE, self.OnExit)
+        wx.Yield()
+
+    def OnExit(self, event):
+        self.Hide()
+        # The program might/will freeze without this line.
+        event.Skip() # Make sure the default handler runs too...
 #------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
@@ -6277,11 +7388,24 @@ class BashApp(wx.App):
         global appRestart
         appRestart = False
         """wxWindows: Initialization handler."""
+        #--OnStartup SplashScreen and/or Progress
+        #   Progress gets hidden behind splash by default, since it's not very informative anyway
+        splashScreen = None
+        progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
+             style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
+        #   Any users who prefer the progress dialog can rename or delete wryesplash.png
+        if bosh.dirs['images'].join(u'wryesplash.png').exists():
+            try:
+                    splashScreen = WryeBashSplashScreen()
+                    splashScreen.Show()
+            except:
+                    pass
+        else:
+                pass
         #--Constants
         self.InitResources()
         #--Init Data
-        progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing Data')+u' '*10,
-            style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
+        progress.Update(20,_(u'Initializing Data'))
         self.InitData(progress)
         progress.Update(70,_(u'Initializing Version'))
         self.InitVersion()
@@ -6291,9 +7415,12 @@ class BashApp(wx.App):
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
         progress.Destroy()
+        if splashScreen:
+            splashScreen.Destroy()
         self.SetTopWindow(frame)
         frame.Show()
         balt.ensureDisplayed(frame)
+        frame.updater.Start()
 
     def InitResources(self):
         """Init application resources."""
@@ -6307,8 +7434,6 @@ class BashApp(wx.App):
     def InitData(self,progress):
         """Initialize all data. Called by OnInit()."""
         progress.Update(5,_(u'Initializing ModInfos'))
-        bosh.configHelpers = bosh.ConfigHelpers()
-        bosh.configHelpers.refresh()
         bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
@@ -6320,18 +7445,11 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
-        #progress.Update(55,_("Initializing BSAInfos"))
-        #bosh.BSAInfos = bosh.BSAInfos()
-        #bosh.BSAInfos.refresh()
         #--Patch check
-        firstBashed = settings.get('bash.patch.firstBashed',False)
-        if not firstBashed and bush.game.esp.canBash:
-            for modInfo in bosh.modInfos.values():
-                if modInfo.header.author == u'BASHED PATCH': break
-            else:
+        if bush.game.esp.canBash:
+            if not bosh.modInfos.bashed_patches and bosh.inisettings['EnsurePatchExists']:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
                 bosh.PatchFile.generateNextBashedPatch()
-            settings['bash.patch.firstBashed'] = True
 
     def InitVersion(self):
         """Perform any version to version conversion. Called by OnInit()."""
@@ -6356,8 +7474,8 @@ class BashApp(wx.App):
                     del balt.sizes[key]
         #--Current Version
         settings['bash.version'] = 43
-        if settings['bash.readme'] != GetBashVersion():
-            settings['bash.readme'] = GetBashVersion()
+        if settings['bash.version'] != GetBashVersion():
+            settings['bash.version'] = GetBashVersion()
             # rescan mergeability
             if not CBash: #Because it is rescanned on showing of patch dialogue anyways so that would double up in CBash Mode.
                 nullProgress = bolt.Progress()
@@ -6682,7 +7800,7 @@ class PatchDialog(wx.Dialog):
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
-                docsDir = bosh.modInfos.dir.join(u'Docs')
+                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
@@ -6695,12 +7813,14 @@ class PatchDialog(wx.Dialog):
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
                         if len(changedFiles) > 1:
                             statusBar.SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
+                        bosh.modInfos[patchName].setGhost(False)
+                        bosh.modInfos.refreshInfoLists()
                     except bosh.PluginsFullError:
                         balt.showError(self,
                             _(u'Unable to add mod %s because load list is full.')
                             % patchName.s)
                     modList.RefreshUI()
-            except bosh.FileEditError, error:
+            except bolt.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,u'%s'%error,_(u'File Edit Error'))
             except BoltError, error:
@@ -6776,7 +7896,7 @@ class PatchDialog(wx.Dialog):
                     file.write(logValue)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
-                docsDir = bosh.modInfos.dir.join(u'Docs')
+                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
@@ -6784,6 +7904,14 @@ class PatchDialog(wx.Dialog):
                 message = _(u'Activate %s?') % patchName.s
                 if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
                     try:
+                        # Note to the regular WB devs:
+                        #  The bashed patch wasn't activating when it had been manually deleting. So, on
+                        #   startup, WB would create a new one, but something, somewhere (BAPI?) wasn't
+                        #   registering this so when this: bosh.modInfos.select(patchName) executed, bash
+                        #   couldn't actually find anything to execute. This fix really belongs somewhere else
+                        #   (after the patch is recreated?), but I don't know where it goes, so I'm sticking it
+                        #   here until one of you come back or I find a better place.
+                        bosh.modInfos.plugins.refresh(True)
                         oldFiles = bosh.modInfos.ordered[:]
                         bosh.modInfos.select(patchName)
                         changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
@@ -6794,7 +7922,7 @@ class PatchDialog(wx.Dialog):
                             _(u'Unable to add mod %s because load list is full.')
                             % patchName.s)
                     modList.RefreshUI()
-            except bosh.FileEditError, error:
+            except bolt.FileEditError, error:
                 balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
                 balt.showError(self,u'%s'%error,_(u'File Edit Error'))
             except BoltError, error:
@@ -6830,7 +7958,7 @@ class PatchDialog(wx.Dialog):
         patchConfigs = {'ImportedMods':set()}
         for patcher in self.patchers:
             patcher.saveConfig(patchConfigs)
-        table.setItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',patchConfigs)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',patchConfigs)
         table.save()
 
     def ImportConfig(self,event=None):
@@ -6845,15 +7973,15 @@ class PatchDialog(wx.Dialog):
         table = bolt.Table(bosh.PickleDict(
             textPath, pklPath))
         #try the current Bashed Patch mode.
-        patchConfigs = table.getItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
+        patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
         if not patchConfigs: #try the old format:
-            patchConfigs = table.getItem(bolt.Path(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
+            patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
             if patchConfigs:
                 configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
                 if configIsCBash != self.doCBash:
                     patchConfigs = self.UpdateConfig(patchConfigs)
             else:   #try the non-current Bashed Patch mode:
-                patchConfigs = table.getItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
+                patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
                 if patchConfigs:
                     patchConfigs = self.UpdateConfig(patchConfigs)
         if patchConfigs is None:
@@ -6862,17 +7990,17 @@ class PatchDialog(wx.Dialog):
             patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try:
                         patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: pass#deprint(_('item %s not in saved configs') % (item))
-            elif isinstance(patcher, TweakPatcher):
+                    except KeyError: pass#deprint(_(u'item %s not in saved configs') % (item))
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                        patcher.gTweakList.Check(index,item.isEnabled)
+                        patcher.gTweakList.SetString(index,item.getListLabel())
                     except: deprint(_(u'item %s not in saved configs') % (item))
         self.SetOkEnable()
 
@@ -6884,8 +8012,10 @@ class PatchDialog(wx.Dialog):
             return
         if self.doCBash:
             bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
+            bosh.PatchFile.patchName = bosh.CBash_PatchFile.patchName
         else:
             bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
+            bosh.CBash_PatchFile.patchName = bosh.PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
     def ConvertConfig(self,patchConfigs):
@@ -6906,16 +8036,16 @@ class PatchDialog(wx.Dialog):
             patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                        patcher.gTweakList.Check(index,item.isEnabled)
+                        patcher.gTweakList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
@@ -6926,13 +8056,13 @@ class PatchDialog(wx.Dialog):
             patcher.SetIsFirstLoad(True)
             patcher.getConfig(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 patcher.SetItems(patcher.getAutoItems())
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
-                        patcher.gList.Check(index,item.isEnabled)
-                        patcher.gList.SetString(index,item.getListLabel())
+                        patcher.gTweakList.Check(index,item.isEnabled)
+                        patcher.gTweakList.SetString(index,item.getListLabel())
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
@@ -6941,14 +8071,14 @@ class PatchDialog(wx.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
             patcher.isEnabled = True
-            if isinstance(patcher, ListPatcher):
+            if hasattr(patcher, 'gList'):
                 if patcher.getName() == 'Leveled Lists': continue
                 for index, item in enumerate(patcher.items):
                     patcher.gList.Check(index,True)
                     patcher.configChecks[item] = True
-            elif isinstance(patcher, TweakPatcher):
+            if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
-                    patcher.gList.Check(index,True)
+                    patcher.gTweakList.Check(index,True)
                     item.isEnabled = True
             self.gExecute.Enable(True)
 
@@ -6957,10 +8087,12 @@ class PatchDialog(wx.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
             patcher.isEnabled = False
-            if not hasattr(patcher, 'gList'): continue
-            if patcher.getName() == 'Leveled Lists': continue # special case that one.
-            patcher.gList.SetChecked([])
-            patcher.OnListCheck()
+            if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
+            if hasattr(patcher, 'gList'):
+                patcher.gList.SetChecked([])
+                patcher.OnListCheck()
+            if hasattr(patcher, 'gTweakList'):
+                patcher.gTweakList.SetChecked([])
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
@@ -7022,7 +8154,7 @@ class PatchDialog(wx.Dialog):
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
-        if event.GetKeyCode() == ord('A') and event.ControlDown(): # Ctrl+'A'
+        if event.GetKeyCode() == 1 and event.CmdDown(): # Ctrl+'A'
             patcher = self.currentPatcher
             if patcher is not None:
                 if event.ShiftDown():
@@ -7073,29 +8205,6 @@ class Patcher:
         if self.gConfigPanel:
             self.gConfigPanel.Layout()
 
-    def SelectAll(self,event=None):
-        """'Select All' Button was pressed, update all configChecks states."""
-        if hasattr(self, 'items'): items = self.items
-        elif hasattr(self, 'tweaks'): items = self.tweaks
-        else: return
-        try:
-            for index, item in enumerate(items):
-                self.gList.Check(index,True)
-            self.OnListCheck()
-        except AttributeError:
-            pass #ListBox instead of CheckListBox
-        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
-
-    def DeselectAll(self,event=None):
-        """'Deselect All' Button was pressed, update all configChecks states."""
-        if hasattr(self, 'gList'):
-            try:
-                self.gList.SetChecked([])
-                self.OnListCheck()
-            except AttributeError:
-                pass #ListBox instead of CheckListBox
-            self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
-
 #------------------------------------------------------------------------------
 class AliasesPatcher(Patcher,bosh.AliasesPatcher):
     """Basic patcher panel with no options."""
@@ -7109,7 +8218,7 @@ class AliasesPatcher(Patcher,bosh.AliasesPatcher):
         text = fill(self.__class__.text,70)
         gText = staticText(gConfigPanel,text)
         #gExample = staticText(gConfigPanel,
-        #    _("Example Mod 1.esp >> Example Mod 1.2.esp"))
+        #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
         self.gAliases = wx.TextCtrl(gConfigPanel,wx.ID_ANY,u'',style=wx.TE_MULTILINE)
         self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
@@ -7149,7 +8258,7 @@ class CBash_AliasesPatcher(Patcher,bosh.CBash_AliasesPatcher):
         text = fill(self.text,70)
         gText = staticText(gConfigPanel,text)
         #gExample = staticText(gConfigPanel,
-        #    _("Example Mod 1.esp >> Example Mod 1.2.esp"))
+        #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
         self.gAliases = wx.TextCtrl(gConfigPanel,wx.ID_ANY,u'',style=wx.TE_MULTILINE)
         self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
@@ -7374,6 +8483,24 @@ class ListPatcher(Patcher):
             self.getChoice(item)
         self.gList.SetString(itemIndex,self.getItemLabel(item))
 
+    def SelectAll(self,event=None):
+        """'Select All' Button was pressed, update all configChecks states."""
+        try:
+            for index, item in enumerate(self.items):
+                self.gList.Check(index,True)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+    def DeselectAll(self,event=None):
+        """'Deselect All' Button was pressed, update all configChecks states."""
+        try:
+            self.gList.SetChecked([])
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 #------------------------------------------------------------------------------
 class TweakPatcher(Patcher):
     """Patcher panel with list of checkable, configurable tweaks."""
@@ -7387,31 +8514,31 @@ class TweakPatcher(Patcher):
         gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
-        self.gList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gTweakList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
         #--Events
-        self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
-        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gList.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
+        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
+        self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_UP,self.TweakOnMouse)
         self.mouseItem = -1
         self.mouseState = None
         if self.selectCommands:
-            self.gSelectAll= button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
-            self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+            self.gSelectAll= button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
+            self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
             gSelectSizer = (vSizer(
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
         #--Init GUI
-        self.SetItems()
+        self.SetTweaks()
         #--Layout
         gSizer = vSizer(
             (gText,),
             (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
                 ((4,0),0,wx.EXPAND),
-                (self.gList,1,wx.EXPAND|wx.TOP,2),
+                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gSelectSizer,
                 ),1,wx.EXPAND|wx.TOP,4),
             )
@@ -7419,44 +8546,44 @@ class TweakPatcher(Patcher):
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
-    def SetItems(self):
+    def SetTweaks(self):
         """Set item to specified set of items."""
-        self.gList.Clear()
+        self.gTweakList.Clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherBold = False
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith(u'Custom'):
-                if isinstance(tweak.choiceValues[tweak.chosen][0],(str,unicode)):
+                if isinstance(tweak.choiceValues[tweak.chosen][0],basestring):
                     label += u' %s' % tweak.choiceValues[tweak.chosen][0]
                 else:
                     label += u' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
-            self.gList.Insert(label,index)
-            self.gList.Check(index,tweak.isEnabled)
+            self.gTweakList.Insert(label,index)
+            self.gTweakList.Check(index,tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
                 # indicate that this is a new item by bolding it and its parent patcher
                 font = self.gConfigPanel.GetFont()
                 font.SetWeight(wx.FONTWEIGHT_BOLD)
-                self.gList.SetItemFont(index, font)
+                self.gTweakList.SetItemFont(index, font)
                 patcherBold = True
         if patcherBold:
             self._BoldPatcherLabel()
 
-    def OnListCheck(self,event=None):
+    def TweakOnListCheck(self,event=None):
         """One of list items was checked. Update all check states."""
         ensureEnabled = False
         for index, tweak in enumerate(self.tweaks):
-            checked = self.gList.IsChecked(index)
+            checked = self.gTweakList.IsChecked(index)
             tweak.isEnabled = checked
             if checked:
                 ensureEnabled = True
         if event is not None:
-            if self.gList.IsChecked(event.GetSelection()):
+            if self.gTweakList.IsChecked(event.GetSelection()):
                 self._EnsurePatcherEnabled()
         elif ensureEnabled:
             self._EnsurePatcherEnabled()
 
-    def OnMouse(self,event):
+    def TweakOnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.RightDown():
             self.mouseState = (event.m_x,event.m_y)
@@ -7473,7 +8600,7 @@ class TweakPatcher(Patcher):
                 if max(abs(event.m_x-oldx),abs(event.m_y-oldy)) > 4:
                     self.mouseState = None
         elif event.Moving():
-            mouseItem = event.m_y/self.gList.GetItemHeight() + self.gList.GetScrollPos(wx.VERTICAL)
+            mouseItem = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
             self.mouseState = False
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
@@ -7495,7 +8622,7 @@ class TweakPatcher(Patcher):
     def ShowChoiceMenu(self,event):
         """Displays a popup choice menu if applicable."""
         #--Tweak Index
-        tweakIndex = event.m_y/self.gList.GetItemHeight() + self.gList.GetScrollPos(wx.VERTICAL)
+        tweakIndex = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
         self.rightClickTweakIndex = tweakIndex
         #--Tweaks
         tweaks = self.tweaks
@@ -7503,35 +8630,35 @@ class TweakPatcher(Patcher):
         choiceLabels = tweaks[tweakIndex].choiceLabels
         if len(choiceLabels) <= 1: return
         chosen = tweaks[tweakIndex].chosen
-        self.gList.SetSelection(tweakIndex)
+        self.gTweakList.SetSelection(tweakIndex)
         #--Build Menu
         menu = wx.Menu()
         for index,label in enumerate(choiceLabels):
             if label == u'----':
                 menu.AppendSeparator()
             elif label.startswith(_(u'Custom')):
-                if isinstance(tweaks[tweakIndex].choiceValues[index][0],(str,unicode)):
+                if isinstance(tweaks[tweakIndex].choiceValues[index][0],basestring):
                     menulabel = label + u' %s' % tweaks[tweakIndex].choiceValues[index][0]
                 else:
                     menulabel = label + u' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
                 menuItem = wx.MenuItem(menu,index,menulabel,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
-                wx.EVT_MENU(self.gList,index,self.OnTweakCustomChoice)
+                wx.EVT_MENU(self.gTweakList,index,self.OnTweakCustomChoice)
             else:
                 menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
                 menu.AppendItem(menuItem)
                 if index == chosen: menuItem.Check()
-                wx.EVT_MENU(self.gList,index,self.OnTweakChoice)
+                wx.EVT_MENU(self.gTweakList,index,self.OnTweakChoice)
         #--Show/Destroy Menu
-        self.gList.PopupMenu(menu)
+        self.gTweakList.PopupMenu(menu)
         menu.Destroy()
 
     def OnTweakChoice(self,event):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
         self.tweaks[tweakIndex].chosen = event.GetId()
-        self.gList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
+        self.gTweakList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
 
     def OnTweakCustomChoice(self,event):
         """Handle choice menu selection."""
@@ -7540,8 +8667,7 @@ class TweakPatcher(Patcher):
         tweak = self.tweaks[tweakIndex]
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
-            subtweaktype = type(v)
-            if subtweaktype == float:
+            if isinstance(v,float):
                 label = (_(u'Enter the desired custom tweak value.')
                          + u'\n' +
                          _(u'Due to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.')
@@ -7549,18 +8675,18 @@ class TweakPatcher(Patcher):
                          _(u'If you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
                          + u'\n' + tweak.key[i])
                 new = balt.askNumber(self.gConfigPanel,label,prompt=_(u'Value'),
-                    title=tweal.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                    title=tweak.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return
                 value.append(float(new)/10)
-            elif subtweaktype == int:
+            elif isinstance(v,int):
                 label = _(u'Enter the desired custom tweak value.')+u'\n'+tweak.key[i]
                 new = balt.askNumber(self.gConfigPanel,label,prompt=_(u'Value'),
                     title=tweak.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
                 if new == None: #user hit cancel
                     return
                 value.append(new)
-            elif subtweaktype in (str,unicode):
+            elif isinstance(v,basestring):
                 label = _(u'Enter the desired custom tweak text.')+u'\n'+tweak.key[i]
                 new = balt.askText(self.gConfigPanel,label,
                     title=tweak.label+_(u' ~ Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i])
@@ -7570,12 +8696,91 @@ class TweakPatcher(Patcher):
         if not value: value = tweak.choiceValues[index]
         tweak.choiceValues[index] = tuple(value)
         tweak.chosen = index
-        if isinstance(tweak.choiceValues[index][0],(str,unicode)):
+        if isinstance(tweak.choiceValues[index][0],basestring):
             menulabel = tweak.getListLabel() + u' %s' % tweak.choiceValues[index][0]
         else:
             menulabel = tweak.getListLabel() + u' %4.2f ' % tweak.choiceValues[index][0]
-        self.gList.SetString(tweakIndex,(menulabel))
+        self.gTweakList.SetString(tweakIndex,(menulabel))
 
+    def TweakSelectAll(self,event=None):
+        """'Select All' Button was pressed, update all configChecks states."""
+        try:
+            for index, item in enumerate(self.tweaks):
+                self.gTweakList.Check(index,True)
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+    def TweakDeselectAll(self,event=None):
+        """'Deselect All' Button was pressed, update all configChecks states."""
+        try:
+            self.gTweakList.SetChecked([])
+            self.OnListCheck()
+        except AttributeError:
+            pass #ListBox instead of CheckListBox
+        self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+#------------------------------------------------------------------------------
+class DoublePatcher(TweakPatcher,ListPatcher):
+    """Patcher panel with option to select source elements."""
+    listLabel = _(u'Source Mods/Files')
+
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+        """Show config."""
+        if self.gConfigPanel: return self.gConfigPanel
+        #--Else...
+        self.gTipText = gTipText
+        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+        text = fill(self.text,70)
+        gText = staticText(self.gConfigPanel,text)
+        #--Import List
+        self.gList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
+        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
+        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
+        #--Tweak List
+        self.gTweakList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
+        self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN,self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_UP,self.TweakOnMouse)
+        self.mouseItem = -1
+        self.mouseState = None
+        #--Buttons
+        self.gSelectAll = button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
+        self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+        gSelectSizer = (vSizer(
+            (self.gSelectAll,0,wx.TOP,12),
+            (self.gDeselectAll,0,wx.TOP,4),
+            ),0,wx.EXPAND|wx.LEFT,4)
+        self.gTweakSelectAll = button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
+        self.gTweakDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
+        gTweakSelectSizer = (vSizer(
+            (self.gTweakSelectAll,0,wx.TOP,12),
+            (self.gTweakDeselectAll,0,wx.TOP,4),
+            ),0,wx.EXPAND|wx.LEFT,4)
+        #--Layout
+        gSizer = vSizer(
+            (gText,),
+            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+                ((4,0),0,wx.EXPAND),
+                (self.gList,1,wx.EXPAND|wx.TOP,2),
+                gSelectSizer,),1,wx.EXPAND|wx.TOP,4),
+            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.subLabel),
+                ((4,0),0,wx.EXPAND),
+                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
+                gTweakSelectSizer,),1,wx.EXPAND|wx.TOP,4),
+            )
+        gConfigPanel.SetSizer(gSizer)
+        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
+        #--Initialize
+        self.SetItems(self.getAutoItems())
+        self.SetTweaks()
+        return gConfigPanel
+
+#------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
@@ -7618,9 +8823,9 @@ class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
 class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
 class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
 
-class RacePatcher(bosh.RacePatcher,ListPatcher):
+class RacePatcher(bosh.RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
-class CBash_RacePatcher(bosh.CBash_RacePatcher,ListPatcher):
+class CBash_RacePatcher(bosh.CBash_RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 
 class RoadImporter(bosh.RoadImporter,ListPatcher): pass
@@ -7635,9 +8840,6 @@ class CBash_StatsPatcher(bosh.CBash_StatsPatcher,ListPatcher): pass
 class ImportScripts(bosh.ImportScripts,ListPatcher):pass
 class CBash_ImportScripts(bosh.CBash_ImportScripts,ListPatcher):pass
 
-class ImportScriptContents(bosh.ImportScriptContents,ListPatcher):pass
-##class CBash_ImportScriptContents(bosh.CBash_ImportScriptContents,ListPatcher):pass
-
 class SpellsPatcher(bosh.SpellsPatcher,ListPatcher):pass
 class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
 
@@ -7647,9 +8849,6 @@ class CBash_AssortedTweaker(bosh.CBash_AssortedTweaker,TweakPatcher): pass
 
 class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
 class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
-
-class GlobalsTweaker(bosh.GlobalsTweaker,TweakPatcher): pass
-class CBash_GlobalsTweaker(bosh.CBash_GlobalsTweaker,TweakPatcher): pass
 
 class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
@@ -7678,18 +8877,11 @@ class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
 class MFactMarker(bosh.MFactMarker,ListPatcher): pass
 class CBash_MFactMarker(bosh.CBash_MFactMarker,ListPatcher): pass
 
-class PowerExhaustion(bosh.PowerExhaustion,Patcher): pass
-class CBash_PowerExhaustion(bosh.CBash_PowerExhaustion,Patcher): pass
-
 class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
 class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass
 
 class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
-
-##class ForceMerger(bosh.ForceMerger,Patcher): pass
-##class CBash_ForceMerger(bosh.CBash_ForceMerger,ListPatcher): pass
-
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
@@ -7714,7 +8906,6 @@ otherPatcherDict = {
     UpdateReferences().__class__.__name__ : CBash_UpdateReferences(),
     CellImporter().__class__.__name__ : CBash_CellImporter(),
     ClothesTweaker().__class__.__name__ : CBash_ClothesTweaker(),
-    GlobalsTweaker().__class__.__name__ : CBash_GlobalsTweaker(),
     GmstTweaker().__class__.__name__ : CBash_GmstTweaker(),
     GraphicsPatcher().__class__.__name__ : CBash_GraphicsPatcher(),
     ImportFactions().__class__.__name__ : CBash_ImportFactions(),
@@ -7723,14 +8914,12 @@ otherPatcherDict = {
     TweakActors().__class__.__name__ : CBash_TweakActors(),
     ImportRelations().__class__.__name__ : CBash_ImportRelations(),
     ImportScripts().__class__.__name__ : CBash_ImportScripts(),
-    ImportScriptContents().__class__.__name__ : ImportScriptContents(), #No CBash equiv
     ImportActorsSpells().__class__.__name__ : CBash_ImportActorsSpells(),
     ListsMerger().__class__.__name__ : CBash_ListsMerger(),
     MFactMarker().__class__.__name__ : CBash_MFactMarker(),
     NamesPatcher().__class__.__name__ : CBash_NamesPatcher(),
     NamesTweaker().__class__.__name__ : CBash_NamesTweaker(),
     NpcFacePatcher().__class__.__name__ : CBash_NpcFacePatcher(),
-    PowerExhaustion().__class__.__name__ : CBash_PowerExhaustion(),
     RacePatcher().__class__.__name__ : CBash_RacePatcher(),
     RoadImporter().__class__.__name__ : CBash_RoadImporter(),
     SoundPatcher().__class__.__name__ : CBash_SoundPatcher(),
@@ -7749,7 +8938,6 @@ otherPatcherDict = {
     CBash_UpdateReferences().__class__.__name__ : UpdateReferences(),
     CBash_CellImporter().__class__.__name__ : CellImporter(),
     CBash_ClothesTweaker().__class__.__name__ : ClothesTweaker(),
-    CBash_GlobalsTweaker().__class__.__name__ : GlobalsTweaker(),
     CBash_GmstTweaker().__class__.__name__ : GmstTweaker(),
     CBash_GraphicsPatcher().__class__.__name__ : GraphicsPatcher(),
     CBash_ImportFactions().__class__.__name__ : ImportFactions(),
@@ -7764,7 +8952,6 @@ otherPatcherDict = {
     CBash_NamesPatcher().__class__.__name__ : NamesPatcher(),
     CBash_NamesTweaker().__class__.__name__ : NamesTweaker(),
     CBash_NpcFacePatcher().__class__.__name__ : NpcFacePatcher(),
-    CBash_PowerExhaustion().__class__.__name__ : PowerExhaustion(),
     CBash_RacePatcher().__class__.__name__ : RacePatcher(),
     CBash_RoadImporter().__class__.__name__ : RoadImporter(),
     CBash_SoundPatcher().__class__.__name__ : SoundPatcher(),
@@ -7895,7 +9082,8 @@ class File_Delete(Link):
     """Delete the file and all backups."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete')))
+        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
+                help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
@@ -7908,8 +9096,11 @@ class File_Delete(Link):
             checks = dialog.FindWindowById(id)
             if checks:
                 for i,mod in enumerate(self.data):
-                     if checks.IsChecked(i):
-                        self.window.data.delete(mod)
+                    if checks.IsChecked(i):
+                        try:
+                            self.window.data.delete(mod)
+                        except bolt.BoltError as e:
+                            balt.showError(self.window, _(u'%s') % e)
             self.window.RefreshUI()
         dialog.Destroy()
 
@@ -7936,7 +9127,7 @@ class File_Duplicate(Link):
                 if hasBsa and hasVoices:
                     message = (_(u"This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.")
                                + u'\n\n' +
-                               _('Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.')
+                               _(u'Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.')
                                ) % (modName.sroot,modName.s,modName.s)
                 elif hasBsa:
                     message = (_(u'This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod.')
@@ -7975,8 +9166,7 @@ class File_Duplicate(Link):
             if destDir == fileInfo.dir:
                 fileInfos.table.copyRow(fileName,destName)
                 if fileInfos.table.getItem(fileName,'mtime'):
-                    destInfo = fileInfos[destName]
-                    fileInfos.table.setItem(destName,'mtime',destInfo.mtime)
+                    fileInfos.table.setItem(destName,'mtime',newTime)
                 if fileInfo.isMod():
                     fileInfos.autoSort()
             self.window.RefreshUI()
@@ -7986,7 +9176,8 @@ class File_Hide(Link):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Hide')))
+        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Hide'),
+                help=_(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]})))
 
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
@@ -8022,14 +9213,15 @@ class File_ListMasters(Link):
     """Copies list of masters to clipboard."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Masters..."))
+        menuItem = wx.MenuItem(menu,self.id,_(u"List Masters..."),
+                help=_(u"Copies list of %(filename)s's masters to the clipboard.") % ({'filename':data[0]}))
         menu.AppendItem(menuItem)
         if len(data) != 1: menuItem.Enable(False)
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
-        text = bosh.modInfos.getModList(fileInfo)
+        text = bosh.modInfos.getModList(fileInfo=fileInfo)
         if (wx.TheClipboard.Open()):
             wx.TheClipboard.SetData(wx.TextDataObject(text))
             wx.TheClipboard.Close()
@@ -8039,8 +9231,11 @@ class File_ListMasters(Link):
 class File_Redate(Link):
     """Move the selected files to start at a specified date."""
     def AppendToMenu(self,menu,window,data):
+        if bosh.boss.LoadOrderMethod == bosh.bapi.BOSS_API_LOMETHOD_TEXTFILE:
+            return
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Redate...'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Redate...'),
+                help=_(u"Move the selected files to start at a specified date."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -8077,14 +9272,15 @@ class File_Sort(Link):
     """Sort the selected files."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Sort'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Sort'),
+                help=_(u"sort the selected files."))
         menu.AppendItem(menuItem)
         if len(data) < 2: menuItem.Enable(False)
 
     def Execute(self,event):
         message = (_(u'Reorder selected mods in alphabetical order?  The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.')
                    + u'\n\n' +
-                   _('Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
+                   _(u'Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
                    )
         if not balt.askContinue(self.window,message,'bash.sortMods.continue',_(u'Sort Mods')):
             return
@@ -8114,7 +9310,8 @@ class File_Snapshot(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         self.title = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
-        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menuItem = wx.MenuItem(menu,self.id,self.title,
+            help=_(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -8153,7 +9350,8 @@ class File_RevertToSnapshot(Link):
     """Revert to Snapshot."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Revert to Snapshot...'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Revert to Snapshot...'),
+            help=_(u"Revert to a previously created snapshot from the Bash/Snapshots dir."))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
 
@@ -8191,7 +9389,8 @@ class File_Backup(Link):
     """Backup file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Backup'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Backup'),
+            help=_(u"Create a backup of the slected file(s)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -8313,7 +9512,7 @@ class Installers_AddMarker(Link):
     """Add an installer marker."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Add Marker...'),_(u'Adds a Marker, a special type of package useful for seperating and labeling your packages.'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Add Marker...'),_(u'Adds a Marker, a special type of package useful for separating and labelling your packages.'))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -8435,6 +9634,20 @@ class Installers_AutoRefreshProjects(BoolLink):
                           )
 
 #------------------------------------------------------------------------------
+class Installers_AutoApplyEmbeddedBCFs(BoolLink):
+    """Toggle autoApplyEmbeddedBCFs setting and update."""
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _(u'Auto-Apply Embedded BCFs'),
+                          'bash.installers.autoApplyEmbeddedBCFs',
+                          _(u'If enabled, embedded BCFs will automatically be applied to archives.')
+                          )
+
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        gInstallers.OnShow()
+
+#------------------------------------------------------------------------------
 class Installers_AutoRefreshBethsoft(BoolLink):
     """Toggle refreshVanilla setting and update."""
     def __init__(self): BoolLink.__init__(self,
@@ -8484,6 +9697,12 @@ class Installers_BsaRedirection(BoolLink):
                           'bash.bsaRedirection',
                           )
 
+    def AppendToMenu(self,menu,window,data):
+        section,key = bush.game.ini.bsaRedirection
+        if not section or not key:
+            return
+        BoolLink.AppendToMenu(self,menu,window,data)
+
     def Execute(self,event):
         """Handle selection."""
         BoolLink.Execute(self,event)
@@ -8492,7 +9711,7 @@ class Installers_BsaRedirection(BoolLink):
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()
-            #balt.showOk(self,_("BSA Hashes reset: %d") % (resetCount,))
+            #balt.showOk(self,_(u"BSA Hashes reset: %d") % (resetCount,))
         bosh.oblivionIni.setBsaRedirection(settings[self.key])
 
 #------------------------------------------------------------------------------
@@ -8636,19 +9855,31 @@ class Installers_skipLandscapeLODNormals(Installers_Skip):
 
 #------------------------------------------------------------------------------
 class Installers_SkipOBSEPlugins(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip %s Plugins') % bush.game.se.shortName,
-                                          'bash.installers.allowOBSEPlugins',
-                                          )
+    """Toggle allowOBSEPlugins setting and update."""
+    def __init__(self):
+        BoolLink.__init__(self,_(u'Skip %s Plugins') % bush.game.se_sd,
+                          'bash.installers.allowOBSEPlugins')
 
     def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == '': return
+        if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,self.text,self.help,kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         menuItem.Check(not settings[self.key])
         bosh.installersWindow = self.gTank
+
+#------------------------------------------------------------------------------
+class Installers_RenameStrings(Installers_Skip):
+    """Toggle auto-renaming of .STRINGS files"""
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _(u'Auto-name String Translation Files'),
+                          'bash.installers.renameStrings',
+                          )
+
+    def AppendToMenu(self,menu,window,data):
+        if bush.game.esp.stringsFiles:
+            Installers_Skip.AppendToMenu(self,menu,window,data)
 
 #------------------------------------------------------------------------------
 class Installers_SortActive(BoolLink):
@@ -8756,7 +9987,8 @@ class Installer_EditWizard(InstallerLink):
             title = _(u'View Wizard...')
         else:
             title = _(u'Edit Wizard...')
-        menuItem = wx.MenuItem(menu, self.id, title)
+        menuItem = wx.MenuItem(menu, self.id, title,
+            help=_(u"Edit the wizard.txt associated with this project."))
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             menuItem.Enable(bool(self.data[self.selected[0]].hasWizard))
@@ -8781,6 +10013,47 @@ class Installer_EditWizard(InstallerLink):
             except:
                 pass
 
+class Installer_OpenWizardInCommentsWizBAINEditor(InstallerLink):
+    """Open the wizard.txt associated with this project in the comments"""
+    def AppendToMenu(self, menu, window, data):
+        Link.AppendToMenu(self, menu, window, data)
+        if self.isSingleArchive():
+            title = _(u'View Wizard In Comments...')
+        else:
+            title = _(u'Open Wizard In Comments...')
+        menuItem = wx.MenuItem(menu, self.id, title,
+            help=_(u"Open the wizard.txt associated with this project in the Comments / WizBAIN Editor."))
+        menu.AppendItem(menuItem)
+        if self.isSingleInstallable():
+            menuItem.Enable(bool(self.data[self.selected[0]].hasWizard))
+        else:
+            menuItem.Enable(False)
+
+    def Execute(self, event):
+        path = self.selected[0]
+        if self.isSingleProject():
+            # Project, open for edit
+            dir = self.data.dir
+            wizpath = u'%s' %dir.join(path.s, self.data[path].hasWizard)
+            gInstallers.gComments.LoadFile(wizpath)
+        else:
+            # Archive, open for viewing
+            archive = self.data[path]
+            with balt.BusyCursor():
+                # This is going to leave junk temp files behind...
+                archive.unpackToTemp(path, [archive.hasWizard])
+            wizpath = u'%s' % archive.tempDir.join(archive.hasWizard)
+            gInstallers.gComments.LoadFile(wizpath)
+        try:
+            archive.tempDir.rmtree(archive.tempDir.stail)
+        except:
+            pass
+
+        gInstallers.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
+        gInstallers.gComments.AppendText(' ')#Need to set the modify flag manually so it saves when changing package selections. Also if the last word in the doc is a keyword(ex. Return) this updates the syntax highlighting.
+        gInstallers.gComments.SetFocus()
+        gInstallers.gComments.EnsureCaretVisible()
+
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
@@ -8792,9 +10065,11 @@ class Installer_Wizard(InstallerLink):
     def AppendToMenu(self, menu, window, data):
         Link.AppendToMenu(self, menu, window, data)
         if not self.bAuto:
-            menuItem = wx.MenuItem(menu, self.id, _(u'Wizard'))
+            menuItem = wx.MenuItem(menu, self.id, _(u'Wizard'),
+                help=_(u"Run the install wizard."))
         else:
-            menuItem = wx.MenuItem(menu, self.id, _(u'Auto Wizard'))
+            menuItem = wx.MenuItem(menu, self.id, _(u'Auto Wizard'),
+                help=_(u"Run the install wizard."))
         menu.AppendItem(menuItem)
         if self.isSingle():
             installer = self.data[self.selected[0]]
@@ -8806,7 +10081,8 @@ class Installer_Wizard(InstallerLink):
         with balt.BusyCursor():
             installer = self.data[self.selected[0]]
             subs = []
-            oldRemaps = installer.remaps
+            oldRemaps = copy.copy(installer.remaps)
+            installer.remaps = {}
             gInstallers.refreshCurrent(installer)
             for index in range(gInstallers.gSubList.GetCount()):
                 subs.append(gInstallers.gSubList.GetString(index))
@@ -8889,7 +10165,7 @@ class Installer_Wizard(InstallerLink):
         #       iniList-> left    -> splitter ->INIPanel
         panel = iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
-            outFile = bosh.dirs['mods'].join(u'INI Tweaks',u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in belt.generateTweakLines(ret.IniEdits[iniFile],iniFile):
                     out.write(line+u'\n')
@@ -8936,7 +10212,8 @@ class Installer_OpenReadme(InstallerLink):
 
     def AppendToMenu(self, menu, window, data):
         Link.AppendToMenu(self, menu, window, data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Open Readme'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Open Readme'),
+            help=_(u"Opens the installer's readme."))
         menu.AppendItem(menuItem)
         if self.isSingle():
             installer = self.data[self.selected[0]]
@@ -8963,7 +10240,8 @@ class Installer_Anneal(InstallerLink):
     """Anneal all packages."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Anneal'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Anneal'),
+            help=_(u"Anneal all packages."))
         menu.AppendItem(menuItem)
         selected = self.filterInstallables()
         menuItem.Enable(len(selected))
@@ -8980,11 +10258,12 @@ class Installer_Anneal(InstallerLink):
 
 #------------------------------------------------------------------------------
 class Installer_Duplicate(InstallerLink):
-    """Duplicate selected Installers."""
+    """Duplicate selected Installer."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         self.title = _(u'Duplicate...')
-        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menuItem = wx.MenuItem(menu,self.id,self.title,
+            help=_(u"Duplicate selected %(installername)s.") % ({'installername':self.selected[0]}))
         menu.AppendItem(menuItem)
         menuItem.Enable(self.isSingle() and not self.isSingleMarker())
 
@@ -9006,13 +10285,13 @@ class Installer_Duplicate(InstallerLink):
         #--Error checking
         newName = GPath(result).tail
         if not newName.s:
-            balt.ShowWarning(self.gTank,_(u"%s is not a valid name.") % result)
+            balt.showWarning(self.gTank,_(u"%s is not a valid name.") % result)
             return
         if newName in self.data:
-            balt.ShowWarning(self.gTank,_(u"%s already exists.") % newName.s)
+            balt.showWarning(self.gTank,_(u"%s already exists.") % newName.s)
             return
         if self.data.dir.join(curName).isfile() and curName.cext != newName.cext:
-            balt.ShowWarning(self.gTank,
+            balt.showWarning(self.gTank,
                 _(u"%s does not have correct extension (%s).") % (newName.s,curName.ext))
             return
         #--Duplicate
@@ -9027,7 +10306,8 @@ class Installer_Hide(InstallerLink):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         self.title = _(u'Hide...')
-        menuItem = wx.MenuItem(menu,self.id,self.title)
+        menuItem = wx.MenuItem(menu,self.id,self.title,
+            help=_(u"Hide selected installer(s)."))
         menu.AppendItem(menuItem)
         for item in window.GetSelected():
             if isinstance(window.data[item],bosh.InstallerMarker):
@@ -9059,7 +10339,8 @@ class Installer_Rename(InstallerLink):
     """Renames files by pattern."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'),
+            help=_(u"Rename selected installer(s)."))
         menu.AppendItem(menuItem)
         self.InstallerType = None
         ##Only enable if all selected items are of the same type
@@ -9091,7 +10372,8 @@ class Installer_HasExtraData(InstallerLink):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Has Extra Directories'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Has Extra Directories'),kind=wx.ITEM_CHECK,
+            help=_(u"Allow installation of files in non-standard directories."))
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
@@ -9115,7 +10397,8 @@ class Installer_OverrideSkips(InstallerLink):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Override Skips'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Override Skips'),kind=wx.ITEM_CHECK,
+            help=_(u"Override global file type skipping for %(installername)s.") % ({'installername':self.selected[0]}))
         menu.AppendItem(menuItem)
         if self.isSingleInstallable():
             installer = self.data[self.selected[0]]
@@ -9138,7 +10421,8 @@ class Installer_SkipRefresh(InstallerLink):
     """Toggle skipRefresh flag on installer."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Don't Refresh"),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u"Don't Refresh"),kind=wx.ITEM_CHECK,
+            help=_(u"Don't automatically refresh project."))
         menu.AppendItem(menuItem)
         if self.isSingleProject():
             installer = self.data[self.selected[0]]
@@ -9320,7 +10604,7 @@ class Installer_OpenTesNexus(InstallerLink):
         message = _(u"Attempt to open this as a mod at TES Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_(u'Open at TES Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+id)
+            webbrowser.open(u'http://oblivion.nexusmods.com/mods/'+id)
 
 class Installer_OpenSkyrimNexus(InstallerLink):
     def AppendToMenu(self,menu,window,data):
@@ -9331,10 +10615,10 @@ class Installer_OpenSkyrimNexus(InstallerLink):
         menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
 
     def Execute(self,event):
-        message = _(u"Attemp to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
+        message = _(u"Attempt to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
         if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_(u'Open at Skyrim Nexus')):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            os.startfile(u'http://www.skyrimnexus.com/downloads/file.php?id='+id)
+            webbrowser.open(u'http://skyrim.nexusmods.com/mods/'+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
@@ -9349,7 +10633,7 @@ class Installer_OpenSearch(InstallerLink):
         """Handle selection."""
         message = _(u"Open a search for this on Google?")
         if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_(u'Open a search')):
-            os.startfile(u'http://www.google.com/search?hl=en&q='+u'+'.join(re.split(ur'\W+|_+',bosh.reTesNexus.search(self.selected[0].s).group(1))))
+            webbrowser.open(u'http://www.google.com/search?hl=en&q='+u'+'.join(re.split(ur'\W+|_+',bosh.reTesNexus.search(self.selected[0].s).group(1))))
 
 class Installer_OpenTESA(InstallerLink):
     """Open selected file(s)."""
@@ -9365,7 +10649,7 @@ class Installer_OpenTESA(InstallerLink):
         message = _(u"Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance.")
         if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_(u'Open at TES Alliance')):
             id = bosh.reTESA.search(self.selected[0].s).group(2)
-            os.startfile(u'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+id)
+            webbrowser.open(u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+id)
 
 class Installer_OpenPES(InstallerLink):
     """Open selected file(s)."""
@@ -9381,7 +10665,7 @@ class Installer_OpenPES(InstallerLink):
         message = _(u"Attempt to open this as a mod at Planet Elderscrolls? This assumes that the trailing digits in the package's name are actually the id number of the mod at Planet Elderscrolls. If this assumption is wrong, you'll just get a random mod page (or error notice) at Planet Elderscrolls.")
         if balt.askContinue(self.gTank,message,'bash.installers.openPES',_(u'Open at Planet Elderscrolls')):
             id = bosh.reTESA.search(self.selected[0].s).group(2)
-            os.startfile(u'http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
+            webbrowser.open(u'http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
 
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
@@ -9450,6 +10734,7 @@ class Installer_Uninstall(InstallerLink):
                 self.data.uninstall(self.filterInstallables(),progress)
         finally:
             self.data.refresh(what='NS')
+            bosh.modInfos.plugins.saveLoadOrder()
             gInstallers.RefreshUIMods()
             bashFrame.RefreshData()
 
@@ -9642,7 +10927,7 @@ class Installer_Espm_List(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        subs = _(u'Esp/m List for ')+u'"%s":\n[spoiler]' % (gInstallers.data[gInstallers.detailsItem].archive)
+        subs = _(u'Esp/m List for %s:') % (gInstallers.data[gInstallers.detailsItem].archive) + u'\n[spoiler]\n'
         for index in range(gInstallers.gEspmList.GetCount()):
             subs += [u'   ',u'** '][gInstallers.gEspmList.IsChecked(index)] + gInstallers.gEspmList.GetString(index) + '\n'
         subs += u'[/spoiler]'
@@ -9718,7 +11003,7 @@ class Installer_Subs_ListSubPackages(InstallerLink):
     def Execute(self,event):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
-        subs = _(u'Sub-Packages List for ')+ u'"%s":\n[spoiler]' % (installer.archive)
+        subs = _(u'Sub-Packages List for %s:') % (installer.archive) + u'\n[spoiler]\n'
         for index in xrange(gInstallers.gSubList.GetCount()):
             subs += [u'   ',u'** '][gInstallers.gSubList.IsChecked(index)] + gInstallers.gSubList.GetString(index) + u'\n'
         subs += u'[/spoiler]'
@@ -9750,10 +11035,10 @@ class InstallerArchive_Unpack(InstallerLink):
             #--Error checking
             project = GPath(result).tail
             if not project.s or project.cext in bosh.readExts:
-                balt.ShowWarning(self.gTank,_(u"%s is not a valid project name.") % result)
+                balt.showWarning(self.gTank,_(u"%s is not a valid project name.") % result)
                 return
             if self.data.dir.join(project).isfile():
-                balt.ShowWarning(self.gTank,_(u"%s is a file.") % project.s)
+                balt.showWarning(self.gTank,_(u"%s is a file.") % project.s)
                 return
             if project in self.data:
                 if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.title,False):
@@ -9959,10 +11244,10 @@ class InstallerProject_Pack(InstallerLink):
         #--Error checking
         archive = GPath(result).tail
         if not archive.s:
-            balt.ShowWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
             return
         if self.data.dir.join(archive).isdir():
-            balt.ShowWarning(self.gTank,_(u'%s is a directory.') % archive.s)
+            balt.showWarning(self.gTank,_(u'%s is a directory.') % archive.s)
             return
         if archive.cext not in bosh.writeExts:
             balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
@@ -9978,7 +11263,7 @@ class InstallerProject_Pack(InstallerLink):
                 isSolid = balt.askYes(self.gTank,_(u'Use solid compression for %s?') % archive.s,self.title,False)
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,
-                        _('Use what maximum size for each solid block?')
+                        _(u'Use what maximum size for each solid block?')
                         + u'\n' +
                         _(u"Enter '0' to use 7z's default size.")
                         ,u'MB',self.title,0,0,102400)
@@ -10024,10 +11309,10 @@ class InstallerProject_ReleasePack(InstallerLink):
         #--Error checking
         archive = GPath(result).tail
         if not archive.s:
-            balt.ShowWarning(self.gTank,_(u"%s is not a valid archive name.") % result)
+            balt.showWarning(self.gTank,_(u"%s is not a valid archive name.") % result)
             return
         if self.data.dir.join(archive).isdir():
-            balt.ShowWarning(self.gTank,_(u"%s is a directory.") % archive.s)
+            balt.showWarning(self.gTank,_(u"%s is a directory.") % archive.s)
             return
         if archive.cext not in bosh.writeExts:
             balt.showWarning(self.gTank,_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
@@ -10103,6 +11388,13 @@ class InstallerConverter_Apply(InstallerLink):
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
+            if not self.converter.hasBCF:
+                deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
+                balt.showWarning(self.gTank,
+                    _(u'%s: An error occured while applying an Auto-BCF.' %
+                      (destArchive.s)))
+                # hasBCF will be set to False if there is an error while rearranging files
+                return
             #--Add the new archive to Bash
             if destArchive not in self.data:
                 self.data[destArchive] = bosh.InstallerArchive(destArchive)
@@ -10120,6 +11412,43 @@ class InstallerConverter_Apply(InstallerLink):
             self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
+class InstallerConverter_ApplyEmbedded(InstallerLink):
+    def AppendToMenu(self,menu,window,data):
+        InstallerLink.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Embedded BCF'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        name = self.selected[0]
+        archive = self.data[name]
+
+        #--Ask for an output filename
+        destArchive = balt.askText(self.gTank,_(u'Output file:'),_(u'Apply BCF...'),name.stail)
+        destArchive = (destArchive if destArchive else u'').strip()
+        if not destArchive: return
+        destArchive = GPath(destArchive)
+
+        #--Error checking
+        if not destArchive.s:
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            return
+        if destArchive.cext not in bosh.writeExts:
+            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
+            destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
+        if destArchive in self.data:
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,_(u'Apply BCF...'),False):
+                return
+
+        with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
+            self.data.applyEmbeddedBCFs([archive],[destArchive],progress)
+            iArchive = self.data[destArchive]
+            if iArchive.order == -1:
+                lastInstaller = self.data[self.selected[-1]]
+                self.data.moveArchives([destArchive],lastInstaller.order+1)
+            self.data.refresh(what='I')
+            self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     def AppendToMenu(self,menu,window,data):
@@ -10128,7 +11457,8 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
-        selectedCRCs = set(window.data[archive].crc for archive in window.GetSelected())
+        selected = window.GetSelected()
+        selectedCRCs = set(window.data[archive].crc for archive in selected)
         crcInstallers = set(window.data.crc_installer)
         srcCRCs = set(window.data.srcCRC_converters)
         #--There is no point in testing each converter unless
@@ -10142,18 +11472,21 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
 ##            for installerCRC in selectedCRCs:
 ##                for converter in window.data.srcCRC_converters[installerCRC]:
 ##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
+        #--If the archive is a single archive with an embedded BCF, add that
+        if len(selected) == 1 and window.data[selected[0]].hasBCF:
+            newMenu = InstallerConverter_ApplyEmbedded()
+            newMenu.AppendToMenu(subMenu,window,data)
         #--Disable the menu if there were no valid converters found
-        if not linkSet:
+        elif not linkSet:
             id = menu.FindItem(self.name)
             menu.Enable(id,False)
-        else:
-            #--Otherwise add each link in alphabetical order, and
-            #--indicate the number of additional, unselected archives
-            #--that the converter requires
-            for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
-                numAsterisks = len(converter.srcCRCs - selectedCRCs)
-                newMenu = InstallerConverter_Apply(converter,numAsterisks)
-                newMenu.AppendToMenu(subMenu,window,data)
+        #--Otherwise add each link in alphabetical order, and
+        #--indicate the number of additional, unselected archives
+        #--that the converter requires
+        for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
+            numAsterisks = len(converter.srcCRCs - selectedCRCs)
+            newMenu = InstallerConverter_Apply(converter,numAsterisks)
+            newMenu.AppendToMenu(subMenu,window,data)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_Create(InstallerLink):
@@ -10248,7 +11581,7 @@ class InstallerConverter_Create(InstallerLink):
         finally:
             progress.Destroy()
             if log:
-               balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
+                balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
 
 #------------------------------------------------------------------------------
 class InstallerConverter_MainMenu(balt.MenuLink):
@@ -10301,7 +11634,7 @@ class Mods_LoadListData(balt.ListEditorData):
         #--Right length?
         if len(newName) == 0 or len(newName) > 64:
             balt.showError(self.parent,
-                _('Name must be between 1 and 64 characters long.'))
+                _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
         settings.setChanged('bash.loadLists.data')
@@ -10422,6 +11755,19 @@ class INI_SortValid(BoolLink):
         iniList.RefreshUI()
 
 #-------------------------------------------------------------------------------
+class INI_AllowNewLines(BoolLink):
+    """Consider INI Tweaks with new lines valid."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _(u'Allow Tweaks with New Lines'),
+                                          'bash.ini.allowNewLines',
+                                          _(u'Tweak files with new lines are considered valid..')
+                                          )
+
+    def Execute(self,event):
+        BoolLink.Execute(self,event)
+        iniList.RefreshUI()
+
+#-------------------------------------------------------------------------------
 class INI_ListINIs(Link):
     """List errors that make an INI Tweak invalid."""
     def AppendToMenu(self,menu,window,data):
@@ -10464,6 +11810,65 @@ class INI_ListErrors(Link):
             wx.TheClipboard.Close()
         balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
 
+#------------------------------------------------------------------------------
+class INI_FileOpenOrCopy(Link):
+    """Open specified file(s) only if they aren't Bash supplied defaults."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if not len(data) == 1:
+            label = _(u'Open/Copy...')
+            help = _(u'Only one INI file can be opened or copied at a time.')
+        elif bosh.dirs['tweaks'].join(data[0]).isfile():
+            label = _(u'Open...')
+            help = _(u"Open '%s' with the system's default program.") % data[0]
+        else:
+            label = _(u'Copy...')
+            help = _(u"Make an editable copy of the default tweak '%s'.") % data[0]
+        menuItem = wx.MenuItem(menu,self.id,label,help)
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(self.data)>0 and len(data) == 1)
+
+    def Execute(self,event):
+        """Handle selection."""
+        dir = self.window.data.dir
+        for file in self.data:
+            if bosh.dirs['tweaks'].join(file).isfile():
+                dir.join(file).start()
+            else:
+                bosh.iniInfos[file].dir.join(file).copyTo(bosh.dirs['tweaks'].join(file))
+                iniList.data.refresh()
+                iniList.RefreshUI()
+
+#------------------------------------------------------------------------------
+class INI_Delete(Link):
+    """Delete the file and all backups."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if bosh.dirs['tweaks'].join(data[0]).isfile():
+            menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
+                help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
+                help=_(u'Bash default tweaks can\'t be deleted.'))
+            menu.AppendItem(menuItem)
+            menuItem.Enable(False)
+
+    def Execute(self,event):
+        message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
+        message.extend(sorted(self.data))
+        dialog = ListBoxes(self.window,_(u'Delete Files'),
+                     _(u'Delete these files? This operation cannot be undone.'),
+                     [message])
+        if dialog.ShowModal() != wx.ID_CANCEL:
+            id = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id)
+            if checks:
+                for i,mod in enumerate(self.data):
+                    if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():
+                        self.window.data.delete(mod)
+            self.window.RefreshUI()
+        dialog.Destroy()
+
 #-------------------------------------------------------------------------------
 class INI_Apply(Link):
     """Apply an INI Tweak."""
@@ -10474,35 +11879,39 @@ class INI_Apply(Link):
         menuItem = wx.MenuItem(menu,self.id,_(u'Apply'),_(u"Applies '%s' to '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
 
-        for i in data:
-            iniInfo = bosh.iniInfos[i]
-            if iniInfo.status < 0:
-                menuItem.Enable(False)
-                return
+        if not settings['bash.ini.allowNewLines']:
+            for i in data:
+                iniInfo = bosh.iniInfos[i]
+                if iniInfo.status < 0:
+                    menuItem.Enable(False) # temp disabled for testing
+                    return
 
     def Execute(self,event):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        if self.window.GetParent().GetParent().GetParent().comboBox.GetSelection() == 0:
-            message = (_(u'Apply an ini tweak to %s?')
+        iniPanel = self.window.GetParent().GetParent().GetParent()
+        choice = iniPanel.GetChoice().tail
+        if choice in bush.game.iniFiles:
+            message = (_(u'Apply an ini tweak to %s?') % choice
                        + u'\n\n' +
-                       _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
-                       ) % iniList.data.ini.path.stail
+                       _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to your computer!')
+                       )
             if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                 return
-        dir = self.window.data.dir
         needsRefresh = False
         for item in self.data:
             #--No point applying a tweak that's already applied
             if bosh.iniInfos[item].status == 20: continue
             needsRefresh = True
-            file = dir.join(item)
-            iniList.data.ini.applyTweakFile(file)
+            if bosh.dirs['tweaks'].join(item).isfile():
+                iniList.data.ini.applyTweakFile(bosh.dirs['tweaks'].join(item))
+            else:
+                iniList.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
-            self.window.GetParent().GetParent().GetParent().iniContents.RefreshUI()
-            self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(self.data[0])
+            iniPanel.iniContents.RefreshUI()
+            iniPanel.tweakContents.RefreshUI(self.data[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(Link):
@@ -10513,23 +11922,29 @@ class INI_CreateNew(Link):
         tweak = data[0]
         menuItem = wx.MenuItem(menu,self.id,_(u'Create Tweak with current settings...'),_(u"Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+        if len(data) != 1 or bosh.iniInfos[data[0]].status < 0:
+            menuItem.Enable(False)
 
     def Execute(self,event):
         """Handle creating a new INI tweak."""
         pathFrom = self.data[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
-        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['mods'].join(u'INI Tweaks'),fileName,_(u'INI Tweak File (*.ini)|*.ini'))
+        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['tweaks'],fileName,_(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return
-        bosh.dirs['mods'].join(u'INI Tweaks', pathFrom).copyTo(path)
+        bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
         iniList.data.refresh()
         oldTarget = iniList.data.ini
-        # Set new target as the tweak we're creating
-        iniList.data.setBaseIni(bosh.BestIniFile(path))
-        iniList.data.ini.applyTweakFile(oldTarget.path)
-        # Restore the old target and refresh
-        iniList.data.ini = oldTarget
+        target = bosh.BestIniFile(path)
+        settings,deleted = target.getSettings()
+        new_settings,deleted = oldTarget.getSettings()
+        deleted = {}
+        for section in settings:
+            if section in new_settings:
+                for setting in settings[section]:
+                    if setting in new_settings[section]:
+                        settings[section][setting] = new_settings[section][setting]
+        target.saveSettings(settings)
         iniList.RefreshUI(detail=path)
         self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
 
@@ -10609,7 +12024,8 @@ class Mods_Deprint(Link):
     """Turn on deprint/delist."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Debug Mode'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Debug Mode'),kind=wx.ITEM_CHECK,
+            help=_(u"Turns on extra debug prints to help debug an error or just for advanced testing."))
         menu.AppendItem(menuItem)
         menuItem.Check(bolt.deprintOn)
 
@@ -10649,7 +12065,8 @@ class Mods_DumpTranslator(Link):
         if not hasattr(sys,'frozen'):
             # Can't dump the strings if the files don't exist.
             Link.AppendToMenu(self,menu,window,data)
-            menuItem = wx.MenuItem(menu,self.id,_(u'Dump Translator'))
+            menuItem = wx.MenuItem(menu,self.id,_(u'Dump Translator'),
+                help=_(u"Generate a new version of the translator file for your locale."))
             menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10659,9 +12076,8 @@ class Mods_DumpTranslator(Link):
                    )
         if not balt.askContinue(self.window,message,'bash.dumpTranslator.continue',_(u'Dump Translator')):
             return
-        import locale
-        language = locale.getlocale()[0].split('_',1)[0]
-        outPath = bosh.dirs['l10n'].join(u'NEW%s.txt' % (language,))
+        language = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+        outPath = bosh.dirs['l10n']
         files = [GPath(u'bash').join(x+u'.py').s for x in (u'bolt',
                                                            u'balt',
                                                            u'bush',
@@ -10677,9 +12093,9 @@ class Mods_DumpTranslator(Link):
                                                            u'cint',
                                                            u'ScriptParser')]
         with balt.BusyCursor():
-            bolt.dumpTranslator(outPath.s,*files)
+            outFile = bolt.dumpTranslator(outPath.s,language,*files)
         balt.showOk(self.window,
-            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outPath.stail,
+            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outFile,
             _(u'Dump Translator')+u': '+outPath.stail)
 
 #------------------------------------------------------------------------------
@@ -10687,7 +12103,8 @@ class Mods_ListMods(Link):
     """Copies list of mod files to clipboard."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Mods..."))
+        menuItem = wx.MenuItem(menu,self.id,_(u"List Mods..."),
+            help=_(u"Copies list of active mod files to clipboard."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10703,7 +12120,8 @@ class Mods_ListBashTags(Link):
     """Copies list of bash tags to clipboard."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Bash Tags..."))
+        menuItem = wx.MenuItem(menu,self.id,_(u"List Bash Tags..."),
+            help=_(u"Copies list of bash tags to clipboard."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10719,14 +12137,15 @@ class Mods_LockTimes(Link):
     """Turn on resetMTimes feature."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Times'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Load Order'),kind=wx.ITEM_CHECK,
+            help=_(u"Will reset mod Load Order to whatever Wrye Bash has saved for them whenever Wrye Bash refreshs data/starts up."))
         menu.AppendItem(menuItem)
-        menuItem.Check(bosh.modInfos.lockTimes)
+        menuItem.Check(bosh.modInfos.lockLO)
 
     def Execute(self,event):
-        lockTimes = not bosh.modInfos.lockTimes
-        if not lockTimes: bosh.modInfos.mtimes.clear()
-        settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockTimes = lockTimes
+        lockLO = not bosh.modInfos.lockLO
+        if not lockLO: bosh.modInfos.mtimes.clear()
+        settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
         modList.RefreshUI()
 
@@ -10765,29 +12184,40 @@ class Mods_Tes4ViewExpert(BoolLink):
 
 #------------------------------------------------------------------------------
 class Mods_BOSSDisableLockTimes(BoolLink):
-    """Toggle Lock Times disabling when launching BOSS through Bash."""
+    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     def __init__(self): BoolLink.__init__(self,
-                                          _(u'BOSS Disable Lock Times'),
+                                          _(u'BOSS Disable Lock Load Order'),
                                           'BOSS.ClearLockTimes',
-                                          _(u"If selected, will temporarilly disable Bash's Lock Times when running BOSS through Bash.")
+                                          _(u"If selected, will temporarily disable Bash's Lock Load Order when running BOSS through Bash.")
                                           )
 
 #------------------------------------------------------------------------------
-class Mods_BOSSShowUpdate(BoolLink):
-    """Toggle Lock Times disabling when launching BOSS through Bash."""
-    def __init__(self):
-        BoolLink.__init__(self,
-            _(u'Always Update BOSS Masterlist prior to running BOSS.'),
-            'BOSS.AlwaysUpdate',
-            _(u"If selected, will tell BOSS to update the masterlist before sorting the mods.")
-            )
-
+class Mods_BOSSLaunchGUI(Link):
+    """If BOSS.exe is available then BOSS GUI.exe should be too."""
     def AppendToMenu(self,menu,window,data):
-        if bosh.configHelpers.bossVersion >= 3:
-            # BOSS 1.8+ don't supply this option, as it's on by default,
-            # and configurable through the BOSS ini
-            return
-        BoolLink.AppendToMenu(self,menu,window,data)
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Launch BOSS GUI'),
+            help=_(u"Launch BOSS GUI to change settings or update the user rules list."))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        exePath = bosh.dirs['boss'].join(u'BOSS GUI.exe')
+        if not exePath.exists(): return
+        args = [exePath.s]
+        statusBar.SetStatusText(u' '.join(args[1:]),1)
+        cwd = bolt.Path.getcwd()
+        exePath.head.setcwd()
+        try:
+            subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+        except Exception, error:
+            balt.showError(
+                bashFrame,
+                (u'%s'%error + u'\n\n' +
+                 _(u'Used Path: ') + self.exePath.s + u'\n' +
+                 _(u'Used Arguments: ') + u'%s' % self.exeArgs),
+                 _(u"Could not launch '%s'") % self.exePath.stail)
+        finally:
+            cwd.setcwd()
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -10877,10 +12307,11 @@ class Settings_SaveSettings(Link):
 class Settings_ExportDllInfo(Link):
     """Exports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == u'': return
+        if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,
-            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se.shortName)
+            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd,
+            _(u"Export list of allowed/disallowed plugin dlls to a txt file (for BAIN)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10888,34 +12319,35 @@ class Settings_ExportDllInfo(Link):
         textDir.makedirs()
         #--File dialog
         textPath = balt.askSave(self.window,
-            _(u'Export list of allowed/disallowed %s plugin dlls to:') % bush.game.se.shortName,
+            _(u'Export list of allowed/disallowed %s plugin dlls to:') % bush.game.se_sd,
             textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
             u'*.txt')
         if not textPath: return
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\n')
+            out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\r\n')
             if settings['bash.installers.goodDlls']:
                 for dll in settings['bash.installers.goodDlls']:
-                    out.write(u'dll:'+dll+u':\n')
+                    out.write(u'dll:'+dll+u':\r\n')
                     for index, version in enumerate(settings['bash.installers.goodDlls'][dll]):
-                        out.write(u'version %02d: %s\n' % (index, version))
-            else: out.write(u'None')
-            out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\n')
+                        out.write(u'version %02d: %s\r\n' % (index, version))
+            else: out.write(u'None\r\n')
+            out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\r\n')
             if settings['bash.installers.badDlls']:
                 for dll in settings['bash.installers.badDlls']:
-                    out.write(u'dll:'+dll+u':\n')
+                    out.write(u'dll:'+dll+u':\r\n')
                     for index, version in enumerate(settings['bash.installers.badDlls'][dll]):
-                        out.write(u'version %02d: %s\n' % (index, version))
-            else: out.write(u'None\n')
+                        out.write(u'version %02d: %s\r\n' % (index, version))
+            else: out.write(u'None\r\n')
 
 #------------------------------------------------------------------------------
 class Settings_ImportDllInfo(Link):
     """Imports list of good and bad dll's."""
     def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == u'': return
+        if not bush.game.se_sd: return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,
-            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se.shortName)
+            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd,
+            help=_(u"Import list of allowed/disallowed plugin dlls from a txt file (for BAIN)."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10923,7 +12355,7 @@ class Settings_ImportDllInfo(Link):
         textDir.makedirs()
         #--File dialog
         textPath = balt.askOpen(self.window,
-            _(u'Import list of allowed/disallowed %s plugin dlls from:') % bush.game.se.shortName,
+            _(u'Import list of allowed/disallowed %s plugin dlls from:') % bush.game.se_sd,
             textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
             u'*.txt',mustExist=True)
         if not textPath: return
@@ -10937,16 +12369,17 @@ class Settings_ImportDllInfo(Link):
             with textPath.open('r',encoding='utf-8-sig') as ins:
                 Dlls = {'goodDlls':{},'badDlls':{}}
                 for line in ins:
+                    line = line.strip()
                     if line.startswith(u'goodDlls'):
                         current = Dlls['goodDlls']
                     if line.startswith(u'badDlls'):
                         current = Dlls['badDlls']
                     elif line.startswith(u'dll:'):
-                        dll = line[4:-2]
+                        dll = line[4:-1]
                         current.setdefault(dll,[])
                     elif line.startswith(u'version'):
-                        ver = line[13:-2].strip(u"'").split(u',')
-                        current[dll].append([ver[0].strip(u"'"),int(ver[1]),long(ver[2])])
+                        ver = line[13:-1].strip(u"'").split(u',')
+                        current[dll].append([ver[0].strip(u"'"),long(ver[1]),long(ver[2])])
             if not replace:
                 settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
                 settings['bash.installers.badDlls'].update(Dlls['badDlls'])
@@ -10954,13 +12387,17 @@ class Settings_ImportDllInfo(Link):
                 settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
         except UnicodeError:
             balt.showError(self.window,_(u'Wrye Bash could not load %s, because it is not saved in UTF-8 format.  Please resave it in UTF-8 format and try again.') % textPath.s)
+        except Exception as e:
+            deprint(u'Error reading', textPath.s, traceback=True)
+            balt.showError(self.window,_(u'Wrye Bash could not load %s, because there was an error in the format of the file.') % textPath.s)
 
 #------------------------------------------------------------------------------
 class Settings_Colors(Link):
     """Shows the color configuration dialog."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Colors...'),help=_(u"Configure the custom colors used in the UI."))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Colors...'),
+            help=_(u"Configure the custom colors used in the UI."))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -10969,119 +12406,338 @@ class Settings_Colors(Link):
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class Settings_CheckForUpdates(Link):
-    """Checks TESNexus for newer versions."""
-    WBFileId = 22368
+class UpdateDialog(wx.Dialog):
+    CHECK_INDENT = 20
+    GROUP_SPACING = 5
+    ITEM_SPACING = 2
+
+    def __init__(self,parent,title,updates):
+        wx.Dialog.__init__(self,parent,wx.ID_ANY,title)
+        self.SetIcons(bashBlue)
+        versions = sorted(updates.keys(),reverse=True)
+        #--Controls
+        controls = []
+        sizer = balt.vSizer(
+            (balt.staticText(self,balt.fill(
+                _(u"The following updates are available for Wrye Bash.  Please select which updates you would like to install, and click 'OK' to update Wrye Bash, or download the files manually and install them yourself."),
+                70)
+                ),0,wx.ALL,10),
+            )
+        itemSizer = wx.FlexGridSizer(
+            (sum(len(updates[x][y]) for y in ('programs','definitions','languages') for x in versions)),
+            3,self.ITEM_SPACING,self.ITEM_SPACING)
+        itemSizer.AddGrowableCol(0)
+        itemSizer.AddGrowableCol(1)
+        itemSizer.AddGrowableCol(2)
+
+        sbSizer = balt.vsbSizer((self,wx.ID_ANY,_(u'Updates')),
+                                (itemSizer,2,wx.GROW|wx.ALL,5))
+        sizer.Add(sbSizer,2,wx.GROW|wx.ALL,5)
+        buttonSizer = self.CreateStdDialogButtonSizer(wx.OK|wx.CANCEL)
+        self.askCheck = balt.checkBox(self,_(u'Always update to the latest version'))
+        self.askCheck.SetValue(settings['bash.update.dontAsk'])
+        sizer.Add(hSizer(
+            (self.askCheck,0,wx.ALIGN_CENTER_VERTICAL|wx.LEFT,5),
+            ((0,0),1,wx.GROW),
+            (buttonSizer,0,wx.ALIGN_RIGHT),
+            ),0,wx.GROW|wx.ALL^wx.TOP,5)
+
+        self.allRadios = allRadios = []
+        class radioWithChecks(wx.RadioButton):
+            """Radio button that enables/disabled associated checkbuttons"""
+            def __init__(self,checks,*args,**kwdargs):
+                wx.RadioButton.__init__(self,*args,**kwdargs)
+                self.checks = checks
+                self.Bind(wx.EVT_RADIOBUTTON,self.OnRadio)
+
+            def OnRadio(self,event):
+                for radio,version in allRadios:
+                    radio._OnRadio()
+                event.Skip()
+
+            def _OnRadio(self):
+                parent = self.GetParent()
+                for id in self.checks:
+                    check = parent.FindWindowById(id[0])
+                    if check: check.Enable(self.GetValue())
+        class specialCheck(wx.CheckBox):
+            """Check box that enables/disables associated checkbutton"""
+            def __init__(self,check,*args,**kwdargs):
+                wx.CheckBox.__init__(self,*args,**kwdargs)
+                self.check = check
+                self.oldValue = False
+                self.Bind(wx.EVT_CHECKBOX,self.OnCheck)
+
+            def OnCheck(self,event):
+                enabled = not self.GetValue()
+                self.check.Enable(enabled)
+                if not enabled:
+                    self.oldValue = self.check.GetValue()
+                    self.check.SetValue(False)
+                else:
+                    self.check.SetValue(self.oldValue)
+                event.Skip()
+
+        first = True
+        for version in versions:
+            version_updates = updates[version]
+            name = version_updates['name']
+            url = version_updates['url']
+            programs = version_updates['programs']
+            definitions = version_updates['definitions']
+            languages = version_updates['languages']
+
+            if ((not bool(programs) and version != settings['bash.version']) or
+                (not programs and not definitions and not languages)):
+                continue
+            ids = []
+            radio = radioWithChecks(ids,self,wx.ID_ANY,name)
+            radio.SetValue(first)
+            if url:
+                link = wx.HyperlinkCtrl(self,wx.ID_ANY,_(u'Download Page'),url)
+                link.SetToolTip(balt.tooltip(u'https://sourceforge.net/projects/oblivionworks/'))
+            else:
+                link = (0,0)
+            border = 0 if first else self.GROUP_SPACING-self.ITEM_SPACING
+            itemSizer.Add(radio,0,wx.TOP,border)
+            itemSizer.Add((0,0))
+            itemSizer.Add(link,0,wx.ALIGN_RIGHT,0)
+
+            for program in programs:
+                check = balt.checkBox(self,program[0])
+                check.Enable(False)
+                subSizer = hSizer((check,0,wx.LEFT,self.CHECK_INDENT-self.ITEM_SPACING))
+                if program[2]:
+                    link = wx.HyperlinkCtrl(self,wx.ID_ANY,_(u'Manual Download'),program[2])
+                    link.SetToolTip(balt.tooltip(u'https://sourceforge.net/projects/oblivionworks/'))
+                    subSizer.Add((0,0),1,wx.GROW,0)
+                    subSizer.Add(link,0,wx.ALIGN_RIGHT,0)
+                else:
+                    link = (0,0)
+
+                itemSizer.Add(check,0,wx.LEFT,self.CHECK_INDENT)
+                itemSizer.Add((0,0))
+                itemSizer.Add(link,0,wx.ALIGN_RIGHT)
+
+                installerName = program[0].lower()
+                if 'standalone' in installerName:
+                    check.SetLabel(u'Standalone Executable')
+                    if settings['bash.standalone']:
+                        ids.append((check.GetId(),program))
+                        check.Enable(first)
+                        check.SetValue(True)
+                elif 'python' in installerName:
+                    check.SetLabel(u'Python Source')
+                    if not settings['bash.standalone']:
+                        ids.append((check.GetId(),program))
+                        check.Enable(first)
+                        check.SetValue(True)
+                elif 'installer' in installerName:
+                    check.SetLabel(u'Installer')
+
+            for items,text,key in ((definitions,_(u'Game Definitions:'),'bash.update.defs'),
+                                   (languages,_(u'Language Pack:'),'bash.update.lang')):
+                firstUpdate = True
+                for update in items:
+                    date_rev = update[1]
+                    date_rev = ' '+date_rev[1]+'-'+date_rev[2]+'-'+date_rev[0]+date_rev[3]
+                    check = balt.checkBox(self,text+date_rev)
+                    if version == settings['bash.version'] and GPath(update[0]) in settings[key]:
+                        # It's an update for the user's current version, and it's already
+                        # been applied
+                        check.Enable(False)
+                        check.SetValue(False)
+                    else:
+                        check.Enable(first)
+                        check.SetValue(firstUpdate)
+                        ids.append((check.GetId(),update))
+                    if GPath(update[0]) not in settings[key]:
+                        button = specialCheck(check,self,wx.ID_ANY,_(u'Mark as Installed'))
+                        button.SetToolTip(tooltip(u'Check this if you have already installed this update manually, to make Wrye Bash ignore this update in the future.'))
+                        button.Enable(first)
+                        ids.append((button.GetId(),None))
+                    else:
+                        button = (0,0)
+                    firstUpdate = False
+                    link = wx.HyperlinkCtrl(self,wx.ID_ANY,_(u'Manual Download'),update[2])
+                    link.SetToolTip(balt.tooltip(u'https://sourceforge.net/projects/oblivionworks/'))
+                    itemSizer.Add(check,0,wx.LEFT,self.CHECK_INDENT)
+                    itemSizer.Add(button)
+                    itemSizer.Add(link,0,wx.ALIGN_RIGHT)
+            radio.checks = ids
+            radio.Enable(bool(ids))
+            allRadios.append((radio,version))
+            first = False
+        self.SetSizer(sizer)
+        sizer.SetSizeHints(self)
+
+    def ShowModal(self):
+        if settings['bash.update.dontAsk']: return wx.ID_OK
+        ret = wx.Dialog.ShowModal(self)
+        if ret == wx.ID_OK:
+            settings['bash.update.dontAsk'] = self.askCheck.GetValue()
+        return ret
+
+    def GetSelections(self):
+        """Call after return from Modal to get what updates were selected"""
+        selections = {}
+        for radio,version in self.allRadios:
+            if radio.GetValue():
+                # Found the active one
+                for id in radio.checks:
+                    check = self.FindWindowById(id[0])
+                    if not check: continue
+                    if not check.Enabled: continue
+                    if not check.GetValue(): continue
+                    update = id[1]
+                    if update:
+                        selections.setdefault(version,[]).append(update)
+        return selections
+
+    def GetInstalled(self):
+        """Call after return from Modal to get what updats the user says are
+           already installed."""
+        selections = []
+        for radio,version in self.allRadios:
+            if radio.GetValue():
+                for id in radio.checks:
+                    check = self.FindWindowById(id[0])
+                    if not check: continue
+                    if not check.GetValue(): continue
+                    update = id[1]
+                    if update is None:
+                        updateCheckId = check.check.GetId()
+                        for updateId in radio.checks:
+                            if updateId[0] == updateCheckId:
+                                selections.append(updateId[1][0])
+                                break
+        return selections
+
+class Settings_CheckForUpdates_DontAsk(BoolLink):
+    def __init__(self):
+        BoolLink.__init__(
+            self,_(u'Always update to the latest version.'),
+            'bash.update.dontAsk',
+            _(u'Always download and install the latest updates from SourceForge when detected.'))
+
+class Settings_CheckForUpdates_BackupSFX(BoolLink):
+    def __init__(self):
+        BoolLink.__init__(
+            self,_(u'Create Self Extracting Backups'),
+            'bash.update.backupSFX',
+            _(u'Create self extracting archives when backups are made.'))
+
+class Settings_CheckForUpdatesFrequency(Link):
+    """Change how often Wrye Bash checks for updates automatically."""
+    def __init__(self,freq='00-01-0000 00:00',text=_(u'Every Day')):
+        Link.__init__(self)
+        self.freq = freq
+        self.text = text
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Check for updates...'),
-            help=_(u'Checks TESNexus for newer versions of Wrye Bash.'))
+        menuItem = wx.MenuItem(menu,self.id,self.text,kind=wx.ITEM_RADIO)
         menu.AppendItem(menuItem)
+        if settings['bash.update.frequency'] == self.freq:
+            menuItem.Check(True)
 
     def Execute(self,event):
-        WBFileId = Settings_CheckForUpdates.WBFileId
-        currentVersion = tuple([int(x) for x in settings['bash.readme'][1].split(u'.')])
-        import multiprocessing
-        import bweb
-        pool = multiprocessing.Pool(processes=1)
-        f = bweb.getTESNexusFiles
-        args = (WBFileId, None)
-        result = pool.apply_async(f, args)
-        prevTime = time.time()
-        try:
-            with balt.Progress(_(u'Check for updates...'),
-                               _(u'Contacting TESNexus...'),
-                               abort=True) as progress:
-                progress.setFull(10)
-                while not result.ready():
-                    currTime = time.time()
-                    elapsedTime = currTime - prevTime
-                    while elapsedTime > 9.99:
-                        elapsedTime -= 9.99
-                        prevTime = currTime - elapsedTime
-                    progress(elapsedTime)
-                    result.wait(0.05)
-                try:
-                    versions = result.get()
-                except Exception, e:
-                    balt.showError(self.window,
-                        _(u'An error occured while contacting TESNexus')
-                        + u':\n\n%s' % e)
-                    return
-        except CancelError:
-            return
-        finally:
-            pool.terminate()
-        main = versions.get('main files',[])
-        if main:
-            maxMain = max([x[1] for x in main])
-        else:
-            maxMain = (0,)
-        beta = versions.get('optional files',[])
-        if beta:
-            maxBeta = max([x[1] for x in beta])
-        else:
-            maxBeta = (0,)
-        currentStr = u'.'.join([u'%s'%x for x in currentVersion])
-        mainStr = u'.'.join([u'%s'%x for x in maxMain])
-        betaStr = u'.'.join([u'%s'%x for x in maxBeta])
+        settings['bash.update.frequency'] = self.freq
+        # Reset the updater
+        bashFrame.updater.Start()
+        event.Skip()
 
-        msg = None
-        title = _(u'Check for updates')
-        if currentVersion > maxMain:
-            # User has a Beta/RC/SVN version
-            if currentVersion > maxBeta:
-                # SVN
-                balt.showOk(self.window,
-                    _(u"No new versions of Wrye Bash are available at TESNexus, however you appear to be using an SVN release (%s).  Be sure to check for updates with your SVN client.")
-                    % currentStr,
-                    title)
-                return
-            elif currentVersion == maxBeta:
-                # Beta/RC, up to date
-                balt.showOk(self.window,
-                    _(u"Wrye Bash is currently up to date (%s).")
-                    % currentStr,
-                    title)
-                return
-            else: # currentVersion < maxBeta
-                # Beta/RC, not up to date
-                msg = (_(u"You appear to be using a Beta/RC release of Wrye Bash (%s).  A newer Beta/RC is available (%s).")
-                       + u'\n\n' +
-                       _(u'Would you like to visit TESNexus to download the Beta/RC version?')
-                       ) % (currentStr,betaStr)
-        elif currentVersion == maxMain:
-            # User has current Stable version
-            if currentVersion >= maxBeta:
-                # And it's >= whatever Beta/RC is available
-                balt.showOk(self.window,
-                    _(u"Wrye Bash is currently up to date (%s).")
-                    % currentStr,
-                    title)
-                return
-            else: # currentVersion < maxBeta
-                # But there's a 'better' Beta/RC available
-                msg = (_(u"Wrye Bash is currently up to date (%s), but a newer Beta/RC is available (%s).")
-                       + u'\n\n' +
-                       _(u'Would you like to visit TESNexus to download the Beta/RC version?')
-                       ) % (currentStr, betaStr)
-        else: # currentVersion < maxMain
-            # Using an older version
-            if currentVersion < maxBeta and maxBeta > maxMain:
-                # There's also a new Beta/RC available
-                msg = (_("You are using an older version of Wrye Bash (%s).  There is a newer stable release (%s) and a newer Beta/RC release (%s).")
-                       + u'\n\n' +
-                       _('Would you like to visit TESNexus to download one of these versions?')
-                       ) % (currentStr, mainStr, betaStr)
+class Settings_ResetUpdateData(Link):
+    """Clears information about updates"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Reset Update Information'),
+                               _(u'This will reset information Wrye Bash stores about what updates have been installed.'))
+        try:
+            enable = bool(settings['bash.update.lang']|settings['bash.update.defs'])
+        except:
+            enable = True
+        menu.AppendItem(menuItem)
+        menuItem.Enable(enable)
+
+    def Execute(self,event):
+        msg = _(u'Remove the following updates from install history?')
+        msg += u'\n\n'
+        try:
+            defs = settings['bash.update.defs']
+            langs = settings['bash.update.lang']
+            if defs or langs:
+                msg += u'\n'.join(u' * '+x.s for x in sorted(defs))+u'\n'
+                msg += u'\n'.join(u' * '+x.s for x in sorted(langs))+u'\n'
+                msg += _(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
             else:
-                msg = (_('You are using an older version of Wrye Bash (%s).  There is a newer stable release available (%s).')
-                       + u'\n\n' +
-                       _(u'Would you like to visist TESNexus to download the updated version?')
-                       ) % (currentStr, mainStr)
-        if msg:
-            if balt.askYes(self.window,msg,title):
-                os.startfile(u'http://www.tesnexus.com/downloads/file.php?id='+unicode(WBFileId))
+                msg += u' * ' + _(u'None')
+        except:
+            deprint(u'An error occured while formatting a message about installed updates:',traceback=True)
+            msg += u'\n * '+_(u'Unable to determine installed updates.')+u'\n\n'
+            msg += _(u'NOTE: The updates will not be removed, this will just reset tracking of these updates.')
+        msg += u'\n\n' + _(u'Clear install history?')
+        if balt.askYes(self.window,msg,_(u'Reset Update Information')):
+            settings['bash.update.defs'] = settingDefaults['bash.update.defs']
+            settings['bash.update.lang'] = settingDefaults['bash.update.lang']
+
+class Settings_CheckForUpdates(Link):
+    """Checks SourceForge for newer versions."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        enable = bashFrame.updater.status is None
+        title = bashFrame.updater.GetStatus()
+        if not title:
+            try:
+                lastCheck = settings['bash.update.last']
+                last = time.localtime(lastCheck)
+                if lastCheck == 0:
+                    when = _(u'Unknown')
+                else:
+                    now = time.localtime()
+                    deltaYear = now.tm_year - last.tm_year
+                    deltaDays = now.tm_yday - last.tm_yday
+                    when = None
+                    if deltaYear == 1:
+                        deltaDays += 365
+                    if deltaDays == 0:
+                        deltaHours = now.tm_hour - last.tm_hour
+                        if deltaHours == 0:
+                            deltaMinutes = now.tm_min - last.tm_min
+                            if deltaMinutes == 0:
+                                deltaSeconds = now.tm_sec - last.tm_sec
+                                if deltaSeconds == 1:
+                                    when = _(u'%(seconds)s second ago')
+                                else:
+                                    when = _(u'%(seconds)s seconds ago')
+                                when = when % ({'seconds':deltaSeconds})
+                            else:
+                                if deltaMinutes == 1:
+                                    when = _(u'%(minutes)s minute ago')
+                                else:
+                                    when = _(u'%(minutes)s minutes ago')
+                                when = when % ({'minutes':deltaMinutes})
+                        else:
+                            if deltaHours == 1:
+                                when = _(u'%(hours)s hour ago')
+                            else:
+                                when = _(u'%(hours)s hours ago')
+                            when = when % ({'hours':deltaHours})
+                    elif deltaDays == 1:
+                        when = _(u'Yesterday, %(time)s') % ({'time':bosh.formatDate(lastCheck)})
+                    else:
+                        when = bosh.formatDate(lastCheck)
+            except:
+                deprint(u'Error getting time of last update:',traceback=True)
+                when = _(u'Unknown')
+            title = _(u'Now (Last Check: %s)...') % when
+        menuItem = wx.MenuItem(menu,self.id,title)
+        menu.AppendItem(menuItem)
+        menuItem.Enable(enable)
+
+    def Execute(self,event):
+        bashFrame.updater.InitiateUpdate(True)
+
 #------------------------------------------------------------------------------
 class Settings_Tab(Link):
     """Handle hiding/unhiding tabs."""
@@ -11152,7 +12808,8 @@ class Settings_IconSize(Link):
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,unicode(self.size),kind=wx.ITEM_RADIO)
+        menuItem = wx.MenuItem(menu,self.id,unicode(self.size),kind=wx.ITEM_RADIO,
+            help=_(u"Sets the status bar icons to %(size)s pixels") % ({'size':unicode(self.size)}))
         menu.AppendItem(menuItem)
         menuItem.Check(self.size == settings['bash.statusbar.iconSize'])
 
@@ -11165,7 +12822,8 @@ class Settings_StatusBar_ShowVersions(Link):
     """Show/Hide version numbers for buttons on the statusbar."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Show App Version'),kind=wx.ITEM_CHECK)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Show App Version'),kind=wx.ITEM_CHECK,
+            help=_(u"Show/hide version numbers for buttons on the status bar."))
         menu.AppendItem(menuItem)
         menuItem.Check(settings['bash.statusbar.showversion'])
 
@@ -11178,6 +12836,165 @@ class Settings_StatusBar_ShowVersions(Link):
         if settings['bash.obse.on']:
             for button in App_Button.obseButtons:
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
+
+#------------------------------------------------------------------------------
+class Settings_Languages(Link):
+    """Menu for available Languages."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        languages = []
+        for file in bosh.dirs['l10n'].list():
+            if file.cext == u'.txt' and file.csbody[-3:] != u'new':
+                languages.append(file.body)
+        if languages:
+            subMenu = wx.Menu()
+            menu.AppendMenu(self.id,_(u'Language'),subMenu)
+            for language in languages:
+                Settings_Language(language.s).AppendToMenu(subMenu,window,data)
+            if GPath('english') not in languages:
+                Settings_Language('English').AppendToMenu(subMenu,window,data)
+        else:
+            menuItem = wx.MenuItem(menu,self.id,_(u'Language'),
+                help=_("Wrye Bash was unable to detect any translation files."))
+            menu.AppendItem(menuItem)
+            menuItem.Enable(False)
+
+#------------------------------------------------------------------------------
+class Settings_Language(Link):
+    """Specific language for Wrye Bash."""
+    languageMap = {
+        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
+        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁體中文)',
+        u'de': _(u'German') + u' (Deutsch)',
+        u'pt_opt': _(u'Portuguese') + u' (português)',
+        u'italian': _(u'Italian') + u' (italiano)',
+        u'russian': _(u'Russian') + u' (русский язык)',
+        u'english': _(u'English') + u' (English)',
+        }
+
+    def __init__(self,language):
+        Link.__init__(self)
+        self.language = language
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        label = self.__class__.languageMap.get(self.language.lower(),self.language)
+        bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+        if self.language == bassLang:
+            menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO,
+                help=_("Currently using %(languagename)s as the active language.") % ({'languagename':label}))
+        else:
+            menuItem = wx.MenuItem(menu,self.id,label,
+                help=_("Restart Wrye Bash and use %(languagename)s as the active language.") % ({'languagename':label}))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+        if self.language == bassLang: return
+        if balt.askYes(bashFrame,
+                       _(u'Wrye Bash needs to restart to change languages.  Do you want to restart?'),
+                       _(u'Restart Wrye Bash')):
+            bashFrame.Restart(('--Language',self.language))
+
+#------------------------------------------------------------------------------
+class Settings_PluginEncodings(Link):
+    encodings = {
+        'gbk': _(u'Chinese (Simplified)'),
+        'big5': _(u'Chinese (Traditional)'),
+        'cp1251': _(u'Russian'),
+        'cp932': _(u'Japanese'),
+        'cp1252': _(u'Western European (English, French, German, etc)'),
+        }
+    def __init__(self):
+        Link.__init__(self)
+        bolt.pluginEncoding = settings['bash.pluginEncoding']
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_(u'Plugin Encoding'),subMenu)
+        Settings_PluginEncoding(_(u'Automatic'),None).AppendToMenu(subMenu,window,data)
+        SeparatorLink().AppendToMenu(subMenu,window,data)
+        enc_name = sorted(Settings_PluginEncodings.encodings.items(),key=lambda x: x[1])
+        for encoding,name in enc_name:
+            Settings_PluginEncoding(name,encoding).AppendToMenu(subMenu,window,data)
+
+#------------------------------------------------------------------------------
+class Settings_PluginEncoding(Link):
+    def __init__(self,name,encoding):
+        Link.__init__(self)
+        self.name = name
+        self.encoding = encoding
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if self.encoding == settings['bash.pluginEncoding']:
+            menuItem = wx.MenuItem(menu,self.id,self.name,kind=wx.ITEM_RADIO,
+                help=_("Select %(encodingname)s encoding for Wrye Bash to use.") % ({'encodingname':self.name}))
+        else:
+            menuItem = wx.MenuItem(menu,self.id,self.name,
+                help=_("Select %(encodingname)s encoding for Wrye Bash to use.") % ({'encodingname':self.name}))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        settings['bash.pluginEncoding'] = self.encoding
+        bolt.pluginEncoding = self.encoding
+
+#------------------------------------------------------------------------------
+class Settings_Games(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        foundGames,allGames,name = bush.detectGames()
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_(u'Game'),subMenu)
+        for game in foundGames:
+            game = game[0].upper()+game[1:]
+            Settings_Game(game).AppendToMenu(subMenu,window,data)
+
+class Settings_Game(Link):
+    def __init__(self,game):
+        Link.__init__(self)
+        self.game = game
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,self.game,kind=wx.ITEM_RADIO,
+            help=_("Restart Wrye Bash to manage %(game)s.") % ({'game':self.game}))
+        menu.AppendItem(menuItem)
+        if self.game.lower() == bush.game.name.lower():
+            menuItem.Check(True)
+
+    def Execute(self,event):
+        if self.game.lower() == bush.game.name.lower(): return
+        bashFrame.Restart(('--game',self.game))
+
+#------------------------------------------------------------------------------
+class Settings_DisableWidget(Link):
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id,_(u'Disable Widget'),subMenu)
+        Settings_DisableCommentsWizBAINEditor().AppendToMenu(subMenu,window,data)
+
+class Settings_DisableCommentsWizBAINEditor(Link):
+    """Show/Hide Comments/WizBAINEditor on the Installers Tab."""
+    def __init__(self):
+        Link.__init__(self)
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'),kind=wx.ITEM_CHECK,
+            help=_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'))
+        menu.AppendItem(menuItem)
+        menuItem.Check(settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'])
+
+    def Execute(self,event):
+        if settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] == 0:
+            settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 1
+            settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
+        else:
+            settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 0
+            settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
@@ -11195,7 +13012,8 @@ class Settings_UnHideButtons(Link):
             for link in hidden:
                 Settings_UnHideButton(link).AppendToMenu(subMenu,window,data)
         else:
-            menuItem = wx.MenuItem(menu,self.id,_(u'Unhide Buttons'))
+            menuItem = wx.MenuItem(menu,self.id,_(u'Unhide Buttons'),
+                help=_(u"No hidden buttons available to unhide."))
             menu.AppendItem(menuItem)
             menuItem.Enable(False)
 
@@ -11244,7 +13062,8 @@ class StatusBar_Hide(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         tip = window.GetToolTip().GetTip()
-        menuItem = wx.MenuItem(menu,self.id,_(u"Hide '%s'") % tip)
+        menuItem = wx.MenuItem(menu,self.id,_(u"Hide '%s'") % tip,
+                help=_(u"Hides %(buttonname)s's status bar button (can be restored through the settings menu).") % ({'buttonname':tip}))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11257,7 +13076,8 @@ class Mod_ActorLevels_Export(Link):
     """Export actor levels from mod to text file."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'NPC Levels...'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'NPC Levels...'),
+                help=_(u"Export NPC level info from mod to text file."))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
@@ -11300,7 +13120,8 @@ class Mod_ActorLevels_Import(Link):
     """Imports actor levels from text file to mod."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'NPC Levels...'))
+        menuItem = wx.MenuItem(menu,self.id,_(u'NPC Levels...'),
+                help=_(u"Import NPC level info from text fiile to mod"))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data)==1)
 
@@ -11414,7 +13235,7 @@ class MasterList_CleanMasters(Link):
                 group = [removeKey,
                               _(u'These master files are not referenced within the mod, and can safely be removed.'),
                               ]
-                group.extend(remove)
+                group.extend(removed)
                 checklists = [group]
                 dialog = ListBoxes(bashFrame,_(u'Remove these masters?'),
                                         _(u'The following master files can be safely removed.'),
@@ -11425,18 +13246,39 @@ class MasterList_CleanMasters(Link):
                 id = dialog.ids[removeKey]
                 checks = dialog.FindWindowById(id)
                 if checks:
-                    for i,mod in enumerate(remove):
+                    for i,mod in enumerate(removed):
                         if not checks.IsChecked(i):
                             newMasters.append(mod)
 
                 modFile.TES4.masters = newMasters
                 modFile.save()
                 dialog.Destroy()
-                if toRemove:
-                    print _(u'to remove:'), toRemove
+                deprint(u'to remove:', removed)
             else:
                 balt.showOk(self.window,_(u'No Masters to clean.'),
                             _(u'Clean Masters'))
+
+#------------------------------------------------------------------------------
+class Mod_FullLoad(Link):
+    """Tests all record definitions against a specific mod"""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Test Full Record Definitions...'))
+        menu.AppendItem(menuItem)
+        menuItem.Enable(len(data)==1)
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        with balt.Progress(_(u'Loading:')+u'\n%s'%fileName.stail) as progress:
+            print bosh.MreRecord.type_class
+            readClasses = bosh.MreRecord.type_class
+            print readClasses.values()
+            loadFactory = bosh.LoadFactory(False, *readClasses.values())
+            modFile = bosh.ModFile(bosh.modInfos[fileName],loadFactory)
+            try:
+                modFile.load(True,progress)
+            except:
+                deprint('execption:\n', traceback=True)
 
 #------------------------------------------------------------------------------
 class Mod_AddMaster(Link):
@@ -11537,14 +13379,14 @@ class Mod_BaloGroups_Edit(wx.Dialog):
         if not newName: return None
         maValid = re.match(u'([a-zA-Z][ _a-zA-Z]+)',newName,flags=re.U)
         if not maValid or maValid.group(1) != newName:
-            showWarning(self,
+            balt.showWarning(self,
                 _(u"Group name must be letters, spaces, underscores only!"),title)
             return None
         elif newName in self.GetItems():
-            showWarning(self,_(u"group %s already exists.") % newName,title)
+            balt.showWarning(self,_(u"group %s already exists.") % newName,title)
             return None
         elif len(newName) >= 40:
-            showWarning(self,_(u"Group names must be less than forty characters."),title)
+            balt.showWarning(self,_(u"Group names must be less than forty characters."),title)
             return None
         else:
             return newName
@@ -11626,7 +13468,7 @@ class Mod_BaloGroups_Edit(wx.Dialog):
 
     def DoRename(self,event):
         """Renames selected item."""
-        title = _("Rename Balo Group")
+        title = _(u"Rename Balo Group")
         index = (self.gList.GetSelections() or (0,))[0]
         if index < 0 or index >= len(self.groups): return bell()
         #--Ask for and then check new name
@@ -11744,7 +13586,7 @@ class Mod_BaloGroups:
 class Mod_AllowAllGhosting(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_("Allow Ghosting"))
+        menuItem = wx.MenuItem(menu,self.id,_(u"Allow Ghosting"))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -11776,15 +13618,12 @@ class Mod_CreateBOSSReport(Link):
         else:
             spoiler = False
         # Scan for ITM and UDR's
-        if settings['bash.CBashEnabled']:
-            modInfos = [bosh.modInfos[x] for x in self.data]
-            try:
-                with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
-                    udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
-            except bolt.CancelError:
-                return
-        else:
-            udr_itm_fog = []
+        modInfos = [bosh.modInfos[x] for x in self.data]
+        try:
+            with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
+                udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+        except bolt.CancelError:
+            return
         # Create the report
         for i,fileName in enumerate(self.data):
             if fileName == u'Oblivion.esm': continue
@@ -11801,11 +13640,11 @@ class Mod_CreateBOSSReport(Link):
                 url = None
                 ma = bosh.reTesNexus.search(installer)
                 if ma and ma.group(2):
-                    url = u'http://www.tesnexus.com/downloads/file.php?id='+ma.group(2)
+                    url = bush.game.nexusUrl+u'downloads/file.php?id='+ma.group(2)
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
-                        url = u'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
+                        url = u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
                 if url:
                     text += u'[url='+url+u']'+fileName.s+u'[/url]'
                 else:
@@ -11817,9 +13656,13 @@ class Mod_CreateBOSSReport(Link):
             #-- CRC
             text += u'\n'+_(u'CRC')+u': %08X' % fileInfo.cachedCrc()
             #-- Dirty edits
-            udrs,itms,fogs = udr_itm_fog[i]
-            if udrs or itms:
-                text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+            if udr_itm_fog:
+                udrs,itms,fogs = udr_itm_fog[i]
+                if udrs or itms:
+                    if settings['bash.CBashEnabled']:
+                        text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+                    else:
+                        text += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
             text += u'\n\n'
         if spoiler: text += u'[/spoiler]'
 
@@ -11863,11 +13706,11 @@ class Mod_CopyModInfo(Link):
                 url = None
                 ma = bosh.reTesNexus.search(installer)
                 if ma and ma.group(2):
-                    url = u'http://www.tesnexus.com/downloads/file.php?id='+ma.group(2)
+                    url = bush.game.nexusUrl+u'downloads/file.php?id='+ma.group(2)
                 if not url:
                     ma = bosh.reTESA.search(installer)
                     if ma and ma.group(2):
-                        url = u'http://www.invision.tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
+                        url = u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
                 if url:
                     text += u'[url=%s]%s[/url]' % (url, fileName.s)
                 else:
@@ -12051,7 +13894,7 @@ class Mod_SkipDirtyCheckInvert(Link):
             fileInfo = bosh.modInfos[fileName]
             ignoreDiry = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDiry)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(self.data)
 
 #------------------------------------------------------------------------------
 class Mod_SkipDirtyCheck(Link):
@@ -12126,31 +13969,31 @@ class Mod_CreateBlankBashedPatch(Link):
 
 #------------------------------------------------------------------------------
 class Mod_CreateBlank(Link):
-    """Create a duplicate of the file."""
+    """Create a new blank mod."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'New Mod...'))
         menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
 
     def Execute(self,event):
-        data = self.data
-        fileName = GPath(data[0])
+        data = self.window.GetSelected()
         fileInfos = self.window.data
-        fileInfo = fileInfos[fileName]
         count = 0
         newName = GPath(u'New Mod.esp')
         while newName in fileInfos:
             count += 1
             newName = GPath(u'New Mod %d.esp' % count)
-        newInfo = bosh.ModInfo(fileInfo.dir,newName)
-        newTime = fileInfo.mtime + 20
-        newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
+        newInfo = fileInfos.factory(fileInfos.dir,newName)
+        if data:
+            newTime = max(fileInfos[x].mtime for x in data)
+        else:
+            newTime = max(fileInfos[x].mtime for x in fileInfos.data)
+        newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
         newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
         newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
         newFile.safeSave()
-        mod_group = bosh.modInfos.table.getColumn('group')
-        mod_group[newName] = mod_group.get(fileName,u'')
+        mod_group = fileInfos.table.getColumn('group')
+        mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
         self.window.RefreshUI(detail=newName)
 
@@ -12174,9 +14017,10 @@ class Mod_CreateDummyMasters(Link):
                            _(u"To remove these files later, use 'Clean Dummy Masters...'"),
                            _(u'Create Files')):
             return
+        doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
         modInfo = bosh.modInfos[self.data[0]]
         lastTime = modInfo.mtime - 1
-        if settings['bash.CBashEnabled']:
+        if doCBash:
             newFiles = []
         refresh = []
         for master in modInfo.header.masters:
@@ -12188,7 +14032,7 @@ class Mod_CreateDummyMasters(Link):
             newTime = lastTime
             newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
             refresh.append(master)
-            if settings['bash.CBashEnabled']:
+            if doCBash:
                 # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
                 # files, then rename them to the correct unicode name later
                 newFiles.append(newInfo.getPath().stail)
@@ -12196,7 +14040,7 @@ class Mod_CreateDummyMasters(Link):
                 newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
                 newFile.tes4.author = u'BASHED DUMMY'
                 newFile.safeSave()
-        if settings['bash.CBashEnabled']:
+        if doCBash:
             with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
                 tempname = u'_DummyMaster.esp.tmp'
                 modFile = Current.addMod(tempname, CreateNew=True)
@@ -12414,7 +14258,7 @@ class Mod_Factions_Import(Link):
             actorFactions.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
             changed = actorFactions.writeToMod(fileInfo)
-            progress(1.0,_('Done.'))
+            progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
             balt.showOk(self.window,_(u'No relevant faction ranks to import.'),
@@ -12639,6 +14483,7 @@ class Mod_FlipSelf(Link):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
+            bosh.modInfos.refresh(doInfos=False)
             self.window.RefreshUI(detail=fileInfo.name)
 
 
@@ -12976,14 +14821,14 @@ class Mod_DecompileAll(Link):
                 balt.showWarning(self.window,_(u"Skipping %s") % fileName.s,_(u'Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
-            loadFactory = bosh.LoadFactory(True,bosh.MreScpt)
+            loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['SCPT'])
             modFile = bosh.ModFile(fileInfo,loadFactory)
             modFile.load(True)
             badGenericLore = False
             removed = []
             id_text = {}
             if modFile.SCPT.getNumRecords(False):
-                loadFactory = bosh.LoadFactory(False,bosh.MreScpt)
+                loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['SCPT'])
                 for master in modFile.tes4.masters:
                     masterFile = bosh.ModFile(bosh.modInfos[master],loadFactory)
                     masterFile.load(True)
@@ -13146,15 +14991,16 @@ class Mod_FullNames_Import(Link):
         if not renamed:
             balt.showOk(self.window,_(u"No changes required."))
         else:
-            buff = StringIO.StringIO()
-            format = u'%s:   %s >> %s\n'
-            #buff.write(format % (_('Editor Id'),_('Name')))
-            for eid in sorted(renamed.keys()):
-                full,newFull = renamed[eid]
-                buff.write(format % (eid,full,newFull))
-            text = buff.getvalue()
-            buff.close()
-            balt.showLog(self.window,text,_(u'Objects Renamed'),icons=bashBlue)
+            with sio() as buff:
+                format = u'%s:   %s >> %s\n'
+                #buff.write(format % (_(u'Editor Id'),_(u'Name')))
+                for eid in sorted(renamed.keys()):
+                    full,newFull = renamed[eid]
+                    try:
+                        buff.write(format % (eid,full,newFull))
+                    except:
+                        print u'unicode error:', (format, eid, full, newFull)
+                balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Patch_Update(Link):
@@ -13189,14 +15035,25 @@ class Mod_Patch_Update(Link):
 
     def Execute(self,event):
         """Handle activation event."""
+        # Clean up some memory
+        bolt.GPathPurge()
+        # Create plugin dictionaries -- used later. Speeds everything up! Yay!
+        fullLoadOrder   = bosh.modInfos.plugins.LoadOrder   #CDC used this cached value no need to requery
+
+        index = 0
+        for name in fullLoadOrder:
+            bush.fullLoadOrder[name] = index
+            index = index + 1
+
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
             balt.showWarning(self.window,
                              (_(u'That which does not exist cannot be patched.')
                               + u'\n' +
-                              _(u'Load some mods and try again.'),
-                              _(u'Existential Error')))
+                              _(u'Load some mods and try again.')
+                              ),
+                              _(u'Existential Error'))
             return
         # Verify they want to build a previous Python patch in CBash mode, or vice versa
         if self.doCBash and not balt.askContinue(self.window,
@@ -13213,11 +15070,13 @@ class Mod_Patch_Update(Link):
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
             if self.doCBash:
                 bosh.CBash_PatchFile.patchTime = fileInfo.mtime
+                bosh.CBash_PatchFile.patchName = fileInfo.name
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
             else:
                 bosh.PatchFile.patchTime = fileInfo.mtime
+                bosh.PatchFile.patchName = fileInfo.name
                 if settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
@@ -13244,7 +15103,7 @@ class Mod_Patch_Update(Link):
             checklists.append(group)
         if merge:
             group = [mergeKey,
-                     _(u"These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Ovlivion maximum esp/esm limit."),
+                     _(u"These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Oblivion maximum esp/esm limit."),
                      ]
             group.extend(merge)
             checklists.append(group)
@@ -13300,10 +15159,10 @@ class Mod_Patch_Update(Link):
             previousMods.add(mod)
         if missing or delinquent:
             warning = ListBoxes(bashFrame,_(u'Master Errors'),
-                _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those probem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
+                _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those problem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
                 [[_(u'Missing Master Errors'),_(u'These mods have missing masters; which will make your game unusable, and you will probably have to regenerate your patch after fixing them.  So just go fix them now.'),missing],
                 [_(u'Delinquent Master Errors'),_(u'These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them.  So just go fix them now.'),delinquent]],
-                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_('Continue Despite Errors')})
+                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_(u'Continue Despite Errors')})
             if warning.ShowModal() == wx.ID_CANCEL:
                 return
         try:
@@ -13351,7 +15210,7 @@ class Mod_ListPatchConfig(Link):
         log(_(u'This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.')+u'\n')
         clip = StringIO.StringIO()
         clip.write(u'%s %s:\n' % (self.data[0],_(u'Config')))
-        clip.write(u'[spoiler][xml]')
+        clip.write(u'[spoiler][xml]\n')
         # CBash/Python patch?
         log.setHeader(u'== '+_(u'Patch Mode'))
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
@@ -13452,7 +15311,7 @@ class Mod_ExportPatchConfig(Link):
         if not outPath: return
         pklPath = outPath+u'.pkl'
         table = bolt.Table(bosh.PickleDict(outPath, pklPath))
-        table.setItem(bolt.Path(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
         table.save()
 
 #------------------------------------------------------------------------------
@@ -13544,7 +15403,7 @@ class Mod_RemoveWorldOrphans(Link):
             #--Export
             orphans = 0
             with balt.Progress(_(u"Remove World Orphans")) as progress:
-                loadFactory = bosh.LoadFactory(True,bosh.MreCell,bosh.MreWrld)
+                loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
                 modFile = bosh.ModFile(fileInfo,loadFactory)
                 progress(0,_(u"Reading %s.") % fileName.s)
                 modFile.load(True,SubProgress(progress,0,0.7))
@@ -14360,9 +16219,9 @@ class Mod_IngredientDetails_Import(Link):
                 Ingredients = bosh.CBash_IngredientDetails()
             else:
                 Ingredients = bosh.IngredientDetails()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
+            progress(0.1,_(u'Reading %s.') % textName.s)
             Ingredients.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+filename.s+u'.')
+            progress(0.2,_(u'Applying to %s.') % fileName.s)
             changed = Ingredients.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -14435,60 +16294,82 @@ class Mod_ScanDirty(Link):
         modInfos = [bosh.modInfos[x] for x in self.data]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
-                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress,detailed=True)
         except bolt.CancelError:
             return
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= '+_(u'Scan Mods'))
-        log(_(u'This is a report of records that where detected as either Identical To Master (ITM) or a deleted reference (UDR).')
+        log(_(u'This is a report of records that were detected as either Identical To Master (ITM) or a deleted reference (UDR).')
             + u'\n')
-        def strFid(fid):
-            # Change a FID to something better for displaying
-            if settings['bash.CBashEnabled']:
-                modName = fid[0].stail
-                id = fid[1]
-            else:
-                modId = 0xFF000000 & fid
+        # Change a FID to something more usefull for displaying
+        if settings['bash.CBashEnabled']:
+            def strFid(fid):
+                return u'%s: %06X' % (fid[0],fid[1])
+        else:
+            def strFid(fid):
+                modId = (0xFF000000 & fid) >> 24
                 modName = modInfo.masterNames[modId]
                 id = 0x00FFFFFF & fid
-            return u'%s: %06X' % (modName, id)
-        def sortedFidList(fids):
-            # Sort list of FIDs fist by mod, then id
-            if settings['bash.CBashEnabled']:
-                return sorted(fids, key=itemgetter(0,1))
-            else:
-                return sorted(fids)
+                return u'%s: %06X' % (modName,id)
         dirty = []
         clean = []
+        error = []
         for i,modInfo in enumerate(modInfos):
-            udr,itm,fog = ret[i]
+            udrs,itms,fog = ret[i]
             if modInfo.name == GPath(u'Unofficial Oblivion Patch.esp'):
                 # Record for non-SI users, shows up as ITM if SI is installed (OK)
                 if settings['bash.CBashEnabled']:
-                    itm.discard(FormID(GPath(u'Oblivion.esm'),0x00AA3C))
+                    itms.discard(FormID(GPath(u'Oblivion.esm'),0x00AA3C))
                 else:
-                    itm.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-            if modInfo.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itm = set()
-            if udr or itm:
+                    itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
+            if modInfo.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
+            if udrs or itms:
                 pos = len(dirty)
                 dirty.append(u'* __'+modInfo.name.s+u'__:\n')
-                dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udr))
-                for fid in sortedFidList(udr): # Sorted by master, then id
-                    dirty[pos] += u'    * %s\n' % strFid(fid)
+                dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
+                for udr in sorted(udrs):
+                    if udr.parentEid:
+                        parentStr = u"%s '%s'" % (strFid(udr.parentFid),udr.parentEid)
+                    else:
+                        parentStr = strFid(udr.parentFid)
+                    if udr.parentType == 0:
+                        # Interior CELL
+                        item = u'%s -  %s attached to Interior CELL (%s)' % (
+                            strFid(udr.fid),udr.type,parentStr)
+                    else:
+                        # Exterior CELL
+                        if udr.parentParentEid:
+                            parentParentStr = u"%s '%s'" % (strFid(udr.parentParentFid),udr.parentParentEid)
+                        else:
+                            parentParentStr = strFid(udr.parentParentFid)
+                        if udr.pos is None:
+                            atPos = u''
+                        else:
+                            atPos = u' at %s' % (udr.pos,)
+                        item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s)%s' % (
+                            strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
+                    dirty[pos] += u'    * %s\n' % item
                 if not settings['bash.CBashEnabled']: continue
-                if itm:
-                    dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itm))
-                for fid in sortedFidList(itm):
+                if itms:
+                    dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itms))
+                for fid in sorted(itms):
                     dirty[pos] += u'    * %s\n' % strFid(fid)
+            elif udrs is None or itms is None:
+                error.append(u'* __'+modInfo.name.s+u'__')
             else:
                 clean.append(u'* __'+modInfo.name.s+u'__')
         #-- Show log
         if dirty:
             log(_(u'Detected %d dirty mods:') % len(dirty))
             for mod in dirty: log(mod)
+            log(u'\n')
         if clean:
             log(_(u'Detected %d clean mods:') % len(clean))
             for mod in clean: log(mod)
+            log(u'\n')
+        if error:
+            log(_(u'The following %d mods had errors while scanning:') % len(error))
+            for mod in error: log(mod)
         balt.showWryeLog(self.window,log.out.getvalue(),
             _(u'Dirty Edit Scan Results'),asDialog=False,icons=bashBlue)
         log.out.close()
@@ -14651,12 +16532,11 @@ class Saves_Profiles:
     def swapPlugins(self,arcSaves,newSaves):
         """Saves current plugins into arcSaves directory and loads plugins
         from newSaves directory (if present)."""
-        arcPath,newPath = (bosh.dirs['saveBase'].join(saves,u'plugins.txt')
+        arcPath,newPath = (bosh.dirs['saveBase'].join(saves)
             for saves in (arcSaves,newSaves))
         #--Archive old Saves
-        bosh.modInfos.plugins.path.copyTo(arcPath)
-        if newPath.exists():
-            newPath.copyTo(bosh.modInfos.plugins.path)
+        bosh.modInfos.plugins.copyTo(arcPath)
+        bosh.modInfos.plugins.copyFrom(newPath)
 
     def swapOblivionVersion(self,newSaves):
         """Swaps Oblivion version to memorized version."""
@@ -14910,7 +16790,7 @@ class Save_EditCreatedData(balt.ListEditorData):
             buff.write(_(u'Clothing')+u'\n'+_(u'Flags: '))
             buff.write(u', '.join(record.flags.getTrueAttrs())+u'\n')
         elif record.recType == 'WEAP':
-            buff.write(bush.weaponTypes[record.weaponType]+u'\n')
+            buff.write(bush.game.weaponTypes[record.weaponType]+u'\n')
             for attr in ('damage','value','speed','reach','weight'):
                 buff.write(u'%s: %s\n' % (attr,getattr(record,attr)))
         #--Enchanted? Switch record to enchantment.
@@ -15071,7 +16951,7 @@ class Save_EditCreatedEnchantmentCosts(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         dialog = balt.askNumber(self.window,
-            (_(u'Enter the number of uses you desire per recharge for all custom made enchantements.')
+            (_(u'Enter the number of uses you desire per recharge for all custom made enchantments.')
              + u'\n' +
              _(u'(Enter 0 for unlimited uses)')),
             prompt=_(u'Uses'),title=_(u'Number of Uses'),value=50,min=0,max=10000)
@@ -15113,7 +16993,7 @@ class Save_Move:
 
     def DoDefault(self,event):
         """Handle selection of Default."""
-        self.MoveFiles(_('Default'))
+        self.MoveFiles(_(u'Default'))
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -15215,7 +17095,8 @@ class Save_RepairFactions(Link):
             offsetFlag = 0x80
             npc_info = {}
             fact_eid = {}
-            loadFactory = bosh.LoadFactory(False,bosh.MreNpc,bosh.MreFact)
+            loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'],
+                                                 bosh.MreRecord.type_class['FACT'])
             ordered = list(bosh.modInfos.ordered)
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             for index,modName in enumerate(ordered):
@@ -15401,7 +17282,7 @@ class Save_Stats(Link):
         with balt.Progress(_(u"Statistics")) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(StringIO.StringIO())
-            progress(0.9,_("Calculating statistics."))
+            progress(0.9,_(u"Calculating statistics."))
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
@@ -15464,7 +17345,7 @@ class Save_Unbloat(Link):
             for type,name in sorted(createdCounts):
                 message += u'  %s %s: %s\n' % (type,name,formatInteger(createdCounts[(type,name)]))
         if nullRefCount:
-            message += u'  '+_('Null Ref Objects:')+ u' %s\n' % formatInteger(nullRefCount)
+            message += u'  '+_(u'Null Ref Objects:')+ u' %s\n' % formatInteger(nullRefCount)
         message = (_(u'Remove savegame bloating?')
                    + u'\n'+message+u'\n' +
                    _(u'WARNING: This is a risky procedure that may corrupt your savegame!  Use only if necessary!')
@@ -15497,14 +17378,14 @@ class Save_UpdateNPCLevels(Link):
 
     def Execute(self,event):
         debug = True
-        message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supercedes the older "Import NPC Levels" command.')
+        message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
         if not balt.askContinue(self.window,message,'bash.updateNpcLevels.continue',_(u'Update NPC Levels')):
             return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             offsetFlag = 0x80
             npc_info = {}
-            loadFactory = bosh.LoadFactory(False,bosh.MreNpc)
+            loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'])
             ordered = list(bosh.modInfos.ordered)
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
@@ -15794,7 +17675,7 @@ class People_Karma(Link):
         for id,item in zip(idList,labels):
             subMenu.Append(id,item)
         wx.EVT_MENU_RANGE(bashFrame,idList.BASE,idList.MAX,self.DoList)
-        menu.AppendMenu(-1,u_('Karma'),subMenu)
+        menu.AppendMenu(-1,_(u'Karma'),subMenu)
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -15863,7 +17744,7 @@ class Master_Disable(Link):
 #------------------------------------------------------------------------------
 class StatusBar_Button(Link):
     """Launch an application."""
-    def __init__(self,uid=None,canHide=True):
+    def __init__(self,uid=None,canHide=True,tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons
                and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
@@ -15871,13 +17752,9 @@ class StatusBar_Button(Link):
         self.mainMenu = Links()
         self.canHide = canHide
         self.gButton = None
-        self._uid = uid
-
-    @property
-    def uid(self):
-        if self._uid is None:
-            return (self.__class__.__name__,getattr(self,'tip',None))
-        return self._uid
+        self._tip = tip
+        if uid is None: uid = (self.__class__.__name__,tip)
+        self.uid = uid
 
     def createButton(self, *args, **kwdargs):
         if len(args) < 11 and 'onRClick' not in kwdargs:
@@ -15887,6 +17764,7 @@ class StatusBar_Button(Link):
         if self.gButton is not None:
             self.gButton.Destroy()
         self.gButton = bitmapButton(*args, **kwdargs)
+        return self.gButton
 
     def DoPopupMenu(self,event):
         if self.canHide:
@@ -15943,7 +17821,7 @@ class App_Button(StatusBar_Button):
         exePathArgs (list):  [exePathArgs,altExePathArgs,...]
         images: [16x16,24x24,32x32] images
         """
-        StatusBar_Button.__init__(self,uid,canHide)
+        StatusBar_Button.__init__(self,uid,canHide,tip)
         if isinstance(exePathArgs, list):
             use = exePathArgs[0]
             for item in exePathArgs:
@@ -15963,7 +17841,6 @@ class App_Button(StatusBar_Button):
             self.exePath = exePathArgs
             self.exeArgs = tuple()
         self.images = images
-        self._tip = tip
         if workingDir:
             self.workingDir = GPath(workingDir)
         else:
@@ -16022,7 +17899,7 @@ class App_Button(StatusBar_Button):
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
-                os.startfile(self.exePath.s)
+                webbrowser.open(self.exePath.s)
             elif self.isJava:
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
@@ -16033,7 +17910,7 @@ class App_Button(StatusBar_Button):
                     subprocess.Popen((self.java.stail,u'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except UnicodeError:
                     balt.showError(bashFrame,
-                                   _(u'Execution failed, because one or more of the command line arguemnts failed to encode.'),
+                                   _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
                 except Exception, error:
                     balt.showError(
@@ -16074,7 +17951,7 @@ class App_Button(StatusBar_Button):
                     subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except UnicodeError:
                     balt.showError(bashFrame,
-                                   _(u'Execution failed, because one or more of the command line arguemnts failed to encode.'),
+                                   _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
                 except WindowsError, werr:
                     if werr.winerror != 740:
@@ -16120,16 +17997,17 @@ class App_Button(StatusBar_Button):
                 except Exception, error:
                     # Most likely we're here because FindExecutable failed (no file association)
                     # Or because win32api import failed.  Try doing it using os.startfile
+                    # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
                     cwd = bolt.Path.getcwd()
                     if self.workingDir:
                         self.workingDir.setcwd()
                     else:
                         self.exePath.head.setcwd()
                     try:
-                        os.startfile(self.exePath.s)
+                        webbrowser.open(self.exePath.s)
                     except UnicodeError:
                         balt.showError(bashFrame,
-                                       _(u'Execution failed, because one or more of the command line arguemnts failed to encode.'),
+                                       _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                        _(u"Could not launch '%s'") % self.exePath.stail)
                     except Exception, error:
                         balt.showError(
@@ -16229,8 +18107,8 @@ class App_BOSS(App_Button):
     """loads BOSS"""
     def __init__(self, *args, **kwdargs):
         App_Button.__init__(self, *args, **kwdargs)
+        self.mainMenu.append(Mods_BOSSLaunchGUI())
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
-        self.mainMenu.append(Mods_BOSSShowUpdate())
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
@@ -16247,29 +18125,17 @@ class App_BOSS(App_Button):
             cwd = bolt.Path.getcwd()
             exePath.head.setcwd()
             with balt.Progress(_(u"Executing BOSS")) as progress:
-                version = bosh.configHelpers.bossVersion
-                if settings.get('bash.mods.autoGhost') and not version:
-                    progress(0.05,_(u"Processing... deghosting mods"))
-                    for fileName in bosh.modInfos:
-                        bosh.modInfos[fileName].setGhost(False)
-                if version >= 1:
-                    if version <= 2 and (settings['BOSS.AlwaysUpdate'] or wx.GetKeyState(85)):
-                        # Disable for BOSS 1.8+ (specified in the BOSS.ini now)
-                        exeArgs += (u'-u',) # Update - BOSS version 1.6+
-                    if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
-                        exeArgs += (u'-r 2',) # Revert level 2 - BOSS version 1.6+
-                    elif wx.GetKeyState(82):
-                        exeArgs += (u'-r 1',) # Revert level 1 - BOSS version 1.6+
-                    if wx.GetKeyState(83):
-                        exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
-                    if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
-                        exeArgs += (u'-c',)
-                if version in [1, 393217]:
-                    if wx.GetKeyState(86):
-                        exeArgs += (u'-V-',) # Disable version parsing - syntax BOSS version 1.6 - 1.6.1
-                elif version >= 393218:
-                    if wx.GetKeyState(86) or wx.GetKeyState(78):
-                        exeArgs += (u'-n',) # Disable version parsing - syntax BOSS version 1.6.2+
+                if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+                    exeArgs += (u'-r 2',) # Revert level 2 - BOSS version 1.6+
+                elif wx.GetKeyState(82):
+                    exeArgs += (u'-r 1',) # Revert level 1 - BOSS version 1.6+
+                if wx.GetKeyState(83):
+                    exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
+                if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
+                    exeArgs += (u'-c',)
+                if bosh.dirs['boss'].join('BOSS.exe').version >= (2,0,0,0):
+                    # After version 2.0, need to pass in the -g argument
+                    exeArgs += (u'-g%s' % bush.game.name,)
                 progress(0.05,_(u"Processing... launching BOSS."))
                 try:
                     subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo, close_fds=bolt.close_fds)
@@ -16278,11 +18144,13 @@ class App_BOSS(App_Button):
                         bosh.modInfos.mtimes.clear()
                         # And refresh to get the new times so WB will keep the order that BOSS specifies
                         bosh.modInfos.refresh(doInfos=False)
+                        # Refresh UI, so WB is made aware of the changes to loadorder.txt
+                        modList.RefreshUI('ALL')
                 except Exception, error:
                     balt.showError(bashFrame,
                                    (_(u"Used Path: %s") % exePath.s + u'\n' +
                                     _(u"Used Arguments: %s") % exeArgs),
-                                   _(u'Could not launch BOSS'))
+                                    _(u'Could not launch BOSS'))
                 finally:
                     cwd.setcwd()
         else:
@@ -16320,7 +18188,7 @@ class Oblivion_Button(App_Button):
     def Execute(self,event):
         App_Button.Execute(self,event)
         if settings.get('bash.autoQuit.on',False):
-            bashFrame.Close()
+            bashFrame.Close(True)
 
 #------------------------------------------------------------------------------
 class TESCS_Button(App_Button):
@@ -16332,6 +18200,7 @@ class TESCS_Button(App_Button):
             tip = self._obseTip % (dict(version=self.version))
         else:
             tip = self._obseTip % (dict(version=''))
+        if not self.obseArg: return tip
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + CSE
@@ -16467,10 +18336,11 @@ class App_Help(StatusBar_Button):
 
     def Execute(self,event):
         """Handle menu selection."""
-        html = bosh.dirs['mopy'].join(u'Wrye Bash.html')
-        if not html.exists():
-            bolt.WryeText.genHtml(bosh.dirs['mopy'].join(u'Wrye Bash.txt').s, None, bosh.dirs['mopy'])
-        html.start()
+        html = bosh.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
+        if html.exists():
+            html.start()
+        else:
+            balt.showError(bashFrame, _(u'Cannot find General Readme file.'))
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
@@ -16499,7 +18369,7 @@ class App_Settings(StatusBar_Button):
         if not self.id: self.id = wx.NewId()
         self.createButton(
             window,
-            Image(GPath(bosh.dirs['images'].join(u'tes4gecko%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
+            Image(GPath(bosh.dirs['images'].join(u'settingsbutton%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
             style=style,
             tip=_(u'Settings'),
             onRClick=self.Execute)
@@ -16509,23 +18379,184 @@ class App_Settings(StatusBar_Button):
         SettingsMenu.PopupMenu(bashFrame.GetStatusBar(),bashFrame,None)
 
 #------------------------------------------------------------------------------
+class App_Restart(StatusBar_Button):
+    """Restart Wrye Bash"""
+    def GetBitmapButton(self,window,style=0):
+        if not self.id: self.id = wx.NewId()
+        if self.gButton is not None: self.gButton.Destroy()
+        self.gButton = bitmapButton(window,
+            wx.ArtProvider.GetBitmap(wx.ART_UNDO,wx.ART_TOOLBAR,
+                (settings['bash.statusbar.iconSize'],
+                 settings['bash.statusbar.iconSize'])),
+            style=style,
+            tip=u'Restart',
+            onClick = self.Execute,
+            onRClick = self.DoPopupMenu)
+        return self.gButton
+
+    def Execute(self,event):
+        bashFrame.Restart()
+
+#------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        self.createButton(
+        return self.createButton(
             window,
             Image(GPath(bosh.dirs['images'].join(u'ModChecker%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
             style=style,
             tip=_(u"Mod Checker"))
-        return self.gButton
 
     def Execute(self,event):
         """Handle menu selection."""
         if not modChecker:
             ModChecker().Show()
-        #balt.ensureDisplayed(docBrowser)
+        #balt.ensureDisplayed(modChecker)
         modChecker.Raise()
+
+#------------------------------------------------------------------------------
+class CreateNewProject(wx.Dialog):
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title=u'Create New Project', size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE)
+
+        self.mopyDir = os.getcwd()
+        self.bashinstallersDir = gInstallers.data.dir
+
+        self.existingprojects = [] #start with a empty list.
+        for dirname in os.listdir(u'%s' %self.bashinstallersDir):
+            # print dirname
+            if os.path.isdir(u'%s' %self.bashinstallersDir + os.sep + u'%s' %dirname):
+                self.existingprojects.append(dirname)#Fill the list with the existing projects so the text control can identify duplicates and change background color
+
+        # print self.existingprojects
+
+        # Attributes
+        self.panel = wx.Panel(self)
+        self.statictext1 = wx.StaticText(self.panel, -1, u'What do you what to name the New Project?', (-1, -1), style=wx.TE_RICH2)
+        self.textctrl = wx.TextCtrl(self.panel, -1, u'New Project Name-#####',(-1,-1))
+        self.statictext2 = wx.StaticText(self.panel, -1, u'What do you what to add to the New Project?', (-1, -1))
+        self.checkboxblankesp = wx.CheckBox(self.panel, -1, u'Blank.esp', (-1, -1))
+        self.checkboxblankesp.SetValue(True)
+        self.checkboxblankwizard = wx.CheckBox(self.panel, -1, u'Blank wizard.txt', (-1, -1))
+        self.checkboxwizardimagesdirectory = wx.CheckBox(self.panel, -1, u'Wizard Images Directory', (-1, -1))
+        if not bEnableWizard:
+            self.checkboxblankwizard.Disable() #pyWin32 not installed
+            self.checkboxwizardimagesdirectory.Disable() #pyWin32 not installed
+        self.checkboxdocsdirectory = wx.CheckBox(self.panel, -1, u'Docs Directory', (-1, -1))
+        self.checkboxscreenshotnoext = wx.CheckBox(self.panel, -1, u'Preview Screenshot(No.ext)(re-enable for BAIT)', (-1, -1))
+        self.checkboxscreenshotnoext.Disable() #Remove this when BAIT gets preview stuff done
+        self.staticline = wx.StaticLine(self.panel, -1, size=(-1, 2))
+        self.okbutton = wx.Button(self.panel, -1, label=u'Ok', size=(100, 30))
+        self.cancelbutton = wx.Button(self.panel, -1, label=u'Cancel', size=(100, 30))
+        # Panel Layout
+        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer.Add(self.okbutton, 0, wx.ALL|wx.ALIGN_CENTER, 10)
+        hsizer.Add(self.cancelbutton, 0, wx.ALL|wx.ALIGN_CENTER, 10)
+        vsizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer.Add(self.statictext1, 0, wx.ALL|wx.ALIGN_CENTER, 10)
+        vsizer.Add(self.textctrl, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 2)
+        vsizer.Add(self.statictext2, 0, wx.ALL|wx.ALIGN_CENTER, 10)
+        vsizer.Add(self.checkboxblankesp, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.checkboxblankwizard, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.checkboxwizardimagesdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.checkboxdocsdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.checkboxscreenshotnoext, 0, wx.ALL|wx.ALIGN_TOP, 5)
+        vsizer.Add(self.staticline, 0, wx.ALL|wx.EXPAND, 5)
+        vsizer.AddStretchSpacer()
+        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER)
+        vsizer.AddStretchSpacer()
+        self.panel.SetSizer(vsizer)
+        # Frame Layout
+        fsizer = wx.BoxSizer(wx.VERTICAL)
+        fsizer.Add(self.panel, 1, wx.EXPAND)
+        self.SetSizer(fsizer)
+        self.SetInitialSize()
+        # Event Handlers
+        self.okbutton.Bind(wx.EVT_BUTTON, self.OnOK, id=-1)
+        self.cancelbutton.Bind(wx.EVT_BUTTON, self.OnDestroyCustomDialog, id=-1)
+        self.Bind(wx.EVT_CLOSE, self.OnDestroyCustomDialog, id=-1)
+        self.textctrl.Bind(wx.EVT_TEXT, self.OnCheckProjectsColorTextCtrl, id=-1)
+        self.checkboxblankesp.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxChange, id=-1)
+        self.checkboxblankwizard.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxChange, id=-1)
+        # Dialog Icon Handlers
+        self.SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_white_off.png', wx.BITMAP_TYPE_PNG))
+        self.OnCheckBoxChange(self)
+
+    def OnCheckProjectsColorTextCtrl(self, event):
+        projectname = self.textctrl.GetValue()
+        if projectname in self.existingprojects: #Fill this in. Compare this with the self.existingprojects list
+            self.textctrl.SetBackgroundColour('#FF0000')
+        else:
+            self.textctrl.SetBackgroundColour('#FFFFFF')
+        self.textctrl.Refresh()
+        # print ('Text has been changed')
+
+    def OnCheckBoxChange(self, event):
+        ''' Change the Dialog Icon to represent what the project status will be when created. '''
+        if self.checkboxblankesp.IsChecked():
+            if self.checkboxblankwizard.IsChecked():
+                super(CreateNewProject,self).SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_white_off_wiz.png', wx.BITMAP_TYPE_PNG))
+            else:
+                super(CreateNewProject,self).SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_white_off.png', wx.BITMAP_TYPE_PNG))
+        else:
+            super(CreateNewProject,self).SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_grey_off.png', wx.BITMAP_TYPE_PNG))
+        # print ('Changed Dialog Icon')
+
+    def OnOK(self, event):
+        ''' Create the New Project and add user specified extras. '''
+        projectname = self.textctrl.GetValue()#The name of the directory to be created
+
+        if not os.path.exists(u'%s' %self.bashinstallersDir + os.sep + u'%s' %projectname): #This checks to see if the Generated New Project directory exists first,
+            os.mkdir(u'%s' %self.bashinstallersDir + os.sep + u'%s' %projectname) #then creates it if it doesn't exist
+            #Then check what checkboxes are checked and add extras.
+            ExtrasDir = self.mopyDir + os.sep + u'templates'
+            NewProjectDir = u'%s' %self.bashinstallersDir + os.sep + u'%s' %projectname
+            if self.checkboxblankesp.IsChecked(): #Copy the Blank.esp into the New Project
+                sourcefile = (ExtrasDir + os.sep + u'Blank.esp') #This is the file to be copied into the created New Project Directory.
+                destinationfile = (NewProjectDir + os.sep + u'Blank.esp')   #This is the destination of the sourcefile.
+                shutil.copy(sourcefile, destinationfile) #This copies the Blank.esp into the New Project folder that was generated in the code above.
+            if self.checkboxblankwizard.IsChecked(): #Create the wizard.txt here
+                text_file = open(NewProjectDir + os.sep + u'wizard.txt', 'w')
+                text_file.write(u';# ' + projectname + u' BAIN Wizard Installation Script')
+                text_file.close()
+            if self.checkboxwizardimagesdirectory.IsChecked(): #Create the 'Wizard Images' Directory
+                os.mkdir(NewProjectDir + os.sep + u'Wizard Images')
+            if self.checkboxdocsdirectory.IsChecked(): #Create the 'Docs' Directory
+                os.mkdir(NewProjectDir + os.sep + u'Docs')
+            if self.checkboxscreenshotnoext.IsChecked(): #Copy the dummy default 'Screenshot' into the New Project
+                sourcefile = (ExtrasDir + os.sep + u'Screenshot') #This is the file to be copied into the created New Project Directory.
+                destinationfile = (NewProjectDir + os.sep + u'Screenshot') #This is the destination of the sourcefile.
+                shutil.copy(sourcefile, destinationfile) #This copies the Screenshot into the New Project folder that was generated in the code above.
+            refresh = True #Refresh Data so project shows up
+        else:
+            dialog = wx.MessageDialog(self, u'There is already a project with that name!\nPick a different name for the project and try again.', u'ERROR', wx.OK | wx.ICON_ERROR)
+            dialog.ShowModal()
+            dialog.Destroy()
+
+        if refresh:
+            self.Destroy()
+            self.fullRefresh = False
+            gInstallers.refreshed = False
+            gInstallers.fullRefresh = self.fullRefresh
+            gInstallers.OnShow()
+            # print projectname
+
+    def OnDestroyCustomDialog(self, event):
+        self.Destroy()
+
+class Installer_CreateNewProject(InstallerLink):
+    """Open the Create New Project Dialog"""
+    def AppendToMenu(self, menu, window, data):
+        Link.AppendToMenu(self, menu, window, data)
+        title = _(u'Create New Project...')
+        menuItem = wx.MenuItem(menu, self.id, title, help=_(u'Create a new project...'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self, event):
+        dialog = CreateNewProject(None,-1,u'Create New Project')
+        dialog.ShowModal()
+        dialog.Destroy()
 
 # Initialization --------------------------------------------------------------
 def InitSettings():
@@ -16538,7 +18569,7 @@ def InitSettings():
     settings.loadDefaults(settingDefaults)
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join(u'WryeLogTemp.html')
-    settings['balt.WryeLog.cssDir'] = bosh.dirs['mods'].join(u'Docs')
+    settings['balt.WryeLog.cssDir'] = bosh.dirs['mopy'].join(u'Docs')
     #--StandAlone version?
     settings['bash.standalone'] = hasattr(sys,'frozen')
     initPatchers()
@@ -16588,7 +18619,7 @@ def InitImages():
     images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_32_blue.png')),wx.BITMAP_TYPE_PNG)
     #--Bash Patch Dialogue
     images['monkey.16'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey16.jpg')),wx.BITMAP_TYPE_JPEG)
-  #  images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),wx.BITMAP_TYPE_JPEG)
+    #images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),wx.BITMAP_TYPE_JPEG)
     #--DocBrowser
     images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),wx.BITMAP_TYPE_PNG)
     images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),wx.BITMAP_TYPE_PNG)
@@ -16616,8 +18647,9 @@ def InitImages():
 
 def InitStatusBar():
     """Initialize status bar links."""
+    dirImages = bosh.dirs['images']
     def imageList(template):
-        return [Image(GPath(bosh.dirs['images'].join(template % x))) for x in (16,24,32)]
+        return [Image(dirImages.join(template % x)) for x in (16,24,32)]
     #--Bash Status/LinkBar
     global obseButton
     obseButton = Obse_Button(uid=u'OBSE')
@@ -16630,16 +18662,16 @@ def InitStatusBar():
         Oblivion_Button(
             bosh.dirs['app'].join(bush.game.exe),
             imageList(u'%s%%s.png' % bush.game.name.lower()),
-            _(u"Launch") + u' ' + bush.game.name,
-            _(u"Launch") + u' ' + bush.game.name + u' %(version)s',
+            u' '.join((_(u"Launch"),bush.game.name)),
+            u' '.join((_(u"Launch"),bush.game.name,u'%(version)s')),
             u'',
-            uid = u'Oblivion'))
+            uid=u'Oblivion'))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
             bosh.dirs['app'].join(bush.game.cs.exe),
             imageList(bush.game.cs.imageName),
-            _(u"Launch") + u' ' + bush.game.cs.shortName,
-            _(u"Launch") + u' ' + bush.game.cs.shortName + u' %(version)s',
+            u' '.join((_(u"Launch"),bush.game.cs.shortName)),
+            u' '.join((_(u"Launch"),bush.game.cs.shortName,u'%(version)s')),
             bush.game.cs.seArgs,
             uid=u'TESCS'))
     BashStatusBar.buttons.append( #OBMM
@@ -16651,93 +18683,87 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #ISOBL
         Tooldir_Button(
             u'ISOBL',
-            imageList(u'isobl%s.png'),
+            imageList(u'tools/isobl%s.png'),
             _(u"Launch InsanitySorrow's Oblivion Launcher")))
     BashStatusBar.buttons.append( #ISRMG
         Tooldir_Button(
             u'ISRMG',
-            imageList(u"insanity'sreadmegenerator%s.png"),
+            imageList(u"tools/insanity'sreadmegenerator%s.png"),
             _(u"Launch InsanitySorrow's Readme Generator")))
     BashStatusBar.buttons.append( #ISRNG
         Tooldir_Button(
             u'ISRNG',
-            imageList(u"insanity'srng%s.png"),
+            imageList(u"tools/insanity'srng%s.png"),
             _(u"Launch InsanitySorrow's Random Name Generator")))
     BashStatusBar.buttons.append( #ISRNPCG
         Tooldir_Button(
             u'ISRNPCG',
-            imageList(u'randomnpc%s.png'),
+            imageList(u'tools/randomnpc%s.png'),
             _(u"Launch InsanitySorrow's Random NPC Generator")))
     BashStatusBar.buttons.append( #OBFEL
         Tooldir_Button(
             u'OBFEL',
-            imageList(u'oblivionfaceexchangerlite%s.png'),
+            imageList(u'tools/oblivionfaceexchangerlite%s.png'),
             _(u"Oblivion Face Exchange Lite")))
     BashStatusBar.buttons.append( #OBMLG
         Tooldir_Button(
             u'OBMLG',
-            imageList(u'modlistgenerator%s.png'),
+            imageList(u'tools/modlistgenerator%s.png'),
             _(u"Oblivion Mod List Generator")))
     BashStatusBar.buttons.append( #OblivionBookCreator
         App_Button(
             (bosh.tooldirs['OblivionBookCreatorPath'],bosh.inisettings['OblivionBookCreatorJavaArg']),
-            imageList(u'oblivionbookcreator%s.png'),
+            imageList(u'tools/oblivionbookcreator%s.png'),
             _(u"Launch Oblivion Book Creator"),
             uid=u'OblivionBookCreator'))
     BashStatusBar.buttons.append( #BSACommander
         Tooldir_Button(
             u'BSACMD',
-            imageList(u'bsacommander%s.png'),
+            imageList(u'tools/bsacommander%s.png'),
             _(u"Launch BSA Commander")))
     BashStatusBar.buttons.append( #Tabula
         Tooldir_Button(
             u'Tabula',
-            imageList(u'tabula%s.png'),
+            imageList(u'tools/tabula%s.png'),
             _(u"Launch Tabula")))
     BashStatusBar.buttons.append( #Tes4Files
         Tooldir_Button(
             u'Tes4FilesPath',
-            imageList(u'tes4files%s.png'),
+            imageList(u'tools/tes4files%s.png'),
             _(u"Launch TES4Files")))
     BashStatusBar.buttons.append( #Tes4Gecko
         App_Button(
             (bosh.tooldirs['Tes4GeckoPath'],bosh.inisettings['Tes4GeckoJavaArg']),
-            imageList(u'tes4gecko%s.png'),
+            imageList(u'tools/tes4gecko%s.png'),
             _(u"Launch Tes4Gecko"),
             uid=u'Tes4Gecko'))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bosh.tooldirs['Tes4ViewPath'],u'-TES4'), #no cmd argument to force view mode
-            imageList(u'tes4view%s.png'),
+            imageList(u'tools/tes4view%s.png'),
             _(u"Launch TES4View"),
             uid=u'TES4View'))
     BashStatusBar.buttons.append( #Tes4Edit
         App_Tes4View(
             (bosh.tooldirs['Tes4EditPath'],u'-TES4 -edit'),
-            imageList(u'tes4edit%s.png'),
+            imageList(u'tools/tes4edit%s.png'),
             _(u"Launch TES4Edit"),
             uid=u'TES4Edit'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
-            imageList(u'tes4trans%s.png'),
+            imageList(u'tools/tes4trans%s.png'),
             _(u"Launch TES4Trans"),
             uid=u'TES4Trans'))
     BashStatusBar.buttons.append( #Tes4LODGen
         App_Tes4View(
             (bosh.tooldirs['Tes4LodGenPath'],u'-TES4 -lodgen'),
-            imageList(u'tes4lodgen%s.png'),
+            imageList(u'tools/tes4lodgen%s.png'),
             _(u"Launch Tes4LODGen"),
             uid=u'TES4LODGen'))
-    configHelpers = bosh.ConfigHelpers()
-    configHelpers.refresh()
-    version = configHelpers.bossVersion
-    if version in (2,3): version = 2
-    elif version > 3: version = 1
-    elif version < 0: version = 0
-    BashStatusBar.buttons.append( #BOSS --
+    BashStatusBar.buttons.append( #BOSS
         App_BOSS(
-            (bosh.dirs['app'].join(u'Data',u'BOSS.bat'),bosh.dirs['app'].join(u'Data',u'BOSS.exe'),bosh.dirs['app'].join(u'BOSS',u'BOSS.exe'))[version],
+            (bosh.dirs['boss'].join(u'BOSS.exe')),
             imageList(u'boss%s.png'),
             _(u"Launch BOSS"),
             uid=u'BOSS'))
@@ -16745,271 +18771,271 @@ def InitStatusBar():
         BashStatusBar.buttons.append( #AutoCad
             Tooldir_Button(
                 'AutoCad',
-                imageList(u'autocad%s.png'),
+                imageList(u'tools/autocad%s.png'),
                 _(u"Launch AutoCad")))
         BashStatusBar.buttons.append( #Blender
             Tooldir_Button(
                 'BlenderPath',
-                imageList(u'blender%s.png'),
+                imageList(u'tools/blender%s.png'),
                 _(u"Launch Blender")))
         BashStatusBar.buttons.append( #Dogwaffle
             Tooldir_Button(
                 'Dogwaffle',
-                imageList(u'dogwaffle%s.png'),
+                imageList(u'tools/dogwaffle%s.png'),
                 _(u"Launch Dogwaffle")))
         BashStatusBar.buttons.append( #GMax
             Tooldir_Button(
                 'GmaxPath',
-                imageList(u'gmax%s.png'),
+                imageList(u'tools/gmax%s.png'),
                 _(u"Launch Gmax")))
         BashStatusBar.buttons.append( #Maya
             Tooldir_Button(
                 'MayaPath',
-                imageList(u'maya%s.png'),
+                imageList(u'tools/maya%s.png'),
                 _(u"Launch Maya")))
         BashStatusBar.buttons.append( #Max
             Tooldir_Button(
                 'MaxPath',
-                imageList(u'3dsmax%s.png'),
+                imageList(u'tools/3dsmax%s.png'),
                 _(u"Launch 3dsMax")))
         BashStatusBar.buttons.append( #Milkshape3D
             Tooldir_Button(
                 'Milkshape3D',
-                imageList(u'milkshape3d%s.png'),
+                imageList(u'tools/milkshape3d%s.png'),
                 _(u"Launch Milkshape 3D")))
         BashStatusBar.buttons.append( #Mudbox
             Tooldir_Button(
                 'Mudbox',
-                imageList(u'mudbox%s.png'),
+                imageList(u'tools/mudbox%s.png'),
                 _(u"Launch Mudbox")))
         BashStatusBar.buttons.append( #Sculptris
             Tooldir_Button(
                 'Sculptris',
-                imageList(u'sculptris%s.png'),
+                imageList(u'tools/sculptris%s.png'),
                 _(u"Launch Sculptris")))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             App_Button(
                 (bosh.tooldirs['SoftimageModTool'],u'-mod'),
-                imageList(u'softimagemodtool%s.png'),
+                imageList(u'tools/softimagemodtool%s.png'),
                 _(u"Launch Softimage Mod Tool"),
                 uid=u'SoftimageModTool'))
         BashStatusBar.buttons.append( #SpeedTree
             Tooldir_Button(
                 'SpeedTree',
-                imageList(u'speedtree%s.png'),
+                imageList(u'tools/speedtree%s.png'),
                 _(u"Launch SpeedTree")))
         BashStatusBar.buttons.append( #Tree[d]
             Tooldir_Button(
                 'Treed',
-                imageList(u'treed%s.png'),
+                imageList(u'tools/treed%s.png'),
                 _(u"Launch Tree\[d\]")))
         BashStatusBar.buttons.append( #Wings3D
             Tooldir_Button(
                 'Wings3D',
-                imageList(u'wings3d%s.png'),
+                imageList(u'tools/wings3d%s.png'),
                 _(u"Launch Wings 3D")))
     if bosh.inisettings['ShowModelingToolLaunchers'] or bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
             Tooldir_Button(
                 'NifskopePath',
-                imageList(u'nifskope%s.png'),
+                imageList(u'tools/nifskope%s.png'),
                 _(u"Launch Nifskope")))
     if bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #AniFX
             Tooldir_Button(
                 'AniFX',
-                imageList(u'anifx%s.png'),
+                imageList(u'tools/anifx%s.png'),
                 _(u"Launch AniFX")))
         BashStatusBar.buttons.append( #Art Of Illusion
             Tooldir_Button(
                 'ArtOfIllusion',
-                imageList(u'artofillusion%s.png'),
+                imageList(u'tools/artofillusion%s.png'),
                 _(u"Launch Art Of Illusion")))
         BashStatusBar.buttons.append( #Artweaver
             Tooldir_Button(
                 'Artweaver',
-                imageList(u'artweaver%s.png'),
+                imageList(u'tools/artweaver%s.png'),
                 _(u"Launch Artweaver")))
         BashStatusBar.buttons.append( #CrazyBump
             Tooldir_Button(
                 'CrazyBump',
-                imageList(u'crazybump%s.png'),
+                imageList(u'tools/crazybump%s.png'),
                 _(u"Launch CrazyBump")))
         BashStatusBar.buttons.append( #DDSConverter
             Tooldir_Button(
                 'DDSConverter',
-                imageList(u'ddsconverter%s.png'),
+                imageList(u'tools/ddsconverter%s.png'),
                 _(u"Launch DDSConverter")))
         BashStatusBar.buttons.append( #DeepPaint
             Tooldir_Button(
                 'DeepPaint',
-                imageList(u'deeppaint%s.png'),
+                imageList(u'tools/deeppaint%s.png'),
                 _(u"Launch DeepPaint")))
         BashStatusBar.buttons.append( #FastStone Image Viewer
             Tooldir_Button(
                 'FastStone',
-                imageList(u'faststoneimageviewer%s.png'),
+                imageList(u'tools/faststoneimageviewer%s.png'),
                 _(u"Launch FastStone Image Viewer")))
         BashStatusBar.buttons.append( #Genetica
             Tooldir_Button(
                 'Genetica',
-                imageList(u'genetica%s.png'),
+                imageList(u'tools/genetica%s.png'),
                 _(u"Launch Genetica")))
         BashStatusBar.buttons.append( #Genetica Viewer
             Tooldir_Button(
                 'GeneticaViewer',
-                imageList(u'geneticaviewer%s.png'),
+                imageList(u'tools/geneticaviewer%s.png'),
                 _(u"Launch Genetica Viewer")))
         BashStatusBar.buttons.append( #GIMP
             Tooldir_Button(
                 'GIMP',
-                imageList(u'gimp%s.png'),
+                imageList(u'tools/gimp%s.png'),
                 _(u"Launch GIMP")))
         BashStatusBar.buttons.append( #GIMP Shop
             Tooldir_Button(
                 'GimpShop',
-                imageList(u'gimpshop%s.png'),
+                imageList(u'tools/gimpshop%s.png'),
                 _(u"Launch GIMP Shop")))
         BashStatusBar.buttons.append( #IcoFX
             Tooldir_Button(
                 'IcoFX',
-                imageList(u'icofx%s.png'),
+                imageList(u'tools/icofx%s.png'),
                 _(u"Launch IcoFX")))
         BashStatusBar.buttons.append( #Inkscape
             Tooldir_Button(
                 'Inkscape',
-                imageList(u'inkscape%s.png'),
+                imageList(u'tools/inkscape%s.png'),
                 _(u"Launch Inkscape")))
         BashStatusBar.buttons.append( #IrfanView
             Tooldir_Button(
                 'IrfanView',
-                imageList(u'irfanview%s.png'),
+                imageList(u'tools/irfanview%s.png'),
                 _(u"Launch IrfanView")))
         BashStatusBar.buttons.append( #MaPZone
             Tooldir_Button(
                 'MaPZone',
-                imageList(u'mapzone%s.png'),
+                imageList(u'tools/mapzone%s.png'),
                 _(u"Launch MaPZone")))
         BashStatusBar.buttons.append( #MyPaint
             Tooldir_Button(
                 'MyPaint',
-                imageList(u'mypaint%s.png'),
+                imageList(u'tools/mypaint%s.png'),
                 _(u"Launch MyPaint")))
         BashStatusBar.buttons.append( #NVIDIAMelody
             Tooldir_Button(
                 'NVIDIAMelody',
-                imageList(u'nvidiamelody%s.png'),
+                imageList(u'tools/nvidiamelody%s.png'),
                 _(u"Launch Nvidia Melody")))
         BashStatusBar.buttons.append( #Paint.net
             Tooldir_Button(
                 'PaintNET',
-                imageList(u'paint.net%s.png'),
+                imageList(u'tools/paint.net%s.png'),
                 _(u"Launch Paint.NET")))
         BashStatusBar.buttons.append( #PaintShop Photo Pro
             Tooldir_Button(
                 'PaintShopPhotoPro',
-                imageList(u'paintshopprox3%s.png'),
+                imageList(u'tools/paintshopprox3%s.png'),
                 _(u"Launch PaintShop Photo Pro")))
         BashStatusBar.buttons.append( #Photoshop
             Tooldir_Button(
                 'PhotoshopPath',
-                imageList(u'photoshop%s.png'),
+                imageList(u'tools/photoshop%s.png'),
                 _(u"Launch Photoshop")))
         BashStatusBar.buttons.append( #PhotoScape
             Tooldir_Button(
                 'PhotoScape',
-                imageList(u'photoscape%s.png'),
+                imageList(u'tools/photoscape%s.png'),
                 _(u"Launch PhotoScape")))
         BashStatusBar.buttons.append( #PhotoSEAM
             Tooldir_Button(
                 'PhotoSEAM',
-                imageList(u'photoseam%s.png'),
+                imageList(u'tools/photoseam%s.png'),
                 _(u"Launch PhotoSEAM")))
         BashStatusBar.buttons.append( #Photobie Design Studio
             Tooldir_Button(
                 'Photobie',
-                imageList(u'photobie%s.png'),
+                imageList(u'tools/photobie%s.png'),
                 _(u"Launch Photobie")))
         BashStatusBar.buttons.append( #PhotoFiltre
             Tooldir_Button(
                 'PhotoFiltre',
-                imageList(u'photofiltre%s.png'),
+                imageList(u'tools/photofiltre%s.png'),
                 _(u"Launch PhotoFiltre")))
         BashStatusBar.buttons.append( #Pixel Studio Pro
             Tooldir_Button(
                 'PixelStudio',
-                imageList(u'pixelstudiopro%s.png'),
+                imageList(u'tools/pixelstudiopro%s.png'),
                 _(u"Launch Pixel Studio Pro")))
         BashStatusBar.buttons.append( #Pixia
             Tooldir_Button(
                 'Pixia',
-                imageList(u'pixia%s.png'),
+                imageList(u'tools/pixia%s.png'),
                 _(u"Launch Pixia")))
         BashStatusBar.buttons.append( #TextureMaker
             Tooldir_Button(
                 'TextureMaker',
-                imageList(u'texturemaker%s.png'),
+                imageList(u'tools/texturemaker%s.png'),
                 _(u"Launch TextureMaker")))
         BashStatusBar.buttons.append( #Twisted Brush
             Tooldir_Button(
                 'TwistedBrush',
-                imageList(u'twistedbrush%s.png'),
+                imageList(u'tools/twistedbrush%s.png'),
                 _(u"Launch TwistedBrush")))
         BashStatusBar.buttons.append( #Windows Texture Viewer
             Tooldir_Button(
                 'WTV',
-                imageList(u'wtv%s.png'),
+                imageList(u'tools/wtv%s.png'),
                 _(u"Launch Windows Texture Viewer")))
         BashStatusBar.buttons.append( #xNormal
             Tooldir_Button(
                 'xNormal',
-                imageList(u'xnormal%s.png'),
+                imageList(u'tools/xnormal%s.png'),
                 _(u"Launch xNormal")))
         BashStatusBar.buttons.append( #XnView
             Tooldir_Button(
                 'XnView',
-                imageList(u'xnview%s.png'),
+                imageList(u'tools/xnview%s.png'),
                 _(u"Launch XnView")))
     if bosh.inisettings['ShowAudioToolLaunchers']:
         BashStatusBar.buttons.append( #Audacity
             Tooldir_Button(
                 'Audacity',
-                imageList(u'audacity%s.png'),
+                imageList(u'tools/audacity%s.png'),
                 _(u"Launch Audacity")))
         BashStatusBar.buttons.append( #ABCAmberAudioConverter
             Tooldir_Button(
                 'ABCAmberAudioConverter',
-                imageList(u'abcamberaudioconverter%s.png'),
+                imageList(u'tools/abcamberaudioconverter%s.png'),
                 _(u"Launch ABC Amber Audio Converter")))
         BashStatusBar.buttons.append( #Switch
             Tooldir_Button(
                 'Switch',
-                imageList(u'switch%s.png'),
+                imageList(u'tools/switch%s.png'),
                 _(u"Launch Switch")))
     BashStatusBar.buttons.append( #Fraps
         Tooldir_Button(
             'Fraps',
-            imageList(u'fraps%s.png'),
+            imageList(u'tools/fraps%s.png'),
             _(u"Launch Fraps")))
     BashStatusBar.buttons.append( #MAP
         Tooldir_Button(
             'MAP',
-            imageList(u'interactivemapofcyrodiil%s.png'),
+            imageList(u'tools/interactivemapofcyrodiil%s.png'),
             _(u"Interactive Map of Cyrodiil and Shivering Isles")))
     BashStatusBar.buttons.append( #LogitechKeyboard
         Tooldir_Button(
             'LogitechKeyboard',
-            imageList(u'logitechkeyboard%s.png'),
+            imageList(u'tools/logitechkeyboard%s.png'),
             _(u"Launch LogitechKeyboard")))
     BashStatusBar.buttons.append( #MediaMonkey
         Tooldir_Button(
             'MediaMonkey',
-            imageList(u'mediamonkey%s.png'),
+            imageList(u'tools/mediamonkey%s.png'),
             _(u"Launch MediaMonkey")))
     BashStatusBar.buttons.append( #NPP
         Tooldir_Button(
             'NPP',
-            imageList(u'notepad++%s.png'),
+            imageList(u'tools/notepad++%s.png'),
             _(u"Launch Notepad++")))
     BashStatusBar.buttons.append( #Steam
         Tooldir_Button(
@@ -17019,76 +19045,89 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #EVGA Precision
         Tooldir_Button(
             'EVGAPrecision',
-            imageList(u'evgaprecision%s.png'),
+            imageList(u'tools/evgaprecision%s.png'),
             _(u"Launch EVGA Precision")))
     BashStatusBar.buttons.append( #WinMerge
         Tooldir_Button(
             'WinMerge',
-            imageList(u'winmerge%s.png'),
+            imageList(u'tools/winmerge%s.png'),
             _(u"Launch WinMerge")))
     BashStatusBar.buttons.append( #Freemind
         Tooldir_Button(
             'FreeMind',
-            imageList(u'freemind%s.png'),
+            imageList(u'tools/freemind%s.png'),
             _(u"Launch FreeMind")))
     BashStatusBar.buttons.append( #Freeplane
         Tooldir_Button(
             'Freeplane',
-            imageList(u'freeplane%s.png'),
+            imageList(u'tools/freeplane%s.png'),
             _(u"Launch Freeplane")))
     BashStatusBar.buttons.append( #FileZilla
         Tooldir_Button(
             'FileZilla',
-            imageList(u'filezilla%s.png'),
+            imageList(u'tools/filezilla%s.png'),
             _(u"Launch FileZilla")))
     BashStatusBar.buttons.append( #EggTranslator
         Tooldir_Button(
             'EggTranslator',
-            imageList(u'eggtranslator%s.png'),
+            imageList(u'tools/eggtranslator%s.png'),
             _(u"Launch Egg Translator")))
     BashStatusBar.buttons.append( #RADVideoTools
         Tooldir_Button(
             'RADVideo',
-            imageList(u'radvideotools%s.png'),
+            imageList(u'tools/radvideotools%s.png'),
             _(u"Launch RAD Video Tools")))
     BashStatusBar.buttons.append( #WinSnap
         Tooldir_Button(
             'WinSnap',
-            imageList(u'winsnap%s.png'),
+            imageList(u'tools/winsnap%s.png'),
             _(u"Launch WinSnap")))
     #--Custom Apps
-    bosh.initLinks(bosh.dirs['mopy'].join(u'Apps'))
+    dirApps = bosh.dirs['mopy'].join(u'Apps')
+    bosh.initLinks(dirApps)
+    folderIcon = None
+    badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
     for link in bosh.links:
         (target,workingdir,args,icon,description) = bosh.links[link]
-        path = GPath(target)
+        path = dirApps.join(link)
         if target.lower().find(ur'installer\{') != -1:
-            path = bosh.dirs['mopy'].join(u'Apps').join(link)
-        if path.exists():
+            target = path
+        else:
+            target = GPath(target)
+        if target.exists():
             icon,idex = icon.split(u',')
             if icon == u'':
-                if path.cext == u'.exe':
+                if target.cext == u'.exe':
                     # Use the icon embedded in the exe
-                    icon = path
+                    try:
+                        win32gui.ExtractIcon(0, target.s, 0)
+                        icon = target
+                    except Exception as e:
+                        icon = u'' # Icon will be set to a red x further down.
                 else:
                     # Use the default icon for that file type
                     try:
                         import _winreg
-                        if path.isdir():
-                            # Special handling of the Folder icon
-                            folderkey = _winreg.OpenKey(
-                                _winreg.HKEY_CLASSES_ROOT,
-                                u'Folder')
-                            iconkey = _winreg.OpenKey(
-                                folderkey,
-                                u'DefaultIcon')
-                            filedata = _winreg.EnumValue(
-                                iconkey,0)
-                            filedata = filedata[1]
-                            filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
+                        if target.isdir():
+                            if folderIcon is None:
+                                # Special handling of the Folder icon
+                                folderkey = _winreg.OpenKey(
+                                    _winreg.HKEY_CLASSES_ROOT,
+                                    u'Folder')
+                                iconkey = _winreg.OpenKey(
+                                    folderkey,
+                                    u'DefaultIcon')
+                                filedata = _winreg.EnumValue(
+                                    iconkey,0)
+                                filedata = filedata[1]
+                                filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
+                                folderIcon = filedata
+                            else:
+                                filedata = folderIcon
                         else:
                             icon_path = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
-                                path.cext)
+                                target.cext)
                             filedata = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
                                 u'%s\\DefaultIcon' % icon_path)
@@ -17101,26 +19140,27 @@ def InitStatusBar():
                                     icon = test
                                     break
                     except:
-                        deprint(_(u'Error finding icon for %s:') % path.s,traceback=True)
+                        deprint(_(u'Error finding icon for %s:') % target.s,traceback=True)
                         icon = u'not\\a\\path'
             icon = GPath(icon)
             # First try a custom icon
-            customIcons = [bosh.dirs['mopy'].join(u'Apps',path.body+u'%i'%x+u'.png') for x in (16,24,32)]
+            fileName = u'%s%%i.png' % path.sbody
+            customIcons = [dirApps.join(fileName % x) for x in (16,24,32)]
             if customIcons[0].exists():
                 icon = customIcons
             # Next try the shortcut specified icon
             else:
                 if icon.exists():
-                    icon = [Image(icon.s+u';'+idex,wx.BITMAP_TYPE_ICO,x) for x in (16,24,32)]
+                    fileName = u';'.join((icon.s,idex))
+                    icon = [Image(fileName,wx.BITMAP_TYPE_ICO,x) for x in (16,24,32)]
             # Last, use the 'x' icon
                 else:
-                    icon = [Image(GPath(bosh.dirs['images'].join(u'x.png'))) for x in (16,24,32)]
+                    icon = badIcons
             BashStatusBar.buttons.append(
                 App_Button(
-                    (path,args),
+                    (path,()),
                     icon,
                     (description),
-                    workingDir=workingdir,
                     canHide=False
                     ))
     #--Final couple
@@ -17134,6 +19174,8 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
+    if bosh.inisettings['ShowDevTools']:
+        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
 
 def InitMasterLinks():
     """Initialize master list menus."""
@@ -17181,6 +19223,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=False))
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=True))
     InstallersPanel.mainMenu.append(Installers_AddMarker())
+    InstallersPanel.mainMenu.append(Installer_CreateNewProject())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())
@@ -17199,6 +19242,7 @@ def InitInstallerLinks():
         InstallersPanel.mainMenu.append(Installers_AutoWizard())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshProjects())
     InstallersPanel.mainMenu.append(Installers_AutoRefreshBethsoft())
+    InstallersPanel.mainMenu.append(Installers_AutoApplyEmbeddedBCFs())
     InstallersPanel.mainMenu.append(Installers_BsaRedirection())
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
@@ -17213,6 +19257,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
     InstallersPanel.mainMenu.append(Installers_skipLandscapeLODNormals())
+    InstallersPanel.mainMenu.append(Installers_RenameStrings())
 
     #--Item links
     #--File
@@ -17222,8 +19267,10 @@ def InitInstallerLinks():
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"))
         openAtMenu.links.append(Installer_OpenSearch())
-        openAtMenu.links.append(Installer_OpenTesNexus())
-        openAtMenu.links.append(Installer_OpenSkyrimNexus())
+	if bush.game.name == u'Oblivion':
+	    openAtMenu.links.append(Installer_OpenTesNexus())
+	elif bush.game.name == u'Skyrim':
+	    openAtMenu.links.append(Installer_OpenSkyrimNexus())
         openAtMenu.links.append(Installer_OpenTESA())
         openAtMenu.links.append(Installer_OpenPES())
         InstallersPanel.itemMenu.append(openAtMenu)
@@ -17243,6 +19290,7 @@ def InitInstallerLinks():
         InstallersPanel.itemMenu.append(Installer_Wizard(False))
         InstallersPanel.itemMenu.append(Installer_Wizard(True))
         InstallersPanel.itemMenu.append(Installer_EditWizard())
+        InstallersPanel.itemMenu.append(Installer_OpenWizardInCommentsWizBAINEditor())
         InstallersPanel.itemMenu.append(SeparatorLink())
     InstallersPanel.itemMenu.append(Installer_OpenReadme())
     InstallersPanel.itemMenu.append(Installer_Anneal())
@@ -17296,6 +19344,7 @@ def InitINILinks():
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
     INIList.mainMenu.append(SeparatorLink())
+    INIList.mainMenu.append(INI_AllowNewLines())
     INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(INI_ListINIs())
 
@@ -17304,8 +19353,8 @@ def InitINILinks():
     INIList.itemMenu.append(INI_CreateNew())
     INIList.itemMenu.append(INI_ListErrors())
     INIList.itemMenu.append(SeparatorLink())
-    INIList.itemMenu.append(File_Open())
-    INIList.itemMenu.append(File_Delete())
+    INIList.itemMenu.append(INI_FileOpenOrCopy())
+    INIList.itemMenu.append(INI_Delete())
 
 def InitModLinks():
     """Initialize Mods tab menus."""
@@ -17343,34 +19392,35 @@ def InitModLinks():
     ModList.mainMenu.append(List_Columns('bash.mods.cols',['File']))
     #--------------------------------------------
     ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Files_Open())
-    ModList.mainMenu.append(Files_Unhide('mod'))
+    #--File Menu---------------------------------
+    if True:
+        fileMenu = MenuLink(_(u'File'))
+        if bush.game.esp.canBash:
+            fileMenu.links.append(Mod_CreateBlankBashedPatch())
+            fileMenu.links.append(Mod_CreateBlank())
+            fileMenu.links.append(SeparatorLink())
+        fileMenu.links.append(Files_Open())
+        fileMenu.links.append(Files_Unhide('mod'))
+        ModList.mainMenu.append(fileMenu)
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_ListMods())
     ModList.mainMenu.append(Mods_ListBashTags())
+    ModList.mainMenu.append(Mods_CleanDummyMasters())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
     if bosh.inisettings['EnableBalo']:
         ModList.mainMenu.append(Mods_AutoGroup())
         ModList.mainMenu.append(Mods_FullBalo())
-    ModList.mainMenu.append(Mods_LockTimes())
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Mods_Deprint())
-    ModList.mainMenu.append(Mods_DumpTranslator())
-    ModList.mainMenu.append(Mods_Tes4ViewExpert())
-    ModList.mainMenu.append(Mods_CleanDummyMasters())
-    #--BOSS options
-    ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(Mods_BOSSDisableLockTimes())
-    ModList.mainMenu.append(Mods_BOSSShowUpdate())
+    if bush.game.name != u'Skyrim':
+        ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
 
     #--ModList: Item Links
+    if bosh.inisettings['ShowDevTools']:
+        ModList.itemMenu.append(Mod_FullLoad())
     if True: #--File
         fileMenu = MenuLink(_(u"File"))
         if bush.game.esp.canBash:
-            fileMenu.links.append(Mod_CreateBlankBashedPatch())
-            fileMenu.links.append(Mod_CreateBlank())
             fileMenu.links.append(Mod_CreateDummyMasters())
             fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_Backup())
@@ -17469,12 +19519,14 @@ def InitModLinks():
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
-        ModList.itemMenu.append(Mod_DecompileAll())
+        if bush.game.name != u'Skyrim':
+            ModList.itemMenu.append(Mod_DecompileAll())
         ModList.itemMenu.append(Mod_FlipSelf())
         ModList.itemMenu.append(Mod_FlipMasters())
-        ModList.itemMenu.append(Mod_SetVersion())
+        if bush.game.name == u'Oblivion':
+            ModList.itemMenu.append(Mod_SetVersion())
 #    if bosh.inisettings['showadvanced'] == 1:
-#        advmenu = MenuLink(_("Advanced Scripts"))
+#        advmenu = MenuLink(_(u"Advanced Scripts"))
 #        advmenu.links.append(Mod_DiffScripts())
         #advmenu.links.append(())
 
@@ -17697,8 +19749,30 @@ def InitSettingsLinks():
         sbMenu.links.append(Settings_UnHideButtons())
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
+    SettingsMenu.append(Settings_Languages())
+    SettingsMenu.append(Settings_PluginEncodings())
+    SettingsMenu.append(Settings_Games())
+    SettingsMenu.append(Settings_DisableWidget())
+    SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_UseAltName())
-    SettingsMenu.append(Settings_CheckForUpdates())
+    SettingsMenu.append(Mods_Deprint())
+    SettingsMenu.append(Mods_DumpTranslator())
+    #--Check for updates
+    if True:
+        updateMenu = MenuLink(_(u'Check for Updates'))
+        updateMenu.links.append(Settings_CheckForUpdates())
+        updateMenu.links.append(SeparatorLink())
+        for freq,text in (('01-00-0000 00:00',_(u'Every Month')),
+                          ('00-07-0000 00:00',_(u'Every Week')),
+                          ('00-01-0000 00:00',_(u'Every Day')),
+                          (True,_(u'Everytime Wrye Bash Starts.')),
+                          (False,_(u'Never'))):
+            updateMenu.links.append(Settings_CheckForUpdatesFrequency(freq,text))
+        updateMenu.links.append(SeparatorLink())
+        updateMenu.links.append(Settings_CheckForUpdates_DontAsk())
+        updateMenu.links.append(Settings_CheckForUpdates_BackupSFX())
+        updateMenu.links.append(Settings_ResetUpdateData())
+        SettingsMenu.append(updateMenu)
 
 def InitLinks():
     """Call other link initializers."""

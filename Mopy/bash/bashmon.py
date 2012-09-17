@@ -37,6 +37,7 @@ import time
 import traceback
 
 #--Local
+import bush
 import bosh
 import bolt
 from bosh import PCFaces
@@ -52,7 +53,7 @@ class Data:
         #--Init bosh stuff
         bosh.initBosh()
         bosh.initSettings(readOnly=True)
-        bosh.oblivionIni = bosh.OblivionIni()
+        bosh.oblivionIni = bosh.OblivionIni(bush.game.iniFiles[0])
         bosh.oblivionIni.mtime = 0
         bosh.modInfos = bosh.ModInfos()
         bosh.saveInfos = bosh.SaveInfos() #--Create, but don't fill
@@ -178,7 +179,7 @@ def saveSaveGame(saveKey):
 def deleteForm(saveKey,formid):
     """Saves changes to savegame. WARNING: NOT TESTED! [3/16/2008]"""
     formid = intArg(formid)
-    saveFile = data.getSaveFile(saveName)
+    saveFile = data.getSaveFile(saveKey)
     removedRecord = saveFile.removeRecord(formid)
     removedCreated = saveFile.removeCreated(formid)
     print (u"  No such record.",u"  Removed")[removedRecord or removedCreated]

@@ -39,6 +39,7 @@ import textwrap
 import time
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
+from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
 
 # Basics ---------------------------------------------------------------------
@@ -123,6 +124,18 @@ colors = Colors()
 
 # Images ----------------------------------------------------------------------
 images = {} #--Singleton for collection of images.
+
+#----------------------------------------------------------------------
+SmallUpArrow = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADxJ"
+    "REFUOI1jZGRiZqAEMFGke2gY8P/f3/9kGwDTjM8QnAaga8JlCG3CAJdt2MQxDCAUaOjyjKMp"
+    "cRAYAABS2CPsss3BWQAAAABJRU5ErkJggg==")
+
+#----------------------------------------------------------------------
+SmallDnArrow = PyEmbeddedImage(
+    "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAEhJ"
+    "REFUOI1jZGRiZqAEMFGke9QABgYGBgYWdIH///7+J6SJkYmZEacLkCUJacZqAD5DsInTLhDR"
+    "bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
 
 #------------------------------------------------------------------------------
 class Image:
@@ -668,7 +681,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
                 bolt.WryeText.genHtml(ins,out,cssDir)
             ins.close()
             logText = logPath
-        os.startfile(logText.s)
+        webbrowser.open(logText.s)
         return
 
     #--Sizing
@@ -1009,6 +1022,7 @@ class TabDragMixin(object):
         self.__justSwapped = wx.NOT_FOUND
         self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
         self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
         self.Bind(wx.EVT_MOTION, self.__OnDragging)
 
     def __OnDragStart(self, event):
@@ -1020,11 +1034,19 @@ class TabDragMixin(object):
             self.CaptureMouse()
         event.Skip()
 
+    def __OnDragEndForced(self, event):
+        self.__dragging = wx.NOT_FOUND
+        self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        event.Skip()
+
     def __OnDragEnd(self, event):
         if self.__dragging != wx.NOT_FOUND:
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             self.__dragging = wx.NOT_FOUND
-            self.ReleaseMouse()
+            try:
+                self.ReleaseMouse()
+            except:
+                pass
         event.Skip()
 
     def __OnDragging(self, event):
@@ -1593,7 +1615,7 @@ class Tank(wx.Panel):
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
 
-    def SetColumnReverse(colummn, reverse):
+    def SetColumnReverse(self,column,reverse):
         pass
     def SetSort(self,sort):
         pass
@@ -1918,7 +1940,7 @@ class Tank_Duplicate(Link):
         if not destPath: return
         destDir,destName = destPath.headTail
         if (destDir == srcDir) and (destName == srcName):
-            balt.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
+            self.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
             return
         self.data.copy(srcName,destName,destDir)
         if destDir == srcDir:

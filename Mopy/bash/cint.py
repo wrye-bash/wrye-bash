@@ -1,4 +1,25 @@
 # -*- coding: utf-8 -*-
+#
+# GPL License and Copyright Notice ============================================
+#  This file is part of Wrye Bash.
+#
+#  Wrye Bash is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  Wrye Bash is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#
+# =============================================================================
 
 from ctypes import *
 import struct
@@ -8,6 +29,24 @@ try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
     from bolt import GPath, deprint, Path
+    from bolt import _encode as _enc
+    from bolt import _unicode as _uni
+    import bolt
+    def _encode(text,*args,**kwdargs):
+        if len(args) > 1:
+            args = list(args)
+            args[1] = bolt.pluginEncoding
+        else:
+            kwdargs['firstEncoding'] = bolt.pluginEncoding
+        if isinstance(text,Path): text = text.s
+        return _enc(text,*args,**kwdargs)
+    def _unicode(text,*args,**kwdargs):
+        if args:
+            args = list(args)
+            args[1] = bolt.pluginEncoding
+        else:
+            kwdargs['encoding'] = bolt.pluginEncoding
+        return _uni(text,*args,**kwdargs)
 except:
     #It isn't, so replace the imported items with bare definitions
     CBashEnabled = "."
@@ -20,17 +59,57 @@ except:
     def _(obj):
         return obj
 
-def _Encode(name,tryFirstEncoding=False):
-    if isinstance(name,Path): name = unicode(name)
-    elif isinstance(name,str): return name
-    if isinstance(name,unicode):
-        if tryFirstEncoding:
+    # Unicode ---------------------------------------------------------------------
+    #--decode unicode strings
+    #  This is only useful when reading fields from mods, as the encoding is not
+    #  known.  For normal filesystem interaction, these functions are not needed
+    encodingOrder = (
+        'ascii',    # Plain old ASCII (0-127)
+        'gbk',      # GBK (simplified Chinese + some)
+        'cp932',    # Japanese
+        'cp949',    # Korean
+        'cp1252',   # English (extended ASCII)
+        'utf8',
+        'cp500',
+        'UTF-16LE',
+        'mbcs',
+        )
+
+    def _unicode(text,encoding=None,avoidEncodings=()):
+        if isinstance(text,unicode) or text is None: return text
+        # Try the user specified encoding first
+        if encoding:
+            try: return unicode(text,encoding)
+            except UnicodeDecodeError: pass
+        # If that fails, fall back to the old method, trial and error
+        for encoding in encodingOrder:
+            try: return unicode(text,encoding)
+            except UnicodeDecodeError: pass
+        raise UnicodeDecodeError(u'Text could not be decoded using any method')
+    _uni = _unicode
+
+    def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
+        if isinstance(text,str) or text is None:
+            if returnEncoding: return (text,None)
+            else: return text
+        # Try user specified encoding
+        if firstEncoding:
             try:
-                return name.encode(tryFirstEncoding)
+                text = text.encode(firstEncoding)
+                if returnEncoding: return (text,firstEncoding)
+                else: return text
             except UnicodeEncodeError:
-                print u"Unable to encode '%s' in %s." % (name, tryFirstEncoding)
-                raise
-    return name
+                pass
+        # Try the list of encodings in order
+        for encoding in encodings:
+            try:
+                if returnEncoding: return (text.encode(encoding),encoding)
+                else: return text.encode(encoding)
+            except UnicodeEncodeError:
+                pass
+        raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+    _enc = _encode
+
 
 _CBashRequiredVersion = (0,6,0)
 
@@ -56,13 +135,13 @@ CBash = None
 # path to compiled dir hardcoded since importing bosh would be circular
 # TODO: refactor to avoid circular deps
 if CBashEnabled == 0: #regular depends on the filepath existing.
-    paths = [join("bash", "compiled", "CBash.dll"),join("compiled", "CBash.dll")]
+    paths = [join(u'bash', u'compiled', u'CBash.dll'),join(u'compiled', u'CBash.dll')]
 elif CBashEnabled == 1: #force python mode
     paths = []
 elif CBashEnabled == 2: #attempt to force CBash mode
-    paths = [join("bash", "compiled", filename) for filename in ["CBash.dll","rename_CBash.dll","_CBash.dll"]]
+    paths = [join(u'bash',u'compiled',filename) for filename in [u'CBash.dll',u'rename_CBash.dll',u'_CBash.dll']]
 else: #attempt to force path to CBash dll
-    paths = [join(path,"CBash.dll") for path in CBashEnabled]
+    paths = [join(path,u'CBash.dll') for path in CBashEnabled]
 
 try:
     for path in paths:
@@ -70,13 +149,7 @@ try:
             CBash = CDLL(path)
             break
     del paths
-except AttributeError, error:
-    CBash = None
-    print error
-except ImportError, error:
-    CBash = None
-    print error
-except OSError, error:
+except (AttributeError,ImportError,OSError) as error:
     CBash = None
     print error
 except:
@@ -284,9 +357,9 @@ class API_FIELDS(object):
 for value, attr in enumerate(API_FIELDS.__slots__):
     setattr(API_FIELDS, attr, value)
 
-class ISTRING(str):
-    """Case insensitive strings class. Performs like str except comparisons are case insensitive."""
-
+class ICASEMixin:
+    """Case insesnsitive string/unicode class mixin.  Performs like str/unicode,
+       except comparisons are case insensitive."""
     def __eq__(self, other):
         try: return self.lower() == other.lower()
         except AttributeError: return False
@@ -323,44 +396,73 @@ class ISTRING(str):
         except AttributeError: return False
 
     def count(self, other, *args):
-        try: return str.count(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.count
+            else: func = unicode.count
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return 0
 
     def endswith(self, other, *args):
         try:
+            if isinstance(self,str): func = str.endswith
+            else: func = unicode.endswith
             if isinstance(other, tuple):
                 for value in other:
-                    if str.endswith(self.lower(), value.lower(), *args):
+                    if func(self.lower(), value.lower(), *args):
                         return True
                 return False
-            return str.endswith(self.lower(), other.lower(), *args)
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return False
 
     def find(self, other, *args):
-        try: return str.find(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.find
+            else: func = unicode.find
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return -1
 
     def index(self, other, *args):
-        try: return str.index(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.index
+            else: func = unicode.index
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return ValueError
 
     def rfind(self, other, *args):
-        try: return str.rfind(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.rfind
+            else: func = unicode.rfind
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return -1
 
     def rindex(self, other, *args):
-        try: return str.rindex(self.lower(), other.lower(), *args)
+        try:
+            if isinstance(self,str): func = str.rindex
+            else: func = unicode.rindex
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return ValueError
 
     def startswith(self, other, *args):
         try:
+            if isinstance(self,str): func = str.startswith
+            else: func = unicode.startswith
             if isinstance(other, tuple):
                 for value in other:
-                    if str.startswith(self.lower(), value.lower(), *args):
+                    if func(self.lower(), value.lower(), *args):
                         return True
                 return False
-            return str.startswith(self.lower(), other.lower(), *args)
+            return func(self.lower(), other.lower(), *args)
         except AttributeError: return False
+
+class ISTRING(ICASEMixin,str):
+    """Case insensitive strings class. Performs like str except comparisons are case insensitive."""
+    pass
+
+class IUNICODE(ICASEMixin,unicode):
+    """Case insensitive unicode class.  Performs like unicode except comparisons
+       are case insensitive."""
+    pass
+
 
 class FormID(object):
     __slots__ = ['formID']
@@ -382,19 +484,19 @@ class FormID(object):
             self.master, self.objectID = master, objectID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "UnvalidatedFormID('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """Unvalidated FormIDs have to be tested for each destination collection
                A FormID is valid if its master is part of the destination collection"""
             targetID = target.GetParentCollection()._CollectionID
-            modID = _CGetModIDByName(targetID, _Encode(self.master,'mbcs'))
+            modID = _CGetModIDByName(targetID, _encode(self.master))
             return FormID.ValidFormID(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 0), targetID) if modID else self
 
         def GetShortFormID(self, target):
@@ -450,13 +552,13 @@ class FormID(object):
             self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "ValidFormID('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"ValidFormID('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """This FormID has already been validated for a specific collection.
@@ -617,13 +719,13 @@ class ActorValue(object):
             self.master, self.objectID = master, objectID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "UnvalidatedActorValue('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"UnvalidatedActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """Unvalidated ActorValues have to be tested for each destination collection.
@@ -631,7 +733,7 @@ class ActorValue(object):
 
                Resolved Actor Value's are not formIDs, but can be treated as such for resolution."""
             targetID = target.GetParentCollection()._CollectionID
-            modID = _CGetModIDByName(targetID, _Encode(self.master,'mbcs'))
+            modID = _CGetModIDByName(targetID, _encode(self.master))
             return ActorValue.ValidActorValue(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 0), targetID) if modID else self
 
         def GetShortActorValue(self, target):
@@ -685,13 +787,13 @@ class ActorValue(object):
             self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0x00FFFFFFL)
 
         def __repr__(self):
-            return "ValidActorValue('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0x00FFFFFFL))
+            return u"ValidActorValue('%s', 0x%06X)" % (self.master, int(self.objectID & 0x00FFFFFFL))
 
         def Validate(self, target):
             """This ActorValue has already been validated for a specific record.
@@ -857,13 +959,13 @@ class MGEFCode(object):
             self.master, self.objectID = master, objectID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
-            return "UnvalidatedMGEFCode('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0xFFFFFF00L))
+            return u"UnvalidatedMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
 
         def Validate(self, target):
             """Unvalidated MGEFCodes have to be tested for each destination collection.
@@ -871,7 +973,7 @@ class MGEFCode(object):
 
                Resolved MGEFCode's are not formIDs, but can be treated as such for resolution."""
             targetID = target.GetParentCollection()._CollectionID
-            modID = _CGetModIDByName(targetID, _Encode(self.master,'mbcs'))
+            modID = _CGetModIDByName(targetID, _encode(self.master))
             return MGEFCode.ValidMGEFCode(self.master, self.objectID, _CMakeShortFormID(modID, self.objectID , 1), targetID) if modID else self
 
         def GetShortMGEFCode(self, target):
@@ -925,13 +1027,13 @@ class MGEFCode(object):
             self.master, self.objectID, self.shortID, self._CollectionID = master, objectID, shortID, collectionID
 
         def __hash__(self):
-            return hash((_Encode(self.master,'mbcs'), self.objectID))
+            return hash((self.master, self.objectID))
 
         def __getitem__(self, x):
             return self.master if x == 0 else int(self.objectID & 0xFFFFFF00L)
 
         def __repr__(self):
-            return "ValidMGEFCode('%s', 0x%06X)" % (_Encode(self.master,'mbcs'), int(self.objectID & 0xFFFFFF00L))
+            return u"ValidMGEFCode('%s', 0x%06X)" % (self.master, int(self.objectID & 0xFFFFFF00L))
 
         def Validate(self, target):
             """This MGEFCode has already been validated for a specific record.
@@ -986,7 +1088,9 @@ class MGEFCode(object):
            This class should never be instantiated except by class MGEFCode(object)."""
 
         def __init__(self, shortID):
-            self.shortID = _Encode(str(shortID) if isinstance(shortID, ISTRING) else shortID,'mbcs') if isinstance(shortID, basestring) else shortID
+            self.shortID = (str(shortID) if isinstance(shortID,ISTRING)
+                            else _encode(shortID) if isinstance(shortID,unicode)
+                            else shortID)
 
         def __hash__(self):
             return hash((self.shortID, None))
@@ -1394,11 +1498,11 @@ class CBashSTRING_GROUP(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING_GROUP(object):
     __slots__ = ['_FieldID']
@@ -1408,11 +1512,11 @@ class CBashISTRING_GROUP(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID + instance._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashLIST_GROUP(object):
     __slots__ = ['_FieldID','_Type','_AsList']
@@ -1449,7 +1553,7 @@ class CBashLIST(object):
             if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements)
+            SetCopyList([self._Type(instance._RecordID, self._FieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1))], nElements)
 
 class CBashUNKNOWN_OR_GENERIC(object):
     __slots__ = ['_FieldID','_Type','_ResType']
@@ -1497,14 +1601,37 @@ class CBashISTRINGARRAY(object):
         if(numRecords > 0):
             cRecords = (POINTER(c_char_p) * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [ISTRING(string_at(cRecords[x])) for x in range(numRecords)]
+            return [IUNICODE(_unicode(string_at(cRecords[x]))) for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
         if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
         else:
             length = len(nValue)
-            nValue = [_Encode(value,'mbcs') for value in nValue]
+            nValue = [_encode(value) for value in nValue]
+            _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_char_p * length)(*nValue)), length)
+
+class CBashIUNICODEARRAY(object):
+    # Almost exactly like CBashISTRINGARRAY, but instead of using the bolt.pluginEncoding
+    # for encoding, uses the automatic encoding detection.  Only really useful for TES4
+    # record (masters)
+    __slots__ = ['_FieldID']
+    def __init__(self, FieldID):
+        self._FieldID = FieldID
+
+    def __get__(self, instance, owner):
+        numRecords = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 1)
+        if (numRecords > 0):
+            cRecords = (POINTER(c_char_p) * numRecords)()
+            _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
+            return [IUNICODE(_uni(string_at(cRecords[x]))) for x in xrange(numRecords)]
+        return []
+
+    def __set__(self, instance, nValue):
+        if nValue is None or not len(nValue): _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        else:
+            length = len(nValue)
+            nValue = [_enc(value) for value in nValue]
             _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref((c_char_p * length)(*nValue)), length)
 
 class CBashGeneric(object):
@@ -1561,7 +1688,7 @@ class CBashFORMIDARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(numRecords)]
+            return [FormID(instance._RecordID, cRecords.contents[x]) for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1595,13 +1722,13 @@ class CBashFORMID_OR_STRING(object):
         IsFormID = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID
         _CGetField.restype = POINTER(c_ulong) if IsFormID else c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else retValue if retValue else None
+        return (FormID(instance._RecordID, retValue.contents.value) if retValue else FormID(None,None)) if IsFormID else _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         IsFormID = _CGetFieldAttribute(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 2) == API_FIELDS.FORMID
         nValue = None if nValue is None else nValue.GetShortFormID(instance) if IsFormID else nValue
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)) if IsFormID else _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(c_ulong(nValue)) if IsFormID else _encode(nValue), 0)
 
 class CBashFORMID_OR_UINT32_ARRAY(object):
     __slots__ = ['_FieldID','_Size']
@@ -1661,7 +1788,7 @@ class CBashUINT8ARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1681,7 +1808,7 @@ class CBashUINT32ARRAY(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1749,11 +1876,28 @@ class CBashSTRING(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue,avoidEncodings=('utf8','utf-8')) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
+
+class CBashUNICODE(object):
+    # Almost exactly like CBashSTRING, only instead of using the bolt.pluginEncoding
+    # specified encoding first, uses the automatic encoding detection.  Only really
+    # useful for the TES4 record
+    __slots__ = ['_FieldID']
+    def __init__(self, FieldID):
+        self._FieldID = FieldID
+
+    def __get__(self, instance, owner):
+        _CGetField.restype = c_char_p
+        retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
+        return _uni(retValue,avoidEncodings=('utf8','utf-8')) if retValue else None
+
+    def __set__(self, instance, nValue):
+        if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _enc(nValue), 0)
 
 class CBashISTRING(object):
     __slots__ = ['_FieldID']
@@ -1763,11 +1907,11 @@ class CBashISTRING(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, self._FieldID, 0, 0, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashRECORDARRAY(object):
     __slots__ = ['_Type','_TypeName']
@@ -1821,7 +1965,7 @@ class CBashLIST_LIST(object):
         self._ListFieldID, self._Type, self._AsList = ListFieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]
+        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
@@ -1830,7 +1974,7 @@ class CBashLIST_LIST(object):
             if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements)
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 1))], nElements)
 
 class CBashGeneric_LIST(object):
     __slots__ = ['_ListFieldID','_Type','_ResType']
@@ -1886,7 +2030,7 @@ class CBashFORMIDARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [FormID(instance._RecordID, cRecords.contents[x]) for x in range(numRecords)]
+            return [FormID(instance._RecordID, cRecords.contents[x]) for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1957,7 +2101,7 @@ class CBashUINT8ARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -1977,7 +2121,7 @@ class CBashUINT32ARRAY_LIST(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ulong * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2036,11 +2180,11 @@ class CBashSTRING_LIST(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING_LIST(object):
     __slots__ = ['_ListFieldID']
@@ -2050,11 +2194,11 @@ class CBashISTRING_LIST(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, self._ListFieldID, 0, 0, 0, 0, _encode(nValue), 0)
 
 # ListX2 Descriptors
 class CBashLIST_LISTX2(object):
@@ -2063,7 +2207,7 @@ class CBashLIST_LISTX2(object):
         self._ListX2FieldID, self._Type, self._AsList = ListX2FieldID, Type, AsList
 
     def __get__(self, instance, owner):
-        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]
+        return ExtractCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]) if self._AsList else [self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))]
 
     def __set__(self, instance, nElements):
         if nElements is None or not len(nElements): _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
@@ -2072,7 +2216,7 @@ class CBashLIST_LISTX2(object):
             if not isinstance(nElements[0], tuple): nElements = ExtractCopyList(nElements)
             ##Resizes the list
             _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0, c_long(length))
-            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in range(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements)
+            SetCopyList([self._Type(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, x) for x in xrange(_CGetFieldAttribute(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 1))], nElements)
 
 class CBashGeneric_LISTX2(object):
     __slots__ = ['_ListX2FieldID','_Type','_ResType']
@@ -2128,7 +2272,7 @@ class CBashUINT8ARRAY_LISTX2(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2206,11 +2350,11 @@ class CBashSTRING_LISTX2(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _encode(nValue), 0)
 
 class CBashISTRING_LISTX2(object):
     __slots__ = ['_ListX2FieldID']
@@ -2220,11 +2364,11 @@ class CBashISTRING_LISTX2(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, self._ListX2FieldID, 0, 0, _encode(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX2(object):
     __slots__ = ['_ListX2FieldID']
@@ -2270,7 +2414,7 @@ class CBashUINT8ARRAY_LISTX3(object):
         if(numRecords > 0):
             cRecords = POINTER(c_ubyte * numRecords)()
             _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, byref(cRecords))
-            return [cRecords.contents[x] for x in range(numRecords)]
+            return [cRecords.contents[x] for x in xrange(numRecords)]
         return []
 
     def __set__(self, instance, nValue):
@@ -2320,11 +2464,11 @@ class CBashSTRING_LISTX3(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        return retValue if retValue else None
+        return _unicode(retValue) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _encode(nValue), 0)
 
 class CBashISTRING_LISTX3(object):
     __slots__ = ['_ListX3FieldID']
@@ -2334,11 +2478,11 @@ class CBashISTRING_LISTX3(object):
     def __get__(self, instance, owner):
         _CGetField.restype = c_char_p
         retValue = _CGetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
 
     def __set__(self, instance, nValue):
         if nValue is None: _CDeleteField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID)
-        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _Encode(nValue,'mbcs'), 0)
+        else: _CSetField(instance._RecordID, instance._FieldID, instance._ListIndex, instance._ListFieldID, instance._ListX2Index, instance._ListX2FieldID, instance._ListX3Index, self._ListX3FieldID, _encode(nValue), 0)
 
 class CBashUNKNOWN_OR_FORMID_OR_UINT32_LISTX3(object):
     __slots__ = ['_ListX3FieldID']
@@ -2744,7 +2888,7 @@ class FNVDestructable(BaseComponent):
         FieldID = self._FieldID + 4
         length = _CGetFieldAttribute(self._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 1)
         _CSetField(self._RecordID, FieldID, 0, 0, 0, 0, 0, 0, 0, c_ulong(length + 1))
-        return Stage(self._RecordID, FieldID, length)
+        return self.Stage(self._RecordID, FieldID, length)
     stages = CBashLIST_GROUP(4, Stage)
     stages_list = CBashLIST_GROUP(4, Stage, True)
     IsVATSTargetable = CBashBasicFlag('flags', 0x01)
@@ -2876,9 +3020,9 @@ class FnvBaseRecord(object):
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
             try:
-                deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
             except: #a record type that doesn't have a full chunk:
-                deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
             del conflicting[attr]
 
         return conflicting
@@ -2940,9 +3084,9 @@ class FnvBaseRecord(object):
     def get_eid(self):
         _CGetField.restype = c_char_p
         retValue = _CGetField(self._RecordID, 4, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
     def set_eid(self, nValue):
-        nValue = 0 if nValue is None or not len(nValue) else _Encode(nValue,'mbcs')
+        nValue = 0 if nValue is None or not len(nValue) else _encode(nValue)
         _CGetField.restype = POINTER(c_ulong)
         _CSetIDFields(self._RecordID, _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0).contents.value, nValue)
     eid = property(get_eid, set_eid)
@@ -3016,9 +3160,9 @@ class FnvTES4Record(object):
     nextObject = CBashGeneric(7, c_ulong)
     ofst_p = CBashUINT8ARRAY(8)
     dele_p = CBashUINT8ARRAY(9)
-    author = CBashSTRING(10)
-    description = CBashSTRING(11)
-    masters = CBashISTRINGARRAY(12)
+    author = CBashUNICODE(10)
+    description = CBashUNICODE(11)
+    masters = CBashIUNICODEARRAY(12)
     DATA = CBashJunk(13)
     overrides = CBashFORMIDARRAY(16)
     screenshot_p = CBashUINT8ARRAY(17)
@@ -4783,12 +4927,12 @@ class FnvGMSTRecord(FnvBaseRecord):
         if fieldtype == API_FIELDS.UNKNOWN: return None
         _CGetField.restype = POINTER(c_long) if fieldtype == API_FIELDS.SINT32 else POINTER(c_float) if fieldtype == API_FIELDS.FLOAT32 else c_char_p
         retValue = _CGetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 0)
-        return (retValue if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
+        return (_unicode(retValue) if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
     def set_value(self, nValue):
         if nValue is None: _CDeleteField(self._RecordID, 7, 0, 0, 0, 0, 0, 0)
         else:
             fieldtype = _CGetFieldAttribute(self._RecordID, 7, 0, 0, 0, 0, 0, 0, 2)
-            _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _Encode(str(nValue),'mbcs'), 0)
+            _CSetField(self._RecordID, 7, 0, 0, 0, 0, 0, 0, byref(c_long(nValue)) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _encode(nValue), 0)
     value = property(get_value, set_value)
     exportattrs = copyattrs = FnvBaseRecord.baseattrs + ['value']
 
@@ -6371,7 +6515,7 @@ class FnvSCOLRecord(FnvBaseRecord):
         def create_placement(self):
             length = _CGetFieldAttribute(self._RecordID, self._FieldID, self._ListIndex, 2, 0, 0, 0, 0, 1)
             _CSetField(self._RecordID, self._FieldID, self._ListIndex, 2, 0, 0, 0, 0, 0, c_ulong(length + 1))
-            return Placement(self._RecordID, self._FieldID, self._ListIndex, 2, length)
+            return self.Placement(self._RecordID, self._FieldID, self._ListIndex, 2, length)
         placements = CBashLIST_LIST(2, Placement)
         placements_list = CBashLIST_LIST(2, Placement, True)
 
@@ -6399,7 +6543,7 @@ class FnvSCOLRecord(FnvBaseRecord):
     def create_static(self):
         length = _CGetFieldAttribute(self._RecordID, 18, 0, 0, 0, 0, 0, 0, 1)
         _CSetField(self._RecordID, 18, 0, 0, 0, 0, 0, 0, 0, c_ulong(length + 1))
-        return Static(self._RecordID, 18, length)
+        return self.Static(self._RecordID, 18, length)
     statics = CBashLIST(18, Static)
     statics_list = CBashLIST(18, Static, True)
 
@@ -7543,7 +7687,7 @@ class FnvCREARecord(FnvBaseRecord):
     def create_soundTyp(self):
         length = _CGetFieldAttribute(self._RecordID, 82, 0, 0, 0, 0, 0, 0, 1)
         _CSetField(self._RecordID, 82, 0, 0, 0, 0, 0, 0, 0, c_ulong(length + 1))
-        return SoundType(self._RecordID, 82, length)
+        return self.SoundType(self._RecordID, 82, length)
     soundTypes = CBashLIST(82, SoundType)
     soundTypes_list = CBashLIST(82, SoundType, True)
 
@@ -8910,52 +9054,52 @@ class FnvCELLRecord(FnvBaseRecord):
     xcmt_p = CBashUINT8ARRAY(55)
     music = CBashFORMID(56)
     def create_ACHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvACHRRecord(RecordID) if RecordID else None
     ACHR = CBashSUBRECORDARRAY(57, FnvACHRRecord, "ACHR")
 
     def create_ACRE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvACRERecord(RecordID) if RecordID else None
     ACRE = CBashSUBRECORDARRAY(58, FnvACRERecord, "ACRE")
 
     def create_REFR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvREFRRecord(RecordID) if RecordID else None
     REFR = CBashSUBRECORDARRAY(59, FnvREFRRecord, "REFR")
 
     def create_PGRE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPGRERecord(RecordID) if RecordID else None
     PGRE = CBashSUBRECORDARRAY(60, FnvPGRERecord, "PGRE")
 
     def create_PMIS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PMIS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PMIS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPMISRecord(RecordID) if RecordID else None
     PMIS = CBashSUBRECORDARRAY(61, FnvPMISRecord, "PMIS")
 
     def create_PBEA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PBEA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PBEA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPBEARecord(RecordID) if RecordID else None
     PBEA = CBashSUBRECORDARRAY(62, FnvPBEARecord, "PBEA")
 
     def create_PFLA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PFLA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PFLA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPFLARecord(RecordID) if RecordID else None
     PFLA = CBashSUBRECORDARRAY(63, FnvPFLARecord, "PFLA")
 
     def create_PCBE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PCBE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PCBE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvPCBERecord(RecordID) if RecordID else None
     PCBE = CBashSUBRECORDARRAY(64, FnvPCBERecord, "PCBE")
 
     def create_NAVM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("NAVM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("NAVM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvNAVMRecord(RecordID) if RecordID else None
     NAVM = CBashSUBRECORDARRAY(65, FnvNAVMRecord, "NAVM")
 
     def create_LAND(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvLANDRecord(RecordID) if RecordID else None
     LAND = CBashSUBRECORD(66, FnvLANDRecord, "LAND")
 
@@ -9073,12 +9217,12 @@ class FnvWRLDRecord(FnvBaseRecord):
     ofst_p = CBashUINT8ARRAY(48)
 
     def create_WorldCELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(49, FnvCELLRecord, "WCEL")
- ##"WCEL" is an artificial type CBash uses to distinguish World Cells
+##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvCELLRecord(RecordID) if RecordID else None
     CELLS = CBashSUBRECORDARRAY(50, FnvCELLRecord, "CELL")
 
@@ -9165,7 +9309,7 @@ class FnvDIALRecord(FnvBaseRecord):
     dialType = CBashGeneric(12, c_ubyte)
     flags = CBashGeneric(13, c_ubyte)
     def create_INFO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return FnvINFORecord(RecordID) if RecordID else None
     INFO = CBashSUBRECORDARRAY(14, FnvINFORecord, "INFO")
 
@@ -10471,9 +10615,9 @@ class ObBaseRecord(object):
         skipped_conflicting = [(attr, value) for attr, value in conflicting.iteritems() if isinstance(value, FormID) and not value.ValidateFormID(self)]
         for attr, value in skipped_conflicting:
             try:
-                deprint(_("%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record (maybe named: %s) importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.full, self.GetParentMod().GName, value))
             except: #a record type that doesn't have a full chunk:
-                deprint(_("%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
+                deprint(_(u"%s attribute of %s record importing from %s referenced an unloaded object (probably %s) - value skipped") % (attr, self.fid, self.GetParentMod().GName, value))
             del conflicting[attr]
 
         return conflicting
@@ -10533,9 +10677,9 @@ class ObBaseRecord(object):
     def get_eid(self):
         _CGetField.restype = c_char_p
         retValue = _CGetField(self._RecordID, 4, 0, 0, 0, 0, 0, 0, 0)
-        return ISTRING(retValue) if retValue else None
+        return IUNICODE(_unicode(retValue)) if retValue else None
     def set_eid(self, nValue):
-        nValue = 0 if nValue is None or not len(nValue) else _Encode(nValue,'mbcs')
+        nValue = 0 if nValue is None or not len(nValue) else _encode(nValue)
         _CGetField.restype = POINTER(c_ulong)
         _CSetIDFields(self._RecordID, _CGetField(self._RecordID, 2, 0, 0, 0, 0, 0, 0, 0).contents.value, nValue)
     eid = property(get_eid, set_eid)
@@ -10585,9 +10729,9 @@ class ObTES4Record(object):
     nextObject = CBashGeneric(7, c_ulong)
     ofst_p = CBashUINT8ARRAY(8)
     dele_p = CBashUINT8ARRAY(9)
-    author = CBashSTRING(10)
-    description = CBashSTRING(11)
-    masters = CBashISTRINGARRAY(12)
+    author = CBashUNICODE(10)
+    description = CBashUNICODE(11)
+    masters = CBashIUNICODEARRAY(12)
     DATA = CBashJunk(13)
     IsESM = CBashBasicFlag('flags1', 0x00000001)
     exportattrs = copyattrs = ['flags1', 'flags2', 'version', 'numRecords', 'nextObject',
@@ -10601,12 +10745,12 @@ class ObGMSTRecord(ObBaseRecord):
         if fieldtype == API_FIELDS.UNKNOWN: return None
         _CGetField.restype = POINTER(c_long) if fieldtype == API_FIELDS.SINT32 else POINTER(c_float) if fieldtype == API_FIELDS.FLOAT32 else c_char_p
         retValue = _CGetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 0)
-        return (retValue if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
+        return (_unicode(retValue) if fieldtype == API_FIELDS.STRING else round(retValue.contents.value,6) if fieldtype == API_FIELDS.FLOAT32 else retValue.contents.value) if retValue else None
     def set_value(self, nValue):
         if nValue is None: _CDeleteField(self._RecordID, 5, 0, 0, 0, 0, 0, 0)
         else:
             fieldtype = _CGetFieldAttribute(self._RecordID, 5, 0, 0, 0, 0, 0, 0, 2)
-            try: _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_long(int(nValue))) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _Encode(str(nValue),'mbcs'), 0)
+            try: _CSetField(self._RecordID, 5, 0, 0, 0, 0, 0, 0, byref(c_long(int(nValue))) if fieldtype == API_FIELDS.SINT32 else byref(c_float(round(nValue,6))) if fieldtype == API_FIELDS.FLOAT32 else _encode(nValue), 0)
             except TypeError: return
             except ValueError: return
     value = property(get_value, set_value)
@@ -10977,7 +11121,7 @@ class ObLANDRecord(ObBaseRecord):
     data_p = CBashUINT8ARRAY(5)
 
     def get_normals(self):
-        return [[self.Normal(self._RecordID, 6, x, 0, y) for y in range(0,33)] for x in range(0,33)]
+        return [[self.Normal(self._RecordID, 6, x, 0, y) for y in xrange(0,33)] for x in xrange(0,33)]
     def set_normals(self, nElements):
         if nElements is None or len(nElements) != 33: return
         for oElement, nElement in zip(self.normals, nElements if isinstance(nElements[0], tuple) else [ExtractCopyList(nElements[x]) for x in range(0,33)]):
@@ -11401,27 +11545,27 @@ class ObCELLRecord(ObBaseRecord):
     posY = CBashUNKNOWN_OR_GENERIC(33, c_long)
     water = CBashFORMID(34)
     def create_ACHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObACHRRecord(RecordID) if RecordID else None
     ACHR = CBashSUBRECORDARRAY(35, ObACHRRecord, "ACHR")
 
     def create_ACRE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ACRE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObACRERecord(RecordID) if RecordID else None
     ACRE = CBashSUBRECORDARRAY(36, ObACRERecord, "ACRE")
 
     def create_REFR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("REFR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObREFRRecord(RecordID) if RecordID else None
     REFR = CBashSUBRECORDARRAY(37, ObREFRRecord, "REFR")
 
     def create_PGRD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("PGRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObPGRDRecord(RecordID) if RecordID else None
     PGRD = CBashSUBRECORD(38, ObPGRDRecord, "PGRD")
 
     def create_LAND(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("LAND", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObLANDRecord(RecordID) if RecordID else None
     LAND = CBashSUBRECORD(39, ObLANDRecord, "LAND")
 
@@ -11874,7 +12018,7 @@ class ObDIALRecord(ObBaseRecord):
     full = CBashSTRING(7)
     dialType = CBashGeneric(8, c_ubyte)
     def create_INFO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("INFO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObINFORecord(RecordID) if RecordID else None
     INFO = CBashSUBRECORDARRAY(9, ObINFORecord, "INFO")
 
@@ -13729,17 +13873,17 @@ class ObWRLDRecord(ObBaseRecord):
     musicType = CBashGeneric(21, c_ulong)
     ofst_p = CBashUINT8ARRAY(22)
     def create_ROAD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ROAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("ROAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObROADRecord(RecordID) if RecordID else None
     ROAD = CBashSUBRECORD(23, ObROADRecord, "ROAD")
 
     def create_WorldCELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("WCEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObCELLRecord(RecordID) if RecordID else None
     WorldCELL = CBashSUBRECORD(24, ObCELLRecord, "WCEL")
- ##"WCEL" is an artificial type CBash uses to distinguish World Cells
+##"WCEL" is an artificial type CBash uses to distinguish World Cells
     def create_CELLS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, self._RecordID)
+        RecordID = _CCreateRecord(self.GetParentMod()._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, self._RecordID)
         return ObCELLRecord(RecordID) if RecordID else None
     CELLS = CBashSUBRECORDARRAY(25, ObCELLRecord, "CELL")
 
@@ -14002,11 +14146,11 @@ class ObModFile(object):
 
     @property
     def FileName(self):
-        return _CGetFileNameByID(self._ModID) or 'Missing'
+        return _uni(_CGetFileNameByID(self._ModID)) or u'Missing'
 
     @property
     def ModName(self):
-        return _CGetModNameByID(self._ModID) or 'Missing'
+        return _uni(_CGetModNameByID(self._ModID)) or u'Missing'
 
     @property
     def GName(self):
@@ -14017,13 +14161,13 @@ class ObModFile(object):
 
     def HasRecord(self, RecordIdentifier):
         if not RecordIdentifier: return False
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return False
         return bool(_CGetRecordID(self._ModID, formID, editorID))
 
     def LookupRecord(self, RecordIdentifier):
         if not RecordIdentifier: return None
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return None
         RecordID = _CGetRecordID(self._ModID, formID, editorID)
         if RecordID:
@@ -14087,289 +14231,289 @@ class ObModFile(object):
         _CUnloadMod(self._ModID)
 
     def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
-        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _Encode(DestinationName,'mbcs') if DestinationName else DestinationName)
+        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _encode(DestinationName) if DestinationName else DestinationName)
 
     @property
     def TES4(self):
         return ObTES4Record(_CGetRecordID(self._ModID, 0, 0))
 
     def create_GMST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObGMSTRecord(RecordID) if RecordID else None
     GMST = CBashRECORDARRAY(ObGMSTRecord, 'GMST')
 
     def create_GLOB(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObGLOBRecord(RecordID) if RecordID else None
     GLOB = CBashRECORDARRAY(ObGLOBRecord, 'GLOB')
 
     def create_CLAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCLASRecord(RecordID) if RecordID else None
     CLAS = CBashRECORDARRAY(ObCLASRecord, 'CLAS')
 
     def create_FACT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObFACTRecord(RecordID) if RecordID else None
     FACT = CBashRECORDARRAY(ObFACTRecord, 'FACT')
 
     def create_HAIR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObHAIRRecord(RecordID) if RecordID else None
     HAIR = CBashRECORDARRAY(ObHAIRRecord, 'HAIR')
 
     def create_EYES(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObEYESRecord(RecordID) if RecordID else None
     EYES = CBashRECORDARRAY(ObEYESRecord, 'EYES')
 
     def create_RACE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObRACERecord(RecordID) if RecordID else None
     RACE = CBashRECORDARRAY(ObRACERecord, 'RACE')
 
     def create_SOUN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSOUNRecord(RecordID) if RecordID else None
     SOUN = CBashRECORDARRAY(ObSOUNRecord, 'SOUN')
 
     def create_SKIL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SKIL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SKIL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSKILRecord(RecordID) if RecordID else None
     SKIL = CBashRECORDARRAY(ObSKILRecord, 'SKIL')
 
     def create_MGEF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObMGEFRecord(RecordID) if RecordID else None
     MGEF = CBashRECORDARRAY(ObMGEFRecord, 'MGEF')
 
     def create_SCPT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSCPTRecord(RecordID) if RecordID else None
     SCPT = CBashRECORDARRAY(ObSCPTRecord, 'SCPT')
 
     def create_LTEX(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLTEXRecord(RecordID) if RecordID else None
     LTEX = CBashRECORDARRAY(ObLTEXRecord, 'LTEX')
 
     def create_ENCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObENCHRecord(RecordID) if RecordID else None
     ENCH = CBashRECORDARRAY(ObENCHRecord, 'ENCH')
 
     def create_SPEL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSPELRecord(RecordID) if RecordID else None
     SPEL = CBashRECORDARRAY(ObSPELRecord, 'SPEL')
 
     def create_BSGN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BSGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BSGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObBSGNRecord(RecordID) if RecordID else None
     BSGN = CBashRECORDARRAY(ObBSGNRecord, 'BSGN')
 
     def create_ACTI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObACTIRecord(RecordID) if RecordID else None
     ACTI = CBashRECORDARRAY(ObACTIRecord, 'ACTI')
 
     def create_APPA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("APPA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("APPA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObAPPARecord(RecordID) if RecordID else None
     APPA = CBashRECORDARRAY(ObAPPARecord, 'APPA')
 
     def create_ARMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObARMORecord(RecordID) if RecordID else None
     ARMO = CBashRECORDARRAY(ObARMORecord, 'ARMO')
 
     def create_BOOK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObBOOKRecord(RecordID) if RecordID else None
     BOOK = CBashRECORDARRAY(ObBOOKRecord, 'BOOK')
 
     def create_CLOT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLOT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLOT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCLOTRecord(RecordID) if RecordID else None
     CLOT = CBashRECORDARRAY(ObCLOTRecord, 'CLOT')
 
     def create_CONT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCONTRecord(RecordID) if RecordID else None
     CONT = CBashRECORDARRAY(ObCONTRecord, 'CONT')
 
     def create_DOOR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObDOORRecord(RecordID) if RecordID else None
     DOOR = CBashRECORDARRAY(ObDOORRecord, 'DOOR')
 
     def create_INGR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObINGRRecord(RecordID) if RecordID else None
     INGR = CBashRECORDARRAY(ObINGRRecord, 'INGR')
 
     def create_LIGH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLIGHRecord(RecordID) if RecordID else None
     LIGH = CBashRECORDARRAY(ObLIGHRecord, 'LIGH')
 
     def create_MISC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObMISCRecord(RecordID) if RecordID else None
     MISC = CBashRECORDARRAY(ObMISCRecord, 'MISC')
 
     def create_STAT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSTATRecord(RecordID) if RecordID else None
     STAT = CBashRECORDARRAY(ObSTATRecord, 'STAT')
 
     def create_GRAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObGRASRecord(RecordID) if RecordID else None
     GRAS = CBashRECORDARRAY(ObGRASRecord, 'GRAS')
 
     def create_TREE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObTREERecord(RecordID) if RecordID else None
     TREE = CBashRECORDARRAY(ObTREERecord, 'TREE')
 
     def create_FLOR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FLOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FLOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObFLORRecord(RecordID) if RecordID else None
     FLOR = CBashRECORDARRAY(ObFLORRecord, 'FLOR')
 
     def create_FURN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObFURNRecord(RecordID) if RecordID else None
     FURN = CBashRECORDARRAY(ObFURNRecord, 'FURN')
 
     def create_WEAP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWEAPRecord(RecordID) if RecordID else None
     WEAP = CBashRECORDARRAY(ObWEAPRecord, 'WEAP')
 
     def create_AMMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObAMMORecord(RecordID) if RecordID else None
     AMMO = CBashRECORDARRAY(ObAMMORecord, 'AMMO')
 
     def create_NPC_(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObNPC_Record(RecordID) if RecordID else None
     NPC_ = CBashRECORDARRAY(ObNPC_Record, 'NPC_')
 
     def create_CREA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCREARecord(RecordID) if RecordID else None
     CREA = CBashRECORDARRAY(ObCREARecord, 'CREA')
 
     def create_LVLC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLVLCRecord(RecordID) if RecordID else None
     LVLC = CBashRECORDARRAY(ObLVLCRecord, 'LVLC')
 
     def create_SLGM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SLGM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SLGM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSLGMRecord(RecordID) if RecordID else None
     SLGM = CBashRECORDARRAY(ObSLGMRecord, 'SLGM')
 
     def create_KEYM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObKEYMRecord(RecordID) if RecordID else None
     KEYM = CBashRECORDARRAY(ObKEYMRecord, 'KEYM')
 
     def create_ALCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObALCHRecord(RecordID) if RecordID else None
     ALCH = CBashRECORDARRAY(ObALCHRecord, 'ALCH')
 
     def create_SBSP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SBSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SBSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSBSPRecord(RecordID) if RecordID else None
     SBSP = CBashRECORDARRAY(ObSBSPRecord, 'SBSP')
 
     def create_SGST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SGST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SGST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObSGSTRecord(RecordID) if RecordID else None
     SGST = CBashRECORDARRAY(ObSGSTRecord, 'SGST')
 
     def create_LVLI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLVLIRecord(RecordID) if RecordID else None
     LVLI = CBashRECORDARRAY(ObLVLIRecord, 'LVLI')
 
     def create_WTHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWTHRRecord(RecordID) if RecordID else None
     WTHR = CBashRECORDARRAY(ObWTHRRecord, 'WTHR')
 
     def create_CLMT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCLMTRecord(RecordID) if RecordID else None
     CLMT = CBashRECORDARRAY(ObCLMTRecord, 'CLMT')
 
     def create_REGN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObREGNRecord(RecordID) if RecordID else None
     REGN = CBashRECORDARRAY(ObREGNRecord, 'REGN')
 
     def create_WRLD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWRLDRecord(RecordID) if RecordID else None
     WRLD = CBashRECORDARRAY(ObWRLDRecord, 'WRLD')
 
     def create_CELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCELLRecord(RecordID) if RecordID else None
     CELL = CBashRECORDARRAY(ObCELLRecord, 'CELL')
 
     def create_DIAL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObDIALRecord(RecordID) if RecordID else None
     DIAL = CBashRECORDARRAY(ObDIALRecord, 'DIAL')
 
     def create_QUST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObQUSTRecord(RecordID) if RecordID else None
     QUST = CBashRECORDARRAY(ObQUSTRecord, 'QUST')
 
     def create_IDLE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObIDLERecord(RecordID) if RecordID else None
     IDLE = CBashRECORDARRAY(ObIDLERecord, 'IDLE')
 
     def create_PACK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObPACKRecord(RecordID) if RecordID else None
     PACK = CBashRECORDARRAY(ObPACKRecord, 'PACK')
 
     def create_CSTY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObCSTYRecord(RecordID) if RecordID else None
     CSTY = CBashRECORDARRAY(ObCSTYRecord, 'CSTY')
 
     def create_LSCR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLSCRRecord(RecordID) if RecordID else None
     LSCR = CBashRECORDARRAY(ObLSCRRecord, 'LSCR')
 
     def create_LVSP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVSP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObLVSPRecord(RecordID) if RecordID else None
     LVSP = CBashRECORDARRAY(ObLVSPRecord, 'LVSP')
 
     def create_ANIO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObANIORecord(RecordID) if RecordID else None
     ANIO = CBashRECORDARRAY(ObANIORecord, 'ANIO')
 
     def create_WATR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObWATRRecord(RecordID) if RecordID else None
     WATR = CBashRECORDARRAY(ObWATRRecord, 'WATR')
 
     def create_EFSH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return ObEFSHRecord(RecordID) if RecordID else None
     EFSH = CBashRECORDARRAY(ObEFSHRecord, 'EFSH')
 
@@ -14433,11 +14577,11 @@ class FnvModFile(object):
 
     @property
     def FileName(self):
-        return _CGetFileNameByID(self._ModID) or 'Missing'
+        return _uni(_CGetFileNameByID(self._ModID)) or u'Missing'
 
     @property
     def ModName(self):
-        return _CGetModNameByID(self._ModID) or 'Missing'
+        return _uni(_CGetModNameByID(self._ModID)) or u'Missing'
 
     @property
     def GName(self):
@@ -14448,13 +14592,13 @@ class FnvModFile(object):
 
     def HasRecord(self, RecordIdentifier):
         if not RecordIdentifier: return False
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return False
         return bool(_CGetRecordID(self._ModID, formID, editorID))
 
     def LookupRecord(self, RecordIdentifier):
         if not RecordIdentifier: return None
-        formID, editorID = (0, _Encode(RecordIdentifier,'mbcs')) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
+        formID, editorID = (0, _encode(RecordIdentifier)) if isinstance(RecordIdentifier, basestring) else (RecordIdentifier.GetShortFormID(self),0)
         if not (formID or editorID): return None
         RecordID = _CGetRecordID(self._ModID, formID, editorID)
         if RecordID:
@@ -14518,514 +14662,514 @@ class FnvModFile(object):
         _CUnloadMod(self._ModID)
 
     def save(self, CloseCollection=True, CleanMasters=True, DestinationName=None):
-        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _Encode(DestinationName,'mbcs') if DestinationName else DestinationName)
+        return _CSaveMod(self._ModID, c_ulong(0 | (0x00000001 if CleanMasters else 0) | (0x00000002 if CloseCollection else 0)), _encode(DestinationName) if DestinationName else DestinationName)
 
     @property
     def TES4(self):
         return FnvTES4Record(_CGetRecordID(self._ModID, 0, 0))
 
     def create_GMST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GMST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvGMSTRecord(RecordID) if RecordID else None
     GMST = CBashRECORDARRAY(FnvGMSTRecord, 'GMST')
 
     def create_TXST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TXST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TXST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTXSTRecord(RecordID) if RecordID else None
     TXST = CBashRECORDARRAY(FnvTXSTRecord, 'TXST')
 
     def create_MICN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MICN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MICN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMICNRecord(RecordID) if RecordID else None
     MICN = CBashRECORDARRAY(FnvMICNRecord, 'MICN')
 
     def create_GLOB(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GLOB", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvGLOBRecord(RecordID) if RecordID else None
     GLOB = CBashRECORDARRAY(FnvGLOBRecord, 'GLOB')
 
     def create_CLAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCLASRecord(RecordID) if RecordID else None
     CLAS = CBashRECORDARRAY(FnvCLASRecord, 'CLAS')
 
     def create_FACT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvFACTRecord(RecordID) if RecordID else None
     FACT = CBashRECORDARRAY(FnvFACTRecord, 'FACT')
 
     def create_HDPT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HDPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HDPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvHDPTRecord(RecordID) if RecordID else None
     HDPT = CBashRECORDARRAY(FnvHDPTRecord, 'HDPT')
 
     def create_HAIR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HAIR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvHAIRRecord(RecordID) if RecordID else None
     HAIR = CBashRECORDARRAY(FnvHAIRRecord, 'HAIR')
 
     def create_EYES(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EYES", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvEYESRecord(RecordID) if RecordID else None
     EYES = CBashRECORDARRAY(FnvEYESRecord, 'EYES')
 
     def create_RACE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RACE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRACERecord(RecordID) if RecordID else None
     RACE = CBashRECORDARRAY(FnvRACERecord, 'RACE')
 
     def create_SOUN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SOUN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSOUNRecord(RecordID) if RecordID else None
     SOUN = CBashRECORDARRAY(FnvSOUNRecord, 'SOUN')
 
     def create_ASPC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ASPC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ASPC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvASPCRecord(RecordID) if RecordID else None
     ASPC = CBashRECORDARRAY(FnvASPCRecord, 'ASPC')
 
     def create_MGEF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MGEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMGEFRecord(RecordID) if RecordID else None
     MGEF = CBashRECORDARRAY(FnvMGEFRecord, 'MGEF')
 
     def create_SCPT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SCPT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSCPTRecord(RecordID) if RecordID else None
     SCPT = CBashRECORDARRAY(FnvSCPTRecord, 'SCPT')
 
     def create_LTEX(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LTEX", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLTEXRecord(RecordID) if RecordID else None
     LTEX = CBashRECORDARRAY(FnvLTEXRecord, 'LTEX')
 
     def create_ENCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ENCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvENCHRecord(RecordID) if RecordID else None
     ENCH = CBashRECORDARRAY(FnvENCHRecord, 'ENCH')
 
     def create_SPEL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SPEL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSPELRecord(RecordID) if RecordID else None
     SPEL = CBashRECORDARRAY(FnvSPELRecord, 'SPEL')
 
     def create_ACTI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ACTI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvACTIRecord(RecordID) if RecordID else None
     ACTI = CBashRECORDARRAY(FnvACTIRecord, 'ACTI')
 
     def create_TACT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TACT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTACTRecord(RecordID) if RecordID else None
     TACT = CBashRECORDARRAY(FnvTACTRecord, 'TACT')
 
     def create_TERM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TERM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TERM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTERMRecord(RecordID) if RecordID else None
     TERM = CBashRECORDARRAY(FnvTERMRecord, 'TERM')
 
     def create_ARMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ARMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvARMORecord(RecordID) if RecordID else None
     ARMO = CBashRECORDARRAY(FnvARMORecord, 'ARMO')
 
     def create_BOOK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BOOK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvBOOKRecord(RecordID) if RecordID else None
     BOOK = CBashRECORDARRAY(FnvBOOKRecord, 'BOOK')
 
     def create_CONT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CONT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCONTRecord(RecordID) if RecordID else None
     CONT = CBashRECORDARRAY(FnvCONTRecord, 'CONT')
 
     def create_DOOR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DOOR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDOORRecord(RecordID) if RecordID else None
     DOOR = CBashRECORDARRAY(FnvDOORRecord, 'DOOR')
 
     def create_INGR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("INGR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvINGRRecord(RecordID) if RecordID else None
     INGR = CBashRECORDARRAY(FnvINGRRecord, 'INGR')
 
     def create_LIGH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LIGH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLIGHRecord(RecordID) if RecordID else None
     LIGH = CBashRECORDARRAY(FnvLIGHRecord, 'LIGH')
 
     def create_MISC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MISC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMISCRecord(RecordID) if RecordID else None
     MISC = CBashRECORDARRAY(FnvMISCRecord, 'MISC')
 
     def create_STAT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("STAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSTATRecord(RecordID) if RecordID else None
     STAT = CBashRECORDARRAY(FnvSTATRecord, 'STAT')
 
     def create_SCOL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SCOL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SCOL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSCOLRecord(RecordID) if RecordID else None
     SCOL = CBashRECORDARRAY(FnvSCOLRecord, 'SCOL')
 
     def create_MSTT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MSTT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MSTT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMSTTRecord(RecordID) if RecordID else None
     MSTT = CBashRECORDARRAY(FnvMSTTRecord, 'MSTT')
 
     def create_PWAT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PWAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PWAT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPWATRecord(RecordID) if RecordID else None
     PWAT = CBashRECORDARRAY(FnvPWATRecord, 'PWAT')
 
     def create_GRAS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("GRAS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvGRASRecord(RecordID) if RecordID else None
     GRAS = CBashRECORDARRAY(FnvGRASRecord, 'GRAS')
 
     def create_TREE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("TREE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvTREERecord(RecordID) if RecordID else None
     TREE = CBashRECORDARRAY(FnvTREERecord, 'TREE')
 
     def create_FURN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FURN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvFURNRecord(RecordID) if RecordID else None
     FURN = CBashRECORDARRAY(FnvFURNRecord, 'FURN')
 
     def create_WEAP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WEAP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWEAPRecord(RecordID) if RecordID else None
     WEAP = CBashRECORDARRAY(FnvWEAPRecord, 'WEAP')
 
     def create_AMMO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AMMO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvAMMORecord(RecordID) if RecordID else None
     AMMO = CBashRECORDARRAY(FnvAMMORecord, 'AMMO')
 
     def create_NPC_(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NPC_", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvNPC_Record(RecordID) if RecordID else None
     NPC_ = CBashRECORDARRAY(FnvNPC_Record, 'NPC_')
 
     def create_CREA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CREA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCREARecord(RecordID) if RecordID else None
     CREA = CBashRECORDARRAY(FnvCREARecord, 'CREA')
 
     def create_LVLC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLVLCRecord(RecordID) if RecordID else None
     LVLC = CBashRECORDARRAY(FnvLVLCRecord, 'LVLC')
 
     def create_LVLN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLVLNRecord(RecordID) if RecordID else None
     LVLN = CBashRECORDARRAY(FnvLVLNRecord, 'LVLN')
 
     def create_KEYM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("KEYM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvKEYMRecord(RecordID) if RecordID else None
     KEYM = CBashRECORDARRAY(FnvKEYMRecord, 'KEYM')
 
     def create_ALCH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ALCH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvALCHRecord(RecordID) if RecordID else None
     ALCH = CBashRECORDARRAY(FnvALCHRecord, 'ALCH')
 
     def create_IDLM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IDLM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IDLM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIDLMRecord(RecordID) if RecordID else None
     IDLM = CBashRECORDARRAY(FnvIDLMRecord, 'IDLM')
 
     def create_NOTE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NOTE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NOTE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvNOTERecord(RecordID) if RecordID else None
     NOTE = CBashRECORDARRAY(FnvNOTERecord, 'NOTE')
 
     def create_COBJ(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("COBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("COBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCOBJRecord(RecordID) if RecordID else None
     COBJ = CBashRECORDARRAY(FnvCOBJRecord, 'COBJ')
 
     def create_PROJ(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PROJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PROJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPROJRecord(RecordID) if RecordID else None
     PROJ = CBashRECORDARRAY(FnvPROJRecord, 'PROJ')
 
     def create_LVLI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LVLI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLVLIRecord(RecordID) if RecordID else None
     LVLI = CBashRECORDARRAY(FnvLVLIRecord, 'LVLI')
 
     def create_WTHR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WTHR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWTHRRecord(RecordID) if RecordID else None
     WTHR = CBashRECORDARRAY(FnvWTHRRecord, 'WTHR')
 
     def create_CLMT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CLMT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCLMTRecord(RecordID) if RecordID else None
     CLMT = CBashRECORDARRAY(FnvCLMTRecord, 'CLMT')
 
     def create_REGN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("REGN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvREGNRecord(RecordID) if RecordID else None
     REGN = CBashRECORDARRAY(FnvREGNRecord, 'REGN')
 
     def create_NAVI(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("NAVI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("NAVI", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvNAVIRecord(RecordID) if RecordID else None
     NAVI = CBashRECORDARRAY(FnvNAVIRecord, 'NAVI')
 
     def create_CELL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CELL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCELLRecord(RecordID) if RecordID else None
     CELL = CBashRECORDARRAY(FnvCELLRecord, 'CELL')
 
     def create_WRLD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WRLD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWRLDRecord(RecordID) if RecordID else None
     WRLD = CBashRECORDARRAY(FnvWRLDRecord, 'WRLD')
 
     def create_DIAL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DIAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDIALRecord(RecordID) if RecordID else None
     DIAL = CBashRECORDARRAY(FnvDIALRecord, 'DIAL')
 
     def create_QUST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("QUST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvQUSTRecord(RecordID) if RecordID else None
     QUST = CBashRECORDARRAY(FnvQUSTRecord, 'QUST')
 
     def create_IDLE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IDLE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIDLERecord(RecordID) if RecordID else None
     IDLE = CBashRECORDARRAY(FnvIDLERecord, 'IDLE')
 
     def create_PACK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PACK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPACKRecord(RecordID) if RecordID else None
     PACK = CBashRECORDARRAY(FnvPACKRecord, 'PACK')
 
     def create_CSTY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CSTY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCSTYRecord(RecordID) if RecordID else None
     CSTY = CBashRECORDARRAY(FnvCSTYRecord, 'CSTY')
 
     def create_LSCR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LSCR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLSCRRecord(RecordID) if RecordID else None
     LSCR = CBashRECORDARRAY(FnvLSCRRecord, 'LSCR')
 
     def create_ANIO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ANIO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvANIORecord(RecordID) if RecordID else None
     ANIO = CBashRECORDARRAY(FnvANIORecord, 'ANIO')
 
     def create_WATR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("WATR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvWATRRecord(RecordID) if RecordID else None
     WATR = CBashRECORDARRAY(FnvWATRRecord, 'WATR')
 
     def create_EFSH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EFSH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvEFSHRecord(RecordID) if RecordID else None
     EFSH = CBashRECORDARRAY(FnvEFSHRecord, 'EFSH')
 
     def create_EXPL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("EXPL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("EXPL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvEXPLRecord(RecordID) if RecordID else None
     EXPL = CBashRECORDARRAY(FnvEXPLRecord, 'EXPL')
 
     def create_DEBR(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DEBR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DEBR", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDEBRRecord(RecordID) if RecordID else None
     DEBR = CBashRECORDARRAY(FnvDEBRRecord, 'DEBR')
 
     def create_IMGS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IMGS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IMGS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIMGSRecord(RecordID) if RecordID else None
     IMGS = CBashRECORDARRAY(FnvIMGSRecord, 'IMGS')
 
     def create_IMAD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IMAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IMAD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIMADRecord(RecordID) if RecordID else None
     IMAD = CBashRECORDARRAY(FnvIMADRecord, 'IMAD')
 
     def create_FLST(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("FLST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("FLST", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvFLSTRecord(RecordID) if RecordID else None
     FLST = CBashRECORDARRAY(FnvFLSTRecord, 'FLST')
 
     def create_PERK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("PERK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("PERK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvPERKRecord(RecordID) if RecordID else None
     PERK = CBashRECORDARRAY(FnvPERKRecord, 'PERK')
 
     def create_BPTD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("BPTD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("BPTD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvBPTDRecord(RecordID) if RecordID else None
     BPTD = CBashRECORDARRAY(FnvBPTDRecord, 'BPTD')
 
     def create_ADDN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ADDN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ADDN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvADDNRecord(RecordID) if RecordID else None
     ADDN = CBashRECORDARRAY(FnvADDNRecord, 'ADDN')
 
     def create_AVIF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AVIF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AVIF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvAVIFRecord(RecordID) if RecordID else None
     AVIF = CBashRECORDARRAY(FnvAVIFRecord, 'AVIF')
 
     def create_RADS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RADS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RADS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRADSRecord(RecordID) if RecordID else None
     RADS = CBashRECORDARRAY(FnvRADSRecord, 'RADS')
 
     def create_CAMS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CAMS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CAMS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCAMSRecord(RecordID) if RecordID else None
     CAMS = CBashRECORDARRAY(FnvCAMSRecord, 'CAMS')
 
     def create_CPTH(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CPTH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CPTH", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCPTHRecord(RecordID) if RecordID else None
     CPTH = CBashRECORDARRAY(FnvCPTHRecord, 'CPTH')
 
     def create_VTYP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("VTYP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("VTYP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvVTYPRecord(RecordID) if RecordID else None
     VTYP = CBashRECORDARRAY(FnvVTYPRecord, 'VTYP')
 
     def create_IPCT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IPCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IPCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIPCTRecord(RecordID) if RecordID else None
     IPCT = CBashRECORDARRAY(FnvIPCTRecord, 'IPCT')
 
     def create_IPDS(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IPDS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IPDS", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIPDSRecord(RecordID) if RecordID else None
     IPDS = CBashRECORDARRAY(FnvIPDSRecord, 'IPDS')
 
     def create_ARMA(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ARMA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ARMA", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvARMARecord(RecordID) if RecordID else None
     ARMA = CBashRECORDARRAY(FnvARMARecord, 'ARMA')
 
     def create_ECZN(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ECZN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ECZN", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvECZNRecord(RecordID) if RecordID else None
     ECZN = CBashRECORDARRAY(FnvECZNRecord, 'ECZN')
 
     def create_MESG(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MESG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MESG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMESGRecord(RecordID) if RecordID else None
     MESG = CBashRECORDARRAY(FnvMESGRecord, 'MESG')
 
     def create_RGDL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RGDL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RGDL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRGDLRecord(RecordID) if RecordID else None
     RGDL = CBashRECORDARRAY(FnvRGDLRecord, 'RGDL')
 
     def create_DOBJ(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DOBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DOBJ", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDOBJRecord(RecordID) if RecordID else None
     DOBJ = CBashRECORDARRAY(FnvDOBJRecord, 'DOBJ')
 
     def create_LGTM(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LGTM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LGTM", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLGTMRecord(RecordID) if RecordID else None
     LGTM = CBashRECORDARRAY(FnvLGTMRecord, 'LGTM')
 
     def create_MUSC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MUSC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MUSC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMUSCRecord(RecordID) if RecordID else None
     MUSC = CBashRECORDARRAY(FnvMUSCRecord, 'MUSC')
 
     def create_IMOD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("IMOD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("IMOD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvIMODRecord(RecordID) if RecordID else None
     IMOD = CBashRECORDARRAY(FnvIMODRecord, 'IMOD')
 
     def create_REPU(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("REPU", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("REPU", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvREPURecord(RecordID) if RecordID else None
     REPU = CBashRECORDARRAY(FnvREPURecord, 'REPU')
 
     def create_RCPE(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RCPE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RCPE", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRCPERecord(RecordID) if RecordID else None
     RCPE = CBashRECORDARRAY(FnvRCPERecord, 'RCPE')
 
     def create_RCCT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("RCCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("RCCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvRCCTRecord(RecordID) if RecordID else None
     RCCT = CBashRECORDARRAY(FnvRCCTRecord, 'RCCT')
 
     def create_CHIP(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CHIP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CHIP", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCHIPRecord(RecordID) if RecordID else None
     CHIP = CBashRECORDARRAY(FnvCHIPRecord, 'CHIP')
 
     def create_CSNO(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CSNO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CSNO", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCSNORecord(RecordID) if RecordID else None
     CSNO = CBashRECORDARRAY(FnvCSNORecord, 'CSNO')
 
     def create_LSCT(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("LSCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("LSCT", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvLSCTRecord(RecordID) if RecordID else None
     LSCT = CBashRECORDARRAY(FnvLSCTRecord, 'LSCT')
 
     def create_MSET(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("MSET", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("MSET", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvMSETRecord(RecordID) if RecordID else None
     MSET = CBashRECORDARRAY(FnvMSETRecord, 'MSET')
 
     def create_ALOC(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("ALOC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("ALOC", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvALOCRecord(RecordID) if RecordID else None
     ALOC = CBashRECORDARRAY(FnvALOCRecord, 'ALOC')
 
     def create_CHAL(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CHAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CHAL", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCHALRecord(RecordID) if RecordID else None
     CHAL = CBashRECORDARRAY(FnvCHALRecord, 'CHAL')
 
     def create_AMEF(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("AMEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("AMEF", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvAMEFRecord(RecordID) if RecordID else None
     AMEF = CBashRECORDARRAY(FnvAMEFRecord, 'AMEF')
 
     def create_CCRD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CCRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CCRD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCCRDRecord(RecordID) if RecordID else None
     CCRD = CBashRECORDARRAY(FnvCCRDRecord, 'CCRD')
 
     def create_CMNY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CMNY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CMNY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCMNYRecord(RecordID) if RecordID else None
     CMNY = CBashRECORDARRAY(FnvCMNYRecord, 'CMNY')
 
     def create_CDCK(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("CDCK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("CDCK", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvCDCKRecord(RecordID) if RecordID else None
     CDCK = CBashRECORDARRAY(FnvCDCKRecord, 'CDCK')
 
     def create_DEHY(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("DEHY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("DEHY", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvDEHYRecord(RecordID) if RecordID else None
     DEHY = CBashRECORDARRAY(FnvDEHYRecord, 'DEHY')
 
     def create_HUNG(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("HUNG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("HUNG", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvHUNGRecord(RecordID) if RecordID else None
     HUNG = CBashRECORDARRAY(FnvHUNGRecord, 'HUNG')
 
     def create_SLPD(self, EditorID=0, formID=FormID(None, None)):
-        RecordID = _CCreateRecord(self._ModID, cast("SLPD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), EditorID, 0)
+        RecordID = _CCreateRecord(self._ModID, cast("SLPD", POINTER(c_ulong)).contents.value, formID.GetShortFormID(self), _encode(EditorID) if EditorID else EditorID, 0)
         return FnvSLPDRecord(RecordID) if RecordID else None
     SLPD = CBashRECORDARRAY(FnvSLPDRecord, 'SLPD')
 
@@ -15129,7 +15273,7 @@ class ObCollection:
         #CollectionType == 0, Oblivion
         #CollectionType == 1, Fallout 3
         #CollectionType == 2, Fallout New Vegas
-        self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(_Encode(ModsPath,'mbcs'), CollectionType),CollectionType)
+        self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(_encode(ModsPath), CollectionType),CollectionType)
         self._ModIndex, self.LoadOrderMods, self.AllMods = -1, [], []
         self._ModType = ObModFile if self._WhichGame == 0 else FnvModFile
 
@@ -15233,7 +15377,7 @@ class ObCollection:
 ##        fIsSkipAllRecords        = 0x00002000
 
         if Flags is None: Flags = 0x00000069 | (0x00000800 if CreateNew else 0) | (0x00000010 if Saveable else 0) | (0x00000040 if LoadMasters else 0)
-        return self._ModType(_CAddMod(self._CollectionID, _Encode(FileName,'mbcs'), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002)))
+        return self._ModType(_CAddMod(self._CollectionID, _encode(FileName), Flags & ~0x00000003 if NoLoad else ((Flags & ~0x00000002) | 0x00000001) if MinLoad else ((Flags & ~0x00000001) | 0x00000002)))
 
     def addMergeMod(self, FileName):
         #fIsIgnoreInactiveMasters, fIsSkipNewRecords
@@ -15263,12 +15407,12 @@ class ObCollection:
         return [record for record in [mod.LookupRecord(RecordIdentifier) for mod in reversed(self.AllMods if GetExtendedConflicts else self.LoadOrderMods)] if record is not None]
 
     def LookupModFile(self, ModName):
-        ModID = _CGetModIDByName(self._CollectionID, _Encode(ModName,'mbcs'))
+        ModID = _CGetModIDByName(self._CollectionID, _encode(ModName))
         if ModID == 0: raise KeyError(_("ModName(%s) not found in collection (%08X)") % (ModName, self._CollectionID) + self.Debug_DumpModFiles() + u'\n')
         return self._ModType(ModID)
 
     def LookupModFileLoadOrder(self, ModName):
-        return _CGetModLoadOrderByName(self._CollectionID, _Encode(ModName,'mbcs'))
+        return _CGetModLoadOrderByName(self._CollectionID, _encode(ModName))
 
     def UpdateReferences(self, Old_NewFormIDs):
         return sum([mod.UpdateReferences(Old_NewFormIDs) for mod in self.LoadOrderMods])
@@ -15277,7 +15421,7 @@ class ObCollection:
         return _CGetRecordUpdatedReferences(self._CollectionID, 0)
 
     def Debug_DumpModFiles(self):
-        col = [_("Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
-        files = [_("Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]
+        col = [_(u"Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
+        files = [_(u"Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]
         col.extend(files)
-        return '\n'.join(col)
+        return u'\n'.join(col)
