@@ -21,14 +21,15 @@
 #
 # =============================================================================
 
-# Imports ---------------------------------------------------------------------
+# Imports ----------------------------------------------------------------------
+#-- Use the 'with' statement for Python 2.5
+from __future__ import with_statement
 #--Standard
 import cPickle
 import StringIO
 import copy
 import locale
 import os
-import stat
 import re
 import shutil
 import struct
@@ -46,125 +47,28 @@ import types
 from binascii import crc32
 import ConfigParser
 import bass
-import chardet
 #-- To make commands executed with Popen hidden
 startupinfo = None
 if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
-    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    try: startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    except:
+        import _subprocess
+        startupinfo.dwFlags |= _subprocess.STARTF_USESHOWWINDOW
 
 #-- Forward declarations
 class Path(object): pass
 
-# Unicode ---------------------------------------------------------------------
-#--decode unicode strings
-#  This is only useful when reading fields from mods, as the encoding is not
-#  known.  For normal filesystem interaction, these functions are not needed
-encodingOrder = (
-    'ascii',    # Plain old ASCII (0-127)
-    'gbk',      # GBK (simplified Chinese + some)
-    'cp932',    # Japanese
-    'cp949',    # Korean
-    'cp1252',   # English (extended ASCII)
-    'utf8',
-    'cp500',
-    'UTF-16LE',
-    'mbcs',
-    )
-
-_encodingSwap = {
-    # The encoding detector reports back some encodings that
-    # are subsets of others.  Use the better encoding when
-    # given the option
-    # 'reported encoding':'actual encoding to use',
-    'GB2312': 'gbk',        # Simplified Chinese
-    'SHIFT_JIS': 'cp932',   # Japanese
-    'windows-1252': 'cp1252',
-    'windows-1251': 'cp1251',
-    }
-
-# Preferred encoding to use when decoding/encoding strings in plugin files
-# None = auto
-# setting it tries the specified encoding first
-pluginEncoding = None
-
-def _getbestencoding(text):
-    """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
-       detection library to find the best match (heurisitcs)"""
-    result = chardet.detect(text)
-    encoding,confidence = result['encoding'],result['confidence']
-    encoding = _encodingSwap.get(encoding,encoding)
-    ## Debug: uncomment the following to output stats on encoding detection
-    #print
-    #print '%s: %s (%s)' % (repr(text),encoding,confidence)
-    return encoding,confidence
-
-def _unicode(text,encoding=None,avoidEncodings=()):
-    if isinstance(text,unicode) or text is None: return text
-    # Try the user specified encoding first
-    if encoding:
-        try: return unicode(text,encoding)
-        except UnicodeDecodeError: pass
-    # Try to detect the encoding next
-    encoding,confidence = _getbestencoding(text)
-    if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
-        try: return unicode(text,encoding)
-        except UnicodeDecodeError: pass
-    # If even that fails, fall back to the old method, trial and error
-    for encoding in encodingOrder:
-        try: return unicode(text,encoding)
-        except UnicodeDecodeError: pass
-    raise UnicodeDecodeError(u'Text could not be decoded using any method')
-
-def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
-    if isinstance(text,str) or text is None:
-        if returnEncoding: return (text,None)
-        else: return text
-    # Try user specified encoding
-    if firstEncoding:
-        try:
-            text = text.encode(firstEncoding)
-            if returnEncoding: return (text,firstEncoding)
-            else: return text
-        except UnicodeEncodeError:
-            pass
-    goodEncoding = None
-    # Try the list of encodings in order
-    for encoding in encodings:
-        try:
-            temp = text.encode(encoding)
-            detectedEncoding = _getbestencoding(temp)
-            if detectedEncoding == encoding:
-                # This encoding also happens to be detected
-                # By the encoding detector as the same thing,
-                # which means use it!
-                if returnEncoding: return (temp,encoding)
-                else: return temp
-            # The encoding detector didn't detect it, but
-            # it works, so save it for later
-            if not goodEncoding: goodEncoding = (temp,encoding)
-        except UnicodeEncodeError:
-            pass
-    # Non of the encodings also where detectable via the
-    # detector, so use the first one that encoded without error
-    if goodEncoding:
-        if returnEncoding: return goodEncoding
-        else: return goodEncoding[0]
-    raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
 # Localization ----------------------------------------------------------------
-def dumpTranslator(outPath,language,*files):
+def dumpTranslator(outTxt,*files):
     """Dumps all tranlatable strings in python source files to a new text file.
        as this requires the source files, it will not work in WBSA mode, unless
        the source files are also installed"""
-    outTxt = u'%sNEW.txt' % language
-    fullTxt = os.path.join(outPath,outTxt)
-    tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % language)
-    oldTxt = os.path.join(outPath,u'%s.txt' % language)
     if not files:
         file = os.path.split(__file__)[1]
         files = [x for x in os.listdir(os.getcwdu()) if (x.lower().endswith(u'.py') or x.lower().endswith(u'.pyw'))]
-    args = [u'p',u'-a',u'-o',fullTxt]
+    args = [u'p',u'-a',u'-o',os.path.join(u'bash',u'l10n',outTxt)]
     args.extend(files)
     if hasattr(sys,'frozen'):
         import pygettext
@@ -176,122 +80,83 @@ def dumpTranslator(outPath,language,*files):
         p = os.path.join(sys.prefix,u'Tools',u'i18n',u'pygettext.py')
         args[0] = p
         subprocess.call(args,shell=True)
-    # Fill in any already translated stuff...?
-    try:
-        reMsgIdsStart = re.compile('#:')
-        reEncoding = re.compile(r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$',re.I)
-        reNonEscapedQuote = re.compile(r'([^\\])"')
-        def subQuote(match): return match.group(1)+'\\"'
-        encoding = None
-        with open(tmpTxt,'w') as out:
-            outWrite = out.write
-            #--Copy old translation file header, and get encoding for strings
-            with open(oldTxt,'r') as ins:
-                for line in ins:
-                    if not encoding:
-                        match = reEncoding.match(line.strip('\r\n'))
-                        if match:
-                            encoding = match.group(1)
-                    match = reMsgIdsStart.match(line)
-                    if match: break
-                    outWrite(line)
-            #--Read through the new translation file, fill in any already
-            #  translated strings
-            with open(fullTxt,'r') as ins:
-                header = False
-                msgIds = False
-                for line in ins:
-                    if not header:
-                        match = reMsgIdsStart.match(line)
-                        if match:
-                            header = True
-                            outWrite(line)
-                        continue
-                    elif line[0:7] == 'msgid "':
-                        text = line.strip('\r\n')[7:-1]
-                        # Replace escape sequences
-                        text = text.replace('\\"','"')      # Quote
-                        text = text.replace('\\t','\t')     # Tab
-                        text = text.replace('\\\\', '\\')   # Backslash
-                        translated = _(text)
-                        if text != translated:
-                            # Already translated
-                            outWrite(line)
-                            outWrite('msgstr "')
-                            translated = translated.encode(encoding)
-                            # Re-escape the escape sequences
-                            translated = translated.replace('\\','\\\\')
-                            translated = translated.replace('\t','\\t')
-                            translated = reNonEscapedQuote.sub(subQuote,translated)
-                            outWrite(translated)
-                            outWrite('"\n')
-                        else:
-                            # Not translated
-                            outWrite(line)
-                            outWrite('msgstr ""\n')
-                    elif line[0:8] == 'msgstr "':
-                        continue
-                    else:
-                        outWrite(line)
-    except:
-        try: os.remove(tmpTxt)
-        except: pass
-    else:
-        try:
-            os.remove(fullTxt)
-            os.rename(tmpTxt,fullTxt)
-        except:
-            if os.path.exists(fullTxt):
-                try: os.remove(tmpTxt)
-                except: pass
-    return outTxt
 
 def initTranslator(language=None,path=None):
-    if not language:
-        try:
-            language = locale.getlocale()[0].split('_',1)[0]
-            language = _encode(language)
-        except UnicodeError:
-            deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
-            # Default to English
-            language = u'English'
+    language = language or locale.getlocale()[0].split(u'_',1)[0]
     path = path or os.path.join(u'bash',u'l10n')
     if language.lower() == u'german': language = u'de'
     txt,po,mo = (os.path.join(path,language+ext)
                  for ext in (u'.txt',u'.po',u'.mo'))
-    if not os.path.exists(txt) and not os.path.exists(mo):
-        if language.lower() != 'english':
-            print 'No translation file for language:', language
+    try:
+        if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
+            # Compile
+            shutil.copy(txt,po)
+            args = [u'm',u'-o',mo,po]
+            if hasattr(sys,'frozen'):
+                import msgfmt
+                old_argv = sys.argv[:]
+                sys.argv = args
+                msgfmt.main()
+                sys.argv = old_argv
+            else:
+                m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
+                subprocess.call([m,u'-o',mo,po],shell=True)
+            os.remove(po)
+        # install translator
+        with open(mo,'rb') as file:
+            trans = gettext.GNUTranslations(file)
+    except:
+        print 'Error loading translation file:'
+        traceback.print_exc()
         trans = gettext.NullTranslations()
-    else:
-        try:
-            if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
-                # Compile
-                shutil.copy(txt,po)
-                args = [u'm',u'-o',mo,po]
-                if hasattr(sys,'frozen'):
-                    import msgfmt
-                    old_argv = sys.argv[:]
-                    sys.argv = args
-                    msgfmt.main()
-                    sys.argv = old_argv
-                else:
-                    m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
-                    subprocess.call([m,u'-o',mo,po],shell=True)
-                os.remove(po)
-            # install translator
-            with open(mo,'rb') as file:
-                trans = gettext.GNUTranslations(file)
-        except:
-            print 'Error loading translation file:'
-            traceback.print_exc()
-            trans = gettext.NullTranslations()
+        trans.install(unicode=True)
+        return
     trans.install(unicode=True)
+    # Dump the non-translated strings to a new file, so they know to translate
+    # TODO: figure out a unicode way that this will work.
+    ##num = 0
+    ##try:
+    ##    with open(txt,'rb') as ins:
+    ##        with open(txt[:-4]+u'_untranslated.txt','wb') as out:
+    ##            lines = []
+    ##            for line in ins:
+    ##                if line[0:1] == '#:':
+    ##                    lines.append(line)
+    ##                elif line[0:4] == 'msgid':
+    ##                    if not lines: continue
+    ##                    lines.append(line)
+    ##                elif line[0:5] == 'msgstr':
+    ##                    if 
+    ##                stripped = line.strip()
+    ##                if stripped.startswith(u'#:'):
+    ##                    lines.append(line)
+    ##                elif stripped.startswith(u'msgid'):
+    ##                    if not lines: continue
+    ##                    lines.append(line)
+    ##                elif stripped.startswith(u'msgstr'):
+    ##                    if not lines: continue
+    ##                    orig = lines[-1].strip()[7:-1]
+    ##                    if not orig:
+    ##                        lines = []
+    ##                        continue
+    ##                    trans = stripped[8:-1]
+    ##                    if not trans:
+    ##                        num += 1
+    ##                        lines.append(line)
+    ##                        out.write(u''.join(lines))
+    ##                        out.write(u'\r\n')
+    ##                        lines = []
+    ##    print unicode(num) + u' untranslated strings written to ' + txt[:-4]+u'_untranslated.txt'
+    ##except:
+    ##    print u'Error dumping untranslated strings:'
+    ##    traceback.print_exc()
 
 #--Do translator test and set
 if locale.getlocale() == (None,None):
     locale.setlocale(locale.LC_ALL,u'')
-initTranslator(bass.language)
+language = bass.language or locale.getlocale()[0].split(u'_',1)[0]
+if language.lower() == u'german': language = u'de' #--Hack for German speakers who aren't 'DE'.
+initTranslator(language)
 
 CBash = 0
 images_list = {
@@ -876,28 +741,7 @@ class PermissionError(BoltError):
     def __init__(self,message=u'Access is denied.'):
         BoltError.__init__(self,message)
 
-#------------------------------------------------------------------------------
-class FileError(BoltError):
-    """TES4/Tes4SaveFile Error: File is corrupted."""
-    def __init__(self,inName,message):
-        BoltError.__init__(self,message)
-        self.inName = inName
 
-    def __str__(self):
-        if self.inName:
-            if isinstance(self.inName, basestring):
-                return self.inName+u': '+self.message
-            return self.inName.s+u': '+self.message
-        else:
-            return u'Unknown File: '+self.message
-
-#------------------------------------------------------------------------------
-class FileEditError(BoltError):
-    """Unable to edit a file"""
-    def __init__(self,filePath,message=None):
-        message = message or u"Unable to edit file %s." % filePath.s
-        BoltError.__init__(self,message)
-        self.filePath = filePath
 
 # LowStrings ------------------------------------------------------------------
 class LString(object):
@@ -905,12 +749,9 @@ class LString(object):
     __slots__ = ('_s','_cs')
 
     def __init__(self,s):
-        if isinstance(s,LString):
-            self._s = s._s
-            self._cs = s._cs
-        else:
-            self._s = s
-            self._cs = s.lower()
+        if isinstance(s,LString): s = s._s
+        self._s = s
+        self._cs = s.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
@@ -952,39 +793,17 @@ class sio(StringIO.StringIO):
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
-#Path = None
+Path = None
 def GPath(name):
     """Returns common path object for specified name/path."""
     if name is None: return None
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
     elif isinstance(name,unicode): norm = os.path.normpath(name)
-    else: norm = os.path.normpath(_unicode(name))
+    else: norm = os.path.normpath(unicode(name))
     path = _gpaths.get(norm)
     if path is not None: return path
     else: return _gpaths.setdefault(norm,Path(norm))
-
-def GPathPurge():
-    """Cleans out the _gpaths dictionary of any unused bolt.Path objects.
-       We cannot use a weakref.WeakValueDictionary in this case for 2 reasons:
-        1) bolt.Path, due to its class structure, cannot be made into weak
-           references
-        2) the objects would be deleted as soon as the last reference goes
-           out of scope (not the behavior we want).  We want the object to
-           stay alive as long as we will possibly be needing it, IE: as long
-           as we're still on the same tab.
-       So instead, we'll manually call our flushing function a few times:
-        1) When switching tabs
-        2) Prior to building a bashed patch
-        3) Prior to saving settings files
-    """
-    for key in _gpaths.keys():
-        # Using .keys() allows use to modify the dictionary while iterating
-        if sys.getrefcount(_gpaths[key]) == 2:
-            # 1 for the reference in the _gpath dictionary,
-            # 1 for the temp reference passed to sys.getrefcount
-            # meanin the object is not reference anywhere else
-            del _gpaths[key]
 
 #------------------------------------------------------------------------------
 class Path(object):
@@ -999,7 +818,7 @@ class Path(object):
     def get(name):
         """Returns path object for specified name/path."""
         if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(_unicode(name))
+        elif isinstance(name,str): norm = os.path.normpath(unicode(name))
         else: norm = os.path.normpath(name)
         return Path.norm_path.setdefault(norm,Path(norm))
 
@@ -1008,7 +827,7 @@ class Path(object):
         """Return the normpath for specified name/path object."""
         if not name: return name
         elif isinstance(name,Path): return name._s
-        elif isinstance(name,str): name = _unicode(name)
+        elif isinstance(name,str): name = unicode(name)
         return os.path.normpath(name)
 
     @staticmethod
@@ -1016,7 +835,7 @@ class Path(object):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
         if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = _unicode(name)
+        elif isinstance(name,str): name = unicode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -1038,8 +857,10 @@ class Path(object):
         """Initialize."""
         if isinstance(name,Path):
             self.__setstate__(name._s)
-        else:
+        elif isinstance(name,unicode):
             self.__setstate__(name)
+        else:
+            self.__setstate__(unicode(name))
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
@@ -1047,8 +868,6 @@ class Path(object):
 
     def __setstate__(self,norm):
         """Used by unpickler. Reconstruct _cs."""
-        # Older pickle files stored filename in str, not unicode
-        if not isinstance(norm,unicode): norm = _unicode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
@@ -1063,6 +882,9 @@ class Path(object):
 
     def __repr__(self):
         return u"bolt.Path("+repr(self._s)+u")"
+
+    def __str__(self):
+        return self._s
 
     def __unicode__(self):
         return self._s
@@ -1143,10 +965,10 @@ class Path(object):
         (Popen automatically tries to encode the name)"""
         if unicodeSafe:
             try:
-                self._s.encode('ascii')
+                self._s.encode(locale.getpreferredencoding())
                 return self+u'.tmp'
             except UnicodeEncodeError:
-                ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
+                ret = self._s.encode(locale.getpreferredencoding(),'xmlcharrefreplace')+u'_unicode_safe.tmp'
                 return self.head.join(ret)
         else:
             return self+u'.tmp'
@@ -1277,7 +1099,7 @@ class Path(object):
                     crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
                     progress(insTell())
         except IOError, ierr:
-            #if werr.winerror != 123: raise
+           # if werr.winerror != 123: raise
             deprint(u'Unable to get crc of %s - probably a unicode error' % self._s)
         return crc & 0xFFFFFFFF
 
@@ -1296,12 +1118,11 @@ class Path(object):
         """Like os.walk."""
         if relative:
             start = len(self._s)
-            for root,dirs,files in os.walk(self._s,topdown,onerror):
-                yield (GPath(root[start:]),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            return ((GPath(x[start:]),[GPath(u) for u in y],[GPath(u) for u in z])
+                for x,y,z in os.walk(self._s,topdown,onerror))
         else:
-            for root,dirs,files in os.walk(self._s,topdown,onerror):
-                yield (GPath(root),[GPath(x) for x in dirs],[GPath(x) for x in files])
-
+            return ((GPath(x),[GPath(u) for u in y],[GPath(u) for u in z])
+                for x,y,z in os.walk(self._s,topdown,onerror))
     def split(self):
         """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
            would return ['C:','Program Files','Bethesda Softworks']"""
@@ -1344,7 +1165,7 @@ class Path(object):
     def clearRO(self):
         """Clears RO flag on self"""
         if not self.isdir():
-            os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
+            os.chmod(path,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
                 cmd = ur'attrib -R "%s\*" /S /D' % self._s
@@ -1382,7 +1203,7 @@ class Path(object):
             if self.exists(): os.removedirs(self._s)
         except WindowsError:
             self.clearRO()
-            os.removedirs(self._s)
+            os.remove(self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
@@ -1426,27 +1247,13 @@ class Path(object):
         """Temporarily rename/move an object.  Use with the 'with' statement"""
         class temp(object):
             def __init__(self,oldPath,newPath):
-                self.newPath = GPath(newPath)
-                self.oldPath = GPath(oldPath)
+                self.newPath = newPath
+                self.oldPath = oldPath
 
-            def __enter__(self): return self.newPath
+            def __enter__(self): return self
             def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
         self.moveTo(destName)
         return temp(self,destName)
-
-    def unicodeSafe(self):
-        """Temporarily rename (only if necessary) the file to a unicode safe name.
-           Use with the 'with' statement."""
-        try:
-            self._s.encode('ascii')
-            class temp(object):
-                def __init__(self,path):
-                    self.path = path
-                def __enter__(self): return self.path
-                def __exit__(self,*args,**kwdargs): pass
-            return temp(self)
-        except UnicodeEncodeError:
-            return self.tempMoveTo(self.temp)
 
     def touch(self):
         """Like unix 'touch' command. Creates a file with current date/time."""
@@ -1468,19 +1275,11 @@ class Path(object):
             shutil.move(self.temp._s, self._s)
     def editable(self):
         """Safely check whether a file is editable."""
-        delete = not os.path.exists(self._s)
         try:
             with open(self._s,'ab') as f:
                 return True
         except:
             return False
-        finally:
-            # If the file didn't exist before, remove the created version
-            if delete:
-                try:
-                    os.remove(self._s)
-                except:
-                    pass
 
     #--Hash/Compare
     def __hash__(self):
@@ -1509,7 +1308,7 @@ class CsvReader:
         self.ins = path.open('rb',encoding='utf-8-sig')
         format = ('excel','excel-tab')[u'\t' in self.ins.readline()]
         if format == 'excel':
-            delimiter = (',',';')[u';' in self.ins.readline()]
+            delimiter = (u',',u';')[u';' in self.ins.readline()]
             self.ins.seek(0)
             self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format,delimiter=delimiter)
         else:
@@ -1520,8 +1319,10 @@ class CsvReader:
     def __exit__(self,*args,**kwdargs): self.ins.close()
 
     def __iter__(self):
-        for iter in self.reader:
-            yield [unicode(x,'utf8') for x in iter]
+        return self
+
+    def next(self):
+        return self.reader.next()
 
     def close(self):
         self.reader = None
@@ -1662,18 +1463,7 @@ class DataDict:
             return self.data[key]
         else:
             if isinstance(key, Path):
-                try:
-                    import bush
-                    return self.data[Path(bush.game.masterFiles[0])]
-                except:
-                    try:
-                        return self.data[Path(u'Oblivion.esm')]
-                    except:
-                        print
-                        print "An error occurred trying to access data for mod file:", key
-                        print "This can occur when the game's main ESM file is corrupted."
-                        print
-                        raise
+                return self.data[Path(bush.game.masterFiles[0])]
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
@@ -1681,7 +1471,7 @@ class DataDict:
     def __len__(self):
         return len(self.data)
     def setdefault(self,key,default):
-        return self.data.setdefault(key,default)
+        return self.data.setdefault(key,value)
     def keys(self):
         return self.data.keys()
     def values(self):
@@ -2113,8 +1903,8 @@ class BinaryFile(StructFile):
             kwdargs['mode'] = mode
         else:
             new_args = list(args)
-            if args[1] == 'r': new_args[1] = 'rb'
-            elif args[1] == 'w': new_args[1] = 'wb'
+            if args[1] == 'r': new_args[1] == 'rb'
+            elif args[1] == 'w': new_args[1] == 'wb'
             elif args[1] == 'rb' or args[1] == 'wb':
                 pass
             else: new_args[1] = 'rb'
@@ -2289,7 +2079,7 @@ class Table(DataDict):
         self.hasChanged = True
     def setdefault(self,key,default):
         if key not in self.data: self.hasChanged = True
-        return self.data.setdefault(key,default)
+        return self.data.setdefault(key,value)
     def pop(self,key,default=None):
         self.hasChanged = True
         return self.data.pop(key,default)
@@ -2398,34 +2188,17 @@ def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
 
-    if keyargs.get('trace',True):
-        import inspect
-        stack = inspect.stack()
-        file,line,function = stack[1][1:4]
+    import inspect
+    stack = inspect.stack()
+    file,line,function = stack[1][1:4]
 
-        msg = u'%s %4d %s: ' % (GPath(file).tail.s,line,function)
-    else:
-        msg = u''
-    try:
-        msg += u' '.join([u'%s'%x for x in args])
-    except UnicodeError:
-        # If the args failed to convert to unicode for some reason
-        # we still want the message displayed any way we can
-        for x in args:
-            try:
-                msg += u' %s' % x
-            except UnicodeError:
-                msg += u' %s' % repr(x)
-
+    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,
+                            u' '.join([u'%s'%x for x in args]))
     if keyargs.get('traceback',False):
         o = StringIO.StringIO(msg)
         o.write(u'\n')
         traceback.print_exc(file=o)
-        value = o.getvalue()
-        try:
-            msg += u'%s' % value
-        except UnicodeError:
-            msg += u'%s' % repr(value)
+        msg = o.getvalue()
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output
@@ -2434,35 +2207,35 @@ def deprint(*args,**keyargs):
         # Nope, it's going somewhere else
         print msg.encode('mbcs')
 
-#def delist(header,items,on=False):
-#    """Prints list as header plus items."""
-#    if not deprintOn and not on: return
-#    import inspect
-#    stack = inspect.stack()
-#    file,line,function = stack[1][1:4]
-#    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,header)
-#    try:
-#        print msg
-#    except UnicodeError:
-#        print msg.encode('mbcs')
-#    if items == None:
-#        print u'> None'
-#    else:
-#        for indexItem in enumerate(items):
-#            msg = u'>%2d: %s' % indexItem
-#            try:
-#                print msg
-#            except UnicodeError:
-#                print msg.encode('mbcs')
+def delist(header,items,on=False):
+    """Prints list as header plus items."""
+    if not deprintOn and not on: return
+    import inspect
+    stack = inspect.stack()
+    file,line,function = stack[1][1:4]
+    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,header)
+    try:
+        print msg
+    except UnicodeError:
+        print msg.encode('mbcs')
+    if items == None:
+        print u'> None'
+    else:
+        for indexItem in enumerate(items):
+            msg = u'>%2d: %s' % indexItem
+            try:
+                print msg
+            except UnicodeError:
+                print msg.encode('mbcs')
 
-#def dictFromLines(lines,sep=None):
-#    """Generate a dictionary from a string with lines, stripping comments and skipping empty strings."""
-#    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
-#    if sep == None or type(sep) == type(u''):
-#        temp = dict([x.split(sep,1) for x in temp if x])
-#    else: #--Assume re object.
-#        temp = dict([sep.split(x,1) for x in temp if x])
-#    return temp
+def dictFromLines(lines,sep=None):
+    """Generate a dictionary from a string with lines, stripping comments and skipping empty strings."""
+    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
+    if sep == None or type(sep) == type(u''):
+        temp = dict([x.split(sep,1) for x in temp if x])
+    else: #--Assume re object.
+        temp = dict([sep.split(x,1) for x in temp if x])
+    return temp
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -2479,11 +2252,11 @@ def invertDict(indict):
     """Invert a dictionary."""
     return dict((y,x) for x,y in indict.iteritems())
 
-#def listFromLines(lines):
-#    """Generate a list from a string with lines, stripping comments and skipping empty strings."""
-#    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
-#    temp = [x for x in temp if x]
-#    return temp
+def listFromLines(lines):
+    """Generate a list from a string with lines, stripping comments and skipping empty strings."""
+    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
+    temp = [x for x in temp if x]
+    return temp
 
 def listSubtract(alist,blist):
     """Return a copy of first list minus items in second list."""
@@ -2493,32 +2266,32 @@ def listSubtract(alist,blist):
             result.append(item)
     return result
 
-#def listJoin(*inLists):
-#    """Joins multiple lists into a single list."""
-#    outList = []
-#    for inList in inLists:
-#        outList.extend(inList)
-#    return outList
+def listJoin(*inLists):
+    """Joins multiple lists into a single list."""
+    outList = []
+    for inList in inLists:
+        outList.extend(inList)
+    return outList
 
-#def listGroup(items):
-#    """Joins items into a list for use in a regular expression.
-#    E.g., a list of ('alpha','beta') becomes '(alpha|beta)'"""
-#    return u'('+(u'|'.join(items))+u')'
+def listGroup(items):
+    """Joins items into a list for use in a regular expression.
+    E.g., a list of ('alpha','beta') becomes '(alpha|beta)'"""
+    return u'('+(u'|'.join(items))+u')'
 
-#def rgbString(red,green,blue):
-#    """Converts red, green blue ints to rgb string."""
-#    return chr(red)+chr(green)+chr(blue)
+def rgbString(red,green,blue):
+    """Converts red, green blue ints to rgb string."""
+    return chr(red)+chr(green)+chr(blue)
 
-#def rgbTuple(rgb):
-#    """Converts red, green, blue string to tuple."""
-#    return struct.unpack('BBB',rgb)
+def rgbTuple(rgb):
+    """Converts red, green, blue string to tuple."""
+    return struct.unpack('BBB',rgb)
 
-#def unQuote(inString):
-#    """Removes surrounding quotes from string."""
-#    if len(inString) >= 2 and inString[0] == u'"' and inString[-1] == u'"':
-#        return inString[1:-1]
-#    else:
-#        return inString
+def unQuote(inString):
+    """Removes surrounding quotes from string."""
+    if len(inString) >= 2 and inString[0] == u'"' and inString[-1] == u'"':
+        return inString[1:-1]
+    else:
+        return inString
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
@@ -2675,41 +2448,33 @@ class StringTable(dict):
         else: format = 1
         try:
             with BinaryFile(path.s) as ins:
-                insSeek = ins.seek
-                insTell = ins.tell
-                insUnpack = ins.unpack
-                insReadCString = ins.readCString
-                insRead = ins.read
-
-                insSeek(0,os.SEEK_END)
-                eof = insTell()
-                insSeek(0)
+                ins.seek(0,os.SEEK_END)
+                eof = ins.tell()
+                ins.seek(0)
                 if eof < 8:
                     # Missing the numIds and dataSize bytes, assume empty file
                     return
 
-                numIds,dataSize = insUnpack('=2I',8)
+                numIds, = ins.unpack('I',4)
                 progress.setFull(max(numIds,1))
-                stringsStart = 8 + (numIds*8)
-                if stringsStart != eof-dataSize:
-                    deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
-                            % (path, dataSize, eof-dataSize, stringsStart))
+                dataSize, = ins.unpack('I',4)
+                stringsStart = eof - dataSize
 
                 for x in xrange(numIds):
                     progress(x)
-                    id,offset = insUnpack('=2I',8)
-                    pos = insTell()
-                    insSeek(stringsStart+offset)
+                    id, = ins.unpack('I',4)
+                    offset, = ins.unpack('I',4)
+                    pos = ins.tell()
+                    ins.seek(stringsStart+offset)
                     if format:
-                        strLen, = insUnpack('I',4)
-                        value = insRead(strLen)
+                        strLen, = ins.unpack('I',4)
+                        value = ins.read(strLen)
                     else:
-                        value = insReadCString()
+                        value = ins.readCString()
                     value = unicode(cstrip(value),'cp1252')
-                    insSeek(pos)
+                    ins.seek(pos)
                     self[id] = value
         except:
-            deprint(u'Error loading string file:', traceback=True)
             return
 
 # WryeText --------------------------------------------------------------------
@@ -2789,7 +2554,7 @@ class WryeText:
     body { background-color: #ffffcc; }
     """
 
-    # Conversion ---------------------------------------------------------------
+    # Conversion ------------------------------------------------------------------
     @staticmethod
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
@@ -2803,9 +2568,6 @@ class WryeText:
             out = outPath.open('w',encoding='utf-8-sig')
         else:
             srcPath = outPath = None
-        # Setup
-        outWrite = out.write
-
         cssDirs = map(GPath,cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
@@ -2907,27 +2669,24 @@ class WryeText:
         #--Init
         outLines = []
         contents = []
-        outLinesAppend = outLines.append
-        outLinesExtend = outLines.extend
         addContents = 0
         inPre = False
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            line = line.replace('\r\n','\n')
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:
                     maCodeBoxEnd = reCodeBoxEnd.match(line)
                     if maCodeBoxEnd:
                         codeboxLines.append(maCodeBoxEnd.group(1))
-                        outLinesAppend(u'<pre style="width:850px;">')
+                        outLines.append(u'<pre style="width:850px;">')
                         try:
                             codeboxLines = codebox(codeboxLines)
                         except:
                             pass
-                        outLinesExtend(codeboxLines)
-                        outLinesAppend(u'</pre>\n')
+                        outLines.extend(codeboxLines)
+                        outLines.append(u'</pre>')
                         codeboxLines = None
                         continue
                     else:
@@ -2937,10 +2696,10 @@ class WryeText:
                 if maCodeBox:
                     outLines.append(u'<pre style="width:850px;">')
                     try:
-                        outLinesExtend(codebox([maCodeBox.group(1)]))
+                        outLines.extend(codebox([maCodeBox.group(1)]))
                     except:
-                        outLinesAppend(maCodeBox.group(1))
-                    outLinesAppend(u'</pre>\n')
+                        outLines.append(maCodeBox.group(1))
+                    outLines.append(u'</pre>\n')
                     continue
                 maCodeBoxStart = reCodeBoxStart.match(line)
                 if maCodeBoxStart:
@@ -2955,7 +2714,7 @@ class WryeText:
                             codeLines = codebox(codeLines,False)
                         except:
                             pass
-                        outLinesExtend(codeLines)
+                        outLines.extend(codeLines)
                         codeLines = None
                         line = maCodeEnd.group(2)
                     else:
@@ -2971,7 +2730,7 @@ class WryeText:
             maPreEnd = rePreEnd.search(line)
             if inPre or maPreBegin or maPreEnd:
                 inPre = maPreBegin or (inPre and not maPreEnd)
-                outLinesAppend(line)
+                outLines.append(line)
                 continue
             #--Font/Background Color
             line = reColor.sub(subColor,line)
@@ -3065,12 +2824,11 @@ class WryeText:
                 if cssPath.exists(): break
             else:
                 raise BoltError(u'Css file not found: '+cssName.s)
-            with cssPath.open('r',encoding='utf-8-sig') as cssIns:
-                css = u''.join(cssIns.readlines())
-            if u'<' in css:
+            css = ''.join(cssPath.open().readlines())
+            if '<' in css:
                 raise BoltError(u'Non css tag in '+cssPath.s)
         #--Write Output ------------------------------------------------------
-        outWrite(WryeText.htmlHead % (title,css))
+        out.write(WryeText.htmlHead % (title,css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
@@ -3079,11 +2837,11 @@ class WryeText:
                     for (level,name,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            out.write(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
                     didContents = True
             else:
-                outWrite(line)
-        outWrite(u'</body>\n</html>\n')
+                out.write(line)
+        out.write(u'</body>\n</html>\n')
         #--Close files?
         if srcPath:
             ins.close()

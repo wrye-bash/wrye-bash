@@ -23,13 +23,6 @@
 
 """This a template to use for making new game types for bash.game"""
 
-# Util Constants ---------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
 #--Name of the game
 ## Example: 'Oblivion'
 name = ''
@@ -94,17 +87,12 @@ class laa:
     exe = '*DNE*'       # Executable to run
     launchesSE = False  # Whether the launcher will automatically launch the SE
 
-# Files BAIN shouldn't skip
-dontSkip = (
-# Nothing so far
-)
-
 #--Save Game format stuff
 class ess:
     # Save file capabilities
     canReadBasic = False        # Can read the info needed for the Save Tab display
     canEditMasters = False      # Can adjust save file masters
-    canEditMore = False         # Advanced editing
+    canEdirMore = False         # Advanced editing
 
     @staticmethod
     def load(ins,header):
@@ -151,54 +139,10 @@ bethDataFiles = set()
 allBethFiles = set()
 
 #--BAIN:
-## These are the allowed default data directories that BAIN can install to
+## These are the allowed default data directories the BAIN can install to
 dataDirs = set()
 ## These are additional special directories that BAIN can install to
 dataDirsPlus = set()
-
-# Mod Record Elements ----------------------------------------------------------
-#-------------------------------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
-
-# Installer -------------------------------------------------------------------
-# ensure all path strings are prefixed with 'r' to avoid interpretation of
-#   accidental escape sequences
-wryeBashDataFiles = set((
-    u'Bashed Patch.esp',
-    u'Bashed Patch, 0.esp',
-    u'Bashed Patch, 1.esp',
-    u'Bashed Patch, 2.esp',
-    u'Bashed Patch, 3.esp',
-    u'Bashed Patch, 4.esp',
-    u'Bashed Patch, 5.esp',
-    u'Bashed Patch, 6.esp',
-    u'Bashed Patch, 7.esp',
-    u'Bashed Patch, 8.esp',
-    u'Bashed Patch, 9.esp',
-    u'Bashed Patch, CBash.esp',
-    u'Bashed Patch, Python.esp',
-    u'Bashed Patch, FCOM.esp',
-    u'Bashed Patch, Warrior.esp',
-    u'Bashed Patch, Thief.esp',
-    u'Bashed Patch, Mage.esp',
-    u'Bashed Patch, Test.esp',
-    u'ArchiveInvalidationInvalidated!.bsa',
-    u'Docs\\Bash Readme Template.html',
-    u'Docs\\wtxt_sand_small.css',
-    u'Docs\\wtxt_teal.css',
-    u'Docs\\Bash Readme Template.txt'
-    ))
-wryeBashDataDirs = set((
-    u'Bash Patches\\'+name,
-    u'INI Tweaks\\'+name
-    ))
-ignoreDataFiles = set((
-    ))
-ignoreDataFilePrefixes = set((
-    ))
-ignoreDataDirs = set((
-    ))
 
 #--Plugin format stuff
 class esp:

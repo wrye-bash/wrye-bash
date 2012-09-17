@@ -90,9 +90,7 @@ if ret != False: # False == success
             button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
         w = Tkinter.Text(frame)
-        w.insert(Tkinter.END, _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.")
-                 + u'\n\n'+
-                 _(u"To prevent this message in the future, use the -g command line argument to specify the game"))
+        w.insert(Tkinter.END, _("Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.\n\nTo preven this message in the future, use the -g command line argument to specify the game"))
         w.config(state=Tkinter.DISABLED)
         w.pack()
         root.mainloop()
@@ -102,11 +100,14 @@ if ret != False: # False == success
     else:
         bush.setGame(ret[0])
 import bosh
-from bolt import GPath, Path, mainfunc
+from bolt import _, GPath, Path, mainfunc
 
 indent = 0
 longest = 0
-stringBuffer = StringIO.StringIO
+if bolt.bUseUnicode:
+    stringBuffer = StringIO.StringIO
+else:
+    stringBuffer = cStringIO.StringIO
 
 # Basics ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -265,7 +266,7 @@ def convertFace(fileName,eid,fromEid,toEid):
     modFile = bosh.ModFile(modInfo,loadFactory)
     modFile.load(True)
     npc = modFile.NPC_.getRecordByEid(eid)
-    bolt.copyattrs(face,npc,('fggs_p','fgga_p','fgts_p'))
+    bosh.copyattrs(face,npc,('fggs_p','fgga_p','fgts_p'))
     npc.setChanged()
     modFile.safeSave()
 
@@ -275,7 +276,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     """Copies eyes and hair from one race to another."""
     init(3)
     if dstMod.lower() == 'oblivion.esm':
-        raise bolt.BoltError(u"You don't REALLY want to overwrite Oblivion.esm, do you?")
+        raise bolt.BoltError(_("You don't REALLY want to overwrite Oblivion.esm, do you?"))
     srcFactory = bosh.LoadFactory(False,bosh.MreRace)
     dstFactory = bosh.LoadFactory(True,bosh.MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
@@ -294,8 +295,8 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
         if record.eid == dstRaceEid:
             dstRace = record
             break
-    if not srcRace: raise bosh.ModError(srcMod,u"Didn't find race (eid) %s." % srcRaceEid)
-    if not dstRace: raise bosh.ModError(dstMod,u"Didn't find race (eid) %s." % dstRaceEid)
+    if not srcRace: raise bosh.ModError(srcMod,_("Didn't find race (eid) %s.") % (srcRaceEid))
+    if not dstRace: raise bosh.ModError(dstMod,_("Didn't find race (eid) %s.") % (dstRaceEid))
     #--Get mapper
     srcMasters = srcFile.tes4.masters[:] + [GPath(srcMod)]
     dstMasters = dstFile.tes4.masters[:] + [GPath(dstMod)]
@@ -321,7 +322,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     dstRace.setChanged()
     #--Save Changes
     dstFile.safeSave()
-    print _(u"  Added %d eyes, %d hair") % (cntEyes,cntHair)
+    print _("  Added %d eyes, %d hair") % (cntEyes,cntHair)
 
 #------------------------------------------------------------------------------
 @mainfunc
@@ -414,7 +415,7 @@ def bookExport(fileName=None):
         for line in ins:
             maHeader = reHeader.match(line)
             if maHeader:
-                if eid and buffer: imported[eid] = bolt.winNewLines(buffer.getvalue())
+                if eid and buffer: imported[eid] = bosh.winNewLines(buffer.getvalue())
                 eid = maHeader.group(1)
                 buffer = stringBuffer()
                 addTags = True
@@ -439,7 +440,7 @@ def bookExport(fileName=None):
                     blanks = ''
         ins.close()
         if eid and buffer:
-            imported[eid] = bolt.winNewLines(buffer.getvalue())
+            imported[eid] = bosh.winNewLines(buffer.getvalue())
     #--Books from mod
     changed = False
     for book in modFile.BOOK.records:
@@ -703,7 +704,7 @@ def getIds(fileName=None):
     """Gets fids and returns as a set. Primarily for analysis of Oblivion.esm.
     NOTE: Does a low level read and hence can read fids of ALL records in all
     groups. Including CELLs WRLDs, etc."""
-    def getRecordReader(self,ins,flags,size):
+    def getRecordReader(ins,flags,size):
         """Decompress record data as needed."""
         if not bosh.MreRecord.flags1(flags).compressed:
             return (ins,ins.tell()+size)
@@ -712,8 +713,8 @@ def getIds(fileName=None):
             sizeCheck, = struct.unpack('I',ins.read(4))
             decomp = zlib.decompress(ins.read(size-4))
             if len(decomp) != sizeCheck:
-                raise bosh.ModError(self.inName,
-                    u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
+                raise ModError(self.inName,
+                    _('Mis-sized compressed data. Expected %d, got %d.') % (size,len(decomp)))
             reader = bosh.ModReader(fileName,stringBuffer(decomp))
             return (reader,sizeCheck)
     init(2)
@@ -795,7 +796,7 @@ def gmstIds(fileName=None):
     if maxId > maxOld:
         outData = {'GMST':fids}
         cPickle.dump(outData,GPath(r'Oblivion_ids.pkl').open('w'))
-        print _(u"%d new gmst ids written to Oblivion_ids.pkl") % ((maxId - maxOld),)
+        print _("%d new gmst ids written to Oblivion_ids.pkl") % ((maxId - maxOld),)
 
 #------------------------------------------------------------------------------
 @mainfunc
@@ -1040,9 +1041,9 @@ def parseRecords(fileName='Oblivion.esm'):
     modFile.fileInfo.setType('esp')
 
 @mainfunc
-def dumpLSCR(fileName=u'Oblivion.esm'):
+def dumpLSCR(fileName='Oblivion.esm'):
     def strFid(longFid):
-        return u'%s: %06X' % (longFid[0].stail, longFid[1])
+        return '%s: %06X' % (longFid[0].stail, longFid[1])
     bosh.initBosh()
     fileName = GPath(fileName)
     #--Load up in CBash
@@ -1051,14 +1052,14 @@ def dumpLSCR(fileName=u'Oblivion.esm'):
         modFile = Current.addMod(fileName.stail)
         Current.load()
         #--Dump the info
-        outFile = GPath(fileName.root+u'.csv')
+        outFile = GPath(fileName.root+'.csv')
         with outFile.open('w') as file:
             count = 0
-            file.write(u'"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
+            file.write('"FormId"\t"EditorID"\t"ICON"\t"DESC"\n')
             for lscr in modFile.LSCR:
-                file.write(u'"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
+                file.write('"%s"\t"%s"\t"%s"\t"%s"\n' % (strFid(lscr.fid),lscr.eid,lscr.iconPath,lscr.text))
                 count += 1
-            print u'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
+            print 'Dumped %i records from "%s" to "%s".' % (count, fileName.stail, outFile.s)
 
 @mainfunc
 def createLSCR(*args):
@@ -1204,7 +1205,7 @@ def createLSCR(*args):
                         masterName = bosh.dirs['mods'].join(masterName)
                         self.fids_eids.append((cint.FormID(masterName.tail,recordId),eid))
             except Exception, e:
-                print "WARNING: An error occurred while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
+                print "WARNING: An error occured while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
 
         def loadDESCS(self,descFile):
             descFile = GPath(descFile)
@@ -1221,7 +1222,7 @@ def createLSCR(*args):
                         if len(line) > 0:
                             self.DESC.append(line)
             except Exception, e:
-                print "WARNING: An error occurred while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
+                print "WARNING: An error occured while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
             random.shuffle(self.DESC)
 
         def loadLNAMS(self,lnamFile,clearLNAM):
@@ -1250,7 +1251,7 @@ def createLSCR(*args):
                         masterName = bosh.dirs['mods'].join(masterName)
                         self.LNAM.append(cint.FormID(masterName.tail,recordId))
             except Exception, e:
-                print "WARNING: An error occurred while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
+                print "WARNING: An error occured while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
 
         def updateMasters(self):
             self.masters = set()
@@ -1408,6 +1409,59 @@ def createLSCR(*args):
 """Very temporary functions."""
 #--Temp
 @mainfunc
+def temp(fileName=None):
+    import psyco
+    psyco.full()
+    init(3)
+    testClasses = (bosh.MreWrld,bosh.MreCell,bosh.MreAcre,bosh.MreAchr,bosh.MreRefr)
+    loadFactory = bosh.LoadFactory(False,*testClasses)
+    modInfo = bosh.modInfos[GPath(fileName)]
+    modFile = bosh.ModFile(modInfo,loadFactory)
+    modFile.load(True)
+    strf = bosh.strFid
+    for cb in modFile.CELL.cellBlocks:
+        print cb.cell.full,strf(cb.cell.fid)
+        cb.cell.setChanged()
+        for attr in ('persistent','temp','distant'):
+            #print ' ',attr
+            for record in getattr(cb,attr):
+                #print '   ',strf(record.fid)
+                record.setChanged()
+    for wb in modFile.WRLD.worldBlocks:
+        print wb.world.full,strf(wb.world.fid)
+        for cb in wb.cellBlocks:
+            print '.',cb.cell.full,strf(cb.cell.fid)
+            cb.cell.setChanged()
+            for attr in ('persistent','temp','distant'):
+                #print ' ',attr
+                for record in getattr(cb,attr):
+                    #print '   ',strf(record.fid)
+                    record.setChanged()
+    modFile.tes4.masters.append(modInfo.name)
+    modFile.tes4.setChanged()
+    outInfo = bosh.ModInfo(modInfo.dir,GPath("Wrye Dump.esp"))
+    modFile.fileInfo = outInfo
+    loadFactory.keepAll = True
+    modFile.askSave()
+    return
+    for record in modFile.SCPT.getActiveRecords():
+        print record.eid
+        out = GPath(record.eid+'.mws').open('w')
+        out.write(record.scriptText)
+        out.close()
+    return
+    #--Save to test file
+    for testClass in testClasses:
+        print testClass.classType
+        for record in getattr(modFile,testClass.classType).records:
+            #print record.eid
+            if reBarExt.match(record.model.modPath):
+                record.model.modPath = reBarExt.sub(r'Architecture\\BarabusCrypt',record.model.modPath)
+                print record.eid, record.model.modPath
+                record.setChanged()
+    modFile.askSave(True)
+
+@mainfunc
 def balancer(fileName=None):
     """Generates part of the balancing scripts for Cobl Races Balanced."""
     init(3)
@@ -1511,7 +1565,7 @@ class Archive:
         path = size = crc = isDir = 0
 
         command = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
-        command = command.encode('mbcs')
+        command = Encode(command,'mbcs')
         out = Popen(command, stdout=PIPE).stdout
         for line in out:
             print line,
@@ -1536,8 +1590,8 @@ class Archive:
 
     def extract(self):
         """Extracts specified files from archive."""
-        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.exe7z,self.path.s)
-        command = command.encode('mbcs')
+        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (exe7z,self.path.s)
+        command = Encode(command,'mbcs')
         out = Popen(command, stdout=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
         for line in out:
@@ -1555,7 +1609,7 @@ def test(file):
 def create_sample_project(read_file=None,dest_path=None):
     """create a sample project for BAIN testing from a text file list of paths - ie as exported by 'list structure'"""
     if not read_file:
-        print _(u"read file must be specified")
+        print _("read file must be specified")
         return
     if not dest_path:
         dest_path = GPath(os.getcwd()).join("Test BAIN Project")
