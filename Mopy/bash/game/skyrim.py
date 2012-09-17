@@ -12792,7 +12792,6 @@ class MelCoed(MelOptStruct):
 #         ]),
 #    {08} wbFloat('Item Condition')
 #  ]);
-
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
@@ -12967,6 +12966,7 @@ class MelBODT(MelStruct):
             (30, 'bodyaddon17'),
             (31, 'fx01'),
         ))
+
     otherFlags = bolt.Flags(0L,bolt.Flags.getNames(
             (0, 'modulates_voice'), #{>>> From ARMA <<<}
             (1, 'unknown_2'),
@@ -12974,11 +12974,13 @@ class MelBODT(MelStruct):
             (3, 'unknown_4'),
             (4, 'non_playable'), #{>>> From ARMO <<<}
         ))
+
     armorTypes = {
         0:'Light Armor',
         1:'Heavy Armor',
         2:'Clothing',
         }
+
     def __init__(self,type='BODT'):
         MelStruct.__init__(self,type,'=3I',
                            (MelBODT.btFlags,'bodyFlags',0L),
@@ -13004,24 +13006,28 @@ class MelBODT(MelStruct):
         else:
             MelStruct.loadData(self,record,ins,type,size,readId)
 
+# Verified Correct for Skyrim
 #-------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model record."""
+    # MODB and MODD need investigation. Could be unused legacy records
     typeSets = {
-        'MODL': ('MODL','MODT','MODS'),
-        'MOD2': ('MOD2','MO2T','MO2S'),
-        'MOD3': ('MOD3','MO3T','MO3S'),
-        'MOD4': ('MOD4','MO4T','MO4S'),
-        'MOD5': ('MOD5','MO5T','MO5S'),
-        'DMDL': ('DMDL','DMDT','DMDS'),
+        'MODL': ('MODL','MODB','MODT','MODS','MODD'),
+        'MOD2': ('MOD2','MODB','MO2T','MO2S','MODD'),
+        'MOD3': ('MOD3','MODB','MO3T','MO3S','MODD'),
+        'MOD4': ('MOD4','MODB','MO4T','MO4S','MODD'),
+        'MOD5': ('MOD5','MODB','MO5T','MO5S','MODD'),
+        'DMDL': ('DMDL','MODB','DMDT','DMDS','MODD'),
         }
     def __init__(self,attr='model',type='MODL'):
         """Initialize."""
         types = self.__class__.typeSets[type]
         MelGroup.__init__(self,attr,
             MelString(types[0],'modPath'),
-            MelBase(types[1],'modt_p'),
-            MelMODS(types[2],'mod_s'),
+            MelBase(types[1],'modb_p'),
+            MelBase(types[2],'modt_p'),
+            MelMODS(types[3],'mod_s'),
+            MelStruct(types[4],'=B','modelFlags'),
             )
 
     def debug(self,on=True):
@@ -13170,7 +13176,7 @@ class MreAddn(MelRecord):
         MelModel(),
         MelBase('DATA','data_p'),
         MelOptStruct('SNAM','I',(FID,'ambientSound')),
-        MelBase('DNAM','flags'),
+        MelBase('DNAM','addnFlags'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -13198,17 +13204,18 @@ class MreArma(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Check FormIDs to make sure they are only 4 and not 8, 12, or 16, bytes.		
-# Assume correct if not Use MelFidList
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
     """Armor"""
     classType = 'ARMO'
     melSet = MelSet(
         MelString('EDID','eid'),
+        MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
         MelOptStruct('EITM','I',(FID,'enchantment')),
+        MelModel(),
         MelModel('model1','MOD2'),
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
@@ -13224,7 +13231,7 @@ class MreArmo(MelRecord):
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelString('BMCT','ragcontemp'), #Ragdoll Constraint Template
+        MelString('BMCT','ragConTemp'), #Ragdoll Constraint Template
         MelOptStruct('ETYP','I',(FID,'equipType')),
         MelOptStruct('BIDS','I',(FID,'bashImpact')),
         MelOptStruct('BAMT','I',(FID,'material')),
@@ -13244,8 +13251,11 @@ class MreArmo(MelRecord):
 class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
     classType = 'AMMO'
-
-    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon','nonPlayable','nonBolt'))
+    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'notNormalWeapon'),
+        (1, 'nonPlayable'),
+        (2, 'nonBolt'),
+    ))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -13259,7 +13269,7 @@ class MreAmmo(MelRecord):
         MelLString('DESC','description'),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','IIff',(FID,'projectile'),(MreAmmo.AmmoTypeFlags,'flags',0L),'damage','value'),
+        MelStruct('DATA','IIfI',(FID,'projectile'),(MreAmmo.AmmoTypeFlags,'flags',0L),'damage','value'),
         MelString('ONAM','shortName'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -13280,14 +13290,15 @@ class MreAnio(MelRecord):
 #------------------------------------------------------------------------------
 class MreAppa(MelRecord):
     """Appa record (Alchemical Apparatus)"""
-    #QUAL is an Enum
-    #  0, 'Novice',
-    #  1, 'Apprentice',
-    #  2, 'Journeyman',
-    #  3, 'Expert',
-    #  4, 'Master'
-
     classType = 'APPA'
+    AppaTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'novice'),
+        (1, 'apprentice'),
+        (2, 'journeyman'),
+        (3, 'expert'),
+        (4, 'master'),
+    ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -13304,35 +13315,25 @@ class MreAppa(MelRecord):
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        MelStruct('QUAL','I','quality'),
+        MelStruct('QUAL','I',(MreAppa.AppaTypeFlags,'flags',0L)),
         MelLString('DESC','description'),
         MelStruct('DATA','If','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified Correct for Skyrim
-# Note To Self -- MelBase('DATA','data_p'), = Blob
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
-
-    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'magic_casting'), #{0x00000001} 'Magic Casting',
-            (1, 'magic_hit_effect'), #{0x00000002} 'Magic Hit Effect',
-            (2, 'enchantment_effect'), #{0x00000004} 'Enchantment Effect'
-        ))
-
     """Arto record (Art effect object)"""
-
     classType = 'ARTO'
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelModel(),
-        MelStruct('DNAM','I',(MreArto.ArtoTypeFlags,'flags',0L)),
+        MelStruct('DNAM','I','flags'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
     """Aspc record (Acoustic Space)"""
@@ -13346,51 +13347,31 @@ class MreAspc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAstp(MelRecord):
     """Astp record (Association type)"""
-
     classType = 'ASTP'
-
-    # DATA Flags
-    # {0x00000001} 'Related'
-    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
-
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('related'))
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('MPRT','maleParent'),
         MelString('FPRT','femaleParent'),
-        MelString('MCHT','maleChild'),
         MelString('FCHT','femaleChild'),
-        MelStruct('DATA','I',(MreAstp.AstpTypeFlags,'flags',0L)),
+        MelString('MCHT','maleChild'),
+        MelStruct('DATA','I',(_flags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
     isKeyedByEid = True # NULL fids are acceptible
-
-
-    class MelCobjCnto(MelGroups):
-        def __init__(self):
-            MelGroups.__init__(self,'components',
-                MelStruct('CNTO','=2I',(FID,'item',None),'count'),
-                MelCoed(),
-                )
-
-        def dumpData(self,record,out):
-            # Only write the COCT/CNTO/COED subrecords if count > 0
-            out.packSub('COCT','I',len(record.components))
-            MelGroups.dumpData(self,record,out)
-
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelNull('COCT'), # Handled by MelCobjCnto
-        MelCobjCnto(),
+        MelNull('COCT'), # Handled by MelComponents
+        MelComponents('CNTO','=2I','components',(FID,'item',None),'count'),
+        #Needs COED record handler here
         MelConditions(),
         MelFid('CNAM','resultingItem'),
         MelFid('BNAM','craftingStation'),
@@ -13398,14 +13379,12 @@ class MreCobj(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
@@ -13414,7 +13393,7 @@ class MreLeveledList(MreLeveledListBase):
         def __init__(self):
             MelGroups.__init__(self,'entries',
                 MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
-                MelCoed(),
+                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
                 )
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
@@ -13422,7 +13401,6 @@ class MreLeveledList(MreLeveledListBase):
 
     __slots__ = MreLeveledListBase.__slots__
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     classType = 'LVLI'
@@ -13433,13 +13411,12 @@ class MreLvli(MreLeveledList):
         MelBounds(),
         MelStruct('LVLD','B','chanceNone'),
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
-        MelOptStruct('LVLG','I',(FID,'glob')),
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
+        MelOptStruct('LVLG','I',(FID,'glob')),
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
@@ -13454,10 +13431,10 @@ class MreLvln(MreLeveledList):
         MreLeveledList.MelLevListLvlo(),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
+        #Needs COED record handler here
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
@@ -13473,7 +13450,6 @@ class MreLvsp(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
@@ -13493,288 +13469,6 @@ class MreMisc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# If VMAD correct then Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MelSpgdData(MelStruct):
-    def __init__(self,type='DATA'):
-        MelStruct.__init__(self,type,'=7f4If',
-                           'gravityVelocity','rotationVelocity','particleSizeX','particleSizeY',
-                           'centerOffsetMin','centerOffsetMax','initialRotationRange',
-                           'numSubtexturesX','numSubtexturesY','type',
-                           ('boxSize',0),
-                           ('particleDensity',0),
-                           )
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        if size == 40:
-            # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
-            # fffffffIIIIf
-            # Type is an Enum 0 = Rain; 1 = Snow
-            unpacked = ins.unpack('=7f3I',size,readId) + (0,0,)
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if action: value = action(value)
-                setter(attr,value)
-            if self._debug:
-                print u' ',zip(self.attrs,unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ',unpacked
-        elif size != 48:
-            raise ModSizeError(ins.inName,readId,48,size,True)
-        else:
-            MelStruct.loadData(self,record,ins,type,size,readId)
-
-class MreSpgd(MelRecord):
-    """Spgd Item"""
-    classType = 'SPGD'
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelSpgdData(),
-        MelString('ICON','icon'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreFlst(MelRecord):
-    """Flst Item"""
-    classType = 'FLST'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        # This is repeating
-        MelOptStruct('LNAM','I',(FID,'pickupSound')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreIpds(MelRecord):
-    """Ipds Item"""
-    classType = 'IPDS'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
-        MelGroups('data',
-            MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
-            ),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MelLgtmData(MelStruct):
-    def __init__(self,type='DALC'):
-        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
-                           'red','green','blue','unknown', # 'X+'
-                           'red','green','blue','unknown', # 'X-'
-                           'red','green','blue','unknown', # 'Y+'
-                           'red','green','blue','unknown', # 'Y-'
-                           'red','green','blue','unknown', # 'Z+'
-                           'red','green','blue','unknown', # 'Z-'
-                           'red','green','blue','unknown', # Specular Color Values
-                           'fresnelPower' # Fresnel Power
-                           )
-
-class MreLgtm(MelRecord):
-    """Lgtm Item"""
-    classType = 'LGTM'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        # 92 Bytes
-        MelStruct('DATA','4B4B4B2f2i3f8I4B3fI',
-            'red','green','blue','unknown',
-            'red','green','blue','unknown',
-            'red','green','blue','unknown',
-            'fogNear','fogFar',
-            'dirRotXY','dirRotZ',
-            'directionalFade','fogClipDist','fogPower',
-            'unknown','unknown','unknown','unknown',
-            'unknown','unknown','unknown','unknown',
-            'red','green','blue','unknown',
-            'fogMax',
-            'lightFaceStart','lightFadeEnd',
-            'unknown',),
-        # 32 Bytes
-        MelLgtmData(),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# If Syntax Correct, Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreOtft(MelRecord):
-    """Otft Item"""
-    classType = 'OTFT'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelFidList('INAM','items'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreVtyp(MelRecord):
-
-    # {0x00} 'Magic Casting',
-    # {0x01} Not Used
-    # {0x02} 'Allow Default Dialog',
-    # {0x04} 'Female',
-    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'male'),
-            (1, 'allow_default_dialog'),
-            (2, 'female'),
-        ))
-
-    """Vtyp Item"""
-    classType = 'VTYP'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelStruct('DNAM','B',(MreVtyp.VtypTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreEyes(MelRecord):
-
-    # {0x01} 'Magic Casting',
-    # {0x02} 'Magic Hit Effect',
-    # {0x04} 'Enchantment Effect',
-    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'playable'),
-            (1, 'not_male'),
-            (2, 'not_female'),
-        ))
-
-    """Eyes Item"""
-    classType = 'EYES'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelLString('FULL','full'),
-        MelString('ICON','icon'),
-        MelStruct('DNAM','B',(MreEyes.EyesTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreMovt(MelRecord):
-    """Movt Item"""
-    classType = 'MOVT'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('MNAM','mnam_n'),
-        MelStruct('SPED','11f','leftwalk','leftrun','rightwalk','rightrun','forwardwalk','forwardrun','backwalk',
-                  'backrun','rotateinplacewalk','rotateinplacerun','rotatewhilemovingrun'),
-        MelStruct('INAM','3f','directional','movementspeed','rotationspeed'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreBook(MelRecord):
-
-    # {0x01} 'Teaches Skill',
-    # {0x02} 'Can''t be Taken',
-    # {0x04} 'Teaches Spell',
-    BookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'teaches_skill'),
-            (1, 'cant_be_taken'),
-            (2, 'teaches_spell'),
-        ))
-
-    bookTypes = {
-        0:'book_tome',
-        255:'note_scroll',
-        }
-
-    skillTypes = {
-       -1 :'None',
-        7 :'One Handed',
-        8 :'Two Handed',
-        9 :'Archery',
-        10:'Block',
-        11:'Smithing',
-        12:'Heavy Armor',
-        13:'Light Armor',
-        14:'Pickpocket',
-        15:'Lockpicking',
-        16:'Sneak',
-        17:'Alchemy',
-        18:'Speech',
-        19:'Alteration',
-        20:'Conjuration',
-        21:'Destruction',
-        22:'Illusion',
-        23:'Restoration',
-        24:'Enchanting',
-        }
-
-    """Book Item"""
-    classType = 'BOOK'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelVmad(),
-        MelBounds(),
-        MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelLString('DESC','book-text'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelOptStruct('YNAM','I',(FID,'pickupSound')),
-        MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
-        # flags are : 'B' -- (MreBook.BookTypeFlags,'flags',0L) 
-        # 'B' of bookTypes
-        # '2B' 2 Unused Bytes
-        # ---------------------------------------------------------------------
-        # Funtion: If Flag - 'teaches_spell' is set -- FormID 'Spell' of [SPEL]
-        #   MelFids('','spell'),
-        # Else 'I' of skillTypes
-        # ---------------------------------------------------------------------
-        # 'I' 'value
-        # 'f' Float 'weight'
-        MelStruct('DATA','4B2If','flags','bookType','unused','unused','skillOrSpell','value','weight',
-        ),
-        MelFids('INAM','races'),
-        MelString('CNAM','cnam_n'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# DATA needs syntax check.
-# BookTypeFlags needs syntax check.
-# bookTypes needs syntax check.
-# skillTypes needs syntax check.
-# After syntax checks and DATA is formated correctly, this record is correct for Skyrim
-#------------------------------------------------------------------------------
-
-class MreEqup(MelRecord):
-    """Equp Item"""
-    classType = 'EQUP'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelFids('PNAM','equpment'),
-        MelStruct('DATA','I','useall_parents'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 # Contains VMAD Can't be merged at this time:
 # MreActi, MreAppa, MreMisc, MreBook, 
@@ -13784,11 +13478,9 @@ class MreEqup(MelRecord):
 # 
 #--Mergeable record types
 mergeClasses = (
-        MreAact, MreAddn, MreAmmo, MreAnio, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreEqup, MreEyes, MreFlst,
-        MreGmst, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMovt,
-        MreOtft, MreSpgd, MreVtyp,
-        )
+    MreAact, MreAmmo, MreAnio, MreArma, MreArmo, MreArto, MreAspc, MreAstp,
+    MreCobj, MreGlob, MreGmst, MreLvli, MreLvln, MreLvsp,
+    )
 
 #--Extra read/write classes
 readClasses = ()
@@ -13805,11 +13497,10 @@ def init():
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreBook, MreCobj, MreEqup, MreEyes, MreFlst,
-        MreGmst, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMisc, MreMovt,
-        MreOtft, MreSpgd, MreVtyp,
+        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
+        MreLvsp, MreMisc,
         MreHeader,
-    ))
+        ))
 
     #--Simple records
     brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
