@@ -241,6 +241,7 @@ saveProfilesKey = (u'General',u'SLocalSavePath')
 masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
+    u'Dawnguard.esm',
     ]
 
 #--Game ESM/ESP/BSA files
@@ -249,6 +250,8 @@ bethDataFiles = set((
     u'skyrim.esm',
     u'update.esm',
     u'update.bsa',
+    u'Dawnguard.esm',
+    u'Dawnguard.bsa',
     u'skyrim - animations.bsa',
     u'skyrim - interface.bsa',
     u'skyrim - meshes.bsa',
@@ -270,6 +273,8 @@ allBethFiles = set((
     u'skyrim.esm',
     u'update.esm',
     u'update.bsa',
+    u'Dawnguard.esm',
+    u'Dawnguard.bsa',
     u'skyrim - animations.bsa',
     u'skyrim - interface.bsa',
     u'skyrim - meshes.bsa',
@@ -12480,18 +12485,19 @@ class esp:
         ]
 
     #--Top types in Skyrim order.
-    topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
-        'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL',
-        'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC',
-        'APPA', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS', 'TREE', 'CLDC', 'FLOR', 'FURN',
-        'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM', 'COBJ', 'PROJ', 'HAZD',
-        'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD',
-        'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH',
-        'EXPL', 'DEBR', 'IMGS', 'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS',
-        'CPTH', 'VTYP', 'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'RGDL',
-        'DOBJ', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'DLBR', 'MUST',
-        'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA', 'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO',
-        'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB',]
+    topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT', 
+                'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 
+                'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 
+                'LIGH', 'MISC', 'APPA', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS', 'TREE', 
+                'CLDC', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 
+                'IDLM', 'COBJ', 'PROJ', 'HAZD', 'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD', 
+                'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 
+                'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS', 
+                'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH', 'VTYP', 
+                'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'RGDL', 'DOBJ',
+                'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'DLBR', 'MUST', 
+                'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA', 'SCEN', 'ASTP', 'OTFT', 'ARTO', 
+                'MATO', 'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB',]
 
     #--Dict mapping 'ignored' top types to un-ignored top types.
     topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
@@ -12738,6 +12744,48 @@ class MelBounds(MelStruct):
             'x1','y1','z1',
             'x2','y2','z2')
 
+#------------------------------------------------------------------------------
+class MelColorN(MelStruct):
+        def __init__(self):
+                MelStruct.__init__(self,'CNAM','=4Bs',
+                        'red','green','blue','unused')
+
+#function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
+#var
+#  Container  : IwbContainer;
+#  LinksTo    : IwbElement;
+#  MainRecord : IwbMainRecord;
+#begin
+#  Result := 0;
+#  if aElement.ElementType = etValue then
+#    Container := aElement.Container
+#  else
+#    Container := aElement as IwbContainer;
+#
+#  LinksTo := Container.ElementByName['Owner'].LinksTo;
+#
+#
+#  if Supports(LinksTo, IwbMainRecord, MainRecord) then
+#    if MainRecord.Signature = 'NPC_' then
+#      Result := 1
+#    else if MainRecord.Signature = 'FACT' then
+#      Result := 2;
+#end;
+#Basically the Idea is if it is it's an NPC_ then it's a FormID of a [GLOB]												
+#if it is it's an FACT (Faction) then it's a 4Byte integer Rank of the faction.
+#If it's not NPC_ or FACT then it's unknown and just a 4Byte integer
+
+#class MelCoed(MelStruct):
+# wbCOED := wbStructExSK(COED, [2], [0, 1], 'Extra Data', [
+#    {00} wbFormIDCkNoReach('Owner', [NPC_, FACT, NULL]),
+#    {04} wbUnion('Global Variable / Required Rank', wbCOEDOwnerDecider, [
+#           wbByteArray('Unknown', 4, cpIgnore),
+#           wbFormIDCk('Global Variable', [GLOB, NULL]),
+#           wbInteger('Required Rank', itS32)
+#         ]),
+#    {08} wbFloat('Item Condition')
+#  ]);
+
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
@@ -12879,27 +12927,45 @@ class MelMODS(MelBase):
 class MelBODT(MelStruct):
     """Body Type data"""
     btFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'skin'),
-        (1, 'head'),
-        (2, 'chest'),
-        (3, 'hands'),
-        (4, 'beard'),
-        (5, 'amulet'),
-        (6, 'ring'),
-        (7, 'feet'),
-        #8 = unk
-        (9, 'shield'),
-        (10,'animal_skin'),
-        (11,'underskin'),
-        (12,'crown'),
-        (13,'face'),
-        (14,'dragon_head'),
-        (15,'dragon_lwing'),
-        (16,'dragon_rwing'),
-        (17,'dragon_body'),
+            (0, 'head'),
+            (1, 'hair'),
+            (2, 'body'),
+            (3, 'hands'),
+            (4, 'forearms'),
+            (5, 'amulet'),
+            (6, 'ring'),
+            (7, 'feet'),
+            (8, 'calves'),
+            (9, 'shield'),
+            (10, 'bodyaddon1/tail'),
+            (11, 'long_hair'),
+            (12, 'circlet'),
+            (13, 'bodyaddon2'),
+            (14, 'dragon_head'),
+            (15, 'dragon_lwing'),
+            (16, 'dragon_rwing'),
+            (17, 'dragon_body'),
+            (18, 'bodyaddon7'),
+            (19, 'bodyaddon8'),
+            (20, 'decapate_head'),
+            (21, 'decapate'),
+            (22, 'bodyaddon9'),
+            (23, 'bodyaddon10'),
+            (24, 'bodyaddon11'),
+            (25, 'bodyaddon12'),
+            (26, 'bodyaddon13'),
+            (27, 'bodyaddon14'),
+            (28, 'bodyaddon15'),
+            (29, 'bodyaddon16'),
+            (30, 'bodyaddon17'),
+            (31, 'fx01'),
         ))
     otherFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (4,'notPlayable'),
+            (0, 'modulates_voice'), #{>>> From ARMA <<<}
+            (1, 'unknown_2'),
+            (2, 'unknown_3'),
+            (3, 'unknown_4'),
+            (4, 'non_playable'), #{>>> From ARMO <<<}
         ))
     armorTypes = {
         0:'Light Armor',
@@ -13049,9 +13115,11 @@ class MreAact(MelRecord):
     classType = 'AACT'
     melSet = MelSet(
         MelString('EDID','eid'),
+        MelColorN(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# CNAM Needs Verification
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
     """Activator."""
@@ -13068,6 +13136,8 @@ class MreActi(MelRecord):
             MelModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
         MelBase('PNAM','pnam_p'),
         MelOptStruct('SNAM','I',(FID,'dropSound')),
         MelOptStruct('VNAM','I',(FID,'pickupSound')),
@@ -13075,11 +13145,10 @@ class MreActi(MelRecord):
         MelLString('RNAM','rnam'),
         MelBase('FNAM','fnam_p'),
         MelOptStruct('KNAM','I',(FID,'keyword')),
-        MelNull('KSIZ'), # Handled by MelKeywords
-        MelKeywords('KWDA','keywords'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAddn(MelRecord):
     """Addon"""
@@ -13089,10 +13158,12 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelBase('DATA','data_p'),
+        MelOptStruct('SNAM','I',(FID,'foodSound')),
         MelBase('DNAM','flags'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# SNAM Needs Verification
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
     """Armor addon?"""
@@ -13106,15 +13177,17 @@ class MreArma(MelRecord):
         MelModel('female_model','MOD3'),
         MelModel('male_model_1st','MOD4'),
         MelModel('female_model_1st','MOD5'),
-        MelFids('MODL','races'),
-        MelOptStruct('SNDD','I',(FID,'foodSound')),
         MelOptStruct('NAM0','I',(FID,'skin0')),
         MelOptStruct('NAM1','I',(FID,'skin1')),
         MelOptStruct('NAM2','I',(FID,'skin2')),
         MelOptStruct('NAM3','I',(FID,'skin3')),
+        MelFids('MODL','races'), #Needs to be an array of FormID [RACE]
+        MelOptStruct('SNDD','I',(FID,'footstep_sound')), #Needs to be an array of FormID [FSTS]
+        MelOptStruct('ONAM','I',(FID,'art_object')), #Needs to be an array of FormID [ARTO]
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# SNDD, ONAM Needs Verification
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
     """Armor"""
@@ -13125,45 +13198,73 @@ class MreArmo(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelOptStruct('EITM','I',(FID,'enchantment')),
+        MelModel(),
         MelModel('model1','MOD2'),
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
         MelModel('model3','MOD4'),
+        MelString('ICO2','ico2_n'),
+        MelString('MIC2','mic2_n'),
         MelBODT(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelString('BMCT','ragcontemp'), #Ragdoll Constraint Template
         MelOptStruct('ETYP','I',(FID,'equipType')),
         MelOptStruct('BIDS','I',(FID,'bashImpact')),
         MelOptStruct('BAMT','I',(FID,'material')),
-        MelOptStruct('YNAM','I',(FID,'pickupSound')),
-        MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelOptStruct('RNAM','I',(FID,'race')),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
         MelFids('MODL','addons'),
         MelStruct('DATA','=If','value','weight'),
-        MelFid('TNAM','baseItem'),
         MelStruct('DNAM','I','armorRating'),
+        MelFid('TNAM','baseItem'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
     classType = 'AMMO'
     # TODO: verify these flags for Skyrim
     _flags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon'))
+    #{0x00000001} 'Ignores Normal Weapon Resistance',
+    #{0x00000002} 'Non-Playable', -- If set it is not Playable
+    #{0x00000004} 'Non-Bolt' -- If set it is not a Bolt / This would not be set for Bolts in Dawnguard  
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelStruct('DATA','fIff','projectileformID',(_flags,'flags',0L),'damage','value'),
+        MelString('ONAM','short_name'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# ONAM Needs Verification
+# Flags Needs Updated
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
     """Anio record (Animated Object)"""
@@ -13175,23 +13276,51 @@ class MreAnio(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAppa(MelRecord):
     """Appa record (Alchemical Apparatus)"""
+    #QUAL is an Enum
+    #  0, 'Novice',
+    #  1, 'Apprentice',
+    #  2, 'Journeyman',
+    #  3, 'Expert',
+    #  4, 'Master'
+    #DATA is Value and Weight
+    #  Integer ('Value', itU32), (4 Bytes)
+    #  Float ('Weight'), (4 Bytes)
+
     classType = 'APPA'
     melSet = MelSet(
         MelString('EDID','eid'),
+        MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
+        MelModel(),
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
         MelStruct('QUAL','I','quality'),
         MelLString('DESC','description'),
-        MelBase('DATA','data_p'),
+        MelStruct('DATA','=If','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# QUAL, DATA Needs Verification
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
     """Arto record (Art effect object)"""
+    #DNAM Flags
+    #{0x00000001} 'Magic Casting',
+    #{0x00000002} 'Magic Hit Effect',
+    #{0x00000004} 'Enchantment Effect'
     classType = 'ARTO'
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -13201,6 +13330,7 @@ class MreArto(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# DNAM Needs Verification
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
     """Aspc record (Acoustic Space)"""
@@ -13214,21 +13344,26 @@ class MreAspc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MreAstp(MelRecord):
     """Astp record (Association type)"""
+    #DATA Flags
+    #{0x00000001} 'Related'
+
     classType = 'ASTP'
     _flags = bolt.Flags(0L,bolt.Flags.getNames('related'))
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('MPRT','maleParent'),
         MelString('FPRT','femaleParent'),
-        MelString('FCHT','femaleChild'),
         MelString('MCHT','maleChild'),
+        MelString('FCHT','femaleChild'),
         MelStruct('DATA','I',(_flags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+# DATA Needs Verification
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
@@ -13246,6 +13381,10 @@ class MreCobj(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+#COED handler shown above needs written
+#COCT and COED is an array grouped together
+#In a plugin the pattern would be this: COCT COED COCT COED
+#In a plugin the pattern would not be this: COCT COCT COCT COCT COCT COED COED COED COED COED
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
@@ -13265,9 +13404,15 @@ class MreLeveledList(MreLeveledListBase):
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
             MelGroups.dumpData(self,record,out)
+        #Needs COED record handler here
 
     __slots__ = MreLeveledListBase.__slots__
 
+#COED handler shown above needs written
+#LVLO and COED is an array grouped together
+#In a plugin the pattern would be this: LVLO COED LVLO COED
+#In a plugin the pattern would not be this: LVLO LVLO LVLO LVLO LVLO COED COED COED COED COED
+##Also The order is LLCT (Count) Array of (LVLO, COED) of LLCT
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     classType = 'LVLI'
@@ -13278,12 +13423,14 @@ class MreLvli(MreLeveledList):
         MelBounds(),
         MelStruct('LVLD','B','chanceNone'),
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelOptStruct('LVLG','I',(FID,'glob')),
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
-        MelOptStruct('LVLG','I',(FID,'glob')),
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
+#COED handler needs added to LVLO
+#Once COED handler is added this is correct
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
@@ -13298,10 +13445,11 @@ class MreLvln(MreLeveledList):
         MreLeveledList.MelLevListLvlo(),
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
-        #Needs COED record handler here
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
+#COED handler needs added to LVLO
+#Once COED handler is added this is correct
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
@@ -13317,6 +13465,8 @@ class MreLvsp(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
+#COED handler needs added to LVLO but is unused with LVSP
+#Once COED handler is added this is correct
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
@@ -13336,6 +13486,257 @@ class MreMisc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
+#------------------------------------------------------------------------------
+
+class MreSpgd(MelRecord):
+    """Spgd Item"""
+    classType = 'SPGD'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # When 48 Bytes
+        # fffffffIIIIf
+        # Type is an Enum 0 = Rain; 1 = Snow
+        MelStruct('DATA','7f4If','Gravity Velocity','Rotation Velocity','Particle Size X','Particle Size Y',
+                  'Center Offset Min','Center Offset Max','Initial Rotation Range','# of Subtextures X','# of Subtextures Y',
+                  'Type','Box Size','Particle Density'),
+        # When 40 Bytes
+        # When ICON is not present 'Box Size' and 'Particle Density' are not in Skyrim.esm.
+        # They can be in a user created plugin but might be ignored by Skyrim
+        # fffffffIII
+        # MelStruct('DATA','7f3I','Gravity Velocity','Rotation Velocity','Particle Size X','Particle Size Y',
+        # 'Center Offset Min','Center Offset Max','Initial Rotation Range','# of Subtextures X','# of Subtextures Y',
+        # 'Type'),
+        MelString('ICON','icon'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Needs routine to get the size or amount of bytes of DATA.  If 48 then do the Top routine, if 40 then do the bottom routine. 
+#------------------------------------------------------------------------------
+
+class MreFlst(MelRecord):
+    """Flst Item"""
+    classType = 'FLST'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is repeating
+        MelOptStruct('LNAM','I',(FID,'pickupSound')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# LNAM Needs to be repeating
+#------------------------------------------------------------------------------
+
+class MreIpds(MelRecord):
+    """Ipds Item"""
+    classType = 'IPDS'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
+        MelOptStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# PNAM Needs to be repeating
+#------------------------------------------------------------------------------
+
+class MreLgtm(MelRecord):
+    """Lgtm Item"""
+    classType = 'LGTM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','23I', 'various'),
+        MelStruct('DALC','8I', 'various'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DATA Needs proper names from UESP Wiki
+# DALC Needs proper names from UESP Wiki
+#------------------------------------------------------------------------------
+
+class MreOtft(MelRecord):
+    """Otft Item"""
+    classType = 'OTFT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is one subrecord with repeating FormIDs of 1 or more
+        MelOptStruct('INAM','I',(FID,'items')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# INAM Needs to have repeating FormIDs of 1 or more
+#------------------------------------------------------------------------------
+
+class MreVtyp(MelRecord):
+
+    # {0x00} 'Magic Casting',
+    # {0x01} Not Used
+    # {0x02} 'Allow Default Dialog',
+    # {0x04} 'Female',
+    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'male'),
+            (1, 'allow_default_dialog'),
+            (2, 'female'),
+        ))
+
+    """Vtyp Item"""
+    classType = 'VTYP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DNAM','B',(MreVtyp.VtypTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DNAM Needs syntax verification for flags
+# If DNAM syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreEyes(MelRecord):
+
+    # {0x01} 'Magic Casting',
+    # {0x02} 'Magic Hit Effect',
+    # {0x04} 'Enchantment Effect',
+    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'playable'),
+            (1, 'not_male'),
+            (2, 'not_female'),
+        ))
+
+    """Eyes Item"""
+    classType = 'EYES'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelString('ICON','icon'),
+        MelStruct('DNAM','B',(MreEyes.EyesTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DNAM Needs syntax verification for flags
+# If DNAM syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreEyes(MelRecord):
+    """Movt Item"""
+    classType = 'MOVT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MNAM','mnam_n'),
+        # Some values may need to be multiplied by a Scale, or 57.296 I need to verify this
+        MelStruct('SPED','11f','leftwalk','leftrun','rightwalk','rightrun','forwardwalk','forwardrun','backwalk',
+                  'backrun','rotateinplacewalk','rotateinplacerun','rotatewhilemovingrun'),
+        # These values will need to be multiplied by a Scale, or 57.296
+        MelStruct('INAM','3f','directional','movementspeed','rotationspeed'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# MNAM Syntax needs syntax check.  Scale may not be necessary
+# INAM Syntax needs syntax check.  Scale may not be necessary
+# If MNAM and INAM syntax is correct this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreBook(MelRecord):
+
+    # {0x01} 'Teaches Skill',
+    # {0x02} 'Can''t be Taken',
+    # {0x04} 'Teaches Spell',
+    BookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'teaches_skill'),
+            (1, 'can''t_be_taken'),
+            (2, 'teaches_spell'),
+        ))
+
+    bookTypes = {
+        0:'book_tome',
+        255:'note_scroll',
+        }
+
+    skillTypes = {
+        1 :'Unknown 1',
+        2 :'Unknown 2',
+        3 :'Unknown 3',
+        4 :'Unknown 4',
+        5 :'Unknown 5',
+        6 :'Unknown 6',
+        7 :'One Handed',
+        8 :'Two Handed',
+        9 :'Archery',
+        10:'Block',
+        11:'Smithing',
+        12:'Heavy Armor',
+        13:'Light Armor',
+        14:'Pickpocket',
+        15:'Lockpicking',
+        16:'Sneak',
+        17:'Alchemy',
+        18:'Speech',
+        19:'Alteration',
+        20:'Conjuration',
+        21:'Destruction',
+        22:'Illusion',
+        23:'Restoration',
+        24:'Enchanting',
+    # ], [
+    # -1 in Dump is sometimes from a signed intS32 of FF FF FF FF
+    # -1, 'None'
+    # ]);
+        }
+
+    """Book Item"""
+    classType = 'BOOK'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelModel(),
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelLString('DESC','book-text'),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelStruct('DATA','B',
+                  # flags are a 'B'
+                  (MreBook.BookTypeFlags,'flags',0L) 
+                  # 'B' of bookTypes
+                  # '2B' 2 Unused Bytes
+                  # Funtion: If Flag - 'teaches_spell' is set -- FormID 'Spell' of [SPEL]
+                  #   MelFids('','spell'),
+                  # Else 'I' of skillTypes
+                  # 'I' 'value
+                  # 'f' Float 'weight'
+        ),
+        MelFids('INAM','races'),
+        MelString('CNAM','cnam_n'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DATA needs syntax check.
+# BookTypeFlags needs syntax check.
+# bookTypes needs syntax check.
+# skillTypes needs syntax check.
+# After syntax checks and DATA is formated correctly, this record is correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreEqup(MelRecord):
+    """Equp Item"""
+    classType = 'EQUP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFids('PNAM','equpment'),
+        # Data Needs to be a boolean false;0 true;1
+        MelStruct('DATA','I','useall_parents'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# DATA needs syntax check
+# If DATA syntax is correct this record is correct for Skyrim
 #------------------------------------------------------------------------------
 
 #--Mergeable record types
