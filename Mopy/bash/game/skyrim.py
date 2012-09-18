@@ -13012,20 +13012,22 @@ class MelModel(MelGroup):
     """Represents a model record."""
     # MODB and MODD need investigation. Could be unused legacy records
     typeSets = {
-        'MODL': ('MODL','MODT','MODS'),
-        'MOD2': ('MOD2','MO2T','MO2S'),
-        'MOD3': ('MOD3','MO3T','MO3S'),
-        'MOD4': ('MOD4','MO4T','MO4S'),
-        'MOD5': ('MOD5','MO5T','MO5S'),
-        'DMDL': ('DMDL','DMDT','DMDS'),
+        'MODL': ('MODL','MODB','MODT','MODS','MODD'),
+        'MOD2': ('MOD2','MODB','MO2T','MO2S','MODD'),
+        'MOD3': ('MOD3','MODB','MO3T','MO3S','MODD'),
+        'MOD4': ('MOD4','MODB','MO4T','MO4S','MODD'),
+        'MOD5': ('MOD5','MODB','MO5T','MO5S','MODD'),
+        'DMDL': ('DMDL','MODB','DMDT','DMDS','MODD'),
         }
     def __init__(self,attr='model',type='MODL'):
         """Initialize."""
         types = self.__class__.typeSets[type]
         MelGroup.__init__(self,attr,
             MelString(types[0],'modPath'),
-            MelBase(types[1],'modt_p'),
-            MelMODS(types[2],'mod_s'),
+            MelBase(types[1],'modb_p'),
+            MelBase(types[2],'modt_p'),
+            MelMODS(types[3],'mod_s'),
+            MelStruct(types[4],'=B','modelFlags'),
             )
 
     def debug(self,on=True):
@@ -13425,8 +13427,7 @@ class MreLeveledList(MreLeveledListBase):
         def __init__(self):
             MelGroups.__init__(self,'entries',
                 MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
-                # MelCoed(),
-                MelOptStruct('COED','=IQ',(FID,'owner'),'coed_unk'),
+                MelCoed(),
                 )
         def dumpData(self,record,out):
             out.packSub('LLCT','B',len(record.entries))
@@ -13794,7 +13795,6 @@ class MreEqup(MelRecord):
 # MreActi, MreAppa, MreMisc, MreBook, 
 #
 # Can't be merged at this time:
-# 
 # 
 #--Mergeable record types
 mergeClasses = (
