@@ -13252,11 +13252,7 @@ class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
     classType = 'AMMO'
     # TODO: verify these flags for Skyrim
-    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'notNormalWeapon'),
-        (1, 'nonPlayable'),
-        (2, 'nonBolt'),
-    ))
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('notNormalWeapon','nonPlayable','nonBolt'))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -13270,7 +13266,8 @@ class MreAmmo(MelRecord):
         MelLString('DESC','description'),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','IIfI',(FID,'projectile'),(MreAmmo.AmmoTypeFlags,'flags',0L),'damage','value'),
+        (MelBODT.btFlags,'bodyFlags',0L),
+        MelStruct('DATA','IIfI',(FID,'projectile'),(_flags,'flags',0L),'damage','value'),
         MelString('ONAM','shortName'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
