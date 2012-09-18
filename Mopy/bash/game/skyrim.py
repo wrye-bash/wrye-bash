@@ -13013,21 +13013,40 @@ class MelModel(MelGroup):
     # MODB and MODD need investigation. Could be unused legacy records
     typeSets = {
         'MODL': ('MODL','MODB','MODT','MODS','MODD'),
-        'MOD2': ('MOD2','MODB','MO2T','MO2S','MODD'),
-        'MOD3': ('MOD3','MODB','MO3T','MO3S','MODD'),
-        'MOD4': ('MOD4','MODB','MO4T','MO4S','MODD'),
-        'MOD5': ('MOD5','MODB','MO5T','MO5S','MODD'),
-        'DMDL': ('DMDL','MODB','DMDT','DMDS','MODD'),
         }
     def __init__(self,attr='model',type='MODL'):
         """Initialize."""
         types = self.__class__.typeSets[type]
         MelGroup.__init__(self,attr,
             MelString(types[0],'modPath'),
-            MelBase(types[1],'modb_p'),
+            MelOptStruct(types[1],'f','modb'),
             MelBase(types[2],'modt_p'),
             MelMODS(types[3],'mod_s'),
-            MelStruct(types[4],'=B','modelFlags'),
+            MelOptStruct(types[4],'=B','modelFlags'),
+            )
+
+    def debug(self,on=True):
+        """Sets debug flag on self."""
+        for element in self.elements[:2]: element.debug(on)
+        return self
+
+#-------------------------------------------------------------------------------
+class MelAltModel(MelGroup):
+    """Represents a model record."""
+    typeSets = {
+        'MOD2': ('MOD2','MO2T','MO2S'),
+        'MOD3': ('MOD3','MO3T','MO3S'),
+        'MOD4': ('MOD4','MO4T','MO4S'),
+        'MOD5': ('MOD5','MO5T','MO5S'),
+        'DMDL': ('DMDL','DMDT','DMDS'),
+        }
+    def __init__(self,attr='model',type='MODL'):
+        """Initialize."""
+        types = self.__class__.typeSets[type]
+        MelGroup.__init__(self,attr,
+            MelString(types[0],'modPath'),
+            MelBase(types[1],'modt_p'),
+            MelMODS(types[2],'mod_s'),
             )
 
     def debug(self,on=True):
@@ -13150,7 +13169,7 @@ class MreActi(MelRecord):
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
+            MelAltModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelNull('KSIZ'),
@@ -13190,10 +13209,10 @@ class MreArma(MelRecord):
         MelBODT(),
         MelFid('RNAM','race'),
         MelBase('DNAM','dnam_p'),
-        MelModel('male_model','MOD2'),
-        MelModel('female_model','MOD3'),
-        MelModel('male_model_1st','MOD4'),
-        MelModel('female_model_1st','MOD5'),
+        MelAltModel('male_model','MOD2'),
+        MelAltModel('female_model','MOD3'),
+        MelAltModel('male_model_1st','MOD4'),
+        MelAltModel('female_model_1st','MOD5'),
         MelOptStruct('NAM0','I',(FID,'skin0')),
         MelOptStruct('NAM1','I',(FID,'skin1')),
         MelOptStruct('NAM2','I',(FID,'skin2')),
@@ -13216,17 +13235,17 @@ class MreArmo(MelRecord):
         MelLString('FULL','full'),
         MelOptStruct('EITM','I',(FID,'enchantment')),
         MelModel(),
-        MelModel('model1','MOD2'),
+        MelAltModel('model1','MOD2'),
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
-        MelModel('model3','MOD4'),
+        MelAltModel('model3','MOD4'),
         MelString('ICO2','ico2_n'),
         MelString('MIC2','mic2_n'),
         MelBODT(),
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
+            MelAltModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -13268,7 +13287,7 @@ class MreAmmo(MelRecord):
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
+            MelAltModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelFid('YNAM','pickupSound'),
@@ -13317,7 +13336,7 @@ class MreAppa(MelRecord):
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
+            MelAltModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelFid('YNAM','pickupSound'),
@@ -13508,7 +13527,7 @@ class MreMisc(MelRecord):
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
+            MelAltModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -13758,7 +13777,7 @@ class MreBook(MelRecord):
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
+            MelAltModel('model','DMDL'),
             ),
         MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -13771,7 +13790,7 @@ class MreBook(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# DATA needs syntax check.
+# DATA needs to have 'skillOrSpell' save an integer or FormID to be mergable.
 # BookTypeFlags needs syntax check.
 # bookTypes needs syntax check.
 # skillTypes needs syntax check.
@@ -13790,6 +13809,108 @@ class MreEqup(MelRecord):
     
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
+
+class MreClfm(MelRecord):
+    """Clfm Item"""
+    classType = 'CLFM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelColorN(),
+        MelStruct('FNAM','I','Playable'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreFstp(MelRecord):
+    """Fstp Item"""
+    classType = 'FSTP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelOptStruct('DATA','I',(FID,'impactSet')),
+        MelString('ANAM','eid'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreRfct(MelRecord):
+    """Rfct Item"""
+    classType = 'RFCT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),'flags'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreSoun(MelRecord):
+    """Soun Item"""
+    classType = 'SOUN'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelString('FNAM','fxPath'),
+        MelBase('SNDD','soundData'),
+        MelStruct('SDSC','I',(FID,'soundDescriptor')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreBptd(MelRecord):
+    """Bptd Item"""
+    classType = 'BPTD'
+    
+    BptdDamageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'severable'),
+            (1, 'ikData'),
+            (2, 'ikDataBipedData'),
+            (3, 'explodable'),
+            (4, 'ikDataIsHead'),
+            (5, 'ikDataHeadtracking'),
+            (6, 'toHitChanceAbsolute'),
+        ))
+
+    BptdPartTypes = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'torso'),
+            (1, 'head'),
+            (2, 'eye'),
+            (3, 'lookAt'),
+            (4, 'flyGrab'),
+            (5, 'saddle'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelLString('BPTN','fxPath'),
+        MelString('BPNN','fxPath'),
+        MelString('BPNT','fxPath'),
+        MelString('BPNI','fxPath'),
+        MelStruct('SDSC','fBBBbBBHIIffIIfffffffIIBBHf','damageMult',(BptdDamageFlags,'flags',0L),
+            (BptdPartTypes,'flags',0L),'healthPcnt','actorValue','toHitChance',
+            'explodableExplosionChancePcnt','explodableDebrisCount',(FID,'explodableDebris'),
+            (FID,'explodableExplosion'),'trackingMaxAngle','explodableDebrisScale',
+            'severableDebrisCount',(FID,'severableDebris'),(FID,'severableExplosion'),
+            'severableDebrisScale','transx','transy','transz','rotx','roty','rotz',
+            (FID,'severableImpactDataset'),(FID,'explodableImpactDataset'),'severableDecalCount',
+            'explodableDecalCount','unknown','limbReplacementScale',
+        ),
+        MelString('NAM1','fxPath'),
+        MelString('NAM4','fxPath'),
+        MelBase('NAM5','textFileHashes'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
 # Contains VMAD Can't be merged at this time:
 # MreActi, MreAppa, MreMisc, MreBook, MreArmo,   
 #
@@ -13798,8 +13919,9 @@ class MreEqup(MelRecord):
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreAddn, MreAnio, MreArma, MreAmmo, 
-        MreArto, MreAspc, MreAstp, MreCobj, MreEqup, MreEyes, MreFlst, 
-        MreIpds, MreLgtm, MreMovt, MreOtft, MreSpgd, MreVtyp
+        MreArto, MreAspc, MreAstp, MreBptd, MreClfm, MreCobj, MreEqup, MreEyes, MreFlst, 
+        MreFstp, MreIpds, MreLgtm, MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, 
+        MreVtyp
         )
 
 #--Extra read/write classes
@@ -13817,9 +13939,9 @@ def init():
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreBook, MreCobj, MreEqup, MreEyes, MreFlst,
-        MreGlob, MreGmst, MreLvli, MreLvln, MreLvsp, MreIpds, MreLgtm, MreMisc, 
-        MreMovt, MreOtft, MreSpgd, MreVtyp,
+        MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj, MreEqup, MreEyes, MreFlst,
+        MreGlob, MreGmst, MreLvli, MreLvln, MreLvsp, MreFstp, MreIpds, MreLgtm, MreMisc, 
+        MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreVtyp,
         MreHeader,
         ))
 
