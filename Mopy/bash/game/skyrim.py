@@ -13894,7 +13894,7 @@ class MreBptd(MelRecord):
         MelString('BPNN','fxPath'),
         MelString('BPNT','fxPath'),
         MelString('BPNI','fxPath'),
-        MelStruct('SDSC','fBBBbBBHIIffIIfffffffIIBBHf','damageMult',(BptdDamageFlags,'flags',0L),
+        MelStruct('SDSC','fBBBbBBHIIffIIIfffffffIIBBHf','damageMult',(BptdDamageFlags,'flags',0L),
             (BptdPartTypes,'flags',0L),'healthPcnt','actorValue','toHitChance',
             'explodableExplosionChancePcnt','explodableDebrisCount',(FID,'explodableDebris'),
             (FID,'explodableExplosion'),'trackingMaxAngle','explodableDebrisScale',
