@@ -13471,7 +13471,8 @@ class MreLvln(MreLeveledList):
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
-        MelModel(),
+        MelString('MODL','model'),
+        MelBase('MODT','modt_p'),
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
