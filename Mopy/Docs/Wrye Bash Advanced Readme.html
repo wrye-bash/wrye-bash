@@ -910,7 +910,7 @@
 		<tr><td>Relations<td>Changes faction relationships.<td>The relations of Faction (FACT) records.
 		<tr><td>Roads<td>Modifies road records.<td>The Road (ROAD) subrecord of Worldspace (WRLD) records.
 		<tr><td>R.AddSpells<td>Adds spells to racial spell list(s). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions to the spell list of Race (RACE) records.
-		<tr><td>R.Attributes-F<td>Modifies racial attributes for females.<td>The following Race (RACE) subrecords:
+		<tr><td>R.Attributes-F<td>Modifies racial attributes for females.<td>The following Race (RACE) subrecords (ATTR):
 			<ul>
 				<li>Female strength
 				<li>Female intelligence
@@ -921,7 +921,7 @@
 				<li>Female personality
 				<li>Female luck
 			</ul>
-		<tr><td>R.Attributes-M<td>Modifies racial attributes for males.<td>The following Race (RACE) subrecords:
+		<tr><td>R.Attributes-M<td>Modifies racial attributes for males.<td>The following Race (RACE) subrecords (ATTR):
 			<ul>
 				<li>Male strength
 				<li>Male intelligence
@@ -932,7 +932,7 @@
 				<li>Male personality
 				<li>Male luck
 			</ul>
-		<tr><td>R.ChangeSpells<td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions or removals to the spell list of Race (RACE) records.
+		<tr><td>R.ChangeSpells<td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions or removals to the spell list (SPLO) of Race (RACE) records.
 		<tr><td>R.Description<td>Modifies race descriptions.<td>The Description (DESC) subrecord of Race (RACE) records.
 		<tr><td>R.Ears<td>Modifies race ears.<td>The following Race (RACE) subrecords:
 			<ul>
@@ -965,8 +965,8 @@
 				<li>Tongue MODT
 				<li>Tongue icon path
 			</ul>
-		<tr><td>R.Relations<td>Modifies race relationships.<td>The faction list of Race (RACE) records.
-		<tr><td>R.Skills<td>Modifies race skill bonuses.<td>The skill boosts of Race (RACE) records.
+		<tr><td>R.Relations<td>Modifies race relationships.<td>The faction list (XNAM) of Race (RACE) records.
+		<tr><td>R.Skills<td>Modifies race skill bonuses.<td>The skill boosts (DATA) of Race (RACE) records.
 		<tr><td>R.Teeth<td>Modifies race upper or lower teeth.<td>The following Race (RACE) subrecords:
 			<ul>
 				<li>Teeth (Lower) model path
@@ -1035,8 +1035,8 @@
 				<li>Sigil Stone: Weight, value, uses.
 				<li>Weapon: Weight, value, health, damage, speed, reach, enchantment points (ANAM).
 			</ul>
-		<tr><td>Voice-F<td>Modifies female voice definitions.<td>The male voice of Race (RACE) records.
-		<tr><td>Voice-M<td>Modifies male voice definitions.<td>The female voice of Race (RACE) records.
+		<tr><td>Voice-F<td>Modifies female voice definitions.<td>The male voice (VNAM) of Race (RACE) records.
+		<tr><td>Voice-M<td>Modifies male voice definitions.<td>The female voice (VNAM) of Race (RACE) records.
 </table>
 <table>
 	<thead>
