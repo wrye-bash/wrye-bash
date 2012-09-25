@@ -90,12 +90,10 @@
     Var Check_wx
     Var Check_pywin32
     Var Check_Comtypes
-    Var Check_PIL
     Var CheckState_Python
     Var CheckState_wx
     Var CheckState_pywin32
     Var CheckState_Comtypes
-    Var CheckState_PIL
     Var PathDialogue_OB
     Var PathDialogue_Nehrim
     Var PathDialogue_Skyrim
@@ -116,7 +114,6 @@
     Var Python_Comtypes
     Var Python_pywin32
     Var Python_wx
-    Var Python_PIL
     Var Requirements
     Var PythonVersionInstall
     Var ExeVersionInstall
@@ -126,11 +123,9 @@
     Var Link_vcredist
     Var Link_wx
     Var Link_pywin32
-    Var Link_PIL
     Var MinVersion_Comtypes
     Var MinVersion_wx
     Var MinVersion_pywin32
-    Var MinVersion_PIL
 
 
 ;-------------------------------- Page List:
@@ -195,11 +190,9 @@
         StrCpy $MinVersion_Comtypes '0.6.2'
         StrCpy $MinVersion_wx '2.8.12'
         StrCpy $MinVersion_pywin32 '217'
-        StrCpy $MinVersion_PIL '1.1.7'
         StrCpy $Python_Comtypes "1"
         StrCpy $Python_wx "1"
         StrCpy $Python_pywin32 "1"
-        StrCpy $Python_PIL "1"
 
         ${If} $Path_OB == $Empty
             ReadRegStr $Path_OB HKLM "Software\Bethesda Softworks\Oblivion" "Installed Path"
@@ -592,22 +585,15 @@ NoComTypes:
                 ${If} $1 == $Empty
                     ReadRegStr $1         HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${EndIf}
-                ReadRegStr $2 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\PIL-py2.7" "DisplayName"
-                ${If} $Python_PIL == $Empty
-                    ReadRegStr $2 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PIL-py2.7" "DisplayName"
-                ${EndIf}
                 StrCpy $Python_pywin32 $1 3 -3
-                StrCpy $Python_PIL $2 5 -5
                 ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
                 ${VersionConvert} $Python_wx "+" $Python_wx
                 ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
-                ${VersionCompare} $MinVersion_PIL $Python_PIL $Python_PIL
             ${EndIf}
             ${If} $Python_Path != $Empty
             ${AndIf} $Python_Comtypes != "1"
             ${AndIf} $Python_pywin32 != "1"
             ${AndIf} $Python_wx != "1"
-            ${AndIf} $Python_PIL != "1"
                 StrCpy $Requirements "Met"
                 ${NSD_CreateLabel} 0 $0u 100% 16u "Python Version: Congratulations!  All prerequisites detected!"
                     Pop $Label
@@ -656,16 +642,6 @@ NoComTypes:
                         ${NSD_OnClick} $Link_pywin32 onClick_Link
                     IntOp $0 $0 + 11
                 ${EndIf}
-                ${If} $Python_PIL == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PILWin32 1.1.7"
-                        Pop $Check_PIL
-                        ${NSD_SetState} $Check_PIL ${BST_CHECKED}
-                    IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u  "PILWin32 webpage" ;https://http://www.pythonware.com/products/pil/
-                        Pop $Link_PIL
-                        ${NSD_OnClick} $Link_PIL onClick_Link
-                    IntOp $0 $0 + 11
-                ${EndIf}
             ${EndIf}
         IntOp $0 $0 + 10
         ${EndIf}
@@ -698,7 +674,6 @@ NoComTypes:
             ${NSD_GetState} $Check_wx $CheckState_wx
             ${NSD_GetState} $Check_Comtypes $CheckState_Comtypes
             ${NSD_GetState} $Check_pywin32 $CheckState_pywin32
-            ${NSD_GetState} $Check_PIL $CheckState_PIL
 
             ${If} $CheckState_Python == ${BST_CHECKED}
                 SetOutPath "$TEMP\PythonInstallers"
@@ -773,25 +748,6 @@ NoComTypes:
                 ${Else}
                     ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!"
                     MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
-                    Abort
-                ${EndIf}
-            ${EndIf}
-            ${If} $CheckState_PIL == ${BST_CHECKED}
-                SetOutPath "$TEMP\PythonInstallers"
-                ${NSD_GetText} $Check_PIL $0
-                ${NSD_SetText} $Check_PIL "$0 - Downloading..."
-                NSISdl::download http://effbot.org/media/downloads/PIL-1.1.7.win32-py2.7.exe "$TEMP\PythonInstallers\pilwin32.exe"
-                Pop $R0
-                ${If} $R0 == "success"
-                    ${NSD_SetText} $Check_PIL "$0 - Installing..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait  '"$TEMP\PythonInstallers\pilwin32.exe"'
-                    BringToFront
-                    ${NSD_SetText} $Check_PIL "$0 - Installed."
-                ${Else}
-                    ${NSD_SetText} $Check_PIL "$0 - Download Failed!"
-                    MessageBox MB_OK "PIL download failed, please try running installer again or manually downloading."
                     Abort
                 ${EndIf}
             ${EndIf}
@@ -1409,8 +1365,6 @@ NoComTypes:
             ExecShell "open" "http://www.python.org/download/releases/2.7.3/"
         ${ElseIf} $0 == $Link_pywin32
             ExecShell "open" "https://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/"
-        ${ElseIf} $0 == $Link_PIL
-            ExecShell "open" "http://www.pythonware.com/products/pil/"
         ${ElseIf} $0 == $Link_vcredist
             ExecShell "open" "http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2"
         ${EndIf}
@@ -1972,6 +1926,7 @@ NoComTypes:
                 Delete "$Path_OB\Mopy\bash\settingsModuleo"
                 Delete "$Path_OB\Mopy\bash\images\tools\*.*"
                 Delete "$Path_OB\Mopy\bash\images\stc\*.*"
+                Delete "$Path_OB\Mopy\bash\images\readme\*.*"
                 Delete "$Path_OB\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_OB\Mopy\bash\images\*"
                 Delete "$Path_OB\Mopy\bash\gpl.txt"
@@ -2033,6 +1988,7 @@ NoComTypes:
                 RMDir  "$Path_OB\Mopy\bash\l10n"
                 RMDir  "$Path_OB\Mopy\bash\images\tools"
                 RMDir  "$Path_OB\Mopy\bash\images\stc"
+                RMDir  "$Path_OB\Mopy\bash\images\readme"
                 RMDir  "$Path_OB\Mopy\bash\images\nsis"
                 RMDir  "$Path_OB\Mopy\bash\images"
                 RMDir  "$Path_OB\Mopy\bash\game"
@@ -2194,6 +2150,7 @@ NoComTypes:
                 Delete "$Path_Nehrim\Mopy\bash\settingsModuleo"
                 Delete "$Path_Nehrim\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Nehrim\Mopy\bash\images\stc\*.*"
+                Delete "$Path_Nehrim\Mopy\bash\images\readme\*.*"
                 Delete "$Path_Nehrim\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Nehrim\Mopy\bash\images\*"
                 Delete "$Path_Nehrim\Mopy\bash\gpl.txt"
@@ -2255,6 +2212,7 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\bash\l10n"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\tools"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\stc"
+                RMDir  "$Path_Nehrim\Mopy\bash\images\readme"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\nsis"
                 RMDir  "$Path_Nehrim\Mopy\bash\images"
                 RMDir  "$Path_Nehrim\Mopy\bash\game"
@@ -2432,6 +2390,7 @@ NoComTypes:
                 Delete "$Path_Skyrim\Mopy\bash\settingsModuleo"
                 Delete "$Path_Skyrim\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Skyrim\Mopy\bash\images\stc\*.*"
+                Delete "$Path_Skyrim\Mopy\bash\images\readme\*.*"
                 Delete "$Path_Skyrim\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Skyrim\Mopy\bash\images\*"
                 Delete "$Path_Skyrim\Mopy\bash\gpl.txt"
@@ -2493,6 +2452,7 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\bash\l10n"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\tools"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\stc"
+                RMDir  "$Path_Skyrim\Mopy\bash\images\readme"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\nsis"
                 RMDir  "$Path_Skyrim\Mopy\bash\images"
                 RMDir  "$Path_Skyrim\Mopy\bash\game"
@@ -2652,6 +2612,7 @@ NoComTypes:
                 Delete "$Path_Ex1\Mopy\bash\settingsModuleo"
                 Delete "$Path_Ex1\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Ex1\Mopy\bash\images\stc\*.*"
+                Delete "$Path_Ex1\Mopy\bash\images\readme\*.*"
                 Delete "$Path_Ex1\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Ex1\Mopy\bash\images\*"
                 Delete "$Path_Ex1\Mopy\bash\gpl.txt"
@@ -2713,6 +2674,7 @@ NoComTypes:
                 RMDir  "$Path_Ex1\Mopy\bash\l10n"
                 RMDir  "$Path_Ex1\Mopy\bash\images\tools"
                 RMDir  "$Path_Ex1\Mopy\bash\images\stc"
+                RMDir  "$Path_Ex1\Mopy\bash\images\readme"
                 RMDir  "$Path_Ex1\Mopy\bash\images\nsis"
                 RMDir  "$Path_Ex1\Mopy\bash\images"
                 RMDir  "$Path_Ex1\Mopy\bash\game"
@@ -2872,6 +2834,7 @@ NoComTypes:
                 Delete "$Path_Ex2\Mopy\bash\settingsModuleo"
                 Delete "$Path_Ex2\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Ex2\Mopy\bash\images\stc\*.*"
+                Delete "$Path_Ex2\Mopy\bash\images\readme\*.*"
                 Delete "$Path_Ex2\Mopy\bash\images\nsis\*.*"
                 Delete "$Path_Ex2\Mopy\bash\images\*"
                 Delete "$Path_Ex2\Mopy\bash\gpl.txt"
@@ -2933,6 +2896,7 @@ NoComTypes:
                 RMDir  "$Path_Ex2\Mopy\bash\l10n"
                 RMDir  "$Path_Ex2\Mopy\bash\images\tools"
                 RMDir  "$Path_Ex2\Mopy\bash\images\stc"
+                RMDir  "$Path_Ex2\Mopy\bash\images\readme"
                 RMDir  "$Path_Ex2\Mopy\bash\images\nsis"
                 RMDir  "$Path_Ex2\Mopy\bash\images"
                 RMDir  "$Path_Ex2\Mopy\bash\game"
