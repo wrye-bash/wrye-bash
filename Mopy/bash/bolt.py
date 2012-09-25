@@ -295,7 +295,7 @@ initTranslator(bass.language)
 
 CBash = 0
 images_list = {
-    292 : {
+    295 : {
         u'3dsmax16.png' : 1176,
         u'3dsmax24.png' : 2152,
         u'3dsmax32.png' : 3225,
@@ -750,6 +750,9 @@ images_list = {
         u'tes4gecko16.png' : 1197,
         u'tes4gecko24.png' : 2230,
         u'tes4gecko32.png' : 2803,
+        u'tesvgecko16.png' : 639,
+        u'tesvgecko24.png' : 954,
+        u'tesvgecko32.png' : 1535,
         u'tes4lodgen16.png' : 1227,
         u'tes4lodgen24.png' : 2467,
         u'tes4lodgen32.png' : 3721,
