@@ -17653,6 +17653,13 @@ class App_Tes4Gecko(App_Button):
         self.__class__ = App_Button
 
 #------------------------------------------------------------------------------
+class App_Tes5Gecko(App_Button):
+    """Left in for unpickling compatibility reasons."""
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.__class__ = App_Button
+
+#------------------------------------------------------------------------------
 class App_OblivionBookCreator(App_Button):
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
@@ -18378,6 +18385,11 @@ def InitStatusBar():
             imageList(u'tools/tes4edit%s.png'),
             _(u"Launch TES5Edit"),
             uid=u'TES5Edit'))
+    BashStatusBar.buttons.append( #Tes5Gecko
+        App_Button( (bosh.tooldirs['Tes5GeckoPath']),
+            imageList(u'tools/tesvgecko%s.png'),
+            _(u"Launch Tes5Gecko"),
+            uid=u'Tes5Gecko'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
