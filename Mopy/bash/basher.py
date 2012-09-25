@@ -557,6 +557,7 @@ settingDefaults = {
         },
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
+    'tes5View.iKnowWhatImDoing':False,
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,
@@ -11815,6 +11816,13 @@ class Mods_Tes4ViewExpert(BoolLink):
                                           _(u'Tes4Edit Expert'),
                                           'tes4View.iKnowWhatImDoing',
                                           )
+#------------------------------------------------------------------------------
+class Mods_Tes5ViewExpert(BoolLink):
+    """Toggle Tes5Edit expert mode (when launched via Bash)."""
+    def __init__(self): BoolLink.__init__(self,
+                                          _(u'Tes5Edit Expert'),
+                                          'tes5View.iKnowWhatImDoing',
+                                          )
 
 #------------------------------------------------------------------------------
 class Mods_BOSSDisableLockTimes(BoolLink):
@@ -17669,6 +17677,8 @@ class App_Tes4View(App_Button):
 #  or name begins with FO3
 # -TES4
 #  or name begins with TES4
+# -TES5
+#  or name begins with TES5
 # -lodgen
 #  or name ends with LODGen.exe
 #  (requires TES4 mode)
@@ -17687,7 +17697,10 @@ class App_Tes4View(App_Button):
 #  or name ends with Trans.exe
     def __init__(self,*args,**kwdargs):
         App_Button.__init__(self,*args,**kwdargs)
-        self.mainMenu.append(Mods_Tes4ViewExpert())
+        if( bush.game.name == 'Skyrim' ):
+            self.mainMenu.append(Mods_Tes5ViewExpert())
+        elif( bush.game.name == 'Oblivion' or bush.game.name == 'Nehrim' ):
+            self.mainMenu.append(Mods_Tes4ViewExpert())
 
     def IsPresent(self):
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
@@ -17704,8 +17717,12 @@ class App_Tes4View(App_Button):
             extraArgs.append(u'-FixupPGRD')
         if wx.GetKeyState(wx.WXK_SHIFT):
             extraArgs.append(u'-skipbsa')
-        if settings['tes4View.iKnowWhatImDoing']:
-            extraArgs.append(u'-IKnowWhatImDoing')
+        if( bush.game.name == 'Oblivion' or bush.game.name == 'Nehrim' ):
+            if settings['tes4View.iKnowWhatImDoing']:
+                extraArgs.append(u'-IKnowWhatImDoing')
+        if( bush.game.name == 'Skyrim' ):
+            if settings['tes5View.iKnowWhatImDoing']:
+                extraArgs.append(u'-IKnowWhatImDoing')
         App_Button.Execute(self,event,tuple(extraArgs))
 
 #------------------------------------------------------------------------------
@@ -18355,6 +18372,12 @@ def InitStatusBar():
             imageList(u'tools/tes4edit%s.png'),
             _(u"Launch TES4Edit"),
             uid=u'TES4Edit'))
+    BashStatusBar.buttons.append( #Tes5Edit
+        App_Tes4View(
+            (bosh.tooldirs['Tes5EditPath'],u'-TES5 -edit'),
+            imageList(u'tools/tes4edit%s.png'),
+            _(u"Launch TES5Edit"),
+            uid=u'TES5Edit'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
