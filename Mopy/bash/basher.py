@@ -45,7 +45,6 @@ import bapi
 import barb
 import bass
 import bweb
-import wizSTC
 
 from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
@@ -441,213 +440,11 @@ settingDefaults = {
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
-    #--Installers Comments/WizBAIN Editor
-    'bash.installers.wizSTC.DisableCommentsWizBAINEditor':0,
-    'bash.installers.wizSTC.StdOutDebugWindow':0,
-    'bash.installers.wizSTC.LoadSTCLexer':'wizbainlexer',
-    'bash.installers.wizSTC.ThemeOnStartup':'Default',
-    'bash.installers.wizSTC.FolderMarginStyle':1,
-    'bash.installers.wizSTC.ShowLineNumbersMargin':1,
-    'bash.installers.wizSTC.AutoAdjustLineMargin':1,
-    'bash.installers.wizSTC.CaretSpeed':0,
-    'bash.installers.wizSTC.CaretPixelWidth':2,
-    'bash.installers.wizSTC.CaretForegroundColor':'#0000FF',
-    'bash.installers.wizSTC.CaretLineBackgroundAlpha':100,
-    'bash.installers.wizSTC.CaretLineVisible':1,
-    'bash.installers.wizSTC.WordWrap':0,
-    'bash.installers.wizSTC.TabsOrSpaces':0,
-    'bash.installers.wizSTC.IndentSize':4,
-    'bash.installers.wizSTC.TabWidth':4,
-    'bash.installers.wizSTC.IndentationGuides':1,
-    'bash.installers.wizSTC.ViewWhiteSpace':1,
-    'bash.installers.wizSTC.TabIndents':1,
-    'bash.installers.wizSTC.BackSpaceUnIndents':0,
-    'bash.installers.wizSTC.BraceCompletion':1,
-    'bash.installers.wizSTC.AutoIndentation':0,
-    'bash.installers.wizSTC.ReadOnly':0,
-    'bash.installers.wizSTC.UseAntiAliasing':1,
-    'bash.installers.wizSTC.UseBufferedDraw':1,
-    'bash.installers.wizSTC.OvertypeOnOff':0,
-    'bash.installers.wizSTC.ViewEOL':0,
-    'bash.installers.wizSTC.LongLineEdgeMode':0,
-    'bash.installers.wizSTC.LongLineEdge':80,
-    'bash.installers.wizSTC.LineEdgeModeAsColumnMarker':0,
-    'bash.installers.wizSTC.VertEditMode':0,
-    'bash.installers.wizSTC.ScrollingPastLastLine':1,
-    'bash.installers.wizSTC.SetLeftRightBlankMargins':0,
-    'bash.installers.wizSTC.MouseGestureWobbleTolerance':500, #Hmmm need to figure out how this affects usage as in low/high number
-    'bash.installers.wizSTC.UseCustomFont':0,
-    'bash.installers.wizSTC.UserCustomFontFace':'Magic Cards',
-    'bash.installers.wizSTC.ModdersHandle':u'ModdersHandle',#Ex:Wrye,Metallicow,LoJack,PacificMorrowind,etc...
-    'bash.installers.wizSTC.IntelliWiz':0,
-    'bash.installers.wizSTC.IntelliCallTip':1,
-    'bash.installers.wizSTC.ActiveProject':u'None',
-    'bash.installers.wizSTC.FindList':[u'Add/Delete from list with the buttons ==>'],
-    'bash.installers.wizSTC.ReplaceList':[u'Add/Delete from list with the buttons ==>'],
-    'bash.installers.wizSTC.SetFindReplaceTransparency':255,
-    'bash.installers.wizSTC.FindReplaceComboBoxsAutoSort':1,
-    'bash.installers.wizSTC.FindReplaceWholeWordCB':0,
-    'bash.installers.wizSTC.FindReplaceMatchCaseCB':0,
-    'bash.installers.wizSTC.FindReplaceWrapAroundCB':1,
-    'bash.installers.wizSTC.MiniMemoText':u'Woot it\'s a memo!',
-    'bash.installers.wizSTC.MiniMemoSavedSize':(75, 75),
-    #--Wrye Bash: Bash.ini Settings
-    
-    
-    
-    
-    'bash.bashini.general.sTest':ur'hmmm',
-    
-    'bash.bashini.general.sMorrowindDir':ur'C:/Program Files/Bethesda Softworks/Morrowind',
-    'bash.bashini.general.sMorrowindBashInstallersDir':ur'C:/Program Files/Bethesda Softworks/Morrowind Mods',
-    'bash.bashini.general.sOblivionDir':ur'C:/Program Files/Bethesda Softworks/Oblivion',
-    'bash.bashini.general.sOblivionBashInstallersDir':ur'C:/Program Files/Bethesda Softworks/Oblivion Mods',
-    'bash.bashini.general.sSkyrimDir':ur'C:/Program Files/Steam/steamapps/common/skyrim',
-    'bash.bashini.general.sSkyrimBashInstallersDir':ur'C:/Program Files/Steam/steamapps/common/Skyrim Mods/Bash Installers',
-    
-    'bash.bashini.general.sOblivionMods':ur'../Skyrim Mods',
-    'bash.bashini.general.sInstallersData':ur'../Skyrim Mods/Bash Installers/Bash',
-    'bash.bashini.general.sBashModData':ur'../Skyrim Mods/Bash Mod Data',
-    'bash.bashini.general.sOblivionPath':ur'.',
-    'bash.bashini.general.sUserPath':ur'.',
-    'bash.bashini.general.sPersonalPath':ur'.',
-    'bash.bashini.general.sLocalAppDataPath':ur'.',
-    'bash.bashini.general.bSteamInstall':ur'.',#(1 or 0 or True or False, or . for autodetect)
 
-    'bash.bashini.settings.sScriptFileExt':ur'.txt',
-    'bash.bashini.settings.iKeepLog':0,#with 0 being no log, and 4 being maximum logging (not fully implemented yet)
-    'bash.bashini.settings.sLogFile':ur'Mopy/bash.log',
-    'bash.bashini.settings.bEnableBalo':False,
-    'bash.bashini.settings.bResetBSATimestamps':True,
-    'bash.bashini.settings.bEnsurePatchExists':True,
-    'bash.bashini.settings.sOblivionTexturesBSAName':ur'.',
-    'bash.bashini.settings.bSkipResetTimeNotifications':False,
-    'bash.bashini.settings.bShowDevTools':False,
-
-    # Not sure, If these have been taken care of...
-    # 'bash.bashini.settings.bShowTextDifferenceMergeable':True,
-    # 'bash.bashini.settings.bShowTextDifferenceNoMerge':True,
-    # 'bash.bashini.settings.bShowTextDifferenceRegular':True,
-    # 'bash.bashini.settings.bShowTextDifferenceESM':True,
-    # LoJack took care of these in the colors dialog...
-    # # 'bash.bashini.settings.oDeactivateTextColour':wx.BLACK,
-    # # 'bash.bashini.settings.oESMTextColour':wx.BLUE,
-    # # 'bash.bashini.settings.oMergeableTextColour':wx.Colour(0x00,0x99,0x00),
-    # # 'bash.bashini.settings.oNoMergeTextColour':wx.Colour(153,0,153),
-    # # 'bash.bashini.settings.oRegularTextColour':wx.BLACK,
-    # Not sure, If these have been taken care of...
-    # 'bash.bashini.settings.oDeactivateTextStyle':(8, wx.NORMAL, wx.SLANT, wx.NORMAL),
-    # 'bash.bashini.settings.oESMTextStyle':u'Default',
-    # 'bash.bashini.settings.oMergeableTextStyle':u'Default',
-    # 'bash.bashini.settings.oNoMergeTextStyle':u'Default',
-    # 'bash.bashini.settings.oRegularTextStyle':u'Default',
-
-    'bash.bashini.settings.bAutoItemCheck':True,
-    'bash.bashini.settings.bSkipHideConfirmation':False,
-    'bash.bashini.settings.s7zExtraCompressionArguments':u'-ms=on -ms=1m',
-    'bash.bashini.settings.iAutoSizeListColumns':0,
-    'bash.bashini.settings.sSoundError':ur'.',
-    'bash.bashini.settings.sSoundSuccess':ur'.',
-
-    'bash.bashini.tooloptions.bShowTextureToolLaunchers':True,
-    'bash.bashini.tooloptions.bShowModelingToolLaunchers':True,
-    'bash.bashini.tooloptions.bShowAudioToolLaunchers':True,
-    #ESM/ESP/LOD/NIF Tool Launchers
-    'bash.bashini.tooloptions.sTes4GeckoPath':ur'Tes4Gecko.jar',
-    'bash.bashini.tooloptions.sTes4GeckoJavaArg':ur'-Xmx1024m',
-    'bash.bashini.tooloptions.sTes4FilesPath':ur'Tools/Tes4Files.exe',
-    'bash.bashini.tooloptions.sTes4EditPath':ur'Tes4Edit.exe',
-    'bash.bashini.tooloptions.sTes4LodGenPath':ur'Tes4LodGen.exe',
-    'bash.bashini.tooloptions.sNifskopePath':ur'C:/Program Files/NifTools/NifSkope/nifskope.exe',
-    #3D Modeling Tool Launchers
-    'bash.bashini.tooloptions.sArtOfIllusionPath':ur'C:/Program Files/ArtOfIllusion/Art of Illusion.exe',
-    'bash.bashini.tooloptions.sAutoCadPath':ur'C:/Program Files/Autodesk Architectural Desktop 3/acad.exe',
-    'bash.bashini.tooloptions.sBlenderPath':ur'C:/Program Files/Blender Foundation/Blender/Blender.exe',
-    'bash.bashini.tooloptions.sGmaxPath':ur'C:/GMAX/gmax.exe',
-    'bash.bashini.tooloptions.sMaxPath':ur'C:/Program Files/Autodesk/3ds Max 2010/3dsmax.exe',
-    'bash.bashini.tooloptions.sMayaPath':ur'C:/not/a/valid/path.exe',
-    'bash.bashini.tooloptions.sMilkShape3DPath':ur'C:/Program Files/MilkShape 3D 1.8.4/ms3d.exe',
-    'bash.bashini.tooloptions.sMudboxPath':ur'C:/Program Files/Autodesk/Mudbox2011/mudbox.exe',
-    'bash.bashini.tooloptions.sSculptrisPath':ur'C:/Program Files/sculptris/Sculptris.exe',
-    'bash.bashini.tooloptions.sSoftimageModToolPath':ur'C:/Softimage/Softimage_Mod_Tool_7.5/Application/bin/XSI.bat -mod',
-    'bash.bashini.tooloptions.sSpeedTreePath':ur'C:/not/a/valid/path.exe',
-    'bash.bashini.tooloptions.sTreedPath':ur'C:/not/a/valid/path.exe',
-    'bash.bashini.tooloptions.sWings3DPath':ur'C:/Program Files/wings3d_1.2/Wings3D.exe',
-    #Texturing/DDS Tool Launchers
-    'bash.bashini.tooloptions.sAniFXPath':ur'C:/Program Files/AniFX 1.0/AniFX.exe',
-    'bash.bashini.tooloptions.sArtweaverPath':ur'C:/Program Files/Artweaver 1.0/Artweaver.exe',
-    'bash.bashini.tooloptions.sBricksNTilesPath':ur'C:/Program Files/BricksNTiles/BricksNTiles.exe',
-    'bash.bashini.tooloptions.sCrazyBumpPath':ur'C:/Program Files/Crazybump/CrazyBump.exe',
-    'bash.bashini.tooloptions.sDDSConverter2Path':ur'C:/Program Files/DDS Converter 2/DDS Converter 2.exe',
-    'bash.bashini.tooloptions.sDeepPaintPath':ur'C:/Program Files/Right Hemisphere/Deep Paint/DeepPaint.exe',
-    'bash.bashini.tooloptions.sDogwafflePath':ur'C:/Program Files/project dogwaffle/dogwaffle.exe',
-    'bash.bashini.tooloptions.sGeneticaPath':ur'C:/Program Files/Spiral Graphics/Genetica 3.5/Genetica.exe',
-    'bash.bashini.tooloptions.sGeneticaViewerPath':ur'C:/Program Files/Spiral Graphics/Genetica Viewer 3/Genetica Viewer 3.exe',
-    'bash.bashini.tooloptions.sGeniuXPhotoEFXPath':ur'C:/Program Files/GeniuXPhotoEFX/GeniuXPhotoEFX.exe',
-    'bash.bashini.tooloptions.sGIMPPath':ur'C:/Program Files/GIMP 2/bin/gimp-2.8.exe',
-    'bash.bashini.tooloptions.sGimpShopPath':ur'C:/Program Files/GIMPshop/bin/gimp-2.2.exe',
-    'bash.bashini.tooloptions.sIcoFXPath':ur'C:/Program Files/IcoFX 1.6/IcoFX.exe',
-    'bash.bashini.tooloptions.sInkscapePath':ur'C:/Program Files/Inkscape/inkscape.exe',
-    'bash.bashini.tooloptions.sMaPZonePath':ur'C:/Program Files/Allegorithmic/MaPZone 2.6/MaPZone2.exe',
-    'bash.bashini.tooloptions.sMyPaintPath':ur'C:/Program Files/MyPaint/mypaint.exe',
-    'bash.bashini.tooloptions.sNVIDIAMelodyPath':ur'C:/Program Files/NVIDIA Corporation/Melody/Melody.exe',
-    'bash.bashini.tooloptions.sPaintNETPath':ur'C:/Program Files/Paint.NET/PaintDotNet.exe',
-    'bash.bashini.tooloptions.sPaintShopPhotoProPath':ur'C:/Program Files/Corel/Corel PaintShop Photo Pro/X3/PSPClassic/Corel Paint Shop Pro Photo.exe',
-    'bash.bashini.tooloptions.sPhotobieDesignStudioPath':ur'C:/Program Files/Photobie/Photobie.exe',
-    'bash.bashini.tooloptions.sPhotoFiltrePath':ur'C:/Program Files/PhotoFiltre/PhotoFiltre.exe',
-    'bash.bashini.tooloptions.sPhotoScapePath':ur'C:/Program Files/PhotoScape/PhotoScape.exe',
-    'bash.bashini.tooloptions.sPhotoSEAMPath':ur'C:/Program Files/PhotoSEAM/PhotoSEAM.exe',
-    'bash.bashini.tooloptions.sPhotoshopPath':ur'C:/Program Files/Adobe/Adobe Photoshop CS3/Photoshop.exe',
-    'bash.bashini.tooloptions.sPixelStudioProPath':ur'C:/Program Files/Pixel/Pixel.exe',
-    'bash.bashini.tooloptions.sPixiaPath':ur'C:/Program Files/Pixia/pixia.exe',
-    'bash.bashini.tooloptions.sTextureMakerPath':ur'C:/Program Files/Texture Maker/texturemaker.exe',
-    'bash.bashini.tooloptions.sTwistedBrushPath':ur'C:/Program Files/Pixarra/TwistedBrush Open Studio/tbrush_open_studio.exe',
-    'bash.bashini.tooloptions.sWTVPath':ur'C:/Program Files/WindowsTextureViewer/WTV.exe',
-    'bash.bashini.tooloptions.sxNormalPath':ur'C:/Program Files/Santiago Orgaz/xNormal/3.17.3/x86/xNormal.exe',
-    #General/Modding Tool Launchers
-    'bash.bashini.tooloptions.sBSACMDPath':ur'C:/Program Files/BSACommander/bsacmd.exe',
-    'bash.bashini.tooloptions.sEggTranslatorPath':ur'C:/Program Files/Egg Translator/EggTranslator.exe',
-    'bash.bashini.tooloptions.sISOBLPath':ur'ISOBL.exe',
-    'bash.bashini.tooloptions.sISRMGPath':ur'Insanitys ReadMe Generator.exe',
-    'bash.bashini.tooloptions.sISRNGPath':ur'Random Name Generator.exe',
-    'bash.bashini.tooloptions.sISRNPCGPath':ur'Random NPC.exe',
-    'bash.bashini.tooloptions.sMAPPath':ur'Modding Tools/Interactive Map of Cyrodiil and Shivering Isles 3.52/Mapa v 3.52.exe',
-    'bash.bashini.tooloptions.sOblivionBookCreatorPathPath':ur'Data/OblivionBookCreator.jar',
-    'bash.bashini.tooloptions.sOblivionBookCreatorJavaArg':ur'-Xmx1024m',
-    'bash.bashini.tooloptions.sOBMLGPath':ur'Modding Tools/Oblivion Mod List Generator/Oblivion Mod List Generator.exe',
-    'bash.bashini.tooloptions.sOBFELPath':ur'C:/Program Files/Oblivion Face Exchange Lite/OblivionFaceExchangeLite.exe',
-    'bash.bashini.tooloptions.sRADVideoPath':ur'C:/Program Files/RADVideo/radvideo.exe',
-    'bash.bashini.tooloptions.sTabulaPath':ur'Modding Tools/Tabula.exe',
-    #Screenshot/Benchmarking Tool Launchers
-    'bash.bashini.tooloptions.sFastStonePath':ur'C:/Program Files/FastStone Image Viewer/FSViewer.exe',
-    'bash.bashini.tooloptions.sFrapsPath':ur'C:/Fraps/Fraps.exe',
-    'bash.bashini.tooloptions.sIrfanViewPath':ur'C:/Program Files/IrfanView/i_view32.exe',
-    'bash.bashini.tooloptions.sWinSnapPath':ur'C:/Program Files/WinSnap/WinSnap.exe',
-    'bash.bashini.tooloptions.sXnViewPath':ur'C:/Program Files/XnView/xnview.exe',
-    #Sound/Audio Tool Launchers
-    'bash.bashini.tooloptions.sABCAmberAudioConverterPath':ur'C:/Program Files/ABC Amber Audio Converter/abcaudio.exe',
-    'bash.bashini.tooloptions.sAudacityPath':ur'C:/Program Files/Audacity/Audacity.exe',
-    'bash.bashini.tooloptions.sMediaMonkeyPath':ur'C:/Program Files/MediaMonkey/MediaMonkey.exe',
-    'bash.bashini.tooloptions.sSwitchPath':ur'C:/Program Files/NCH Swift Sound/Switch/switch.exe',
-    #Text/Development Tool Launchers
-    'bash.bashini.tooloptions.sFreeMindPath':ur'C:/Program Files/FreeMind/Freemind.exe',
-    'bash.bashini.tooloptions.sFreeplanePath':ur'C:/Program Files/Freeplane/freeplane.exe',
-    'bash.bashini.tooloptions.sNPPPath':ur'C:/Program Files/Notepad++/notepad++.exe',
-    'bash.bashini.tooloptions.sWinMergePath':ur'C:/Program Files/WinMerge/WinMergeU.exe',
-    #Other/Miscellaneous Tool Launchers
-    'bash.bashini.tooloptions.sEVGAPrecisionPath':ur'C:/Program Files/EVGA Precision/EVGAPrecision.exe',
-    'bash.bashini.tooloptions.sFileZillaPath':ur'C:/Program Files/FileZilla FTP Client/filezilla.exe',
-    'bash.bashini.tooloptions.sLogitechKeyboardPath':ur'C:/Program Files/Logitech Gaming Software/LCore.exe',
-    'bash.bashini.tooloptions.sSteamPath':ur'C:/Program Files/Steam/steam.exe',
-    #Users personal Mods archives seperate from bash installers
-    'bash.bashini.mymodsdirs.MySkyrimModsDir':ur'C:/Games/Skyrim Mods',
-    'bash.bashini.mymodsdirs.MyOblivionModsDir':ur'C:/Games/Oblivion Mods',
-    'bash.bashini.mymodsdirs.MyMorrowindModsDir':ur'C:/Games/Morrowind Mods',
-    'bash.bashini.mymodsdirs.MyFallout3ModsDir':ur'C:/Games/Fallout 3 Mods',
-    'bash.bashini.mymodsdirs.MyFalloutNVModsDir':ur'C:/Games/Fallout New Vegas Mods',
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': wx.DefaultPosition,
+
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
@@ -1287,7 +1084,7 @@ class List(wx.Panel):
             self.colWidths[colName] = width
             self.checkcol = []
         event.Skip()
-
+        
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
@@ -1322,7 +1119,7 @@ class List(wx.Panel):
         column is being edited and process after in OnUpdateUI()"""
         self.checkcol = [event.GetColumn()]
         event.Skip()
-
+        
     #--Item Sort
     def DoItemSort(self, event):
         self.PopulateItems(self.cols[event.GetColumn()],-1)
@@ -2173,7 +1970,7 @@ class ModList(List):
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
         #set column sort image
-        try:
+        try: 
             try: self.list.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
             if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
@@ -3797,7 +3594,6 @@ class InstallersList(balt.Tank):
                 wx.TheClipboard.Close()
         event.Skip()
 
-
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
     """Panel for InstallersTank."""
@@ -3814,191 +3610,95 @@ class InstallersPanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
-        #0 = Comments/WizBAIN Editor On as default, 1 for Off
-        self.NoCommentsOption = settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor']
-        if self.NoCommentsOption == 0:
-            commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-            subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-            checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
-            #--Refreshing
-            self.refreshed = False
-            self.refreshing = False
-            self.frameActivated = False
-            self.fullRefresh = False
-            #--Contents
-            self.gList = InstallersList(left,data,
-                installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
-                details=self, style=wx.LC_REPORT)
-            self.gList.SetSizeHints(100,100)
-            #--Package
-            self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
-            self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
-            #--Info Tabs
-            self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
-            self.gNotebook.SetSizeHints(100,100)
-            self.infoPages = []
-            infoTitles = (
-                ('gGeneral',_(u'General')),
-                ('gMatched',_(u'Matched')),
-                ('gMissing',_(u'Missing')),
-                ('gMismatched',_(u'Mismatched')),
-                ('gConflicts',_(u'Conflicts')),
-                ('gUnderrides',_(u'Underridden')),
-                ('gDirty',_(u'Dirty')),
-                ('gSkipped',_(u'Skipped')),
-                )
-            for name,title in infoTitles:
-                gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
-                self.gNotebook.AddPage(gPage,title)
-                self.infoPages.append([gPage,False])
-            self.gNotebook.SetSelection(settings['bash.installers.page'])
-            self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
-            #--Sub-Installers
-            subPackagesPanel = wx.Panel(checkListSplitter)
-            subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
-            self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
-            self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
-            self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
-            #--Espms
-            espmsPanel = wx.Panel(checkListSplitter)
-            espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
-            self.espms = []
-            self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
-            self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
-            self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
-            #--Comments
-            commentsPanel = wx.Panel(commentsSplitter)
-            self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
-            ## self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
-            self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
-            #--Splitter settings
-            checkListSplitter.SetMinimumPaneSize(50)
-            checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
-            checkListSplitter.SetSashGravity(0.5)
-            subSplitter.SetMinimumPaneSize(50)
-            subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
-            subSplitter.SetSashGravity(0.5)
-            commentsHeight = self.gPackage.GetSize()[1]
-            commentsSplitter.SetMinimumPaneSize(commentsHeight)
-            commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
-            commentsSplitter.SetSashGravity(1.0)
-            #--Layout
-            subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
-            subPackagesSizer.SetSizeHints(subPackagesPanel)
-            subPackagesPanel.SetSizer(subPackagesSizer)
-            espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
-            espmsSizer.SetSizeHints(espmsPanel)
-            espmsPanel.SetSizer(espmsSizer)
-            commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
-            commentsSizer.SetSizeHints(commentsPanel)
-            commentsPanel.SetSizer(commentsSizer)
-            rightSizer = vSizer(
-                (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
-                (commentsSplitter,1,wx.EXPAND,2))
-            rightSizer.SetSizeHints(right)
-            right.SetSizer(rightSizer)
-            wx.LayoutAlgorithm().LayoutWindow(self, right)
-            commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
-            # restore saved comments text box size
-            if 0 == commentsSplitterSavedSashPos:
-                commentsSplitter.SetSashPosition(-commentsHeight)
-            else:
-                commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
-            #--Events
-            self.Bind(wx.EVT_SIZE,self.OnSize)
-            commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
-        elif self.NoCommentsOption == 1:
-            print('Comment/WizBAIN Editor Disabled')
-            ### commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-            subSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-            checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
-            #--Refreshing
-            self.refreshed = False
-            self.refreshing = False
-            self.frameActivated = False
-            self.fullRefresh = False
-            #--Contents
-            self.gList = InstallersList(left,data,
-                installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
-                details=self, style=wx.LC_REPORT)
-            self.gList.SetSizeHints(100,100)
-            #--Package
-            self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
-            self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
-            #--Info Tabs
-            self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
-            self.gNotebook.SetSizeHints(100,100)
-            self.infoPages = []
-            infoTitles = (
-                ('gGeneral',_(u'General')),
-                ('gMatched',_(u'Matched')),
-                ('gMissing',_(u'Missing')),
-                ('gMismatched',_(u'Mismatched')),
-                ('gConflicts',_(u'Conflicts')),
-                ('gUnderrides',_(u'Underridden')),
-                ('gDirty',_(u'Dirty')),
-                ('gSkipped',_(u'Skipped')),
-                )
-            for name,title in infoTitles:
-                gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
-                self.gNotebook.AddPage(gPage,title)
-                self.infoPages.append([gPage,False])
-            self.gNotebook.SetSelection(settings['bash.installers.page'])
-            self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
-            #--Sub-Installers
-            subPackagesPanel = wx.Panel(checkListSplitter)
-            subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
-            self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
-            self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
-            self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
-            #--Espms
-            espmsPanel = wx.Panel(checkListSplitter)
-            espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
-            self.espms = []
-            self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
-            self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
-            self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
-            #--Comments
-            ### commentsPanel = wx.Panel(commentsSplitter)
-            ### self.commentsLabel = staticText(commentsPanel, _(u'Comments / WizBAIN Editor'))
-            ### self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
-            ### self.gComments = wizSTC.WizBAINStyledTextCtrl(commentsPanel, wx.ID_ANY)
-            #--Splitter settings
-            checkListSplitter.SetMinimumPaneSize(50)
-            checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
-            checkListSplitter.SetSashGravity(0.5)
-            subSplitter.SetMinimumPaneSize(50)
-            subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
-            subSplitter.SetSashGravity(0.5)
-            commentsHeight = self.gPackage.GetSize()[1]
-            ### commentsSplitter.SetMinimumPaneSize(commentsHeight)
-            ### commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
-            ### commentsSplitter.SetSashGravity(1.0)
-            #--Layout
-            subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
-            subPackagesSizer.SetSizeHints(subPackagesPanel)
-            subPackagesPanel.SetSizer(subPackagesSizer)
-            espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
-            espmsSizer.SetSizeHints(espmsPanel)
-            espmsPanel.SetSizer(espmsSizer)
-            ### commentsSizer = vSizer(self.commentsLabel, (self.gComments,1,wx.EXPAND,2))
-            ### commentsSizer.SetSizeHints(commentsPanel)
-            ### commentsPanel.SetSizer(commentsSizer)
-            rightSizer = vSizer(
-                (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
-                (subSplitter,1,wx.EXPAND,2))
-            rightSizer.SetSizeHints(right)
-            right.SetSizer(rightSizer)
-            wx.LayoutAlgorithm().LayoutWindow(self, right)
-            commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
-            # restore saved comments text box size
-            if 0 == commentsSplitterSavedSashPos:
-                subSplitter.SetSashPosition(-commentsHeight)
-            else:
-                subSplitter.SetSashPosition(commentsSplitterSavedSashPos)
-            #--Events
-            self.Bind(wx.EVT_SIZE,self.OnSize)
-            subSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
+        commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+        subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
+        checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+        #--Refreshing
+        self.refreshed = False
+        self.refreshing = False
+        self.frameActivated = False
+        self.fullRefresh = False
+        #--Contents
+        self.gList = InstallersList(left,data,
+            installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
+            details=self, style=wx.LC_REPORT)
+        self.gList.SetSizeHints(100,100)
+        #--Package
+        self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
+        self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+        #--Info Tabs
+        self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
+        self.gNotebook.SetSizeHints(100,100)
+        self.infoPages = []
+        infoTitles = (
+            ('gGeneral',_(u'General')),
+            ('gMatched',_(u'Matched')),
+            ('gMissing',_(u'Missing')),
+            ('gMismatched',_(u'Mismatched')),
+            ('gConflicts',_(u'Conflicts')),
+            ('gUnderrides',_(u'Underridden')),
+            ('gDirty',_(u'Dirty')),
+            ('gSkipped',_(u'Skipped')),
+            )
+        for name,title in infoTitles:
+            gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
+            self.gNotebook.AddPage(gPage,title)
+            self.infoPages.append([gPage,False])
+        self.gNotebook.SetSelection(settings['bash.installers.page'])
+        self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+        #--Sub-Installers
+        subPackagesPanel = wx.Panel(checkListSplitter)
+        subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+        self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
+        self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+        self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
+        #--Espms
+        espmsPanel = wx.Panel(checkListSplitter)
+        espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+        self.espms = []
+        self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
+        self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+        #--Comments
+        commentsPanel = wx.Panel(commentsSplitter)
+        commentsLabel = staticText(commentsPanel, _(u'Comments'))
+        self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+        #--Splitter settings
+        checkListSplitter.SetMinimumPaneSize(50)
+        checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+        checkListSplitter.SetSashGravity(0.5)
+        subSplitter.SetMinimumPaneSize(50)
+        subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+        subSplitter.SetSashGravity(0.5)
+        commentsHeight = self.gPackage.GetSize()[1]
+        commentsSplitter.SetMinimumPaneSize(commentsHeight)
+        commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
+        commentsSplitter.SetSashGravity(1.0)
+        #--Layout
+        subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+        subPackagesSizer.SetSizeHints(subPackagesPanel)
+        subPackagesPanel.SetSizer(subPackagesSizer)
+        espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+        espmsSizer.SetSizeHints(espmsPanel)
+        espmsPanel.SetSizer(espmsSizer)
+        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND,2))
+        commentsSizer.SetSizeHints(commentsPanel)
+        commentsPanel.SetSizer(commentsSizer)
+        rightSizer = vSizer(
+            (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
+            (commentsSplitter,1,wx.EXPAND,2))
+        rightSizer.SetSizeHints(right)
+        right.SetSizer(rightSizer)
+        wx.LayoutAlgorithm().LayoutWindow(self, right)
+        commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
+        # restore saved comments text box size
+        if 0 == commentsSplitterSavedSashPos:
+            commentsSplitter.SetSashPosition(-commentsHeight)
+        else:
+            commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+        #--Events
+        self.Bind(wx.EVT_SIZE,self.OnSize)
+        commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -4096,7 +3796,6 @@ class InstallersPanel(SashTankPanel):
                 self.RefreshUIMods()
         self.SetStatusCount()
 
-
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
         if event.GetId() == self.gNotebook.GetId():
@@ -4126,15 +3825,9 @@ class InstallersPanel(SashTankPanel):
         settings['bash.installers.page'] = self.gNotebook.GetSelection()
         if not self.detailsItem: return
         if self.detailsItem not in self.data: return
-        if self.NoCommentsOption == 1:
-            pass
-        else:
-            ## if not self.gComments.IsModified(): return
-            if not self.gComments.GetModify(): return
-            installer = self.data[self.detailsItem]
-            ## installer.comments = self.gComments.GetValue()
-            self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-            installer.comments = self.gComments.GetTextUTF8()
+        if not self.gComments.IsModified(): return
+        installer = self.data[self.detailsItem]
+        installer.comments = self.gComments.GetValue()
         self.data.setChanged()
 
     def RefreshUIMods(self):
@@ -4182,16 +3875,7 @@ class InstallersPanel(SashTankPanel):
                 balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
                     [x not in installer.espmNots for x in names])
             #--Comments
-            if self.NoCommentsOption == 1:
-                pass
-            else:
-                ## self.gComments.SetValue(installer.comments)
-                try:
-                    self.gComments.SetText(installer.comments)
-                except:
-                    self.gComments.SetTextUTF8(installer.comments)
-                self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-                self.gComments.EmptyUndoBuffer()
+            self.gComments.SetValue(installer.comments)
         else:
             self.gPackage.SetValue(u'')
             for index,(gPage,state) in enumerate(self.infoPages):
@@ -4199,16 +3883,7 @@ class InstallersPanel(SashTankPanel):
                 gPage.SetValue(u'')
             self.gSubList.Clear()
             self.gEspmList.Clear()
-            if self.NoCommentsOption == 1:
-                pass
-            else:
-                ## self.gComments.SetValue(u'')
-                try:
-                    self.gComments.SetText(u'')
-                except:
-                    self.gComments.SetTextUTF8(u'')
-                self.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-                self.gComments.EmptyUndoBuffer()
+            self.gComments.SetValue(u'')
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -6995,7 +6670,7 @@ class DocBrowser(wx.Frame):
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
         docPath = docPath or GPath(self.data.get(self.modName,u''))
-        if not docPath.exists():
+        if not docPath.exists(): 
             return False
         try:
             with docPath.open('r',encoding='utf-8-sig') as textFile:
@@ -8088,10 +7763,10 @@ class PatchDialog(wx.Dialog):
             self.gPatchers.Check(index,False)
             patcher.isEnabled = False
             if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
-            if hasattr(patcher, 'gList'):
+            if hasattr(patcher, 'gList'): 
                 patcher.gList.SetChecked([])
                 patcher.OnListCheck()
-            if hasattr(patcher, 'gTweakList'):
+            if hasattr(patcher, 'gTweakList'): 
                 patcher.gTweakList.SetChecked([])
         self.gExecute.Enable(False)
 
@@ -8779,7 +8454,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.SetItems(self.getAutoItems())
         self.SetTweaks()
         return gConfigPanel
-
+       
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
@@ -10012,47 +9687,6 @@ class Installer_EditWizard(InstallerLink):
                 archive.tempDir.rmtree(archive.tempDir.stail)
             except:
                 pass
-
-class Installer_OpenWizardInCommentsWizBAINEditor(InstallerLink):
-    """Open the wizard.txt associated with this project in the comments"""
-    def AppendToMenu(self, menu, window, data):
-        Link.AppendToMenu(self, menu, window, data)
-        if self.isSingleArchive():
-            title = _(u'View Wizard In Comments...')
-        else:
-            title = _(u'Open Wizard In Comments...')
-        menuItem = wx.MenuItem(menu, self.id, title,
-            help=_(u"Open the wizard.txt associated with this project in the Comments / WizBAIN Editor."))
-        menu.AppendItem(menuItem)
-        if self.isSingleInstallable():
-            menuItem.Enable(bool(self.data[self.selected[0]].hasWizard))
-        else:
-            menuItem.Enable(False)
-
-    def Execute(self, event):
-        path = self.selected[0]
-        if self.isSingleProject():
-            # Project, open for edit
-            dir = self.data.dir
-            wizpath = u'%s' %dir.join(path.s, self.data[path].hasWizard)
-            gInstallers.gComments.LoadFile(wizpath)
-        else:
-            # Archive, open for viewing
-            archive = self.data[path]
-            with balt.BusyCursor():
-                # This is going to leave junk temp files behind...
-                archive.unpackToTemp(path, [archive.hasWizard])
-            wizpath = u'%s' % archive.tempDir.join(archive.hasWizard)
-            gInstallers.gComments.LoadFile(wizpath)
-        try:
-            archive.tempDir.rmtree(archive.tempDir.stail)
-        except:
-            pass
-
-        gInstallers.gComments.ConvertEOLs(2)#Unix. LF. Fix for Mixed EOL problem
-        gInstallers.gComments.AppendText(' ')#Need to set the modify flag manually so it saves when changing package selections. Also if the last word in the doc is a keyword(ex. Return) this updates the syntax highlighting.
-        gInstallers.gComments.SetFocus()
-        gInstallers.gComments.EnsureCaretVisible()
 
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
@@ -12871,7 +12505,7 @@ class Settings_Language(Link):
         u'russian': _(u'Russian') + u' (Ñ€ÑƒÑ�Ñ�ÐºÐ¸Ð¹ Ñ�Ð·Ñ‹Ðº)',
         u'english': _(u'English') + u' (English)',
         }
-
+        
     def __init__(self,language):
         Link.__init__(self)
         self.language = language
@@ -12967,34 +12601,6 @@ class Settings_Game(Link):
     def Execute(self,event):
         if self.game.lower() == bush.game.name.lower(): return
         bashFrame.Restart(('--game',self.game))
-
-#------------------------------------------------------------------------------
-class Settings_DisableWidget(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        subMenu = wx.Menu()
-        menu.AppendMenu(self.id,_(u'Disable Widget'),subMenu)
-        Settings_DisableCommentsWizBAINEditor().AppendToMenu(subMenu,window,data)
-
-class Settings_DisableCommentsWizBAINEditor(Link):
-    """Show/Hide Comments/WizBAINEditor on the Installers Tab."""
-    def __init__(self):
-        Link.__init__(self)
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'),kind=wx.ITEM_CHECK,
-            help=_(u'Disable Comments/WizBAIN Editor on Installers Tab(Requires Restart).'))
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'])
-
-    def Execute(self,event):
-        if settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] == 0:
-            settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 1
-            settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
-        else:
-            settings['bash.installers.wizSTC.DisableCommentsWizBAINEditor'] = 0
-            settings.setChanged('bash.installers.wizSTC.DisableCommentsWizBAINEditor')
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(Link):
@@ -19175,7 +18781,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
     if bosh.inisettings['ShowDevTools']:
-        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
+        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))   
 
 def InitMasterLinks():
     """Initialize master list menus."""
@@ -19290,7 +18896,6 @@ def InitInstallerLinks():
         InstallersPanel.itemMenu.append(Installer_Wizard(False))
         InstallersPanel.itemMenu.append(Installer_Wizard(True))
         InstallersPanel.itemMenu.append(Installer_EditWizard())
-        InstallersPanel.itemMenu.append(Installer_OpenWizardInCommentsWizBAINEditor())
         InstallersPanel.itemMenu.append(SeparatorLink())
     InstallersPanel.itemMenu.append(Installer_OpenReadme())
     InstallersPanel.itemMenu.append(Installer_Anneal())
@@ -19752,7 +19357,6 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_Languages())
     SettingsMenu.append(Settings_PluginEncodings())
     SettingsMenu.append(Settings_Games())
-    SettingsMenu.append(Settings_DisableWidget())
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Mods_Deprint())
