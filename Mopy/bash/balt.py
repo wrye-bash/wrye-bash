@@ -673,6 +673,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     except ImportError:
         # Comtypes not available most likely! so do it this way:
         import os
+        import webbrowser
         if not isinstance(logText,bolt.Path):
             logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
