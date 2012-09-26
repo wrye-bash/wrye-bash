@@ -5833,19 +5833,20 @@ class ModInfos(FileInfos):
         else:
             return 0
 
-    def getRequires(self,fileName):
-        """Extracts and returns requirement dictionary for fileName from header.hedr.description."""
-        requires = {}
-        if not fileName in self.data or not self.data[fileName].header:
-            maRequires = reRequires.search(self.data[fileName].header.description)
-            if maRequires:
-                for item in map(string.strip,maRequires.group(1).split(u',')):
-                    maReqItem = reReqItem.match(item)
-                    key,value = ma
-                    if maReqItem:
-                        key,value = maReqItem.groups()
-                        requires[key] = float(value or 0)
-        return requires
+#    def getRequires(self,fileName):
+#        """Extracts and returns requirement dictionary for fileName from header.hedr.description."""
+#        print "****************************** THIS FUNCTION WAS CALLED"
+#        requires = {}
+#        if not fileName in self.data or not self.data[fileName].header:
+#            maRequires = reRequires.search(self.data[fileName].header.description)
+#            if maRequires:
+#                for item in map(string.strip,maRequires.group(1).split(u',')):
+#                    maReqItem = reReqItem.match(item)
+#                    key,value = ma
+#                    if maReqItem:
+#                        key,value = maReqItem.groups()
+#                        requires[key] = float(value or 0)
+#        return requires
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def getOblivionVersions(self):
@@ -12090,6 +12091,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
         effects = []
         _effects = fields[12:]
         actorValueName_Number = UsesEffectsMixin.actorValueName_Number
+        recipientTypeName_Number = UsesEffectsMixin.recipientTypeName_Number
         aliases = self.aliases
         while len(_effects) >= 13:
             _effect, _effects = _effects[1:13], _effects[13:]
@@ -12155,7 +12157,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
                 elif group == 'AMMO':
                     pass
                 elif group == 'SGST':
-                    class_fid_attr_value[group][longid] = readSGSTFields(fields)
+                    class_fid_attr_value[group][longid] = self.readSGSTFromText(fields)
 
     def writeToText(self,textPath):
         return
