@@ -6094,10 +6094,11 @@ class BashFrame(wx.Frame):
         #--Check INI Tweaks...
         if bosh.iniInfos.refresh():
             popInis = 'ALL'
-        #--Ensure BSA timestamps are good
-        if bosh.inisettings['ResetBSATimestamps']:
-            if bosh.bsaInfos.refresh():
-                bosh.bsaInfos.resetMTimes()
+        #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
+        if( bush.game.name != 'Skyrim' ):
+            if bosh.inisettings['ResetBSATimestamps']:
+                if bosh.bsaInfos.refresh():
+                    bosh.bsaInfos.resetMTimes()
         #--Repopulate
         if popMods:
             modList.RefreshUI(popMods) #--Will repop saves too.
