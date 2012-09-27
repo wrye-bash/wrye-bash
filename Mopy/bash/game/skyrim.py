@@ -15374,15 +15374,475 @@ class MreClfm(MelRecord):
     
 # Verified Correct for Skyrim
 #------------------------------------------------------------------------------
+
+class MreFstp(MelRecord):
+    """Fstp Item"""
+    classType = 'FSTP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelOptStruct('DATA','I',(FID,'impactSet')),
+        MelString('ANAM','eid'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreRfct(MelRecord):
+    """Rfct Item"""
+    classType = 'RFCT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),'flags'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreSoun(MelRecord):
+    """Soun Item"""
+    classType = 'SOUN'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelString('FNAM','fxPath'),
+        MelBase('SNDD','soundData'),
+        MelStruct('SDSC','I',(FID,'soundDescriptor')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreBptd(MelRecord):
+    """Bptd Item"""
+    classType = 'BPTD'
+    
+    BptdDamageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'severable'),
+            (1, 'ikData'),
+            (2, 'ikDataBipedData'),
+            (3, 'explodable'),
+            (4, 'ikDataIsHead'),
+            (5, 'ikDataHeadtracking'),
+            (6, 'toHitChanceAbsolute'),
+        ))
+
+    BptdPartTypes = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'torso'),
+            (1, 'head'),
+            (2, 'eye'),
+            (3, 'lookAt'),
+            (4, 'flyGrab'),
+            (5, 'saddle'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelLString('BPTN','fxPath'),
+        MelString('BPNN','fxPath'),
+        MelString('BPNT','fxPath'),
+        MelString('BPNI','fxPath'),
+        MelStruct('SDSC','f3Bb2BH2I2f3I7f2I2BHf','damageMult',(BptdDamageFlags,'flags',0L),
+            (BptdPartTypes,'flags',0L),'healthPcnt','actorValue','toHitChance',
+            'explodableExplosionChancePcnt','explodableDebrisCount',(FID,'explodableDebris'),
+            (FID,'explodableExplosion'),'trackingMaxAngle','explodableDebrisScale',
+            'severableDebrisCount',(FID,'severableDebris'),(FID,'severableExplosion'),
+            'severableDebrisScale','transx','transy','transz','rotx','roty','rotz',
+            (FID,'severableImpactDataset'),(FID,'explodableImpactDataset'),'severableDecalCount',
+            'explodableDecalCount','unknown','limbReplacementScale',
+        ),
+        MelString('NAM1','fxPath'),
+        MelString('NAM4','fxPath'),
+        MelBase('NAM5','textFileHashes'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreFlor(MelRecord):
+    """Flor Item"""
+    classType = 'FLOR'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelAltModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelBase('PNAM','unknown01'),
+        MelLString('RNAM','activateTextOverride'),
+        MelBase('FNAM','unknown02'),
+		MelStruct('PFIG','I',(FID,'harvestIngredient')),
+		MelStruct('SNAM','I',(FID,'harvestSound')),
+		MelStruct('PFPC','4B','spring','summer','fall','winter',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreTree(MelRecord):
+    """Tree Item"""
+    classType = 'TREE'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('PFIG','I',(FID,'harvestIngredient')),
+        MelStruct('SNAM','I',(FID,'harvestSound')),
+        MelStruct('PFPC','4B','spring','summer','fall','wsinter',),
+        MelLString('FULL','full'),
+        MelStruct('CNAM','ff8Iff','trunkFlexibility','branchFlexibility'
+        'Unknown','Unknown','Unknown','Unknown','Unknown','Unknown','Unknown','Unknown',
+        'leafAmplitude','leafFrequency'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
+
+class MreMgef(MelRecord):
+    """Mgef Item"""
+    classType = 'MGEF'
+    
+    MgefActorValueEnum = bolt.Flags(0L,bolt.Flags.getNames(
+        (-1, 'None'),
+        (0, 'Aggresion'),
+        (1, 'Confidence'),
+        (2, 'Energy'),
+        (3, 'Morality'),
+        (4, 'Mood'),
+        (5, 'Assistance'),
+        (6, 'One-Handed'),
+        (7, 'Two-Handed'),
+        (8, 'Archery'),
+        (9, 'Block'),
+        (10, 'Smithing'),
+        (11, 'HeavyArmor'),
+        (12, 'LightArmor'),
+        (13, 'Pickpocket'),
+        (14, 'Lockpicking'),
+        (15, 'Sneak'),
+        (16, 'Alchemy'),
+        (17, 'Speech'),
+        (18, 'Alteration'),
+        (19, 'Conjuration'),
+        (20, 'Destruction'),
+        (21, 'Illusion'),
+        (22, 'Restoration'),
+        (23, 'Enchanting'),
+        (24, 'Health'),
+        (25, 'Magicka'),
+        (26, 'Stamina'),
+        (27, 'HealRate'),
+        (28, 'MagickaRate'),
+        (29, 'StaminaRate'),
+        (30, 'SpeedMult'),
+        (31, 'InventoryWeight'),
+        (32, 'CarryWeight'),
+        (33, 'CriticalChance'),
+        (34, 'MeleeDamage'),
+        (35, 'UnarmedDamage'),
+        (36, 'Mass'),
+        (37, 'VoicePoints'),
+        (38, 'VoiceRate'),
+        (39, 'DamageResist'),
+        (40, 'PoisonResist'),
+        (41, 'ResistFire'),
+        (42, 'ResistShock'),
+        (43, 'ResistFrost'),
+        (44, 'ResistMagic'),
+        (45, 'ResistDisease'),
+        (46, 'Unknown46'),
+        (47, 'Unknown47'),
+        (48, 'Unknown48'),
+        (49, 'Unknown49'),
+        (50, 'Unknown50'),
+        (51, 'Unknown51'),
+        (52, 'Unknown52'),
+        (53, 'Paralysis'),
+        (54, 'Invisibility'),
+        (55, 'NightEye'),
+        (56, 'DetectLifeRange'),
+        (57, 'WaterBreathing'),
+        (58, 'WaterWalking'),
+        (59, 'Unknown59'),
+        (60, 'Fame'),
+        (61, 'Infamy'),
+        (62, 'JumpingBonus'),
+        (63, 'WardPower'),
+        (64, 'RightItemCharge'),
+        (65, 'ArmorPerks'),
+        (66, 'ShieldPerks'),
+        (67, 'WardDeflection'),
+        (68, 'Variable01'),
+        (69, 'Variable02'),
+        (70, 'Variable03'),
+        (71, 'Variable04'),
+        (72, 'Variable05'),
+        (73, 'Variable06'),
+        (74, 'Variable07'),
+        (75, 'Variable08'),
+        (76, 'Variable09'),
+        (77, 'Variable10'),
+        (78, 'BowSpeedBonus'),
+        (79, 'FavorActive'),
+        (80, 'FavorsPerDay'),
+        (81, 'FavorsPerDayTimer'),
+        (82, 'LeftItemCharge'),
+        (83, 'AbsorbChance'),
+        (84, 'Blindness'),
+        (85, 'WeaponSpeedMult'),
+        (86, 'ShoutRecoveryMult'),
+        (87, 'BowStaggerBonus'),
+        (88, 'Telekinesis'),
+        (89, 'FavorPointsBonus'),
+        (90, 'LastBribedIntimidated'),
+        (91, 'LastFlattered'),
+        (92, 'MovementNoiseMult'),
+        (93, 'BypassVendorStolenCheck'),
+        (94, 'BypassVendorKeywordCheck'),
+        (95, 'WaitingForPlayer'),
+        (96, 'One-HandedModifier'),
+        (97, 'Two-HandedModifier'),
+        (98, 'MarksmanModifier'),
+        (99, 'BlockModifier'),
+        (100, 'SmithingModifier'),
+        (101, 'HeavyArmorModifier'),
+        (102, 'LightArmorModifier'),
+        (103, 'PickpocketModifier'),
+        (104, 'LockpickingModifier'),
+        (105, 'SneakingModifier'),
+        (106, 'AlchemyModifier'),
+        (107, 'SpeechcraftModifier'),
+        (108, 'AlterationModifier'),
+        (109, 'ConjurationModifier'),
+        (110, 'DestructionModifier'),
+        (111, 'IllusionModifier'),
+        (112, 'RestorationModifier'),
+        (113, 'EnchantingModifier'),
+        (114, 'One-HandedSkillAdvance'),
+        (115, 'Two-HandedSkillAdvance'),
+        (116, 'MarksmanSkillAdvance'),
+        (117, 'BlockSkillAdvance'),
+        (118, 'SmithingSkillAdvance'),
+        (119, 'HeavyArmorSkillAdvance'),
+        (120, 'LightArmorSkillAdvance'),
+        (121, 'PickpocketSkillAdvance'),
+        (122, 'LockpickingSkillAdvance'),
+        (123, 'SneakingSkillAdvance'),
+        (124, 'AlchemySkillAdvance'),
+        (125, 'SpeechcraftSkillAdvance'),
+        (126, 'AlterationSkillAdvance'),
+        (127, 'ConjurationSkillAdvance'),
+        (128, 'DestructionSkillAdvance'),
+        (129, 'IllusionSkillAdvance'),
+        (130, 'RestorationSkillAdvance'),
+        (131, 'EnchantingSkillAdvance'),
+        (132, 'LeftWeaponSpeedMultiply'),
+        (133, 'DragonSouls'),
+        (134, 'CombatHealthRegenMultiply'),
+        (135, 'One-HandedPowerModifier'),
+        (136, 'Two-HandedPowerModifier'),
+        (137, 'MarksmanPowerModifier'),
+        (138, 'BlockPowerModifier'),
+        (139, 'SmithingPowerModifier'),
+        (140, 'HeavyArmorPowerModifier'),
+        (141, 'LightArmorPowerModifier'),
+        (142, 'PickpocketPowerModifier'),
+        (143, 'LockpickingPowerModifier'),
+        (144, 'SneakingPowerModifier'),
+        (145, 'AlchemyPowerModifier'),
+        (146, 'SpeechcraftPowerModifier'),
+        (147, 'AlterationPowerModifier'),
+        (148, 'ConjurationPowerModifier'),
+        (149, 'DestructionPowerModifier'),
+        (150, 'IllusionPowerModifier'),
+        (151, 'RestorationPowerModifier'),
+        (152, 'EnchantingPowerModifier'),
+        (153, 'DragonRend'),
+        (154, 'AttackDamageMult'),
+        (155, 'HealRateMult'),
+        (156, 'MagickaRateMult'),
+        (157, 'StaminaRateMult'),
+        (158, 'WerewolfPerks'),
+        (159, 'VampirePerks'),
+        (160, 'GrabActorOffset'),
+        (161, 'Grabbed'),
+        (162, 'Unknown162'),
+        (163, 'ReflectDamage'),
+    ))
+    
+    MgefGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'Hostile'),
+        (2, 'Recover'),
+        (3, 'Detrimental'),
+        (4, 'Snap to Navmesh'),
+        (5, 'No Hit Event'),
+        (6, 'Unknown 6'),
+        (7, 'Unknown 7'),
+        (8, 'Unknown 8'),
+        (9, 'Dispell with Keywords'),
+        (10, 'No Duration'),
+        (11, 'No Magnitude'),
+        (12, 'No Area'),
+        (13, 'FX Persist'),
+        (14, 'Unknown 14'),
+        (15, 'Gory Visuals'),
+        (16, 'Hide in UI'),
+        (17, 'Unknown 17'),
+        (18, 'No Recast'),
+        (19, 'Unknown 19'),
+        (20, 'Unknown 20'),
+        (21, 'Unknown 21'),
+        (22, 'Power Affects Magnitude'),
+        (23, 'Power Affects Duration'),
+        (24, 'Unknown 24'),
+        (25, 'Unknown 25'),
+        (26, 'Unknown 26'),
+        (27, 'Painless'),
+        (28, 'No Hit Effect'),
+        (29, 'No Death Dispel'),
+        (30, 'Unknown 30'),
+        (31, 'Unknown 31'),
+        (32, 'Unknown 32'),
+    ))
+    
+    MgefCastTypeEnum = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'ConstantEffect'),
+        (1, 'FireandForget'),
+        (2, 'Concentrate'),
+        (3, 'Scroll'),
+    ))
+   
+    MgefDeliveryTypeEnum = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Self'),
+        (1, 'Contact'),
+        (2, 'Aimed'),
+        (3, 'TargetActor'),
+        (3, 'TargetLocation'),
+    ))
+    
+    MgefSoundLevelEnum = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Loud'),
+        (1, 'Normal'),
+        (2, 'Silent'),
+        (3, 'VeryLoud'),
+    ))
+    
+    MgefEffectArchetype = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'ValueModifier'),
+        (1, 'Script'),
+        (2, 'Dispel'),
+        (3, 'CureDisease'),
+        (4, 'Absorb'),
+        (5, 'DualValueModifier'),
+        (6, 'Calm'),
+        (7, 'Demoralize'),
+        (8, 'Frenzy'),
+        (9, 'Disarm'),
+        (10, 'CommandSummoned'),
+        (11, 'Invisibility'),
+        (12, 'Light'),
+        (13, 'Unknown13'),
+        (14, 'Unknown14'),
+        (15, 'Lock'),
+        (16, 'Open'),
+        (17, 'BoundWeapon'),
+        (18, 'SummonCreature'),
+        (19, 'DetectLife'),
+        (20, 'Telekinesis'),
+        (21, 'Paralysis'),
+        (22, 'Reanimate'),
+        (23, 'SoulTrap'),
+        (24, 'TurnUndead'),
+        (25, 'Guide'),
+        (26, 'WerewolfFeed'),
+        (27, 'CureParalysis'),
+        (28, 'CureAddiction'),
+        (29, 'CurePoison'),
+        (30, 'Concussion'),
+        (31, 'ValueandParts'),
+        (32, 'AccumulateMagnitude'),
+        (33, 'Stagger'),
+        (34, 'PeakValueModifier'),
+        (35, 'Cloak'),
+        (36, 'Werewolf'),
+        (37, 'SlowTime'),
+        (38, 'Rally'),
+        (39, 'EnhanceWeapon'),
+        (40, 'SpawnHazard'),
+        (41, 'Etherealize'),
+        (42, 'Banish'),
+        (43, 'SpawnScriptedRef'),
+        (44, 'Disguise'),
+        (45, 'GrabActor'),
+        (46, 'VampireLord'),
+    ))
+    
+    MgefSoundsTypeEnum = bolt.Flags(0L,bolt.Flags.getNames(
+      (0, 'Sheathe/Draw'),
+      (1, 'Charge'),
+      (2, 'Ready'),
+      (3, 'Release'),
+      (3, 'Concentration Cast Loop'),
+      (3, 'On Hit'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelLString('FULL','full'),
+        MelStruct('MDOB','I',(FID,'harvestIngredient')),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelStruct('DATA','IfI2i2If4I4f6Ii3IfIf7I2f',
+        (MgefGeneralFlags,'flags',0L),'baseCost',(FID,'assocItem'),(MgefActorValueEnum,'magicSkill'),
+        (MgefActorValueEnum,'resistValue'),'unknown',(FID,'castingLight'),'taperWeight',(FID,'hitShader'),
+        (FID,'enchantShader'),'minimumSkillLevel','spellmakingArea',
+        'spellmakingCastingTime','taperCurve','taperDuration','secondAvWeight',
+        (MgefEffectArchetype,'flags',0L),(MgefActorValueEnum,'flags',0L),(FID,'projectile'),
+        (FID,'explosion'),(MgefCastTypeEnum,'castingType',0L),(MgefDeliveryTypeEnum,'delivery',0L),
+        (MgefActorValueEnum,'secondActorValue',0L),(FID,'castingArt'),(FID,'hitEffectArt'),(FID,'impactData'),
+        'skillUsageMultiplier',(FID,'dualCastingArt'),'dualCastingScale',(FID,'enchantArt'),
+        'unknown', 'unknown',(FID,'equipAbility'),(FID,'imageSpaceModifier'),(FID,'perkToApply'),
+        (MgefSoundLevelEnum,'castingSoundLevel',0L),'scriptEffectAiScore','scriptEffectAiDelayTime'
+        ),
+        MelFids('ESCE','effects'),
+        MelStruct('SNDD','2I',(MgefSoundsTypeEnum,'flags',0L),'soundsType'),
+        MelLString('DNAM','full'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim
+#------------------------------------------------------------------------------
 # Contains VMAD Can't be merged at this time:
-# MreActi, MreAppa, MreMisc, MreArmo
+# MreActi, MreArmo, MreAppa, MreMisc, MreBook, MreFlor, MreMgef  
 #
+# Can't be merged at this time:
+# 
 #--Mergeable record types
 mergeClasses = (
-    MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, 
-    MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln, 
-    MreLvsp, MreMisc,
-    )
+        MreAact, MreAddn, MreAmmo, MreAnio, MreArma,
+        MreArto, MreAspc, MreAstp, MreBptd, MreClfm,
+        MreCobj, MreEqup, MreEyes, MreFlst, MreFstp, MreGlob, MreGmst,
+        MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, 
+        MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd,
+        MreTree, MreVtyp,
+        )
 
 #--Extra read/write classes
 readClasses = ()
@@ -15398,9 +15858,12 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, 
+        MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm,
+        MreCobj, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst,
+        MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef,
+        MreMisc, MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd,
+        MreTree, MreVtyp,
         MreHeader,
         ))
 
