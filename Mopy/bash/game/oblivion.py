@@ -29,7 +29,7 @@ from .. import brec
 from .. import bolt
 from .. import bush
 from ..brec import *
-from ..bolt import Flags, DataDict
+from ..bolt import Flags, DataDict, StateError
 
 # Util Constants ---------------------------------------------------------------
 #--Null strings (for default empty byte arrays)
