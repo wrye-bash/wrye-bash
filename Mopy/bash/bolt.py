@@ -2688,7 +2688,8 @@ class StringTable(dict):
                 eof = insTell()
                 insSeek(0)
                 if eof < 8:
-                    # Missing the numIds and dataSize bytes, assume empty file
+                    deprint(u"Warning: Strings file '%s' file size (%d) is less than 8 bytes.  8 bytes are the minimum required by the expected format, assuming the Strings file is empty."
+                            % (path, eof))
                     return
 
                 numIds,dataSize = insUnpack('=2I',8)
