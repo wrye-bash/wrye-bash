@@ -18909,13 +18909,13 @@ def InitInstallerLinks():
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"))
         openAtMenu.links.append(Installer_OpenSearch())
-    if bush.game.name == u'Oblivion':
-        openAtMenu.links.append(Installer_OpenTesNexus())
-    elif bush.game.name == u'Skyrim':
-        openAtMenu.links.append(Installer_OpenSkyrimNexus())
+        if bush.game.name == u'Oblivion':
+            openAtMenu.links.append(Installer_OpenTesNexus())
+        elif bush.game.name == u'Skyrim':
+            openAtMenu.links.append(Installer_OpenSkyrimNexus())
         openAtMenu.links.append(Installer_OpenTESA())
         openAtMenu.links.append(Installer_OpenPES())
-    InstallersPanel.itemMenu.append(openAtMenu)
+        InstallersPanel.itemMenu.append(openAtMenu)
     InstallersPanel.itemMenu.append(Installer_Hide())
     InstallersPanel.itemMenu.append(Installer_Rename())
     #--Install, uninstall, etc.
