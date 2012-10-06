@@ -18915,7 +18915,7 @@ def InitInstallerLinks():
         openAtMenu.links.append(Installer_OpenSkyrimNexus())
         openAtMenu.links.append(Installer_OpenTESA())
         openAtMenu.links.append(Installer_OpenPES())
-        InstallersPanel.itemMenu.append(openAtMenu)
+    InstallersPanel.itemMenu.append(openAtMenu)
     InstallersPanel.itemMenu.append(Installer_Hide())
     InstallersPanel.itemMenu.append(Installer_Rename())
     #--Install, uninstall, etc.
