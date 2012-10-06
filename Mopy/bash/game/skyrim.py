@@ -244,6 +244,7 @@ masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
     u'Dawnguard.esm',
+    u'HearthFires.esm',
     ]
 
 #--Game ESM/ESP/BSA files
