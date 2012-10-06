@@ -13417,9 +13417,12 @@ allBethFiles = set((
     u'shadersfx\\Lighting\\059\\VC00401.fxp',
     u'Sound\\Voice\\Processing\\FonixData.cdf',
     # Section 3: Strings Files
-    u'Strings\\Dawnguard_English.dlstrings', #--probably need one for each language
-    u'Strings\\Dawnguard_English.ilstrings',
-    u'Strings\\Dawnguard_English.strings',
+    u'Strings\\Dawnguard_English.DLSTRINGS', #--probably need one for each language
+    u'Strings\\Dawnguard_English.ILSTRINGS',
+    u'Strings\\Dawnguard_English.STRINGS',
+    u'Strings\\HearthFires_English.DLSTRINGS',
+    u'Strings\\HearthFires_English.ILSTRINGS',
+    u'Strings\\HearthFires_English.STRINGS',
     u'Strings\\Skyrim_English.DLSTRINGS',
     u'Strings\\Skyrim_English.ILSTRINGS',
     u'Strings\\Skyrim_English.STRINGS',
