@@ -56,6 +56,8 @@ patchTip = u'Update via Steam'
 
 #--URL to the Nexus site for this game
 nexusUrl = u'http://skyrim.nexusmods.com/'
+nexusName = u'Skyrim Nexus'
+nexusKey = 'bash.installers.openSkyrimNexus'
 
 #--Creation Kit Set information
 class cs:
@@ -243,6 +245,7 @@ masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
     u'Dawnguard.esm',
+    u'HearthFires.esm',
     ]
 
 #--Game ESM/ESP/BSA files
@@ -253,6 +256,8 @@ bethDataFiles = set((
     u'Update.bsa',
     u'Dawnguard.esm',
     u'Dawnguard.bsa',
+    u'HearthFires.bsa',
+    u'HearthFires.esm',
     u'Skyrim - Animations.bsa',
     u'Skyrim - Interface.bsa',
     u'Skyrim - Meshes.bsa',
@@ -271,10 +276,13 @@ bethDataFiles = set((
 #--Every file in the Data directory from Bethsoft
 allBethFiles = set((
     # Section 1: Vanilla files
-    u'Dawnguard.bsa',
-    u'Dawnguard.esm',
+    u'Skyrim.esm',
     u'Update.bsa',
     u'Update.esm',
+    u'Dawnguard.bsa',
+    u'Dawnguard.esm',
+    u'HearthFires.bsa',
+    u'HearthFires.esm',
     u'Skyrim - Animations.bsa',
     u'Skyrim - Interface.bsa',
     u'Skyrim - Meshes.bsa',
@@ -284,7 +292,6 @@ allBethFiles = set((
     u'Skyrim - Textures.bsa',
     u'Skyrim - Voices.bsa',
     u'Skyrim - VoicesExtra.bsa',
-    u'Skyrim.esm',
     u'HighResTexturePack01.esp',
     u'HighResTexturePack02.esp',
     u'HighResTexturePack01.bsa',
@@ -13412,9 +13419,12 @@ allBethFiles = set((
     u'shadersfx\\Lighting\\059\\VC00401.fxp',
     u'Sound\\Voice\\Processing\\FonixData.cdf',
     # Section 3: Strings Files
-    u'Strings\\Dawnguard_English.dlstrings', #--probably need one for each language
-    u'Strings\\Dawnguard_English.ilstrings',
-    u'Strings\\Dawnguard_English.strings',
+    u'Strings\\Dawnguard_English.DLSTRINGS', #--probably need one for each language
+    u'Strings\\Dawnguard_English.ILSTRINGS',
+    u'Strings\\Dawnguard_English.STRINGS',
+    u'Strings\\HearthFires_English.DLSTRINGS',
+    u'Strings\\HearthFires_English.ILSTRINGS',
+    u'Strings\\HearthFires_English.STRINGS',
     u'Strings\\Skyrim_English.DLSTRINGS',
     u'Strings\\Skyrim_English.ILSTRINGS',
     u'Strings\\Skyrim_English.STRINGS',

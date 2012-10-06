@@ -10226,35 +10226,23 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
                 for link in self.links:
                     link.AppendToMenu(subMenu,window,data)
 
-class Installer_OpenTesNexus(InstallerLink):
+class Installer_OpenNexus(InstallerLink):
     """Open selected file(s)."""
     def AppendToMenu(self,menu,window,data):
+        if not bush.game.nexusUrl:
+            return
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'TES Nexus...'))
+        menuItem = wx.MenuItem(menu,self.id,_(bush.game.nexusName))
         menu.AppendItem(menuItem)
         x = bosh.reTesNexus.search(data[0].s)
         menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
 
     def Execute(self,event):
         """Handle selection."""
-        message = _(u"Attempt to open this as a mod at TES Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Nexus.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openTesNexus',_(u'Open at TES Nexus')):
+        message = _(u"Attempt to open this as a mod at %{nexusName}s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %{nexusName}s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %{nexusName}s.") % {'nexusName':bush.game.nexusName}
+        if balt.askContinue(self.gTank,message, bush.game.nexusKey,_(u'Open at %{nexusName}s') % {'nexusName':bush.game.nexusName}):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            webbrowser.open(u'http://oblivion.nexusmods.com/mods/'+id)
-
-class Installer_OpenSkyrimNexus(InstallerLink):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Skyrim Nexus...'))
-        menu.AppendItem(menuItem)
-        x = bosh.reTesNexus.search(data[0].s)
-        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
-
-    def Execute(self,event):
-        message = _(u"Attempt to open this as a mod at Skyrim Nexus?  This assumes that the trailing digits in the package's name are actually the id number of the mod at Skyrim Nexus.  If this assumption is wrong, you'll just get a random mod page (or error notice) at Skyrim Nexus.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openSkyimNexus',_(u'Open at Skyrim Nexus')):
-            id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            webbrowser.open(u'http://skyrim.nexusmods.com/mods/'+id)
+            webbrowser.open(bush.game.nexusUrl+u'mods/'+id)
 
 class Installer_OpenSearch(InstallerLink):
     """Open selected file(s)."""
@@ -12506,8 +12494,8 @@ class Settings_Languages(Link):
 class Settings_Language(Link):
     """Specific language for Wrye Bash."""
     languageMap = {
-        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (ç®€ä½“ä¸­æ–‡)',
-        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (ç¹�é«”ä¸­æ–‡)',
+        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
+        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
         u'de': _(u'German') + u' (Deutsch)',
         u'pt_opt': _(u'Portuguese') + u' (portuguÃªs)',
         u'italian': _(u'Italian') + u' (italiano)',
@@ -18909,10 +18897,7 @@ def InitInstallerLinks():
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"))
         openAtMenu.links.append(Installer_OpenSearch())
-    if bush.game.name == u'Oblivion':
-        openAtMenu.links.append(Installer_OpenTesNexus())
-    elif bush.game.name == u'Skyrim':
-        openAtMenu.links.append(Installer_OpenSkyrimNexus())
+        openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())
         openAtMenu.links.append(Installer_OpenPES())
         InstallersPanel.itemMenu.append(openAtMenu)
