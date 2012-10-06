@@ -55,6 +55,8 @@ patchTip = u'Update via Steam'
 
 #--URL to the Nexus site for this game
 nexusUrl = u'http://skyrim.nexusmods.com/'
+nexusName = u'Skyrim Nexus'
+nexusKey = 'bash.installers.openSkyrimNexus'
 
 #--Creation Kit Set information
 class cs:

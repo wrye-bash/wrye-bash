@@ -57,6 +57,7 @@ patchTip = u'http://www.elderscrolls.com/'
 
 #--URL to the Nexus site for this game
 nexusUrl = u'http://oblivion.nexusmods.com/'
+nexusName = u'TES Nexus'
 
 #--Construction Set information
 class cs:
