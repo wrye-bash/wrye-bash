@@ -58,6 +58,7 @@ patchTip = u'http://www.elderscrolls.com/'
 #--URL to the Nexus site for this game
 nexusUrl = u'http://oblivion.nexusmods.com/'
 nexusName = u'TES Nexus'
+nexusKey = 'bash.installers.openTesNexus'
 
 #--Construction Set information
 class cs:
