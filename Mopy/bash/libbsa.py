@@ -116,8 +116,8 @@ def Init(path):
     LIBBSA_VERSION_TES4 = c_uint.in_dll(libbsa,'LIBBSA_VERSION_TES4').value
     LIBBSA_VERSION_TES5 = c_uint.in_dll(libbsa,'LIBBSA_VERSION_TES5').value
     games = {
-	    'Morrowind':LIBBSA_VERSION_TES3,
-		LIBBSA_VERSION_TES3:LIBBSA_VERSION_TES3,
+        'Morrowind':LIBBSA_VERSION_TES3,
+        LIBBSA_VERSION_TES3:LIBBSA_VERSION_TES3,
         'Oblivion':LIBBSA_VERSION_TES4,
         LIBBSA_VERSION_TES4:LIBBSA_VERSION_TES4,
         'Fallout 3':LIBBSA_VERSION_TES5,
@@ -220,10 +220,10 @@ def Init(path):
     global version
     version = c_uint8_p()
     try:
-	    verMajor = c_uint32()
-		verMinor = c_uint32()
-		verPatch = c_uint32()
-		libbsa.GetVersionNums()
+        verMajor = c_uint32()
+        verMinor = c_uint32()
+        verPatch = c_uint32()
+        libbsa.GetVersionNums()
         _CGetVersionString(byref(verMajor), byref(verMinor), byref(verPatch))
         version = u'%i.%i.%i' % verMajor % verMinor % verPatch
     except LibbsaError as e:
@@ -237,7 +237,7 @@ def Init(path):
     _COpenBSA = libbsa.OpenBSA
     _COpenBSA.restype = LibbsaErrorCheck
     _COpenBSA.argtypes = [bsa_handle_p, c_uint8_p]
-	## uint32_t SaveBSA(bsa_handle bh, const uint8_t * path, const uint32_t flags)
+    ## uint32_t SaveBSA(bsa_handle bh, const uint8_t * path, const uint32_t flags)
     _CSaveBSA = libbsa.SaveBSA
     _CSaveBSA.restype = LibbsaErrorCheck
     _CSaveBSA.argtypes = [bsa_handle, c_uint8_p, c_uint32]
@@ -296,29 +296,29 @@ def Init(path):
         # Content Reading
         # ---------------------------------------------------------------------
         def GetAssets(self, contentPath):
-			assets = c_uint8_p_p()
-		    num = c_size_t()
+            assets = c_uint8_p_p()
+            num = c_size_t()
             _CGetAssets(self._handle, _enc(contentPath), byref(assets), byref(num))
-			return [GPath(_uni(assets[i])) for i in xrange(num.value)]
+            return [GPath(_uni(assets[i])) for i in xrange(num.value)]
 
         def IsAssetInBSA(self, assetPath):
-		    result = c_bool()
+            result = c_bool()
             _CIsAssetInBSA(self._handle, _enc(assetPath), byref(result))
             return result.value
 
         # ---------------------------------------------------------------------
         # Content Writing
         # ---------------------------------------------------------------------
-		## These functions don't have wrappers yet, so no OO interface for them.
+        ## These functions don't have wrappers yet, so no OO interface for them.
 
         # ---------------------------------------------------------------------
         # Content Extraction
         # ---------------------------------------------------------------------
         def ExtractAssets(self, contentPath, destPath):
-			assets = c_uint8_p_p()
-		    num = c_size_t()
+            assets = c_uint8_p_p()
+            num = c_size_t()
             _CExtractAssets(self._handle, _enc(contentPath), _enc(destPath), byref(assets), byref(num))
-			return [GPath(_uni(assets[i])) for i in xrange(num.value)]
+            return [GPath(_uni(assets[i])) for i in xrange(num.value)]
 
         def ExtractAsset(self, assetPath, destPath):
             _CExtractAsset(self._handle, _enc(assetPath), _enc(destPath))
