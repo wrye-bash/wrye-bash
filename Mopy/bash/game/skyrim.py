@@ -252,6 +252,8 @@ bethDataFiles = set((
     u'Update.bsa',
     u'Dawnguard.esm',
     u'Dawnguard.bsa',
+    u'HearthFires.bsa',
+    u'HearthFires.esm',
     u'Skyrim - Animations.bsa',
     u'Skyrim - Interface.bsa',
     u'Skyrim - Meshes.bsa',
@@ -270,10 +272,13 @@ bethDataFiles = set((
 #--Every file in the Data directory from Bethsoft
 allBethFiles = set((
     # Section 1: Vanilla files
-    u'Dawnguard.bsa',
-    u'Dawnguard.esm',
+    u'Skyrim.esm',
     u'Update.bsa',
     u'Update.esm',
+    u'Dawnguard.bsa',
+    u'Dawnguard.esm',
+    u'HearthFires.bsa',
+    u'HearthFires.esm',
     u'Skyrim - Animations.bsa',
     u'Skyrim - Interface.bsa',
     u'Skyrim - Meshes.bsa',
@@ -283,7 +288,6 @@ allBethFiles = set((
     u'Skyrim - Textures.bsa',
     u'Skyrim - Voices.bsa',
     u'Skyrim - VoicesExtra.bsa',
-    u'Skyrim.esm',
     u'HighResTexturePack01.esp',
     u'HighResTexturePack02.esp',
     u'HighResTexturePack01.bsa',
