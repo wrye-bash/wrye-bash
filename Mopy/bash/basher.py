@@ -12006,11 +12006,13 @@ class Settings_ImportDllInfo(Link):
                     if line.startswith(u'badDlls'):
                         current = Dlls['badDlls']
                     elif line.startswith(u'dll:'):
-                        dll = line[4:-1]
+                        dll = line.split(u':',1)[1].strip()
                         current.setdefault(dll,[])
                     elif line.startswith(u'version'):
-                        ver = line[13:-1].strip(u"'").split(u',')
-                        current[dll].append([ver[0].strip(u"'"),long(ver[1]),long(ver[2])])
+                        ver = line.split(u':',1)[1]
+                        ver = eval(ver)
+                        current[dll].append(ver)
+                        print dll,':',ver
             if not replace:
                 settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
                 settings['bash.installers.badDlls'].update(Dlls['badDlls'])
