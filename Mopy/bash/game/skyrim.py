@@ -243,33 +243,32 @@ saveProfilesKey = (u'General',u'SLocalSavePath')
 masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
-    u'Dawnguard.esm',
-    u'HearthFires.esm',
     ]
 
 #--Game ESM/ESP/BSA files
+#  These filenames need to be in lowercase,
 bethDataFiles = set((
     #--Vanilla
-    u'Skyrim.esm',
-    u'Update.esm',
-    u'Update.bsa',
-    u'Dawnguard.esm',
-    u'Dawnguard.bsa',
-    u'HearthFires.bsa',
-    u'HearthFires.esm',
-    u'Skyrim - Animations.bsa',
-    u'Skyrim - Interface.bsa',
-    u'Skyrim - Meshes.bsa',
-    u'Skyrim - Misc.bsa',
-    u'Skyrim - Shaders.bsa',
-    u'Skyrim - Sounds.bsa',
-    u'Skyrim - Textures.bsa',
-    u'Skyrim - Voices.bsa',
-    u'Skyrim - VoicesExtra.bsa',
-    u'HighResTexturePack01.esp',
-    u'HighResTexturePack02.esp',
-    u'HighResTexturePack01.bsa',
-    u'HighResTexturePack02.bsa',
+    u'skyrim.esm',
+    u'update.esm',
+    u'update.bsa',
+    u'dawnguard.esm',
+    u'dawnguard.bsa',
+    u'hearthfires.bsa',
+    u'hearthfires.esm',
+    u'skyrim - animations.bsa',
+    u'skyrim - interface.bsa',
+    u'skyrim - meshes.bsa',
+    u'skyrim - misc.bsa',
+    u'skyrim - shaders.bsa',
+    u'skyrim - sounds.bsa',
+    u'skyrim - textures.bsa',
+    u'skyrim - voices.bsa',
+    u'skyrim - voicesextra.bsa',
+    u'highrestexturepack01.esp',
+    u'highrestexturepack02.esp',
+    u'highrestexturepack01.bsa',
+    u'highrestexturepack02.bsa',
     ))
 
 #--Every file in the Data directory from Bethsoft
@@ -14114,23 +14113,244 @@ class RecordHeader(brec.BaseRecordHeader):
 #-------------------------------------------------------------------------------
 class MelVmad(MelBase):
     """Virtual Machine data (VMAD)"""
-    class Vmad(object):
-        __slots__ = ('version','unk','scripts',)
-        def __init__(self):
-            self.version = 5
-            self.unk = 2
-            self.scripts = {}
-    class Script(object):
-        __slots__ = ('unk','properties')
+    # Maybe use this later for better access to Fid,Aid pairs?
+    ##ObjectRef = collections.namedtuple('ObjectRef',['fid','aid'])
+    class FragmentInfo(object):
+        __slots__ = ('unk','fileName',)
         def __init__(self):
             self.unk = 0
-            self.properties = {}
-    class Property(object):
-        __slots__ = ('type','unk','value')
+            self.fileName = u''
+
+        def loadData(self,ins,Type,readId):
+            if Type == 'INFO':
+                raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
+            elif Type == 'PACK':
+                self.unk,count = ins.unpack('=bB',2,readId)
+                self.fileName = ins.readString16(-1,readId)
+                count = bin(count).count('1')
+            elif Type == 'PERK':
+                self.unk, = ins.unpack('=b',1,readId)
+                self.fileName = ins.readString16(-1,readId)
+                count, = ins.unpack('=H',2,readId)
+            elif Type == 'QUST':
+                self.unk,count = ins.unpack('=bH',3,readId)
+                self.fileName = ins.readString16(-1,readId)
+            elif Type == 'SCEN':
+                raise Exception(u"Fragment SCripts for 'SCEN' records are not implemented.")
+            else:
+                raise Exception(u"Unexpected Fragments Scripts for record type '%s'." % Type)
+            return count
+
+    class INFOFragment(object):
+        pass
+
+    class PACKFragment(object):
+        __slots__ = ('unk','scriptName','fragmentName',)
         def __init__(self):
-            self.type = 1
+            self.unk = 0
+            self.scriptName = u''
+            self.fragmentName = u''
+
+        def loadData(self,ins,readId):
+            self.unk = ins.unpack('=b',1,readId)
+            self.scriptName = ins.readString16(-1,readId)
+            self.fragmentName = ins.readString16(-1,readId)
+
+    class PERKFragment(object):
+        __slots__ = ('index','unk1','unk2','scriptName','fragmentName',)
+        def __init__(self):
+            self.index = -1
+            self.unk1 = 0
+            self.unk2 = 0
+            self.scriptName = u''
+            self.fragmentName= u''
+
+        def loadData(self,ins,readId):
+            self.index,self.unk1,self.unk2 = ins.unpack('=Hhb',4,readId)
+            self.scriptName = ins.readString16(-1,readId)
+            self.fragmentName = ins.readString16(-1,readId)
+
+    class QUSTFragment(object):
+        __slots__ = ('index','unk1','unk2','unk3','scriptName','fragmentName',)
+        def __init__(self):
+            self.index = -1
+            self.unk1 = 0
+            self.unk2 = 0
+            self.unk3 = 0
+            self.scriptName = u''
+            self.fragmentName = u''
+
+        def loadData(self,ins,readId):
+            self.index,self.unk1,self.unk2,self.unk3 = ins.unpack('=Hhib',9,readId)
+            self.scriptName = ins.readString16(-1,readId)
+            self.fragmentName = ins.readString16(-1,readId)
+
+    class SCENFragment(object):
+        pass
+
+    FragmentMap = {'INFO': INFOFragment,
+                   'PACK': PACKFragment,
+                   'PERK': PERKFragment,
+                   'QUST': QUSTFragment,
+                   'SCEN': SCENFragment,
+                   }
+
+    class Property(object):
+        __slots__ = ('name','unk','value',)
+        def __init__(self):
+            self.name = u''
             self.unk = 1
-            self.value = 0
+            self.value = None
+
+        def loadData(self,ins,version,objFormat,readId):
+            insUnpack = ins.unpack
+            # Script Property
+            self.name = ins.readString16(-1,readId)
+            if version >= 4:
+                Type,self.unk = insUnpack('=2B',2,readId)
+            else:
+                Type, = insUnpack('=B',1,readId)
+                self.unk = 1
+            # Data
+            if Type == 1:
+                # Object (8 Bytes)
+                if objFormat == 1:
+                    fid,aid,nul = insUnpack('=IHH',8,readId)
+                else:
+                    nul,aid,fid = insUnpack('=HHI',8,readId)
+                self.value = (fid,aid)
+            elif Type == 2:
+                # String
+                self.value = ins.readString16(-1,readId)
+            elif Type == 3:
+                # Int32
+                self.value, = insUnpack('=i',4,readId)
+            elif Type == 4:
+                # Float
+                self.value, = insUnpack('=f',4,readId)
+            elif Type == 5:
+                # Bool (Int8)
+                self.value = bool(insUnpack('=b',1,readId)[0])
+            elif Type == 11:
+                # List of Objects
+                count, = insUnpack('=I',4,readId)
+                if objFormat == 1: # (fid,aid,nul)
+                    value = insUnpack('='+count*'IHH',count*8,readId)
+                    self.value = zip(value[::3],value[1::3]) # list of (fid,aid)'s
+                else: # (nul,aid,fid)
+                    value = insUnpack('='+count*'HHI',count*8,readId)
+                    self.value = zip(value[2::3],value[1::3]) # list of (fid,aid)'s
+            elif Type == 12:
+                # List of Strings
+                count, = insUnpack('=I',4,readId)
+                self.value = [ins.readString16(-1,readId) for i in xrange(count)]
+            elif Type == 13:
+                # List of Int32s
+                count, = insUpack('=I',4,readId)
+                self.value = list(insUnpack('='+`count`+'i',count*4,readId))
+            elif Type == 14:
+                # List of Floats
+                count, = insUnpack('=I',4,readId)
+                self.value = list(insUnpack('='+`count`+'f',count*4,readId))
+            elif Type == 15:
+                # List of Bools (int8)
+                count, = insUnpack('=I',4,readId)
+                self.value = map(bool,insUnpack('='+`count`+'b',count,readId))
+            else:
+                raise Exception(u'Unrecognized VM Data property type: %i' % Type)
+
+    class Script(object):
+        __slots__ = ('name','unk','properties',)
+        def __init__(self):
+            self.name = u''
+            self.unk = 0
+            self.properties = []
+
+        def loadData(self,ins,version,objFormat,readId):
+            Property = MelVmad.Property
+            self.properties = []
+            propAppend = self.properties.append
+            # Script Entry
+            self.name = ins.readString16(-1,readId)
+            if version >= 4:
+                self.unk,propCount = ins.unpack('=BH',3,readId)
+            else:
+                self.unk = 0
+                propCount, = ins.unpack('=H',2,readId)
+            # Properties
+            for x in xrange(propCount):
+                prop = Property()
+                prop.loadData(version,objFormat,readId)
+                propAppend(prop)
+
+    class Alias(object):
+        __slots__ = ('unk1','aid','unk2','unk3','scripts',)
+        def __init__(self):
+            self.unk1 = 0
+            self.aid = 0
+            self.unk2 = 0
+            self.unk3 = 0
+            self.scripts = []
+
+        def loadData(self,ins,version,readId):
+            self.unk1,self.aid,self.unk2,self.unk3,objFormat,count = ins.unpack('=hHihhH',14)
+            Script = MelVmad.Script
+            self.scripts = []
+            scriptAppend = self.scripts.append
+            for x in xrange(count):
+                script = Script()
+                script.loadData(ins,version,objFormat,readId)
+                scriptAppend(script)
+
+    class Vmad(object):
+        __slots__ = ('scripts','fragmentInfo','fragments','aliases',)
+        def __init__(self):
+            self.scripts = []
+            self.fragmentInfo = None
+            self.fragments = None
+            self.aliases = None
+
+        def loadData(self,record,ins,size,readId):
+            insTell = ins.tell
+            endOfField = insTell() + size
+            self.scripts = []
+            scriptsAppend = self.scripts.append
+            Script = MelVmad.Script
+            # VMAD Header
+            version,objFormat,scriptCount = ins.unpack('=3H',6,readId)
+            # Primary Scripts
+            for x in xrange(scriptCount):
+                script = Script()
+                script.loadData(ins,version,objFormat,readId)
+                scriptsAppend(script)
+            # Script Fragments
+            if insTell() < endOfField:
+                self.fragmentInfo = MelVmad.FragmentInfo()
+                Type = record._Type
+                fragCount = self.fragmentInfo.loadData(ins,Type,readId)
+                self.fragments = []
+                fragAppend = self.fragments.append
+                Fragment = MelVmad.FragmentMap[Type]
+                for x in xrange(fragCount):
+                    frag = Fragment()
+                    frag.loadData(ins,readId)
+                    fragAppend(frag)
+                # Alias Scripts
+                if Type == 'QUST':
+                    aliasCount = ins.unpack('=H',2,readId)
+                    Alias = MelVmad.Alias
+                    self.aliases = []
+                    aliasAppend = self.aliases.append
+                    for x in xrange(aliasCount):
+                        alias = Alias()
+                        alias.loadData(ins,version,readId)
+                        aliasAppend(alias)
+                else:
+                    self.aliases = None
+            else:
+                self.fragmentInfo = None
+                self.fragments = None
+                self.aliases = None
 
     def __init__(self,type='VMAD',attr='vmdata'):
         MelBase.__init__(self,type,attr)
@@ -14148,69 +14368,7 @@ class MelVmad(MelBase):
 
     def loadData(self,record,ins,type,size,readId):
         vmad = MelVmad.Vmad()
-        # Header
-        version,vmad.unk,scriptCount = ins.unpack('=3H',6,readId)
-        vmad.version = version
-        # Scripts
-        for x in xrange(scriptCount):
-            script = MelVmad.Script()
-            scriptName = ins.readString16(size,readId)
-            if version >= 4:
-                script.unk,propertyCount = ins.unpack('=BH',3,readId)
-            else:
-                propertyCount, = ins.unpack('H',2,readId)
-                script.unk = 0
-            # Properties
-            props = script.properties
-            for y in xrange(propertyCount):
-                prop = MelVmad.Property()
-                propName = ins.readString16(size,readId)
-                if version >= 4:
-                    type,prop.unk = ins.unpack('=2B',2,readId)
-                else:
-                    type, = ins.unpack('B',1,readId)
-                    prop.unk = 0
-                prop.type = type
-                if type == 1:
-                    # Object reference? (uint64?)
-                    value = ins.unpack('=HHI',8,readId) # unk,unk,fid
-                elif type == 2:
-                    # String
-                    value = ins.readString16(size,readId)
-                elif type == 3:
-                    # int32
-                    value, = ins.unpack('i',4,readId)
-                elif type == 4:
-                    # float
-                    value, = ins.unpack('f',4,readId)
-                elif type == 5:
-                    # bool (int8)
-                    value, = ins.unpack('b',1,readId)
-                elif type == 11:
-                    # array of object refs? (uint64s?)
-                    count, = ins.unpack('I',4,readId)
-                    value = list(ins.unpack(`count`+'Q',count*8,readId))
-                elif type == 12:
-                    # array of strings
-                    count, = ins.unpack('I',4,readId)
-                    value = [ins.readString16(size,readId) for z in xrange(count)]
-                elif type == 13:
-                    # array of int32's
-                    count, = ins.unpack('I',4,readId)
-                    value = list(ins.unpack(`count`+'i',count*4,readId))
-                elif type == 14:
-                    # array of float's
-                    count, = ins.unpack('I',4,readId)
-                    value = list(ins.unpack(`count`+'f',count*4,readId))
-                elif type == 15:
-                    # array of bools's (int8's)
-                    count, = ins.unpack('I',4,readId)
-                    value = list(ins.unpack(`count`+'b',count*1,readId))
-                else:
-                    raise Exception(u'Unrecognized VM Data property type: %i' % type)
-                prop.value = value
-                props[propName] = prop
-            vmad.scripts[scriptName] = script
+        vmad.loadData(record,ins,size,readId)
         record.__setattr__(self.attr,vmad)
 
     def dumpData(self,record,out):
