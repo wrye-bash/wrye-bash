@@ -8640,17 +8640,18 @@ otherPatcherDict = {
 #------------------------------------------------------------------------------
 class BoolLink(Link):
     """Simple link that just toggles a setting."""
-    def __init__(self, text, key, help=''):
+    def __init__(self, text, key, help='', opposite=False):
         Link.__init__(self)
         self.text = text
         self.help = help
         self.key = key
+        self.opposite = opposite
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,self.text,self.help,kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
-        menuItem.Check(settings[self.key])
+        menuItem.Check(settings[self.key] ^ self.opposite)
 
     def Execute(self,event):
         settings[self.key] ^= True
@@ -9328,15 +9329,40 @@ class Installers_AutoApplyEmbeddedBCFs(BoolLink):
 class Installers_AutoRefreshBethsoft(BoolLink):
     """Toggle refreshVanilla setting and update."""
     def __init__(self): BoolLink.__init__(self,
-                                          _(u'Auto-Refresh Bethsoft Content'),
+                                          _(u'Skip Bethsoft Content'),
                                          'bash.installers.autoRefreshBethsoft',
+                                         u'Skip installing Bethesda ESMs, ESPs, and BSAs.',
+                                         True
                                          )
 
     def Execute(self,event):
         if not settings[self.key]:
-            message = balt.fill(_(u"Enable refreshing Bethsoft Content?  This will cause data refreshing to take much longer if the timestamps on Bethsoft BSA's, ESP's, or ESM's change."))
-            if not balt.askWarning(self.gTank,fill(message,80),self.title): return
+            message = balt.fill(_(u"Enable installation of Bethsoft Content?") + u'\n\n' +
+                                _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculatted.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
+                                )
+            if not balt.askYes(self.gTank,fill(message,80),self.title): return
         BoolLink.Execute(self,event)
+        if settings[self.key]:
+            # Refresh Data - only if we are now including Bethsoft files
+            gInstallers.refreshed = False
+            gInstallers.fullRefresh = False
+            gInstallers.OnShow()
+        # Refresh Installers
+        toRefresh = set()
+        for name in gInstallers.data.data:
+            installer = gInstallers.data.data[name]
+            if installer.hasBethFiles:
+                toRefresh.add((name,installer))
+        if toRefresh:
+            with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60) as progress:
+                progress.setFull(len(toRefresh))
+                for index,(name,installer) in enumerate(toRefresh):
+                    progress(index,_(u'Refreshing Packages...')+u'\n'+name.s)
+                    apath = bosh.dirs['installers'].join(name)
+                    installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
+                    gInstallers.data.hasChanged = True
+            gInstallers.data.refresh(what='NSC')
+            gInstallers.gList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Installers_Enabled(BoolLink):
@@ -18831,7 +18857,7 @@ def InitMasterLinks():
     MasterList.itemMenu.append(Master_Disable())
 
 def InitInstallerLinks():
-    """Initialize people tab menus."""
+    """Initialize Installers tab menus."""
     #--Column links
     #--Sorting
     if True:
