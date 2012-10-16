@@ -7018,10 +7018,7 @@ class Installer(object):
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         new_sizeCrcDate = {}
-        if settings['bash.installers.autoRefreshBethsoft']:
-            bethFiles = set()
-        else:
-            bethFiles = bush.game.bethDataFiles
+        bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         skipExts = Installer.skipExts
         asRoot = apRoot.s
         relPos = len(asRoot)+1
@@ -7266,7 +7263,6 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        bethFiles = bush.game.bethDataFiles
         packageFiles = set((u'package.txt',u'package.jpg'))
         unSize = 0
         espmNots = self.espmNots
@@ -7281,6 +7277,7 @@ class Installer(object):
             skipLandscapeLODTextures = False
             skipLandscapeLODNormals = False
             renameStrings = False
+            bethFiles = set()
         else:
             skipVoices = self.skipVoices
             skipEspmVoices = set(x.cs for x in espmNots)
@@ -7292,6 +7289,7 @@ class Installer(object):
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
+            bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
         skipObse = not settings['bash.installers.allowOBSEPlugins']
@@ -7510,7 +7508,7 @@ class Installer(object):
                     goodDlls.setdefault(fileLower,[])
                     goodDlls[fileLower].append([archiveRoot,size,crc])
             #--Noisy skips
-            elif file in bethFiles:
+            elif fileLower in bethFiles:
                 skipDirFilesAdd(full)
                 continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
