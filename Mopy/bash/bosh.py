@@ -6955,7 +6955,7 @@ class Installer(object):
         'skipRefresh','fileRootIdex')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms',
-        'underrides','hasWizard','espmMap','hasReadme','hasBCF')
+        'underrides','hasWizard','espmMap','hasReadme','hasBCF','hasBethFiles')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set((u'screenshots',))
@@ -7084,7 +7084,8 @@ class Installer(object):
                 rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
-                    if not rsDir and sFileLower in bethFiles: continue
+                    if not rsDir and sFileLower in bethFiles:
+                        continue
                     rpFile = ghostGet(rpFile,rpFile)
                 isEspm = not rsDir and ext in (u'.esp',u'.esm')
                 apFile = apDirJoin(sFile)
@@ -7168,6 +7169,7 @@ class Installer(object):
         self.espmMap = {}
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False
+        self.hasBethFiles = False
         self.data_sizeCrc = {}
         self.skipExtFiles = set()
         self.skipDirFiles = set()
@@ -7266,6 +7268,7 @@ class Installer(object):
         packageFiles = set((u'package.txt',u'package.jpg'))
         unSize = 0
         espmNots = self.espmNots
+        bethFiles = bush.game.bethDataFiles
         if self.overrideSkips:
             skipVoices = False
             skipEspmVoices = None
@@ -7277,7 +7280,7 @@ class Installer(object):
             skipLandscapeLODTextures = False
             skipLandscapeLODNormals = False
             renameStrings = False
-            bethFiles = set()
+            bethFilesSkip = set()
         else:
             skipVoices = self.skipVoices
             skipEspmVoices = set(x.cs for x in espmNots)
@@ -7289,7 +7292,7 @@ class Installer(object):
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
-            bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+            bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
         skipObse = not settings['bash.installers.allowOBSEPlugins']
@@ -7378,7 +7381,8 @@ class Installer(object):
                                 self.hasReadme = full
                                 skipDirFilesDiscard(file)
                                 skip = False
-                    elif file in bethFiles:
+                    elif fileLower in bethFiles:
+                        self.hasBethFiles = True
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                         continue
@@ -7508,7 +7512,8 @@ class Installer(object):
                     goodDlls.setdefault(fileLower,[])
                     goodDlls[fileLower].append([archiveRoot,size,crc])
             #--Noisy skips
-            elif fileLower in bethFiles:
+            elif fileLower in bethFilesSkip:
+                self.hasBethFiles = True
                 skipDirFilesAdd(full)
                 continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
@@ -7520,6 +7525,9 @@ class Installer(object):
             elif fileExt in skipExts:
                 skipExtFilesAdd(full)
                 continue
+            #--Bethesda Content?
+            if fileLower in bethFiles:
+                self.hasBethFiles = True
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
