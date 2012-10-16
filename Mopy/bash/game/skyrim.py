@@ -14022,7 +14022,7 @@ class esp:
     canEditHeader = True    # Can edit anything in the TES4 record
 
     #--Valid ESM/ESP header versions
-    validHeaderVersions = (0.94,)
+    validHeaderVersions = (0.94, 1.70,)
 
     #--Strings Files
     stringsFiles = [
