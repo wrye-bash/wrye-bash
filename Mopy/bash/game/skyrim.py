@@ -13449,6 +13449,7 @@ dataDirs = set((
     u'shadersfx',
     u'music',
     u'sound',
+    u'seq',
     ))
 dataDirsPlus = set((
     u'ini tweaks',
