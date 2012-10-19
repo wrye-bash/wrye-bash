@@ -3335,8 +3335,11 @@ class IniFile(object):
 
 #-----------------------------------------------------------------------------------------------
 def BestIniFile(path):
-    if path.csbody == u'oblivion':
+    if not path:
         return oblivionIni
+    for ini in gameInis:
+        if path == ini.path:
+            return ini
     INICount = IniFile.formatMatch(path)
     OBSECount = OBSEIniFile.formatMatch(path)
     if INICount >= OBSECount:
@@ -30936,6 +30939,8 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['userApp'] = localAppData.join(bush.game.name)
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
+    global gameInis
+    global oblivionIni
     gameInis = [OblivionIni(x) for x in bush.game.iniFiles]
     oblivionIni = gameInis[0]
     try:
