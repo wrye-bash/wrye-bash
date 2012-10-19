@@ -1701,7 +1701,13 @@ class INILineCtrl(wx.ListCtrl):
                 for i in xrange(len(lines), num):
                     self.DeleteItem(len(lines))
         except IOError:
-            balt.showWarning(self, _(u"%s does not exist yet.  %s will create this file on first run.  INI tweaks will not be usable until then.") % (bosh.iniInfos.ini.path, bush.game.iniFiles[0]))
+            warn = True
+            if hasattr(bashFrame,'notebook'):
+                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())
+                if page != self.GetParent().GetParent().GetParent():
+                    warn = False
+            if warn:
+                balt.showWarning(self, _(u"%s does not exist yet.  %s will create this file on first run.  INI tweaks will not be usable until then.") % (bosh.iniInfos.ini.path, bush.game.iniFiles[0]))
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
@@ -2522,9 +2528,13 @@ class INIPanel(SashPanel):
             if path is None:
                 self.choice -= 1
             elif not path.isfile():
-                del self.choices[self.GetChoiceString()]
-                self.choice -= 1
-                what = 'ALL'
+                for iFile in bosh.gameInis:
+                    if iFile.path == path:
+                        break
+                else:
+                    del self.choices[self.GetChoiceString()]
+                    self.choice -= 1
+                    what = 'ALL'
             self.SetBaseIni(self.GetChoice())
             self.comboBox.SetItems(self.SortChoices())
             self.comboBox.SetSelection(self.choice)
