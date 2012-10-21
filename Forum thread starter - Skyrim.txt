@@ -4,7 +4,7 @@
 [list]
 [*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
 [*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"
-[*]It allows you to exceed the 255 mod threshold by automatically merging mods for you
+[*]It allows you to exceed the 255 mod threshold by automatically merging some types of mods for you
 [/list]
 
 [b]FAQ[/b]:
@@ -20,7 +20,7 @@ Yeah, to save typing, we often sling around terminology that can be confusing to
 [*][b]CBash[/b]: (2) A C++ written DLL with a C API, that is used for reading and writing ESP/ESM format files. This is the only part of Wrye Bash not written in Python (well, except for calls to 7z.exe to extract things).
 [*]The practical benefits of using CBash are:[list=1]
 [*] Building the bashed patch is much faster
-[*] More plugins are mergeable, giving you the ability to cram more goodness into Oblivion
+[*] More plugins are mergeable, giving you the ability to cram more goodness into the game
 [*] In the future, more interesting kinds of tweaks will be practical to implement[/list]
 [*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
 [*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
@@ -51,7 +51,7 @@ If you're using the Standalone version, the only other thing you need to install
 If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:
 [spoiler]
 [list]
-  [*][url="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi"]Python 2.7.3[/url] (Python 2.7.1 from Wrye Python 04a is fine as well)
+  [*][url="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi"]Python 2.7.3[/url]
   [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe"]wxPython 2.8.12.1 unicode for Python 2.7[/url]
   [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2[/url]
   [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url]
@@ -124,18 +124,27 @@ Rinse and repeat when a new svn comes out.
 [/list]
 
 [b]Changelog for Latest Version[/b]:
-[size=5]299 [2012/07/01] [Various community members][/size]
+[size=5]300 [2012/08/09] [Various community members][/size]
 [spoiler][list]
-[*]Fixed bug 3536117 (launcher icon error). [trira]
-[*]Bash fails to reorder the UI after running BOSS. [cdcooley]
-[*]Ongoing improvements to the installer system. [alt3rn1ty]
-[*]New INI Tweak: Large Interiors Static Limit Fix. Prevents CTDs with mods that have large custom interiors when trying to exit to a worldspace. [Arthmoor]
-[*]Updated path for GIMP in bash_default.ini for GIMP 2.8. [wrinklyninja]
-[*]Updated BAPI DLLs. This update adds load order / active plugins caching. Helps with UI lag issues. [wrinklyninja]
-[*]Further updates to the WizBAIN editor. [Metallicow]
-[*]Bug #3535826 No spells listed in Delete Spells... [trira]
-[*]Images relocated for readme files. [Metallicow]
-[*]Enhancement 3400257 Startup splash screen? [Metallicow]
+[*]Fix for a reported Unicode bug. [Metallicow]
+[*]Mod indices not updating after re-ordering mods. [trira]
+[*]Updated bash_default.ini to help with some of the Oblivion specific stuff. [cdcooley]
+[*]Numerous WizBAIN updates. [Metallicow]
+[*]Updated splash screen code. [cdcooley]
+[*]Installer script and forum post updates for PIL dependency. [alt3rn1ty]
+[*]Fixed Bash not loading if loadorder.txt or plugins.txt do not exist. [wrinklyninja]
+[*]Relocated tool images to a new tools folder. [Metallicow]
+[*]Calls to os.startfile changed to webbrowser.open for URLs for cross-platform compatibility. [Metallicow]
+[*]Updated regex handling for Nexus files. [trira]
+[*]Added install warning for SkyProc patchers (Skyrim) [Daidalos]
+[*]Enhancement 3530356 - enable BAIN support for Automatic Variants packages. (Skyrim) [Daidalos]
+[*]Enhancement 3539241 - Ability to copy plugins / installer-archives to clipboard from wrye bash. [Daidalos]
+[*]Updated BAPI for compatibility with BOSS 2.1. [wrinklyninja]
+[*]Some memory cleanup code to help with the BAIN tab eating up so much RAM. [Lojack]
+[*]Bash will no longer fail to start if the language locale cannot be determined. [Lojack]
+[*]Cleanup of old code, fixed some variable names with typos. [Lojack]
+[*]Possible fix for the bug where Wrye Bash throws an error about ghosted files being missing when a mod is uninstalled via BAIN. [wrinklyninja]
+[*]Moved the two readme templates and the two css files from Data\Docs to Mopy\Docs since they are static files. [Arthmoor]
 [/list]
 It looks small but it's definitely a major improvement.
 [/spoiler]
