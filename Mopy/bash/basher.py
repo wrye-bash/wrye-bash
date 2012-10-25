@@ -995,7 +995,7 @@ class List(wx.Panel):
                                 self.data.delete(mod)
                             except bolt.BoltError as e:
                                 balt.showError(self, _(u'%s') % e)
-                bosh.modInfos.plugins.saveLoadOrder()
+                bosh.modInfos.plugins.refresh(True)
                 self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
