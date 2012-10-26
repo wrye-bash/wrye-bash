@@ -3715,7 +3715,7 @@ class InstallersPanel(SashTankPanel):
         """Update any controls using custom colors."""
         self.gList.RefreshUI()
 
-    def OnShow(self):
+    def OnShow(self,canCancel=True):
         """Panel is shown. Update self.data."""
         if settings.get('bash.installers.isFirstRun',True):
             settings['bash.installers.isFirstRun'] = False
@@ -3760,7 +3760,7 @@ class InstallersPanel(SashTankPanel):
                 self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
             self.refreshing = True
-            with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=True) as progress:
+            with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
                     what = ('DISC','IC')[self.refreshed]
                     if data.refresh(progress,what,self.fullRefresh):
@@ -6347,24 +6347,24 @@ class ListBoxes(wx.Dialog):
             sizer.AddGrowableRow(i)
         okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
         okButton.SetDefault()
+        buttonSizer = hSizer((balt.spacer),
+                             (okButton,0,wx.ALIGN_RIGHT),
+                             )
+        for id,label in labels.iteritems():
+            if id in (wx.ID_OK,wx.ID_CANCEL):
+                continue
+            but = button(self,id=id,label=label)
+            but.Bind(wx.EVT_BUTTON,self.OnClick)
+            buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
         if Cancel:
-            sizer.Add(hSizer(
-                (balt.spacer),
-                (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
-                (button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT),
-                ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
-        else:
-            sizer.Add(hSizer(
-                (balt.spacer),
-                (okButton,0,wx.ALIGN_RIGHT|wx.RIGHT,2),
-                ),1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+            buttonSizer.Add(button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
+        sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
             self.SetSize(wx.Size(minWidth,-1))
-
 
     def OnKeyUp(self,event):
         """Char events"""
@@ -6380,6 +6380,13 @@ class ListBoxes(wx.Dialog):
             for i in xrange(len(obj.GetStrings())):
                 obj.Check(i,False)
         event.Skip()
+
+    def OnClick(self,event):
+        id = event.GetId()
+        if id not in (wx.ID_OK,wx.ID_CANCEL):
+            self.EndModal(id)
+        else:
+            event.Skip()
 
 #------------------------------------------------------------------------------
 class ColorDialog(wx.Dialog):
@@ -9215,6 +9222,132 @@ class Installers_AddMarker(Link):
             self.gTank.ClearSelected()
             self.gTank.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
             self.gTank.gList.EditLabel(index)
+
+#------------------------------------------------------------------------------
+class Installers_MonitorInstall(Link):
+    """Monitors Data folder for external installation."""
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Monitor External Installation...'),
+                               _(u'Monitors the Data folder during installation via manual install or 3rd party tools.'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        """Handle Selection."""
+        if not balt.askOk(self.gTank,_(u'Wrye Bash will monitor your data folder for changes when installing a mod via an external application or manual install.  This will require two refreshes of the Data folder and may take some time.')
+                          ,_(u'External Installation')):
+            return
+        # Refresh Data
+        gInstallers.refreshed = False
+        gInstallers.fullRefresh = False
+        gInstallers.OnShow(canCancel=False)
+        # Backup CRC data
+        data = copy.copy(gInstallers.data.data_sizeCrcDate)
+        # Install and wait
+        balt.showOk(self.gTank,_(u'You may now install your mod.  When installation is complete, press Ok.'),_(u'External Installation'))
+        # Refresh Data
+        gInstallers.refreshed = False
+        gInstallers.fullRefresh = False
+        gInstallers.OnShow(canCancel=False)
+        # Determine changes
+        curData = gInstallers.data.data_sizeCrcDate
+        oldFiles = set(data)
+        curFiles = set(curData)
+        newFiles = curFiles - oldFiles
+        delFiles = oldFiles - curFiles
+        sameFiles = curFiles & oldFiles
+        changedFiles = set(file for file in sameFiles if data[file][1] != curData[file][1])
+        touchedFiles = set(file for file in sameFiles if data[file][2] != curData[file][2])
+        touchedFiles -= changedFiles
+
+        if not newFiles and not changedFiles and not touchedFiles:
+            balt.showOk(self.gTank,_(u'No changes were detected in the Data directory.'),_(u'External Installation'))
+            return
+
+        # Change to list for sorting
+        newFiles = list(newFiles)
+        newFiles.sort()
+        delFiles = list(delFiles)
+        changedFiles = list(changedFiles)
+        changedFiles.sort()
+        touchedFiles = list(touchedFiles)
+        touchedFiles.sort()
+        # Show results, select which files to include
+        checklists = []
+        newFilesKey = _(u'New Files')
+        changedFilesKey = _(u'Changed Files')
+        touchedFilesKey = _(u'Touched Files')
+        delFilesKey = _(u'Deleted Files')
+        if newFiles:
+            group = [newFilesKey,
+                     _(u'These files are newly added to the Data directory.'),
+                     ]
+            group.extend(newFiles)
+            checklists.append(group)
+        if changedFiles:
+            group = [changedFilesKey,
+                     _(u'These files were modified.'),
+                     ]
+            group.extend(changedFiles)
+            checklists.append(group)
+        if touchedFiles:
+            group = [touchedFilesKey,
+                     _(u'These files were not changed, but had their modification time altered.  Most likely, these files are included in the external installation, but were the same version as already existed.'),
+                     ]
+            group.extend(touchedFiles)
+            checklists.append(group)
+        if delFiles:
+            group = [delFilesKey,
+                     _(u'These files were deleted.  BAIN does not have the capability to remove files when installing.'),
+                     ]
+            group.extend(delFiles)
+        dialog = ListBoxes(self.gTank,_(u'External Installation'),
+                           _(u'The following changes were detected in the Data directory'),
+                           checklists,changedlabels={wx.ID_OK:_(u'Create Project')})
+        choice = dialog.ShowModal()
+        if choice == wx.ID_CANCEL:
+            dialog.Destroy()
+            return
+        include = set()
+        for (lst,key) in [(newFiles,newFilesKey),
+                           (changedFiles,changedFilesKey),
+                           (touchedFiles,touchedFilesKey),
+                           ]:
+            if lst:
+                id = dialog.ids[key]
+                checks = dialog.FindWindowById(id)
+                if checks:
+                    for i,file in enumerate(lst):
+                        if checks.IsChecked(i):
+                            include.add(file)
+        dialog.Destroy()
+        # Create Project
+        if not include:
+            return
+        projectName = balt.askText(self.gTank,_(u'Project Name'),_(u'External Installation'))
+        if not projectName:
+            return
+        path = bosh.dirs['installers'].join(projectName).root
+        if path.exists():
+            num = 2
+            tmpPath = path + u' (%i)' % num
+            while tmpPath.exists():
+                num += 1
+                tmpPath = path + u' (%i)' % num
+            path = tmpPath
+        # Copy Files
+        with balt.Progress(_(u'Creating Project...'),u'\n'+u' '*60) as progress:
+            bosh.InstallerProject.createFromData(path,include,progress)
+        # Refresh Installers - so we can manipulate the InstallerProject item
+        gInstallers.OnShow()
+        # Update the status of the installer (as installer last)
+        path = path.relpath(bosh.dirs['installers'])
+        self.data.install([path],None,True,False)
+        # Refresh UI
+        gInstallers.RefreshUIMods()
+        # Select new installer
+        gList = self.gTank.gList
+        gList.SetItemState(gList.GetItemCount()-1,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
 
 # Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -18892,6 +19025,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=True))
     InstallersPanel.mainMenu.append(Installers_AddMarker())
     InstallersPanel.mainMenu.append(Installer_CreateNewProject())
+    InstallersPanel.mainMenu.append(Installers_MonitorInstall())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installer_ListPackages())
     InstallersPanel.mainMenu.append(SeparatorLink())

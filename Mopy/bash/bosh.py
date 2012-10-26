@@ -8562,6 +8562,18 @@ class InstallerProject(Installer):
             outFile.untemp()
             outFile.moveTo(realOutFile)
 
+    @staticmethod
+    def createFromData(projectPath,files,progress=None):
+        if not files: return
+        progress = progress if progress else bolt.Progress()
+        projectPath = GPath(projectPath)
+        progress.setFull(len(files))
+        srcJoin = dirs['mods'].join
+        dstJoin = projectPath.join
+        for i,file in enumerate(files):
+            progress(i,file.s)
+            srcJoin(file).copyTo(dstJoin(file))
+
     #--Omod Config ------------------------------------------------------------
     class OmodConfig:
         """Tiny little omod config class."""
