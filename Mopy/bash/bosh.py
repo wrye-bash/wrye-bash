@@ -7066,6 +7066,7 @@ class Installer(object):
                     newSDirs = (x for x in newSDirs if x.lower() != sd)
                 if setSkipDocs and setSkipImages:
                     newSDirs = (x for x in newSDirs if x.lower() != u'docs')
+                newSDirs = [x for x in newSDirs if x.lower() not in bush.game.SkipBAINRefresh]
                 sDirs[:] = [x for x in newSDirs]
                 if log: log.write(u'(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
             dirDirsFilesAppend((asDir,sDirs,sFiles))
