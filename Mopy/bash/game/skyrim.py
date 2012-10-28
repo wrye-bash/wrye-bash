@@ -14253,7 +14253,7 @@ class MelVmad(MelBase):
                 self.value = [ins.readString16(-1,readId) for i in xrange(count)]
             elif Type == 13:
                 # List of Int32s
-                count, = insUpack('=I',4,readId)
+                count, = insUnpack('=I',4,readId)
                 self.value = list(insUnpack('='+`count`+'i',count*4,readId))
             elif Type == 14:
                 # List of Floats
