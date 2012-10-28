@@ -125,6 +125,12 @@ dontSkip = (
        u'keyboard_italian.txt',
 )
 
+#Folders BAIN should never check
+SkipBAINRefresh = set ((
+    #Use lowercase names
+    u'tes5edit backups',
+))
+
 #--Some stuff dealing with INI files
 class ini:
     #--True means new lines are allowed to be added via INI Tweaks
