@@ -3335,8 +3335,11 @@ class IniFile(object):
 
 #-----------------------------------------------------------------------------------------------
 def BestIniFile(path):
-    if path.csbody == u'oblivion':
+    if not path:
         return oblivionIni
+    for ini in gameInis:
+        if path == ini.path:
+            return ini
     INICount = IniFile.formatMatch(path)
     OBSECount = OBSEIniFile.formatMatch(path)
     if INICount >= OBSECount:
@@ -6955,7 +6958,7 @@ class Installer(object):
         'skipRefresh','fileRootIdex')
     volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
         'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms',
-        'underrides','hasWizard','espmMap','hasReadme','hasBCF')
+        'underrides','hasWizard','espmMap','hasReadme','hasBCF','hasBethFiles')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
     docDirs = set((u'screenshots',))
@@ -7063,6 +7066,7 @@ class Installer(object):
                     newSDirs = (x for x in newSDirs if x.lower() != sd)
                 if setSkipDocs and setSkipImages:
                     newSDirs = (x for x in newSDirs if x.lower() != u'docs')
+                newSDirs = [x for x in newSDirs if x.lower() not in bush.game.SkipBAINRefresh]
                 sDirs[:] = [x for x in newSDirs]
                 if log: log.write(u'(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
             dirDirsFilesAppend((asDir,sDirs,sFiles))
@@ -7084,7 +7088,8 @@ class Installer(object):
                 rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
-                    if not rsDir and sFileLower in bethFiles: continue
+                    if not rsDir and sFileLower in bethFiles:
+                        continue
                     rpFile = ghostGet(rpFile,rpFile)
                 isEspm = not rsDir and ext in (u'.esp',u'.esm')
                 apFile = apDirJoin(sFile)
@@ -7168,6 +7173,7 @@ class Installer(object):
         self.espmMap = {}
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False
+        self.hasBethFiles = False
         self.data_sizeCrc = {}
         self.skipExtFiles = set()
         self.skipDirFiles = set()
@@ -7266,6 +7272,7 @@ class Installer(object):
         packageFiles = set((u'package.txt',u'package.jpg'))
         unSize = 0
         espmNots = self.espmNots
+        bethFiles = bush.game.bethDataFiles
         if self.overrideSkips:
             skipVoices = False
             skipEspmVoices = None
@@ -7277,7 +7284,7 @@ class Installer(object):
             skipLandscapeLODTextures = False
             skipLandscapeLODNormals = False
             renameStrings = False
-            bethFiles = set()
+            bethFilesSkip = set()
         else:
             skipVoices = self.skipVoices
             skipEspmVoices = set(x.cs for x in espmNots)
@@ -7289,7 +7296,7 @@ class Installer(object):
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
-            bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+            bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
         skipObse = not settings['bash.installers.allowOBSEPlugins']
@@ -7378,7 +7385,8 @@ class Installer(object):
                                 self.hasReadme = full
                                 skipDirFilesDiscard(file)
                                 skip = False
-                    elif file in bethFiles:
+                    elif fileLower in bethFiles:
+                        self.hasBethFiles = True
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                         continue
@@ -7508,7 +7516,8 @@ class Installer(object):
                     goodDlls.setdefault(fileLower,[])
                     goodDlls[fileLower].append([archiveRoot,size,crc])
             #--Noisy skips
-            elif fileLower in bethFiles:
+            elif fileLower in bethFilesSkip:
+                self.hasBethFiles = True
                 skipDirFilesAdd(full)
                 continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
@@ -7520,6 +7529,9 @@ class Installer(object):
             elif fileExt in skipExts:
                 skipExtFilesAdd(full)
                 continue
+            #--Bethesda Content?
+            if fileLower in bethFiles:
+                self.hasBethFiles = True
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
@@ -8550,6 +8562,18 @@ class InstallerProject(Installer):
                 raise StateError(archive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
             outFile.untemp()
             outFile.moveTo(realOutFile)
+
+    @staticmethod
+    def createFromData(projectPath,files,progress=None):
+        if not files: return
+        progress = progress if progress else bolt.Progress()
+        projectPath = GPath(projectPath)
+        progress.setFull(len(files))
+        srcJoin = dirs['mods'].join
+        dstJoin = projectPath.join
+        for i,file in enumerate(files):
+            progress(i,file.s)
+            srcJoin(file).copyTo(dstJoin(file))
 
     #--Omod Config ------------------------------------------------------------
     class OmodConfig:
@@ -30928,6 +30952,8 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['userApp'] = localAppData.join(bush.game.name)
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
+    global gameInis
+    global oblivionIni
     gameInis = [OblivionIni(x) for x in bush.game.iniFiles]
     oblivionIni = gameInis[0]
     try:

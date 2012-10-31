@@ -113,6 +113,11 @@ dontSkip = (
 # Nothing so far
 )
 
+#Folders BAIN should never check
+SkipBAINRefresh = set ((
+    #Use lowercase names
+))
+
 #--Some stuff dealing with INI files
 class ini:
     #--True means new lines are allowed to be added via INI Tweaks

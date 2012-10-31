@@ -27,9 +27,8 @@
 import struct
 from .. import brec
 from .. import bolt
-from .. import bush
+from ..bolt import _encode
 from ..brec import *
-from ..bolt import Flags, DataDict, StateError
 
 # Util Constants ---------------------------------------------------------------
 #--Null strings (for default empty byte arrays)
@@ -125,6 +124,12 @@ dontSkip = (
        u'keyboard_spanish.txt',
        u'keyboard_italian.txt',
 )
+
+#Folders BAIN should never check
+SkipBAINRefresh = set ((
+    #Use lowercase names
+    u'tes5edit backups',
+))
 
 #--Some stuff dealing with INI files
 class ini:
@@ -244,8 +249,6 @@ saveProfilesKey = (u'General',u'SLocalSavePath')
 masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
-    u'Dawnguard.esm',
-    u'HearthFires.esm',
     ]
 
 #--Game ESM/ESP/BSA files
@@ -13452,6 +13455,7 @@ dataDirs = set((
     u'shadersfx',
     u'music',
     u'sound',
+    u'seq',
     ))
 dataDirsPlus = set((
     u'ini tweaks',
@@ -14249,7 +14253,7 @@ class MelVmad(MelBase):
                 self.value = [ins.readString16(-1,readId) for i in xrange(count)]
             elif Type == 13:
                 # List of Int32s
-                count, = insUpack('=I',4,readId)
+                count, = insUnpack('=I',4,readId)
                 self.value = list(insUnpack('='+`count`+'i',count*4,readId))
             elif Type == 14:
                 # List of Floats
