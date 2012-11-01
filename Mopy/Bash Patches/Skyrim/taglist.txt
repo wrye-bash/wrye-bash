@@ -1,7 +1,100 @@
+Update.esm
+ IFCHECKSUM("Update.esm",412D96FB) DIRTY: 50 ITM, 1 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ IFCHECKSUM("Update.esm",7F464083) DIRTY: 50 ITM, 1 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Dawnguard.esm
+ IFCHECKSUM("Dawnguard.esm",BD72CCF3) DIRTY: 591 ITM, 82 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ TAG: {{BASH: Delev}}
+Hearthfires.esm
+ IFCHECKSUM("Hearthfires.esm",AF82CE6A) DIRTY: 163 ITM, 11 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ExplorerDungeonPack.esm
+ IFCHECKSUM("ExplorerDungeonPack.esm",F28E0E3C) DIRTY: 9 ITM,  1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+SkyMoMod.esm
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("SkyMoMod.esm",6D2AD8B5)||IFCHECKSUM("SkyMoMod.esm",BE817A8C) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Tamrielic Lore.esm
+ IFCHECKSUM("Tamrielic Lore.esm",1EC8407A) DIRTY: 5 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ClimatesOfTamriel.esm
+ IFCHECKSUM("ClimatesOfTamriel.esm",C110B173) DIRTY: 4 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ORS_MorthalPain.esm
+ IFCHECKSUM("ORS_MorthalPain.esm",8AC2860F) DIRTY: 23 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ORS_SolitudeGate.esm
+ IFCHECKSUM("ORS_SolitudeGate.esm",31BACFAE) DIRTY: 26 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+pinewoodvillage.esm
+ IFCHECKSUM("pinewoodvillage.esm",DDA83B3F) DIRTY: 33 ITM, 25 UDR, 1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Monster Hunter.esm
+ IFCHECKSUM("Monster Hunter.esm",51FB2723) DIRTY: 28 ITM, 19 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Skyrim_Realism.esm
+ IFCHECKSUM("Skyrim_Realism.esm",BC06197F) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+UnicornCave.esm
+ IFCHECKSUM("UnicornCave.esm",C5D100F6) DIRTY: 41 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Amulet of Articulation Leveling Fix.esp
  TAG: {{BASH: Relev}}
+lightingfix.esp
+ IFCHECKSUM("lightingfix.esp",B22ED6C8) DIRTY: 9 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Unofficial Skyrim Patch.esp
  TAG: {{BASH: Delev, Relev}}
+AdrianneAvenicci.esp
+ IFCHECKSUM("AdrianneAvenicci.esp",3F15FD93) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Ahlam.esp
+ IFCHECKSUM("Ahlam.esp",9C67BE65) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Anuriel.esp
+ IFCHECKSUM("Anuriel.esp",229F9B8F) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Arcadia.esp
+ IFCHECKSUM("Arcadia.esp",BF61E5D3) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Betrid.esp
+ IFCHECKSUM("Betrid.esp",2856929C) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Borgakh.esp
+ IFCHECKSUM("Borgakh.esp",66F14B1B) DIRTY: 6 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BrandShei.esp
+ IFCHECKSUM("BrandShei.esp",F5A4ACBE) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Bryling.esp
+ IFCHECKSUM("Bryling.esp",6531FFC7) DIRTY: 7 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DanicaPureSpring.esp
+ IFCHECKSUM("DanicaPureSpring.esp",7714719A) DIRTY: 5 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ElisifTheFair.esp
+ IFCHECKSUM("ElisifTheFair.esp",6625766C) DIRTY: 9 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Faendal.esp
+ IFCHECKSUM("Faendal.esp",5D38C4E9) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Faida.esp
+ IFCHECKSUM("Faida.esp",8F0AD003) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+FalkFirebeard.esp
+ IFCHECKSUM("FalkFirebeard.esp",F5EFAD83) DIRTY: 5 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Faralda.esp
+ IFCHECKSUM("Faralda.esp",F5F6A469) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+FraliaGrayMane.esp
+ IFCHECKSUM("FraliaGrayMane.esp",D017BDCC) DIRTY: 6 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Fridrika.esp
+ IFCHECKSUM("Fridrika.esp",94C78EBA) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+GaiusMaro.esp
+ IFCHECKSUM("GaiusMaro.esp",DCBBFF4D) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Hroki.esp
+ IFCHECKSUM("Hroki.esp",690073BB) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Irileth.esp
+ IFCHECKSUM("Irileth.esp",F8BA6414) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Maven.esp
+ IFCHECKSUM("Maven.esp",87E58A02) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MirabelleErvine.esp
+ IFCHECKSUM("MirabelleErvine.esp",51DF62F4) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Sigrid.esp
+ IFCHECKSUM("Sigrid.esp",72F4F16E) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Sven.esp
+ IFCHECKSUM("Sven.esp",4060CC94) DIRTY: 6 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Tonilia.esp
+ IFCHECKSUM("Tonilia.esp",926DEEA0) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Ysolda.esp
+ IFCHECKSUM("Ysolda.esp",814A898C) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Supreme Fog.esp
+ IFCHECKSUM("Supreme Fog.esp",4B1EB3A6) DIRTY: 4 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+CLARALUX - More and Brighter Lights.esp
+ IFCHECKSUM("CLARALUX - More and Brighter Lights.esp",CF9E9621) DIRTY: 113 ITM, 5 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MikeFoxs_CorrectLighting.esp
+ IFCHECKSUM("MikeFoxs_CorrectLighting.esp",D2B44EBE) DIRTY: 302 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Realistic Lighting.esp
+ IFCHECKSUM("Realistic Lighting.esp",5F40F0F8) DIRTY: 247 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+skyrimsoundtrackexpansion.esp
+ IFCHECKSUM("skyrimsoundtrackexpansion.esp",06FA5890) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+sh_HF_goat_fix.esp
+ TAG: {{BASH: Relev}}
 SkyrimImprovedChanges.esp
  TAG: {{BASH: Delev, Relev}}
 SurvivalistIngenuity.esp
@@ -10,7 +103,7 @@ SIRW.esp
  TAG: {{BASH: Delev, Relev}} not tested
 Economics of Skyrim.esp
  TAG: {{BASH: Delev, Relev}}
-REGEX: 83Willows_101BUGs_.+\.esp
+REGEX: (83Willows_)?101BUGs.+\.esp
  TAG: {{BASH: Delev, Relev}}
 Bandits Wear Helmets.esp
  TAG: {{BASH: Relev}}
@@ -18,8 +111,23 @@ Barrels and Crates.esp
  TAG: {{BASH: Relev}}
 BetterFishAdded.esp
  TAG: {{BASH: Relev}}
-IFNOT(FFCC056A|"Crafting300.esp")&&IFNOT(50142D0D|"Crafting300.esp") MOD: Crafting300.esp
+REGEX: BellyachesNewDragonSpecies_?(Tougher)?(Factionless)?(Dragons)?\.esp
+ IFCHECKSUM("BellyachesNewDragonSpecies_FactionlessDragons.esp",AA96F38F) DIRTY: 118 ITM, 3 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ IFCHECKSUM("BellyachesNewDragonSpecies.esp",685E2580) DIRTY: 117 ITM, 3 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Bob The Merchant.esp
+ IFCHECKSUM("Bob The Merchant.esp",05F9D7C3) DIRTY: 1 ITM record.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Console Books.esp
+ IFCHECKSUM("Console Books.esp",6AE62CA9) DIRTY: 1 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+IFNOTCHECKSUM("Crafting300.esp",FFCC056A)&&IFNOTCHECKSUM("Crafting300.esp",50142D0D) MOD: Crafting300.esp
  TAG: {{BASH: Delev, Relev}}
+CrossbowsRevamped.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("CrossbowsRevamped.esp",52F5F6D1) DIRTY: 10 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+CrossbowsRevamped70pctnospawn.esp
+ TAG: {{BASH: Delev, Relev}}
+Cumulable Blessings.esp
+ IFCHECKSUM("Cumulable Blessings.esp",DA1971DC) DIRTY: 3 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ IFCHECKSUM("Cumulable Blessings.esp",BCC10635) DIRTY: 3 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 DecorativeTrophies.esp
  TAG: {{BASH: Relev}}
 Deleveled Skyrim - Items.esp
@@ -30,22 +138,36 @@ Deleveled Skyrim - Enemies Wildlife.esp
  TAG: {{BASH: Delev, Relev}}
 Deleveled Skyrim - Enemies (No Dragons).esp
  TAG: {{BASH: Delev, Relev}}
+Deleveled Skyrim - SkyMoMod_list.esp
+ TAG: {{BASH: Delev, Relev}}
 Deleveled Skyrim - TCOSS.esp
  TAG: {{BASH: Delev, Relev}}
 Dragons in the Wild.esp
  TAG: {{BASH: Delev}}
+DSpSoB.esp
+ IFCHECKSUM("DSpSoB.esp",44D3F30C) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ExpandedJailCells.esp
+ IFCHECKSUM("ExpandedJailCells.esp",BA5A6F28) DIRTY: 1 ITM, 1 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 GenebrisTreasureChests.esp
  TAG: {{BASH: Delev, Relev}}
 GlaiceLootMod.esp
  TAG: {{BASH: Delev, Relev}}
+GuardianStonesExpanded.esp
+ IFCHECKSUM("GuardianStonesExpanded.esp",BDBF79E7) DIRTY: 2 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 HigherLevelEnemies.esp
  TAG: {{BASH: Relev}}
 HighlandFarmMilk.esp
  TAG: {{BASH: Relev}}
+ImprovedFish.esp
+ TAG: {{BASH: Relev}}
+Immersive Patrols.esp
+ IFCHECKSUM("Immersive Patrols.esp",1158CFE5) DIRTY: 31 ITM, 8 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Ish's Respec Mod.esp
  TAG: {{BASH: Relev}}
 Legionettes.esp
  TAG: {{BASH: Relev}}
+LegendarySouls.esp
+ IFCHECKSUM("LegendarySouls.esp",9DDF1F5F) DIRTY: 270 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 LFox Alchemists Have Potions and Poisons.esp
  TAG: {{BASH: Delev, Relev}}
 LFox Blacksmiths Have Metals.esp
@@ -64,6 +186,8 @@ REGEX: Realistic Wildlife Loot -( IMCN)?( Realistic| Reduced)\.esp
  TAG: {{BASH: Delev, Relev}}
 REGEX: Real Wildlife Skyrim.*\.esp
  TAG: {{BASH: Relev}}
+Real Wildlife.esp
+ TAG: {{BASH: Relev}}
 REGEX: SIRWPat?ch.esp
  TAG: {{BASH: Delev, Relev}}
 SB - Loot Mod.esp
@@ -72,10 +196,15 @@ SkBBP - Loot Drops and Leveled Lists.esp
  TAG: {{BASH: Delev, Relev}}
 SkyMoMod.esp
  TAG: {{BASH: Delev, Relev}}
+Skyrim Immersive Creatures.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("Skyrim Immersive Creatures.esp",9F345819)||IFCHECKSUM("Skyrim Immersive Creatures.esp",31F6B4FF)||IFCHECKSUM("Skyrim Immersive Creatures.esp",DB09F9B0)||IFCHECKSUM("Skyrim Immersive Creatures.esp",ACC6DAE2) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 SkyMoMod_lists.esp
  TAG: {{BASH: Delev, Relev}}
 REGEX: Deleveled Skyrim - SkyMoMod_list( \(No EleTri\)| \(No EleTriSta\))\.esp
  TAG: {{BASH: Delev, Relev}}
+Skyrim Flora Overhaul.esp
+ IFCHECKSUM("Skyrim Flora Overhaul.esp",FAB40701) DIRTY: 8 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Skyrim Scaling Stopper - Misc Edits.esp
  TAG: {{BASH: Delev, Relev}}
 Skyrim Scaling Stopper - Vanilla Dragon Scaling Patch.esp
@@ -84,15 +213,49 @@ smithingextended.esp
  TAG: {{BASH: Delev, Relev}}
 SPTDiverseGuardsSkyrim.esp
  TAG: {{BASH: Delev}}
+SteamAchievementUnlocker.esp
+ IFCHECKSUM("SteamAchievementUnlocker.esp",067CB652) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 REGEX: Tamriel Compendium( -)?( Skill Book Version)?\.esp
+ TAG: {{BASH: Relev}}
+TheBigBookofAlchemy.esp
  TAG: {{BASH: Relev}}
 REGEX: Tytanis\w{0,2}(GER)?\.esp
  TAG: {{BASH: Delev, Relev}}
 xFenWSOWAF.esp
  TAG: {{BASH: Delev, Relev}}
+xgfPferdeKarren-en.esp
+ IFCHECKSUM("xgfPferdeKarren-en.esp",B56A25C1) DIRTY: 4 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Destructible_bottles.esp
+ IFCHECKSUM("Destructible_bottles.esp",BF5ED5A9) DIRTY: 10 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ContainerMagic.esp
+ IFCHECKSUM("ContainerMagic.esp",CBF09128) DIRTY: 3 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+akavirisharpkatana.esp
+ IFCHECKSUM("akavirisharpkatana.esp",B74E58F0) DIRTY: 10 ITM, 2 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Althirs Camping Tools English.esp
+ IFCHECKSUM("Althirs Camping Tools English.esp",C5346BE3) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Althirs Camping Tools German.esp
+ IFCHECKSUM("Althirs Camping Tools German.esp",D1B56978) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 REGEX: Arcania_armory( \(base\))?\.esp
  TAG: {{BASH: Relev}}
+ArcaneArchery.esp
+ IFCHECKSUM("ArcaneArchery.esp",3BB808E1) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+archdemonplushighdragon.esp
+ IFCHECKSUM("archdemonplushighdragon.esp",84F7CB68) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 armorkits.esp
+ TAG: {{BASH: Relev}}
+AronsMechaDragons.esp
+ IFCHECKSUM("AronsMechaDragons.esp",77A605C4) DIRTY: 10 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BaratheonArmor.esp
+ IFFILE("SkyRe_Plugin_BaratheonArmor_1.esp") TAG: {{BASH: Deactivate}}
+blackswordsman.esp
+ IFFILE("SkyRe_Plugin_BerserkBlackSwordsmanArmor.esp") TAG: {{BASH: Deactivate}}
+BowofIorveth.esp
+ IFFILE("SkyRe_Plugin_BowofIorveth_1.2.esp") TAG: {{BASH: Deactivate}}
+Cattelya Greatsword.esp
+ IFCHECKSUM("Cattelya Greatsword.esp",38C1FCB3) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Cerberus.esp
+ IFCHECKSUM("Cerberus.esp",BD2CF9A5) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Chainmail Hood v2.2.esp
  TAG: {{BASH: Relev}}
 REGEX: Cloaks( - No Imperial| - Player Only)?\.esp
  TAG: {{BASH: Relev}}
@@ -102,32 +265,140 @@ REGEX: Lorecraft - Cloaks( No Imperial| Player Only)?\.esp
  TAG: {{BASH: Relev}}
 1nivWICCloaks.esp
  TAG: {{BASH: Relev}}
-IFNOT($BFNIAP) MOD: hothtrooper44_ArmorCompilation.esp
- TAG: {{BASH: Relev}}
+DaedricCrossbow.esp
+ IFCHECKSUM("DaedricCrossbow.esp",7A4AF5A4) DIRTY: 2 ITM, 2 UDR records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Dark Souls Rings.esp
+ IFCHECKSUM("Dark Souls Rings.esp",4DFA74C8) DIRTY: 3 ITM, 1 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Dawnguard Fraktionen Extended.esp
+ IFCHECKSUM("Dawnguard Fraktionen Extended.esp",9C5504FC) DIRTY: 12 ITM, 5 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DaggerCraft.esp
+ IFFILE("SkyRe_Plugin_DaggerCraft_1.3.esp") TAG: {{BASH: Deactivate}}
+DragonboneCrossbow.esp
+ IFCHECKSUM("DragonboneCrossbow.esp",294218C5) DIRTY: 1 ITM record.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+REGEX: DragonBoneWeapons.+\.esp
+ IFFILE("SkyRe_Plugin_DragonBoneWeaponsComplete.+\.esp") TAG: {{BASH: Deactivate}}
+DragonsoulArmour.esp
+ IFCHECKSUM("DragonsoulArmour.esp",E0C93BA1) DIRTY: 9 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DragonsoulWeapons.esp
+ IFCHECKSUM("DragonsoulWeapons.esp",CCA2F9B7) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Dwarven War Cross Bow.esp
+ IFCHECKSUM("Dwarven War Cross Bow.esp",8D6DD2FB) DIRTY: 6 ITM, 3 UDR records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Dwemer Artificer.esp
+ IFCHECKSUM("Dwemer Artificer.esp",939498B8) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DwemerAutoBlade.esp
+ IFFILE("SkyRe_Plugin_DwemerAutoBlade.esp") TAG: {{BASH: Deactivate}}
+Faleria.esp
+ IFCHECKSUM("Faleria.esp",D624BABC) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+HBetterBows.esp
+ IFFILE("SkyRe_Plugin_BetterBows_1.4.1.esp") TAG: {{BASH: Deactivate}}
+HedgeKnight.esp
+ IFFILE("SkyRe_Plugin_HedgeKnightArmor_1.esp") TAG: {{BASH: Deactivate}}
+IFNOTVAR(BFNIAP) MOD: hothtrooper44_ArmorCompilation.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFREGEX("SkyRe_Plugin_ImmersiveArmor.+\.esp") TAG: {{BASH: Deactivate}} and remove [Relev]
+hunterarmor.esp
+ IFFILE("SkyRe_Plugin_NordicHunterLightArmor_1.2.esp") TAG: {{BASH: Deactivate}}
+hunterarmorv1.2.esp
+ IFFILE("SkyRe_Plugin_NordicHunterLightArmor_1.2.esp") TAG: {{BASH: Deactivate}}
+I5KWeaponOH.esp
+ TAG: {{BASH: Delev, Relev}}
+imp_helm.esp
+ IFCHECKSUM("imp_helm.esp",B5CC3F9D) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Insanity's Dragon Katana.esp
+ IFFILE("SkyRe_Plugin_InsanitysDragonKatana_1.2.esp") TAG: {{BASH: Deactivate}}
+InsanitysDragonKatana.esp
+ IFFILE("SkyRe_Plugin_InsanitysDragonKatana_1.2.esp") TAG: {{BASH: Deactivate}}
+Insanity's Goldbrand.esp
+ IFCHECKSUM("Insanity's Goldbrand.esp",B5360513) DIRTY: 2 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+InsanitysCelticKatana.esp
+ IFFILE("SkyRe_Plugin_InsanitysCelticKatana_1.2.esp") TAG: {{BASH: Deactivate}}
+Insanity's Sorrow.esp
+ IFCHECKSUM("Insanity's Sorrow.esp",872ACBC) DIRTY: 2 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Insanity's Umbra Sword.esp
+ IFCHECKSUM("Insanity's Umbra Sword.esp",D8894064) DIRTY: 3 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+isilNarsil.esp
+ IFFILE("SkyRe_Plugin_isilNarsil.esp") TAG: {{BASH: Deactivate}}
+JoOsSkyrimKnightlyArmory.esp
+ IFCHECKSUM("JoOsSkyrimKnightlyArmory.esp",B77D7435) DIRTY: 10 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Deleveled Skyrim - JSwords.esp
  TAG: {{BASH: Delev, Relev}}
 SkyRe_Plugin_JaySuSSwords_1.3D.esp
  TAG: {{BASH: Delev}}
+LB_EnemiesEssplode!.esp
+ TAG: {{BASH: Relev}}
+LC_ArcherEliteArmor.esp
+ IFCHECKSUM("LC_ArcherEliteArmor.esp",9A81FB2E) DIRTY: 5 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+lilithssickle_2_1.esp
+ IFCHECKSUM("lilithssickle_2_1.esp",78270F6E) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-
+LPotD Armor.esp
+ IFCHECKSUM("LPotD Armor.esp",0550F86D) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_- Cleaning Guide)"
+LpotDHorse.esp
+ IFCHECKSUM("LPotD Armor.esp",F8E960CF) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_- Cleaning Guide)"
+LSB_BattleHammersV6.esp
+ TAG: {{BASH: Delev}}
+Maliki.esp
+ IFCHECKSUM("Maliki.esp",EA4CC153) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Malo_Waffen.esp
+ IFFILE("SkyRe_Plugin_Malo_Waffen.esp") TAG: {{BASH: Deactivate}}
+mancika_templarset.esp
+ IFCHECKSUM("mancika_templarset.esp",CBAD4542) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_- Cleaning Guide)"
+Masters of Death - Sicarius Armor (Standalone).esp
+ IFFILE("SkyRe Masters of Death - Sicarius Armor (Standalone)") TAG: {{BASH: Deactivate}}
+monster_hunter.esp
+ IFCHECKSUM("monster_hunter.esp",A8A0C107) DIRTY: 1 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Nicoroshi Creations.esp
+ IFREGEX("SkyRe_Plugin_NicoroshiCreations.*\.esp") TAG: {{BASH: Deactivate}}
+(TWE) Nilfgaardian Sorcerer Pack.esp
+ IFCHECKSUM("(TWE) Nilfgaardian Sorcerer Pack.esp",06610CC7) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Omegared99-LvLList-CompOnly.esp
  TAG: {{BASH: Relev}}
 REGEX: (High|Medium|Standard|Uber)-..Percent\.esp
  TAG: {{BASH: Relev}}
 Omegared99-Compilation-NPC Plugin.esp
  TAG: {{BASH: Relev}}
+Oriental Weapon&Armor.esp
+ IFREGEX("SkyRe_Plugin_Oriental Weapon&Armor.*\.esp") TAG: {{BASH: Deactivate}}
 PIVariety.esp
  TAG: {{BASH: Delev, Relev}}
+Power Potions.esp
+ TAG: {{BASH: Relev}}
+ IFCHECKSUM("Power Potions.esp",7F5EA37E) DIRTY: 26 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+PrvtI_HeavyArmory.esp
+ TAG: {{BASH: Relev}}
+Reaper's Necroxym Greatsword.esp
+ IFCHECKSUM("Reaper's Necroxym Greatsword.esp",A5A15349) DIRTY: 1 ITM, 3 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+RedguardKnight.esp
+ IFFILE("SkyRe_Plugin_RedguardKnightArmor_3.esp") TAG: {{BASH: Deactivate}}
+RegentSword.esp
+ IFFILE("SkyRe_Plugin_RegentSword.esp") TAG: {{BASH: Deactivate}}
+ShieldsofSkyrimLists.esp
+ TAG: {{BASH: Relev}}
 ShShortswords.esp
  TAG: {{BASH: Delev, Relev}}
+Space Wiking's The Elementals.esp
+ IFCHECKSUM("Space Wiking's The Elementals.esp",707FDF2E) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-
 stalhrimstandalone2.esp
  TAG: {{BASH: Relev}}
 StormcloakArmorVariety.esp
  TAG: {{BASH: Relev}}
+Tamrielic Artifacts - Goldbrand - Eltonbrand.esp
+ IFCHECKSUM("Tamrielic Artifacts - Goldbrand - Eltonbrand.esp",496766F9) DIRTY: 1 UDR record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 TCOSS.esp
  TAG: {{BASH: Delev, Relev}}
 ThalmorNoGlass.esp
  TAG: {{BASH: Delev}}
 ThalmorEliteArmor.esp
  TAG: {{BASH: Delev}}
+VagabondArmor.esp
+ IFFILE("SkyRe_Plugin_VagabondArmor_5.esp") TAG: {{BASH: Deactivate}}
+VanguardArmor.esp
+ IFFILE("SkyRe_Plugin_VanguardArmor_3.esp") TAG: {{BASH: Deactivate}}
+viciousdawnbreaker.esp
+ IFFILE("SkyRe_Plugin_viciousdawnbreaker.esp") TAG: {{BASH: Deactivate}}
+warchief armor.esp
+ IFFILE("SkyRe_Plugin_WarchiefArmor_4.esp") TAG: {{BASH: Deactivate}}
+WarchiefArmor.esp
+ IFFILE("SkyRe_Plugin_WarchiefArmor_4.esp") TAG: {{BASH: Deactivate}}
 REGEX: Weapons of the Third Era.+\.esp
  TAG: {{BASH: Relev}}
 REGEX: WeaponsOf3E(-alpha|-beta|_Replacer)?\.esp
@@ -142,11 +413,18 @@ Wyrmslayer.esp
  TAG: {{BASH: Delev, Relev}}
 WVExpansion.esp
  TAG: {{BASH: Delev, Relev}}
-IF($BFNIAP) MOD: hothtrooper44_ArmorCompilation.esp
- TAG: {{BASH: Relev}}
+IFVAR(BFNIAP) MOD: hothtrooper44_ArmorCompilation.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFREGEX("SkyRe_Plugin_ImmersiveArmor.+\.esp") TAG: {{BASH: Deactivate}} and remove [Relev]
+CraftableODPM.esp
+ IFCHECKSUM("CraftableODPM.esp",B19B9231) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Crafting 300 Basic.esp
  TAG: {{BASH: Delev, Relev}}
+Expanded Apothecary Inventory.esp
+ IFCHECKSUM("Expanded Apothecary Inventory.esp",761777FF) DIRTY: 1 UDR record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 EpicEndeavours.esp
+ TAG: {{BASH: Delev, Relev}}
+Skyrim_New Balance.esp
  TAG: {{BASH: Delev, Relev}}
 PISE.esp
  TAG: {{BASH: Delev, Relev}}
@@ -190,57 +468,360 @@ Odahviing Mighty Dragons.esp
  TAG: {{BASH: Delev, Relev}}
 REGEX: (Soft)?(Super)?(Nightmare)?(Slighty| Slighty)?(Mighty| Mighty)? Dragons( Unleveled)?\.esp
  TAG: {{BASH: Delev, Relev}}
+mehrdrachenstufen.esp
+ TAG: {{BASH: Relev}}
+a_dragons_respect.esp
+ IFCHECKSUM("a_dragons_respect.esp",0F39A808) DIRTY: 16 ITM, 4 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+buy_whiterun2.esp
+ IFCHECKSUM("buy_whiterun2.esp",F734CA91) DIRTY: 167 ITM, 221 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DovahkriidGrenzganger.esp
+ IFCHECKSUM("DovahkriidGrenzganger.esp",3C53A050) DIRTY: 25 ITM, 21 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Forfeorannaheim.esp
+ IFCHECKSUM("Forfeorannaheim.esp",59266CBF) DIRTY: 51 ITM, 31 UDR, 7 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Gobland.esp
+ IFCHECKSUM("Gobland.esp",20858F47) DIRTY: 69 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+JobsofSkyrim.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("JobsofSkyrim.esp",8C1C50BA) DIRTY: 71 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+questrewardleveler.esp
+ IFCHECKSUM("questrewardleveler.esp",B75E31AA) DIRTY: 4 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+(TWE) Riften Brothel..esp
+ IFCHECKSUM("(TWE) Riften Brothel..esp",81F1B405) DIRTY: 14 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+RiverwoodRepose.esp
+ IFCHECKSUM("RiverwoodRepose.esp",304711BC) DIRTY: 29 ITM, 4 UDR, 2 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Saviors Lodge - Player Home.esp
+ IFCHECKSUM("Saviors Lodge - Player Home.esp",615CF04F) DIRTY: 39 ITM, 64 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+SK_Berserk.esp
+ IFCHECKSUM("SK_Berserk.esp",C30C6667) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Skyrim School of Witchcraft and Wizardry.esp
+ IFCHECKSUM("Skyrim School of Witchcraft and Wizardry.esp",E003E0AF) DIRTY: 599 ITM, 67 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+TEG_TelvanniHall.esp
+ IFCHECKSUM("TEG_TelvanniHall.esp",802BCC84) DIRTY: 71 ITM, 1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+The McMiller Chronicles.esp
+ IFCHECKSUM("The McMiller Chronicles.esp",E2214B30) DIRTY: 32 ITM, 13 UDR, 1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+TheChampionsOfTamriel.esp
+ IFCHECKSUM("TheChampionsOfTamriel.esp",A8C8F78A) DIRTY: 30 ITM, 2 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+tinytreehome.esp
+ IFCHECKSUM("tinytreehome.esp",31567AAA) DIRTY: 10 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+tinytreehomebarebones.esp
+ IFCHECKSUM("tinytreehomebarebones.esp",2713BEFA) DIRTY: 10 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Ultimate training ground.esp
+ IFCHECKSUM("Ultimate training ground.esp",2DE178EF) DIRTY: 12 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Whiterun Trees.esp
+ IFCHECKSUM("Whiterun Trees.esp",D2995274) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Winterhold repairV4.esp
+ IFCHECKSUM("Winterhold repairV4.esp",1CB2273B) DIRTY: 11 ITM, 26 UDR, and 1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Winterhold Fully Restored.esp
+ IFCHECKSUM("Winterhold Fully Restored.esp",5725E884) DIRTY: 17 ITM, 356 UDR, and 3 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Work a Steady Job as a Blacksmith.esp
+ IFCHECKSUM("Work a Steady Job as a Blacksmith.esp",9EC79790) DIRTY: 13 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 REGEX: SkyrimCoinReplacer.*\.esp
  TAG: {{BASH: Delev}}
-IFNOT("SkyRe_Main.esp") MOD: Morrowloot.esp
+IFNOTVAR(SkyReM) MOD: Morrowloot.esp
  TAG: {{BASH: Delev, Relev}}
 xFenWSOWAFW3E.esp
  TAG: {{BASH: Delev, Relev}}
+amulrinbuff.esp
+ IFCHECKSUM("amulrinbuff.esp",E2614BDA) DIRTY: 1 UDR record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 armorLegion.esp
  TAG: {{BASH: Delev, Relev}}
+Babette.esp
+ IFCHECKSUM("Babette.esp",6596E3CF) DIRTY: 8 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-
+Better Deadly Bandits.esp
+ TAG: {{BASH: Relev}}
+Better Deadly Bandits Weapons Only.esp
+ TAG: {{BASH: Relev}}
+BUE.esp
+ IFCHECKSUM("BUE.esp",B4AD5924) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BUENoCosts.esp
+ IFCHECKSUM("BUENoCosts.esp",B296E5B2) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BUEWaepons.esp
+ IFCHECKSUM("BUEWaepons.esp",CBA14DAB) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide"")
+BUEWaeponsCombined.esp
+ IFCHECKSUM("BUEWaeponsCombined.esp",68A1C6ED) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BUEWaeponsNoCostCombined.esp
+ IFCHECKSUM("BUEWaeponsNoCostCombined.esp",57786435) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BUEWaeponsNoCosts.esp
+ IFCHECKSUM("BUEWaeponsNoCosts.esp",1D72E3E4) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+CCO - Permanent Birthsigns.esp
+ IFCHECKSUM("CCO - Permanent Birthsigns.esp",9CB120EE) DIRTY: 24 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Circlet with Helms.esp
+ IFCHECKSUM("Circlet with Helms.esp",FBEC072E) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Circlet with Hoods.esp
+ IFCHECKSUM("Circlet with Hoods.esp",3FE98CF1) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Connys Improved Hearthfire.esp
+ IFCHECKSUM("Connys Improved Hearthfire.esp",D5979764) DIRTY: 2 ITM, 121 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DFB - Dawnguard - Crossbow Expansion.esp
+ TAG: {{BASH: Delev, Relev}}
+Dragon Souls To Attributes.esp
+ IFCHECKSUM("Dragon Souls To Attributes.esp",EC31C990) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Fast Respawns And Rich Merchants.esp
  TAG: {{BASH: Relev}}
+Four Slots for Enchanting .esp
+ IFCHECKSUM("Four Slots for Enchanting .esp",8E34ED2E) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Five Slots for Enchanting vanilla.esp
+ IFCHECKSUM("Five Slots for Enchanting vanilla.esp",3A94D556) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Seven Slots for Enchanting vanilla.esp
+ IFCHECKSUM("Seven Slots for Enchanting vanilla.esp",8C921ECD) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Eight Slots for Enchanting vanilla.esp
+ IFCHECKSUM("Eight Slots for Enchanting vanilla.esp",0D5A4DFA) DIRTY: 5 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Ten Slots for Enchanting vanilla.esp
+ IFCHECKSUM("Ten Slots for Enchanting vanilla.esp",977EC151) DIRTY: 5 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 GoldenVendors.esp
  TAG: {{BASH: Relev}}
+Golden Army.esp
+ TAG: {{BASH: Relev}}
+ IFCHECKSUM("Golden Army.esp",B430707B) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+HigherEnchantmentsNoChargeArtifacts.esp
+ IFCHECKSUM("HigherEnchantmentsNoChargeArtifacts.esp",890AED0C) DIRTY: 13 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+HigherEnchantmentsNoChargeArtifactsDawnguard.esp
+ IFCHECKSUM("HigherEnchantmentsNoChargeArtifactsDawnguard.esp",CA38ED1A) DIRTY: 16 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+HjerimArmory.esp
+ IFCHECKSUM("HjerimArmory.esp",E6B5F2B2) DIRTY: 3 ITM, 4 UDR records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ IFCHECKSUM("HjerimArmory.esp",68BDC62D) DIRTY: 3 ITM, 444 UDR records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+improved final battle.esp
+ IFCHECKSUM("improved final battle.esp",41A04451) DIRTY: 10 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ImprovedMonsterLoot.esp
+ TAG: {{BASH: Relev}}
+ IFCHECKSUM("ImprovedMonsterLoot.esp",B9CE5D33) DIRTY: 1 ITM record.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Increased Bounty & Guild Rewards - Reduced Fedex.esp
+ TAG: {{BASH: Delev}}
+JanusForbeare's Fighting Words.esp
+ IFCHECKSUM("JanusForbeare's Fighting Words.esp",EAF4398B) DIRTY: 1 ITM record.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Leveled Smithing.esp
  TAG: {{BASH: Delev, Relev}}
 levelingmerchantswallets.esp
  TAG: {{BASH: Delev, Relev}}
 REGEX: LFox Alchemists Have Ingredients.+\.esp
  TAG: {{BASH: Relev}}
+masteredmagicka.esp
+ IFCHECKSUM("masteredmagicka.esp",E5918397) DIRTY: 2 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+masteredmagickaalternative.esp
+ IFCHECKSUM("masteredmagickaalternative.esp",89FF6FE5) DIRTY: 2 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+masteredmagickaenchantmentfix.esp
+ IFCHECKSUM("masteredmagickaenchantmentfix.esp",94AF712D) DIRTY: 2 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MoreSalt.esp
+ IFCHECKSUM("MoreSalt.esp",492E06A5) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ TAG: {{BASH: Relev}}
+mso- morahir's staff overhaul.esp
+ IFCHECKSUM("mso- morahir's staff overhaul.esp",D31D84E2) DIRTY: 1 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+No Lootless goats.esp
+ TAG: {{BASH: Relev}}
+NoLeveledItemRewards.esp
+ TAG: {{BASH: Delev}}
+ORS_MorthalPain_InsanePatch.esp
+ IFCHECKSUM("ORS_MorthalPain_InsanePatch.esp",B623F96D) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ORS1InsanePatch.esp
+ IFCHECKSUM("ORS1InsanePatch.esp",CD653E42) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+RestoSpells.esp
+ IFCHECKSUM("RestoSpells.esp",15B11D47) DIRTY: 11 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 REGEX: RichMerchants\w*\.esp
  TAG: {{BASH: Relev}}
 Skyrim_Dragon Update.esp
  TAG: {{BASH: Delev, Relev}}
 Skyrim Creatures Alive.esp
  TAG: {{BASH: Relev, Delev}}
+Trolls Loot.esp
+ IFCHECKSUM("Trolls Loot.esp",9C8F811B) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Unlevelled World.esp
  TAG: {{BASH: Relev, Delev}}
 Unlevelled World - War in Skyrim II Patch.esp
  TAG: {{BASH: Relev, Delev}}
 Skyrim Creatures Alive.esp
  TAG: {{BASH: Relev, Delev}}
+Ustengrav gate removal.esp
+ IFCHECKSUM("Ustengrav gate removal.esp",A680BE35) DIRTY: 6 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+VanillaMonsterLootV1_5.esp
+ TAG: {{BASH: Relev}}
+VanillaMonsterLoot.esp
+ TAG: {{BASH: Relev}}
+ IFCHECKSUM("VanillaMonsterLoot.esp",DCEE3E1E) DIRTY: 2 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 WiS IV - Double ArrowDamage.esp
  TAG: {{BASH: Stats}}
 WiS IV - Double Arrow Damage.esp
  TAG: {{BASH: Stats}}
+Skyrim unleashed_items.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("Skyrim unleashed_items.esp",F179C374) DIRTY: 51 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Skyrim unleashed_npc.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("Skyrim unleashed_npc.esp",5E9123B6) DIRTY: 43 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Skyrim unleashed Xtra_items.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("Skyrim unleashed Xtra_items.esp",37DCEA93) DIRTY: 80 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Skyrim unleashed Xtra_npc.esp
+ TAG: {{BASH: Delev, Relev}}
+ IFCHECKSUM("Skyrim unleashed Xtra_npc.esp",05AAA1D2) DIRTY: 69 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+aaaadaedric1.esp
+ IFCHECKSUM("aaaadaedric1.esp",E01641C4) DIRTY: 9 ITM, 1 UDR, 1 deleted NavMesh. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+csmod.esp
+ IFCHECKSUM("csmod.esp",5E095749) DIRTY: 19 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Drinking Fountains of Skyrim.esp
+ IFCHECKSUM("Drinking Fountains of Skyrim.esp",1A86291B) DIRTY: 1 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+FarvynsDivineOctavo.esp
+ IFCHECKSUM("FarvynsDivineOctavo.esp",E8A983E6) DIRTY: 18 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Log Cabin Riften.esp
+ IFCHECKSUM("Log Cabin Riften.esp",CB696C6C) DIRTY: 14 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MerchantsGuild.esp
+ IFCHECKSUM("MerchantsGuild.esp",CBAA3162) DIRTY: 11 ITM, 2 UDR records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Pinewood Village.esp
+ IFCHECKSUM("Pinewood Village.esp",4A26EA6A) DIRTY: 33 ITM, 25 UDR, 1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+tos_oakwood.esp
+ IFCHECKSUM("tos_oakwood.esp",9FF8763E) DIRTY: 9 ITM, 3 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+tos_oakwood_hf.esp
+ IFCHECKSUM("tos_oakwood_hf.esp",33196BE1) DIRTY: 3 ITM, 3 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ExplorerDungeonPack.esp
+ IFCHECKSUM("ExplorerDungeonPack.esp",4D76065C) DIRTY: 61 ITM, 10 UDR, 1 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ IFCHECKSUM("ExplorerDungeonPack.esp",03B99039) DIRTY: 8 ITM, 10 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+grass & ground fixes.esp
+ IFCHECKSUM("grass & ground fixes.esp",CE13BA2A) DIRTY: 15 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Liberation Beacon.esp
+ IFCHECKSUM("Liberation Beacon.esp",EAC2C978) DIRTY: 10 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Jornheim.esp
+ IFCHECKSUM("Jornheim.esp",65C2481F) DIRTY: 15 ITM, 3 UDR, 2 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Oblivion Gates.esp
+ IFCHECKSUM("Oblivion Gates.esp",EEBBFF41)||IFCHECKSUM("Oblivion Gates.esp",ED42650C) DIRTY: 82 ITM, 1 UDR, 3 deleted NavMesh records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+R0R0N0 Stable.esp
+ IFCHECKSUM("R0R0N0 Stable.esp",17D01A7C) DIRTY: 6 ITM, 3 UDR record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+SummerSkyrim.esp
+ IFCHECKSUM("SummerSkyrim.esp",C5BF6C9D) DIRTY: 1 UDR record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Tundra to forest.esp
+ IFCHECKSUM("Tundra to forest.esp",12D6056D) DIRTY: 20 ITM, 11 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+unicorncave.esp
+ IFCHECKSUM("unicorncave.esp",40169648) DIRTY: 37 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Yamato Transform and Summon.esp
+ IFCHECKSUM("Yamato Transform and Summon.esp",D7668232) DIRTY: 12 ITM, 2 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Skyrim_realism.esp
+ IFCHECKSUM("Skyrim_realism.esp",536BCFFA) DIRTY: 183 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+IFNOTFILE("3DNPC.esp") MOD: RealisticRoomRental.esp
+ IFCHECKSUM("RealisticRoomRental.esp",484EF81F) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+RRRE-Lite.esp
+ IFCHECKSUM("RRRE-Lite.esp",653ACD5D) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BloodmoonRising.esp
+ IFCHECKSUM("BloodmoonRising.esp",53B3CE8C) DIRTY: 9 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+AdoringFanSummon.esp
+ IFCHECKSUM("AdoringFanSummon.esp",583BB026) DIRTY: 13 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+AlikrKematuSummon.esp
+ IFCHECKSUM("AlikrKematuSummon.esp",6D6B36B6) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Apocalypse - The Spell Package.esp
+ IFCHECKSUM("Apocalypse - The Spell Package.esp",C8244604) DIRTY: 5 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Ancient Spells.esp
  TAG: {{BASH: Relev}}
+BardSvaknirSummon.esp
+ IFCHECKSUM("BardSvaknirSummon.esp",0804A34E) DIRTY: 12 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BladesBaurusSummon.esp
+ IFCHECKSUM("BladesBaurusSummon.esp",87C1BD13) DIRTY: 4 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+CompanionSkjorSummon.esp
+ IFCHECKSUM("CompanionSkjorSummon.esp",67E339E3) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+DarkBrotherhoodAstrid.esp
+ IFCHECKSUM("DarkBrotherhoodAstrid.esp",20A8055D) DIRTY: 10 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+FalmerSnowElf.esp
+ IFCHECKSUM("FalmerSnowElf.esp",98D86B17) DIRTY: 5 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ForswornFaolanSummon.esp
+ IFCHECKSUM("ForswornFaolanSummon.esp",4AF28309) DIRTY: 7 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+GamblerVashaSummon.esp
+ IFCHECKSUM("GamblerVashaSummon.esp",EC3B6A2A) DIRTY: 9 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+GreybeardJurgenSummon.esp
+ IFCHECKSUM("GreybeardJurgenSummon.esp",4A9199ED) DIRTY: 5 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+HeroYsgramorSummon.esp
+ IFCHECKSUM("HeroYsgramorSummon.esp",0AA174FF) DIRTY: 7 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MagesArnielSummon.esp
+ IFCHECKSUM("MagesArnielSummon.esp",9C386D04) DIRTY: 2 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MagesSavosSummon.esp
+ IFCHECKSUM("MagesSavosSummon.esp",5CE9EC31) DIRTY: 1 ITM record.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Milestone Memoirs.esp
+ IFCHECKSUM("Milestone Memoirs.esp",3722E902) DIRTY: 2 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MystraTransmuteOreNoCooldown.esp
+ IFCHECKSUM("MystraTransmuteOreNoCooldown.esp",EA66F549) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Nature of the beast.esp
+ IFCHECKSUM("Nature of the beast.esp",41B7A05B) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+NightingaleGallusSummon.esp
+ IFCHECKSUM("NightingaleGallusSummon.esp",B93F275A) DIRTY: 2 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+OblivionMankarSummon.esp
+ IFCHECKSUM("OblivionMankarSummon.esp",D62798D4) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+QueenPotemaSummon.esp
+ IFCHECKSUM("QueenPotemaSummon.esp",B3F2FCD8) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+SpellCombo.esp
+ IFCHECKSUM("SpellCombo.esp",E82C9392) DIRTY: 14 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+SynodSeptimusSummon.esp
+ IFCHECKSUM("SynodSeptimusSummon.esp",259814E3) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ThalmorAncanoSummon.esp
+ IFCHECKSUM("ThalmorAncanoSummon.esp",C8407CDA) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ThievesGreyFoxSummon.esp
+ IFCHECKSUM("ThievesGreyFoxSummon.esp",1595AF04) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+TotalConjuration.esp
+ TAG: {{BASH: Relev}}
+ IFCHECKSUM("TotalConjuration.esp",FB678137) DIRTY: 35 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+WhispersCallerSummon.esp
+ IFCHECKSUM("WhispersCallerSummon.esp",CD6E13F0) DIRTY: 6 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Lost Magic.esp
+ TAG: {{BASH: Delev, Relev}}
 PISE-Reduced Potions.esp
  TAG: {{BASH: Delev, Relev}}
 Enchanted Items Overhaul.esp
  TAG: {{BASH: Delev, Relev}}
 NightEye_Ench+Potion+Spell.esp
  TAG: {{BASH: Relev}}
+Combat Remastered.esp
+ IFCHECKSUM("Combat Remastered.esp",D2EB1521) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+ArcheryDummyXP.esp
+ IFCHECKSUM("ArcheryDummyXP.esp",9C044962) DIRTY: 3 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Skyrim Scaling Stopper.esp
  TAG: {{BASH: Delev, Relev}}
 SkyRe_Main.esp
+ TAG: {{BASH: Relev, Delev}}
+SkyRe_Main_NoDawnguard.esp
  TAG: {{BASH: Relev, Delev}}
 SkyRe_EnemyScaling.esp
  TAG: {{BASH: Relev}}
 SkyRe_Enemies.esp
  TAG: {{BASH: Relev}}
-IF("SkyRe_Main.esp") MOD: Morrowloot.esp
+IFVAR(SkyReM) MOD: Morrowloot.esp
  TAG: {{BASH: Delev, Relev}}
+Improved Lower Level Smithing.esp
+ IFCHECKSUM("Improved Lower Level Smithing.esp",2A7094CE) DIRTY: 5 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+MoreWerewolfPerks.esp
+ IFCHECKSUM("MoreWerewolfPerks.esp",DECFC212) DIRTY: 2 ITM records.  Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+TheEyesofBeauty.esp
+ IFCHECKSUM("TheEyesofBeauty.esp",A06E30EA) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Matera.esp
+ IFCHECKSUM("Matera.esp",1E48287E) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Monli.esp
+ IFCHECKSUM("Monli.esp",75A81077) DIRTY: 3 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+IFFILE("3DNPC.esp") MOD: RealisticRoomRental.esp
+ IFCHECKSUM("RealisticRoomRental.esp",484EF81F) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Alexina.esp
+ IFCHECKSUM("Alexina.esp",5D08BB22) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Stella.esp
+ IFCHECKSUM("Stella.esp",CEC494D4) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+BrelynaMaryon.esp
+ IFCHECKSUM("BrelynaMaryon.esp",0A18148F) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+CamillaValerius.esp
+ IFCHECKSUM("CamillaValerius.esp",3A9B09D3) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+CarlottaValentia.esp
+ IFCHECKSUM("CarlottaValentia.esp",99430670) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Delphine.esp
+ IFCHECKSUM("Delphine.esp",F91A519E) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+HirelingErikTheSlayer.esp
+ IFCHECKSUM("HirelingErikTheSlayer.esp",58542992) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+SFR_Onmund.esp
+ IFCHECKSUM("SFR_Onmund.esp",F8DF7340) DIRTY: 3 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Annekke.esp
+ IFCHECKSUM("Annekke.esp",D2E8A173) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Mjoll.esp
+ IFCHECKSUM("Mjoll.esp",CD371A27) DIRTY: 2 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+Taarie.esp
+ IFCHECKSUM("Taarie.esp",4D5BBFDC) DIRTY: 4 ITM records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+throwing_weapons_leveledlists_plugin.esp
+ TAG: {{BASH: Relev}}
+NymSkyrimGrammarHammer.esp
+ IFCHECKSUM("NymSkyrimGrammarHammer.esp",90A68AA7) DIRTY: 1 ITM record. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+rcrnShaders.esp
+ IFCHECKSUM("rcrnShaders.esp",209FD1B5) DIRTY: 16 ITM, 3 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
+RCRNvolumetric.esp
+ IFCHECKSUM("RCRNvolumetric.esp",54176F89) DIRTY: 2 ITM, 0 UDR records. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
 Water FX - Get Wet.esp
- IF("Chesko_Frostfall.esp") TAG: {{BASH: Deactivate, NoMerge}} already included in 'Chesko_Frostfall.esp'
+ IFVAR(EN)&&IFFILE("Chesko_Frostfall.esp") TAG: {{BASH: Deactivate, NoMerge}} already included in 'Chesko_Frostfall.esp'
+ IFVAR(RU)&&IFFILE("Chesko_Frostfall.esp") TAG: {{BASH: Deactivate, NoMerge}} уже включено в Chesko_Frostfall.esp
+housemarkerfasttravel.esp
+ IFCHECKSUM("housemarkerfasttravel.esp",2181FADE) DIRTY: 3 ITM. Needs TES5Edit cleaning. ("http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit Cleaning guide")
