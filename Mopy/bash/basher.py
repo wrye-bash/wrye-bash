@@ -10408,7 +10408,7 @@ class Installer_OpenNexus(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        message = _(u"Attempt to open this as a mod at %{nexusName}s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %{nexusName}s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %{nexusName}s.") % {'nexusName':bush.game.nexusName}
+        message = _(u"Attempt to open this as a mod at %{nexusName}s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %(nexusName)s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %(nexusName)s.") % {'nexusName':bush.game.nexusName}
         if balt.askContinue(self.gTank,message, bush.game.nexusKey,_(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
             webbrowser.open(bush.game.nexusUrl+u'mods/'+id)
