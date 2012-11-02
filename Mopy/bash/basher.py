@@ -18545,11 +18545,11 @@ def InitStatusBar():
             imageList(u'tools/tes4edit%s.png'),
             _(u"Launch TES5Edit"),
             uid=u'TES5Edit'))
-    BashStatusBar.buttons.append( #Tes5Gecko
+    BashStatusBar.buttons.append( #TesVGecko
         App_Button( (bosh.tooldirs['Tes5GeckoPath']),
             imageList(u'tools/tesvgecko%s.png'),
-            _(u"Launch Tes5Gecko"),
-            uid=u'Tes5Gecko'))
+            _(u"Launch TesVGecko"),
+            uid=u'TesVGecko'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
