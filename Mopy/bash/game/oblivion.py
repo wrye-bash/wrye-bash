@@ -115,6 +115,7 @@ dontSkip = (
 
 #Folders BAIN should never check
 SkipBAINRefresh = set ((
+    u'tes4edit backups',
     #Use lowercase names
 ))
 
