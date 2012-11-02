@@ -14287,7 +14287,7 @@ class MelVmad(MelBase):
             # Properties
             for x in xrange(propCount):
                 prop = Property()
-                prop.loadData(version,objFormat,readId)
+                prop.loadData(ins,version,objFormat,readId)
                 propAppend(prop)
 
     class Alias(object):
