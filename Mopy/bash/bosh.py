@@ -4787,6 +4787,9 @@ class TrackedFileInfos(DataDict):
                     data[name] = fileInfo
                     self.corrupted.pop(name,None)
                 changed.add(name)
+            filePath = fileInfo.getPath()
+            if not filePath.exists():
+                self.untrack(name)
         return changed
 
     def track(self,fileName):
