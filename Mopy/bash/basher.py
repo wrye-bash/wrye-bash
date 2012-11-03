@@ -976,7 +976,7 @@ class List(wx.Panel):
                 selected.append(self.items[itemDex])
         return selected
 
-    def DeleteSelected(self):
+    def DeleteSelected(self,dontRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if items:
@@ -993,6 +993,9 @@ class List(wx.Panel):
                         if checks.IsChecked(i):
                             try:
                                 self.data.delete(mod)
+                                # Temporarily Track this file for BAIN, so BAIN will
+                                # update the status of its installers
+                                bosh.trackedInfos.track(bosh.dirs['mods'].join(mod))
                             except bolt.BoltError as e:
                                 balt.showError(self, _(u'%s') % e)
                 bosh.modInfos.plugins.refresh(True)
@@ -2001,7 +2004,7 @@ class ModList(List):
         """Char event: Delete, Reorder, Check/Uncheck."""
         ##Delete
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected()
+            self.DeleteSelected(event.ShiftDown())
         ##Ctrl+Up and Ctrl+Down
         elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
