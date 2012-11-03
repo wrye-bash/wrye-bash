@@ -18210,7 +18210,10 @@ class App_GenPickle(StatusBar_Button):
         #--Data base
         import cPickle
         fids = cPickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
-        maxId = max(fids.values())
+        if fids:
+            maxId = max(fids.values())
+        else:
+            maxId = 0
         maxId = max(maxId,0xf12345)
         maxOld = maxId
         print 'maxId',hex(maxId)
