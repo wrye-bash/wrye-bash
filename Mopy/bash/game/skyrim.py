@@ -30,6 +30,9 @@ from .. import bolt
 from ..bolt import _encode
 from ..brec import *
 
+import itertools
+from_iterable = itertools.chain.from_iterable
+
 # Util Constants ---------------------------------------------------------------
 #--Null strings (for default empty byte arrays)
 null1 = '\x00'
@@ -14143,10 +14146,30 @@ class MelVmad(MelBase):
                 self.unk,count = ins.unpack('=bH',3,readId)
                 self.fileName = ins.readString16(-1,readId)
             elif Type == 'SCEN':
-                raise Exception(u"Fragment SCripts for 'SCEN' records are not implemented.")
+                raise Exception(u"Fragment Scripts for 'SCEN' records are not implemented.")
             else:
-                raise Exception(u"Unexpected Fragments Scripts for record type '%s'." % Type)
+                raise Exception(u"Unexpected Fragment Scripts for record type '%s'." % Type)
             return count
+
+        def dumpData(self,Type,count):
+            structPack = struct.pack
+            fileName = _encode(self.fileName)
+            if Type == 'INFO':
+                raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
+            elif Type == 'PACK':
+                # TODO: check if this is right!
+                count = int(count*'1',2)
+                data = structPack('=bBH',self.unk,count,len(fileName)) + fileName
+            elif Type == 'PERK':
+                data = structPack('=bH',self.unk,len(fileName)) + fileName
+                data += structPack('=H',count)
+            elif Type == 'QUST':
+                data = structPack('=bHH',self.unk,count,len(fileName)) + fileName
+            elif Type == 'SCEN':
+                raise Exception(u"Fragment Scripts for 'SCEN' records are not implemented.")
+            else:
+                raise Exception(u"Unexpected Fragment Scripts for record type '%s'." % Type)
+            return data
 
     class INFOFragment(object):
         pass
@@ -14163,6 +14186,14 @@ class MelVmad(MelBase):
             self.scriptName = ins.readString16(-1,readId)
             self.fragmentName = ins.readString16(-1,readId)
 
+        def dumpData(self):
+            structPack = struct.pack
+            scriptName = _encode(self.scriptName)
+            fragmentName = _encode(self.fragmentName)
+            data = structPack('=bH',self.unk,len(scriptName)) + scriptName
+            data += structPack('=H',len(fragmentName)) + fragmentName
+            return data
+
     class PERKFragment(object):
         __slots__ = ('index','unk1','unk2','scriptName','fragmentName',)
         def __init__(self):
@@ -14176,6 +14207,14 @@ class MelVmad(MelBase):
             self.index,self.unk1,self.unk2 = ins.unpack('=Hhb',4,readId)
             self.scriptName = ins.readString16(-1,readId)
             self.fragmentName = ins.readString16(-1,readId)
+
+        def dumpData(self):
+            structPack = struct.pack
+            scriptName = _encode(self.scriptName)
+            fragmentName = _encode(self.fragmentName)
+            data = structPack('=HhbH',self.index,self.unk1,self.unk2,len(scriptName)) + scriptName
+            data += structPack('=H',len(fragmentName)) + fragmentName
+            return data
 
     class QUSTFragment(object):
         __slots__ = ('index','unk1','unk2','unk3','scriptName','fragmentName',)
@@ -14191,6 +14230,14 @@ class MelVmad(MelBase):
             self.index,self.unk1,self.unk2,self.unk3 = ins.unpack('=Hhib',9,readId)
             self.scriptName = ins.readString16(-1,readId)
             self.fragmentName = ins.readString16(-1,readId)
+
+        def dumpData(self):
+            structPack = struct.pack
+            scriptName = _encode(self.scriptName)
+            fragmentName = _encode(self.fragmentName)
+            data = structPack('=HhibH',self.index,self.unk1,self.unk2,self.unk3,len(scriptName)) + scriptName
+            data += structPack('=H',len(fragmentName)) + fragmentName
+            return data
 
     class SCENFragment(object):
         pass
@@ -14266,6 +14313,65 @@ class MelVmad(MelBase):
             else:
                 raise Exception(u'Unrecognized VM Data property type: %i' % Type)
 
+        def dumpData(self):
+            structPack = struct.pack
+            ## Property Entry
+            # Property Name
+            name = _encode(self.name)
+            data = structPack('=H',len(name))+name
+            # Property Type
+            value = self.value
+            # Type 1 - Object Reference
+            if isinstance(value,tuple):
+                # Object Format 1 - (Fid, Aid, NULL)
+                data += structPack('=BBIHH',1,self.unk,value[0],value[1],0)
+            # Type 2 - String
+            elif isinstance(value,basestring):
+                value = _encode(value)
+                data += structPack('=BBH',2,self.unk,len(value))+value
+            # Type 3 - Int
+            elif isinstance(value,(int,long)):
+                data += structPack('=BBi',3,self.unk,value)
+            # Type 4 - Float
+            elif isinstance(value,float):
+                data += structPack('=BBf',4,self.unk,value)
+            # Type 5 - Bool
+            elif isinstance(value,bool):
+                data += structPack('=BBb',5,self.unk,value)
+            # Type 11 -> 15 - lists
+            elif isinstance(value,list):
+                # Empty list, fail to object refereneces?
+                count = len(value)
+                if not count:
+                    data += structPack('=BBI',11,self.unk,count)
+                else:
+                    Type = value[0]
+                    # Type 11 - Object References
+                    if isinstance(Type,tuple):
+                        value = list(from_iterable([x+(0,) for x in value]))
+                        # value = [fid,aid,NULL, fid,aid,NULL, ...]
+                        data += structPack('=BBI'+count*'IHH',11,self.unk,count,*value)
+                    # Type 12 - Strings
+                    elif isinstance(Type,basestring):
+                        data += structPack('=BBI',12,self.unk,count)
+                        for string in value:
+                            string = _encode(string)
+                            data += structPack('=H',len(string))+string
+                    # Type 13 - Ints
+                    elif isinstance(Type,(int,long)):
+                        data += structPack('=BBI'+`count`+'i',13,self.unk,count,*value)
+                    # Type 14 - Floats
+                    elif isinstance(Type,float):
+                        data += structPack('=BBI'+`count`+'f',14,self.unk,count,*value)
+                    # Type 15 - Bools
+                    elif isinstance(Type,bool):
+                        data += structPack('=BBI'+`count`+'b',15,self.unk,count,*value)
+                    else:
+                        raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
+            else:
+                raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
+            return data
+
     class Script(object):
         __slots__ = ('name','unk','properties',)
         def __init__(self):
@@ -14290,6 +14396,33 @@ class MelVmad(MelBase):
                 prop.loadData(ins,version,objFormat,readId)
                 propAppend(prop)
 
+        def dumpData(self):
+            structPack = struct.pack
+            ## Script Entry
+            # scriptName
+            name = _encode(self.name)
+            data = structPack('=H',len(name))+name
+            # unkown, property count
+            data += structPack('=BH',self.unk,len(self.properties))
+            # properties
+            for prop in self.properties:
+                data += prop.dumpData()
+            return data
+
+        def mapFids(self,record,function,save=False):
+            for prop in self.properties:
+                value = prop.value
+                # Type 1 - Object Reference
+                if isinstance(value,tuple):
+                    value = (function(value[0]),value[1])
+                    if save:
+                        prop.value = value
+                # Type 11 - List of Object References
+                elif isinstance(value,list) and value and isinstance(value[0],tuple):
+                    value = [(function(x[0]),x[1]) for x in value]
+                    if save:
+                        prop.value = value
+
     class Alias(object):
         __slots__ = ('unk1','aid','unk2','unk3','scripts',)
         def __init__(self):
@@ -14308,6 +14441,10 @@ class MelVmad(MelBase):
                 script = Script()
                 script.loadData(ins,version,objFormat,readId)
                 scriptAppend(script)
+
+        def mapFids(self,record,function,save=False):
+            for script in self.scripts:
+                script.mapFids(record,function,save)
 
     class Vmad(object):
         __slots__ = ('scripts','fragmentInfo','fragments','aliases',)
@@ -14359,6 +14496,36 @@ class MelVmad(MelBase):
                 self.fragments = None
                 self.aliases = None
 
+        def dumpData(self,record,out):
+            structPack = struct.pack
+            # Header
+            data = structPack('=3H',4,1,len(self.scripts)) # vmad version, object format, script count
+            # Primary Scripts
+            for script in self.scripts:
+                data += script.dumpData()
+            # Script Fragments
+            if self.fragments:
+                Type = record._Type
+                data += self.fragmentInfo.dumpData(Type,len(self.fragments))
+                for frag in self.fragments:
+                    data += frag.dumpData()
+                if Type == 'QUST':
+                    # Alias Scripts
+                    aliases = self.aliases
+                    data += structPack('=H',2,len(aliases))
+                    for alias in aliases:
+                        data += alias.dumpData()
+            # Write
+            out.packSub(self.subType,data)
+
+        def mapFids(self,record,function,save=False):
+            for script in self.scripts:
+                script.mapFids(record,function,save)
+            if not self.aliases:
+                return
+            for alias in self.aliases:
+                alias.mapFids(record,function,save)
+
     def __init__(self,type='VMAD',attr='vmdata'):
         MelBase.__init__(self,type,attr)
 
@@ -14382,73 +14549,14 @@ class MelVmad(MelBase):
         """Dumps data from record to outstream"""
         vmad = record.__getattribute__(self.attr)
         if vmad is None: return
-        structPack = struct.pack
-        def packString(string):
-            string = _encode(string)
-            return structPack('H',len(string))+string
-        # Header
-        data = structPack('3h',vmad.version,vmad.unk,len(vmad.scripts))
-        # Scripts
-        for scriptName,script in vmad.scripts.iteritems():
-            data += packString(scriptName)
-            data += structPack('=BH',script.unk,len(script.properties))
-            # Properties
-            for propName,prop in script.properties.iteritems():
-                data += packString(propName)
-                type = prop.type
-                data += structPack('2B',type,prop.unk)
-                if type == 1:
-                    # Object reference
-                    data += structPack('=HHI',*prop.value)
-                elif type == 2:
-                    # String
-                    data += packString(prop.value)
-                elif type == 3:
-                    # int32
-                    data += structPack('i',prop.value)
-                elif type == 4:
-                    # float
-                    data += structPack('f',prop.value)
-                elif type == 5:
-                    # bool (int8)
-                    data += structPack('b',prop.value)
-                elif type == 11:
-                    # array of object references
-                    num = len(prop.value)
-                    data += structPack('=I'+`num`+'Q',num,*prop.value)
-                elif type == 12:
-                    # array of strings
-                    num = len(prop.value)
-                    data += structPack('I',num)
-                    for string in prop.value:
-                        data += packString(string)
-                elif type == 13:
-                    # array of int32's
-                    num = len(prop.value)
-                    data += structPack('=I'+`num`+'i',num,*prop.value)
-                elif type == 14:
-                    # array of float's
-                    num = len(prop.value)
-                    data += structPack('=I'+`num`+'f',num,*prop.value)
-                elif type == 15:
-                    # array of bools (int8)
-                    num = len(prop.value)
-                    data += structPack('=I'+`num`+'b',num,*prop.value)
-        out.packSub(self.subType,data)
+        vmad.dumpData(record,out)
 
     def mapFids(self,record,function,save=False):
-        """Applies function to fids.  If save s true, then fid is set
+        """Applies function to fids.  If save is true, then fid is set
            to result of function."""
-        attr = self.attr
-        vmad = record.__getattribute__(attr)
+        vmad = record.__getattribute__(self.attr)
         if vmad is None: return
-        for scriptName,script in vmad.scripts.iteritems():
-            for propName,prop in script.properties.iteritems():
-                if prop.type == 0:
-                    value = prop.value
-                    value = (value[0],value[1],function(value[2]))
-                    if save:
-                        prop.value = value
+        vmad.mapFids(record,function,save)
 
 #-------------------------------------------------------------------------------
 class MelBounds(MelStruct):
