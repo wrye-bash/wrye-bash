@@ -13955,9 +13955,41 @@ gmstEids = [
 #--Tags supported by this game
 allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate'))
 
+#--GLOB record tweaks used by bosh's GmstTweaker
+#  Each entry is a tuple in the following format:
+#    (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, Option3, ..., OptionN)
+#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
+#     then Value (below) must be a tuple of equal length, providing values for each GLOB
+#  Each Option is a tuple:
+#    (DisplayText, Value)
+#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
+#      will treat this option as the default value.
+#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
+#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
+#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
+#  fix for an example of this (in the GMST Tweaks)
+GlobalsTweaks = [
+    ]
+
+#--GMST record tweaks used by bosh's GmstTweaker
+#  Each entry is a tuple in the following format:
+#    (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, Option3, ..., OptionN)
+#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
+#     then Value (below) must be a tuple of equal length, providing values for each GMST
+#  Each Option is a tuple:
+#    (DisplayText, Value)
+#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
+#      will treat this option as the default value.
+#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
+#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
+#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
+#  fix for an example of this (in the GMST Tweaks)
+GmstTweaks = [
+    ]
+
 #--Patchers available when building a Bashed Patch
 patchers = (
-    u'AliasesPatcher', u'PatchMerger', u'ListsMerger',
+    u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker'
     )
 
 # For ListsMerger
