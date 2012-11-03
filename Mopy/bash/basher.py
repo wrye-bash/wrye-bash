@@ -18188,6 +18188,62 @@ class App_Restart(StatusBar_Button):
         bashFrame.Restart()
 
 #------------------------------------------------------------------------------
+class App_GenPickle(StatusBar_Button):
+    """Generate PKL File. Ported out of bish.py which wasn't working."""
+    def GetBitmapButton(self,window,style=0):
+        if not self.id: self.id = wx.NewId()
+        if self.gButton is not None: self.gButton.Destroy()
+        self.gButton = bitmapButton(window,
+            wx.ArtProvider.GetBitmap(wx.ART_UNDO,wx.ART_TOOLBAR,
+                (settings['bash.statusbar.iconSize'],
+                 settings['bash.statusbar.iconSize'])),
+            style=style,
+            tip=u'Generate PKL File',
+            onClick = self.Execute,
+            onRClick = self.DoPopupMenu)
+        return self.gButton
+
+    def Execute(self,event,fileName=None):
+        """Updates map of GMST eids to fids in bash\db\Oblivion_ids.pkl, based either
+        on a list of new eids or the gmsts in the specified mod file. Updated pkl file
+        is dropped in Mopy directory."""
+        #--Data base
+        import cPickle
+        fids = cPickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
+        maxId = max(fids.values())
+        maxId = max(maxId,0xf12345)
+        maxOld = maxId
+        print 'maxId',hex(maxId)
+        #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing
+        # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
+        for eid in bush.game.gmstEids:
+            if eid not in fids:
+                maxId += 1
+                fids[eid] = maxId
+                print '%08X  %08X %s' % (0,maxId,eid)
+                #--Source file
+        if fileName:
+            init(3)
+            sorter = lambda a: a.eid
+            loadFactory = bosh.LoadFactory(False,bosh.MreGmst)
+            modInfo = bosh.modInfos[GPath(fileName)]
+            modFile = bosh.ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            for gmst in sorted(modFile.GMST.records,key=sorter):
+                print gmst.eid, gmst.value
+                if gmst.eid not in fids:
+                    maxId += 1
+                    fids[gmst.eid] = maxId
+                    print '%08X  %08X %s' % (gmst.fid,maxId,gmst.eid)
+        #--Changes?
+        if maxId > maxOld:
+            outData = {'GMST':fids}
+            cPickle.dump(outData,GPath(bush.game.pklfile).open('w'))
+            print _(u"%d new gmst ids written to "+bush.game.pklfile) % ((maxId - maxOld),)
+        else:
+            print _(u'No changes necessary. PKL data unchanged.')
+
+#------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
@@ -18976,7 +19032,8 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
     if bosh.inisettings['ShowDevTools']:
-        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))   
+        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
+        BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
 def InitMasterLinks():
     """Initialize master list menus."""
