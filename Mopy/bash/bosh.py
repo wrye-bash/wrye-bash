@@ -23413,14 +23413,15 @@ class GmstTweaker(MultiTweaker):
     defaultConfig = {'isEnabled':True}
     tweaks = []
 
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        MultiTweaker.getConfig(self,configs)
         # Load game specific tweaks
-        GmstTweaker.tweaks = []
-        tweaksAppend = GmstTweaker.tweaks.append
-        for cls,tweaks in [(CBash_GlobalsTweak,bush.game.GlobalsTweaks),
-                           (CBash_GmstTweak,bush.game.GmstTweaks)]:
+        self.tweaks = []
+        tweaksAppend = self.tweaks.append
+        for cls,tweaks in [(GlobalsTweak,bush.game.GlobalsTweaks),
+                           (GmstTweak,bush.game.GmstTweaks)]:
             for tweak in tweaks:
                 if isinstance(tweak,tuple):
                     tweaksAppend(cls(*tweak))
@@ -23428,8 +23429,7 @@ class GmstTweaker(MultiTweaker):
                     args = tweak[0]
                     kwdargs = tweak[1]
                     tweaksAppend(cls(*args,**kwdargs))
-        GmstTweaker.tweaks.sort(key=lambda a: a.label.lower())
-
+        self.tweaks.sort(key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -23471,12 +23471,12 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
     tweaks = []
 
     #--Config Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        CBash_MultiTweaker.getConfig(self,configs)
         # Load game specific tweaks
-        CBash_GmstTweaker.tweaks = []
-        tweaksAppend = CBash_GmstTweaker.tweaks.append
+        self.tweaks = []
+        tweaksAppend = self.tweaks.append
         for cls,tweaks in [(CBash_GlobalsTweak,bush.game.GlobalsTweaks),
                            (CBash_GmstTweak,bush.game.GmstTweaks)]:
             for tweak in tweaks:
@@ -23486,7 +23486,11 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
                     args = tweak[0]
                     kwdargs = tweak[1]
                     tweaksAppend(cls(*args,**kwdargs))
-        CBash_GmstTweaker.tweaks.sort(key=lambda a: a.label.lower())
+        self.tweaks.sort(key=lambda a: a.label.lower())
+
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
             if isinstance(tweak,CBash_GlobalsTweak):
