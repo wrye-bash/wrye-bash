@@ -13948,6 +13948,9 @@ weaponTypes = (
 #--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
 
+#The pickle file for this game. Holds encoded GMST IDs from the big list below.
+pklfile = r'bash\db\Skyrim_ids.pkl'
+
 gmstEids = [
     # None
     ]
