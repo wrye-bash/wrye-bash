@@ -3919,7 +3919,7 @@ def init():
     # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
     # re-executing all lines within the module, it acts like another 'import'
     # statement - in otherwords, nothing happens.  This means any lines that
-    # affect outside modules must do so withing this function, which will be
+    # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
     brec.ModReader.recHeader = RecordHeader
 
@@ -3937,8 +3937,3 @@ def init():
     #--Simple records
     brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
         set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
-
-    #--GmstTweaker initialization
-    from ..bosh import GmstTweaker, CBash_GmstTweaker
-    GmstTweaker.initGame()
-    CBash_GmstTweaker.initGame()
