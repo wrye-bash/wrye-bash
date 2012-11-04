@@ -1541,7 +1541,7 @@ class MreHeaderBase(MelRecord):
 #-------------------------------------------------------------------------------
 class MreGlob(MelRecord):
     """Global record.  Rather stupidly all values, despite their designation
-       (shotr,long,float), are stored as floats -- which means that very large
+       (short,long,float), are stored as floats -- which means that very large
        integers lose precision."""
     classType = 'GLOB'
     melSet = MelSet(
