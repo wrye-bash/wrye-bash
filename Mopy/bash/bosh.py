@@ -23419,7 +23419,8 @@ class GmstTweaker(MultiTweaker):
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        MultiTweaker.getConfig(self,configs)
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
+        self.isEnabled = config.get('isEnabled',False)
         # Load game specific tweaks
         self.tweaks = []
         tweaksAppend = self.tweaks.append
@@ -23433,6 +23434,8 @@ class GmstTweaker(MultiTweaker):
                     kwdargs = tweak[1]
                     tweaksAppend(cls(*args,**kwdargs))
         self.tweaks.sort(key=lambda a: a.label.lower())
+        for tweak in self.tweaks:
+            tweak.getConfig(config)
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -23476,6 +23479,8 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
     #--Config Phase ------------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
+        self.isEnabled = config.get('isEnabled',False)
         CBash_MultiTweaker.getConfig(self,configs)
         # Load game specific tweaks
         self.tweaks = []
@@ -23490,6 +23495,8 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
                     kwdargs = tweak[1]
                     tweaksAppend(cls(*args,**kwdargs))
         self.tweaks.sort(key=lambda a: a.label.lower())
+        for tweak in self.tweaks:
+            tweak.getConfig(config)
 
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
