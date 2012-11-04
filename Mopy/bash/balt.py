@@ -35,6 +35,7 @@ import StringIO
 import string
 import struct
 import sys
+import os
 import textwrap
 import time
 import wx
@@ -445,7 +446,8 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
     if gCheckBox.GetValue():
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
-def askContinueShortTerm(parent,message,title=_(u'Warning')):
+
+def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
@@ -454,6 +456,16 @@ def askContinueShortTerm(parent,message,title=_(u'Warning')):
         wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
     gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
     #--Layout
+    buttonSizer = hSizer(spacer)
+    if wx.ID_OK in labels:
+        okButton = button(dialog,id=wx.ID_OK,label=lables[wx.ID_OK])
+    else:
+        okButton = button(dialog,id=wx.ID_OK)
+    buttonSizer.Add(okButton,0,wx.RIGHT,4)
+    for id,lable in labels.itervalues():
+        if id in (wx.ID_OK,wx.ID_CANCEL):
+            continue
+        but = button(dialog,id=id,lable=lable)
     sizer = vSizer(
         (hSizer(
             (icon,0,wx.ALL,6),
@@ -543,7 +555,7 @@ def askOk(parent,message,title=u''):
 
 def askYes(parent,message,title=u'',default=True,icon=wx.ICON_EXCLAMATION):
     """Shows a modal warning or question message."""
-    style = wx.YES_NO|icon|((wx.NO_DEFAULT,wx.YES_DEFAULT)[default])
+    style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
     return askStyled(parent,message,title,style)
 
 def askWarning(parent,message,title=_(u'Warning')):
@@ -747,6 +759,128 @@ def playSound(parent,sound):
         sound.Play(wx.SOUND_ASYNC)
     else:
         showError(parent,_(u"Invalid sound file %s.") % sound)
+
+# Shell (OS) File Operations --------------------------------------------------
+#------------------------------------------------------------------------------
+try:
+    from win32com.shell import shell, shellcon
+    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
+
+except ImportError:
+    shellcon = None
+    FO_DELETE = 0
+    FO_MOVE = 1
+    FO_COPY = 2
+    FO_RENAME = 3
+
+def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,renameOnCollision=False,silent=False,parent=None):
+    abspath = os.path.abspath
+
+    source = source if source else u''
+    if isinstance(source,(bolt.Path,basestring)):
+        source = GPath(abspath(GPath(source).s))
+    else:
+        source = [GPath(abspath(GPath(x).s)) for x in source]
+
+    target = target if target else u''
+    if isinstance(target,(bolt.Path,basestring)):
+        target = GPath(abspath(GPath(target).s))
+    else:
+        target = [GPath(abspath(GPath(x).s)) for x in target]
+
+    parent = parent.GetHandle() if parent else None
+
+    if shell is not None:
+        if isinstance(source,bolt.Path):
+            source = source.s
+        else:
+            source = u'\x00'.join(x.s for x in source)
+
+        if isinstance(target,bolt.Path):
+            target = target.s
+            multiDestFiles = 0
+        else:
+            target = u'\x00'.join(x.s for x in target)
+            multiDestFiles = shellcon.FOF_MULTIDESTFILES
+
+        flags = shellcon.FOF_WANTMAPPINGHANDLE|multiDestFiles
+        if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
+        if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
+        if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
+        if silent: flags |= shellcon.FOF_SILENT
+
+        result,nAborted,mapping = shell.SHFileOperation(
+            (parent,operation,source,target,flags,None,None))
+
+        if result == 0:
+            if nAborted:
+                raise Exception(u'%d operations were aborted by the user' % nAborted)
+            return dict(mapping)
+        elif result == 1223:
+            # User Canceled
+            raise CancelError
+        elif result == 2 and operation == FO_DELETE:
+            # Delete failed because file didnt exist
+            return dict(mapping)
+        else:
+            raise Exception(result)
+
+    else:
+        # Use custom dialogs and such
+        # TODO: implement this
+        raise Exception(u'Not Implemented')
+        if not isinstance(source,list):
+            source = [source]
+        if not isinstance(target,list):
+            target = [target]
+
+        # Delete
+        if operation == FO_DELETE:
+            # allowUndo - no effect, can't use recyle bin this way
+            # noConfirm - ask if noConfirm is False
+            # renameOnCollision - no effect, deleting files
+            # silent - no real effect, since we don't show visuals when deleting this way
+            if not noConfirm:
+                message = _(u'Are you sure you want to permanently delete these %(count)d items?') % {'count':len(source)}
+                message += u'\n\n' + '\n'.join([u' * %s' % x for x in source])
+                if not askYes(parent,message,_(u'Delete Multiple Items')):
+                    return {}
+            # Do deletion
+            for file in source:
+                if not file.exists():
+                    continue
+                if file.isdir():
+                    file.rmtree(file.stail)
+                else:
+                    file.remove()
+            return {}
+        # Move
+        if operation == FO_MOVE:
+            # allowUndo - no effect, we're not going to track file movements manually
+            # noConfirm - no real effect when moving
+            # renameOnCollision - if moving collision, auto rename, otherwise ask
+            # silent - no real effect, since we're not showing visuals
+            collisions = []
+            for fileFrom,fileTo in zip(source,target):
+                if ((fileFrom.isdir() and fileTo.exists() and fileTo.isdir()) or
+                    (fileFrom.isfile() and fileTo.exists() and fileTo.isfile())):
+                    collisions.append(fileTo)
+            if collisions:
+                pass
+
+def shellDelete(files,parent,askOk=True,recycle=True):
+    try:
+        return fileOperation(FO_DELETE,files,None,recycle,not askOk,True,False,parent)
+    except CancelError:
+        if askOk:
+            return {}
+        raise
+
+def shellMove(filesFrom,filesTo,parent,askOverwrite=True,allowUndo=True,autoRename=True):
+    return fileOperation(FO_MOVE,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+
+def shellCopy(filesFrom,filesTo,parent,askOverwrite=True,allowUndo=True,autoRename=True):
+    return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
