@@ -18195,16 +18195,11 @@ class App_GenPickle(StatusBar_Button):
     """Generate PKL File. Ported out of bish.py which wasn't working."""
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
-        if self.gButton is not None: self.gButton.Destroy()
-        self.gButton = bitmapButton(window,
-            wx.ArtProvider.GetBitmap(wx.ART_UNDO,wx.ART_TOOLBAR,
-                (settings['bash.statusbar.iconSize'],
-                 settings['bash.statusbar.iconSize'])),
+        return self.createButton(
+            window,
+            Image(GPath(bosh.dirs['images'].join(u'pickle%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
             style=style,
-            tip=u'Generate PKL File',
-            onClick = self.Execute,
-            onRClick = self.DoPopupMenu)
-        return self.gButton
+            tip=_(u"Generate PKL File"))
 
     def Execute(self,event,fileName=None):
         """Updates map of GMST eids to fids in bash\db\Oblivion_ids.pkl, based either
