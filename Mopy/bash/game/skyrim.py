@@ -14618,6 +14618,18 @@ allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate'))
 #  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
 #  fix for an example of this (in the GMST Tweaks)
 GlobalsTweaks = [
+    (_(u'Timescale'),_(u'Timescale will be set to:'),
+        u'timescale',
+        (u'1',         1),
+        (u'8',         8),
+        (u'10',       10),
+        (u'12',       12),
+        (u'[20]',     20),
+        (u'24',       24),
+        (u'30',       30),
+        (u'40',       40),
+        (_(u'Custom'), 20),
+        ),
     ]
 
 #--GMST record tweaks used by bosh's GmstTweaker
@@ -16255,7 +16267,7 @@ def init():
     # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
     # re-executing all lines within the module, it acts like another 'import'
     # statement - in otherwords, nothing happens.  This means any lines that
-    # affect outside modules must do so withing this function, which will be
+    # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
     brec.ModReader.recHeader = RecordHeader
 
