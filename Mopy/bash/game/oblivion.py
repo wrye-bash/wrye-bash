@@ -1415,7 +1415,7 @@ GmstTweaks = [
         (_(u'Allow'),      1),
         (_(u'[Disallow]'), 0),
         ),
-    (_(u'Companions: Max Number'),_(u'Maximum number of actors following the player'),
+    (_(u'Companions: Max Number'),_(u'Maximum number of actors following the player.'),
         (u'iNumberActorsAllowedToFollowPlayer',),
         (u'2',         2),
         (u'4',         4),
