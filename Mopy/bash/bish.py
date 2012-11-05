@@ -757,22 +757,14 @@ def gmstIds(fileName=None):
     is dropped in Mopy directory."""
     #--Data base
     import cPickle
-    fids = cPickle.load(GPath(r'bash\db\Oblivion_ids.pkl').open('r'))['GMST']
+    fids = cPickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
     maxId = max(fids.values())
     maxId = max(maxId,0xf12345)
     maxOld = maxId
     print 'maxId',hex(maxId)
     #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing
     # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
-    for eid in ['iTrainingSkills','fRepairCostMult','fCrimeGoldSteal','iAllowAlchemyDuringCombat','iNumberActorsAllowedToFollowPlayer',
-                'iAllowRepairDuringCombat','iMaxPlayerSummonedCreatures','iAICombatMaxAllySummonCount','iAINumberActorsComplexScene',
-                'fHostileActorExteriorDistance','fHostileActorInteriorDistance','iVampirismAgeOffset','iRemoveExcessDeadCount',
-                'iRemoveExcessDeadTotalActorCount','iRemoveExcessDeadComplexTotalActorCount','iRemoveExcessDeadComplexCount',
-                'fRemoveExcessDeadTime','fRemoveExcessComplexDeadTime','iInventoryAskQuantityAt','iCrimeGoldPickpocket',
-                'iCrimeGoldTresspass','sBloodTextureDefault','sBloodTextureExtra1','sBloodTextureExtra2','sBloodParticleDefault',
-                'sBloodParticleExtra1','sBloodParticleExtra2','iAllyHitAllowed','sAutoSaving','sFloraFailureMessage',
-                'sFloraSuccessMessage','sQuickSaving','sFastTravelHorseatGate','sLoadingArea','sQuickLoading','sNoCharge',
-                'fAISocialchanceForConversationInterior',]:
+    for eid in bush.game.gmstEids:
         if eid not in fids:
             maxId += 1
             fids[eid] = maxId
@@ -794,8 +786,8 @@ def gmstIds(fileName=None):
     #--Changes?
     if maxId > maxOld:
         outData = {'GMST':fids}
-        cPickle.dump(outData,GPath(r'Oblivion_ids.pkl').open('w'))
-        print _(u"%d new gmst ids written to Oblivion_ids.pkl") % ((maxId - maxOld),)
+        cPickle.dump(outData,GPath(bush.game.pklfile).open('w'))
+        print _(u"%d new gmst ids written to "+bush.game.pklfile) % ((maxId - maxOld),)
 
 #------------------------------------------------------------------------------
 @mainfunc

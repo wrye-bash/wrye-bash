@@ -976,7 +976,7 @@ class List(wx.Panel):
                 selected.append(self.items[itemDex])
         return selected
 
-    def DeleteSelected(self):
+    def DeleteSelected(self,dontRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if items:
@@ -993,6 +993,9 @@ class List(wx.Panel):
                         if checks.IsChecked(i):
                             try:
                                 self.data.delete(mod)
+                                # Temporarily Track this file for BAIN, so BAIN will
+                                # update the status of its installers
+                                bosh.trackedInfos.track(bosh.dirs['mods'].join(mod))
                             except bolt.BoltError as e:
                                 balt.showError(self, _(u'%s') % e)
                 bosh.modInfos.plugins.refresh(True)
@@ -2001,7 +2004,7 @@ class ModList(List):
         """Char event: Delete, Reorder, Check/Uncheck."""
         ##Delete
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected()
+            self.DeleteSelected(event.ShiftDown())
         ##Ctrl+Up and Ctrl+Down
         elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
@@ -10408,7 +10411,7 @@ class Installer_OpenNexus(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        message = _(u"Attempt to open this as a mod at %{nexusName}s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %{nexusName}s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %{nexusName}s.") % {'nexusName':bush.game.nexusName}
+        message = _(u"Attempt to open this as a mod at %(nexusName)s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %(nexusName)s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %(nexusName)s.") % {'nexusName':bush.game.nexusName}
         if balt.askContinue(self.gTank,message, bush.game.nexusKey,_(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}):
             id = bosh.reTesNexus.search(self.selected[0].s).group(2)
             webbrowser.open(bush.game.nexusUrl+u'mods/'+id)
@@ -18188,6 +18191,60 @@ class App_Restart(StatusBar_Button):
         bashFrame.Restart()
 
 #------------------------------------------------------------------------------
+class App_GenPickle(StatusBar_Button):
+    """Generate PKL File. Ported out of bish.py which wasn't working."""
+    def GetBitmapButton(self,window,style=0):
+        if not self.id: self.id = wx.NewId()
+        return self.createButton(
+            window,
+            Image(GPath(bosh.dirs['images'].join(u'pickle%s.png'%settings['bash.statusbar.iconSize']))).GetBitmap(),
+            style=style,
+            tip=_(u"Generate PKL File"))
+
+    def Execute(self,event,fileName=None):
+        """Updates map of GMST eids to fids in bash\db\Oblivion_ids.pkl, based either
+        on a list of new eids or the gmsts in the specified mod file. Updated pkl file
+        is dropped in Mopy directory."""
+        #--Data base
+        import cPickle
+        fids = cPickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
+        if fids:
+            maxId = max(fids.values())
+        else:
+            maxId = 0
+        maxId = max(maxId,0xf12345)
+        maxOld = maxId
+        print 'maxId',hex(maxId)
+        #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing
+        # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
+        for eid in bush.game.gmstEids:
+            if eid not in fids:
+                maxId += 1
+                fids[eid] = maxId
+                print '%08X  %08X %s' % (0,maxId,eid)
+                #--Source file
+        if fileName:
+            init(3)
+            sorter = lambda a: a.eid
+            loadFactory = bosh.LoadFactory(False,bosh.MreGmst)
+            modInfo = bosh.modInfos[GPath(fileName)]
+            modFile = bosh.ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            for gmst in sorted(modFile.GMST.records,key=sorter):
+                print gmst.eid, gmst.value
+                if gmst.eid not in fids:
+                    maxId += 1
+                    fids[gmst.eid] = maxId
+                    print '%08X  %08X %s' % (gmst.fid,maxId,gmst.eid)
+        #--Changes?
+        if maxId > maxOld:
+            outData = {'GMST':fids}
+            cPickle.dump(outData,GPath(bush.game.pklfile).open('w'))
+            print _(u"%d new gmst ids written to "+bush.game.pklfile) % ((maxId - maxOld),)
+        else:
+            print _(u'No changes necessary. PKL data unchanged.')
+
+#------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
@@ -18545,11 +18602,11 @@ def InitStatusBar():
             imageList(u'tools/tes4edit%s.png'),
             _(u"Launch TES5Edit"),
             uid=u'TES5Edit'))
-    BashStatusBar.buttons.append( #Tes5Gecko
+    BashStatusBar.buttons.append( #TesVGecko
         App_Button( (bosh.tooldirs['Tes5GeckoPath']),
             imageList(u'tools/tesvgecko%s.png'),
-            _(u"Launch Tes5Gecko"),
-            uid=u'Tes5Gecko'))
+            _(u"Launch TesVGecko"),
+            uid=u'TesVGecko'))
     BashStatusBar.buttons.append( #Tes4Trans
         App_Tes4View(
             (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
@@ -18976,7 +19033,8 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
     if bosh.inisettings['ShowDevTools']:
-        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))   
+        BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
+        BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
 def InitMasterLinks():
     """Initialize master list menus."""
