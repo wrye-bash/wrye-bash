@@ -16248,15 +16248,11 @@ class MreMisc(MelRecord):
 
 # If VMAD correct then Verified Correct for Skyrim
 #------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Contains VMAD Can't be merged at this time:
-# MreActi, MreAppa, MreMisc, MreArmo
-#
 #--Mergeable record types
 mergeClasses = (
-    MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, 
-    MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln, 
-    MreLvsp, MreMisc,
+        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
+        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
+        MreLvsp, MreMisc,
     )
 
 #--Extra read/write classes
