@@ -15407,7 +15407,7 @@ class MelVmad(MelBase):
                 self.fragments = None
                 self.aliases = None
 
-        def dumpData(self,record,out):
+        def dumpData(self,record):
             structPack = struct.pack
             # Header
             data = structPack('=3H',4,1,len(self.scripts)) # vmad version, object format, script count
@@ -15426,8 +15426,7 @@ class MelVmad(MelBase):
                     data += structPack('=H',2,len(aliases))
                     for alias in aliases:
                         data += alias.dumpData()
-            # Write
-            out.packSub(self.subType,data)
+            return data
 
         def mapFids(self,record,function,save=False):
             for script in self.scripts:
@@ -15460,7 +15459,8 @@ class MelVmad(MelBase):
         """Dumps data from record to outstream"""
         vmad = record.__getattribute__(self.attr)
         if vmad is None: return
-        vmad.dumpData(record,out)
+        # Write
+        out.packSub(self.subType,vmad.dumpData(record))
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids.  If save is true, then fid is set
