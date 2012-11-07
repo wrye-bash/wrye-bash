@@ -22927,10 +22927,12 @@ class GlobalsTweak(MultiTweakItem):
         """Build patch."""
         value = self.choiceValues[self.chosen][0]
         for record in patchFile.GLOB.records:
-            if record.eid.lower() == self.key:
-                if record.value != value:
-                    record.value = value
-                    keep(record.fid)
+            if hasattr(record,'eid'):
+                if record.eid.lower() == self.key:
+                    if record.value != value:
+                        record.value = value
+                        keep(record.fid)
+                    break
         log(u'* '+_(u'%s set to: %4.2f') % (self.label,value))
 
 class CBash_GlobalsTweak(CBash_MultiTweakItem):
