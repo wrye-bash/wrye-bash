@@ -22926,7 +22926,6 @@ class GlobalsTweak(MultiTweakItem):
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         value = self.choiceValues[self.chosen][0]
-        print 'self.key:', self.key
         for record in patchFile.GLOB.records:
             if hasattr(record,'eid'):
                 if record.eid.lower() == self.key:
