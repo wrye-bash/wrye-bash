@@ -11890,7 +11890,7 @@ class Mods_DumpTranslator(Link):
                                                      u'cint',
                                                      u'ScriptParser')]
         # Include Game files
-        files.extend([bashPath.join(x) for x in bosh.dirs['mopy'].join(u'bash','game').list() if x.cext == u'.py' and x != u'__init__.py'])
+        files.extend([bashPath.join(x).s for x in bosh.dirs['mopy'].join(u'bash','game').list() if x.cext == u'.py' and x != u'__init__.py'])
         with balt.BusyCursor():
             outFile = bolt.dumpTranslator(outPath.s,language,*files)
         balt.showOk(self.window,
