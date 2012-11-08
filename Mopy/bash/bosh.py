@@ -5081,7 +5081,7 @@ class ModInfos(FileInfos):
         if hasChanged:
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
-        hasChanged += self.plugins.refresh()
+        hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
