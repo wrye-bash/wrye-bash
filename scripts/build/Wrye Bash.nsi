@@ -163,7 +163,7 @@
         ReadRegStr $Reg_Value_Ex2_Py     HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
         ReadRegStr $Reg_Value_OB_Exe     HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
         ReadRegStr $Reg_Value_Nehrim_Exe HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
-        ReadRegStr $Reg_Value_Skyrim_Exe HKLM "Software\Wrye Bash" "Skyrim Standalond Version"
+        ReadRegStr $Reg_Value_Skyrim_Exe HKLM "Software\Wrye Bash" "Skyrim Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe    HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe    HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
     FunctionEnd
@@ -298,7 +298,7 @@
                 ${NSD_SetState} $Check_OB_Exe  $CheckState_OB_Exe
             ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_OB_Py
-                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
+;                ${NSD_SetState} $Check_OB_Py  $CheckState_OB_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_OB"
                 Pop $PathDialogue_OB
@@ -317,7 +317,7 @@
                 ${NSD_SetState} $Check_Nehrim_Exe  $CheckState_Nehrim_Exe
             ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_Nehrim_Py
-                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
+;                ${NSD_SetState} $Check_Nehrim_Py  $CheckState_Nehrim_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Nehrim"
                 Pop $PathDialogue_Nehrim
@@ -336,7 +336,7 @@
                 ${NSD_SetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
             ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                 Pop $Check_Skyrim_Py
-                ${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
+;                ${NSD_SetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Skyrim"
                 Pop $PathDialogue_Skyrim
@@ -359,7 +359,7 @@
                     ${NSD_SetState} $Check_Ex1_Exe  $CheckState_Ex1_Exe
                 ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex1_Py
-                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
+;                    ${NSD_SetState} $Check_Ex1_Py  $CheckState_Ex1_Py
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex1"
                     Pop $PathDialogue_Ex1
@@ -376,7 +376,7 @@
                     ${NSD_SetState} $Check_Ex2_Exe  $CheckState_Ex2_Exe
                 ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
                     Pop $Check_Ex2_Py
-                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
+;                    ${NSD_SetState} $Check_Ex2_Py  $CheckState_Ex2_Py
                 IntOp $0 $0 + 13
                 ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Ex2"
                     Pop $PathDialogue_Ex2
