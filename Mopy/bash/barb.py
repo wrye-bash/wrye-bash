@@ -234,8 +234,8 @@ class BackupSettings(BaseBackupSettings):
         if basher.settings['bash.version'] == 0: return False
         return not self.SameAppVersion() and self.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
-            _(u'Previous Version: ')+basher.settings['bash.version']+u'\n' +
-            _(u'Current Version: ')+self.verApp+u'\n'+
+            _(u'Previous Version: ')+(u'%s\n' % basher.settings['bash.version']) +
+            _(u'Current Version: ')+(u'%s\n' % self.verApp) +
             _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
     def PromptContinue(self):
