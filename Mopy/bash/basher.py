@@ -3931,7 +3931,7 @@ class InstallersPanel(SashTankPanel):
             else:
                 return u''
         if pageName == 'gGeneral':
-            info = _(u'== Overview')+u'\n'
+            info = u'== '+_(u'Overview')+u'\n'
             info += _(u'Type: ')
             if isinstance(installer,bosh.InstallerProject):
                 info += _(u'Project')
@@ -3993,7 +3993,7 @@ class InstallersPanel(SashTankPanel):
             info += '\n'
             #--Infoboxes
             gPage.SetValue(info+dumpFiles(installer,installer.data_sizeCrc,sNone,
-                _(u'== Configured Files'),isPath=True))
+                u'== '+_(u'Configured Files'),isPath=True))
         elif pageName == 'gMatched':
             gPage.SetValue(dumpFiles(installer,set(installer.data_sizeCrc)
                 - installer.missingFiles - installer.mismatchedFiles,isPath=True))
@@ -4009,8 +4009,8 @@ class InstallersPanel(SashTankPanel):
             gPage.SetValue(dumpFiles(installer,installer.dirty_sizeCrc,isPath=True))
         elif pageName == 'gSkipped':
             gPage.SetValue(u'\n'.join((
-                dumpFiles(installer,installer.skipExtFiles,sNone,_(u'== Skipped (Extension)')),
-                dumpFiles(installer,installer.skipDirFiles,sNone,_(u'== Skipped (Dir)')),
+                dumpFiles(installer,installer.skipExtFiles,sNone,u'== '+_(u'Skipped (Extension)')),
+                dumpFiles(installer,installer.skipDirFiles,sNone,u'== '+_(u'Skipped (Dir)')),
                 )) or sNone)
 
     #--Config
@@ -11874,20 +11874,24 @@ class Mods_DumpTranslator(Link):
             return
         language = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         outPath = bosh.dirs['l10n']
-        files = [GPath(u'bash').join(x+u'.py').s for x in (u'bolt',
-                                                           u'balt',
-                                                           u'bush',
-                                                           u'bosh',
-                                                           u'bash',
-                                                           u'basher',
-                                                           u'bashmon',
-                                                           u'belt',
-                                                           u'bish',
-                                                           u'barg',
-                                                           u'barb',
-                                                           u'bass',
-                                                           u'cint',
-                                                           u'ScriptParser')]
+        bashPath = GPath(u'bash')
+        files = [bashPath.join(x+u'.py').s for x in (u'bolt',
+                                                     u'balt',
+                                                     u'bush',
+                                                     u'bosh',
+                                                     u'bash',
+                                                     u'basher',
+                                                     u'bashmon',
+                                                     u'belt',
+                                                     u'bish',
+                                                     u'barg',
+                                                     u'barb',
+                                                     u'bass',
+                                                     u'cint',
+                                                     u'ScriptParser')]
+        # Include Game files
+        bashPath = bashPath.join(u'game')
+        files.extend([bashPath.join(x).s for x in bosh.dirs['mopy'].join(u'bash','game').list() if x.cext == u'.py' and x != u'__init__.py'])
         with balt.BusyCursor():
             outFile = bolt.dumpTranslator(outPath.s,language,*files)
         balt.showOk(self.window,

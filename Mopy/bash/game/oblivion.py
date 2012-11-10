@@ -2036,7 +2036,7 @@ class MreHasEffects:
                 else:
                     effectName = mgef_name[effect.name]
                     if effect.name in avEffects:
-                        effectName = re.sub(_('u(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                        effectName = re.sub(_u('(Attribute|Skill)'),aValues[effect.actorValue],effectName)
                 buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
                 if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
                 if effect.area: buffWrite(u' %sa'%effect.area)
