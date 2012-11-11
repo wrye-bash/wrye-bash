@@ -16535,7 +16535,7 @@ class MelBipedObjectData(MelStruct):
         ))
 
     def __init__(self):
-        MelStruct.__init__(self,'BOD2','=2I',(BipedFlags,'bipedFlags',0L),(ArmorTypeFlags,'armorFlags',0L))
+        MelStruct.__init__(self,'BOD2','=2I',(MelBipedObjectData.BipedFlags,'bipedFlags',0L),(MelBipedObjectData.ArmorTypeFlags,'armorFlags',0L))
 
     def getLoaders(self,loaders):
         # Loads either old style BODT or new style BOD2 records
@@ -16548,8 +16548,8 @@ class MelBipedObjectData(MelStruct):
             bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
             # legacyData is discarded
             setter = record.__setattr__
-            setter('bipedFlags',BipedFlags(bipedFlags))
-            setter('armorFlags',ArmorTypeFlags(armorFlags))
+            setter('bipedFlags',MelBipedObjectData.BipedFlags(bipedFlags))
+            setter('armorFlags',MelBipedObjectData.ArmorTypeFlags(armorFlags))
         else:
             # BOD2 - new style, MeStruct can handle it
             MelStruct.loadData(self,record,ins,type,size,readId)
