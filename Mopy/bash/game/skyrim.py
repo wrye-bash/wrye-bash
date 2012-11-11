@@ -16482,11 +16482,9 @@ class MreAddn(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-class MreArma(MelRecord):
-    """Armor addon?"""
-    classType = 'ARMA'
-
-    ArmaBipedObjectFlags = bolt.Flags(0L,bolt.Flags.getNames(
+class MelBipedObjectData(MelStruct):
+    """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
+    BipedFlags = bolt.Flags(0L,bolt.Flags.getNames(
             (0, 'head'),
             (1, 'hair'),
             (2, 'body'),
@@ -16497,7 +16495,7 @@ class MreArma(MelRecord):
             (7, 'feet'),
             (8, 'calves'),
             (9, 'shield'),
-            (10, 'bodyaddon1/tail'),
+            (10, 'bodyaddon1_tail'),
             (11, 'long_hair'),
             (12, 'circlet'),
             (13, 'bodyaddon2'),
@@ -16521,24 +16519,49 @@ class MreArma(MelRecord):
             (31, 'fx01'),
         ))
 
-    ArmaOtherFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'modulates_voice'), #{>>> From ARMA <<<}
-            (1, 'unknown_2'),
-            (2, 'unknown_3'),
-            (3, 'unknown_4'),
-            (4, 'non_playable'), #{>>> From ARMO <<<}
+    ## Legacy Flags, not needed anymore (For BODT subrecords)
+    #OtherFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    #        (0, 'modulates_voice'), #{>>> From ARMA <<<}
+    #        (1, 'unknown_2'),
+    #        (2, 'unknown_3'),
+    #        (3, 'unknown_4'),
+    #        (4, 'non_playable'), #{>>> From ARMO <<<}
+    #    ))
+
+    ArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'light_armor'),
+        (1, 'heavy_armor'),
+        (2, 'clothing'),
         ))
 
-    ArmaArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'Light Armor'),
-        (1, 'Heavy Armor'),
-        (2, 'Clothing'),
-        ))
+    def __init__(self):
+        MelStruct.__init__(self,'BOD2','=2I',(BipedFlags,'bipedFlags',0L),(ArmorTypeFlags,'armorFlags',0L))
+
+    def getLoaders(self,loaders):
+        # Loads either old style BODT or new style BOD2 records
+        loaders['BOD2'] = self
+        loaders['BODT'] = self
+
+    def loadData(self,record,ins,type,size,readId):
+        if type == 'BODT':
+            # Old record type, use alternate loading routine
+            bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
+            # legacyData is discarded
+            setter = record.__setattr__
+            setter('bipedFlags',BipedFlags(bipedFlags))
+            setter('armorFlags',ArmorTypeFlags(armorFlags))
+        else:
+            # BOD2 - new style, MeStruct can handle it
+            MelStruct.loadData(self,record,ins,type,size,readId)
+
+#------------------------------------------------------------------------------
+class MreArma(MelRecord):
+    """Armor addon?"""
+    classType = 'ARMA'
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelOptStruct('BODT','3I',(ArmaBipedObjectFlags,'armaBipedFlagsBODT',0L),(ArmaOtherFlags,'armaOtherFlagsBODT',0L),(ArmaArmorTypeFlags,'armaArmorTypeFlagsBODT',0L)),
-        MelOptStruct('BOD2','2I',(ArmaBipedObjectFlags,'armaBipedFlags',0L),(ArmaArmorTypeFlags,'armaArmorTypeFlags',0L)),
+        MelBipedObjectData(),
         MelFid('RNAM','race'),
         MelBase('DNAM','dnam_p'),
         MelModel('male_model','MOD2'),
@@ -16561,55 +16584,6 @@ class MreArmo(MelRecord):
     """Armor"""
     classType = 'ARMO'
 
-    ArmoBipedObjectFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'head'),
-            (1, 'hair'),
-            (2, 'body'),
-            (3, 'hands'),
-            (4, 'forearms'),
-            (5, 'amulet'),
-            (6, 'ring'),
-            (7, 'feet'),
-            (8, 'calves'),
-            (9, 'shield'),
-            (10, 'bodyaddon1/tail'),
-            (11, 'long_hair'),
-            (12, 'circlet'),
-            (13, 'bodyaddon2'),
-            (14, 'dragon_head'),
-            (15, 'dragon_lwing'),
-            (16, 'dragon_rwing'),
-            (17, 'dragon_body'),
-            (18, 'bodyaddon7'),
-            (19, 'bodyaddon8'),
-            (20, 'decapate_head'),
-            (21, 'decapate'),
-            (22, 'bodyaddon9'),
-            (23, 'bodyaddon10'),
-            (24, 'bodyaddon11'),
-            (25, 'bodyaddon12'),
-            (26, 'bodyaddon13'),
-            (27, 'bodyaddon14'),
-            (28, 'bodyaddon15'),
-            (29, 'bodyaddon16'),
-            (30, 'bodyaddon17'),
-            (31, 'fx01'),
-        ))
-
-    ArmoOtherFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'modulates_voice'), #{>>> From ARMA <<<}
-            (1, 'unknown_2'),
-            (2, 'unknown_3'),
-            (3, 'unknown_4'),
-            (4, 'non_playable'), #{>>> From ARMO <<<}
-        ))
-
-    ArmoArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'Light Armor'),
-        (1, 'Heavy Armor'),
-        (2, 'Clothing'),
-        ))
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -16623,8 +16597,7 @@ class MreArmo(MelRecord):
         MelModel('model3','MOD4'),
         MelString('ICO2','ico2_n'),
         MelString('MIC2','mic2_n'),
-        MelOptStruct('BODT','3I',(ArmoBipedObjectFlags,'armoBipedFlagsBODT',0L),(ArmoOtherFlags,'armoOtherFlagsBODT',0L),(ArmoArmorTypeFlags,'armoArmorTypeFlagsBODT',0L)),
-        MelOptStruct('BOD2','2I',(ArmoBipedObjectFlags,'armoBipedFlags',0L),(ArmoArmorTypeFlags,'armoArmorTypeFlags',0L)),
+        MelBipedObjectData(),
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
