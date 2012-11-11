@@ -16573,8 +16573,8 @@ class MreArma(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelOptStruct('BODT','3I',(ArmaBipedObjectFlags,'flags',0L),(ArmaOtherFlags,'flags',0L),(ArmaArmorTypeFlags,'flags',0L)),
-        MelOptStruct('BOD2','2I',(ArmaBipedObjectFlags,'flags',0L),(ArmaArmorTypeFlags,'flags',0L)),
+        MelOptStruct('BODT','3I',(ArmaBipedObjectFlags,'armaBipedFlagsBODT',0L),(ArmaOtherFlags,'armaOtherFlagsBODT',0L),(ArmaArmorTypeFlags,'armaArmorTypeFlagsBODT',0L)),
+        MelOptStruct('BOD2','2I',(ArmaBipedObjectFlags,'armaBipedFlags',0L),(ArmaArmorTypeFlags,'armaArmorTypeFlags',0L)),
         MelFid('RNAM','race'),
         MelBase('DNAM','dnam_p'),
         MelAltModel('male_model','MOD2'),
@@ -16659,8 +16659,8 @@ class MreArmo(MelRecord):
         MelAltModel('model3','MOD4'),
         MelString('ICO2','ico2_n'),
         MelString('MIC2','mic2_n'),
-        MelOptStruct('BODT','3I',(ArmoBipedObjectFlags,'flags',0L),(ArmoOtherFlags,'flags',0L),(ArmoArmorTypeFlags,'flags',0L)),
-        MelOptStruct('BOD2','2I',(ArmoBipedObjectFlags,'flags',0L),(ArmoArmorTypeFlags,'flags',0L)),
+        MelOptStruct('BODT','3I',(ArmoBipedObjectFlags,'armoBipedFlagsBODT',0L),(ArmoOtherFlags,'armoOtherFlagsBODT',0L),(ArmoArmorTypeFlags,'armoArmorTypeFlagsBODT',0L)),
+        MelOptStruct('BOD2','2I',(ArmoBipedObjectFlags,'armoBipedFlags',0L),(ArmoArmorTypeFlags,'armoArmorTypeFlags',0L)),
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
