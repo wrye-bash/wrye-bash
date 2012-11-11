@@ -16232,6 +16232,7 @@ class MelMODS(MelBase):
             if save: record.__setattr__(attr,data)
 
 #-------------------------------------------------------------------------------
+# Not used after CK version 1.8
 class MelBODT(MelStruct):
     """Body Type data"""
     btFlags = bolt.Flags(0L,bolt.Flags.getNames(
@@ -16435,7 +16436,7 @@ class MreAact(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
     """Activator."""
@@ -16464,7 +16465,7 @@ class MreActi(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreAddn(MelRecord):
     """Addon"""
@@ -16479,14 +16480,65 @@ class MreAddn(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
     """Armor addon?"""
     classType = 'ARMA'
+
+    ArmaBipedObjectFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'head'),
+            (1, 'hair'),
+            (2, 'body'),
+            (3, 'hands'),
+            (4, 'forearms'),
+            (5, 'amulet'),
+            (6, 'ring'),
+            (7, 'feet'),
+            (8, 'calves'),
+            (9, 'shield'),
+            (10, 'bodyaddon1/tail'),
+            (11, 'long_hair'),
+            (12, 'circlet'),
+            (13, 'bodyaddon2'),
+            (14, 'dragon_head'),
+            (15, 'dragon_lwing'),
+            (16, 'dragon_rwing'),
+            (17, 'dragon_body'),
+            (18, 'bodyaddon7'),
+            (19, 'bodyaddon8'),
+            (20, 'decapate_head'),
+            (21, 'decapate'),
+            (22, 'bodyaddon9'),
+            (23, 'bodyaddon10'),
+            (24, 'bodyaddon11'),
+            (25, 'bodyaddon12'),
+            (26, 'bodyaddon13'),
+            (27, 'bodyaddon14'),
+            (28, 'bodyaddon15'),
+            (29, 'bodyaddon16'),
+            (30, 'bodyaddon17'),
+            (31, 'fx01'),
+        ))
+
+    ArmaOtherFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'modulates_voice'), #{>>> From ARMA <<<}
+            (1, 'unknown_2'),
+            (2, 'unknown_3'),
+            (3, 'unknown_4'),
+            (4, 'non_playable'), #{>>> From ARMO <<<}
+        ))
+
+    ArmaArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Light Armor'),
+        (1, 'Heavy Armor'),
+        (2, 'Clothing'),
+        ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelBODT(),
+        MelOptStruct('BODT','3I',(ArmaBipedObjectFlags,'flags',0L),(ArmaOtherFlags,'flags',0L),(ArmaArmorTypeFlags,'flags',0L)),
+        MelOptStruct('BOD2','2I',(ArmaBipedObjectFlags,'flags',0L),(ArmaArmorTypeFlags,'flags',0L)),
         MelFid('RNAM','race'),
         MelBase('DNAM','dnam_p'),
         MelModel('male_model','MOD2'),
@@ -16503,11 +16555,61 @@ class MreArma(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
     """Armor"""
     classType = 'ARMO'
+
+    ArmoBipedObjectFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'head'),
+            (1, 'hair'),
+            (2, 'body'),
+            (3, 'hands'),
+            (4, 'forearms'),
+            (5, 'amulet'),
+            (6, 'ring'),
+            (7, 'feet'),
+            (8, 'calves'),
+            (9, 'shield'),
+            (10, 'bodyaddon1/tail'),
+            (11, 'long_hair'),
+            (12, 'circlet'),
+            (13, 'bodyaddon2'),
+            (14, 'dragon_head'),
+            (15, 'dragon_lwing'),
+            (16, 'dragon_rwing'),
+            (17, 'dragon_body'),
+            (18, 'bodyaddon7'),
+            (19, 'bodyaddon8'),
+            (20, 'decapate_head'),
+            (21, 'decapate'),
+            (22, 'bodyaddon9'),
+            (23, 'bodyaddon10'),
+            (24, 'bodyaddon11'),
+            (25, 'bodyaddon12'),
+            (26, 'bodyaddon13'),
+            (27, 'bodyaddon14'),
+            (28, 'bodyaddon15'),
+            (29, 'bodyaddon16'),
+            (30, 'bodyaddon17'),
+            (31, 'fx01'),
+        ))
+
+    ArmoOtherFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'modulates_voice'), #{>>> From ARMA <<<}
+            (1, 'unknown_2'),
+            (2, 'unknown_3'),
+            (3, 'unknown_4'),
+            (4, 'non_playable'), #{>>> From ARMO <<<}
+        ))
+
+    ArmoArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Light Armor'),
+        (1, 'Heavy Armor'),
+        (2, 'Clothing'),
+        ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -16521,7 +16623,8 @@ class MreArmo(MelRecord):
         MelModel('model3','MOD4'),
         MelString('ICO2','ico2_n'),
         MelString('MIC2','mic2_n'),
-        MelBODT(),
+        MelOptStruct('BODT','3I',(ArmoBipedObjectFlags,'flags',0L),(ArmoOtherFlags,'flags',0L),(ArmoArmorTypeFlags,'flags',0L)),
+        MelOptStruct('BOD2','2I',(ArmoBipedObjectFlags,'flags',0L),(ArmoArmorTypeFlags,'flags',0L)),
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
@@ -16545,7 +16648,7 @@ class MreArmo(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
@@ -16580,7 +16683,7 @@ class MreAmmo(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
     """Anio record (Animated Object)"""
@@ -16588,11 +16691,11 @@ class MreAnio(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
-        MelString('BNAM','unk'),
+        MelString('BNAM','unloadEvent'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreAppa(MelRecord):
     """Appa record (Alchemical Apparatus)"""
@@ -16627,7 +16730,7 @@ class MreAppa(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
     """Arto record (Art effect object)"""
@@ -16650,7 +16753,7 @@ class MreArto(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
     """Aspc record (Acoustic Space)"""
@@ -16664,11 +16767,10 @@ class MreAspc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreAstp(MelRecord):
     """Astp record (Association type)"""
-
     classType = 'ASTP'
 
     # DATA Flags
@@ -16685,13 +16787,12 @@ class MreAstp(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
     isKeyedByEid = True # NULL fids are acceptible
-
 
     class MelCobjCnto(MelGroups):
         def __init__(self):
@@ -16716,14 +16817,14 @@ class MreCobj(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
@@ -16740,7 +16841,7 @@ class MreLeveledList(MreLeveledListBase):
 
     __slots__ = MreLeveledListBase.__slots__
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     classType = 'LVLI'
@@ -16757,7 +16858,7 @@ class MreLvli(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
@@ -16775,7 +16876,7 @@ class MreLvln(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
@@ -16791,7 +16892,7 @@ class MreLvsp(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
@@ -16818,7 +16919,7 @@ class MreMisc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# If VMAD correct then Verified Correct for Skyrim
+# If VMAD correct then Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
