@@ -636,11 +636,11 @@ NoComTypes:
                     IntOp $0 $0 + 11
                 ${EndIf}
                 ${If} $Python_pywin32 == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 217"
+                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 218"
                         Pop $Check_pywin32
                         ${NSD_SetState} $Check_pywin32 ${BST_CHECKED}
                     IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;https://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/
+                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;https://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/
                         Pop $Link_pywin32
                         ${NSD_OnClick} $Link_pywin32 onClick_Link
                     IntOp $0 $0 + 11
@@ -739,7 +739,7 @@ NoComTypes:
                 SetOutPath "$TEMP\PythonInstallers"
                 ${NSD_GetText} $Check_pywin32 $0
                 ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20217/pywin32-217.win32-py2.7.exe?r=&ts=1339283717&use_mirror=dfn "$TEMP\PythonInstallers\pywin32.exe"
+                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe?r=&ts=1352752073&use_mirror=iweb "$TEMP\PythonInstallers\pywin32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
@@ -1472,7 +1472,7 @@ NoComTypes:
         ${ElseIf} $0 == $Link_Python
             ExecShell "open" "http://www.python.org/download/releases/2.7.3/"
         ${ElseIf} $0 == $Link_pywin32
-            ExecShell "open" "https://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/"
+            ExecShell "open" "https://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/"
         ${ElseIf} $0 == $Link_vcredist
             ExecShell "open" "http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2"
         ${EndIf}
