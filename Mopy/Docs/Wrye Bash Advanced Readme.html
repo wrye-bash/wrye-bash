@@ -233,7 +233,7 @@
         <tr><th colspan="3">Column Header Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td rowspan="7">Sort By<td>Sort By Active<td>Active installers will be sorted to the top.
+        <tr><td rowspan="7" id="bainSortBy">Sort By<td>Sort By Active<td>Active installers will be sorted to the top.
         <tr><td>Projects First<td>If this is checked, then project packages will be sorted to the top of the list.
         <tr><td>Package<td>Sort packages by package name.
         <tr><td>Order<td>Sort packages by install order.
@@ -245,14 +245,15 @@
         <tr><td>Modified<td>Display the (date) Modified column.
         <tr><td>Size<td>Display the Size column.
         <tr><td>Files<td>Display the (number of) Files column.
-        <tr><td colspan="2">Open...<td>Opens the Installers directory in Windows Explorer.
-        <tr><td colspan="2">Refresh Data<td>Re-scans the Data directory and all project directories. This is done once per run of Wrye Bash, when the Installers tab is first opened. If you manually alter the directories after that, you should run this command to update BAIN to reflect the changes.
-        <tr><td colspan="2">Full Refresh<td>This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
-        <tr><td colspan="2">Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
-        <tr><td colspan="2">Create New Project...<td>Displays a dialog that allows you to create a new project and select some starting files for it.
-        <tr><td colspan="2">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
+        <tr><td colspan="2" id="bainOpenDir">Open...<td>Opens the Installers directory in Windows Explorer.
+        <tr><td colspan="2" id="bainRefreshData">Refresh Data<td>Re-scans the Data directory and all project directories. This is done once per run of Wrye Bash, when the Installers tab is first opened. If you manually alter the directories after that, you should run this command to update BAIN to reflect the changes.
+        <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
+        <tr><td colspan="2" id="bainAddMarker">Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
+        <tr><td colspan="2" id="bainCreateNewProject">Create New Project...<td>Displays a dialog that allows you to create a new project and select some starting files for it.
+		<tr><td colspan="2" id="bainMonitorExternalInstallation">Monitor External Installation...<td>When you absolutely cannot install a mod via BAIN, you can put BAIN into Monitor Mode using this command.  It will scan the Data folder before and after you install the mod, then provide an option to create a Project from the changes it detects.
+        <tr><td colspan="2" id="bainListPackages">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
         <tr><td colspan="2" id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
-        <tr><td colspan="2">Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
+        <tr><td colspan="2" id="bainUnhide">Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
         <tr><td colspan="2" id="bainUninstallAll">Uninstall All Packages<td>Uninstalls all the packages in the package list.
         <tr><td colspan="2" id="bainCleanData">Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
             <ul>
@@ -262,68 +263,68 @@
                 <li>Installed BAIN packages.
             </ul>
         The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
-        <tr><td colspan="2">Avoid At Startup<td>Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you should enable this.
+        <tr><td colspan="2" id="bainAvoidAtStartup">Avoid At Startup<td>Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you should enable this.
         <tr><td colspan="2" id="bainEnabled">Enabled<td>This enables/disables Bain itself. Preferred setting: Enabled (checked).
         <tr><td colspan="2" id="bainAutoAnneal">Auto-Anneal<td>Toggles the auto-anneal process on/off. Preferred setting: enabled.
-        <tr><td colspan="2">Auto-Anneal/Install Wizards<td>Toggles whether or not to automatically install/anneal a package when finished with its wizard.
+        <tr><td colspan="2" id="bainAutoAnnealInstallWizards">Auto-Anneal/Install Wizards<td>Toggles whether or not to automatically install/anneal a package when finished with its wizard.
         <tr><td colspan="2" id="bainAutoRefreshProjects">Auto-Refresh Projects<td>Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
-        <tr><td colspan="2">Auto-Refresh BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Enabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed. Preferred setting: disabled.
-        <tr><td colspan="2">Auto-Apply Embedded BCFs<td class="missing">This item has not yet been documented.
-        <tr><td colspan="2">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
-        <tr><td colspan="2">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
+        <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
+        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td class="missing">This item has not yet been documented.
+        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+        <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
-        <tr><td colspan="2">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
+        <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
         <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td><i>Oblivion only.</i> If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed.
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
-        <tr><td colspan="2">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
-        <tr><td colspan="2">Skip Images<td>If checked, image files will be skipped.
-        <tr><td colspan="2">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
-        <tr><td colspan="2">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
-        <tr><td colspan="2">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
-        <tr><td colspan="2">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
-        <tr><td colspan="2">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td colspan="2">Auto-name String Translation Files<td class="missing"><i>Skyrim only.</i> This item has not yet been documented.
+        <tr><td colspan="2" id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
+        <tr><td colspan="2" id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
+        <tr><td colspan="2" id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
+        <tr><td colspan="2" id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
+        <tr><td colspan="2" id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
+        <tr><td colspan="2" id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
+        <tr><td colspan="2" id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td class="missing"><i>Skyrim only.</i> This item has not yet been documented.
 </table>
 <table id="bainPackageCommands">
     <thead>
         <tr><th colspan="3">Package Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td colspan="2">Open...<td>Opens the selected package(s) in the file system.
-        <tr><td colspan="2">Duplicate...<td>Makes a duplicate of the selected package(s).
-        <tr><td colspan="2">Delete<td>Deletes the selected package(s). Deleted packages are <b>not</b> sent to the Recycling Bin, they are permanently deleted.
-        <tr><td rowspan="5">Open at<td>Google...<td>Attempts to perform a Google search for the selected package's name.
+        <tr><td colspan="2" id="bainOpenFile">Open...<td>Opens the selected package(s) in the file system.
+        <tr><td colspan="2" id="bainDuplicate">Duplicate...<td>Makes a duplicate of the selected package(s).
+        <tr><td colspan="2" id="bainDelete">Delete<td>Deletes the selected package(s). Deleted packages are <b>not</b> sent to the Recycling Bin, they are permanently deleted.
+        <tr><td rowspan="5" id="bainOpenAt">Open at<td>Google...<td>Attempts to perform a Google search for the selected package's name.
         <tr><td>TES Nexus...<td>Attempts to open the selected package's page on TES Nexus.  This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td>Skyrim Nexus...<td>Attempts to open the selected package's page on Skyrim Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td>TES Alliance...<td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td>Planet Elderscrolls...<td>Attempts to open the selected package's page on Planet Elderscrolls. This command assumes that the trailing digits in a package's name is the package ID at the site.
-        <tr><td colspan="2">Hide...<td>Hides the package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
-        <tr><td colspan="2">Rename...<td>Renames the selected package or marker.
-        <tr><td colspan="2">Refresh<td>Refreshes all info for the selected package(s). Since BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie. you select another program's window, then switch back to Wrye Bash), this is only useful if a package has been changed and it has <a href="#bainDontRefresh">Don't Refresh</a> selected, or the <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled. Note that scanning a project for changes takes much longer than scanning an archive for changes.
-        <tr><td colspan="2">Move To...<td>Moves the selected package(s) to the specified position.
+        <tr><td colspan="2" id="bainHide">Hide...<td>Hides the package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
+        <tr><td colspan="2" id="bainRename">Rename...<td>Renames the selected package or marker.
+        <tr><td colspan="2" id="bainRefresh">Refresh<td>Refreshes all info for the selected package(s). Since BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie. you select another program's window, then switch back to Wrye Bash), this is only useful if a package has been changed and it has <a href="#bainDontRefresh">Don't Refresh</a> selected, or the <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled. Note that scanning a project for changes takes much longer than scanning an archive for changes.
+        <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
         <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
-        <tr><td colspan="2">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to the Skip XX options.
-        <tr><td colspan="2">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
+        <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to the Skip XX options.
+        <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
         <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing Projects, this package won't get refreshed. The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.
-        <tr><td colspan="2">Wizard<td>Runs the Wizard for the package, if it has one.
-        <tr><td colspan="2">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
-        <tr><td colspan="2">View Wizard...<td>Opens the wizard.txt for viewing.
-        <tr><td colspan="2">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
+        <tr><td colspan="2" id="bainWizard">Wizard<td>Runs the Wizard for the package, if it has one.
+        <tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
+        <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.
+        <tr><td colspan="2" id="bainOpenReadme">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
         <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors.
-        <tr><td colspan="2">Install<td>Fully installs the package except for files that would be overriden by later packages.
-        <tr><td colspan="2">Install Last<td>Moves the package to the end of the order list and installs it.
-        <tr><td colspan="2">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
-        <tr><td colspan="2">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overriden will be installed as required.
-        <tr><td rowspan="2">Conversions<td>Create...<td>Archives only. Creates a new Bain Conversion File.
+        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overriden by later packages.
+        <tr><td colspan="2" id="bainInstallLast">Install Last<td>Moves the package to the end of the order list and installs it.
+        <tr><td colspan="2" id="bainInstallMissing">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
+        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overriden will be installed as required.
+        <tr><td rowspan="2" id="bainConversion">Conversions<td>Create...<td>Archives only. Creates a new Bain Conversion File.
         <tr><td>Apply->[BCF]<td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.
-        <tr><td colspan="2">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
+        <tr><td colspan="2" id="bainUnpackToProject">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
         <tr><td colspan="2" id="bainPackToArchive">Pack to Archive...<td>Projects only. Packs the project to an archive. It defaults to .7z, but also supports .zip.
-        <tr><td colspan="2">Package For Release...<td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
+        <tr><td colspan="2" id="bainPackageForRelease">Package For Release...<td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
         <tr><td colspan="2" id="bainSyncFromData">Sync From Data<td>Projects only. Synchronize the project with files from the Data directory. This is essentially the reverse of "Install" for projects since it copies from the Data directory to the project rather than the other way around.
-        <tr><td colspan="2">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Useful for comparing conflicting resources.
+        <tr><td colspan="2" id="bainCopyConflictsToProject">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Useful for comparing conflicting resources.
         <tr><td colspan="2" id="bainOmodInfo">Omod Info...<td>Projects only. Allows you to read/write omod configuration info.
-        <tr><td colspan="2">List Structure...<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
+        <tr><td colspan="2" id="bainListStructure">List Structure...<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
 </table>
 <table>
     <thead>
