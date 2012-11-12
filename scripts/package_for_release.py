@@ -109,9 +109,11 @@ def CleanupStandaloneFiles():
 def CreateStandaloneExe(version, file_version, pipe=None):
     if not have_py2exe:
         print " Could not find python module 'py2exe', aborting StandAlone creation."
+        print >> pipe, " Could not find python module 'py2exe', aborting StandAlone creation."
         return False
     if not VerifyPy2Exe():
         print " You have not installed the replacement zipextimporter.py file."
+        print >> pipe, " You have not installed the replacement zipextimporter.py file."
         return False
     wbsa = os.path.join(scripts, 'build', 'standalone')
     reshacker = os.path.join(wbsa, 'Reshacker.exe')
@@ -130,6 +132,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
 
     if not os.path.exists(script):
         print " Could not find 'setup.template', aborting StandAlone creation."
+        print >> pipe, " Could not find 'setup.template', aborting StandAlone creation."
         return False
 
     if os.path.exists(manifest):
@@ -138,6 +141,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
         file.close()
     else:
         print " Could not find 'manifest.template', the StandAlone will look OLD (Windows 9x style)."
+        print >> pipe, " Could not find 'manifest.template', the StandAlone will look OLD (Windows 9x style)."
         manifest = None
 
     # Determine the extra includes needed (because py2exe wont automatically detect these)
@@ -216,11 +220,13 @@ def PackStandaloneVersion(version, pipe=None):
 def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
     if not have_winreg and nsis is None:
         print " Could not find python module '_winreg', aborting Installer creation."
+        print >> pipe, " Could not find python module '_winreg', aborting Installer creation."
         return
 
     script = os.path.join(scripts, 'build', 'Wrye Bash.nsi')
     if not os.path.exists(script):
         print " Could not find nsis script '%s', aborting Installer creation." % script
+        print >> pipe, " Could not find nsis script '%s', aborting Installer creation." % script
         return
 
     try:
@@ -230,6 +236,7 @@ def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
         subprocess.call([nsis, '/NOCD', '/DWB_NAME=Wrye Bash %s' % version, '/DWB_FILEVERSION=%s' % file_version, script], shell=True, stdout=pipe, stderr=pipe)
     except:
         print " Could not find 'makensis.exe', aborting Installer creation."
+        print >> pipe, " Could not find 'makensis.exe', aborting Installer creation."
 
 
 if __name__ == '__main__':
@@ -300,19 +307,23 @@ if __name__ == '__main__':
 
     if args.manual:
         print 'Creating archive distributable...'
+        print >> pipe, 'Creating archive distributable...'
         BuildManualVersion(version, pipe)
 
     exe_made = False
     if args.exe or args.wbsa or args.installer:
         print 'Building standalone exe...'
+        print >> pipe, 'Building standalone exe...'
         exe_made = CreateStandaloneExe(version, file_version, pipe)
 
     if args.wbsa and exe_made:
         print 'Creating standalone distributable...'
+        print >> pipe, 'Creating standalone distributable...'
         PackStandaloneVersion(version, pipe)
 
     if args.installer and exe_made:
         print 'Creating installer distributable...'
+        print >> pipe, 'Creating installer distributable...'
         BuildInstallerVersion(version, file_version, args.nsis, pipe)
 
     if not args.exe:
