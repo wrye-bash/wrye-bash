@@ -12675,9 +12675,9 @@ class Settings_Language(Link):
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
         u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
         u'de': _(u'German') + u' (Deutsch)',
-        u'pt_opt': _(u'Portuguese') + u' (portuguÃªs)',
+        u'pt_opt': _(u'Portuguese') + u' (português)',
         u'italian': _(u'Italian') + u' (italiano)',
-        u'russian': _(u'Russian') + u' (Ñ€ÑƒÑ�Ñ�ÐºÐ¸Ð¹ Ñ�Ð·Ñ‹Ðº)',
+        u'russian': _(u'Russian') + u' (ру́сский язы́к)',
         u'english': _(u'English') + u' (English)',
         }
         
