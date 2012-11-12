@@ -16232,82 +16232,6 @@ class MelMODS(MelBase):
             if save: record.__setattr__(attr,data)
 
 #-------------------------------------------------------------------------------
-# Not used after CK version 1.8
-class MelBODT(MelStruct):
-    """Body Type data"""
-    btFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'head'),
-            (1, 'hair'),
-            (2, 'body'),
-            (3, 'hands'),
-            (4, 'forearms'),
-            (5, 'amulet'),
-            (6, 'ring'),
-            (7, 'feet'),
-            (8, 'calves'),
-            (9, 'shield'),
-            (10, 'bodyaddon1/tail'),
-            (11, 'long_hair'),
-            (12, 'circlet'),
-            (13, 'bodyaddon2'),
-            (14, 'dragon_head'),
-            (15, 'dragon_lwing'),
-            (16, 'dragon_rwing'),
-            (17, 'dragon_body'),
-            (18, 'bodyaddon7'),
-            (19, 'bodyaddon8'),
-            (20, 'decapate_head'),
-            (21, 'decapate'),
-            (22, 'bodyaddon9'),
-            (23, 'bodyaddon10'),
-            (24, 'bodyaddon11'),
-            (25, 'bodyaddon12'),
-            (26, 'bodyaddon13'),
-            (27, 'bodyaddon14'),
-            (28, 'bodyaddon15'),
-            (29, 'bodyaddon16'),
-            (30, 'bodyaddon17'),
-            (31, 'fx01'),
-        ))
-
-    otherFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'modulates_voice'), #{>>> From ARMA <<<}
-            (1, 'unknown_2'),
-            (2, 'unknown_3'),
-            (3, 'unknown_4'),
-            (4, 'non_playable'), #{>>> From ARMO <<<}
-        ))
-
-    armorTypes = {
-        0:'Light Armor',
-        1:'Heavy Armor',
-        2:'Clothing',
-        }
-
-    def __init__(self,type='BODT'):
-        MelStruct.__init__(self,type,'=3I',
-                           (MelBODT.btFlags,'bodyFlags',0L),
-                           (MelBODT.otherFlags,'otherFlags',0L),
-                           ('armorType',0)
-                           )
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        if size == 8:
-            # Version 20 of this subrecord type was only 8 bytes - omits 'armorType'
-            unpacked = ins.unpack('=2I',size,readId) + (0,)
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if action: value = action(value)
-                setter(attr,value)
-            if self._debug:
-                print u' ',zip(self.attrs,unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ',unpacked
-        elif size != 12:
-            raise ModSizeError(ins.inName,readId,12,size,True)
-        else:
-            MelStruct.loadData(self,record,ins,type,size,readId)
 
 # Verified Correct for Skyrim
 #-------------------------------------------------------------------------------
@@ -16545,7 +16469,14 @@ class MelBipedObjectData(MelStruct):
     def loadData(self,record,ins,type,size,readId):
         if type == 'BODT':
             # Old record type, use alternate loading routine
-            bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
+            if size == 8:
+                # Version 20 of this subrecord is only 8 bytes (armorType omitted)
+                bipedFlags,legacyData = ins.unpack('=2I',size,readId)
+                armorFlags = 0
+            elif size != 12:
+                raise ModSizeError(ins.inName,readId,12,size,True)
+            else:
+                bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
             # legacyData is discarded
             setter = record.__setattr__
             setter('bipedFlags',MelBipedObjectData.BipedFlags(bipedFlags))
