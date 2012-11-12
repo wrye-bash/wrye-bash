@@ -583,7 +583,7 @@ weaponTypes = (
     )
 
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = r'bash\db\Oblivion_ids.pkl'
+pklfile = ur'bash\db\Oblivion_ids.pkl'
 
 #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
