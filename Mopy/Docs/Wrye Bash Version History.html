@@ -36,31 +36,48 @@
 
 <p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
 
+<h2>302 [2012/11/11] [Various community members]</h2>
+<ul>
+<li>Bugfixes for formatting to fix up the "Open at..." feature in an attempt to get it to work better with Nexus. [Lojack]</li>
+<li>[Oblivion] Added exception to the BAIN CRC refresh list for the TES4Edit Backups folder. [Arthmoor]</li>
+<li>[Skyrim] Complete overhaul of support for processing VMAD records for Papyrus scripts. [Lojack]</li>
+<li>[Skyrim] Enabled Game Settings tweaks and populated the array for necessary NULL form entries. [Lojack/Arthmoor]</li>
+<li>Deleting a Mod through the Mods Tab interface will automatically update the status of any affected BAIN packages. [Lojack]</li>
+<li>Improvements to the advanced readme document structure. [Wrinklyninja]</li>
+<li>Speed improvements and bug fixes for the global settings patcher. [Lojack]</li>
+<li>[Skyrim] Updated the "Clean Data" files list for Hearthfire. [Sharlikran]</li>
+<li>Update translation dumper to include game specific files. [Lojack]</li>
+<li>Fix for bug #231 "Newly installed mod files appear at the top of the plugin list until Bash is restarted." [Daidalos]</li>
+<li>Fixed a potential issue with the auto-backup system if the settings dict ends up with an int as the version instead of a string. [Lojack]</li>
+<li>[Skyrim] Added support for the BOD2 subrecord which shipped with Skyrim patch 1.8. [Sharlikran]</li>
+<li>[Skyrim] BODT subrecords will be converted automatically into BOD2 subrecords for affected objects when the patch is rebuilt. (Note: This means Wrye Bash for Skyrim now requires Patch 1.8) [Lojack]</li>
+</ul>
+
 <h2>301 [2012/11/01] [Various community members]</h2>
 <ul>
- <li>Fixed several Oblivion ini tweaks that were missing returns at the ends of the files. [Arthmoor]</li>
+ <li>[Oblivion] Fixed several Oblivion ini tweaks that were missing returns at the ends of the files. [Arthmoor]</li>
  <li>Fixed the invalid load order correction problem. [cdcooley]</li>
  <li>Fixed an error in the Russian translation preventing Import Cells from working. [Lojack]</li>
- <li>Updates to skyrim.py "Clean Data" files list. [Sharlikran]</li>
+ <li>[Skyrim] Updates to skyrim.py "Clean Data" files list. [Sharlikran]</li>
  <li>WIZBAIN has been removed from the program. [Arthmoor]</li>
- <li>Cleanup of record definitions that Bash is already able to procees. [Sharlikran]</li>
- <li>Status bar icons have been added for TES5Edit and TESVGecko if they are installed. [Arthmoor]</li>
+ <li>[Skyrim] Cleanup of record definitions that Bash is already able to procees. [Sharlikran]</li>
+ <li>[Skyrim] Status bar icons have been added for TES5Edit and TESVGecko if they are installed. [Arthmoor]</li>
  <li>Dependency on PIL has been removed. [alt3rn1ty]</li>
  <li>General cleanup of code for typos, missing imports, and other minor defects. [Several People]</li>
- <li>BSA timestamp resetting will no longer take place for Skyrim. [Arthmoor]</li>
- <li>Added visual warning for when Skyrim .STRINGS files are not the expected size. [Lojack]</li>
- <li>File support for Hearthfire data has been added. [Sharlikran]</li>
+ <li>[Skyrim] BSA timestamp resetting will no longer take place for Skyrim. [Arthmoor]</li>
+ <li>[Skyrim] Added visual warning for when Skyrim .STRINGS files are not the expected size. [Lojack]</li>
+ <li>[Skyrim] File support for Hearthfire data has been added. [Sharlikran]</li>
  <li>Experimental additions for LibBSA added. [wrinklyninja]</li>
  <li>"Open At..." menu only appearing in Skyrim mode has been fixed. [Lojack]</li>
  <li>Fixed encoding on Chinese characters in source files. [Lojack]</li>
  <li>Fixed importing of SE dll permissions. [Lojack]</li>
  <li>Fixed support for refreshing Bethesda data files using BAIN archives. [Lojack]</li>
- <li>Fixed version number message for Skyrim Patch 1.8. [Sharlikran]</li>
- <li>Skyrim SEQ folder added as a valid install location in BAIN. [Arthmoor]</li>
+ <li>[Skyrim] Fixed version number message for Skyrim Patch 1.8. [Sharlikran]</li>
+ <li>[Skyrim] The SEQ folder has been added as a valid install location in BAIN. [Arthmoor]</li>
  <li>Fixes for processing ini files when the game hasn't generated them yet. [Lojack]</li>
- <li>Workaround for Bug #233 (load order scrambling in Skyrim) added - this is not a complete fix. [Trira]</li>
+ <li>[Skyrim] Workaround for Bug #233 (load order scrambling in Skyrim) added - this is not a complete fix. [Trira]</li>
  <li>External installation monitoring added for BAIN to keep in sync with other tools such as NMM. [Lojack]</li>
- <li>TES5Edit Backups folder will not be scanned during BAIN CRC refresh checks. [Arthmoor]</li>
+ <li>[Skyrim] TES5Edit Backups folder will not be scanned during BAIN CRC refresh checks. [Arthmoor]</li>
 </ul>
 
 <h2>300 [2012/08/09] [Various community members]</h2>
