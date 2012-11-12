@@ -3608,7 +3608,8 @@ class OblivionIni(IniFile):
         """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
         if self.path.exists(): return
         srcPath = dirs['app'].join(u'%s_default.ini' % bush.game.name)
-        srcPath.copyTo(self.path)
+        if srcPath.exists():
+            srcPath.copyTo(self.path)
 
     def saveSettings(self,settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
@@ -4913,6 +4914,10 @@ class FileInfos(DataDict):
         fileInfo = self[fileName]
         #--File
         filePath = fileInfo.getPath()
+        if filePath.tail != fileName.tail:
+            # Prevent edge case which could cause Oblivion.esm/Skyrim.esm
+            # to be deleted
+            return
         filePath.remove()
         #--Table
         self.table.delRow(fileName)

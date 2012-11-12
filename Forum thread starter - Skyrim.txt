@@ -140,5 +140,6 @@ Rinse and repeat when a new svn comes out.
 [*]Fixed a potential issue with the auto-backup system if the settings dict ends up with an int as the version instead of a string. [Lojack]
 [*][Skyrim] Added support for the BOD2 subrecord which shipped with Skyrim patch 1.8. [Sharlikran]
 [*][Skyrim] BODT subrecords will be converted automatically into BOD2 subrecords for affected objects when the patch is rebuilt. (Note: This means Wrye Bash for Skyrim now requires Patch 1.8) [Lojack]
+[*]Typo fix for the installer. Standalone will now be the default option. [alt3rn1ty]
 [/list]
 [/spoiler]
