@@ -4913,6 +4913,10 @@ class FileInfos(DataDict):
         fileInfo = self[fileName]
         #--File
         filePath = fileInfo.getPath()
+        if filePath.tail != fileName.tail:
+            # Prevent edge case which could cause Oblivion.esm/Skyrim.esm
+            # to be deleted
+            return
         filePath.remove()
         #--Table
         self.table.delRow(fileName)
