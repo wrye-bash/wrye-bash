@@ -6058,7 +6058,9 @@ class BashFrame(wx.Frame):
                                 rev = max(rev,client.info(d.s).get('revision').number)
                         svnVersion = svnVersion % rev
                         isSVN = True
-                    except pysvn.ClientError:
+                    except (pysvn.ClientError,AttributeError):
+                        pass
+                    except Exception:
                         pass
             except ImportError:
                 pass
