@@ -4914,9 +4914,9 @@ class FileInfos(DataDict):
         fileInfo = self[fileName]
         #--File
         filePath = fileInfo.getPath()
-        if filePath.tail != fileName.tail:
-            # Prevent edge case which could cause Oblivion.esm/Skyrim.esm
-            # to be deleted
+        if filePath.body != fileName and filePath.tail != fileName.tail:
+            # Prevent accidental deletion of Skyrim.esm/Oblivion.esm, but
+            # Still works properly for ghosted files
             return
         filePath.remove()
         #--Table
