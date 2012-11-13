@@ -6032,6 +6032,7 @@ class BashFrame(wx.Frame):
                     dir = dir.join(u'..')
                     count += 1
                 svnDir = dir.join(u'.svn')
+                dir = bosh.dirs['mopy']
                 if svnDir.exists():
                     try:
                         client = pysvn.Client(svnDir.s)
@@ -6050,7 +6051,11 @@ class BashFrame(wx.Frame):
                         else:
                             svnVersion = u'SVN r%i'
                         # Get revision
-                        rev = client.info(dir.s).get('revision').number
+                        rev = 0
+                        for d in dir.list():
+                            d = dir.join(d)
+                            if d.isdir():
+                                rev = max(rev,client.info(d.s).get('revision').number)
                         svnVersion = svnVersion % rev
                         isSVN = True
                     except pysvn.ClientError:
