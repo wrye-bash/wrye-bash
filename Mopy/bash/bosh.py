@@ -66,6 +66,7 @@ from brec import *
 from brec import _coerce # Since it wont get imported by the import * (it begins with _)
 from chardet.universaldetector import UniversalDetector
 import bapi
+import libbsa
 
 startupinfo = bolt.startupinfo
 
@@ -4377,11 +4378,14 @@ class ModInfo(FileInfo):
             exGroup = maExGroup.group(1)
             return len(modInfos.exGroup_mods.get(exGroup,u'')) > 1
 
+    def getBsaPath(self):
+        """Returns path to plugin's BSA, if it were to exists."""
+        return self.getPath().root.root+u'.bsa'
+
     def hasResources(self):
         """Returns (hasBsa,hasVoices) booleans according to presence of corresponding resources."""
-        bsaPath = self.getPath().root+u'.bsa'
         voicesPath = self.dir.join(u'Sound',u'Voice',self.name)
-        return [bsaPath.exists(),voicesPath.exists()]
+        return [self.getBsaPath().exists(),voicesPath.exists()]
 
     def setmtime(self,mtime=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
@@ -5743,17 +5747,34 @@ class ModInfos(FileInfos):
 
     def isMissingStrings(self,modName):
         """True if the mod says it has .STRINGS files, but the files are missing."""
-        if self.data[modName].header.flags1.hasStrings:
+        modInfo = self.data[modName]
+        if modInfo.header.flags1.hasStrings:
+            deprint('mod:',modName)
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
+            bsaPath = modInfo.getBsaPath()
+            bsaFile = None
             for stringsFile in bush.game.esp.stringsFiles:
                 dir,join,format = stringsFile
-                dirJoin = dirs[dir].join(*join).join
                 fname = format % {'body':sbody,
                                   'ext':ext,
                                   'language':language}
-                if not dirJoin(fname).exists():
+                assetPath = GPath(u'').join(*join).join(fname)
+                # Check loose files first
+                if dirs[dir].join(assetPath).exists():
+                    continue
+                # Check in BSA's next
+                if not bsaPath.exists():
                     return True
+                if not bsaFile:
+                    try:
+                        bsaFile = libbsa.BSAHandle(bsaPath)
+                    except:
+                        deprint(u'Error loading BSA file:',bsaPath.stail,traceback=True)
+                        return True
+                if bsaFile.IsAssetInBSA(assetPath):
+                    continue
+                return True
         return False
 
     def hasBadMasterNames(self,modName):
@@ -6277,7 +6298,13 @@ class ConfigHelpers:
         # That didn't work - Wrye Bash isn't installed correctly
         if not bapi.BAPI:
             raise bolt.BoltError(u'The BOSS API could not be loaded.')
-            
+
+
+        libbsa.Init(dirs['compiled'].s)
+        # That didn't work - Wrye Bash isn't installed correctly
+        if not libbsa.libbsa:
+            raise bolt.BoltError(u'The libbsa API could not be loaded.')
+        deprint(u'Using libbsa API version:', libbsa.version)
 
         global boss
         if os.path.isfile(GPath(dirs['mods'].s).join(u'Nehrim.esm').s):
