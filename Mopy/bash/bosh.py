@@ -4415,22 +4415,25 @@ class ModInfo(FileInfo):
             #--Open the BSA
             with libbsa.BSAHandle(bsaPath) as bsa:
                 #--Check to ensure the required files exist
-                for file in extract:
-                    if not bsa.IsAssetInBSA(file.s):
-                        raise ModError(self.name,u"Could not extract '%s' from '%s', file does not exit within BSA." % (file,bsaPath.tail))
-                #--Extract the Files
-                for file in extract:
-                    target = targetJoin(file)
-                    #--Hack workaround - libbsa currently isn't creating target directories properly,
-                    #  and then failing to extract the files because the target directory isn't present.add
-                    #  Workaround is to create the directories first, then extract
-                    target.head.makedirs()
-                    #--Hack workaround 2 - libbsa won't let you extract over an existing file, so remove it
-                    #  first.
-                    target.remove()
-                    #--Extract
-                    bsa.ExtractAsset(file,target)
-                    paths.add(target)
+                try:
+                    for file in extract:
+                        if not bsa.IsAssetInBSA(file.s):
+                            raise ModError(self.name,u"Could not extract '%s' from '%s', file does not exit within BSA." % (file,bsaPath.tail))
+                    #--Extract the Files
+                    for file in extract:
+                        target = targetJoin(file)
+                        #--Hack workaround - libbsa currently isn't creating target directories properly,
+                        #  and then failing to extract the files because the target directory isn't present.add
+                        #  Workaround is to create the directories first, then extract
+                        target.head.makedirs()
+                        #--Hack workaround 2 - libbsa won't let you extract over an existing file, so remove it
+                        #  first.
+                        target.remove()
+                        #--Extract
+                        bsa.ExtractAsset(file,target)
+                        paths.add(target)
+                except libbsa.LibbsaError as e:
+                    raise ModError(self.name,u"Could not extract Strings Files from '%s': %s" % (bsaPath.tail,e))
         return paths
 
     def hasResources(self):
@@ -14512,9 +14515,9 @@ class PatchFile(ModFile):
                 modInfo = modInfos[GPath(modName)]
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
-            except ModError:
+            except ModError as e:
                 deprint('load error:', traceback=True)
-                self.loadErrorMods.append(modName)
+                self.loadErrorMods.append((modName,e))
                 continue
             try:
                 #--Error checks
@@ -14634,7 +14637,7 @@ class PatchFile(ModFile):
         if self.loadErrorMods:
             log.setHeader(u'=== '+_(u'Load Error Mods'))
             log(_(u"The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
-            for mod in self.loadErrorMods: log (u'* '+mod.s)
+            for (mod,e) in self.loadErrorMods: log (u'* '+mod.s+u': %s'%e)
         if self.worldOrphanMods:
             log.setHeader(u'=== '+_(u'World Orphans'))
             log(_(u"The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
@@ -15126,7 +15129,7 @@ class CBash_PatchFile(ObModFile):
         if self.loadErrorMods:
             log.setHeader(u'=== '+_(u'Load Error Mods'))
             log(_(u"The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
-            for mod in self.loadErrorMods: log (u'* '+mod.s)
+            for (mod,e) in self.loadErrorMods: log (u'* '+mod.s+u': %s' % e)
         if self.worldOrphanMods:
             log.setHeader(u'=== '+_(u'World Orphans'))
             log(_(u"The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
