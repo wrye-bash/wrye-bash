@@ -1479,13 +1479,16 @@ class ModFile:
             header = ins.unpackRecHeader()
             self.tes4 = bush.game.MreHeader(header,ins,True)
             #--Strings
+            self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:
-                self.strings.load(self.fileInfo.getPath(),
-                                  oblivionIni.getSetting('General','sLanguage','English'),
-                                  progress)
+                stringsPaths = self.fileInfo.getStringsPaths(
+                    oblivionIni.getSetting('General','sLanguage',u'English'))
+                progress.setFull(3)
+                for path in stringsPaths:
+                    self.strings.loadFile(path,progress)
+                    progress.plus()
                 ins.setStringTable(self.strings)
             else:
-                self.strings.clear()
                 ins.setStringTable(None)
             #--Raw data read
             insAtEnd = ins.atEnd
@@ -4382,10 +4385,58 @@ class ModInfo(FileInfo):
         """Returns path to plugin's BSA, if it were to exists."""
         return self.getPath().root.root+u'.bsa'
 
+    def hasBsa(self):
+        """Returns True if plugin has an associated BSA."""
+        return self.getBsaPath().exists()
+
+    def getStringsPaths(self,language=u'English'):
+        """If Strings Files are available as loose files, just point to those, otherwise
+           extract needed files from BSA if needed."""
+        baseName = GPath(u'Strings').join(self.name.body)
+        baseDirJoin = self.getPath().head.join
+        targetJoin = dirs['bsaCache'].join(self.name).join
+        files = (baseName+u'_'+language+x for x in (u'.STRINGS',u'.DLSTRINGS',
+                                                   u'.ILSTRINGS'))
+        extract = set()
+        paths = set()
+        #--Check for Loose Files first
+        for file in files:
+            loose = baseDirJoin(file)
+            if not loose.exists():
+                extract.add(file)
+            else:
+                paths.add(loose)
+        #--If there were some missing Loose Files
+        if extract:
+            #--Check if the BSA for this mod exists
+            bsaPath = self.getBsaPath()
+            if not bsaPath.exists():
+                raise ModError(self.name,u'Could not extract Strings Files from BSA, %s does not extist.' % bsaPath.tail)
+            #--Open the BSA
+            with libbsa.BSAHandle(bsaPath) as bsa:
+                #--Check to ensure the required files exist
+                for file in extract:
+                    if not bsa.IsAssetInBSA(file.s):
+                        raise ModError(self.name,u"Could not extract '%s' from '%s', file does not exit within BSA." % (file,bsaPath.tail))
+                #--Extract the Files
+                for file in extract:
+                    target = targetJoin(file)
+                    #--Hack workaround - libbsa currently isn't creating target directories properly,
+                    #  and then failing to extract the files because the target directory isn't present.add
+                    #  Workaround is to create the directories first, then extract
+                    target.head.makedirs()
+                    #--Hack workaround 2 - libbsa won't let you extract over an existing file, so remove it
+                    #  first.
+                    target.remove()
+                    #--Extract
+                    bsa.ExtractAsset(file,target)
+                    paths.add(target)
+        return paths
+
     def hasResources(self):
         """Returns (hasBsa,hasVoices) booleans according to presence of corresponding resources."""
         voicesPath = self.dir.join(u'Sound',u'Voice',self.name)
-        return [self.getBsaPath().exists(),voicesPath.exists()]
+        return [self.hasBsa(),voicesPath.exists()]
 
     def setmtime(self,mtime=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
@@ -5749,7 +5800,6 @@ class ModInfos(FileInfos):
         """True if the mod says it has .STRINGS files, but the files are missing."""
         modInfo = self.data[modName]
         if modInfo.header.flags1.hasStrings:
-            deprint('mod:',modName)
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
             bsaPath = modInfo.getBsaPath()
@@ -29720,6 +29770,8 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
 
     dirs['bainData'] = getBainDataPath(bashIni)
 
+    dirs['bsaCache'] = dirs['bainData'].join(u'BSA Cache')
+
     dirs['converters'] = dirs['installers'].join(u'Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join(u'--Duplicates')
     dirs['corruptBCFs'] = dirs['converters'].join(u'--Corrupt')
@@ -29742,7 +29794,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
-    for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData'):
+    for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData','bsaCache'):
         dirs[key].makedirs()
 
     # Setup BOSS API
