@@ -155,7 +155,7 @@ def Init(path):
                  'ERROR_FILE_DELETE_FAIL',
                  'ERROR_FILE_NOT_UTF8',
                  'ERROR_FILE_NOT_FOUND',
-				 'ERROR_FILE_RENAME_FAIL',
+                 'ERROR_FILE_RENAME_FAIL',
                  'ERROR_TIMESTAMP_READ_FAIL',
                  'ERROR_TIMESTAMP_WRITE_FAIL',
                  'ERROR_PARSE_FAIL',
