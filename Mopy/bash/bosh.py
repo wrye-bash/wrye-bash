@@ -5803,7 +5803,9 @@ class ModInfos(FileInfos):
         """True if the mod says it has .STRINGS files, but the files are missing."""
         modInfo = self.data[modName]
         if modInfo.header.flags1.hasStrings:
+            deprint(u'Mod:', modInfo.name)
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
+            deprint(u' Language:', language)
             sbody,ext = modName.sbody,modName.ext
             bsaPath = modInfo.getBsaPath()
             bsaFile = None
@@ -5814,19 +5816,26 @@ class ModInfos(FileInfos):
                                   'language':language}
                 assetPath = GPath(u'').join(*join).join(fname)
                 # Check loose files first
+                deprint(u' File:', assetPath)
                 if dirs[dir].join(assetPath).exists():
+                    deprint(u'  Exists as loose file.')
                     continue
                 # Check in BSA's next
+                deprint(u'  Checking BSA contents...')
                 if not bsaPath.exists():
+                    deprint(u'   BSA',bsaPath,'does not exist.')
                     return True
                 if not bsaFile:
                     try:
+                        deprint(u'   Loading',bsaPath)
                         bsaFile = libbsa.BSAHandle(bsaPath)
                     except:
-                        deprint(u'Error loading BSA file:',bsaPath.stail,traceback=True)
+                        deprint(u'   Error loading BSA file:',bsaPath.stail,traceback=True)
                         return True
                 if bsaFile.IsAssetInBSA(assetPath):
+                    deprint(u'   File found in BSA.')
                     continue
+                deprint(u'   File NOT found in BSA.')
                 return True
         return False
 
