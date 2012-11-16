@@ -14379,6 +14379,12 @@ class PatchFile(ModFile):
             if hasVoices:
                 reasons += u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s
 
+        #--Missing Strings Files?
+        if modInfo.isMissingStrings():
+            if not verbose: return False
+            reasons += u'\n.    '+_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
+                modInfo.name.sbody, oblivionIni.getSetting('General','sLanguage',u'English'))
+
         #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
         if u'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
             if not verbose: return False
