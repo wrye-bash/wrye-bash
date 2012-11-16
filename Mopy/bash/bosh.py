@@ -5807,8 +5807,13 @@ class ModInfos(FileInfos):
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             deprint(u' Language:', language)
             sbody,ext = modName.sbody,modName.ext
-            bsaPath = modInfo.getBsaPath()
-            bsaFile = None
+            bsaPaths = [modInfo.getBsaPath()]
+            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
+                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
+                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
+                bsaPaths.extend(extraBsa)
+            bsaPaths = [x for x in bsaPaths if x.exists()]
+            bsaFiles = {}
             for stringsFile in bush.game.esp.stringsFiles:
                 dir,join,format = stringsFile
                 fname = format % {'body':sbody,
@@ -5822,21 +5827,27 @@ class ModInfos(FileInfos):
                     continue
                 # Check in BSA's next
                 deprint(u'  Checking BSA contents...')
-                if not bsaPath.exists():
-                    deprint(u'   BSA',bsaPath,'does not exist.')
+                found = False
+                for path in bsaPaths:
+                    if not path.exists():
+                        deprint(u'  ',path,u'does not exist.')
+                        continue
+                    bsaFile = bsaFiles.get(path,None)
+                    if not bsaFile:
+                        try:
+                            deprint(u'   Loading',path)
+                            bsaFile = libbsa.BSAHandle(path)
+                            bsaFiles[path] = bsaFile
+                        except:
+                            deprint(u'   Error loading BSA file:',path.stail,traceback=True)
+                            continue
+                    if bsaFile.IsAssetInBSA(assetPath):
+                        deprint(u'   File found in',path)
+                        found = True
+                        break
+                if not found:
+                    deprint(u'   File not found.')
                     return True
-                if not bsaFile:
-                    try:
-                        deprint(u'   Loading',bsaPath)
-                        bsaFile = libbsa.BSAHandle(bsaPath)
-                    except:
-                        deprint(u'   Error loading BSA file:',bsaPath.stail,traceback=True)
-                        return True
-                if bsaFile.IsAssetInBSA(assetPath):
-                    deprint(u'   File found in BSA.')
-                    continue
-                deprint(u'   File NOT found in BSA.')
-                return True
         return False
 
     def hasBadMasterNames(self,modName):
