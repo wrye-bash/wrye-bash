@@ -4392,11 +4392,16 @@ class ModInfo(FileInfo):
     def getStringsPaths(self,language=u'English'):
         """If Strings Files are available as loose files, just point to those, otherwise
            extract needed files from BSA if needed."""
-        baseName = GPath(u'Strings').join(self.name.body)
         baseDirJoin = self.getPath().head.join
-        targetJoin = dirs['bsaCache'].join(self.name).join
-        files = (baseName+u'_'+language+x for x in (u'.STRINGS',u'.DLSTRINGS',
-                                                   u'.ILSTRINGS'))
+        files = []
+        sbody,ext = self.name.sbody,self.name.ext
+        language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
+        for (dir,join,format) in bush.game.esp.stringsFiles:
+            fname = format % {'body':sbody,
+                              'ext':ext,
+                              'language':language}
+            assetPath = GPath(u'').join(*join).join(fname)
+            files.append(assetPath)
         extract = set()
         paths = set()
         #--Check for Loose Files first
@@ -4408,20 +4413,28 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            #--Check if the BSA for this mod exists
-            bsaPath = self.getBsaPath()
-            if not bsaPath.exists():
-                raise ModError(self.name,u'Could not extract Strings Files from BSA, %s does not extist.' % bsaPath.tail)
-            #--Open the BSA
-            with libbsa.BSAHandle(bsaPath) as bsa:
-                #--Check to ensure the required files exist
-                try:
-                    for file in extract:
-                        if not bsa.IsAssetInBSA(file.s):
-                            raise ModError(self.name,u"Could not extract '%s' from '%s', file does not exit within BSA." % (file,bsaPath.tail))
-                    #--Extract the Files
-                    for file in extract:
-                        target = targetJoin(file)
+            bsaPaths = [self.getBsaPath()]
+            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
+                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
+                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
+                extraBsa.reverse()
+                bsaPaths.extend(extraBsa)
+            bsaPaths = [x for x in bsaPaths if x.exists()]
+            bsaFiles = {}
+            targetJoin = dirs['bsaCache'].join
+            for file in extract:
+                found = False
+                for path in bsaPaths:
+                    bsaFile = bsaFiles.get(path,None)
+                    if not bsaFile:
+                        try:
+                            bsaFile = libbsa.BSAHandle(path)
+                            bsaFiles[path] = bsaFile
+                        except:
+                            deprint(u'   Error loading BSA file:',path.stail,traceback=True)
+                            continue
+                    if bsaFile.IsAssetInBSA(file):
+                        target = targetJoin(path.tail,file)
                         #--Hack workaround - libbsa currently isn't creating target directories properly,
                         #  and then failing to extract the files because the target directory isn't present.add
                         #  Workaround is to create the directories first, then extract
@@ -4430,10 +4443,14 @@ class ModInfo(FileInfo):
                         #  first.
                         target.remove()
                         #--Extract
-                        bsa.ExtractAsset(file,target)
+                        try:
+                            bsaFile.ExtractAsset(file,target)
+                        except libbsa.LibbsaError as e:
+                            raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
                         paths.add(target)
-                except libbsa.LibbsaError as e:
-                    raise ModError(self.name,u"Could not extract Strings Files from '%s': %s" % (bsaPath.tail,e))
+                        found = True
+                if not found:
+                    raise ModError(self.name,u"Could not locat Strings File '%s'" % file.stail)
         return paths
 
     def hasResources(self):
@@ -5803,9 +5820,7 @@ class ModInfos(FileInfos):
         """True if the mod says it has .STRINGS files, but the files are missing."""
         modInfo = self.data[modName]
         if modInfo.header.flags1.hasStrings:
-            deprint(u'Mod:', modInfo.name)
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
-            deprint(u' Language:', language)
             sbody,ext = modName.sbody,modName.ext
             bsaPaths = [modInfo.getBsaPath()]
             for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
@@ -5821,32 +5836,24 @@ class ModInfos(FileInfos):
                                   'language':language}
                 assetPath = GPath(u'').join(*join).join(fname)
                 # Check loose files first
-                deprint(u' File:', assetPath)
                 if dirs[dir].join(assetPath).exists():
-                    deprint(u'  Exists as loose file.')
                     continue
                 # Check in BSA's next
-                deprint(u'  Checking BSA contents...')
                 found = False
                 for path in bsaPaths:
                     if not path.exists():
-                        deprint(u'  ',path,u'does not exist.')
                         continue
                     bsaFile = bsaFiles.get(path,None)
                     if not bsaFile:
                         try:
-                            deprint(u'   Loading',path)
                             bsaFile = libbsa.BSAHandle(path)
                             bsaFiles[path] = bsaFile
                         except:
-                            deprint(u'   Error loading BSA file:',path.stail,traceback=True)
                             continue
                     if bsaFile.IsAssetInBSA(assetPath):
-                        deprint(u'   File found in',path)
                         found = True
                         break
                 if not found:
-                    deprint(u'   File not found.')
                     return True
         return False
 
