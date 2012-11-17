@@ -215,7 +215,6 @@ def Init(path):
     # =========================================================================
     ## uint32_t GetVersionNums(uint32_t * versionMajor, uint32_t * versionMinor, uint32_t * versionPatch)
     _CGetVersionNums = libbsa.GetVersionNums
-    _CGetVersionNums.restype = LibbsaErrorCheck
     _CGetVersionNums.argtypes = [c_uint32_p, c_uint32_p, c_uint32_p]
     global version
     version = c_uint8_p()
@@ -223,9 +222,8 @@ def Init(path):
         verMajor = c_uint32()
         verMinor = c_uint32()
         verPatch = c_uint32()
-        libbsa.GetVersionNums()
-        _CGetVersionString(byref(verMajor), byref(verMinor), byref(verPatch))
-        version = u'%i.%i.%i' % verMajor % verMinor % verPatch
+        _CGetVersionNums(byref(verMajor),byref(verMinor),byref(verPatch))
+        version = u'%i.%i.%i' % (verMajor.value,verMinor.value,verPatch.value)
     except LibbsaError as e:
         print u'Error getting libbsa version:', e
         version = u'Error'

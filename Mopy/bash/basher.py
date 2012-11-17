@@ -121,6 +121,7 @@ laaButton = None
 
 # Settings --------------------------------------------------------------------
 settings = None
+isSVN = False
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -6019,12 +6020,56 @@ class BashFrame(wx.Frame):
     def SetTitle(self,title=None):
         """Set title. Set to default if no title supplied."""
         if not title:
+            svnVersion = None
+            global isSVN
+            isSVN = False
+            ### Try SVN gathering stuff
+            try:
+                import pysvn
+                dir = bolt.Path.getcwd()
+                count = 0
+                while not dir.join(u'.svn').exists() and count < 5:
+                    dir = dir.join(u'..')
+                    count += 1
+                svnDir = dir.join(u'.svn')
+                dir = bosh.dirs['mopy']
+                if svnDir.exists():
+                    try:
+                        client = pysvn.Client(svnDir.s)
+                        changes = client.status(dir.s)
+                        changed = False
+                        for f in changes:
+                            if f.text_status in (pysvn.wc_status_kind.added,
+                                                 pysvn.wc_status_kind.deleted,
+                                                 pysvn.wc_status_kind.modified,
+                                                 pysvn.wc_status_kind.conflicted,
+                                                 pysvn.wc_status_kind.unversioned):
+                                changed = True
+                                break
+                        if changed:
+                            svnVersion = u'SVN r%i*'
+                        else:
+                            svnVersion = u'SVN r%i'
+                        # Get revision
+                        rev = 0
+                        for d in dir.list():
+                            d = dir.join(d)
+                            if d.isdir():
+                                rev = max(rev,client.info(d.s).get('revision').number)
+                        svnVersion = svnVersion % rev
+                        isSVN = True
+                    except (pysvn.ClientError,AttributeError):
+                        pass
+                    except Exception:
+                        pass
+            except ImportError:
+                pass
             ###Remove from Bash after CBash integrated
             if bush.game.altName and settings['bash.useAltName']:
                 title = bush.game.altName + u' %s%s'
             else:
                 title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.name
-            title = title % (settings['bash.version'],
+            title = title % (svnVersion if isSVN else settings['bash.version'],
                 _(u'(Standalone)') if settings['bash.standalone'] else u'')
             if CBash:
                 title += u', CBash v%u.%u.%u: ' % (
@@ -12675,9 +12720,9 @@ class Settings_Language(Link):
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
         u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
         u'de': _(u'German') + u' (Deutsch)',
-        u'pt_opt': _(u'Portuguese') + u' (portuguÃªs)',
+        u'pt_opt': _(u'Portuguese') + u' (português)',
         u'italian': _(u'Italian') + u' (italiano)',
-        u'russian': _(u'Russian') + u' (Ñ€ÑƒÑ�Ñ�ÐºÐ¸Ð¹ Ñ�Ð·Ñ‹Ðº)',
+        u'russian': _(u'Russian') + u' (ру́сский язы́к)',
         u'english': _(u'English') + u' (English)',
         }
         

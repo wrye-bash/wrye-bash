@@ -23,6 +23,10 @@
 
 """This a template to use for making new game types for bash.game"""
 
+# Imports ----------------------------------------------------------------------
+from .. import brec
+from ..brec import *
+
 # Util Constants ---------------------------------------------------------------
 #--Null strings (for default empty byte arrays)
 null1 = '\x00'
@@ -30,17 +34,22 @@ null2 = null1*2
 null3 = null1*3
 null4 = null1*4
 
+# Mod Record Elements ----------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Constants
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
 #--Name of the game
-## Example: 'Oblivion'
-name = ''
+## Example: u'Oblivion'
+name = u''
 
 #--Alternat display name of Wrye Bash when managing this game
-## Example: 'Wrye Smash'
-altName = ''
+## Example: u'Wrye Smash'
+altName = u''
 
 #--Exe to look for to see if this is the right game
-## Example: 'TESV.exe'
-exe = ''
+## Example: u'TESV.exe'
+exe = u''
 
 #--Registry keys to read to find the install location
 ## These are relative to:
@@ -48,56 +57,90 @@ exe = ''
 ##  HKLM\Software\Wow6432Node
 ##  HKCU\Software
 ##  HKCU\Software\Wow6432Node
+## Example: (u'Bethesda Softworks\\Oblivion',u'Installed Path')
 regInstallKeys = [
     ]
 
 #--Patch information
 ## URL to download patches for the main game.
-patchURL = ''
+patchURL = u''
 ## Tooltip to display over the URL when displayed
-patchTip = ''
+patchTip = u''
+
+#--URL to the Nexus site for this game
+nexusUrl = u''  #-- URL
+nexusName = u'' #-- Long Name
+nexusKey u''    #-- Key for the "always ask this question" setting in settings.dat
 
 #--Construction Set information
 class cs:
-    shortName = ''                  # Abbreviated name
-    longName = ''                   # Full name
-    exe = '*DNE*'                   # Executable to run
-    seArgs = ''                     # Argument to pass to the SE to load the CS
-    imageName = ''                  # Image name template for the status bar
+    shortName = u''                  # Abbreviated name
+    longName = u''                   # Full name
+    exe = u'*DNE*'                   # Executable to run
+    seArgs = u''                     # Argument to pass to the SE to load the CS
+    imageName = u''                  # Image name template for the status bar
 
 #--Script Extender information
 class se:
-    shortName = ''       # Abbreviated name.  If this is empty, it signals that no SE is available
-    longname = ''        # Full name
-    exe = ''             # Exe to run
-    steamExe = ''        # Exe to run if a steam install
-    url = ''             # URL to download from
-    urlTip = ''          # Tooltip for mouse over the URL
+    shortName = u''       # Abbreviated name.  If this is empty, it signals that no SE is available
+    longname = u''        # Full name
+    exe = u''             # Exe to run
+    steamExe = u''        # Exe to run if a steam install
+    url = u''             # URL to download from
+    urlTip = u''          # Tooltip for mouse over the URL
+	
+#--Script Dragon
+class sd:
+    shortName = u''
+    longName = u''
+    installDir = u''
+	
+#--SkyProc Patchers
+    shortName = u''
+    longName = u''
+    installDir = u''
+
+#--Quick shortcut for combining the SE and SD names
+se_sd = u''
 
 #--Graphics Extender information
 class ge:
-    shortName = ''
-    longName = ''
+    shortName = u''
+    longName = u''
     ## exe is treated specially here.  If it is a string, then it should
     ## be the path relative to the root directory of the game
     ## if it is list, each list element should be an iterable to pass to Path.join
     ## relative to the root directory of the game.  In this case, each filename
     ## will be tested in reverse order.  This was required for Oblivion, as the newer
     ## OBGE has a different filename than the older OBGE
-    exe = ''
-    url = ''
-    urlTip = ''
+    exe = u''
+    url = u''
+    urlTip = u''
 
 #--4gb Launcher
 class laa:
-    name = ''           # Display name of the launcher
-    exe = '*DNE*'       # Executable to run
-    launchesSE = False  # Whether the launcher will automatically launch the SE
+    name = u''           # Display name of the launcher
+    exe = u'*DNE*'       # Executable to run
+    launchesSE = False   # Whether the launcher will automatically launch the SE
 
 # Files BAIN shouldn't skip
 dontSkip = (
 # Nothing so far
 )
+
+#--Folders BAIN should never CRC check in the Data directory
+SkipBAINRefresh = set((
+    # Use lowercase names
+))
+
+#--Some stuff dealing with INI files
+class ini:
+    #--True means new lines are allowed to be added via INI tweaks
+    #  (by default)
+    allowNewLines = False
+
+    #--INI Entry to enable BSA Redirection
+    bsaRedirection = (u'Archive',u'sArchiveList')
 
 #--Save Game format stuff
 class ess:
@@ -127,23 +170,24 @@ class ess:
         """Rewrites masters of existing save file."""
         raise Exception('Not implemented')
 
+#--The main plugin Wrye Bash should look for
+masterFiles = [
+    ]
+
 #--INI files that should show up in the INI Edits tab
-## Example: ['Oblivion.ini']
+## Example: [u'Oblivion.ini']
 iniFiles = [
     ]
 
 #-- INI setting used to setup Save Profiles
 ## (section,key)
-saveProfilesKey = ('General','SLocalSavePath')
-
-#--The main plugins Wrye Bash should look for
-## Example: ['Skyrim.esm']
-masterFiles = [
-    ]
+saveProfilesKey = (u'General',u'SLocalSavePath')
 
 #--Game ESM/ESP/BSA files
-## These are all of the data files that belong to the game
-bethDataFiles = set()
+## These are all of the ESM,ESP,and BSA data files that belong to the game
+bethDataFiles = set((
+    # Use lowercase names
+))
 
 #--Every file in the Data directory from Bethsoft
 ## These are every single file in the Data directory that
@@ -155,11 +199,6 @@ allBethFiles = set()
 dataDirs = set()
 ## These are additional special directories that BAIN can install to
 dataDirsPlus = set()
-
-# Mod Record Elements ----------------------------------------------------------
-#-------------------------------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
@@ -230,3 +269,110 @@ class esp:
 
     #--Record Types: all recognized record types (not just the top types)
     recordTypes = set(topTypes + 'GRUP,TES4'.split(','))
+
+class RecordHeader(brec.BaseRecordHeader):
+    size = 20 # Size in bytes of a record header
+
+    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
+        self.recType = recType
+        self.size = size
+        # Do some conditional stuff, commonly different variable names
+		# if this is a GRUP header or an actual record
+
+    @staticmethod
+    def unpack(ins):
+        """Returns a RecordHeader object by reading the input stream."""
+        pass
+
+    def pack(self):
+        """Returns the record header packed into a string for writing to file."""
+        pass
+	
+#--The pickle file for this game.  Holds encoded GMST IDs from the big list below
+pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
+
+#--List of GMST's in the main plugin that have 0x00000000 as the form id.  Any GMST
+#  as such needs its Editor ID listed here in order to access it.
+gmstEids = [
+]
+
+#--Bash Tags supported by this game
+allTags = sorted((
+))
+
+#--GLOB record tweaks used by bosh's GmstTweaker
+#  Each entry is a tuple in the following format:
+#    (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, Option3, ..., OptionN)
+#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
+#     then Value (below) must be a tuple of equal length, providing values for each GLOB
+#  Each Option is a tuple:
+#    (DisplayText, Value)
+#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
+#      will treat this option as the default value.
+#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
+#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
+#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
+#  fix for an example of this (in the GMST Tweaks)
+## NOTE: only required if the GmstTweaker has been enabled for this game
+GlobalsTweaks = [
+]
+
+#--GMST record tweaks used by bosh's GmstTweaker
+#  Each entry is a tuple in the following format:
+#    (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, Option3, ..., OptionN)
+#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
+#     then Value (below) must be a tuple of equal length, providing values for each GMST
+#  Each Option is a tuple:
+#    (DisplayText, Value)
+#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
+#      will treat this option as the default value.
+#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
+#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
+#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
+#  fix for an example of this (in the GMST Tweaks)
+## NOTE: only required if the GmstTweaker has been enabled for this game
+GmstTweaks = [
+]
+
+#--Patcher available when building a Bashed Patch (refrerenced by class name)
+patchers = (
+)
+
+#--For ListMerger patcher (leveled list patcher)
+listTypes = ()
+
+#--CBash patchers available when building a Bashed Patch
+CBash_patchers = (
+)
+
+# Mod Record Elements ---------------------------------------------------------
+#------------------------------------------------------------------------------
+
+# create record definitions here
+
+#------------------------------------------------------------------------------
+
+#--Mergeable record types
+mergeClasses = (
+)
+
+#--Extra read classes: these record types will always be loaded, even if patchers
+#  don't need them directly (for example, for MGEF info)
+readClasses = ()
+writeClasses = ()
+
+def ini():
+    # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
+    # re-executing all lines within the module, it acts like another 'import'
+    # statement - in otherwords, nothing happens.  This means any lines that
+    # affect outside modules must do so within this function, which will be
+    # called instead of 'reload'
+    brec.ModReader.recHeader = RecordHeader
+
+    #--Record Types
+    brec.MreRecord.type_class = dict((x.classType,x) for x in  (
+	    ))
+
+    #--Simple records
+    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
+        set(('TES4',)))
