@@ -4434,13 +4434,13 @@ class ModInfo(FileInfo):
                             deprint(u'   Error loading BSA file:',path.stail,traceback=True)
                             continue
                     if bsaFile.IsAssetInBSA(file):
-                        target = targetJoin(path.tail,file)
+                        target = targetJoin(path.tail)
                         #--Extract
                         try:
                             bsaFile.ExtractAsset(file,target)
                         except libbsa.LibbsaError as e:
                             raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
-                        paths.add(target)
+                        paths.add(target.join(file))
                         found = True
                 if not found:
                     raise ModError(self.name,u"Could not locate Strings File '%s'" % file.stail)
