@@ -267,11 +267,11 @@ def Init(path):
     ## uint32_t ExtractAssets(bsa_handle bh, const uint8_t * contentPath, const uint8_t * destPath, uint8_t *** assetPaths, size_t * numAssets)
     _CExtractAssets = libbsa.ExtractAssets
     _CExtractAssets.restype = LibbsaErrorCheck
-    _CExtractAssets.argtypes = [bsa_handle, c_uint8_p, c_uint8_p, c_uint8_p_p_p, c_size_t_p]
+    _CExtractAssets.argtypes = [bsa_handle, c_uint8_p, c_uint8_p, c_uint8_p_p_p, c_size_t_p, c_bool]
     ## uint32_t ExtractAsset(bsa_handle bh, const uint8_t * assetPath, const uint8_t * destPath)
     _CExtractAsset = libbsa.ExtractAsset
     _CExtractAsset.restype = LibbsaErrorCheck
-    _CExtractAsset.argtypes = [bsa_handle, c_uint8_p, c_uint8_p]
+    _CExtractAsset.argtypes = [bsa_handle, c_uint8_p, c_uint8_p, c_bool]
 
     # =========================================================================
     # Class Wrapper
@@ -315,11 +315,11 @@ def Init(path):
         def ExtractAssets(self, contentPath, destPath):
             assets = c_uint8_p_p()
             num = c_size_t()
-            _CExtractAssets(self._handle, _enc(contentPath), _enc(destPath), byref(assets), byref(num))
+            _CExtractAssets(self._handle, _enc(contentPath), _enc(destPath), byref(assets), byref(num), True)
             return [GPath(_uni(assets[i])) for i in xrange(num.value)]
 
         def ExtractAsset(self, assetPath, destPath):
-            _CExtractAsset(self._handle, _enc(assetPath), _enc(destPath))
+            _CExtractAsset(self._handle, _enc(assetPath), _enc(destPath), True)
 
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())

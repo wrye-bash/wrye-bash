@@ -4012,7 +4012,7 @@ class Plugins:
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = self.hasChanged()
-        if hasChanged or forceRefresh: 
+        if hasChanged or forceRefresh:
             self.loadActive()
             self.loadLoadOrder()
         return hasChanged
@@ -4434,23 +4434,16 @@ class ModInfo(FileInfo):
                             deprint(u'   Error loading BSA file:',path.stail,traceback=True)
                             continue
                     if bsaFile.IsAssetInBSA(file):
-                        target = targetJoin(path.tail,file)
-                        #--Hack workaround - libbsa currently isn't creating target directories properly,
-                        #  and then failing to extract the files because the target directory isn't present.add
-                        #  Workaround is to create the directories first, then extract
-                        target.head.makedirs()
-                        #--Hack workaround 2 - libbsa won't let you extract over an existing file, so remove it
-                        #  first.
-                        target.remove()
+                        target = targetJoin(path.tail)
                         #--Extract
                         try:
                             bsaFile.ExtractAsset(file,target)
                         except libbsa.LibbsaError as e:
                             raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
-                        paths.add(target)
+                        paths.add(target.join(file))
                         found = True
                 if not found:
-                    raise ModError(self.name,u"Could not locat Strings File '%s'" % file.stail)
+                    raise ModError(self.name,u"Could not locate Strings File '%s'" % file.stail)
         return paths
 
     def hasResources(self):
@@ -4523,7 +4516,7 @@ class ModInfo(FileInfo):
         else:
             bashTags = maBashKeys.group(1).split(u',')
             return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
-    
+
     def reloadBashTags(self):
         """Reloads bash tags from mod description and BOSS"""
         tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
@@ -4534,7 +4527,7 @@ class ModInfo(FileInfo):
             tags -= oldTagsSet
             self.setBashTagsDesc(tags)
         self.setBashTags(tags)
-    
+
     def getDirtyMessage(self):
         """Returns a dirty message from BOSS."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
@@ -5417,7 +5410,7 @@ class ModInfos(FileInfos):
             if autoTag:
                 mod.reloadBashTags()
 
-    
+
     #--Full Balo --------------------------------------------------------------
     def updateBaloHeaders(self):
         """Adds/removes balo headers as necessary. This is called by refresh(),
@@ -6373,7 +6366,7 @@ class ConfigHelpers:
         except ImportError:
             pass
 
-        
+
         bapi.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not bapi.BAPI:
@@ -8960,7 +8953,7 @@ class InstallersData(bolt.TankData, DataDict):
             text += _(u'Needs Annealing due to a change in Install Order.')
         elif backKey == 'installers.bkgd.dirty':
             text += _(u'Needs Annealing due to a change in configuration.')
-        #--TODO: add mouse  mouse tips 
+        #--TODO: add mouse  mouse tips
         return text
 
     def getName(self,item):
@@ -14875,7 +14868,7 @@ class CBash_PatchFile(ObModFile):
         badForm = FormID(GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
         for record in getattr(modFile,group):
             #don't merge deleted items
-            if record.IsDeleted and group not in ('REFRS','ACHRS','ACRES'): 
+            if record.IsDeleted and group not in ('REFRS','ACHRS','ACRES'):
                 print group
                 continue
             fid = record.fid
@@ -14885,7 +14878,7 @@ class CBash_PatchFile(ObModFile):
             if record.IsWinning():
                 if record.HasInvalidFormIDs():
                     if doFilter:
-                        record.mergeFilter(self)                        
+                        record.mergeFilter(self)
                         if record.HasInvalidFormIDs():
                             print u"Debugging mergeModFile - Skipping", fid, u"in mod (", record.GetParentMod().ModName, u")due to failed merge filter"
                             dump_record(record)
@@ -14899,7 +14892,7 @@ class CBash_PatchFile(ObModFile):
                 if record.IsDeleted and group in ('REFRS','ACHRS','ACRES'):
                     undelete = True
                     override = record.Conflicts()[1].CopyAsOverride(self, UseWinningParents=True)
-                else: 
+                else:
                     undelete = False
                     override = record.CopyAsOverride(self, UseWinningParents=True)
                 if override:
@@ -15001,7 +14994,7 @@ class CBash_PatchFile(ObModFile):
             del mod_patchers
         else:
             mod_apply = []
-            
+
         for modName in self.completeMods:
             modInfo = modInfos[modName]
             bashTags = modInfo.getBashTags()
@@ -15690,7 +15683,7 @@ class CBash_MultiTweaker(CBash_Patcher):
 
 class DoublePatcher(ListPatcher):
     """Subclass for patchers that have GUI lists of objects."""
-    
+
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
         Patcher.getConfig(self,configs)
@@ -27372,7 +27365,7 @@ class RaceTweaker_BiggerOrcsandNords(MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u'Bigger Nords and Orcs'))
@@ -27392,7 +27385,7 @@ class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
             (u'Merge hairs only from vanilla races', 1),
             (u'Full hair merge between similar races', 0)
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27446,7 +27439,7 @@ class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Merge Hairs from similar races"))
@@ -27454,7 +27447,7 @@ class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-            
+
 class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
     """Merges similar race's eyes."""
 
@@ -27466,7 +27459,7 @@ class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
             (u'Merge eyes only from vanilla races', 1),
             (u'Full eye merge between similar races', 0)
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27520,7 +27513,7 @@ class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Merge Eyes from similar races"))
@@ -27539,7 +27532,7 @@ class RaceTweaker_AllHairs(MultiTweakItem):
             u'hairyraces',
             (u'get down tonight',1)
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27568,7 +27561,7 @@ class RaceTweaker_AllHairs(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Races Have All Hairs"))
@@ -27587,7 +27580,7 @@ class RaceTweaker_AllEyes(MultiTweakItem):
             u'eyeyraces',
             (u'what an lot of eyes you have dear',1)
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27616,7 +27609,7 @@ class RaceTweaker_AllEyes(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Races Have All Eyes"))
@@ -27635,7 +27628,7 @@ class RaceTweaker_PlayableEyes(MultiTweakItem):
             u'playableeyes',
             (u'Get it done', 1),
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27664,7 +27657,7 @@ class RaceTweaker_PlayableEyes(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Playable Eyes"))
@@ -27683,7 +27676,7 @@ class RaceTweaker_PlayableHairs(MultiTweakItem):
             u'playablehairs',
             (u'Get it done', 1),
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27712,7 +27705,7 @@ class RaceTweaker_PlayableHairs(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Playable Hairs"))
@@ -27731,7 +27724,7 @@ class RaceTweaker_SexlessHairs(MultiTweakItem):
             u'sexlesshairs',
             (u'Get it done', 1),
             )
-        
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27761,7 +27754,7 @@ class RaceTweaker_SexlessHairs(MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-            
+
     def log(self,log):
         """Will write to log."""
         log.setHeader(u'==='+_(u"Sexless Hairs"))
@@ -28144,7 +28137,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             if race.full:
                 extra[race.full.lower()] = {'hairs':race.hairs,'eyes':race.eyes,'relations':race.relations}
         for tweak in self.enabledTweaks:
-            tweak.buildPatch(progress,self.patchFile,extra)        
+            tweak.buildPatch(progress,self.patchFile,extra)
         #--Sort Eyes/Hair
         defaultEyes = {}
         defaultMaleHair = {}
@@ -28408,7 +28401,7 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
                             if races_data[r]['hairs'] != races_data[race]['hairs']:
                                 # list(set([]) disgusting thing again
                                 changedHairs[race] = list(set(races_data[r]['hairs']+races_data[race]['hairs']))
-        pstate = 0                        
+        pstate = 0
         for modFile in Current.LoadOrderMods:
             subProgress(pstate, _(u'Merging hairs...')+u'\n')
             for race in modFile.RACE:
@@ -28422,7 +28415,7 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
                             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
-                
+
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
@@ -28432,7 +28425,7 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
- 
+
 class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
     """Merges similar race's eyes."""
     scanOrder = 32
@@ -28484,7 +28477,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
                             if races_data[r]['eyes'] != races_data[race]['eyes']:
                                 # list(set([]) disgusting thing again
                                 changedEyes[race] = list(set(changedEyes.setdefault(race,[])+races_data[r]['eyes']+races_data[race]['eyes']))
-        pstate = 0                        
+        pstate = 0
         for modFile in Current.LoadOrderMods:
             subProgress(pstate, _(u'Merging eyes...')+u'\n')
             for race in modFile.RACE:
@@ -28498,7 +28491,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
                             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
-                
+
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
@@ -28508,7 +28501,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
- 
+
 class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
     """Sets all eyes to be playable."""
     scanOrder = 32
@@ -28549,7 +28542,7 @@ class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
- 
+
 class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
     """Sets all hairs to be playable."""
     scanOrder = 32
@@ -28590,7 +28583,7 @@ class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
-        
+
 class CBash_RaceTweaker_SexlessHairs(CBash_MultiTweakItem):
     """Sets all hairs to be playable by both males and females."""
     scanOrder = 32
@@ -28760,7 +28753,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
         prev_attr_value = self.fid_attr_value.get(recordId,None)
-        
+
         if prev_attr_value:
             cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
@@ -29156,7 +29149,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
         for tweak in self.enabledTweaks:
             for type in tweak.getTypes():
                 group_patchers.setdefault(type,[]).append(tweak)
-        
+
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
