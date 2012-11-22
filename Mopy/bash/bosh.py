@@ -47,6 +47,7 @@ import shutil
 import string
 import struct
 import sys
+import tempfile
 from types import *
 from operator import attrgetter,itemgetter
 import subprocess
@@ -4986,7 +4987,9 @@ class FileInfos(DataDict):
             # Prevent accidental deletion of Skyrim.esm/Oblivion.esm, but
             # Still works properly for ghosted files
             return
-        filePath.remove()
+        #--Shell Delete
+        balt.shellDelete(filePath,askOk=False)
+        #filePath.remove()
         #--Table
         self.table.delRow(fileName)
         #--Misc. Editor backups (mods only)
@@ -7050,8 +7053,9 @@ class ScreensData(DataDict):
     def delete(self,fileName):
         """Deletes member file."""
         filePath = self.dir.join(fileName)
-        filePath.remove()
-        del self.data[fileName]
+        deleted = balt.shellDelete(filePath)
+        if deleted is not None:
+            del self.data[fileName]
 
 #------------------------------------------------------------------------------
 class Installer(object):
@@ -7089,9 +7093,40 @@ class Installer(object):
     def initData():
         Installer.dataDirs = bush.game.dataDirs
         Installer.dataDirsPlus = Installer.dataDirs | Installer.docDirs | bush.game.dataDirsPlus
+
     #--Temp Files/Dirs
-    tempDir = GPath(u'InstallerTemp')
-    tempList = GPath(u'InstallerTempList.txt')
+    _tempDir = None
+    @staticmethod
+    def newTempDir():
+        """Generates a new temporary directory name, sets it as the current Temp Dir."""
+        Installer._tempDir = GPath(tempfile.mkdtemp(prefix=u'WryeBash_'))
+        return Installer._tempDir
+
+    @staticmethod
+    def rmTempDir():
+        """Removes the current temporary directory, and sets the current Temp Dir to
+           None - meaning a new one will be generated on getTempDir()"""
+        if Installer._tempDir is None:
+            return
+        if Installer._tempDir.exists():
+            Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
+        Installer._tempDir = None
+
+    @staticmethod
+    def getTempDir():
+        """Returns current Temp Dir, generating one if needed."""
+        return Installer._tempDir if Installer._tempDir is not None else Installer.newTempDir()
+
+    @staticmethod
+    def clearTemp():
+        """Clear the current Temp Dir, but leave it as the current Temp dir still."""
+        if Installer._tempDir is not None and Installer._tempDir.exists():
+            try:
+                Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
+            except:
+                Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
+
+    tempList = GPath(tempfile.gettempdir()).join(u'WryeBash_InstallerTempList.txt')
 
     #--Class Methods ----------------------------------------------------------
     @staticmethod
@@ -7100,14 +7135,6 @@ class Installer(object):
         dataDir = dirs['mods']
         ghosts = [x for x in dataDir.list() if x.cs[-6:] == u'.ghost']
         return dict((x.root,x) for x in ghosts if not dataDir.join(x).root.exists())
-
-    @staticmethod
-    def clearTemp():
-        """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
-        try:
-            InstallerConverter.tempDir.rmtree(safety=u'Temp')
-        except:
-            InstallerConverter.tempDir.rmtree(safety=u'Temp')
 
     @staticmethod
     def sortFiles(files):
@@ -8365,8 +8392,10 @@ class InstallerArchive(Installer):
         with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
         apath = dirs['installers'].join(archive)
+        #--Ensure temp dir empty
+        self.rmTempDir()
         with apath.unicodeSafe() as arch:
-            args = u'"%s" -y -o%s @%s -scsUTF8' % (arch.s, self.tempDir.s, self.tempList.s)
+            args = u'"%s" -y -o%s @%s -scsUTF8' % (arch.s, self.getTempDir().s, self.tempList.s)
             if recurse:
                 args += u' -r'
             command = u'"%s" l %s' % (exe7z, args)
@@ -8386,8 +8415,6 @@ class InstallerArchive(Installer):
             progress.state = 0
             progress.setFull(numFiles)
             #--Extract files
-            self.clearTemp()
-
             command = u'"%s" x %s' % (exe7z, args)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
             extracted = []
@@ -8404,51 +8431,72 @@ class InstallerArchive(Installer):
             result = ins.close()
             self.tempList.remove()
             # Clear ReadOnly flag if set
-            cmd = ur'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+            cmd = ur'attrib -R "%s\*" /S /D' % (self.getTempDir().s)
             ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
             if result:
                 raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
-        #--Done
+        #--Done -> don't clean out temp dir, it's going to be used soon
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
-        progress = progress or bolt.Progress()
-        destDir = dirs['mods']
         destFiles = set(destFiles)
-        norm_ghost = Installer.getGhosted()
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
         #--Extract
+        progress = progress if progress else bolt.Progress()
         progress(0,archive.s+u'\n'+_(u'Extracting files...'))
-        fileNames = [x[0] for x in dest_src.itervalues()]
         self.unpackToTemp(archive,dest_src.values(),SubProgress(progress,0,0.9))
-        #--Move
-        progress(0.9,archive.s+u'\n'+_(u'Moving files...'))
+        #--Rearrange files
+        progress(0.9,archive.s+u'\n'+_(u'Organizing files...'))
+        unpackDir = self.getTempDir() #--returns directory used by unpackToTemp
+        unpackDirJoin = unpackDir.join
+        stageDir = self.newTempDir()  #--forgets the old temp dir, creates a new one
+        stageDataDir = stageDir.join(u'Data')
+        stageDataDirJoin = stageDataDir.join
         count = 0
-        tempDir = self.tempDir
         norm_ghost = Installer.getGhosted()
-        mtimes = set()
-        i = 0
+        norm_ghostGet = norm_ghost.get
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(max(len(dest_src),1))
-        for dest,src in dest_src.iteritems():
-            subprogress(i,archive.s+u'\n'+_(u'Moving files...')+u'\n'+dest.s)
-            i += 1
-            size,crc = data_sizeCrc[dest]
-            srcFull = tempDir.join(src)
-            destFull = destDir.join(norm_ghost.get(dest,dest))
-            if srcFull.exists():
-                srcFull.moveTo(destFull)
-                if reModExt.search(destFull.s):
-                    newTime = destFull.mtime
+        subprogressPlus = subprogress.plus
+        data_sizeCrcDate_update = {}
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TIMESTAMP:
+            mtimes = set()
+            mtimesAdd = mtimes.add
+            def timestamps(x):
+                if reModExt.search(x.s):
+                    newTime = x.mtime
                     while newTime in mtimes:
                         newTime += 1
-                    destFull.mtime = newTime
-                    mtimes.add(newTime)
-                data_sizeCrcDate[dest] = (size,crc,destFull.mtime)
+                    x.mtime = newTime
+                    mtimesAdd(newTime)
+        else:
+            def timestamps(x):
+                pass
+        for dest,src in  dest_src.iteritems():
+            size,crc = data_sizeCrc[dest]
+            srcFull = unpackDirJoin(src)
+            stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
+            if srcFull.exists():
+                timestamps(srcFull)
+                data_sizeCrcDate_update[dest] = (size,crc,srcFull.mtime)
                 count += 1
-        self.clearTemp()
+                # Move to staging directory
+                srcFull.moveTo(stageFull)
+                subprogressPlus()
+        #--Clean up unpacked dir
+        unpackDir.rmtree(safety=unpackDir.stail)
+        #--Now Move
+        try:
+            if count:
+                destDir = dirs['mods'].head
+                balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
+        finally:
+            #--Clean up staging dir
+            self.rmTempDir()
+        #--Update Installers data
+        data_sizeCrcDate.update(data_sizeCrcDate_update)
         return count
 
     def unpackToProject(self,archive,project,progress=None):
@@ -8465,17 +8513,19 @@ class InstallerArchive(Installer):
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        tempDir = self.tempDir
+        tempDir = self.getTempDir()
         # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % (self.tempDir.s)
+        cmd = ur'attrib -R "%s\*" /S /D' % (tempDir.s)
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
+        tempDirJoin = tempDir.join
+        destDirJoin = destDir.join
         for file in files:
-            srcFull = tempDir.join(file)
-            destFull = destDir.join(file)
+            srcFull = tempDirJoin(file)
+            destFull = destDirJoin(file)
             if srcFull.exists():
                 srcFull.moveTo(destFull)
                 count += 1
-        self.clearTemp()
+        self.rmTempDir()
         return count
 
     def listSource(self, archive):
@@ -8554,35 +8604,56 @@ class InstallerProject(Installer):
 
     def install(self,name,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
-        destDir = dirs['mods']
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
-        progress.setFull(len(dest_src))
+        progress = progress if progress else bolt.Progress()
+        progress.setFull(max(len(dest_src),1))
         progress(0,name.stail+u'\n'+_(u'Moving files...'))
+        progressPlus = progress.plus
         #--Copy Files
-        count = 0
+        self.rmTempDir()
+        stageDir = self.getTempDir()
+        stageDataDir = stageDir.join(u'Data')
+        stageDataDirJoin = stageDataDir.join
         norm_ghost = Installer.getGhosted()
+        norm_ghostGet = norm_ghost.get
         srcDir = dirs['installers'].join(name)
-        mtimes = set()
-        i = 0
-        for dest,src in dest_src.iteritems():
-            progress(i,name.stail+u'\n'+_(u'Moving files...')+u'\n'+dest.s)
-            i += 1
-            size,crc = data_sizeCrc[dest]
-            srcFull = srcDir.join(src)
-            destFull = destDir.join(norm_ghost.get(dest,dest))
-            if srcFull.exists():
-                srcFull.copyTo(destFull)
-                if reModExt.search(destFull.s):
-                    newTime = destFull.mtime
-                    while newTime in mtimes:
+        srcDirJoin = srcDir.join
+        data_sizeCrcDate_update = {}
+        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TIMESTAMP:
+            mtimes = set()
+            mtimesAdd = mtimes.add
+            def timestamps(x):
+                if reModExt.search(x.s):
+                    newTime = x.mtime
+                    while newTime in mtimes.values():
                         newTime += 1
-                    destFull.mtime = newTime
-                    mtimes.add(newTime)
-                data_sizeCrcDate[dest] = (size,crc,destFull.mtime)
+                    mtimesAdd(newTime)
+        else:
+            def timestamps(*args):
+                pass
+        count = 0
+        for dest,src in dest_src.iteritems():
+            size,crc = data_sizeCrc[dest]
+            srcFull = srcDirJoin(src)
+            stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
+            if srcFull.exists():
+                srcFull.copyTo(stageFull)
+                timestamps(stageFull)
+                data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
                 count += 1
+                progressPlus()
+        try:
+            if count:
+                destDir = dirs['mods'].head
+                balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
+        finally:
+            #--Clean out staging dir
+            self.rmTempDir()
+        #--Update Installers data
+        data_sizeCrcDate.update(data_sizeCrcDate_update)
         return count
 
     def syncToData(self,package,projFiles):
@@ -8974,10 +9045,7 @@ class InstallersData(bolt.TankData, DataDict):
         if item == self.lastKey: return
         installer = self.data[item]
         apath = self.dir.join(item)
-        if isinstance(installer,InstallerProject):
-            apath.rmtree(safety=u'Installers')
-        else:
-            apath.remove()
+        balt.shellDelete(apath,askOk=False)
         del self.data[item]
 
     def copy(self,item,destName,destDir=None):
@@ -9466,24 +9534,44 @@ class InstallersData(bolt.TankData, DataDict):
         #--Remove files
         emptyDirs = set()
         modsDir = dirs['mods']
-        InstallersData.updateTable(removes, u'')
         removedPlugins = []
+        removedFiles = []
+        data_sizeCrcDate_removes = set()
+        #--Construct list of files to delete
         for file in removes:
             if reModExt.search(file.s):
                 removedPlugins.append(file)
                 # Line below added to hopefully stop mtime error for ghosted plugins.
                 removedPlugins.append(file+u'.ghost')
             path = modsDir.join(file)
-            path.remove()
-            (path+u'.ghost').remove()
-            del data_sizeCrcDate[file]
+            if path.exists():
+                removedFiles.append(path)
+            if (path+u'.ghost').exists():
+                removedFiles.append(path+u'.ghost')
+            data_sizeCrcDate_removes.add(file)
             emptyDirs.add(path.head)
+        #--Add in folders that will be empty
+        for emptyDir in emptyDirs:
+            if emptyDir.isdir():
+                items = emptyDir.list()
+                if not items:
+                    removedFiles.append(emptyDir)
+                else:
+                    # Has files in it, if all of them are being removed,
+                    # it's ok
+                    for item in items:
+                        if item not in removedFiles:
+                            break
+                    else:
+                        removedFiles.append(emptyDir)
+        #--Do the deletion
+        balt.shellDelete(removedFiles,progress.getParent(),False,False)
+        #--Update InstallersData
+        InstallersData.updateTable(removes,u'')
+        for file in data_sizeCrcDate_removes:
+            del data_sizeCrcDate[file]
         #--Remove mods from load order
         modInfos.plugins.removeMods(removedPlugins, True)
-        #--Remove empties
-        for emptyDir in emptyDirs:
-            if emptyDir.isdir() and not emptyDir.list():
-                emptyDir.removedirs()
         #--De-activate
         for archive in unArchives:
             data[archive].isActive = False

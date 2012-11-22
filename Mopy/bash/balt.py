@@ -774,9 +774,11 @@ except ImportError:
     FO_RENAME = 3
 
 def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,renameOnCollision=False,silent=False,parent=None):
+    if not source:
+        return {}
+
     abspath = os.path.abspath
 
-    source = source if source else u''
     if isinstance(source,(bolt.Path,basestring)):
         source = GPath(abspath(GPath(source).s))
     else:
@@ -814,7 +816,7 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
 
         if result == 0:
             if nAborted:
-                raise Exception(u'%d operations were aborted by the user' % nAborted)
+                raise SkipError(nAborted if nAborted is not True else None)
             return dict(mapping)
         elif result == 1223:
             # User Canceled
@@ -828,7 +830,6 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
     else:
         # Use custom dialogs and such
         # TODO: implement this
-        raise Exception(u'Not Implemented')
         if not isinstance(source,list):
             source = [source]
         if not isinstance(target,list):
@@ -854,6 +855,8 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
                 else:
                     file.remove()
             return {}
+        # Only Delete is implemented so far
+        raise Exception(u'Not Implemented')
         # Move
         if operation == FO_MOVE:
             # allowUndo - no effect, we're not going to track file movements manually
@@ -868,18 +871,18 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             if collisions:
                 pass
 
-def shellDelete(files,parent,askOk=True,recycle=True):
+def shellDelete(files,parent=None,askOk=True,recycle=True):
     try:
         return fileOperation(FO_DELETE,files,None,recycle,not askOk,True,False,parent)
     except CancelError:
         if askOk:
-            return {}
+            return None
         raise
 
-def shellMove(filesFrom,filesTo,parent,askOverwrite=True,allowUndo=True,autoRename=True):
+def shellMove(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
     return fileOperation(FO_MOVE,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
 
-def shellCopy(filesFrom,filesTo,parent,askOverwrite=True,allowUndo=True,autoRename=True):
+def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
     return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
 
 # Other Windows ---------------------------------------------------------------
@@ -1313,6 +1316,9 @@ class Progress(bolt.Progress):
         return self
     def __exit__(self,type,value,traceback):
         self.Destroy()
+
+    def getParent(self):
+        return self.dialog.GetParent()
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
