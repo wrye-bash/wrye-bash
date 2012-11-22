@@ -869,8 +869,12 @@ class CancelError(BoltError):
         BoltError.__init__(self, message)
 
 class SkipError(BoltError):
-    """User pressed 'Skip' on the progress meter."""
-    def __init__(self,message=u'Action skipped by user.'):
+    """User pressed Skipped n operations."""
+    def __init__(self,count=None,message=u'%s actions skipped by user.'):
+        if count:
+            message = message % count
+        else:
+            message = u'Action skipped by user.'
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
@@ -2598,6 +2602,9 @@ class Progress:
         self.full = full
         self.state = 0
         self.debug = False
+
+    def getParent(self):
+        return None
 
     def setFull(self,full):
         """Set's full and for convenience, returns self."""

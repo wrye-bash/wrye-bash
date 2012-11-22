@@ -137,12 +137,19 @@ def exit():
     except OSError, e:
         print e
 
-    try:
-        # Cleanup temp installers directory
-        import bosh
-        bosh.Installer.tempDir.rmtree(bosh.Installer.tempDir.stail)
-    except:
-        pass
+    # Cleanup temp installers directory
+    import tempfile
+    tempDir = GPath(tempfile.tempdir)
+    for file in tempDir.list():
+        if file.cs.startswith(u'wryebash_'):
+            file = tempDir.join(file)
+            try:
+                if file.isdir():
+                    file.rmtree(safety=file.stail)
+                else:
+                    file.remove()
+            except:
+                pass
 
     if basherImported:
         from basher import appRestart
