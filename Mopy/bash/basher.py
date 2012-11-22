@@ -47,7 +47,7 @@ import bass
 import bweb
 
 from bosh import formatInteger,formatDate
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
+from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 startupinfo = bolt.startupinfo
@@ -10104,6 +10104,8 @@ class Installer_Anneal(InstallerLink):
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
                 self.data.anneal(self.filterInstallables(),progress)
+        except (CancelError,SkipError):
+            pass
         finally:
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
@@ -10322,13 +10324,17 @@ class Installer_Install(InstallerLink):
             with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
                 last = (self.mode == 'LAST')
                 override = (self.mode != 'MISSING')
-                tweaks = self.data.install(self.filterInstallables(),progress,last,override)
-                if tweaks:
-                    balt.showInfo(self.window,
-                        _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
-                        +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
-                        _(u'INI Tweaks')
-                        )
+                try:
+                    tweaks = self.data.install(self.filterInstallables(),progress,last,override)
+                except (CancelError,SkipError):
+                    pass
+                else:
+                    if tweaks:
+                        balt.showInfo(self.window,
+                            _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
+                            +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
+                            _(u'INI Tweaks')
+                            )
         finally:
             self.data.refresh(what='N')
             gInstallers.RefreshUIMods()
@@ -10573,6 +10579,8 @@ class Installer_Uninstall(InstallerLink):
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.data.uninstall(self.filterInstallables(),progress)
+        except (CancelError,SkipError):
+            pass
         finally:
             self.data.refresh(what='NS')
             bosh.modInfos.plugins.saveLoadOrder()
