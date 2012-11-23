@@ -1160,6 +1160,14 @@ class Path(object):
         else:
             return dirJoin(self.tail+u'.tmp')
 
+    @staticmethod
+    def tempDir(prefix=None):
+        return GPath(tempfile.mkdtemp(prefix=prefix))
+
+    @staticmethod
+    def baseTempDir():
+        return GPath(tempfile.gettempdir())
+
     @property
     def backup(self):
         "Backup file path."
@@ -1237,11 +1245,16 @@ class Path(object):
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
     @property
+    def stat(self):
+        """File stats"""
+        return os.stat(self._s)
+
+    @property
     def version(self):
         """File version (exe/dll) embeded in the file properties (windows only)."""
         try:
             import win32api
-            info = win32api.GetFileVersionInfo(self.s,u'\\')
+            info = win32api.GetFileVersionInfo(self._s,u'\\')
             ms = info['FileVersionMS']
             ls = info['FileVersionLS']
             version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
