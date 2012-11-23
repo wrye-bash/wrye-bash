@@ -7602,23 +7602,24 @@ class PatchDialog(wx.Dialog):
                 progress(0.9,patchName.s+u'\n'+_(u'Saving...'))
                 try:
                     patchFile.safeSave()
-                except WindowsError, werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(self,(_(u'Bash encountered an error when saving %s.')
-                                            + u'\n\n' +
-                                            _(u'The file is in use by another process such as TES4Edit.')
-                                            + u'\n' +
-                                            _(u'Please close the other program that is accessing %s.')
-                                            + u'\n\n' +
-                                            _(u'Try again?')) % (patchName.s,patchName.s),
-                                      _(u'Bash Patch - Save Error')):
+                except (CancelError,SkipError,WindowsError) as error:
+                    if isinstance(error,WindowsError) and error.winerror != 32:
+                        raise
+                    message = (_(u'Bash encountered and error when saving %(patchName)s.')
+                               + u'\n\n' +
+                               _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
+                               + u'\n' +
+                               _(u'Please close any program that is accessing %(patchName)s, and provide Administrator Privileges if prompted to do so.')
+                               + u'\n\n' +
+                               _(u'Try again?')) % {'patchName':patchName.s}
+                    while balt.askYes(self,message,_(u'Bash Patch - Save Error')):
                         try:
                             patchFile.safeSave()
-                        except WindowsError, werr:
+                        except (CancelError,SkipError,WindowsError) as error:
                             continue
                         break
                     else:
-                        raise
+                        raise CancelError
 
                 #--Cleanup
                 self.patchInfo.refresh()
@@ -7634,19 +7635,22 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
+                #--Write log/readme to temp dir first
                 with readme.temp.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
+                #--Convert log/readmeto wtxt
+                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
+                bolt.WryeText.genHtml(readme.temp,None,docsDir)
+                #--Try moving temp log/readme to Docs dir
                 try:
-                    balt.shellMove(readme.temp,readme,self,False,False,False)
+                    srcFiles = [readme.temp,readme.temp.root+u'.html']
+                    balt.shellMove(srcFiles,[readme,readme.root+u'.html'],self,False,False,False)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directoy instead
-                    dest = bosh.dirs['saveBase'].join(readme.tail)
-                    balt.shellMove(readme.temp,dest,self,False,False,False)
-                    readme = dest
+                    balt.shellMove(srcFiles,bosh.dirs['saveBase'],self,False,False,False)
+                    readme = bosh.dirs['saveBase'].join(readme.tail)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
-                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
-                bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
                 #--Select?
