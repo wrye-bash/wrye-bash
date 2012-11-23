@@ -3388,30 +3388,11 @@ class InstallersList(balt.Tank):
                     try:
                         bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
                         completed.append(omod)
-                    except CancelError:
-                        # Clean up from current omod that is extracting
-                        try:
-                            outDir.rmtree(omod.sbody)
-                        except:
-                            bolt.deprint(_(u'Failed to clean up output dir:')+u'\n', traceback=True)
-                        try:
-                            bosh.dirs['mopy'].join(u'temp').rmtree(u'temp')
-                        except:
-                            bolt.deprint(_(u'Failed to clean up temp dir:')+u'\n', traceback=True)
+                    except (CancelError,SkipError):
+                        # Omod extraction was cancelled, or user denied admin rights if needed
                         raise
                     except:
-                        bolt.deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
-
-                        # Clean up
-                        failed.append(u' * ' + omod.stail)
-                        try:
-                            outDir.rmtree(omod.sbody)
-                        except:
-                            bolt.deprint(_(u'Failed to clean up output dir:')+u'\n', traceback=True)
-                        try:
-                            bosh.dirs['mopy'].join(u'temp').rmtree(u'temp')
-                        except:
-                            bolt.deprint(_(u'Failed to clean up temp dir:')+u'\n', taceback=True)
+                        deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
             except CancelError:
                 skipped = set(omodnames) - set(completed)
                 msg = u''
@@ -3472,19 +3453,22 @@ class InstallersList(balt.Tank):
             if gCheckBox.GetValue():
                 settings['bash.installers.onDropFiles.action'] = action
         with balt.BusyCursor():
-            if action == 'COPY':
-                #--Copy the dropped files
-                for file in filenames:
-                    file.copyTo(bosh.dirs['installers'].join(file.tail))
-                for file in converters:
-                    file.copyTo(bosh.dirs['converters'].join(file.tail))
-            elif action == 'MOVE':
-                for file in filenames:
-                    file.moveTo(bosh.dirs['installers'].join(file.tail))
-                for file in converters:
-                    file.copyTo(bosh.dirs['converters'].join(file.tail))
-            else:
-                return
+            installersJoin = bosh.dirs['installers'].join
+            convertersJoin = bosh.dirs['converters'].join
+            filesTo = [installersJoin(x.tail) for x in filenames]
+            filesTo.extend(convertersJoin(x.tail) for x in converters)
+            filenames.extend(converters)
+            try:
+                if action == 'COPY':
+                    #--Copy the dropped files
+                    balt.shellCopy(filenames,filesTo,self,False,False,False)
+                elif action == 'MOVE':
+                    #--Move the dropped files
+                    balt.shellMove(filenames,filesTo,self,False,False,False)
+                else:
+                    return
+            except (CancelError,SkipError):
+                pass
             modList.RefreshUI()
             if iniList:
                 iniList.RefreshUI()
