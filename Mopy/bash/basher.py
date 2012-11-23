@@ -3382,7 +3382,7 @@ class InstallersList(balt.Tank):
                     outDir = bosh.dirs['installers'].join(omod.body)
                     if outDir.exists():
                         if balt.askYes(progress.dialog,_(u"The project '%s' already exists.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
-                            outDir.rmtree(omod.sbody)
+                            balt.shellDelete(outDir,self,False,False,False)
                         else:
                             continue
                     try:
@@ -3768,7 +3768,8 @@ class InstallersPanel(SashTankPanel):
                     # Move bad omods
                     try:
                         omodMoves = list(omodMoves)
-                        omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body) for omod in omodMoves]
+                        omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.tail) for omod in omodMoves]
+                        balt.shellMakeDirs(dirInstallersJoin(u'Bash',u'Failed OMODs'))
                         balt.shellMove(omodMoves,omodDests,self,False,False,False)
                     except (CancelError,SkipError):
                         while balt.askYes(self,_(u'Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory.')
