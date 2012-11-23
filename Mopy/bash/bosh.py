@@ -9595,6 +9595,7 @@ class InstallersData(bolt.TankData, DataDict):
         Anneal will:
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
+        progress = progress if progress else bolt.Progress()
         data = self.data
         data_sizeCrcDate = self.data_sizeCrcDate
         anPackages = set(anPackages or data)
@@ -9623,18 +9624,38 @@ class InstallersData(bolt.TankData, DataDict):
                     removes.discard(file)
         #--Remove files
         emptyDirs = set()
+        emptyDirsAdd = emptyDirs.add
         modsDir = dirs['mods']
+        modsDirJoin = modsDir.join
+        removeFiles = []
+        removeFilesAppend = removeFiles.append
+        for file in removes:
+            path = modsDirJoin(file)
+            if path.exists():
+                removeFilesAppend(path)
+            ghostPath = path+u'.ghost'
+            if ghostPath.exists():
+                removeFilesAppend(ghostPath)
+            emptyDirsAdd(path.head)
+        #--Add in empty (or to be empty) directories
+        for emptyDir in emptyDirs:
+            if emptyDir.isdir():
+                items = set(emptyDir.list())
+                if not items:
+                    # Directory is empty
+                    removeFilesAppend(emptyDir)
+                else:
+                    # ...or will be empty
+                    items = set(emptyDir.join(x) for x in items)
+                    if not items - set(removeFiles):
+                        removeFilesAppend(emptyDir)
+        #--Shell Delete
+        if removeFiles:
+            balt.shellDelete(removeFiles,progress.getParent(),False,False)
+        #--Update data
         InstallersData.updateTable(removes, u'')
         for file in removes:
-            path = modsDir.join(file)
-            path.remove()
-            (path+u'.ghost').remove()
             data_sizeCrcDate.pop(file,None)
-            emptyDirs.add(path.head)
-        #--Remove empties
-        for emptyDir in emptyDirs:
-            if emptyDir.isdir() and not emptyDir.list():
-                emptyDir.removedirs()
         #--Restore files
         restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
         if restoreArchives:
