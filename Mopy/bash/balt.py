@@ -805,7 +805,8 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             target = u'\x00'.join(x.s for x in target)
             multiDestFiles = shellcon.FOF_MULTIDESTFILES
 
-        flags = shellcon.FOF_WANTMAPPINGHANDLE|multiDestFiles
+        flags = (shellcon.FOF_WANTMAPPINGHANDLE|
+                 multiDestFiles)
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
         if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
@@ -884,6 +885,23 @@ def shellMove(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,aut
 
 def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
     return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+
+def shellMakeDirs(dirName,parent=None):
+    toMake = []
+    toMakeAppend = toMake.append
+    while not dirName.exists():
+        toMakeAppend(dirName.tail)
+        dirName = dirName.head
+    if not toMake:
+        return
+    toMake.reverse()
+    tempDir = bolt.Path.tempDir(u'WryeBash_')
+    toMake = tempDir.join(*toMake)
+    toMake.makedirs()
+    try:
+        shellMove(tempDir.join(tempDir.list()[0]),dirName,parent,False,False,False)
+    finally:
+        tempDir.rmtree(safety=tempDir.stail)
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
