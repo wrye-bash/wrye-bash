@@ -3806,9 +3806,10 @@ class OmodFile:
             # Error occured, see if final output dir needs deleting
             if outDir.exists():
                 try:
-                    balt.shellDelete(outDir,progress.getParent(),False,False,False)
+                    balt.shellDelete(outDir,progress.getParent(),False,False)
                 except:
                     pass
+            raise
         finally:
             # Clean up temp directories
             extractDir.rmtree(safety=extractDir.stail)
