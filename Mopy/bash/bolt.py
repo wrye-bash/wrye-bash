@@ -40,6 +40,7 @@ import codecs
 import gettext
 import traceback
 import csv
+import tempfile
 from subprocess import Popen, PIPE
 close_fds = True
 import types
@@ -1148,15 +1149,16 @@ class Path(object):
         """Temp file path.  If unicodeSafe is True, the returned
         temp file will be a fileName that can be passes through Popen
         (Popen automatically tries to encode the name)"""
+        dirJoin = GPath(tempfile.gettempdir()).join(u'WryeBash_temp').join
         if unicodeSafe:
             try:
                 self._s.encode('ascii')
-                return self+u'.tmp'
+                return dirJoin(self.tail+u'.tmp')
             except UnicodeEncodeError:
                 ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
-                return self.head.join(ret)
+                return dirJoin(ret)
         else:
-            return self+u'.tmp'
+            return dirJoin(self.tail+u'.tmp')
 
     @property
     def backup(self):
