@@ -47,7 +47,6 @@ import shutil
 import string
 import struct
 import sys
-import tempfile
 from types import *
 from operator import attrgetter,itemgetter
 import subprocess
@@ -3731,76 +3730,89 @@ class OmodFile:
 
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
-        if progress is None: progress = bolt.Progress()
-        # First, extract the files to a temp directory
-        tempDir = dirs['mopy'].join(u'temp',self.path.temp.body)
+        progress = progress if progress else bolt.Progress()
+        extractDir = Path.tempDir(u'WryeBash_')
+        stageBaseDir = Path.tempDir(u'WryeBash_')
+        stageDir = stageBaseDir.join(outDir.tail)
 
-        # Get contents of archive
-        sizes,total = self.getOmodContents()
+        try:
+            # Get contents of archive
+            sizes,total = self.getOmodContents()
 
-        # Extract the files
-        reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
-        reError = re.compile(ur'Error:',re.U)
-        progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
+            # Extract the files
+            reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
+            reError = re.compile(ur'Error:',re.U)
+            progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
 
-        subprogress = bolt.SubProgress(progress, 0, 0.4)
-        current = 0
-        with self.path.unicodeSafe() as tempOmod:
-            cmd7z = [exe7z,u'e',u'-r',tempOmod.s,u'-o%s' % tempDir.s]
-            with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
-                for line in ins:
-                    line = unicode(line,'utf8')
-                    maExtracting = reExtracting.match(line)
-                    if maExtracting:
-                        name = maExtracting.group(1).strip().strip(u'\r')
-                        size = sizes[name]
-                        subprogress(float(current)/total,self.path.stail+u'\n'+_(u'Extracting...')+u'\n'+name)
-                        current += size
+            subprogress = bolt.SubProgress(progress, 0, 0.4)
+            current = 0
+            with self.path.unicodeSafe() as tempOmod:
+                cmd7z = [exe7z,u'e',u'-r',tempOmod.s,u'-o%s' % extractDir.s]
+                with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
+                    for line in ins:
+                        line = unicode(line,'utf8')
+                        maExtracting = reExtracting.match(line)
+                        if maExtracting:
+                            name = maExtracting.group(1).strip().strip(u'\r')
+                            size = sizes[name]
+                            subprogress(float(current)/total,self.path.stail+u'\n'+_(u'Extracting...')+u'\n'+name)
+                            current += size
 
-        # Get compression type
-        progress(0.4,self.path.stail+u'\n'+_(u'Reading config'))
-        self.readConfig(tempDir.join(u'config'))
+            # Get compression type
+            progress(0.4,self.path.stail+u'\n'+_(u'Reading config'))
+            self.readConfig(extractDir.join(u'config'))
 
-        # Collect OMOD conversion data
-        ocdDir = outDir.join(u'omod conversion data')
-        progress(0.46, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\ninfo.txt')
-        self.writeInfo(ocdDir.join(u'info.txt'), self.path.stail, tempDir.join(u'readme').exists(), tempDir.join(u'script').exists())
-        progress(0.47, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscript')
-        if tempDir.join(u'script').exists():
-            with bolt.BinaryFile(tempDir.join(u'script').s) as input:
-                with ocdDir.join(u'script.txt').open('w') as output:
-                    output.write(input.readNetString())
-        progress(0.48, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nreadme.rtf')
-        if tempDir.join(u'readme').exists():
-            with bolt.BinaryFile(tempDir.join(u'readme').s) as input:
-                with ocdDir.join(u'readme.rtf').open('w') as output:
-                    output.write(input.readNetString())
-        progress(0.49, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscreenshot')
-        if tempDir.join(u'image').exists():
-            tempDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
-        progress(0.5,self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nconfig')
-        tempDir.join(u'config').moveTo(ocdDir.join(u'config'))
+            # Collect OMOD conversion data
+            ocdDir = stageDir.join(u'omod conversion data')
+            progress(0.46, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\ninfo.txt')
+            self.writeInfo(ocdDir.join(u'info.txt'), self.path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
+            progress(0.47, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscript')
+            if extractDir.join(u'script').exists():
+                with bolt.BinaryFile(extractDir.join(u'script').s) as input:
+                    with ocdDir.join(u'script.txt').open('w') as output:
+                        output.write(input.readNetString())
+            progress(0.48, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nreadme.rtf')
+            if extractDir.join(u'readme').exists():
+                with bolt.BinaryFile(tempDir.join(u'readme').s) as input:
+                    with ocdDir.join(u'readme.rtf').open('w') as output:
+                        output.write(input.readNetString())
+            progress(0.49, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscreenshot')
+            if extractDir.join(u'image').exists():
+                extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
+            progress(0.5,self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nconfig')
+            extractDir.join(u'config').moveTo(ocdDir.join(u'config'))
 
-        # Extract the files
-        if self.compType == 0:
-            extract = self.extractFiles7z
-        else:
-            extract = self.extractFilesZip
+            # Extract the files
+            if self.compType == 0:
+                extract = self.extractFiles7z
+            else:
+                extract = self.extractFilesZip
 
-        pluginSize = sizes.get('plugins',0)
-        dataSize = sizes.get('data',0)
-        subprogress = bolt.SubProgress(progress, 0.5, 1)
-        with outDir.unicodeSafe() as tempOut:
-            if tempDir.join(u'plugins.crc').exists() and tempDir.join(u'plugins').exists():
-                pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
-                extract(tempDir.join(u'plugins.crc'),tempDir.join(u'plugins'),tempOut,pluginProgress)
-            if tempDir.join(u'data.crc').exists() and tempDir.join(u'data').exists():
-                dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
-                extract(tempDir.join(u'data.crc'),tempDir.join(u'data'),tempOut,dataProgress)
-            progress(1,self.path.stail+u'\n'+_(u'Extracted'))
+            pluginSize = sizes.get('plugins',0)
+            dataSize = sizes.get('data',0)
+            subprogress = bolt.SubProgress(progress, 0.5, 1)
+            with stageDir.unicodeSafe() as tempOut:
+                if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():
+                    pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
+                    extract(extractDir.join(u'plugins.crc'),extractDir.join(u'plugins'),tempOut,pluginProgress)
+                if extractDir.join(u'data.crc').exists() and extractDir.join(u'data').exists():
+                    dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
+                    extract(extractDir.join(u'data.crc'),extractDir.join(u'data'),tempOut,dataProgress)
+                progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
-        # Clean up temp dir
-        dirs['mopy'].join(u'temp').rmtree(u'temp')
+            # Move files to final directory
+            balt.shellMove(stageDir,outDir.head)
+        except Exception as e:
+            # Error occured, see if final output dir needs deleting
+            if outDir.exists():
+                try:
+                    balt.shellDelete(outDir,progress.getParent(),False,False,False)
+                except:
+                    pass
+        finally:
+            # Clean up temp directories
+            extractDir.rmtree(safety=extractDir.stail)
+            stageBaseDir.rmtree(safety=stageBaseDir.stail)
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes = self.getFile_CrcSizes(crcPath)
@@ -4230,7 +4242,7 @@ class FileInfo:
 
     def tempBackup(self, forceBackup=True):
         """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
-        self._doBackup(GPath(tempfile.gettempdir()).join(u'WryeBash_temp_backup'),forceBackup)
+        self._doBackup(Path.baseTempDir().join(u'WryeBash_temp_backup'),forceBackup)
 
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
@@ -7107,7 +7119,7 @@ class Installer(object):
     @staticmethod
     def newTempDir():
         """Generates a new temporary directory name, sets it as the current Temp Dir."""
-        Installer._tempDir = GPath(tempfile.mkdtemp(prefix=u'WryeBash_'))
+        Installer._tempDir = Path.tempDir(u'WryeBash_')
         return Installer._tempDir
 
     @staticmethod
@@ -7134,7 +7146,7 @@ class Installer(object):
             except:
                 Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
 
-    tempList = GPath(tempfile.gettempdir()).join(u'WryeBash_InstallerTempList.txt')
+    tempList = Path.baseTempDir().join(u'WryeBash_InstallerTempList.txt')
 
     #--Class Methods ----------------------------------------------------------
     @staticmethod
