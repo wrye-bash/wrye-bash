@@ -1545,12 +1545,12 @@ class ModFile:
             print fileName.s,u'not saved.'
 
     def safeSave(self):
-        """Save data to file safely."""
-        self.fileInfo.makeBackup()
+        """Save data to file safely.  Works under UAC."""
+        self.fileInfo.tempBackup()
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
-        filePath.untemp()
-        self.fileInfo.setmtime()
+        filePath.temp.mtime = self.fileInfo.mtime
+        balt.shellMove(filePath.temp,filePath,None,False,False,False)
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -4209,13 +4209,12 @@ class FileInfo:
         path.mtime = mtime
         self.mtime = path.mtime
 
-    def makeBackup(self, forceBackup=False):
-        """Creates backup(s) of file."""
+    def _doBackup(self,backupDir,forceBackup=False):
+        """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
         if not self in self.getFileInfos().data.values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup Directory
-        backupDir = self.bashDir.join(u'Backups')
         backupDir.makedirs()
         #--File Path
         original = self.getPath()
@@ -4228,6 +4227,15 @@ class FileInfo:
         if not firstBackup.exists():
             original.copyTo(firstBackup)
             self.coCopy(original,firstBackup)
+
+    def tempBackup(self, forceBackup=True):
+        """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
+        self._doBackup(GPath(tempfile.gettempdir()).join(u'WryeBash_temp_backup'),forceBackup)
+
+    def makeBackup(self, forceBackup=False):
+        """Creates backup(s) of file."""
+        backupDir = self.bashDir.join(u'Backups')
+        self._doBackup(backupDir,forceBackup)
         #--Done
         self.madeBackup = True
 
