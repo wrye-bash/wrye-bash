@@ -7634,8 +7634,15 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-                with readme.open('w',encoding='utf-8-sig') as file:
+                with readme.temp.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
+                try:
+                    balt.shellMove(readme.temp,readme,self,False,False,False)
+                except (CancelError,SkipError):
+                    # User didn't allow UAC, move to My Games directoy instead
+                    dest = bosh.dirs['saveBase'].join(readme.tail)
+                    balt.shellMove(readme.temp,dest,self,False,False,False)
+                    readme = dest
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
                 docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
@@ -10128,7 +10135,7 @@ class Installer_Duplicate(InstallerLink):
         isdir = self.data.dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.rootExt
-        newName = root+u' Copy'+ext
+        newName = root+_(u' Copy')+ext
         index = 0
         while newName in self.data:
             newName = root + (_(u' Copy (%d)') % index) + ext
