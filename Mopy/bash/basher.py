@@ -7622,26 +7622,23 @@ class PatchDialog(wx.Dialog):
                 #--Save
                 progress.setCancel(False)
                 progress(0.9,patchName.s+u'\n'+_(u'Saving...'))
-                try:
-                    patchFile.safeSave()
-                except (CancelError,SkipError,WindowsError) as error:
-                    if isinstance(error,WindowsError) and error.winerror != 32:
-                        raise
-                    message = (_(u'Bash encountered and error when saving %(patchName)s.')
-                               + u'\n\n' +
-                               _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
-                               + u'\n' +
-                               _(u'Please close any program that is accessing %(patchName)s, and provide Administrator Privileges if prompted to do so.')
-                               + u'\n\n' +
-                               _(u'Try again?')) % {'patchName':patchName.s}
-                    while balt.askYes(self,message,_(u'Bash Patch - Save Error')):
-                        try:
-                            patchFile.safeSave()
-                        except (CancelError,SkipError,WindowsError) as error:
+                message = (_(u'Bash encountered and error when saving %(patchName)s.')
+                           + u'\n\n' +
+                           _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
+                           + u'\n' +
+                           _(u'Please close any program that is accessing %(patchName)s, and provide Administrator Privileges if prompted to do so.')
+                           + u'\n\n' +
+                           _(u'Try again?')) % {'patchName':patchName.s}
+                while True:
+                    try:
+                        patchFile.safeSave()
+                    except (CancelError,SkipError,WindowsError) as error:
+                        if isinstance(error,WindowsError) and error.winerror != 32:
+                            raise
+                        if balt.askYes(self,message,_(u'Bash Patch - Save Error')):
                             continue
-                        break
-                    else:
                         raise CancelError
+                    break
 
                 #--Cleanup
                 self.patchInfo.refresh()
@@ -9937,11 +9934,13 @@ class Installer_EditWizard(InstallerLink):
             with balt.BusyCursor():
                 # This is going to leave junk temp files behind...
                 archive.unpackToTemp(path, [archive.hasWizard])
-            archive.tempDir.join(archive.hasWizard).start()
             try:
-                archive.tempDir.rmtree(archive.tempDir.stail)
-            except:
-                pass
+                archive.getTempDir().join(archive.hasWizard).start()
+            finally:
+                try:
+                    archive.rmTempDir()
+                except:
+                    pass
 
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
