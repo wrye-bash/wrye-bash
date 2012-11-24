@@ -804,7 +804,7 @@ class SashTankPanel(NotebookPanel):
         """Panel is shown. Update self.data."""
         if self.gList.data.refresh():
             self.gList.RefreshUI()
-        super(SashTankPanel).OnShow()
+        super(SashTankPanel,self).OnShow()
 
     def OnSashDrag(self,event):
         """Handle sash moved."""
