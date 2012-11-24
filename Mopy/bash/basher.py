@@ -7657,20 +7657,23 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
+                tempReadmeDir = Path.tempDir(u'WryeBash_').join(u'Docs')
+                tempReadme = tempReadmeDir.join(patchName.sroot+u'.txt')
                 #--Write log/readme to temp dir first
-                with readme.temp.open('w',encoding='utf-8-sig') as file:
+                with tempReadme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
                 #--Convert log/readmeto wtxt
                 docsDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
-                bolt.WryeText.genHtml(readme.temp,None,docsDir)
+                bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    srcFiles = [readme.temp,readme.temp.root+u'.html']
-                    balt.shellMove(srcFiles,[readme,readme.root+u'.html'],self,False,False,False)
+                    balt.shellMove(tempReadmeDir,bosh.dirs['mods'],self,False,False,False)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directoy instead
-                    balt.shellMove(srcFiles,bosh.dirs['saveBase'],self,False,False,False)
+                    balt.shellMove([tempReadme,tempReadme.root+u'.html'],bosh.dirs['saveBase'],self,False,False,False)
                     readme = bosh.dirs['saveBase'].join(readme.tail)
+                #finally:
+                #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
