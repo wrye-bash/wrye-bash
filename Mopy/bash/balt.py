@@ -887,21 +887,37 @@ def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,aut
     return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
 
 def shellMakeDirs(dirName,parent=None):
-    toMake = []
-    toMakeAppend = toMake.append
-    while not dirName.exists():
-        toMakeAppend(dirName.tail)
-        dirName = dirName.head
-    if not toMake:
+    if not dirName:
         return
-    toMake.reverse()
-    tempDir = bolt.Path.tempDir(u'WryeBash_')
-    toMake = tempDir.join(*toMake)
-    toMake.makedirs()
+    elif not isinstance(dirName,(list,tuple,set)):
+        dirName = [dirName]
+    tempDirs = []
+    tempDirsAppend = tempDirs.append
+    fromDirs = []
+    fromDirsAppend = fromDirs.append
+    toDirs =[]
+    toDirsAppend = toDirs.append
     try:
-        shellMove(tempDir.join(tempDir.list()[0]),dirName,parent,False,False,False)
+        for dir in dirName:
+            tempDir = bolt.Path.tempDir(u'WryeBash_')
+            tempDirsAppend(tempDir)
+            toMake = []
+            toMakeAppend = toMake.append
+            while not dir.exists():
+                toMakeAppend(dir.tail)
+                dir = dir.head
+            if not toMake:
+                continue
+            toMake.reverse()
+            base = tempDir.join(toMake[0])
+            toDir = dir.join(toMake[0])
+            tempDir.join(*toMake).makedirs()
+            fromDirsAppend(base)
+            toDirsAppend(toDir)
+        shellMove(fromDirs,toDirs,parent,False,False,False)
     finally:
-        tempDir.rmtree(safety=tempDir.stail)
+        for tempDir in tempDirs:
+            tempDir.rmtree(safety=tempDir.stail)
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------

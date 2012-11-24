@@ -4939,7 +4939,8 @@ class FileInfos(DataDict):
         newNames = set()
         added = set()
         updated = set()
-        self.dir.makedirs()
+        balt.shellMakeDirs(self.dir)
+        #self.dir.makedirs()
         #--Loop over files in directory
         names = [ x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x) ]
         if self.dirdef:
@@ -29953,8 +29954,8 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
-    for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData','bsaCache'):
-        dirs[key].makedirs()
+    print 'makedirs'
+    balt.shellMakeDirs([dirs[key] for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData','bsaCache')])
 
     # Setup BOSS API
     global configHelpers
