@@ -101,6 +101,8 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
     os.environ['PATH'] += ';'+sys.prefix
 
 appRestart = False # restart Bash if true
+uacRestart = False # restart Bash with Admin Rights if true
+isUAC = False      # True if the game is under UAC protection
 
 # Singletons ------------------------------------------------------------------
 statusBar = None
@@ -8826,6 +8828,9 @@ class Files_Unhide(Link):
             srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'', wildcard)
         if not srcPaths: return
         #--Iterate over Paths
+        srcFiles = []
+        destFiles = []
+        coSavesMoves = {}
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
@@ -8846,10 +8851,19 @@ class Files_Unhide(Link):
                     % (srcFileName.s,))
             #--Move it?
             else:
-                srcPath.moveTo(destPath)
+                srcFiles.append(srcPath)
+                dsestFiles.append(destPath)
                 if isSave:
-                    bosh.CoSaves(srcPath).move(destPath)
-        #--Repopulate
+                    coSavesMove[destPath] = bosh.CoSaves(srcPath)
+        #--Now move everything at once
+        if not srcFiles:
+            return
+        try:
+            balt.shellMove(srcFiles,destFiles,window,False,False,False)
+            for dest in coSavesMove:
+                coSavesMoves[dest].move(dest)
+        except (CancelError,SkipError):
+            pass
         bashFrame.RefreshData()
 
 # File Links ------------------------------------------------------------------

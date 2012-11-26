@@ -773,6 +773,21 @@ except ImportError:
     FO_COPY = 2
     FO_RENAME = 3
 
+class FileOperationError(Exception):
+    def __init__(self,errorCode):
+        self.errno = errorCode
+        Exception.__init__(self,u'FileOperationError: %i' % errorCode)
+
+class AccessDeniedError(FileOperationError):
+    def __init__(self):
+        self.errno = 120
+        Exception.__init__(self,u'FileOperationError: Access Denied')
+
+FileOperationErrorMap = {
+    120: AccessDeniedError,
+    1223: CancelError,
+    }
+
 def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,renameOnCollision=False,silent=False,parent=None):
     if not source:
         return {}
@@ -819,14 +834,11 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             if nAborted:
                 raise SkipError(nAborted if nAborted is not True else None)
             return dict(mapping)
-        elif result == 1223:
-            # User Canceled
-            raise CancelError
         elif result == 2 and operation == FO_DELETE:
             # Delete failed because file didnt exist
             return dict(mapping)
         else:
-            raise Exception(result)
+            raise FileOperationErrorMap.get(result,FileOperationError(result))
 
     else:
         # Use custom dialogs and such
