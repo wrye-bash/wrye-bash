@@ -29,6 +29,7 @@ import atexit
 import os
 from time import time, sleep
 import sys
+import codecs
 import re
 import traceback
 import StringIO
@@ -153,6 +154,7 @@ def exit():
 
     if basherImported:
         from basher import appRestart
+        from basher import uacRestart
         if appRestart:
             if isinstance(appRestart,set):
                 # Special case for applying updates
@@ -164,7 +166,7 @@ def exit():
                 special = False
                 if not hasattr(sys,'frozen'):
                     exePath = GPath(sys.executable)
-                    sys.argv = [exePath.stail] + sys.argv
+                    #sys.argv = [exePath.stail] + sys.argv
                 if u'--restarting' not in sys.argv:
                     sys.argv += [u'--restarting']
                 def updateArgv(args):
@@ -187,6 +189,16 @@ def exit():
                                 sys.argv.extend(args)
                 updateArgv(appRestart)
             try:
+                if uacRestart:
+                        import win32api
+                        if hasattr(sys,'frozen'):
+                            win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join('"%s"' % x for x in sys.argv[1:]),os.getcwdu(),True)
+                        else:
+                            args = u' '.join([u'%s',u'"%s"'][u' ' in x] % x for x in sys.argv)
+                            print 'exe:',  exePath.s
+                            print 'args:', args
+                            win32api.ShellExecute(0,'runas',exePath.s,args,os.getcwdu(),True)
+                        return
                 import subprocess
                 if special:
                     subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
@@ -215,18 +227,21 @@ def dump_environment():
 
 # Main ------------------------------------------------------------------------
 def main():
-    if hasattr(sys,'frozen'):
-        # Standalone stdout is NUL, no matter what.  Reassign it to stderr so the output
-        # goes to 'Wrye Bash.exe.txt'
-        sys.stdout = sys.stderr
-        # Also, save it for later, to regain control from wxPython
-        old_stderr = sys.stderr
     bolt.deprintOn = opts.debug
     if len(extra) > 0:
         return
 
     # useful for understanding context of bug reports
-    if opts.debug: dump_environment()
+    if opts.debug or hasattr(sys,'frozen'):
+        # Standalone stdout is NUL no matter what.   Redirect it to stderr.
+        # Also, setup stdout/stderr to the debug log if debug mode / standalone before wxPython is up
+        errLog = open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w')
+        sys.stdout = errLog
+        sys.stderr = errLog
+        old_stderr = errLog
+
+    if opts.debug:
+        dump_environment()
 
     if opts.Psyco:
         try:
@@ -362,11 +377,12 @@ def main():
     #  required before the rest has imported
     SetUserPath(u'bash.ini',opts.userPath)
 
+    isUAC = False
     try:
         # Force Python mode if CBash can't work with this game
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
-        bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
+        isUAC = bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
 
         # if HTML file generation was requested, just do it and quit
@@ -525,6 +541,19 @@ def main():
 
     global basherImported
     basherImported = True
+
+    basher.isUAC = isUAC
+    if isUAC:
+        # Show a prompt asking if we should restart in Admin Mode
+        if balt.askYes(None,_(u"It appears that the game folder is under UAC protection.  To allow Wrye Bash to work properly, it is recommended that you reinstall/move the game outside of UAC's protection.")
+                       + u'\n\n' +
+                       _(u"If you do not want to do this, Wrye Bash will need Administrator Privileges to function correctly.  If you do not run Wrye Bash in Admin Mode, it will attempt to ask for permission every time it needs Administrator Privileges to perform an action.")
+                       + u'\n\n' +
+                       _(u"Would you like to start Wrye Bash in Admin Mode?"),
+                       _(u'UAC Protection')):
+            basher.appRestart = True
+            basher.uacRestart = True
+            return
 
     app.Init()
     app.MainLoop()
