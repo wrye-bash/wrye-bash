@@ -4989,7 +4989,7 @@ class FileInfos(DataDict):
         newPath = self.dir.join(newName)
         if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
-        oldPath.moveTo(newPath)
+        balt.shellMove(oldPath,newPath,None,False,False,False)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -5924,7 +5924,10 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        oldIndex = boss.GetPluginLoadOrder(oldName)
+        try:
+            oldIndex = boss.GetPluginLoadOrder(oldName)
+        except (CancelError,SkipError):
+            return
         isSelected = self.isSelected(oldName)
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
@@ -29893,6 +29896,25 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.name)
 
+    # Test UAC
+    isUAC = False
+    tempDir = bolt.Path.tempDir(u'WryeBash_')
+    tempFile = tempDir.join(u'_tempfile.tmp')
+    dest = dirs['mods'].join(u'_tempfile.tmp')
+    with tempFile.open('wb') as out:
+        pass
+    try:
+        balt.fileOperation(balt.FO_MOVE,tempFile,dest,False,False,False,True,None)
+    except balt.AccessDeniedError:
+        isUAC = True
+    finally:
+        tempDir.rmtree(safety=tempDir.stail)
+        if dest.exists():
+            try:
+                balt.shellDelete(dest,None,False,False)
+            except:
+                pass
+
     #  Personal
     personal = getPersonalPath(bashIni,personal)
     dirs['saveBase'] = personal.join(u'My Games',bush.game.name)
@@ -29954,12 +29976,13 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
-    print 'makedirs'
     balt.shellMakeDirs([dirs[key] for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData','bsaCache')])
 
     # Setup BOSS API
     global configHelpers
     configHelpers = ConfigHelpers()
+
+    return isUAC
 
 def initLinks(appDir):
     #-- Other tools
@@ -30159,11 +30182,12 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
         bashIni = ConfigParser.ConfigParser()
         bashIni.read(u'bash.ini')
 
-    initDirs(bashIni,personal,localAppData, oblivionPath)
+    isUAC = initDirs(bashIni,personal,localAppData, oblivionPath)
     initOptions(bashIni)
     initLogFile()
     Installer.initData()
     PatchFile.initGameData()
+    return isUAC
 
 def initSettings(readOnly=False):
     global settings

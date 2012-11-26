@@ -114,7 +114,7 @@ class InstallerWizard(wiz.Wizard):
                     u'*.cur',            # CUR's
                     u'*.ani',            # ANI's
                     ], bosh.SubProgress(progress,0,0.9), recurse=True)
-            self.wizard_file = installer.gettTempDir().join(installer.hasWizard)
+            self.wizard_file = installer.getTempDir().join(installer.hasWizard)
         else:
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
         self.parser = WryeParser(self, installer, subs, bArchive, path, link.bAuto)
