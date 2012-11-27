@@ -127,6 +127,11 @@ def parse():
                         default=False,
                         dest='restarting',
                         help=optparse.SUPPRESS_HELP)
+    parser.add_option('--no-uac',
+                        action='store_true',
+                        default=False,
+                        dest='uac',
+                        help='suppress the prompt to restart in admin mode when UAC is detected.')
     parser.add_option('--bashmon',
                         action='store_true',
                         help=optparse.SUPPRESS_HELP)

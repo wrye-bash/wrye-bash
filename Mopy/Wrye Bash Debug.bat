@@ -83,7 +83,7 @@ GOTO END
 
 
 :FOUND
-SET PYTHON=%PYPATH%python.exe
+SET PYTHON=%PYPATH%pythonw.exe
 
 :FOUNDPYTHON
 ECHO Found Python at '%PYTHON%'
