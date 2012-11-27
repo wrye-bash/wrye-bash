@@ -6011,7 +6011,7 @@ class BashFrame(wx.Frame):
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.name
             balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
 
-    def Restart(self,args=True):
+    def Restart(self,args=True,uac=False):
         if not args: return
 
         def argConvert(arg):
@@ -6039,6 +6039,9 @@ class BashFrame(wx.Frame):
             self.updater.WriteBatchFile(args)
         else:
             appRestart = args
+
+        global uacRestart
+        uacRestart = uac
         self.Close(True)
 
     def SetTitle(self,title=None):
@@ -7421,6 +7424,7 @@ class PatchDialog(wx.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_(u'Build Patch'),onClick=self.Execute)
+        SetUAC(self.gExecute)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Deselect All'),onClick=self.DeselectAll)
         cancelButton = button(self,id=wx.ID_CANCEL,label=_(u'Cancel'))
@@ -8738,6 +8742,16 @@ otherPatcherDict = {
     }
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+def SetUAC(item):
+    """Helper function for creating menu items or buttons that need UAC"""
+    if isUAC:
+        if isinstance(item,wx.MenuItem):
+            if item.IsEnabled():
+                bitmap = images['uac.small'].GetBitmap()
+                item.SetBitmap(bitmap)
+        else:
+            balt.setUAC(item,isUAC)
+
 class BoolLink(Link):
     """Simple link that just toggles a setting."""
     def __init__(self, text, key, help='', opposite=False):
@@ -8872,8 +8886,10 @@ class File_Delete(Link):
     """Delete the file and all backups."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
-                help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
+                               help=_(u"Delete %(filename)s.") % ({'filename':data[0]}))
+        menu.AppendItem(menuItem)
+        SetUAC(menuItem)
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
@@ -8902,6 +8918,7 @@ class File_Duplicate(Link):
         self.title = (_(u'Duplicate'),_(u'Duplicate...'))[len(data) == 1]
         menuItem = wx.MenuItem(menu,self.id,self.title, _(u"Make a copy of '%s'") % (data[0]))
         menu.AppendItem(menuItem)
+        SetUAC(menuItem)
 
     def Execute(self,event):
         data = self.data
@@ -8966,8 +8983,10 @@ class File_Hide(Link):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Hide'),
-                help=_(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]})))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Hide'),
+                               help=_(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]}))
+        menu.AppendItem(menuItem)
+        SetUAC(menuItem)
 
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
@@ -9144,6 +9163,7 @@ class File_RevertToSnapshot(Link):
             help=_(u"Revert to a previously created snapshot from the Bash/Snapshots dir."))
         menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
+        SetUAC(menuItem)
 
     def Execute(self,event):
         """Handle menu item selection."""
@@ -9203,12 +9223,14 @@ class File_RevertToBackup:
         menu.AppendItem(menuItem)
         self.backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
         menuItem.Enable(singleSelect and self.backup.exists())
+        SetUAC(menuItem)
         #--First Backup item
         wx.EVT_MENU(window,ID_REVERT_FIRST,self.Execute)
         menuItem = wx.MenuItem(menu,ID_REVERT_FIRST,_(u'Revert to First Backup'))
         menu.AppendItem(menuItem)
         self.firstBackup = self.backup +u'f'
         menuItem.Enable(singleSelect and self.firstBackup.exists())
+        SetUAC(menuItem)
 
     def Execute(self,event):
         fileInfo = self.fileInfo
@@ -12939,6 +12961,24 @@ class Settings_UseAltName(BoolLink):
         BoolLink.Execute(self,event)
         bashFrame.SetTitle()
 
+#------------------------------------------------------------------------------
+class Settings_UAC(Link):
+    def AppendToMenu(self,menu,window,data):
+        if not isUAC:
+            return
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Administrator Mode'),
+                               help=_(u'Restart Wrye Bash with administrator privileges.'))
+        menu.AppendItem(menuItem)
+        SetUAC(menuItem)
+
+    def Execute(self,event):
+        if balt.askYes(bashFrame,
+                       _(u'Restart Wrye Bash with administrator privileges?'),
+                       _(u'Administrator Mode'),
+                       ):
+            bashFrame.Restart(True,True)
+
 # StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
 class StatusBar_Hide(Link):
@@ -13891,6 +13931,7 @@ class Mod_CreateDummyMasters(Link):
             menuItem.Enable(True)
         else:
             menuItem.Enable(False)
+        SetUAC(menuItem)
 
     def Execute(self,event):
         """Handle execution."""
@@ -14911,6 +14952,7 @@ class Mod_Patch_Update(Link):
             menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
+        SetUAC(menuItem)
         menu.AppendItem(menuItem)
         menuItem.Enable(enable)
         if enable and settings['bash.CBashEnabled']:
@@ -18577,6 +18619,9 @@ def InitImages():
     images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),wx.BITMAP_TYPE_PNG)
     images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),wx.BITMAP_TYPE_PNG)
+    #--UAC icons
+    images['uac.small'] = Image(GPath(balt.getUACIcon('small')),wx.BITMAP_TYPE_ICO)
+    images['uac.large'] = Image(GPath(balt.getUACIcon('large')),wx.BITMAP_TYPE_ICO)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
@@ -19718,6 +19763,7 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Mods_Deprint())
     SettingsMenu.append(Mods_DumpTranslator())
+    SettingsMenu.append(Settings_UAC())
     #--Check for updates
     if True:
         updateMenu = MenuLink(_(u'Check for Updates'))

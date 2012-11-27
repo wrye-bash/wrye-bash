@@ -29877,6 +29877,36 @@ def getBashModDataPath(bashIni):
 def getLegacyPath(newPath, oldPath):
     return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
 
+def testUAC(oblivionPath):
+    print 'testing UAC'
+    #--Bash Ini
+    bashIni = None
+    if GPath(u'bash.ini').exists():
+        try:
+            bashIni = ConfigParser.ConfigParser()
+            bashIni.read(u'bash.ini')
+        except:
+            bashIni = None
+
+    dir = getOblivionPath(bashIni,oblivionPath).join(u'Data')
+    tempDir = bolt.Path.tempDir(u'WryeBash_')
+    tempFile = tempDir.join(u'_tempfile.tmp')
+    dest = dir.join(u'_tempfile.tmp')
+    with tempFile.open('wb') as out:
+        pass
+    try:
+        balt.fileOperation(balt.FO_MOVE,tempFile,dest,False,False,False,True,None)
+    except balt.AccessDeniedError:
+        return True
+    finally:
+        tempDir.rmtree(safety=tempDir.stail)
+        if dest.exists():
+            try:
+                balt.shellDelete(dest,None,False,False)
+            except:
+                pass
+    return False
+
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
@@ -29895,25 +29925,6 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.name)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.name)
-
-    # Test UAC
-    isUAC = False
-    tempDir = bolt.Path.tempDir(u'WryeBash_')
-    tempFile = tempDir.join(u'_tempfile.tmp')
-    dest = dirs['mods'].join(u'_tempfile.tmp')
-    with tempFile.open('wb') as out:
-        pass
-    try:
-        balt.fileOperation(balt.FO_MOVE,tempFile,dest,False,False,False,True,None)
-    except balt.AccessDeniedError:
-        isUAC = True
-    finally:
-        tempDir.rmtree(safety=tempDir.stail)
-        if dest.exists():
-            try:
-                balt.shellDelete(dest,None,False,False)
-            except:
-                pass
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
@@ -29981,8 +29992,6 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     # Setup BOSS API
     global configHelpers
     configHelpers = ConfigHelpers()
-
-    return isUAC
 
 def initLinks(appDir):
     #-- Other tools
@@ -30182,12 +30191,11 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
         bashIni = ConfigParser.ConfigParser()
         bashIni.read(u'bash.ini')
 
-    isUAC = initDirs(bashIni,personal,localAppData, oblivionPath)
+    initDirs(bashIni,personal,localAppData, oblivionPath)
     initOptions(bashIni)
     initLogFile()
     Installer.initData()
     PatchFile.initGameData()
-    return isUAC
 
 def initSettings(readOnly=False):
     global settings

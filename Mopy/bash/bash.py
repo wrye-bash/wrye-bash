@@ -166,9 +166,13 @@ def exit():
                 special = False
                 if not hasattr(sys,'frozen'):
                     exePath = GPath(sys.executable)
-                    #sys.argv = [exePath.stail] + sys.argv
+                    sys.argv = [exePath.stail] + sys.argv
                 if u'--restarting' not in sys.argv:
                     sys.argv += [u'--restarting']
+                #--Assume if we're restarting that they don't want to be
+                #  prompted again about UAC
+                if u'--no-uac' not in sys.argv:
+                    sys.argv += [u'--no-uac']
                 def updateArgv(args):
                     if isinstance(args,(list,tuple)):
                         if len(args) > 0 and isinstance(args[0],(list,tuple)):
@@ -190,22 +194,23 @@ def exit():
                 updateArgv(appRestart)
             try:
                 if uacRestart:
-                        import win32api
-                        if hasattr(sys,'frozen'):
-                            win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join('"%s"' % x for x in sys.argv[1:]),os.getcwdu(),True)
-                        else:
-                            args = u' '.join([u'%s',u'"%s"'][u' ' in x] % x for x in sys.argv)
-                            print 'exe:',  exePath.s
-                            print 'args:', args
-                            win32api.ShellExecute(0,'runas',exePath.s,args,os.getcwdu(),True)
-                        return
-                import subprocess
-                if special:
-                    subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
-                elif hasattr(sys,'frozen'):
-                    subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
+                    if not hasattr(sys,'frozen'):
+                        sys.argv = sys.argv[1:]
+                    import win32api
+                    if hasattr(sys,'frozen'):
+                        win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join('"%s"' % x for x in sys.argv[1:]),os.getcwdu(),True)
+                    else:
+                        args = u' '.join([u'%s',u'"%s"'][u' ' in x] % x for x in sys.argv)
+                        win32api.ShellExecute(0,'runas',exePath.s,args,os.getcwdu(),True)
+                    return
                 else:
-                    subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                    import subprocess
+                    if special:
+                        subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
+                    elif hasattr(sys,'frozen'):
+                        subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
+                    else:
+                        subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
             except Exception, error:
                 print error
                 print u'Error Attempting to Restart Wrye Bash!'
@@ -382,7 +387,8 @@ def main():
         # Force Python mode if CBash can't work with this game
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
-        isUAC = bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
+        isUAC = bosh.testUAC(opts.oblivionPath)
+        bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
 
         # if HTML file generation was requested, just do it and quit
@@ -543,14 +549,23 @@ def main():
     basherImported = True
 
     basher.isUAC = isUAC
-    if isUAC:
+    if isUAC and not opts.uac:
         # Show a prompt asking if we should restart in Admin Mode
-        if balt.askYes(None,_(u"It appears that the game folder is under UAC protection.  To allow Wrye Bash to work properly, it is recommended that you reinstall/move the game outside of UAC's protection.")
-                       + u'\n\n' +
-                       _(u"If you do not want to do this, Wrye Bash will need Administrator Privileges to function correctly.  If you do not run Wrye Bash in Admin Mode, it will attempt to ask for permission every time it needs Administrator Privileges to perform an action.")
-                       + u'\n\n' +
-                       _(u"Would you like to start Wrye Bash in Admin Mode?"),
-                       _(u'UAC Protection')):
+        message = _(u"Wrye Bash needs Administrator Privileges to make changes to the %(gameName)s directory.  If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges.") % {'gameName':bush.game.name}
+        title=_(u'UAC Protection')
+        if balt.canVista:
+            admin = _(u'Run with Administrator Privileges')
+            result = balt.vistaDialog(None,
+                message=message,
+                buttons=[(True,'+'+admin),
+                         (False,_(u'Run normally')),
+                         ],
+                title=title)
+        else:
+            result = balt.askYes(None,
+                message+u'\n\n'+_(u'Start Wrye Bash with Administrator Privileges?'),
+                title)
+        if result:
             basher.appRestart = True
             basher.uacRestart = True
             return

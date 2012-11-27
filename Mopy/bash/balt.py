@@ -541,6 +541,31 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
         return value
 
 # Message Dialogs -------------------------------------------------------------
+import win32gui
+import windows
+canVista = windows.TASK_DIALOG_AVAILABLE
+
+def getUACIcon(size='small'):
+    if size == 'small':
+        flag = windows.SHGSI_SMALLICON
+    else:
+        flag = windows.SHGSI_LARGEICON
+    path,idex = windows.GetStockIconLocation(windows.SIID_SHIELD,flag)
+    return path+u';%s' % idex
+
+def setUAC(button,uac=True):
+    windows.setUAC(button.GetHandle(),uac)
+
+def vistaDialog(parent,message,title,buttons=[],commandLinks=True):
+    dialog = windows.TaskDialog(u'Wrye Bash',title,message,
+                                buttons=[x[1] for x in buttons],
+                                parenthwnd=parent.GetHandle() if parent else None)
+    result = dialog.show(commandLinks)
+    for id,title in buttons:
+        if title.startswith(u'+'): title = title[1:]
+        if title == result[0]:
+            return id
+
 def askStyled(parent,message,title,style):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
