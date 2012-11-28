@@ -2416,6 +2416,19 @@ def csvFormat(format):
     return csvFormat[1:] #--Chop leading comma
 
 deprintOn = False
+
+class tempDebugMode(object):
+    __slots__=('_old')
+    def __init__(self):
+        global deprintOn
+        self._old = deprintOn
+        deprintOn = True
+
+    def __enter__(self): return self
+    def __exit__(self,*args,**kwdargs):
+        global deprintOn
+        deprintOn = self._old
+
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
@@ -2731,11 +2744,20 @@ class StringTable(dict):
                         value = insRead(strLen)
                     else:
                         value = insReadCString()
-                    value = unicode(cstrip(value),'cp1252')
+                    try:
+                        value = unicode(cstrip(value),'cp1252')
+                    except:
+                        deprint(u'Error decoding string in string file.')
+                        deprint(u'id:', id)
+                        deprint(u'raw string:', repr(cstrip(value)))
+                        deprint(u'file pos:', insTell())
+                        deprint(u'cp1252:', unicode(cstrip(value),'cp1252'))
+                        deprint(u'8859-1:', unicode(cstrip(value),'iso8859-1'))
+                        raise
                     insSeek(pos)
                     self[id] = value
         except:
-            deprint(u'Error loading string file:', traceback=True)
+            deprint(u'Error loading string file:', path.stail, traceback=True)
             return
 
 # WryeText --------------------------------------------------------------------

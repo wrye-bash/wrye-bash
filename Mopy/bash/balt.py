@@ -556,10 +556,15 @@ def getUACIcon(size='small'):
 def setUAC(button,uac=True):
     windows.setUAC(button.GetHandle(),uac)
 
-def vistaDialog(parent,message,title,buttons=[],commandLinks=True):
+def vistaDialog(parent,message,title,buttons=[],icon=None,commandLinks=True,footer=u'',expander=[]):
     dialog = windows.TaskDialog(u'Wrye Bash',title,message,
                                 buttons=[x[1] for x in buttons],
+                                icon=icon,
                                 parenthwnd=parent.GetHandle() if parent else None)
+    if footer:
+        dialog.set_footer(footer)
+    if expander:
+        dialog.set_expander(expander)
     result = dialog.show(commandLinks)
     for id,title in buttons:
         if title.startswith(u'+'): title = title[1:]
