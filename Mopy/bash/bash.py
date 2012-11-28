@@ -122,11 +122,47 @@ def oneInstanceChecker():
         if pidpath.exists(): os.remove(pidpath.s)
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
         os.write(lockfd, u"%d" % os.getpid())
-    except OSError, e:
+    except OSError as e:
         # lock file exists and is currently locked by another process
-        msg = _(u'Already started')
-        try: print msg
-        except UnicodeError: print msg.encode('mbcs')
+        msg = _(u'Only one instance of Wrye Bash can run.')
+        try:
+            import balt
+            if balt.canVista:
+                balt.vistaDialog(None,
+                    message=msg,
+                    title=u'',
+                    icon='error',
+                    buttons=[(True,'ok')],
+                    )
+            else:
+                try:
+                    import wx
+                    _app = wx.App(False)
+                    dialog = wx.MessageDialog(None,msg,_(u'Wrye Bash'),wx.ID_OK)
+                    dialog.ShowModal()
+                    dialog.Destory()
+                except ImportError as e:
+                    print 'error: e'
+                    import Tkinter
+                    root = Tkinter.Tk()
+                    frame = Tkinter.Frame(root)
+                    frame.pack()
+
+                    button = Tkinter.Button(frame, text=_(u"Ok"), command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+                    button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
+
+                    w = Tkinter.Text(frame)
+                    w.insert(Tkinter.END, msg)
+                    w.config(state=Tkinter.DISABLED)
+                    w.pack()
+                    root.mainloop()
+        except Exception as e:
+            print 'error:', e
+            pass
+        try:
+            print msg
+        except UnicodeError:
+            print msg.encode('mbcs')
         return False
 
     return True
@@ -135,7 +171,7 @@ def exit():
     try:
         os.close(lockfd)
         os.remove(pidpath.s)
-    except OSError, e:
+    except OSError as e:
         print e
 
     # Cleanup temp installers directory
@@ -211,7 +247,7 @@ def exit():
                         subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
                     else:
                         subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-            except Exception, error:
+            except Exception as error:
                 print error
                 print u'Error Attempting to Restart Wrye Bash!'
                 print u'cmd line: %s %s' %(exePath.s, sys.argv)
@@ -406,7 +442,7 @@ def main():
         import basher
         import barb
         import balt
-    except (bolt.PermissionError, bolt.BoltError), e:
+    except (bolt.PermissionError, bolt.BoltError) as e:
         # try really hard to be able to show the error in the GUI
         try:
             if 'basher' not in locals():
@@ -427,7 +463,7 @@ def main():
         balt.showError(None,u'%s'%e)
         app.MainLoop()
         raise e
-    except (ImportError, StandardError), e:
+    except (ImportError, StandardError) as e:
         # try really hard to be able to show the error in any GUI
         try:
             o = StringIO.StringIO()
@@ -484,7 +520,7 @@ def main():
                 w.pack()
                 root.mainloop()
                 return
-        except StandardError, y:
+        except StandardError as y:
             print 'An error has occured with Wrye Bash, and could not be displayed.'
             print 'The following is the error that occured while trying to display the first error:'
             try:

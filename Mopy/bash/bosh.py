@@ -9012,7 +9012,7 @@ class InstallersData(bolt.TankData, DataDict):
                     if value == 0:
                         value = u'0 KB'
                     else:
-                        value = max(formatInteger(value/1024),formatInteger(1))+u' KB'
+                        value = formatInteger(max(value,1024)/1024)+u' KB'
                 else:
                     raise ArgumentError(column)
             labels.append(value)

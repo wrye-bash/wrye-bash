@@ -2236,12 +2236,14 @@ class ModDetails(SashPanel):
         self.cancel.Disable()
 
     def SetEdited(self):
+        if not self.modInfo: return
         self.edited = True
         if bush.game.esp.canEditHeader:
             self.save.Enable()
         self.cancel.Enable()
 
     def OnTextEdit(self,event):
+        if not self.modInfo: return
         if self.modInfo and not self.edited:
             if ((self.fileStr != self.file.GetValue()) or
                 (self.authorStr != self.author.GetValue()) or
@@ -2382,7 +2384,10 @@ class ModDetails(SashPanel):
         modList.RefreshUI()
 
     def DoCancel(self,event):
-        self.SetFile(self.modInfo.name)
+        if self.modInfo:
+            self.SetFile(self.modInfo.name)
+        else:
+            self.SetFile(None)
 
     #--Bash Tags
     def ShowBashTagsMenu(self,event):
