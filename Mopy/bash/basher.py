@@ -12137,12 +12137,12 @@ class Mods_BOSSLaunchGUI(Link):
         exePath.head.setcwd()
         try:
             subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-        except Exception, error:
+        except Exception as error:
             balt.showError(
                 bashFrame,
                 (u'%s'%error + u'\n\n' +
                  _(u'Used Path: ') + self.exePath.s + u'\n' +
-                 _(u'Used Arguments: ') + u'%s' % self.exeArgs),
+                 _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                  _(u"Could not launch '%s'") % self.exePath.stail)
         finally:
             cwd.setcwd()
@@ -17815,6 +17815,13 @@ class App_Button(StatusBar_Button):
         else:
             return None
 
+    def ShowError(self,error):
+        balt.showError(bashFrame,
+                       (u'%s'%error + u'\n\n' +
+                        _(u'Used Path: ') + self.exePath.s + u'\n' +
+                        _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
+                       _(u"Could not launch '%s'") % self.exePath.stail)
+
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
@@ -17831,13 +17838,8 @@ class App_Button(StatusBar_Button):
                     balt.showError(bashFrame,
                                    _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
-                except Exception, error:
-                    balt.showError(
-                        bashFrame,
-                        (u'%s'%error + u'\n\n' +
-                         _(u'Used Path: ') + self.exePath.s + u'\n' +
-                         _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                        _(u"Could not launch '%s'") % self.exePath.stail)
+                except Exception as error:
+                    self.ShowError(error)
                 finally:
                     cwd.setcwd()
             elif self.isExe:
@@ -17872,31 +17874,16 @@ class App_Button(StatusBar_Button):
                     balt.showError(bashFrame,
                                    _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
-                except WindowsError, werr:
+                except WindowsError as werr:
                     if werr.winerror != 740:
-                        balt.showError(
-                            bashFrame,
-                            (u'%s'%werr + u'\n\n' +
-                             _(u'Used Path: ') + self.exePath.s + u'\n' +
-                             _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                            _(u"Could not launch '%s'") % self.exePath.stail)
+                        self.ShowError(werr)
                     try:
                         import win32api
-                        win32api.ShellExecute(0,u"open",exePath.s,u'%s'%self.exeArgs,bosh.dirs['app'].s,1)
+                        win32api.ShellExecute(0,'runas',exePath.s,u'%s'%self.exeArgs,bosh.dirs['app'].s,1)
                     except:
-                        balt.showError(
-                            bashFrame,
-                            (u'%s'%werr + u'\n\n' +
-                             _(u'Used Path: ') + self.exePath.s + u'\n' +
-                             _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                            _(u"Could not launch '%s'") % self.exePath.stail)
-                except Exception, error:
-                    balt.showError(
-                        bashFrame,
-                        (u'%s'%error + u'\n\n' +
-                         _(u'Used Path: ') + self.exePath.s + u'\n' +
-                         _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                        _(u"Could not launch '%s'") % self.exePath.stail)
+                        self.ShowError(werr)
+                except Exception as error:
+                    self.ShowError(error)
                 finally:
                     cwd.setcwd()
             else:
@@ -17910,33 +17897,35 @@ class App_Button(StatusBar_Button):
                     r, executable = win32api.FindExecutable(self.exePath.s)
                     executable = win32api.GetLongPathName(executable)
                     args = u'"%s"' % self.exePath.s
-                    for arg in self.exeArgs:
-                        args += u' %s' % arg
+                    args += u' '.join([u'%s' % arg for arg in self.exeArgs])
                     win32api.ShellExecute(0,u"open",executable,args,dir,1)
-                except Exception, error:
-                    # Most likely we're here because FindExecutable failed (no file association)
-                    # Or because win32api import failed.  Try doing it using os.startfile
-                    # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
-                    cwd = bolt.Path.getcwd()
-                    if self.workingDir:
-                        self.workingDir.setcwd()
+                except Exception as error:
+                    if isinstance(error,WindowsError) and error.winerror == 740:
+                        # Requires elevated permissions
+                        try:
+                            import win32api
+                            win32api.ShellExecute(0,'runas',executable,args,dir,1)
+                        except Exception as error:
+                            self.ShowError(error)
                     else:
-                        self.exePath.head.setcwd()
-                    try:
-                        webbrowser.open(self.exePath.s)
-                    except UnicodeError:
-                        balt.showError(bashFrame,
-                                       _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
-                                       _(u"Could not launch '%s'") % self.exePath.stail)
-                    except Exception, error:
-                        balt.showError(
-                            bashFrame,
-                            (u'%s'%error + u'\n\n' +
-                             _(u'Used Path: ') + self.exePath.s + u'\n' +
-                             _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                            _(u"Could not launch '%s'") % self.exePath.stail)
-                    finally:
-                        cwd.setcwd()
+                        # Most likely we're here because FindExecutable failed (no file association)
+                        # Or because win32api import failed.  Try doing it using os.startfile
+                        # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
+                        cwd = bolt.Path.getcwd()
+                        if self.workingDir:
+                            self.workingDir.setcwd()
+                        else:
+                            self.exePath.head.setcwd()
+                        try:
+                            webbrowser.open(self.exePath.s)
+                        except UnicodeError:
+                            balt.showError(bashFrame,
+                                           _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
+                                           _(u"Could not launch '%s'") % self.exePath.stail)
+                        except Exception as error:
+                            self.ShowError(error)
+                        finally:
+                            cwd.setcwd()
         else:
             balt.showError(bashFrame,
                            _(u'Application missing: %s') % self.exePath.s,
@@ -18068,7 +18057,7 @@ class App_BOSS(App_Button):
                     exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
                 if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
                     exeArgs += (u'-c',)
-                if bosh.dirs['boss'].join('BOSS.exe').version >= (2,0,0,0):
+                if bosh.dirs['boss'].join(u'BOSS.exe').version >= (2,0,0,0):
                     # After version 2.0, need to pass in the -g argument
                     exeArgs += (u'-g%s' % bush.game.name,)
                 progress(0.05,_(u"Processing... launching BOSS."))
@@ -18081,11 +18070,8 @@ class App_BOSS(App_Button):
                         bosh.modInfos.refresh(doInfos=False)
                         # Refresh UI, so WB is made aware of the changes to loadorder.txt
                         modList.RefreshUI('ALL')
-                except Exception, error:
-                    balt.showError(bashFrame,
-                                   (_(u"Used Path: %s") % exePath.s + u'\n' +
-                                    _(u"Used Arguments: %s") % exeArgs),
-                                    _(u'Could not launch BOSS'))
+                except Exception as error:
+                    self.ShowError(error)
                 finally:
                     cwd.setcwd()
         else:
