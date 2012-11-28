@@ -560,7 +560,9 @@ def main():
                 buttons=[(True,'+'+admin),
                          (False,_(u'Run normally')),
                          ],
-                title=title)
+                title=title,
+                footer=_(u'To skip this message in the future, launch Wrye Bash with the --no-uac command line switch.'),
+                )
         else:
             result = balt.askYes(None,
                 message+u'\n\n'+_(u'Start Wrye Bash with Administrator Privileges?'),
