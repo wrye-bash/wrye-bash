@@ -423,27 +423,42 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
     #--ContinueKey set?
     if _settings.get(continueKey): return wx.ID_OK
     #--Generate/show dialog
-    dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-    icon = wx.StaticBitmap(dialog,defId,
-        wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
-    gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-    #--Layout
-    sizer = vSizer(
-        (hSizer(
-            (icon,0,wx.ALL,6),
-            (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
-            ),1,wx.EXPAND|wx.ALL,6),
-        (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-        (hSizer( #--Save/Cancel
-            spacer,
-            button(dialog,id=wx.ID_OK),
-            (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-            ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-        )
-    dialog.SetSizer(sizer)
-    #--Get continue key setting and return
-    result = dialog.ShowModal()
-    if gCheckBox.GetValue():
+    if canVista:
+        result = vistaDialog(parent,
+                             title=title,
+                             message=message,
+                             buttons=[(wx.ID_OK,'ok'),
+                                      (wx.ID_CANCEL,'cancel'),
+                                      ],
+                             checkBox=_(u"Don't show this in the future."),
+                             icon='warning',
+                             heading=u'',
+                             )
+        check = result[1]
+        result = result[0]
+    else:
+        dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        icon = wx.StaticBitmap(dialog,defId,
+            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
+        #--Layout
+        sizer = vSizer(
+            (hSizer(
+                (icon,0,wx.ALL,6),
+                (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                ),1,wx.EXPAND|wx.ALL,6),
+            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            (hSizer( #--Save/Cancel
+                spacer,
+                button(dialog,id=wx.ID_OK),
+                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            )
+        dialog.SetSizer(sizer)
+        #--Get continue key setting and return
+        result = dialog.ShowModal()
+        check = gCheckBox.GetValue()
+    if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
 
@@ -451,38 +466,59 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
-    dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-    icon = wx.StaticBitmap(dialog,defId,
-        wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
-    gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
-    #--Layout
-    buttonSizer = hSizer(spacer)
-    if wx.ID_OK in labels:
-        okButton = button(dialog,id=wx.ID_OK,label=lables[wx.ID_OK])
+    if canVista:
+        buttons = []
+        if wx.ID_OK in labels:
+            buttons.append((wx.ID_OK,labels[wx.ID_OK]))
+        for id in labels:
+            if id in (wx.ID_OK,wx.ID_CANCEL):
+                continue
+            buttons.append((id,label[id]))
+        buttons.append((wx.ID_CANCEL,labels.get(wx.ID_CANCEL,'cancel')))
+        result = vistaDialog(parent,
+                             title=title,
+                             message=message,
+                             buttons=buttons,
+                             checkBox=_(u"Don't show this for the rest of operation."),
+                             icon='warning',
+                             heading=u'',
+                             )
+        check = result[1]
+        result = result[0]
     else:
-        okButton = button(dialog,id=wx.ID_OK)
-    buttonSizer.Add(okButton,0,wx.RIGHT,4)
-    for id,lable in labels.itervalues():
-        if id in (wx.ID_OK,wx.ID_CANCEL):
-            continue
-        but = button(dialog,id=id,lable=lable)
-    sizer = vSizer(
-        (hSizer(
-            (icon,0,wx.ALL,6),
-            (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
-            ),1,wx.EXPAND|wx.ALL,6),
-        (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-        (hSizer( #--Save/Cancel
-            spacer,
-            button(dialog,id=wx.ID_OK),
-            (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-            ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-        )
-    dialog.SetSizer(sizer)
-    #--Get continue key setting and return
-    result = dialog.ShowModal()
+        dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        icon = wx.StaticBitmap(dialog,defId,
+            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
+        #--Layout
+        buttonSizer = hSizer(spacer)
+        if wx.ID_OK in labels:
+            okButton = button(dialog,id=wx.ID_OK,label=lables[wx.ID_OK])
+        else:
+            okButton = button(dialog,id=wx.ID_OK)
+        buttonSizer.Add(okButton,0,wx.RIGHT,4)
+        for id,lable in labels.itervalues():
+            if id in (wx.ID_OK,wx.ID_CANCEL):
+                continue
+            but = button(dialog,id=id,lable=lable)
+        sizer = vSizer(
+            (hSizer(
+                (icon,0,wx.ALL,6),
+                (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                ),1,wx.EXPAND|wx.ALL,6),
+            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            (hSizer( #--Save/Cancel
+                spacer,
+                button(dialog,id=wx.ID_OK),
+                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            )
+        dialog.SetSizer(sizer)
+        #--Get continue key setting and return
+        result = dialog.ShowModal()
+        check = gCheckBox.GetValue()
     if result in (wx.ID_OK,wx.ID_YES):
-        if gCheckBox.GetValue():
+        if check:
             return 2
         return True
     return False
@@ -556,8 +592,10 @@ def getUACIcon(size='small'):
 def setUAC(button,uac=True):
     windows.setUAC(button.GetHandle(),uac)
 
-def vistaDialog(parent,message,title,buttons=[],icon=None,commandLinks=True,footer=u'',expander=[]):
-    dialog = windows.TaskDialog(u'Wrye Bash',title,message,
+def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
+    heading = heading if heading is not None else title
+    title = title if heading is not None else u'Wrye Bash'
+    dialog = windows.TaskDialog(title,heading,message,
                                 buttons=[x[1] for x in buttons],
                                 icon=icon,
                                 parenthwnd=parent.GetHandle() if parent else None)
@@ -565,50 +603,85 @@ def vistaDialog(parent,message,title,buttons=[],icon=None,commandLinks=True,foot
         dialog.set_footer(footer)
     if expander:
         dialog.set_expander(expander)
+    if checkBox:
+        if isinstance(checkBox,basestring):
+            dialog.set_check_box(checkBox,False)
+        else:
+            dialog.set_check_box(checkBox[0],checkBox[1])
     result = dialog.show(commandLinks)
     for id,title in buttons:
         if title.startswith(u'+'): title = title[1:]
         if title == result[0]:
-            return id
+            if checkBox:
+                return (id,result[2])
+            else:
+                return id
+    return (None,result[2])
 
-def askStyled(parent,message,title,style):
+def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
-    dialog = wx.MessageDialog(parent,message,title,style)
-    result = dialog.ShowModal()
-    dialog.Destroy()
+    if canVista:
+        buttons = []
+        icon = None
+        if style & wx.YES_NO:
+            yes = 'yes'
+            no = 'no'
+            if style & wx.YES_DEFAULT:
+                yes = 'Yes'
+            elif style & wx.NO_DEFAULT:
+                no = 'No'
+            buttons.append((wx.ID_YES,yes))
+            buttons.append((wx.ID_NO,no))
+        if style & wx.OK:
+            buttons.append((wx.ID_OK,'ok'))
+        if style & wx.CANCEL:
+            buttons.append((wx.ID_CANCEL,'cancel'))
+        if style & (wx.ICON_EXCLAMATION|wx.ICON_INFORMATION):
+            icon = 'warning'
+        if style & wx.ICON_HAND:
+            icon = 'error'
+        result = vistaDialog(parent,
+                             message=message,
+                             title=title,
+                             icon=icon,
+                             buttons=buttons)
+    else:
+        dialog = wx.MessageDialog(parent,message,title,style)
+        result = dialog.ShowModal()
+        dialog.Destroy()
     return result in (wx.ID_OK,wx.ID_YES)
 
-def askOk(parent,message,title=u''):
+def askOk(parent,message,title=u'',**kwdargs):
     """Shows a modal error message."""
-    return askStyled(parent,message,title,wx.OK|wx.CANCEL)
+    return askStyled(parent,message,title,wx.OK|wx.CANCEL,**kwdargs)
 
-def askYes(parent,message,title=u'',default=True,icon=wx.ICON_EXCLAMATION):
+def askYes(parent,message,title=u'',default=True,icon=wx.ICON_EXCLAMATION,**kwdargs):
     """Shows a modal warning or question message."""
     style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
-    return askStyled(parent,message,title,style)
+    return askStyled(parent,message,title,style,**kwdargs)
 
-def askWarning(parent,message,title=_(u'Warning')):
+def askWarning(parent,message,title=_(u'Warning'),**kwdargs):
     """Shows a modal warning message."""
-    return askStyled(parent,message,title,wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION)
+    return askStyled(parent,message,title,wx.OK|wx.CANCEL|wx.ICON_EXCLAMATION,**kwdargs)
 
-def showOk(parent,message,title=u''):
+def showOk(parent,message,title=u'',**kwdargs):
     """Shows a modal error message."""
-    return askStyled(parent,message,title,wx.OK)
+    return askStyled(parent,message,title,wx.OK,**kwdargs)
 
-def showError(parent,message,title=_(u'Error')):
+def showError(parent,message,title=_(u'Error'),**kwdargs):
     """Shows a modal error message."""
-    return askStyled(parent,message,title,wx.OK|wx.ICON_HAND)
+    return askStyled(parent,message,title,wx.OK|wx.ICON_HAND,**kwdargs)
 
-def showWarning(parent,message,title=_(u'Warning')):
+def showWarning(parent,message,title=_(u'Warning'),**kwdargs):
     """Shows a modal warning message."""
-    return askStyled(parent,message,title,wx.OK|wx.ICON_EXCLAMATION)
+    return askStyled(parent,message,title,wx.OK|wx.ICON_EXCLAMATION,**kwdargs)
 
-def showInfo(parent,message,title=_(u'Information')):
+def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     """Shows a modal information message."""
-    return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION)
+    return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
-def showList(parent,header,items,maxItems=0,title=u''):
+def showList(parent,header,items,maxItems=0,title=u'',**kwdargs):
     """Formats a list of items into a message for use in a Message."""
     numItems = len(items)
     if maxItems <= 0: maxItems = numItems
@@ -616,7 +689,7 @@ def showList(parent,header,items,maxItems=0,title=u''):
     message += u'\n* '+u'\n* '.join(items[:min(numItems,maxItems)])
     if numItems > maxItems:
         message += u'\n'+_(u'(And %d others.)') % (numItems - maxItems,)
-    return askStyled(parent,message,title,wx.OK)
+    return askStyled(parent,message,title,wx.OK,**kwdargs)
 
 #------------------------------------------------------------------------------
 def showLogClose(evt=None):
@@ -1370,6 +1443,51 @@ class BusyCursor(object):
         wx.EndBusyCursor()
 
 #------------------------------------------------------------------------------
+class Progress2(bolt.Progress):
+    def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
+            style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_SMOOTH,
+            abort=False,onAbort=None):
+        self.parent = parent
+        buttons = [(wx.CANCEL,'cancel')] if abort else []
+        self.dialog = windows.TaskDialog(parenthwnd=parent.GetHandle() if parent else None,
+                                         title=title,
+                                         content=message,
+                                         buttons=buttons,
+                                         heading=u'')
+        self.dialog.set_progress_bar(None)
+        self.dialog.show()
+        self.message = message
+        self.prevState = -1
+        self.prevTime = 0
+
+    def __enter__(self): return self
+    def __exit__(self,type,value,traceback):
+        self.Destroy()
+
+    def getParent():
+        return self.parent
+
+    def setCancel(self,enabled=True):
+        print 'setCancel not implemented'
+        pass
+
+    def doProgress(self,state,message):
+        if not self.dialog:
+            raise StateError(u'Dialog already destroyed.')
+        elif (state == 0 or state == 1 or (message != self.prevMessage) or
+              (state != self.prevState or (time.time() - self.prevTime) > 0.5)):
+            if message != self.prevMessage:
+                self.dialog.set_content(message)
+            self.dialog.set_progress_bar(None,pos=int(state*100))
+            self.prevMessage = message
+            self.prevState = state
+            self.prevTime = time.time()
+
+    def Destroy(self):
+        if self.dialog:
+            self.dialog.close()
+            self.dialog = None
+
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
