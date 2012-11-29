@@ -1481,11 +1481,11 @@ class ModFile:
             #--Strings
             self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:
-                stringsPaths = self.fileInfo.getStringsPaths(
-                    oblivionIni.getSetting('General','sLanguage',u'English'))
+                lang = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
+                stringsPaths = self.fileInfo.getStringsPaths(lang)
                 progress.setFull(3)
                 for path in stringsPaths:
-                    self.strings.loadFile(path,progress)
+                    self.strings.loadFile(path,progress,lang)
                     progress.plus()
                 ins.setStringTable(self.strings)
             else:
@@ -7078,7 +7078,7 @@ class ScreensData(DataDict):
     def delete(self,fileName):
         """Deletes member file."""
         filePath = self.dir.join(fileName)
-        deleted = balt.shellDelete(filePath)
+        deleted = balt.shellDelete(filePath,askOk=False)
         if deleted is not None:
             del self.data[fileName]
 

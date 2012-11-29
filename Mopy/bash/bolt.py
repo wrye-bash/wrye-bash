@@ -2696,6 +2696,13 @@ class ProgressFile(Progress):
 #------------------------------------------------------------------------------
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
+    encodings = {
+        # Encoding to fall back to if UTF-8 fails, based on language
+        # Default is 1252 (Western European), so only list languages
+        # different than that
+        u'russian': 'cp1251',
+        }
+
     def load(self,modFilePath,language=u'English',progress=Progress()):
         baseName = modFilePath.tail.body
         baseDir = modFilePath.head.join(u'Strings')
@@ -2708,9 +2715,11 @@ class StringTable(dict):
             progress(i)
             self.loadFile(file,SubProgress(progress,i,i+1))
 
-    def loadFile(self,path,progress):
+    def loadFile(self,path,progress,language=u'english'):
         if path.cext == u'.strings': format = 0
         else: format = 1
+        language = language.lower()
+        backupEncoding = self.encodings.get(language,'cp1252')
         try:
             with BinaryFile(path.s) as ins:
                 insSeek = ins.seek
@@ -2734,28 +2743,32 @@ class StringTable(dict):
                     deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
                             % (path, dataSize, eof-dataSize, stringsStart))
 
+                id = -1
+                offset = -1
                 for x in xrange(numIds):
-                    progress(x)
-                    id,offset = insUnpack('=2I',8)
-                    pos = insTell()
-                    insSeek(stringsStart+offset)
-                    if format:
-                        strLen, = insUnpack('I',4)
-                        value = insRead(strLen)
-                    else:
-                        value = insReadCString()
                     try:
-                        value = unicode(cstrip(value),'cp1252')
+                        progress(x)
+                        id,offset = insUnpack('=2I',8)
+                        pos = insTell()
+                        insSeek(stringsStart+offset)
+                        if format:
+                            strLen, = insUnpack('I',4)
+                            value = insRead(strLen)
+                        else:
+                            value = insReadCString()
+                        value = cstrip(value)
+                        try:
+                            value = unicode(value,'utf-8')
+                        except UnicodeDecodeError:
+                            value = unicode(value,backupEncoding)
+                        insSeek(pos)
+                        self[id] = value
                     except:
-                        deprint(u'Error decoding string in string file.')
+                        deprint(u'Error reading string file:')
                         deprint(u'id:', id)
-                        deprint(u'raw string:', repr(cstrip(value)))
-                        deprint(u'file pos:', insTell())
-                        deprint(u'cp1252:', unicode(cstrip(value),'cp1252'))
-                        deprint(u'8859-1:', unicode(cstrip(value),'iso8859-1'))
+                        deprint(u'offset:', offset)
+                        deprint(u'filePos:',  insTell())
                         raise
-                    insSeek(pos)
-                    self[id] = value
         except:
             deprint(u'Error loading string file:', path.stail, traceback=True)
             return
