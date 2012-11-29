@@ -760,7 +760,7 @@ class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE):
         """Initialize."""
-        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        NotebookPanel.__init__(self, parent, wx.ID_ANY)
         splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
@@ -789,44 +789,28 @@ class SashPanel(NotebookPanel):
         if hasattr(self, 'sashPosKey'):
             settings[self.sashPosKey] = splitter.GetSashPosition()
 
-class SashTankPanel(NotebookPanel):
-    """Subclass of a notebook panel designed for a two pane tank panel."""
+class SashTankPanel(SashPanel):
     def __init__(self,data,parent):
-        """Initialize."""
-        wx.Panel.__init__(self, parent,-1)
+        sashPos = data.getParam('sashPos',200)
+        minimumSize = 80
         self.data = data
         self.detailsItem = None
-        sashPos = data.getParam('sashPos',200)
-        self.left = leftSash(self,defaultSize=(sashPos,100),onSashDrag=self.OnSashDrag)
-        self.right = wx.Panel(self,style=wx.NO_BORDER)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-
-    def OnShow(self):
-        """Panel is shown. Update self.data."""
-        if self.gList.data.refresh():
-            self.gList.RefreshUI()
-        super(SashTankPanel,self).OnShow()
-
-    def OnSashDrag(self,event):
-        """Handle sash moved."""
-        wMin,wMax = 80,self.GetSizeTuple()[0]-80
-        sashPos = max(wMin,min(wMax,event.GetDragRect().width))
-        self.left.SetDefaultSize((sashPos,10))
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
-        self.data.setParam('sashPos',sashPos)
-
-    def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
+        super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
 
     def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
         self.SaveDetails()
+        splitter = self.right.GetParent()
+        sashPos = splitter.GetSashPosition()
+        self.data.setParam('sashPos',sashPos)
         self.data.save()
 
     def GetDetailsItem(self):
-        """Returns item currently being shown in details view."""
         return self.detailsItem
+
+    def OnShow(self):
+        if self.gList.data.refresh():
+            self.gList.RefreshUI()
+        super(SashTankPanel,self).OnShow()
 
 #------------------------------------------------------------------------------
 class List(wx.Panel):
@@ -2127,7 +2111,7 @@ class ModDetails(SashPanel):
             self.description.SetMaxLength(512)
             wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
             wx.EVT_TEXT(self.description,id,self.OnTextEdit)
-            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
+            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
@@ -2969,7 +2953,7 @@ class SaveDetails(SashPanel):
         self.gCoSaves = staticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
-        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
+        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
@@ -3615,7 +3599,7 @@ class InstallersPanel(SashTankPanel):
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
-        splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
+        splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
         commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
         subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
@@ -3631,7 +3615,7 @@ class InstallersPanel(SashTankPanel):
         self.gList.SetSizeHints(100,100)
         #--Package
         self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
-        self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+        self.gPackage.HideNativeCaret()
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
         self.gNotebook.SetSizeHints(100,100)
@@ -3696,6 +3680,11 @@ class InstallersPanel(SashTankPanel):
         rightSizer.SetSizeHints(right)
         right.SetSizer(rightSizer)
         wx.LayoutAlgorithm().LayoutWindow(self, right)
+        leftSizer = vSizer(
+            (self.gList,1,wx.EXPAND),
+            )
+        left.SetSizer(leftSizer)
+        wx.LayoutAlgorithm().LayoutWindow(self,left)
         commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
         # restore saved comments text box size
         if 0 == commentsSplitterSavedSashPos:
@@ -3703,7 +3692,7 @@ class InstallersPanel(SashTankPanel):
         else:
             commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
+        #self.Bind(wx.EVT_SIZE,self.OnSize)
         commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
@@ -3928,6 +3917,7 @@ class InstallersPanel(SashTankPanel):
             self.gSubList.Clear()
             self.gEspmList.Clear()
             self.gComments.SetValue(u'')
+        self.gPackage.HideNativeCaret()
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -4307,26 +4297,23 @@ class ScreensList(List):
         self.picture.SetBitmap(bitmap)
 
 #------------------------------------------------------------------------------
-class ScreensPanel(NotebookPanel):
+class ScreensPanel(SashPanel):
     """Screenshots tab."""
     def __init__(self,parent):
         """Initialize."""
-        wx.Panel.__init__(self, parent, -1)
-        #--Left
         sashPos = settings.get('bash.screens.sashPos',120)
-        left = self.left = leftSash(self,defaultSize=(sashPos,100),onSashDrag=self.OnSashDrag)
-        right = self.right =  wx.Panel(self,style=wx.NO_BORDER)
+        SashPanel.__init__(self,parent,'bash.screens.sashPos',sashPos=sashPos,minimumSize=100)
+        left,right = self.left,self.right
         #--Contents
         global screensList
         screensList = ScreensList(left)
         screensList.SetSizeHints(100,100)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         self.list = screensList
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Layout
         right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
+        left.SetSizer(hSizer((screensList,1,wx.GROW)))
+        wx.LayoutAlgorithm().LayoutWindow(self,right)
 
     def RefreshUIColors(self):
         screensList.picture.SetBackground(colors['screens.bkgd.image'])
@@ -4335,18 +4322,6 @@ class ScreensPanel(NotebookPanel):
         """Sets status bar count field."""
         text = _(u'Screens:')+u' %d' % (len(screensList.data.data),)
         statusBar.SetStatusText(text,2)
-
-    def OnSashDrag(self,event):
-        """Handle sash moved."""
-        wMin,wMax = 80,self.GetSizeTuple()[0]-80
-        sashPos = max(wMin,min(wMax,event.GetDragRect().width))
-        self.left.SetDefaultSize((sashPos,10))
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
-        screensList.picture.Refresh()
-        settings['bash.screens.sashPos'] = sashPos
-
-    def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -4781,16 +4756,14 @@ class MessageList(List):
         self.gText.Navigate(path.s,0x2) #--0x2: Clear History
 
 #------------------------------------------------------------------------------
-class MessagePanel(NotebookPanel):
+class MessagePanel(SashPanel):
     """Messages tab."""
     def __init__(self,parent):
         """Initialize."""
         import wx.lib.iewin
-        wx.Panel.__init__(self, parent, -1)
-        #--Left
         sashPos = settings.get('bash.messages.sashPos',120)
-        gTop = self.gTop =  topSash(self,defaultSize=(100,sashPos),onSashDrag=self.OnSashDrag)
-        gBottom = self.gBottom =  wx.Panel(self,style=wx.NO_BORDER)
+        SashPanel.__init__(self,parent,'bash.messages.sashPos',sashPos=120,mode=wx.HORIZONTAL,minimumSize=100)
+        gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList
         gMessageList = MessageList(gTop)
@@ -4828,17 +4801,11 @@ class MessagePanel(NotebookPanel):
         text = _(u'PMs:')+u' %d/%d' % (numUsed,len(gMessageList.data.keys()))
         statusBar.SetStatusText(text,2)
 
-    def OnSashDrag(self,event):
-        """Handle sash moved."""
-        hMin,hMax = 80,self.GetSizeTuple()[1]-80
-        sashPos = max(hMin,min(hMax,event.GetDragRect().height))
-        self.gTop.SetDefaultSize((10,sashPos))
-        wx.LayoutAlgorithm().LayoutWindow(self, self.gBottom)
-        settings['bash.messages.sashPos'] = sashPos
-
     def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.gTop)
-        wx.LayoutAlgorithm().LayoutWindow(self, self.gBottom)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.left)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
+        if event:
+            event.Skip()
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -4918,8 +4885,6 @@ class PeoplePanel(SashTankPanel):
         self.gText = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_MULTILINE)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Layout
         right.SetSizer(vSizer(
             (hSizer(
@@ -4928,6 +4893,7 @@ class PeoplePanel(SashTankPanel):
                 ),0,wx.GROW),
             (self.gText,1,wx.GROW|wx.TOP,4),
             ))
+        left.SetSizer(vSizer((self.gList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
     def SetStatusCount(self):
