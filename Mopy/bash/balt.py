@@ -2082,15 +2082,21 @@ class Tank(wx.Panel):
         self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
     #--Standard data commands -------------------------------------------------
-    def DeleteSelected(self):
+    def DeleteSelected(self,shellUI=False,noRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if not items: return
-        message = _(u'Delete these items? This operation cannot be undone.')
-        message += u'\n* ' + u'\n* '.join([self.data.getName(x) for x in items])
-        if not askYes(self,message,_(u'Delete Items')): return False
-        for item in items:
-            del self.data[item]
+        if not shellUI:
+            message = _(u'Delete these items? This operation cannot be undone.')
+            message += u'\n* ' + u'\n* '.join([self.data.getName(x) for x in items])
+            if not askYes(self,message,_(u'Delete Items')): return False
+            for item in items:
+                del self.data[item]
+        else:
+            try:
+                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
+            except (CancelError,SkipError):
+                pass
         self.RefreshUI()
         self.data.setChanged()
 

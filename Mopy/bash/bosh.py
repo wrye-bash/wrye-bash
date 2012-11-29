@@ -5000,30 +5000,52 @@ class FileInfos(DataDict):
         fileInfo.madeBackup = False
 
     #--Delete
-    def delete(self,fileName,doRefresh=True):
+    def delete(self,fileName,doRefresh=True,askOk=False,dontRecycle=False):
         """Deletes member file."""
-        fileInfo = self[fileName]
-        #--File
-        filePath = fileInfo.getPath()
-        if filePath.body != fileName and filePath.tail != fileName.tail:
-            # Prevent accidental deletion of Skyrim.esm/Oblivion.esm, but
-            # Still works properly for ghosted files
-            return
-        #--Shell Delete
-        balt.shellDelete(filePath,askOk=False)
-        #filePath.remove()
-        #--Table
-        self.table.delRow(fileName)
-        #--Misc. Editor backups (mods only)
-        if fileInfo.isMod():
-            for ext in (u'.bak',u'.tmp',u'.old',u'.ghost'):
-                backPath = filePath + ext
-                backPath.remove()
+        if not isinstance(fileName,(list,set)):
+            fileNames = [fileName]
+        else:
+            fileNames = fileName
+        #--Files to delete
+        toDelete = []
+        toDeleteAppend = toDelete.append
+        #--Cache table updates
+        tableUpdate = {}
         #--Backups
-        backRoot = self.getBashDir().join(u'Backups',fileInfo.name)
-        for backPath in (backRoot,backRoot+u'f'):
-            backPath.remove()
-        if doRefresh: self.refresh()
+        backBase = self.getBashDir().join(u'Backups')
+        #--Go through each file
+        for fileName in fileNames:
+            fileInfo = self[fileName]
+            #--File
+            filePath = fileInfo.getPath()
+            if filePath.body != fileName and filePath.tail != fileName.tail:
+                # Prevent accidental deletion of Skyrim.esm/Oblivion.esm, but
+                # Still works properly for ghosted files
+                continue
+            toDeleteAppend(filePath)
+            #--Table
+            tableUpdate[filePath] = fileName
+            #--Misc. Editor backups (mods only)
+            if fileInfo.isMod():
+                for ext in (u'.bak',u'.tmp',u'.old',u'.ghost'):
+                    backPath = filePath + ext
+                    toDeleteAppend(backPath)
+            #--Backups
+            backRoot = backBase.join(fileInfo.name)
+            for backPath in (backRoot,backRoot+u'f'):
+                toDeleteAppend(backPath)
+        #--Now do actual deletions
+        toDelete = [x for x in toDelete if x.exists()]
+        try:
+            balt.shellDelete(toDelete,askOk=askOk,recycle=not dontRecycle)
+        finally:
+            #--Table
+            for filePath in toDelete:
+                if filePath in tableUpdate:
+                    if not filePath.exists():
+                        self.table.delRow(tableUpdate[filePath])
+            #--Refresh
+            if doRefresh: self.refresh()
 
     #--Move Exists
     def moveIsSafe(self,fileName,destDir):
@@ -7075,12 +7097,17 @@ class ScreensData(DataDict):
         self.data = newData
         return changed
 
-    def delete(self,fileName):
+    def delete(self,fileName,noRecycle=False):
         """Deletes member file."""
-        filePath = self.dir.join(fileName)
-        deleted = balt.shellDelete(filePath,askOk=False)
+        dirJoin = self.dir.join
+        if isinstance(fileName,(list,set)):
+            filePath = [dirJoin(file) for file in fileName]
+        else:
+            filePath = [dirJoin(fileName)]
+        deleted = balt.shellDelete(filePath,recycle=not noRecycle)
         if deleted is not None:
-            del self.data[fileName]
+            for file in filePath:
+                del self.data[file.tail]
 
 #------------------------------------------------------------------------------
 class Installer(object):
@@ -9072,6 +9099,23 @@ class InstallersData(bolt.TankData, DataDict):
         apath = self.dir.join(item)
         balt.shellDelete(apath,askOk=False)
         del self.data[item]
+
+    def delete(self,items,askOk=False,dontRecycle=False):
+        """Delete multiple installers.  Delete entry AND archive file itself."""
+        toDelete = []
+        toDeleteAppend = toDelete.append
+        dirJoin = self.dir.join
+        selfLastKey = self.lastKey
+        for item in items:
+            if item == selfLastKey: continue
+            toDeleteAppend(dirJoin(item))
+        #--Delete
+        try:
+            balt.shellDelete(toDelete,askOk=askOk,recycle=not dontRecycle)
+        finally:
+            for item in toDelete:
+                if not item.exists():
+                    del self.data[item.tail]
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
