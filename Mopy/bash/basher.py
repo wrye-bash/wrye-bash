@@ -963,30 +963,42 @@ class List(wx.Panel):
                 selected.append(self.items[itemDex])
         return selected
 
-    def DeleteSelected(self,dontRecycle=False):
+    def DeleteSelected(self,shellUI=False,dontRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if items:
-            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            message.extend(sorted(items))
-            dialog = ListBoxes(self,_(u'Delete Items'),
-                         _(u'Delete these items?  This operation cannot be undone.'),
-                         [message])
-            if dialog.ShowModal() != wx.ID_CANCEL:
-                id = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id)
-                if checks:
-                    for i,mod in enumerate(items):
-                        if checks.IsChecked(i):
-                            try:
-                                self.data.delete(mod)
-                                # Temporarily Track this file for BAIN, so BAIN will
-                                # update the status of its installers
-                                bosh.trackedInfos.track(bosh.dirs['mods'].join(mod))
-                            except bolt.BoltError as e:
-                                balt.showError(self, _(u'%s') % e)
-                bosh.modInfos.plugins.refresh(True)
-                self.RefreshUI()
+            if shellUI:
+                try:
+                    self.data.delete(items,askOk=True,dontRecycle=dontRecycle)
+                except balt.AccessDeniedError:
+                    pass
+                dirJoin = self.data.dir.join
+                for item in items:
+                    itemPath = dirJoin(item)
+                    if not itemPath.exists():
+                        bosh.trackedInfos.track(itemPath)
+            else:
+                message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
+                message.extend(sorted(items))
+                dialog = ListBoxes(self,_(u'Delete Items'),
+                             _(u'Delete these items?  This operation cannot be undone.'),
+                             [message])
+                if dialog.ShowModal() != wx.ID_CANCEL:
+                    id = dialog.ids[message[0]]
+                    checks = dialog.FindWindowById(id)
+                    if checks:
+                        dirJoin = self.data.dir.join
+                        for i,mod in enumerate(items):
+                            if checks.IsChecked(i):
+                                try:
+                                    self.data.delete(mod)
+                                    # Temporarily Track this file for BAIN, so BAIN will
+                                    # update the status of its installers
+                                    bosh.trackedInfos.track(dirJoin(mod))
+                                except bolt.BoltError as e:
+                                    balt.showError(self, _(u'%s') % e)
+            bosh.modInfos.plugins.refresh(True)
+            self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
         removed = []
@@ -1588,7 +1600,7 @@ class INIList(List):
             self.SelectAll()
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected()
+                self.DeleteSelected(True,event.ShiftDown())
         event.Skip()
 
     def OnColumnResize(self,event):
@@ -1991,7 +2003,7 @@ class ModList(List):
         """Char event: Delete, Reorder, Check/Uncheck."""
         ##Delete
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected(event.ShiftDown())
+            self.DeleteSelected(False,event.ShiftDown())
         ##Ctrl+Up and Ctrl+Down
         elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
@@ -3552,7 +3564,7 @@ class InstallersList(balt.Tank):
         ##Delete - delete
         elif code in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected()
+                self.DeleteSelected(True,event.ShiftDown())
         ##F2 - Rename selected.
         elif code == wx.WXK_F2:
             selected = self.GetSelected()
@@ -4256,7 +4268,7 @@ class ScreensList(List):
         ##Delete
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected()
+                self.DeleteSelected(True,event.ShiftDown())
             self.RefreshUI()
         ##Enter
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
