@@ -1485,7 +1485,7 @@ class ModFile:
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
                 progress.setFull(max(len(stringsPaths),1))
                 for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,progress,lang)
+                    self.strings.loadFile(path,SubProgress(progress,i,i+1),lang)
                     progress(i)
                 ins.setStringTable(self.strings)
             else:
