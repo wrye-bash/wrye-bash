@@ -1483,10 +1483,10 @@ class ModFile:
             if unpack and self.tes4.flags1[7] and loadStrings:
                 lang = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
-                progress.setFull(3)
-                for path in stringsPaths:
+                progress.setFull(max(len(stringsPaths),1))
+                for i,path in enumerate(stringsPaths):
                     self.strings.loadFile(path,progress,lang)
-                    progress.plus()
+                    progress(i)
                 ins.setStringTable(self.strings)
             else:
                 ins.setStringTable(None)
