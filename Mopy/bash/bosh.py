@@ -1474,6 +1474,7 @@ class ModFile:
     def load(self,unpack=False,progress=None,loadStrings=True):
         """Load file."""
         progress = progress or bolt.Progress()
+        progress.setFull(1.0)
         #--Header
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
             header = ins.unpackRecHeader()
@@ -1481,21 +1482,26 @@ class ModFile:
             #--Strings
             self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:
+                stringsProgress = SubProgress(progress,0,0.2) # Use 10% of progress bar for strings
                 lang = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
-                progress.setFull(max(len(stringsPaths),1))
+                stringsProgress.setFull(max(len(stringsPaths),1))
                 for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,SubProgress(progress,i,i+1),lang)
-                    progress(i)
+                    self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
+                    stringsProgress(i)
                 ins.setStringTable(self.strings)
+                subProgress = SubProgress(progress,0.2,1.0)
             else:
                 ins.setStringTable(None)
+                subProgress = progress
             #--Raw data read
+            subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
             insRecHeader = ins.unpackRecHeader
             selfGetTopClass = self.loadFactory.getTopClass
             selfTopsSkipAdd = self.topsSkipped.add
             insSeek = ins.seek
+            insTell = ins.tell
             selfLoadFactory = self.loadFactory
             while not insAtEnd():
                 #--Get record info and handle it
@@ -1516,6 +1522,7 @@ class ModFile:
                     print u'Error in',self.fileInfo.name.s
                     deprint(u' ',traceback=True)
                     break
+                subProgress(insTell())
         #--Done Reading
 
     def load_unpack(self):
