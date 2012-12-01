@@ -349,31 +349,6 @@ def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
 
-# Sub-Windows -----------------------------------------------------------------
-def leftSash(parent,defaultSize=(100,100),onSashDrag=None):
-    """Creates a left sash window."""
-    sash = wx.SashLayoutWindow(parent,style=wx.SW_3D)
-    sash.SetDefaultSize(defaultSize)
-    sash.SetOrientation(wx.LAYOUT_VERTICAL)
-    sash.SetAlignment(wx.LAYOUT_LEFT)
-    sash.SetSashVisible(wx.SASH_RIGHT, True)
-    if onSashDrag:
-        id = sash.GetId()
-        sash.Bind(wx.EVT_SASH_DRAGGED_RANGE, onSashDrag,id=id,id2=id)
-    return sash
-
-def topSash(parent,defaultSize=(100,100),onSashDrag=None):
-    """Creates a top sash window."""
-    sash = wx.SashLayoutWindow(parent,style=wx.SW_3D)
-    sash.SetDefaultSize(defaultSize)
-    sash.SetOrientation(wx.LAYOUT_HORIZONTAL)
-    sash.SetAlignment(wx.LAYOUT_TOP)
-    sash.SetSashVisible(wx.SASH_BOTTOM, True)
-    if onSashDrag:
-        id = sash.GetId()
-        sash.Bind(wx.EVT_SASH_DRAGGED_RANGE, onSashDrag,id=id,id2=id)
-    return sash
-
 # Sizers ----------------------------------------------------------------------
 spacer = ((0,0),1) #--Used to space elements apart.
 
