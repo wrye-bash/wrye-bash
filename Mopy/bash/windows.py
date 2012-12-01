@@ -30,6 +30,8 @@
 from ctypes import *
 from ctypes.wintypes import MAX_PATH
 import win32gui
+import _winreg
+import subprocess
 
 BUTTONID_OFFSET                 = 1000
 
@@ -257,6 +259,27 @@ def setUAC(handle,uac=True):
     """Calls the Windows API to set a button as UAC"""
     win32gui.SendMessage(handle,0x0000160C,None,uac)
 
+#--Start a webpage with an anchor ---------------------------------------------
+# Need to do this specially, because doing it via os.startfile, ShellExecute,
+# etc drops off the anchor part of the url
+def StartURL(url):
+    if not isinstance(url,basestring):
+        url = url.s
+    # Get default browser location
+    try:
+        key = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,u'http\\shell\\open\\command')
+        value = _winreg.EnumValue(key,0)
+        cmd = value[1]
+        cmd = cmd.replace(u'%1',url)
+        subprocess.Popen(cmd)
+    except WindowsError:
+        # Regestry detection failed, fallback
+        # This method doesn't work with # anchors in the url name on windows
+        import webbrowser
+        webbrowser.open(url,new=2)
+
+#------------------------------------------------------------------------------
+
 #------Message codes------#
 _SETISMARQUEE = 1127
 _SETPBARRANGE = 1129
@@ -447,7 +470,7 @@ class TaskDialog(object):
         self._parent = hwnd
 
     def show(self, command_links=False, centered=True, can_cancel=False,
-             can_minimize=False, hyperlinks=False, additional_flags=0):
+             can_minimize=False, hyperlinks=True, additional_flags=0):
         """Build and display the dialog box."""
         conf = self.__configure(command_links, centered, can_cancel,
                                 can_minimize, hyperlinks, additional_flags)

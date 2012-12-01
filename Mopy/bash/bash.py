@@ -593,6 +593,13 @@ def main():
             title=_(u'UAC Protection')
             if balt.canVista:
                 admin = _(u'Run with Administrator Privileges')
+                readme = bosh.dirs['mopy'].join(u'Docs',u'Wrye Bash General Readme.html')
+                if readme.exists():
+                    readme = u'file:///'+readme.s.replace(u'\\',u'/').replace(u' ',u'%20')
+                else:
+                    # Fallback to SVN repository
+                    readme = u"http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html"
+                readme += '#trouble-permissions'
                 uacRestart = balt.vistaDialog(None,
                     message=message,
                     buttons=[(True,u'+'+admin),
@@ -603,7 +610,9 @@ def main():
                               (_(u'Always run normally: --no-uac')
                                + u'\n' +
                                _(u'Always run with Admin Privileges: --uac')),
-                              _(u'Use one of these command line switches.')],
+                              (_(u'Use one of these command line switches.')
+                               + u'\n' +
+                               _(u'See the <A href="%(readmePath)s">readme</A> for more information.') % {'readmePath':readme})],
                     )
             else:
                 uacRestart = balt.askYes(None,

@@ -830,12 +830,35 @@
 <p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.
 
 <h3 id="trouble-permissions">File Permissions</h3>
-<p>If you are running Windows Vista or Windows 7, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature. There are four common workarounds to this problem:
+<p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  There are four common workarounds to this problem:
 <ol>
 	<li>Install the game outside <q>Program Files</q> or <q>Program Files (x86)</q>. UAC prevents unauthorised edits to these folders, so by installing the game outside of them, you remove it from UAC's reach, allowing you to use mods more easily. Steam users can move their Steam installation and games using <a href="https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129">these instructions</a>.
 	<li>Deactivate UAC. This can be done from the Control Panel, and will turn UAC off across the whole of your computer. It is up to you whether you feel that you have adequate security measures in place to do this without risk.
 	<li>Give yourself <q>Full Control</q> permissions over your game install folder. This will allow you to make any edits you desire while keeping UAC active and on guard for any edits made by programs you do not run, and also means that you do not need to reinstall your game to a new location.
-	<li>Run Wrye Bash as an Administrator. Right-click the <q>Wrye Bash.exe</q> and select <q>Run as administrator</q>. This can only be done if you are using the Standalone version of Wrye Bash.
+	<li>Do nothing.  Wrye Bash will detect if it needs to run as Administrator, and give you a dialog with a few opotions:
+		<ol>
+			<li>Start Wrye Bash as Administrator:  This will give Wrye Bash full Administrator Rights, allowing it to function fully with no further action.
+			<li>Start normally.  This will start Wrye Bash without Administartor Rights.
+				<ul>
+					<li>Any actions that require Administrator Privileges will cause a UAC prompt to be shown.  Commonly, these are:
+						<ul>
+							<li>The first time Wrye Bash is started, approximately 4-6 times, depending on the number of directories Wrye Bash needs to create.
+							<li>When the Bashed Patch is rebuilt, 2 times, once for the Bashed Patch itself, once for the associated readme.
+							<li>Installing, Uninstalling, Annealing, and other operations in the Installers Tab that require modification of the game's Data folder.
+							<li>On shutdown, you may be prompted multiple times when saving various .dat files to the Bash Installers and Bash Mod Data folders, if these folders are under UAC protection.
+						</ul>
+					<li>A few actions are restricted:
+						<ul>
+							<li>Saving files into the UAC protected area: Windows does not allow the Save File dialog to select a target within a UAC protected folder.
+							<li>Ghosting: Wrye Bash will not be able to un-ghost already ghosted mods.  Wrye Bash will not ghost mods.  Both of these require renaming mod files.
+						</ul>
+				</ul>
+		</ol>
+		Launching Wrye Bash with some command line switches can avoid this dialog:
+		<ul>
+			<li>--no-uac: Always start normally, without Administrator Privileges
+			<li>--uac: Always start as Administrator (if required)
+		</ul>
 </ol>
 <p>For those that wish to take the third option and give themselves <q>Full Control</q> permissions, here is a guide:
 <ol>
