@@ -577,7 +577,7 @@ def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandL
     if footer:
         dialog.set_footer(footer)
     if expander:
-        dialog.set_expander(expander)
+        dialog.set_expander(expander,False,not footer)
     if checkBox:
         if isinstance(checkBox,basestring):
             dialog.set_check_box(checkBox,False)
