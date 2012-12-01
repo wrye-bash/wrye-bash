@@ -4947,14 +4947,18 @@ class FileInfos(DataDict):
         newNames = set()
         added = set()
         updated = set()
-        balt.shellMakeDirs(self.dir)
-        #self.dir.makedirs()
-        #--Loop over files in directory
-        names = [ x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x) ]
-        if self.dirdef:
-            names = { x for x in names } | {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
-            names = [ x for x in names ]
-        names.sort(key=lambda x: x.cext == u'.ghost')
+        if not self.dir.exists():
+            # Watched folder either got deleted, or never existed
+            names = []
+        else:
+            #balt.shellMakeDirs(self.dir)
+            #self.dir.makedirs()
+            #--Loop over files in directory
+            names = [ x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x) ]
+            if self.dirdef:
+                names = { x for x in names } | {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
+                names = [ x for x in names ]
+            names.sort(key=lambda x: x.cext == u'.ghost')
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
