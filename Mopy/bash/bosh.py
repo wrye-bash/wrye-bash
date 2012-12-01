@@ -1482,7 +1482,7 @@ class ModFile:
             #--Strings
             self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:
-                stringsProgress = SubProgress(progress,0,0.2) # Use 10% of progress bar for strings
+                stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
                 lang = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
                 stringsProgress.setFull(max(len(stringsPaths),1))
@@ -1490,7 +1490,7 @@ class ModFile:
                     self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
                     stringsProgress(i)
                 ins.setStringTable(self.strings)
-                subProgress = SubProgress(progress,0.2,1.0)
+                subProgress = SubProgress(progress,0.1,1.0)
             else:
                 ins.setStringTable(None)
                 subProgress = progress
@@ -1503,6 +1503,7 @@ class ModFile:
             insSeek = ins.seek
             insTell = ins.tell
             selfLoadFactory = self.loadFactory
+            selfTops = self.tops
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
@@ -1513,8 +1514,8 @@ class ModFile:
                 topClass = selfGetTopClass(label)
                 try:
                     if topClass:
-                        self.tops[label] = topClass(header,selfLoadFactory)
-                        self.tops[label].load(ins,unpack and (topClass != MobBase))
+                        selfTops[label] = topClass(header,selfLoadFactory)
+                        selfTops[label].load(ins,unpack and (topClass != MobBase))
                     else:
                         selfTopsSkipAdd(label)
                         insSeek(size-header.__class__.size,1,type + '.' + label)
