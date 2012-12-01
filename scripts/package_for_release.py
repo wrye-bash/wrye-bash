@@ -92,7 +92,7 @@ def VerifyPy2Exe():
 #--Create the standard manual installer version
 def BuildManualVersion(version, pipe=None):
     archive = os.path.join(dest, 'Wrye Bash %s - Python Source.7z' % version)
-    cmd_7z = [exe7z, 'a', '-mx9', '-xr!.svn', '-xr!Microsoft.VC80.CRT', '-xr!*.pyc', archive, 'Mopy', 'Data']
+    cmd_7z = [exe7z, 'a', '-mx9', '-xr!.svn', '-xr!Microsoft.VC80.CRT', '-xr!*.pyc', archive, 'Data']
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
 
 #--Create the StandAlone version
@@ -211,7 +211,6 @@ def PackStandaloneVersion(version, pipe=None):
               '-xr!Microsoft.VC80.CRT', # Skip MSVC runtime for the manual archive install
               '-xr!*.py', '-xr!*.pyc', '-xr!*.pyw', '-xr!*.bat', # Skip python source
               archive,
-              'Data',
               'Mopy',
               ]
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
