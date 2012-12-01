@@ -926,7 +926,7 @@ NoComTypes:
                 Delete "$Path_OB\Data\Bash Patches\Crowded Cities 15_Names.csv"
                 Delete "$Path_OB\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
                 RMDir  "$Path_OB\Mopy\Data\Actor Levels"
-                ;As of 294 the below are obselete locations or files.
+                ;As of 294 the below are obsolete locations or files.
                 Delete "$Path_OB\Mopy\ScriptParser.p*"
                 Delete "$Path_OB\Mopy\lzma.exe"
                 Delete "$Path_OB\Mopy\images\*"
@@ -958,10 +958,10 @@ NoComTypes:
                 RMDir  "$Path_OB\Mopy\Extras"
                 RMDir  "$Path_OB\Mopy\Data\Actor Levels"
                 RMDir  "$Path_OB\Mopy\Data"
-                ;As of 297 the below are obselete locations or files.
+                ;As of 297 the below are obsolete locations or files.
                 Delete "$Path_OB\Mopy\Wrye Bash.txt"
                 Delete "$Path_OB\Mopy\Wrye Bash.html"
-                ;As of 301 the below are obselete locations or files.
+                ;As of 301 the below are obsolete locations or files.
                 Delete "$Path_OB\Mopy\macro\txt\*.txt"
                 Delete "$Path_OB\Mopy\macro\py\*.py"
                 Delete "$Path_OB\Mopy\macro\py\*.pyc"
@@ -982,6 +982,10 @@ NoComTypes:
                 RMDir  "$Path_OB\Mopy\macro\py"
                 RMDir  "$Path_OB\Mopy\macro"
                 RMDir  "$Path_OB\Mopy\bash\images\stc"
+				; As of 303 the below are obsolete locations or files.
+				Delete "$Path_OB\Mopy\templates\Bashed Patch, Skyrim.esp"
+				Delete "$Path_OB\Mopy\templates\Bashed Patch, Oblivion.esp"
+				Delete "$Path_OB\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Nehrim != $Empty
                 Delete "$Path_Nehrim\Mopy\Data\Actor Levels\*"
@@ -1031,7 +1035,7 @@ NoComTypes:
                 Delete "$Path_Nehrim\Data\Bash Patches\Crowded Cities 15_Names.csv"
                 Delete "$Path_Nehrim\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
                 RMDir "$Path_Nehrim\Mopy\Data\Actor Levels"
-                ;As of 294 the below are obselete locations or files.
+                ;As of 294 the below are obsolete locations or files.
                 Delete "$Path_Nehrim\Mopy\ScriptParser.p*"
                 Delete "$Path_Nehrim\Mopy\lzma.exe"
                 Delete "$Path_Nehrim\Mopy\images\*"
@@ -1063,10 +1067,10 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\Extras"
                 RMDir  "$Path_Nehrim\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Nehrim\Mopy\Data"
-                ;As of 297 the below are obselete locations or files.
+                ;As of 297 the below are obsolete locations or files.
                 Delete "$Path_Nehrim\Mopy\Wrye Bash.txt"
                 Delete "$Path_Nehrim\Mopy\Wrye Bash.html"
-                ;As of 301 the below are obselete locations or files.
+                ;As of 301 the below are obsolete locations or files.
                 Delete "$Path_Nehrim\Mopy\macro\txt\*.txt"
                 Delete "$Path_Nehrim\Mopy\macro\py\*.py"
                 Delete "$Path_Nehrim\Mopy\macro\py\*.pyc"
@@ -1087,6 +1091,10 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\macro\py"
                 RMDir  "$Path_Nehrim\Mopy\macro"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\stc"
+				; As of 303 the below are obsolete locations or files.
+				Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Skyrim.esp"
+				Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Oblivion.esp"
+				Delete "$Path_Nehrim\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Skyrim != $Empty
                 Delete "$Path_Skyrim\Mopy\Data\Actor Levels\*"
@@ -1137,7 +1145,7 @@ NoComTypes:
                 Delete "$Path_Skyrim\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
                 Delete "$Path_Skyrim\Data\ArchiveInvalidationInvalidated!.bsa"
                 RMDir  "$Path_Skyrim\Mopy\Data\Actor Levels"
-                ;As of 294 the below are obselete locations or files.
+                ;As of 294 the below are obsolete locations or files.
                 Delete "$Path_Skyrim\Mopy\ScriptParser.p*"
                 Delete "$Path_Skyrim\Mopy\lzma.exe"
                 Delete "$Path_Skyrim\Mopy\images\*"
@@ -1169,10 +1177,10 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\Extras"
                 RMDir  "$Path_Skyrim\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Skyrim\Mopy\Data"
-                ;As of 297 the below are obselete locations or files.
+                ;As of 297 the below are obsolete locations or files.
                 Delete "$Path_Skyrim\Mopy\Wrye Bash.txt"
                 Delete "$Path_Skyrim\Mopy\Wrye Bash.html"
-                ;As of 301 the below are obselete locations or files.
+                ;As of 301 the below are obsolete locations or files.
                 Delete "$Path_Skyrim\Mopy\macro\txt\*.txt"
                 Delete "$Path_Skyrim\Mopy\macro\py\*.py"
                 Delete "$Path_Skyrim\Mopy\macro\py\*.pyc"
@@ -1193,6 +1201,10 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\macro\py"
                 RMDir  "$Path_Skyrim\Mopy\macro"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\stc"
+				; As of 303 the below are obsolete locations or files.
+				Delete "$Path_Skryim\Mopy\templates\Bashed Patch, Skyrim.esp"
+				Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Oblivion.esp"
+				Delete "$Path_Skyrim\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Ex1 != $Empty
                 Delete "$Path_Ex1\Mopy\Data\Actor Levels\*"
@@ -1242,7 +1254,7 @@ NoComTypes:
                 Delete "$Path_Ex1\Data\Bash Patches\Crowded Cities 15_Names.csv"
                 Delete "$Path_Ex1\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
                 RMDir "$Path_Ex1\Mopy\Data\Actor Levels"
-                ;As of 294 the below are obselete locations or files.
+                ;As of 294 the below are obsolete locations or files.
                 Delete "$Path_Ex1\Mopy\ScriptParser.p*"
                 Delete "$Path_Ex1\Mopy\lzma.exe"
                 Delete "$Path_Ex1\Mopy\images\*"
@@ -1274,10 +1286,10 @@ NoComTypes:
                 RMDir  "$Path_Ex1\Mopy\Extras"
                 RMDir  "$Path_Ex1\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Ex1\Mopy\Data"
-                ;As of 297 the below are obselete locations or files.
+                ;As of 297 the below are obsolete locations or files.
                 Delete "$Path_Ex1\Mopy\Wrye Bash.txt"
                 Delete "$Path_Ex1\Mopy\Wrye Bash.html"
-                ;As of 301 the below are obselete locations or files.
+                ;As of 301 the below are obsolete locations or files.
                 Delete "$Path_Ex1\Mopy\macro\txt\*.txt"
                 Delete "$Path_Ex1\Mopy\macro\py\*.py"
                 Delete "$Path_Ex1\Mopy\macro\py\*.pyc"
@@ -1298,6 +1310,10 @@ NoComTypes:
                 RMDir  "$Path_Ex1\Mopy\macro\py"
                 RMDir  "$Path_Ex1\Mopy\macro"
                 RMDir  "$Path_Ex1\Mopy\bash\images\stc"
+				; As of 303 the below are obsolete locations or files.
+				Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Skyrim.esp"
+				Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Oblivion.esp"
+				Delete "$Path_Ex1\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Ex2 != $Empty
                 Delete "$Path_Ex2\Mopy\Data\Actor Levels\*"
@@ -1349,7 +1365,7 @@ NoComTypes:
                 Delete "$Path_Ex2\Data\Bash Patches\Crowded Cities 15_Names.csv"
                 Delete "$Path_Ex2\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
                 RMDir "$Path_Ex2\Mopy\Data\Actor Levels"
-                ;As of 294 the below are obselete locations or files.
+                ;As of 294 the below are obsolete locations or files.
                 Delete "$Path_Ex2\Mopy\ScriptParser.p*"
                 Delete "$Path_Ex2\Mopy\lzma.exe"
                 Delete "$Path_Ex2\Mopy\images\*"
@@ -1381,10 +1397,10 @@ NoComTypes:
                 RMDir  "$Path_Ex2\Mopy\Extras"
                 RMDir  "$Path_Ex2\Mopy\Data\Actor Levels"
                 RMDir  "$Path_Ex2\Mopy\Data"
-                ;As of 297 the below are obselete locations or files.
+                ;As of 297 the below are obsolete locations or files.
                 Delete "$Path_Ex2\Mopy\Wrye Bash.txt"
                 Delete "$Path_Ex2\Mopy\Wrye Bash.html"
-                ;As of 301 the below are obselete locations or files.
+                ;As of 301 the below are obsolete locations or files.
                 Delete "$Path_Ex2\Mopy\macro\txt\*.txt"
                 Delete "$Path_Ex2\Mopy\macro\py\*.py"
                 Delete "$Path_Ex2\Mopy\macro\py\*.pyc"
@@ -1405,6 +1421,10 @@ NoComTypes:
                 RMDir  "$Path_Ex2\Mopy\macro\py"
                 RMDir  "$Path_Ex2\Mopy\macro"
                 RMDir  "$Path_Ex2\Mopy\bash\images\stc"
+				; As of 303 the below are obsolete locations or files.
+				Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Skyrim.esp"
+				Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Oblivion.esp"
+				Delete "$Path_Ex2\Mopy\templates\Blank.esp"
             ${EndIf}
         ${EndIf}
     FunctionEnd
@@ -1493,7 +1513,7 @@ NoComTypes:
                 SetOutPath $Path_OB\Mopy
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
                 SetOutPath $Path_OB\Data
-                File /r "Data\ArchiveInvalidationInvalidated!.bsa"
+                File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
                 SetOutPath "$Path_OB\Mopy\Bash Patches\Oblivion"
                 File /r "Mopy\Bash Patches\Oblivion\*.*"
                 SetOutPath $Path_OB\Data\Docs
@@ -1529,7 +1549,7 @@ NoComTypes:
                 SetOutPath $Path_Nehrim\Mopy
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
                 SetOutPath $Path_Nehrim\Data
-                File /r "Data\ArchiveInvalidationInvalidated!.bsa"
+                File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
                 SetOutPath "$Path_Nehrim\Mopy\Bash Patches\Oblivion"
                 File /r "Mopy\Bash Patches\Oblivion\*.*"
                 SetOutPath $Path_Nehrim\Data\Docs
@@ -1594,8 +1614,6 @@ NoComTypes:
             ${If} Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                SetOutPath $Path_Ex1\Data
-                File /r /x "*.svn*" "Data\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
@@ -1625,8 +1643,6 @@ NoComTypes:
             ${If} Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2\Mopy
                 File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                SetOutPath $Path_Ex2\Data
-                File /r /x "*.svn*" "Data\*.*"
                 ; Write the installation path into the registry
                 WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
