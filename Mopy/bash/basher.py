@@ -573,7 +573,7 @@ class BashError(BoltError): pass
 # Constants
 #--Indexed
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
-splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
+splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
 
 #--Generic
 ID_RENAME = 6000
@@ -757,7 +757,7 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE):
+    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50,style=splitterStyle):
         """Initialize."""
         NotebookPanel.__init__(self, parent, wx.ID_ANY)
         splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
@@ -2085,7 +2085,7 @@ class ModDetails(SashPanel):
     """Details panel for mod tab."""
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         #--Singleton
         global modDetails
@@ -2122,7 +2122,7 @@ class ModDetails(SashPanel):
             self.description.SetMaxLength(512)
             wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
             wx.EVT_TEXT(self.description,id,self.OnTextEdit)
-            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
@@ -2943,7 +2943,7 @@ class SaveDetails(SashPanel):
     """Savefile details panel."""
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,mode=wx.HORIZONTAL,minimumSize=230,style=wx.SW_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,mode=wx.HORIZONTAL,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         readOnlyColour = self.GetBackgroundColour()
         #--Singleton
@@ -2964,7 +2964,7 @@ class SaveDetails(SashPanel):
         self.gCoSaves = staticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
-        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
+        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
@@ -3610,7 +3610,6 @@ class InstallersPanel(SashTankPanel):
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
-        splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
         commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
         subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
@@ -4779,7 +4778,7 @@ class MessagePanel(SashPanel):
         global gMessageList
         gMessageList = MessageList(gTop)
         gMessageList.SetSizeHints(100,100)
-        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom, wx.ID_ANY, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.list = gMessageList
         #--Search
         gSearchBox = self.gSearchBox = wx.TextCtrl(gBottom,wx.ID_ANY,u'',style=wx.TE_PROCESS_ENTER)
@@ -6710,7 +6709,7 @@ class DocBrowser(wx.Frame):
         self.docNameBox = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY)
         #--Doc display
         self.plainText = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
-        self.htmlText = wx.lib.iewin.IEHtmlWindow(self, wx.ID_ANY, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+        self.htmlText = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Events
         wx.EVT_CLOSE(self, self.OnCloseWindow)
         #--Layout
@@ -6985,7 +6984,7 @@ class ModChecker(wx.Frame):
         self.merged = None
         self.imported = None
         #--Text
-        self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self, wx.ID_ANY, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+        self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Buttons
         bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
         gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
