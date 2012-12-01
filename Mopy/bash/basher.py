@@ -82,7 +82,6 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 import balt
 from balt import tooltip, fill, bell
 from balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
-from balt import leftSash, topSash
 from balt import spacer, hSizer, vSizer, hsbSizer, vsbSizer
 from balt import colors, images, Image
 from balt import Links, Link, SeparatorLink, MenuLink
