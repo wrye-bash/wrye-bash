@@ -3651,9 +3651,17 @@ class OblivionIni(IniFile):
         if not section or not key: return
         aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
-        if aiBsa.exists() and aiBsa.mtime >  aiBsaMTime:
+        if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
-        if doRedirect == self.getBsaRedirection(): return
+        if doRedirect == self.getBsaRedirection():
+            return
+        if doRedirect and not aiBsa.exists():
+            source = dirs['mopy'].join(u'templates',bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
+            source.mtime = aiBsaMTime
+            try:
+                balt.shellCopy(source,aiBsa,askOk=False)
+            except (AccessDeniedError,CancelError,SkipError):
+                return
         sArchives = self.getSetting(section,key,u'')
         #--Strip existint redirectors out
         archives = [x.strip() for x in sArchives.split(u',') if x.strip().lower() not in self.bsaRedirectors]
