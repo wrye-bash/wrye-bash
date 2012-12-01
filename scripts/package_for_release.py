@@ -268,7 +268,7 @@ if __name__ == '__main__':
     parser.add_option('-n', '--nsis',
                         default=None,
                         dest='nsis',
-                        help='Specify the path to the NSIS root directory.  Use this is pywin32 is not installed.'
+                        help='Specify the path to the NSIS root directory.  Use this if pywin32 is not installed.'
                         )
     parser.add_option('-v', '--verbose',
                         default=False,
