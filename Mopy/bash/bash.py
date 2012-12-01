@@ -595,11 +595,15 @@ def main():
                 admin = _(u'Run with Administrator Privileges')
                 uacRestart = balt.vistaDialog(None,
                     message=message,
-                    buttons=[(True,'+'+admin),
+                    buttons=[(True,u'+'+admin),
                              (False,_(u'Run normally')),
                              ],
                         title=title,
-                    footer=_(u'To skip this message in the future, launch Wrye Bash with the --no-uac command line switch.'),
+                    expander=[_(u'How to avoid this message in the future'),
+                              (_(u'Always run normally: --no-uac')
+                               + u'\n' +
+                               _(u'Always run with Admin Privileges: --uac')),
+                              _(u'Use one of these command line switches.')],
                     )
             else:
                 uacRestart = balt.askYes(None,
