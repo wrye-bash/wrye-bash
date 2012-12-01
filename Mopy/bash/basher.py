@@ -47,7 +47,7 @@ import bass
 import bweb
 
 from bosh import formatInteger,formatDate
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError
+from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 startupinfo = bolt.startupinfo
@@ -101,6 +101,8 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
     os.environ['PATH'] += ';'+sys.prefix
 
 appRestart = False # restart Bash if true
+uacRestart = False # restart Bash with Admin Rights if true
+isUAC = False      # True if the game is under UAC protection
 
 # Singletons ------------------------------------------------------------------
 statusBar = None
@@ -758,7 +760,7 @@ class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE):
         """Initialize."""
-        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        NotebookPanel.__init__(self, parent, wx.ID_ANY)
         splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
@@ -787,44 +789,28 @@ class SashPanel(NotebookPanel):
         if hasattr(self, 'sashPosKey'):
             settings[self.sashPosKey] = splitter.GetSashPosition()
 
-class SashTankPanel(NotebookPanel):
-    """Subclass of a notebook panel designed for a two pane tank panel."""
+class SashTankPanel(SashPanel):
     def __init__(self,data,parent):
-        """Initialize."""
-        wx.Panel.__init__(self, parent,-1)
+        sashPos = data.getParam('sashPos',200)
+        minimumSize = 80
         self.data = data
         self.detailsItem = None
-        sashPos = data.getParam('sashPos',200)
-        self.left = leftSash(self,defaultSize=(sashPos,100),onSashDrag=self.OnSashDrag)
-        self.right = wx.Panel(self,style=wx.NO_BORDER)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-
-    def OnShow(self):
-        """Panel is shown. Update self.data."""
-        if self.gList.data.refresh():
-            self.gList.RefreshUI()
-        super(SashTankPanel).OnShow()
-
-    def OnSashDrag(self,event):
-        """Handle sash moved."""
-        wMin,wMax = 80,self.GetSizeTuple()[0]-80
-        sashPos = max(wMin,min(wMax,event.GetDragRect().width))
-        self.left.SetDefaultSize((sashPos,10))
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
-        self.data.setParam('sashPos',sashPos)
-
-    def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
+        super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
 
     def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
         self.SaveDetails()
+        splitter = self.right.GetParent()
+        sashPos = splitter.GetSashPosition()
+        self.data.setParam('sashPos',sashPos)
         self.data.save()
 
     def GetDetailsItem(self):
-        """Returns item currently being shown in details view."""
         return self.detailsItem
+
+    def OnShow(self):
+        if self.gList.data.refresh():
+            self.gList.RefreshUI()
+        super(SashTankPanel,self).OnShow()
 
 #------------------------------------------------------------------------------
 class List(wx.Panel):
@@ -977,30 +963,42 @@ class List(wx.Panel):
                 selected.append(self.items[itemDex])
         return selected
 
-    def DeleteSelected(self,dontRecycle=False):
+    def DeleteSelected(self,shellUI=False,dontRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if items:
-            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            message.extend(sorted(items))
-            dialog = ListBoxes(self,_(u'Delete Items'),
-                         _(u'Delete these items?  This operation cannot be undone.'),
-                         [message])
-            if dialog.ShowModal() != wx.ID_CANCEL:
-                id = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id)
-                if checks:
-                    for i,mod in enumerate(items):
-                        if checks.IsChecked(i):
-                            try:
-                                self.data.delete(mod)
-                                # Temporarily Track this file for BAIN, so BAIN will
-                                # update the status of its installers
-                                bosh.trackedInfos.track(bosh.dirs['mods'].join(mod))
-                            except bolt.BoltError as e:
-                                balt.showError(self, _(u'%s') % e)
-                bosh.modInfos.plugins.refresh(True)
-                self.RefreshUI()
+            if shellUI:
+                try:
+                    self.data.delete(items,askOk=True,dontRecycle=dontRecycle)
+                except balt.AccessDeniedError:
+                    pass
+                dirJoin = self.data.dir.join
+                for item in items:
+                    itemPath = dirJoin(item)
+                    if not itemPath.exists():
+                        bosh.trackedInfos.track(itemPath)
+            else:
+                message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
+                message.extend(sorted(items))
+                dialog = ListBoxes(self,_(u'Delete Items'),
+                             _(u'Delete these items?  This operation cannot be undone.'),
+                             [message])
+                if dialog.ShowModal() != wx.ID_CANCEL:
+                    id = dialog.ids[message[0]]
+                    checks = dialog.FindWindowById(id)
+                    if checks:
+                        dirJoin = self.data.dir.join
+                        for i,mod in enumerate(items):
+                            if checks.IsChecked(i):
+                                try:
+                                    self.data.delete(mod)
+                                    # Temporarily Track this file for BAIN, so BAIN will
+                                    # update the status of its installers
+                                    bosh.trackedInfos.track(dirJoin(mod))
+                                except bolt.BoltError as e:
+                                    balt.showError(self, _(u'%s') % e)
+            bosh.modInfos.plugins.refresh(True)
+            self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
         removed = []
@@ -1602,7 +1600,7 @@ class INIList(List):
             self.SelectAll()
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected()
+                self.DeleteSelected(True,event.ShiftDown())
         event.Skip()
 
     def OnColumnResize(self,event):
@@ -2005,7 +2003,7 @@ class ModList(List):
         """Char event: Delete, Reorder, Check/Uncheck."""
         ##Delete
         if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected(event.ShiftDown())
+            self.DeleteSelected(False,event.ShiftDown())
         ##Ctrl+Up and Ctrl+Down
         elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
@@ -2125,7 +2123,7 @@ class ModDetails(SashPanel):
             self.description.SetMaxLength(512)
             wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
             wx.EVT_TEXT(self.description,id,self.OnTextEdit)
-            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
+            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
@@ -2234,12 +2232,14 @@ class ModDetails(SashPanel):
         self.cancel.Disable()
 
     def SetEdited(self):
+        if not self.modInfo: return
         self.edited = True
         if bush.game.esp.canEditHeader:
             self.save.Enable()
         self.cancel.Enable()
 
     def OnTextEdit(self,event):
+        if not self.modInfo: return
         if self.modInfo and not self.edited:
             if ((self.fileStr != self.file.GetValue()) or
                 (self.authorStr != self.author.GetValue()) or
@@ -2380,7 +2380,10 @@ class ModDetails(SashPanel):
         modList.RefreshUI()
 
     def DoCancel(self,event):
-        self.SetFile(self.modInfo.name)
+        if self.modInfo:
+            self.SetFile(self.modInfo.name)
+        else:
+            self.SetFile(None)
 
     #--Bash Tags
     def ShowBashTagsMenu(self,event):
@@ -2962,7 +2965,7 @@ class SaveDetails(SashPanel):
         self.gCoSaves = staticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
-        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom)
+        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE)
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
@@ -3382,36 +3385,17 @@ class InstallersList(balt.Tank):
                     outDir = bosh.dirs['installers'].join(omod.body)
                     if outDir.exists():
                         if balt.askYes(progress.dialog,_(u"The project '%s' already exists.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
-                            outDir.rmtree(omod.sbody)
+                            balt.shellDelete(outDir,self,False,False,False)
                         else:
                             continue
                     try:
                         bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
                         completed.append(omod)
-                    except CancelError:
-                        # Clean up from current omod that is extracting
-                        try:
-                            outDir.rmtree(omod.sbody)
-                        except:
-                            bolt.deprint(_(u'Failed to clean up output dir:')+u'\n', traceback=True)
-                        try:
-                            bosh.dirs['mopy'].join(u'temp').rmtree(u'temp')
-                        except:
-                            bolt.deprint(_(u'Failed to clean up temp dir:')+u'\n', traceback=True)
+                    except (CancelError,SkipError):
+                        # Omod extraction was cancelled, or user denied admin rights if needed
                         raise
                     except:
-                        bolt.deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
-
-                        # Clean up
-                        failed.append(u' * ' + omod.stail)
-                        try:
-                            outDir.rmtree(omod.sbody)
-                        except:
-                            bolt.deprint(_(u'Failed to clean up output dir:')+u'\n', traceback=True)
-                        try:
-                            bosh.dirs['mopy'].join(u'temp').rmtree(u'temp')
-                        except:
-                            bolt.deprint(_(u'Failed to clean up temp dir:')+u'\n', taceback=True)
+                        deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
             except CancelError:
                 skipped = set(omodnames) - set(completed)
                 msg = u''
@@ -3472,19 +3456,22 @@ class InstallersList(balt.Tank):
             if gCheckBox.GetValue():
                 settings['bash.installers.onDropFiles.action'] = action
         with balt.BusyCursor():
-            if action == 'COPY':
-                #--Copy the dropped files
-                for file in filenames:
-                    file.copyTo(bosh.dirs['installers'].join(file.tail))
-                for file in converters:
-                    file.copyTo(bosh.dirs['converters'].join(file.tail))
-            elif action == 'MOVE':
-                for file in filenames:
-                    file.moveTo(bosh.dirs['installers'].join(file.tail))
-                for file in converters:
-                    file.copyTo(bosh.dirs['converters'].join(file.tail))
-            else:
-                return
+            installersJoin = bosh.dirs['installers'].join
+            convertersJoin = bosh.dirs['converters'].join
+            filesTo = [installersJoin(x.tail) for x in filenames]
+            filesTo.extend(convertersJoin(x.tail) for x in converters)
+            filenames.extend(converters)
+            try:
+                if action == 'COPY':
+                    #--Copy the dropped files
+                    balt.shellCopy(filenames,filesTo,self,False,False,False)
+                elif action == 'MOVE':
+                    #--Move the dropped files
+                    balt.shellMove(filenames,filesTo,self,False,False,False)
+                else:
+                    return
+            except (CancelError,SkipError):
+                pass
             modList.RefreshUI()
             if iniList:
                 iniList.RefreshUI()
@@ -3577,7 +3564,7 @@ class InstallersList(balt.Tank):
         ##Delete - delete
         elif code in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected()
+                self.DeleteSelected(True,event.ShiftDown())
         ##F2 - Rename selected.
         elif code == wx.WXK_F2:
             selected = self.GetSelected()
@@ -3624,7 +3611,7 @@ class InstallersPanel(SashTankPanel):
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
-        splitterStyle = wx.NO_BORDER|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
+        splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE|wx.FULL_REPAINT_ON_RESIZE
         commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
         subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
@@ -3640,7 +3627,7 @@ class InstallersPanel(SashTankPanel):
         self.gList.SetSizeHints(100,100)
         #--Package
         self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
-        self.gPackage.SetBackgroundColour(self.GetBackgroundColour())
+        self.gPackage.HideNativeCaret()
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
         self.gNotebook.SetSizeHints(100,100)
@@ -3705,6 +3692,11 @@ class InstallersPanel(SashTankPanel):
         rightSizer.SetSizeHints(right)
         right.SetSizer(rightSizer)
         wx.LayoutAlgorithm().LayoutWindow(self, right)
+        leftSizer = vSizer(
+            (self.gList,1,wx.EXPAND),
+            )
+        left.SetSizer(leftSizer)
+        wx.LayoutAlgorithm().LayoutWindow(self,left)
         commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
         # restore saved comments text box size
         if 0 == commentsSplitterSavedSashPos:
@@ -3712,7 +3704,7 @@ class InstallersPanel(SashTankPanel):
         else:
             commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
+        #self.Bind(wx.EVT_SIZE,self.OnSize)
         commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
@@ -3748,18 +3740,56 @@ class InstallersPanel(SashTankPanel):
                         progress(i,x.stail)
                         outDir = dirInstallersJoin(omod.body)
                         num = 0
+                        omodRemoves = set()
+                        omodMoves = set()
                         while outDir.exists():
                             outDir = dirInstallersJoin(u'%s%s' % (omod.sbody,num))
                             num += 1
                         try:
                             bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
-                            omod.remove()
-                        except:
+                            omodRemoves.add(omod)
+                        except (CancelError,SkipError):
+                            omodMoves.add(omod)
+                        except Exception as e:
                             deprint(_(u"Error extracting OMOD '%s':") % omod.stail,traceback=True)
                             # Ensures we don't infinitely refresh if moving the omod fails
                             data.failedOmods.add(omod.body)
-                            outDir.rmtree(omod.sbody)
-                            omod.moveTo(dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body))
+                            omodMoves.add(omod)
+                    # Delete extracted omods
+                    try:
+                        balt.shellDelete(omodRemoves,self,False,False)
+                    except (CancelError,SkipError):
+                        while balt.askYes(self,_(u'Bash needs Administrator Privileges to delete OMODs that have already been extracted.')
+                                          + u'\n\n' +
+                                          _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
+                            try:
+                                omodRemoves = set(x for x in omodRemoves if x.exists())
+                                balt.shellDelete(omodRemoves,self,False,False)
+                            except (CancelError,SkipError):
+                                continue
+                            break
+                        else:
+                            # User decided not to give permission.  Add omod to 'failedOmods' so we know not to try to extract them again
+                            for omod in omodRemoves:
+                                if omod.exists():
+                                    data.failedOmods.add(omod.body)
+                    # Move bad omods
+                    try:
+                        omodMoves = list(omodMoves)
+                        omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.tail) for omod in omodMoves]
+                        balt.shellMakeDirs(dirInstallersJoin(u'Bash',u'Failed OMODs'))
+                        balt.shellMove(omodMoves,omodDests,self,False,False,False)
+                    except (CancelError,SkipError):
+                        while balt.askYes(self,_(u'Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory.')
+                                          + u'\n\n' +
+                                          _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
+                            try:
+                                omodMoves = [x for x in omodMoves]
+                                omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body) for omod in omodMoves]
+                                balt.shellMove(omodMoves,omodDests,self,False,False,False)
+                            except (CancelError,SkipError):
+                                continue
+                            break
             finally:
                 self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
@@ -3899,6 +3929,7 @@ class InstallersPanel(SashTankPanel):
             self.gSubList.Clear()
             self.gEspmList.Clear()
             self.gComments.SetValue(u'')
+        self.gPackage.HideNativeCaret()
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -4237,7 +4268,7 @@ class ScreensList(List):
         ##Delete
         elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected()
+                self.DeleteSelected(True,event.ShiftDown())
             self.RefreshUI()
         ##Enter
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
@@ -4278,26 +4309,23 @@ class ScreensList(List):
         self.picture.SetBitmap(bitmap)
 
 #------------------------------------------------------------------------------
-class ScreensPanel(NotebookPanel):
+class ScreensPanel(SashPanel):
     """Screenshots tab."""
     def __init__(self,parent):
         """Initialize."""
-        wx.Panel.__init__(self, parent, -1)
-        #--Left
         sashPos = settings.get('bash.screens.sashPos',120)
-        left = self.left = leftSash(self,defaultSize=(sashPos,100),onSashDrag=self.OnSashDrag)
-        right = self.right =  wx.Panel(self,style=wx.NO_BORDER)
+        SashPanel.__init__(self,parent,'bash.screens.sashPos',sashPos=sashPos,minimumSize=100)
+        left,right = self.left,self.right
         #--Contents
         global screensList
         screensList = ScreensList(left)
         screensList.SetSizeHints(100,100)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         self.list = screensList
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Layout
         right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
+        left.SetSizer(hSizer((screensList,1,wx.GROW)))
+        wx.LayoutAlgorithm().LayoutWindow(self,right)
 
     def RefreshUIColors(self):
         screensList.picture.SetBackground(colors['screens.bkgd.image'])
@@ -4306,18 +4334,6 @@ class ScreensPanel(NotebookPanel):
         """Sets status bar count field."""
         text = _(u'Screens:')+u' %d' % (len(screensList.data.data),)
         statusBar.SetStatusText(text,2)
-
-    def OnSashDrag(self,event):
-        """Handle sash moved."""
-        wMin,wMax = 80,self.GetSizeTuple()[0]-80
-        sashPos = max(wMin,min(wMax,event.GetDragRect().width))
-        self.left.SetDefaultSize((sashPos,10))
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
-        screensList.picture.Refresh()
-        settings['bash.screens.sashPos'] = sashPos
-
-    def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -4752,16 +4768,14 @@ class MessageList(List):
         self.gText.Navigate(path.s,0x2) #--0x2: Clear History
 
 #------------------------------------------------------------------------------
-class MessagePanel(NotebookPanel):
+class MessagePanel(SashPanel):
     """Messages tab."""
     def __init__(self,parent):
         """Initialize."""
         import wx.lib.iewin
-        wx.Panel.__init__(self, parent, -1)
-        #--Left
         sashPos = settings.get('bash.messages.sashPos',120)
-        gTop = self.gTop =  topSash(self,defaultSize=(100,sashPos),onSashDrag=self.OnSashDrag)
-        gBottom = self.gBottom =  wx.Panel(self,style=wx.NO_BORDER)
+        SashPanel.__init__(self,parent,'bash.messages.sashPos',sashPos=120,mode=wx.HORIZONTAL,minimumSize=100)
+        gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList
         gMessageList = MessageList(gTop)
@@ -4799,17 +4813,11 @@ class MessagePanel(NotebookPanel):
         text = _(u'PMs:')+u' %d/%d' % (numUsed,len(gMessageList.data.keys()))
         statusBar.SetStatusText(text,2)
 
-    def OnSashDrag(self,event):
-        """Handle sash moved."""
-        hMin,hMax = 80,self.GetSizeTuple()[1]-80
-        sashPos = max(hMin,min(hMax,event.GetDragRect().height))
-        self.gTop.SetDefaultSize((10,sashPos))
-        wx.LayoutAlgorithm().LayoutWindow(self, self.gBottom)
-        settings['bash.messages.sashPos'] = sashPos
-
     def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.gTop)
-        wx.LayoutAlgorithm().LayoutWindow(self, self.gBottom)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.left)
+        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
+        if event:
+            event.Skip()
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -4889,8 +4897,6 @@ class PeoplePanel(SashTankPanel):
         self.gText = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_MULTILINE)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Layout
         right.SetSizer(vSizer(
             (hSizer(
@@ -4899,6 +4905,7 @@ class PeoplePanel(SashTankPanel):
                 ),0,wx.GROW),
             (self.gText,1,wx.GROW|wx.TOP,4),
             ))
+        left.SetSizer(vSizer((self.gList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
     def SetStatusCount(self):
@@ -5987,7 +5994,7 @@ class BashFrame(wx.Frame):
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.name
             balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
 
-    def Restart(self,args=True):
+    def Restart(self,args=True,uac=False):
         if not args: return
 
         def argConvert(arg):
@@ -6015,6 +6022,9 @@ class BashFrame(wx.Frame):
             self.updater.WriteBatchFile(args)
         else:
             appRestart = args
+
+        global uacRestart
+        uacRestart = uac
         self.Close(True)
 
     def SetTitle(self,title=None):
@@ -7397,6 +7407,7 @@ class PatchDialog(wx.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = button(self,id=wx.ID_OK,label=_(u'Build Patch'),onClick=self.Execute)
+        SetUAC(self.gExecute)
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Deselect All'),onClick=self.DeselectAll)
         cancelButton = button(self,id=wx.ID_CANCEL,label=_(u'Cancel'))
@@ -7600,25 +7611,23 @@ class PatchDialog(wx.Dialog):
                 #--Save
                 progress.setCancel(False)
                 progress(0.9,patchName.s+u'\n'+_(u'Saving...'))
-                try:
-                    patchFile.safeSave()
-                except WindowsError, werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(self,(_(u'Bash encountered an error when saving %s.')
-                                            + u'\n\n' +
-                                            _(u'The file is in use by another process such as TES4Edit.')
-                                            + u'\n' +
-                                            _(u'Please close the other program that is accessing %s.')
-                                            + u'\n\n' +
-                                            _(u'Try again?')) % (patchName.s,patchName.s),
-                                      _(u'Bash Patch - Save Error')):
-                        try:
-                            patchFile.safeSave()
-                        except WindowsError, werr:
+                message = (_(u'Bash encountered and error when saving %(patchName)s.')
+                           + u'\n\n' +
+                           _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
+                           + u'\n' +
+                           _(u'Please close any program that is accessing %(patchName)s, and provide Administrator Privileges if prompted to do so.')
+                           + u'\n\n' +
+                           _(u'Try again?')) % {'patchName':patchName.s}
+                while True:
+                    try:
+                        patchFile.safeSave()
+                    except (CancelError,SkipError,WindowsError) as error:
+                        if isinstance(error,WindowsError) and error.winerror != 32:
+                            raise
+                        if balt.askYes(self,message,_(u'Bash Patch - Save Error')):
                             continue
-                        break
-                    else:
-                        raise
+                        raise CancelError
+                    break
 
                 #--Cleanup
                 self.patchInfo.refresh()
@@ -7634,12 +7643,25 @@ class PatchDialog(wx.Dialog):
                 timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
                 logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
                 readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-                with readme.open('w',encoding='utf-8-sig') as file:
+                tempReadmeDir = Path.tempDir(u'WryeBash_').join(u'Docs')
+                tempReadme = tempReadmeDir.join(patchName.sroot+u'.txt')
+                #--Write log/readme to temp dir first
+                with tempReadme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
+                #--Convert log/readmeto wtxt
+                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
+                bolt.WryeText.genHtml(tempReadme,None,docsDir)
+                #--Try moving temp log/readme to Docs dir
+                try:
+                    balt.shellMove(tempReadmeDir,bosh.dirs['mods'],self,False,False,False)
+                except (CancelError,SkipError):
+                    # User didn't allow UAC, move to My Games directoy instead
+                    balt.shellMove([tempReadme,tempReadme.root+u'.html'],bosh.dirs['saveBase'],self,False,False,False)
+                    readme = bosh.dirs['saveBase'].join(readme.tail)
+                #finally:
+                #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
-                docsDir = settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
-                bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
                 #--Select?
@@ -8703,6 +8725,19 @@ otherPatcherDict = {
     }
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+def SetUAC(item):
+    """Helper function for creating menu items or buttons that need UAC
+       Note: for this to work correctly, it needs to be run BEFORE
+       appending a menu item to a menu (and so, needs to be enabled/
+       diasbled prior to that as well."""
+    if isUAC:
+        if isinstance(item,wx.MenuItem):
+            if item.IsEnabled():
+                bitmap = images['uac.small'].GetBitmap()
+                item.SetBitmaps(bitmap,bitmap)
+        else:
+            balt.setUAC(item,isUAC)
+
 class BoolLink(Link):
     """Simple link that just toggles a setting."""
     def __init__(self, text, key, help='', opposite=False):
@@ -8793,6 +8828,9 @@ class Files_Unhide(Link):
             srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'', wildcard)
         if not srcPaths: return
         #--Iterate over Paths
+        srcFiles = []
+        destFiles = []
+        coSavesMoves = {}
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
@@ -8813,10 +8851,19 @@ class Files_Unhide(Link):
                     % (srcFileName.s,))
             #--Move it?
             else:
-                srcPath.moveTo(destPath)
+                srcFiles.append(srcPath)
+                dsestFiles.append(destPath)
                 if isSave:
-                    bosh.CoSaves(srcPath).move(destPath)
-        #--Repopulate
+                    coSavesMove[destPath] = bosh.CoSaves(srcPath)
+        #--Now move everything at once
+        if not srcFiles:
+            return
+        try:
+            balt.shellMove(srcFiles,destFiles,window,False,False,False)
+            for dest in coSavesMove:
+                coSavesMoves[dest].move(dest)
+        except (CancelError,SkipError):
+            pass
         bashFrame.RefreshData()
 
 # File Links ------------------------------------------------------------------
@@ -8825,8 +8872,9 @@ class File_Delete(Link):
     """Delete the file and all backups."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
-                help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
+                               help=_(u"Delete %(filename)s.") % ({'filename':data[0]}))
+        menu.AppendItem(menuItem)
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
@@ -8919,8 +8967,9 @@ class File_Hide(Link):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Hide'),
-                help=_(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]})))
+        menuItem = wx.MenuItem(menu,self.id,_(u'Hide'),
+                               help=_(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]}))
+        menu.AppendItem(menuItem)
 
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
@@ -9095,8 +9144,8 @@ class File_RevertToSnapshot(Link):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Revert to Snapshot...'),
             help=_(u"Revert to a previously created snapshot from the Bash/Snapshots dir."))
-        menu.AppendItem(menuItem)
         menuItem.Enable(len(self.data) == 1)
+        menu.AppendItem(menuItem)
 
     def Execute(self,event):
         """Handle menu item selection."""
@@ -9153,15 +9202,15 @@ class File_RevertToBackup:
         #--Backup Item
         wx.EVT_MENU(window,ID_REVERT_BACKUP,self.Execute)
         menuItem = wx.MenuItem(menu,ID_REVERT_BACKUP,_(u'Revert to Backup'))
-        menu.AppendItem(menuItem)
         self.backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
         menuItem.Enable(singleSelect and self.backup.exists())
+        menu.AppendItem(menuItem)
         #--First Backup item
         wx.EVT_MENU(window,ID_REVERT_FIRST,self.Execute)
         menuItem = wx.MenuItem(menu,ID_REVERT_FIRST,_(u'Revert to First Backup'))
-        menu.AppendItem(menuItem)
         self.firstBackup = self.backup +u'f'
         menuItem.Enable(singleSelect and self.firstBackup.exists())
+        menu.AppendItem(menuItem)
 
     def Execute(self,event):
         fileInfo = self.fileInfo
@@ -9901,11 +9950,13 @@ class Installer_EditWizard(InstallerLink):
             with balt.BusyCursor():
                 # This is going to leave junk temp files behind...
                 archive.unpackToTemp(path, [archive.hasWizard])
-            archive.tempDir.join(archive.hasWizard).start()
             try:
-                archive.tempDir.rmtree(archive.tempDir.stail)
-            except:
-                pass
+                archive.getTempDir().join(archive.hasWizard).start()
+            finally:
+                try:
+                    archive.rmTempDir()
+                except:
+                    pass
 
 class Installer_Wizard(InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
@@ -10104,6 +10155,8 @@ class Installer_Anneal(InstallerLink):
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
                 self.data.anneal(self.filterInstallables(),progress)
+        except (CancelError,SkipError):
+            pass
         finally:
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
@@ -10126,7 +10179,7 @@ class Installer_Duplicate(InstallerLink):
         isdir = self.data.dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.rootExt
-        newName = root+u' Copy'+ext
+        newName = root+_(u' Copy')+ext
         index = 0
         while newName in self.data:
             newName = root + (_(u' Copy (%d)') % index) + ext
@@ -10322,13 +10375,17 @@ class Installer_Install(InstallerLink):
             with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
                 last = (self.mode == 'LAST')
                 override = (self.mode != 'MISSING')
-                tweaks = self.data.install(self.filterInstallables(),progress,last,override)
-                if tweaks:
-                    balt.showInfo(self.window,
-                        _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
-                        +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
-                        _(u'INI Tweaks')
-                        )
+                try:
+                    tweaks = self.data.install(self.filterInstallables(),progress,last,override)
+                except (CancelError,SkipError):
+                    pass
+                else:
+                    if tweaks:
+                        balt.showInfo(self.window,
+                            _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
+                            +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
+                            _(u'INI Tweaks')
+                            )
         finally:
             self.data.refresh(what='N')
             gInstallers.RefreshUIMods()
@@ -10573,6 +10630,8 @@ class Installer_Uninstall(InstallerLink):
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.data.uninstall(self.filterInstallables(),progress)
+        except (CancelError,SkipError):
+            pass
         finally:
             self.data.refresh(what='NS')
             bosh.modInfos.plugins.saveLoadOrder()
@@ -12061,12 +12120,12 @@ class Mods_BOSSLaunchGUI(Link):
         exePath.head.setcwd()
         try:
             subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-        except Exception, error:
+        except Exception as error:
             balt.showError(
                 bashFrame,
                 (u'%s'%error + u'\n\n' +
                  _(u'Used Path: ') + self.exePath.s + u'\n' +
-                 _(u'Used Arguments: ') + u'%s' % self.exeArgs),
+                 _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                  _(u"Could not launch '%s'") % self.exePath.stail)
         finally:
             cwd.setcwd()
@@ -12881,6 +12940,23 @@ class Settings_UseAltName(BoolLink):
     def Execute(self,event):
         BoolLink.Execute(self,event)
         bashFrame.SetTitle()
+
+#------------------------------------------------------------------------------
+class Settings_UAC(Link):
+    def AppendToMenu(self,menu,window,data):
+        if not isUAC:
+            return
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu,self.id,_(u'Administrator Mode'),
+                               help=_(u'Restart Wrye Bash with administrator privileges.'))
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        if balt.askYes(bashFrame,
+                       _(u'Restart Wrye Bash with administrator privileges?'),
+                       _(u'Administrator Mode'),
+                       ):
+            bashFrame.Restart(True,True)
 
 # StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -13829,11 +13905,11 @@ class Mod_CreateDummyMasters(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Create Dummy Masters...'))
-        menu.AppendItem(menuItem)
         if len(data) == 1 and bosh.modInfos[data[0]].getStatus() == 30: # Missing masters
             menuItem.Enable(True)
         else:
             menuItem.Enable(False)
+        menu.AppendItem(menuItem)
 
     def Execute(self,event):
         """Handle execution."""
@@ -14854,8 +14930,8 @@ class Mod_Patch_Update(Link):
             menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
         else:
             menuItem = wx.MenuItem(menu,self.id,title)
-        menu.AppendItem(menuItem)
         menuItem.Enable(enable)
+        menu.AppendItem(menuItem)
         if enable and settings['bash.CBashEnabled']:
             menuItem.Check(not self.CBashMismatch)
 
@@ -17722,6 +17798,13 @@ class App_Button(StatusBar_Button):
         else:
             return None
 
+    def ShowError(self,error):
+        balt.showError(bashFrame,
+                       (u'%s'%error + u'\n\n' +
+                        _(u'Used Path: ') + self.exePath.s + u'\n' +
+                        _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
+                       _(u"Could not launch '%s'") % self.exePath.stail)
+
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
@@ -17738,13 +17821,8 @@ class App_Button(StatusBar_Button):
                     balt.showError(bashFrame,
                                    _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
-                except Exception, error:
-                    balt.showError(
-                        bashFrame,
-                        (u'%s'%error + u'\n\n' +
-                         _(u'Used Path: ') + self.exePath.s + u'\n' +
-                         _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                        _(u"Could not launch '%s'") % self.exePath.stail)
+                except Exception as error:
+                    self.ShowError(error)
                 finally:
                     cwd.setcwd()
             elif self.isExe:
@@ -17779,31 +17857,16 @@ class App_Button(StatusBar_Button):
                     balt.showError(bashFrame,
                                    _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
                                    _(u"Could not launch '%s'") % self.exePath.stail)
-                except WindowsError, werr:
+                except WindowsError as werr:
                     if werr.winerror != 740:
-                        balt.showError(
-                            bashFrame,
-                            (u'%s'%werr + u'\n\n' +
-                             _(u'Used Path: ') + self.exePath.s + u'\n' +
-                             _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                            _(u"Could not launch '%s'") % self.exePath.stail)
+                        self.ShowError(werr)
                     try:
                         import win32api
-                        win32api.ShellExecute(0,u"open",exePath.s,u'%s'%self.exeArgs,bosh.dirs['app'].s,1)
+                        win32api.ShellExecute(0,'runas',exePath.s,u'%s'%self.exeArgs,bosh.dirs['app'].s,1)
                     except:
-                        balt.showError(
-                            bashFrame,
-                            (u'%s'%werr + u'\n\n' +
-                             _(u'Used Path: ') + self.exePath.s + u'\n' +
-                             _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                            _(u"Could not launch '%s'") % self.exePath.stail)
-                except Exception, error:
-                    balt.showError(
-                        bashFrame,
-                        (u'%s'%error + u'\n\n' +
-                         _(u'Used Path: ') + self.exePath.s + u'\n' +
-                         _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                        _(u"Could not launch '%s'") % self.exePath.stail)
+                        self.ShowError(werr)
+                except Exception as error:
+                    self.ShowError(error)
                 finally:
                     cwd.setcwd()
             else:
@@ -17817,33 +17880,35 @@ class App_Button(StatusBar_Button):
                     r, executable = win32api.FindExecutable(self.exePath.s)
                     executable = win32api.GetLongPathName(executable)
                     args = u'"%s"' % self.exePath.s
-                    for arg in self.exeArgs:
-                        args += u' %s' % arg
+                    args += u' '.join([u'%s' % arg for arg in self.exeArgs])
                     win32api.ShellExecute(0,u"open",executable,args,dir,1)
-                except Exception, error:
-                    # Most likely we're here because FindExecutable failed (no file association)
-                    # Or because win32api import failed.  Try doing it using os.startfile
-                    # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
-                    cwd = bolt.Path.getcwd()
-                    if self.workingDir:
-                        self.workingDir.setcwd()
+                except Exception as error:
+                    if isinstance(error,WindowsError) and error.winerror == 740:
+                        # Requires elevated permissions
+                        try:
+                            import win32api
+                            win32api.ShellExecute(0,'runas',executable,args,dir,1)
+                        except Exception as error:
+                            self.ShowError(error)
                     else:
-                        self.exePath.head.setcwd()
-                    try:
-                        webbrowser.open(self.exePath.s)
-                    except UnicodeError:
-                        balt.showError(bashFrame,
-                                       _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
-                                       _(u"Could not launch '%s'") % self.exePath.stail)
-                    except Exception, error:
-                        balt.showError(
-                            bashFrame,
-                            (u'%s'%error + u'\n\n' +
-                             _(u'Used Path: ') + self.exePath.s + u'\n' +
-                             _(u'Used Arguments: ') + u'%s' % self.exeArgs),
-                            _(u"Could not launch '%s'") % self.exePath.stail)
-                    finally:
-                        cwd.setcwd()
+                        # Most likely we're here because FindExecutable failed (no file association)
+                        # Or because win32api import failed.  Try doing it using os.startfile
+                        # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
+                        cwd = bolt.Path.getcwd()
+                        if self.workingDir:
+                            self.workingDir.setcwd()
+                        else:
+                            self.exePath.head.setcwd()
+                        try:
+                            webbrowser.open(self.exePath.s)
+                        except UnicodeError:
+                            balt.showError(bashFrame,
+                                           _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
+                                           _(u"Could not launch '%s'") % self.exePath.stail)
+                        except Exception as error:
+                            self.ShowError(error)
+                        finally:
+                            cwd.setcwd()
         else:
             balt.showError(bashFrame,
                            _(u'Application missing: %s') % self.exePath.s,
@@ -17975,7 +18040,7 @@ class App_BOSS(App_Button):
                     exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
                 if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
                     exeArgs += (u'-c',)
-                if bosh.dirs['boss'].join('BOSS.exe').version >= (2,0,0,0):
+                if bosh.dirs['boss'].join(u'BOSS.exe').version >= (2,0,0,0):
                     # After version 2.0, need to pass in the -g argument
                     exeArgs += (u'-g%s' % bush.game.name,)
                 progress(0.05,_(u"Processing... launching BOSS."))
@@ -17988,11 +18053,8 @@ class App_BOSS(App_Button):
                         bosh.modInfos.refresh(doInfos=False)
                         # Refresh UI, so WB is made aware of the changes to loadorder.txt
                         modList.RefreshUI('ALL')
-                except Exception, error:
-                    balt.showError(bashFrame,
-                                   (_(u"Used Path: %s") % exePath.s + u'\n' +
-                                    _(u"Used Arguments: %s") % exeArgs),
-                                    _(u'Could not launch BOSS'))
+                except Exception as error:
+                    self.ShowError(error)
                 finally:
                     cwd.setcwd()
         else:
@@ -18520,6 +18582,9 @@ def InitImages():
     images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),wx.BITMAP_TYPE_PNG)
     images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),wx.BITMAP_TYPE_PNG)
+    #--UAC icons
+    images['uac.small'] = Image(GPath(balt.getUACIcon('small')),wx.BITMAP_TYPE_ICO)
+    images['uac.large'] = Image(GPath(balt.getUACIcon('large')),wx.BITMAP_TYPE_ICO)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
@@ -19661,6 +19726,7 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_UseAltName())
     SettingsMenu.append(Mods_Deprint())
     SettingsMenu.append(Mods_DumpTranslator())
+    SettingsMenu.append(Settings_UAC())
     #--Check for updates
     if True:
         updateMenu = MenuLink(_(u'Check for Updates'))

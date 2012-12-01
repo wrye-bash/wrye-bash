@@ -40,6 +40,7 @@ import codecs
 import gettext
 import traceback
 import csv
+import tempfile
 from subprocess import Popen, PIPE
 close_fds = True
 import types
@@ -869,8 +870,12 @@ class CancelError(BoltError):
         BoltError.__init__(self, message)
 
 class SkipError(BoltError):
-    """User pressed 'Skip' on the progress meter."""
-    def __init__(self,message=u'Action skipped by user.'):
+    """User pressed Skipped n operations."""
+    def __init__(self,count=None,message=u'%s actions skipped by user.'):
+        if count:
+            message = message % count
+        else:
+            message = u'Action skipped by user.'
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
@@ -1144,15 +1149,24 @@ class Path(object):
         """Temp file path.  If unicodeSafe is True, the returned
         temp file will be a fileName that can be passes through Popen
         (Popen automatically tries to encode the name)"""
+        dirJoin = GPath(tempfile.gettempdir()).join(u'WryeBash_temp').join
         if unicodeSafe:
             try:
                 self._s.encode('ascii')
-                return self+u'.tmp'
+                return dirJoin(self.tail+u'.tmp')
             except UnicodeEncodeError:
                 ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
-                return self.head.join(ret)
+                return dirJoin(ret)
         else:
-            return self+u'.tmp'
+            return dirJoin(self.tail+u'.tmp')
+
+    @staticmethod
+    def tempDir(prefix=None):
+        return GPath(tempfile.mkdtemp(prefix=prefix))
+
+    @staticmethod
+    def baseTempDir():
+        return GPath(tempfile.gettempdir())
 
     @property
     def backup(self):
@@ -1231,11 +1245,16 @@ class Path(object):
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
     @property
+    def stat(self):
+        """File stats"""
+        return os.stat(self._s)
+
+    @property
     def version(self):
         """File version (exe/dll) embeded in the file properties (windows only)."""
         try:
             import win32api
-            info = win32api.GetFileVersionInfo(self.s,u'\\')
+            info = win32api.GetFileVersionInfo(self._s,u'\\')
             ms = info['FileVersionMS']
             ls = info['FileVersionLS']
             version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
@@ -2397,6 +2416,19 @@ def csvFormat(format):
     return csvFormat[1:] #--Chop leading comma
 
 deprintOn = False
+
+class tempDebugMode(object):
+    __slots__=('_old')
+    def __init__(self):
+        global deprintOn
+        self._old = deprintOn
+        deprintOn = True
+
+    def __enter__(self): return self
+    def __exit__(self,*args,**kwdargs):
+        global deprintOn
+        deprintOn = self._old
+
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
@@ -2599,6 +2631,9 @@ class Progress:
         self.state = 0
         self.debug = False
 
+    def getParent(self):
+        return None
+
     def setFull(self,full):
         """Set's full and for convenience, returns self."""
         if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
@@ -2661,6 +2696,13 @@ class ProgressFile(Progress):
 #------------------------------------------------------------------------------
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
+    encodings = {
+        # Encoding to fall back to if UTF-8 fails, based on language
+        # Default is 1252 (Western European), so only list languages
+        # different than that
+        u'russian': 'cp1251',
+        }
+
     def load(self,modFilePath,language=u'English',progress=Progress()):
         baseName = modFilePath.tail.body
         baseDir = modFilePath.head.join(u'Strings')
@@ -2673,9 +2715,11 @@ class StringTable(dict):
             progress(i)
             self.loadFile(file,SubProgress(progress,i,i+1))
 
-    def loadFile(self,path,progress):
+    def loadFile(self,path,progress,language=u'english'):
         if path.cext == u'.strings': format = 0
         else: format = 1
+        language = language.lower()
+        backupEncoding = self.encodings.get(language,'cp1252')
         try:
             with BinaryFile(path.s) as ins:
                 insSeek = ins.seek
@@ -2699,21 +2743,34 @@ class StringTable(dict):
                     deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
                             % (path, dataSize, eof-dataSize, stringsStart))
 
+                id = -1
+                offset = -1
                 for x in xrange(numIds):
-                    progress(x)
-                    id,offset = insUnpack('=2I',8)
-                    pos = insTell()
-                    insSeek(stringsStart+offset)
-                    if format:
-                        strLen, = insUnpack('I',4)
-                        value = insRead(strLen)
-                    else:
-                        value = insReadCString()
-                    value = unicode(cstrip(value),'cp1252')
-                    insSeek(pos)
-                    self[id] = value
+                    try:
+                        progress(x)
+                        id,offset = insUnpack('=2I',8)
+                        pos = insTell()
+                        insSeek(stringsStart+offset)
+                        if format:
+                            strLen, = insUnpack('I',4)
+                            value = insRead(strLen)
+                        else:
+                            value = insReadCString()
+                        value = cstrip(value)
+                        try:
+                            value = unicode(value,'utf-8')
+                        except UnicodeDecodeError:
+                            value = unicode(value,backupEncoding)
+                        insSeek(pos)
+                        self[id] = value
+                    except:
+                        deprint(u'Error reading string file:')
+                        deprint(u'id:', id)
+                        deprint(u'offset:', offset)
+                        deprint(u'filePos:',  insTell())
+                        raise
         except:
-            deprint(u'Error loading string file:', traceback=True)
+            deprint(u'Error loading string file:', path.stail, traceback=True)
             return
 
 # WryeText --------------------------------------------------------------------

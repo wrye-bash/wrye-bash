@@ -114,7 +114,7 @@ class InstallerWizard(wiz.Wizard):
                     u'*.cur',            # CUR's
                     u'*.ani',            # ANI's
                     ], bosh.SubProgress(progress,0,0.9), recurse=True)
-            self.wizard_file = installer.tempDir.join(installer.hasWizard)
+            self.wizard_file = installer.getTempDir().join(installer.hasWizard)
         else:
             self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
         self.parser = WryeParser(self, installer, subs, bArchive, path, link.bAuto)
@@ -187,7 +187,7 @@ class InstallerWizard(wiz.Wizard):
         # Clean up temp files
         if self.parser.bArchive:
             try:
-                self.parser.installer.tempDir.rmtree(safety='Temp')
+                self.parser.installer.rmTempDir()
             except:
                 pass
         return self.ret
@@ -1485,7 +1485,7 @@ class WryeParser(ScriptParser.Parser):
             return
         # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
-            imageJoin = self.installer.tempDir.join
+            imageJoin = self.installer.getTempDir().join
         else:
             imageJoin = bosh.dirs['installers'].join(self.path).join
         for i in images:

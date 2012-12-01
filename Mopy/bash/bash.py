@@ -29,6 +29,7 @@ import atexit
 import os
 from time import time, sleep
 import sys
+import codecs
 import re
 import traceback
 import StringIO
@@ -121,11 +122,47 @@ def oneInstanceChecker():
         if pidpath.exists(): os.remove(pidpath.s)
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
         os.write(lockfd, u"%d" % os.getpid())
-    except OSError, e:
+    except OSError as e:
         # lock file exists and is currently locked by another process
-        msg = _(u'Already started')
-        try: print msg
-        except UnicodeError: print msg.encode('mbcs')
+        msg = _(u'Only one instance of Wrye Bash can run.')
+        try:
+            import balt
+            if balt.canVista:
+                balt.vistaDialog(None,
+                    message=msg,
+                    title=u'',
+                    icon='error',
+                    buttons=[(True,'ok')],
+                    )
+            else:
+                try:
+                    import wx
+                    _app = wx.App(False)
+                    dialog = wx.MessageDialog(None,msg,_(u'Wrye Bash'),wx.ID_OK)
+                    dialog.ShowModal()
+                    dialog.Destory()
+                except ImportError as e:
+                    print 'error: e'
+                    import Tkinter
+                    root = Tkinter.Tk()
+                    frame = Tkinter.Frame(root)
+                    frame.pack()
+
+                    button = Tkinter.Button(frame, text=_(u"Ok"), command=root.destroy, pady=15, borderwidth=5, relief=Tkinter.GROOVE)
+                    button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
+
+                    w = Tkinter.Text(frame)
+                    w.insert(Tkinter.END, msg)
+                    w.config(state=Tkinter.DISABLED)
+                    w.pack()
+                    root.mainloop()
+        except Exception as e:
+            print 'error:', e
+            pass
+        try:
+            print msg
+        except UnicodeError:
+            print msg.encode('mbcs')
         return False
 
     return True
@@ -134,18 +171,26 @@ def exit():
     try:
         os.close(lockfd)
         os.remove(pidpath.s)
-    except OSError, e:
+    except OSError as e:
         print e
 
-    try:
-        # Cleanup temp installers directory
-        import bosh
-        bosh.Installer.tempDir.rmtree(bosh.Installer.tempDir.stail)
-    except:
-        pass
+    # Cleanup temp installers directory
+    import tempfile
+    tempDir = GPath(tempfile.tempdir)
+    for file in tempDir.list():
+        if file.cs.startswith(u'wryebash_'):
+            file = tempDir.join(file)
+            try:
+                if file.isdir():
+                    file.rmtree(safety=file.stail)
+                else:
+                    file.remove()
+            except:
+                pass
 
     if basherImported:
         from basher import appRestart
+        from basher import uacRestart
         if appRestart:
             if isinstance(appRestart,set):
                 # Special case for applying updates
@@ -160,6 +205,10 @@ def exit():
                     sys.argv = [exePath.stail] + sys.argv
                 if u'--restarting' not in sys.argv:
                     sys.argv += [u'--restarting']
+                #--Assume if we're restarting that they don't want to be
+                #  prompted again about UAC
+                if u'--no-uac' not in sys.argv:
+                    sys.argv += [u'--no-uac']
                 def updateArgv(args):
                     if isinstance(args,(list,tuple)):
                         if len(args) > 0 and isinstance(args[0],(list,tuple)):
@@ -180,14 +229,25 @@ def exit():
                                 sys.argv.extend(args)
                 updateArgv(appRestart)
             try:
-                import subprocess
-                if special:
-                    subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
-                elif hasattr(sys,'frozen'):
-                    subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
+                if uacRestart:
+                    if not hasattr(sys,'frozen'):
+                        sys.argv = sys.argv[1:]
+                    import win32api
+                    if hasattr(sys,'frozen'):
+                        win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join('"%s"' % x for x in sys.argv[1:]),os.getcwdu(),True)
+                    else:
+                        args = u' '.join([u'%s',u'"%s"'][u' ' in x] % x for x in sys.argv)
+                        win32api.ShellExecute(0,'runas',exePath.s,args,os.getcwdu(),True)
+                    return
                 else:
-                    subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-            except Exception, error:
+                    import subprocess
+                    if special:
+                        subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
+                    elif hasattr(sys,'frozen'):
+                        subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
+                    else:
+                        subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+            except Exception as error:
                 print error
                 print u'Error Attempting to Restart Wrye Bash!'
                 print u'cmd line: %s %s' %(exePath.s, sys.argv)
@@ -208,18 +268,21 @@ def dump_environment():
 
 # Main ------------------------------------------------------------------------
 def main():
-    if hasattr(sys,'frozen'):
-        # Standalone stdout is NUL, no matter what.  Reassign it to stderr so the output
-        # goes to 'Wrye Bash.exe.txt'
-        sys.stdout = sys.stderr
-        # Also, save it for later, to regain control from wxPython
-        old_stderr = sys.stderr
     bolt.deprintOn = opts.debug
     if len(extra) > 0:
         return
 
     # useful for understanding context of bug reports
-    if opts.debug: dump_environment()
+    if opts.debug or hasattr(sys,'frozen'):
+        # Standalone stdout is NUL no matter what.   Redirect it to stderr.
+        # Also, setup stdout/stderr to the debug log if debug mode / standalone before wxPython is up
+        errLog = open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w')
+        sys.stdout = errLog
+        sys.stderr = errLog
+        old_stderr = errLog
+
+    if opts.debug:
+        dump_environment()
 
     if opts.Psyco:
         try:
@@ -355,10 +418,12 @@ def main():
     #  required before the rest has imported
     SetUserPath(u'bash.ini',opts.userPath)
 
+    isUAC = False
     try:
         # Force Python mode if CBash can't work with this game
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
+        isUAC = bosh.testUAC(opts.oblivionPath)
         bosh.initBosh(opts.personalPath,opts.localAppDataPath,opts.oblivionPath)
         bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
 
@@ -377,7 +442,7 @@ def main():
         import basher
         import barb
         import balt
-    except (bolt.PermissionError, bolt.BoltError), e:
+    except (bolt.PermissionError, bolt.BoltError) as e:
         # try really hard to be able to show the error in the GUI
         try:
             if 'basher' not in locals():
@@ -398,7 +463,7 @@ def main():
         balt.showError(None,u'%s'%e)
         app.MainLoop()
         raise e
-    except (ImportError, StandardError), e:
+    except (ImportError, StandardError) as e:
         # try really hard to be able to show the error in any GUI
         try:
             o = StringIO.StringIO()
@@ -455,7 +520,7 @@ def main():
                 w.pack()
                 root.mainloop()
                 return
-        except StandardError, y:
+        except StandardError as y:
             print 'An error has occured with Wrye Bash, and could not be displayed.'
             print 'The following is the error that occured while trying to display the first error:'
             try:
@@ -518,6 +583,30 @@ def main():
 
     global basherImported
     basherImported = True
+
+    basher.isUAC = isUAC
+    if isUAC and not opts.uac:
+        # Show a prompt asking if we should restart in Admin Mode
+        message = _(u"Wrye Bash needs Administrator Privileges to make changes to the %(gameName)s directory.  If you do not start Wrye Bash with elevated privileges, you will be prompted at each operation that requires elevated privileges.") % {'gameName':bush.game.name}
+        title=_(u'UAC Protection')
+        if balt.canVista:
+            admin = _(u'Run with Administrator Privileges')
+            result = balt.vistaDialog(None,
+                message=message,
+                buttons=[(True,'+'+admin),
+                         (False,_(u'Run normally')),
+                         ],
+                title=title,
+                footer=_(u'To skip this message in the future, launch Wrye Bash with the --no-uac command line switch.'),
+                )
+        else:
+            result = balt.askYes(None,
+                message+u'\n\n'+_(u'Start Wrye Bash with Administrator Privileges?'),
+                title)
+        if result:
+            basher.appRestart = True
+            basher.uacRestart = True
+            return
 
     app.Init()
     app.MainLoop()
