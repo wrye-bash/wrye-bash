@@ -607,11 +607,13 @@ def main():
                              ],
                         title=title,
                     expander=[_(u'How to avoid this message in the future'),
-                              (_(u'Always run normally: --no-uac')
+                              _(u'Less information'),
+                              (_(u'Use one of the following command line switches:')
+                               + u'\n\n' +
+                               _(u'--no-uac: always run normally')
                                + u'\n' +
-                               _(u'Always run with Admin Privileges: --uac')),
-                              (_(u'Use one of these command line switches.')
-                               + u'\n' +
+                               _(u'--uac: always run with Admin Privileges')
+                               + u'\n\n' +
                                _(u'See the <A href="%(readmePath)s">readme</A> for more information.') % {'readmePath':readme})],
                     )
             else:
