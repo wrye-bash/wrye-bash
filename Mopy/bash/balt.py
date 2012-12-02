@@ -349,31 +349,6 @@ def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
 
-# Sub-Windows -----------------------------------------------------------------
-def leftSash(parent,defaultSize=(100,100),onSashDrag=None):
-    """Creates a left sash window."""
-    sash = wx.SashLayoutWindow(parent,style=wx.SW_3D)
-    sash.SetDefaultSize(defaultSize)
-    sash.SetOrientation(wx.LAYOUT_VERTICAL)
-    sash.SetAlignment(wx.LAYOUT_LEFT)
-    sash.SetSashVisible(wx.SASH_RIGHT, True)
-    if onSashDrag:
-        id = sash.GetId()
-        sash.Bind(wx.EVT_SASH_DRAGGED_RANGE, onSashDrag,id=id,id2=id)
-    return sash
-
-def topSash(parent,defaultSize=(100,100),onSashDrag=None):
-    """Creates a top sash window."""
-    sash = wx.SashLayoutWindow(parent,style=wx.SW_3D)
-    sash.SetDefaultSize(defaultSize)
-    sash.SetOrientation(wx.LAYOUT_HORIZONTAL)
-    sash.SetAlignment(wx.LAYOUT_TOP)
-    sash.SetSashVisible(wx.SASH_BOTTOM, True)
-    if onSashDrag:
-        id = sash.GetId()
-        sash.Bind(wx.EVT_SASH_DRAGGED_RANGE, onSashDrag,id=id,id2=id)
-    return sash
-
 # Sizers ----------------------------------------------------------------------
 spacer = ((0,0),1) #--Used to space elements apart.
 
@@ -578,6 +553,7 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
 
 # Message Dialogs -------------------------------------------------------------
 import win32gui
+import win32api
 import windows
 canVista = windows.TASK_DIALOG_AVAILABLE
 
@@ -592,6 +568,10 @@ def getUACIcon(size='small'):
 def setUAC(button,uac=True):
     windows.setUAC(button.GetHandle(),uac)
 
+def _vistaDialog_Hyperlink(*args):
+    file = args[1]
+    windows.StartURL(file)
+
 def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
@@ -599,10 +579,11 @@ def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandL
                                 buttons=[x[1] for x in buttons],
                                 icon=icon,
                                 parenthwnd=parent.GetHandle() if parent else None)
+    dialog.bind(windows.HYPERLINK_CLICKED,_vistaDialog_Hyperlink)
     if footer:
         dialog.set_footer(footer)
     if expander:
-        dialog.set_expander(expander)
+        dialog.set_expander(expander,False,not footer)
     if checkBox:
         if isinstance(checkBox,basestring):
             dialog.set_check_box(checkBox,False)
