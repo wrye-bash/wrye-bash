@@ -7583,7 +7583,10 @@ class Installer(object):
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
-                        self.hasBCF = full
+                        ## Disabling Auto-BCF's for now, until the code for them can be updated to the latest
+                        ## tempDir stuff
+                        ## TODO: DO THIS!
+                        #self.hasBCF = full
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in docExts and sub == u'':
