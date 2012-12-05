@@ -232,9 +232,15 @@ class SHSTOCKICONINFO(Structure):
                 ('iIcon',c_int),
                 ('szPath',c_wchar*MAX_PATH)]
 
-stockiconinfo = windll.shell32.SHGetStockIconInfo
-stockiconinfo.argtypes = [c_uint,c_uint,POINTER(SHSTOCKICONINFO)]
-stockiconinfo.restype = c_uint32
+
+try:
+    stockiconinfo = windll.shell32.SHGetStockIconInfo
+    stockiconinfo.argtypes = [c_uint,c_uint,POINTER(SHSTOCKICONINFO)]
+    stockiconinfo.restype = c_uint32
+    STOCK_ICON_AVAILABLE = True
+except AttributeError:
+    STOCK_ICON_AVAILABLE = False
+
 
 def GetStockIcon(id,flags=0):
     flags = ~(~flags|SHGSI_ICONLOCATION)|SHGSI_ICON
