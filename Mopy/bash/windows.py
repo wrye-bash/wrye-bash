@@ -238,27 +238,33 @@ try:
     stockiconinfo.argtypes = [c_uint,c_uint,POINTER(SHSTOCKICONINFO)]
     stockiconinfo.restype = c_uint32
     STOCK_ICON_AVAILABLE = True
+
+    def GetStockIcon(id,flags=0):
+        flags = ~(~flags|SHGSI_ICONLOCATION)|SHGSI_ICON
+        info = SHSTOCKICONINFO()
+        info.cbSize = sizeof(info)
+        result = stockiconinfo(id,flags,byref(info))
+        if result != 0:
+            raise Exception(result)
+        return info.hIcon
+
+    def GetStockIconLocation(id,flags=0):
+        flags = ~(~flags|SHGSI_ICON)|SHGSI_ICONLOCATION
+        info = SHSTOCKICONINFO()
+        info.cbSize = sizeof(info)
+        result = stockiconinfo(id,flags,byref(info))
+        if result != 0:
+            raise Exception(result)
+        return (info.szPath,info.iIcon)
+
 except AttributeError:
     STOCK_ICON_AVAILABLE = False
 
+    def GetStockIcon(id,flags=0):
+        return None
 
-def GetStockIcon(id,flags=0):
-    flags = ~(~flags|SHGSI_ICONLOCATION)|SHGSI_ICON
-    info = SHSTOCKICONINFO()
-    info.cbSize = sizeof(info)
-    result = stockiconinfo(id,flags,byref(info))
-    if result != 0:
-        raise Exception(result)
-    return info.hIcon
-
-def GetStockIconLocation(id,flags=0):
-    flags = ~(~flags|SHGSI_ICON)|SHGSI_ICONLOCATION
-    info = SHSTOCKICONINFO()
-    info.cbSize = sizeof(info)
-    result = stockiconinfo(id,flags,byref(info))
-    if result != 0:
-        raise Exception(result)
-    return (info.szPath,info.iIcon)
+    def GetStockIconLocation(id,flags=0):
+        return (u'',0)
 
 #--Set a Button as a UAC button
 def setUAC(handle,uac=True):
