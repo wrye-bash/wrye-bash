@@ -398,6 +398,7 @@ settingDefaults = {
     'bash.modDocs.pos': wx.DefaultPosition,
     'bash.modDocs.dir': None,
     #--Installers
+    'bash.installers.allCols': ['Package','Order','Modified','Size','Files'],
     'bash.installers.cols': ['Package','Order','Modified','Size','Files'],
     'bash.installers.colReverse': {},
     'bash.installers.sort': 'Order',
@@ -448,6 +449,7 @@ settingDefaults = {
     'bash.wizard.pos': wx.DefaultPosition,
 
     #--Wrye Bash: INI Tweaks
+    'bash.ini.allCols': ['File','Installer'],
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
     'bash.ini.colReverse': {},
@@ -461,7 +463,8 @@ settingDefaults = {
     'bash.ini.choice': 0,
     'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
-    'bash.mods.cols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC', 'Mod Status'],
+    'bash.mods.allCols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC','Mod Status'],
+    'bash.mods.cols': ['File','Load Order','Installer','Modified','Size','Author','CRC'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
     'bash.mods.sort': 'Load Order',
@@ -488,6 +491,7 @@ settingDefaults = {
     'bash.mods.export.deprefix': u'',
     'bash.mods.export.skipcomments': False,
     #--Wrye Bash: Saves
+    'bash.saves.allCols': ['File','Modified','Size','PlayeTime','Player','Cell'],
     'bash.saves.cols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.sort': 'Modified',
     'bash.saves.colReverse': {
@@ -521,6 +525,7 @@ settingDefaults = {
         },
     'bash.BSAs.sort': 'File',
     #--Wrye Bash: Screens
+    'bash.screens.allCols': ['File'],
     'bash.screens.cols': ['File'],
     'bash.screens.sort': 'File',
     'bash.screens.colReverse': {
@@ -535,6 +540,7 @@ settingDefaults = {
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
     #--Wrye Bash: Messages
+    'bash.messages.allCols': ['Subject','Author','Date'],
     'bash.messages.cols': ['Subject','Author','Date'],
     'bash.messages.sort': 'Date',
     'bash.messages.colReverse': {
@@ -546,6 +552,7 @@ settingDefaults = {
         },
     'bash.messages.colAligns': {},
     #--Wrye Bash: People
+    'bash.people.allCols': ['Name','Karma','Header'],
     'bash.people.cols': ['Name','Karma','Header'],
     'bash.people.sort': 'Name',
     'bash.people.colReverse': {},
@@ -9284,16 +9291,17 @@ class List_Column(Link):
 
 class List_Columns(Link):
     """Customize visible columns."""
-    def __init__(self,columnsKey,persistantColumns=[]):
+    def __init__(self,columnsKey,allColumnsKey,persistantColumns=[]):
         Link.__init__(self)
         self.columnsKey = columnsKey
+        self.allColumnsKey = allColumnsKey
         self.persistant = persistantColumns
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         subMenu = wx.Menu()
         menu.AppendMenu(self.id,_(u"Columns"),subMenu)
-        for col in settingDefaults[self.columnsKey]:
+        for col in settingDefaults[self.allColumnsKey]:
             enable = col not in self.persistant
             List_Column(self.columnsKey,col,enable).AppendToMenu(subMenu,window,data)
 
@@ -19187,7 +19195,7 @@ def InitInstallerLinks():
         InstallersPanel.mainMenu.append(sortMenu)
     #--Columns
     InstallersPanel.mainMenu.append(SeparatorLink())
-    InstallersPanel.mainMenu.append(List_Columns('bash.installers.cols',['Package']))
+    InstallersPanel.mainMenu.append(List_Columns('bash.installers.cols','bash.installers.allCols',['Package']))
     #--Actions
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(balt.Tanks_Open())
@@ -19310,7 +19318,7 @@ def InitINILinks():
         sortMenu.links.append(Files_SortBy('Installer'))
     INIList.mainMenu.append(sortMenu)
     INIList.mainMenu.append(SeparatorLink())
-    INIList.mainMenu.append(List_Columns('bash.ini.cols',['File']))
+    INIList.mainMenu.append(List_Columns('bash.ini.cols','bash.ini.allCols',['File']))
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(INI_AllowNewLines())
     INIList.mainMenu.append(Files_Open())
@@ -19357,7 +19365,7 @@ def InitModLinks():
         ModList.mainMenu.append(versionsMenu)
     #--Columns ----------------------------------
     ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(List_Columns('bash.mods.cols',['File']))
+    ModList.mainMenu.append(List_Columns('bash.mods.cols','bash.mods.allCols',['File']))
     #--------------------------------------------
     ModList.mainMenu.append(SeparatorLink())
     #--File Menu---------------------------------
@@ -19523,7 +19531,7 @@ def InitSaveLinks():
         SaveList.mainMenu.append(subDirMenu)
     #--Columns --------------------------------
     SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(List_Columns('bash.saves.cols',['File']))
+    SaveList.mainMenu.append(List_Columns('bash.saves.cols','bash.saves.allCols',['File']))
     #------------------------------------------
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
@@ -19635,7 +19643,7 @@ def InitScreenLinks():
     #--SaveList: Column Links
     ScreensList.mainMenu.append(Files_Open())
     ScreensList.mainMenu.append(SeparatorLink())
-    ScreensList.mainMenu.append(List_Columns('bash.screens.cols',['File']))
+    ScreensList.mainMenu.append(List_Columns('bash.screens.cols','bash.screens.allCols',['File']))
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
     #--JPEG Quality
@@ -19665,7 +19673,7 @@ def InitMessageLinks():
     #--SaveList: Column Links
     MessageList.mainMenu.append(Messages_Archive_Import())
     MessageList.mainMenu.append(SeparatorLink())
-    MessageList.mainMenu.append(List_Columns('bash.messages.cols',['Subject']))
+    MessageList.mainMenu.append(List_Columns('bash.messages.cols','bash.messages.allCols',['Subject']))
 
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
@@ -19676,7 +19684,7 @@ def InitPeopleLinks():
     PeoplePanel.mainMenu.append(People_AddNew())
     PeoplePanel.mainMenu.append(People_Import())
     PeoplePanel.mainMenu.append(SeparatorLink())
-    PeoplePanel.mainMenu.append(List_Columns('bash.people.cols',['Name']))
+    PeoplePanel.mainMenu.append(List_Columns('bash.people.cols','bash.people.allCols',['Name']))
     #--Item links
     PeoplePanel.itemMenu.append(People_Karma())
     PeoplePanel.itemMenu.append(SeparatorLink())
