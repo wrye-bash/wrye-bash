@@ -3659,8 +3659,8 @@ class OblivionIni(IniFile):
             source = dirs['mopy'].join(u'templates',bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                balt.shellCopy(source,aiBsa,askOk=False)
-            except (AccessDeniedError,CancelError,SkipError):
+                balt.shellCopy(source,aiBsa,askOverwrite=False)
+            except (balt.AccessDeniedError,bolt.CancelError,bolt.SkipError):
                 return
         sArchives = self.getSetting(section,key,u'')
         #--Strip existint redirectors out
