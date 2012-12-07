@@ -8737,9 +8737,10 @@ def SetUAC(item):
        diasbled prior to that as well."""
     if isUAC:
         if isinstance(item,wx.MenuItem):
-            if item.IsEnabled():
-                bitmap = images['uac.small'].GetBitmap()
-                item.SetBitmaps(bitmap,bitmap)
+            pass
+            #if item.IsEnabled():
+            #    bitmap = images['uac.small'].GetBitmap()
+            #    item.SetBitmaps(bitmap,bitmap)
         else:
             balt.setUAC(item,isUAC)
 
@@ -18589,8 +18590,8 @@ def InitImages():
     images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),wx.BITMAP_TYPE_PNG)
     images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),wx.BITMAP_TYPE_PNG)
     #--UAC icons
-    images['uac.small'] = Image(GPath(balt.getUACIcon('small')),wx.BITMAP_TYPE_ICO)
-    images['uac.large'] = Image(GPath(balt.getUACIcon('large')),wx.BITMAP_TYPE_ICO)
+    #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),wx.BITMAP_TYPE_ICO)
+    #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),wx.BITMAP_TYPE_ICO)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
