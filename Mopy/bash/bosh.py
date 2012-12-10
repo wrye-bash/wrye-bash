@@ -3659,8 +3659,8 @@ class OblivionIni(IniFile):
             source = dirs['mopy'].join(u'templates',bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                balt.shellCopy(source,aiBsa,askOk=False)
-            except (AccessDeniedError,CancelError,SkipError):
+                balt.shellCopy(source,aiBsa,askOverwrite=False)
+            except (balt.AccessDeniedError,bolt.CancelError,bolt.SkipError):
                 return
         sArchives = self.getSetting(section,key,u'')
         #--Strip existint redirectors out
@@ -6450,10 +6450,10 @@ class ConfigHelpers:
         deprint(u'Using libbsa API version:', libbsa.version)
 
         global boss
-        if os.path.isfile(GPath(dirs['mods'].s).join(u'Nehrim.esm').s):
-            boss = bapi.BossDb(GPath(dirs['app'].s).s,u'Nehrim')
+        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
+            boss = bapi.BossDb(dirs['app'].s,u'Nehrim')
         else:
-            boss = bapi.BossDb(GPath(dirs['app'].s).s,bush.game.name)
+            boss = bapi.BossDb(dirs['app'].s,bush.game.name)
         deprint(u'Using BOSS API version:', bapi.version)
         bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
                               ConfigHelpers.bossLOMismatchCallback)
@@ -7583,7 +7583,10 @@ class Installer(object):
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
-                        self.hasBCF = full
+                        ## Disabling Auto-BCF's for now, until the code for them can be updated to the latest
+                        ## tempDir stuff
+                        ## TODO: DO THIS!
+                        #self.hasBCF = full
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in docExts and sub == u'':
