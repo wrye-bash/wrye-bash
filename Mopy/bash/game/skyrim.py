@@ -14521,7 +14521,7 @@ weaponTypes = (
 pklfile = r'bash\db\Skyrim_ids.pkl'
 
 #--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs it Editor Id listed here.
+#  as the form id.  Any GMST as such needs its Editor Id listed here.
 gmstEids = ['bAutoAimBasedOnDistance','fActionPointsAttackMagic','fActionPointsAttackRanged',
     'fActionPointsFOVBase','fActiveEffectConditionUpdateInterval','fActorAlertSoundTimer',
     'fActorAlphaFadeSeconds','fActorAnimZAdjust','fActorArmorDesirabilityDamageMult',
@@ -17588,10 +17588,11 @@ class MreMgef(MelRecord):
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
-        MreAact, MreAddn, MreAmmo, MreAnio, MreArma, MreArto, MreAspc, MreAstp,
-        MreBptd, MreClfm, MreCobj, MreEqup, MreEyes, MreFlst, MreFstp, MreGlob,
-        MreGmst, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMovt, MreOtft,
-        MreRfct, MreSoun, MreSpgd, MreTree, MreVtyp,
+        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, 
+        MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj, MreEqup, 
+        MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds, MreLgtm, 
+        MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft, MreRfct, 
+        MreSoun, MreSpgd, MreTree, MreVtyp,
         )
 
 #--Extra read/write classes
