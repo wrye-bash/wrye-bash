@@ -6450,10 +6450,10 @@ class ConfigHelpers:
         deprint(u'Using libbsa API version:', libbsa.version)
 
         global boss
-        if os.path.isfile(GPath(dirs['mods'].s).join(u'Nehrim.esm').s):
-            boss = bapi.BossDb(GPath(dirs['app'].s).s,u'Nehrim')
+        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
+            boss = bapi.BossDb(dirs['app'].s,u'Nehrim')
         else:
-            boss = bapi.BossDb(GPath(dirs['app'].s).s,bush.game.name)
+            boss = bapi.BossDb(dirs['app'].s,bush.game.name)
         deprint(u'Using BOSS API version:', bapi.version)
         bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
                               ConfigHelpers.bossLOMismatchCallback)
