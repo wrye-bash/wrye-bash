@@ -491,7 +491,7 @@ settingDefaults = {
     'bash.mods.export.deprefix': u'',
     'bash.mods.export.skipcomments': False,
     #--Wrye Bash: Saves
-    'bash.saves.allCols': ['File','Modified','Size','PlayeTime','Player','Cell'],
+    'bash.saves.allCols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.cols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.sort': 'Modified',
     'bash.saves.colReverse': {
