@@ -1,127 +1,148 @@
-﻿Continuing from the [topic=]previous thread[/topic]...
+﻿Continuing from [topic=1424272]Thread 25[/topic]...
 
-[b]What does Wrye Bash do?[/b]
-[list]
+Threads:
+[spoiler]
+[topic=1424272]Thread 25[/topic]
+[topic=1421484]Thread 24[/topic]
+[topic=1418237]Thread 23[/topic]
+[topic=1412088]Thread, who knows well go with, 10[/topic]
+[topic=1403337]Thread 21[/topic]
+[topic=1399559]Thread 20[/topic]
+[topic=1395353]Thread 19[/topic]
+[topic=1394012]Thread 18[/topic]
+[topic=1392055]Thread 17[/topic]
+[topic=1387231]Thread 16[/topic]
+[topic=1384740]Thread 15[/topic]
+[topic=1380497]Thread 14[/topic]
+[topic=1378796]Thread 13[/topic]
+[topic=1376871]Thread 12[/topic]
+[topic=1373846]Thread 11[/topic]
+[topic=1369968]Thread 10[/topic]
+[topic=1368366]Thread 9[/topic]
+[topic=1364422]Thread 8[/topic]
+[topic=1356741]Thread 7[/topic]
+[topic=1346866]Thread 6[/topic]
+[topic=1338421]Thread 5[/topic]
+[topic=1333968]Thread 4[/topic]
+[topic=1317086]Thread 3[/topic]
+[topic=1294281]Thread 2[/topic]
+[topic=1256835]Thread 1[/topic]
+[/spoiler]
+
+[b]What does Wrye Bash do?[/b][list]
 [*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
 [*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"
 [*]It allows you to exceed the 255 mod threshold by automatically merging some types of mods for you
 [/list]
-
 [b]FAQ[/b]:
 [spoiler]
 [list=1]
 [*]What the heck do all these acronyms mean?
-Yeah, to save typing, we often sling around terminology that can be confusing to newcomers. Here's a quick rundown of what we mean:
+										Yeah, to save typing, we often sling around terminology that can be confusing to newcomers. Here's a quick rundown of what we mean:
 [list]
 [*][b]WB[/b]: Wrye Bash.  Written in Python.
 [*][b]WBSA[/b]: Wrye Bash Standalone. Wrye Bash packaged with the required Python interpreter and all dependencies into one neat executable package. Still internally runs on Python, but since the interpreter is internal to the exe, no Python components are required to be installed.
 [*][b]PBash[/b]: A Bashed Patch built with the "classic" Python mode patchers. These patchers read, process, and write mod records all in Python.
 [*][b]CBash[/b]: (1) A Bashed Patch built with the CBash (see #2) mode patchers. These patchers still do mod processing in Python, but utilize CBash.dll to do the file reading and writing.
 [*][b]CBash[/b]: (2) A C++ written DLL with a C API, that is used for reading and writing ESP/ESM format files. This is the only part of Wrye Bash not written in Python (well, except for calls to 7z.exe to extract things).
-[*]The practical benefits of using CBash are:[list=1]
-[*] Building the bashed patch is much faster
-[*] More plugins are mergeable, giving you the ability to cram more goodness into the game
-[*] In the future, more interesting kinds of tweaks will be practical to implement[/list]
-[*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
+[*]The practical benefits of using CBash are:
+[list=1]
+[*]Building the bashed patch is much faster
+[*]More plugins are mergeable, giving you the ability to cram more goodness into the game
+[*]In the future, more interesting kinds of tweaks will be practical to implement
+[/list]										[*][b]BAIN[/b]: BAsh INstaller.  You use it from the WB Installers tab
 [*][b]BAIN archive[/b]: A mod released in a format that can be installed by BAIN
 [*][b]BAIT[/b]: Bash Asynchronous Installer Tab.  In development (pre-beta) and will replace the current implementation of BAIN.  Will use multi-threading to have a UI that still responds while it processes data (calculates CRC's, installs mods, etc).
-[/list]
+[/list]	
 [/list]
 [/spoiler]
 
-[b]Download[/b]: [url=http://skyrim.nexusmods.com/mods/1840]Skyrim Nexus[/url] or [url=http://oblivion.nexusmods.com/mods/22368]Oblivion Nexus[/url] and of course [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]
+[b]Download[/b]: [url="http://skyrim.nexusmods.com/mods/1840"]Skyrim Nexus[/url] or [url="http://oblivion.nexusmods.com/mods/22368"]Oblivion Nexus[/url] and of course [url="https://sourceforge.net/projects/oblivionworks/"]SourceForge[/url]
 
-[b]Documentation[/b]:
-[list]
-  [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)
-  [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]
-  [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url]
-  [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]简体中文[/url]
+[b]Documentation[/b]:[list]
+[*][url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html"]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)
+[*]alt3rn1ty's [url="http://oblivion.nexusmods.com/mods/35230"]Wrye Bash Pictorial Guide[/url]
+[*]Metallicow's BAIN [url="http://oblivion.nexusmods.com/mods/38857"]Demo Wizard[/url]
+[*]Translated documentation and guides: [url="http://bbs.3dmgame.com/thread-2490955-1-1.html"]简体中文[/url]
 [/list]
-
 [b]Requirements and Installation[/b]: Short version: just use the installer and install to the Skyrim folder!   When you install dependencies, just install them to their default locations.
 Long version:
 [spoiler]
 There are two versions available: the Python version and the Standalone version.  They are functionally equivalent.  Most people should run the Standalone version since it is slightly simpler (no external Python components to install).  You should to install the Python version, however, if you want to be more involved with development or if you already have Python installed on your system for other reasons.
 
-First, if you're using Windows XP, Wrye Bash needs the [url=http://www.microsoft.com/download/en/details.aspx?id=14431]MSVC++ 2005 SP1 Redistributable with ATL Security Update[/url] installed, the x86 version.  This is required for the custom 7z executable that Wrye Bash uses to run.  Later versions of Windows already have this installed.
+First, if you're using Windows XP, Wrye Bash needs the [url="http://www.microsoft.com/download/en/details.aspx?id=14431"]MSVC++ 2005 SP1 Redistributable with ATL Security Update[/url] installed, the x86 version.  This is required for the custom 7z executable that Wrye Bash uses to run.  Later versions of Windows already have this installed.
 
-If you're using the Standalone version, the only other thing you need to install manually is the [url=http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2]MSVC++ 2008 Redistributable[/url].
+If you're using the Standalone version, the only other thing you need to install manually is the [url="http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2"]MSVC++ 2008 Redistributable[/url].
 
 If you are using the Python version, dependency installation will be handled automatically by the installer.  However, if you want or need to do things manually:
 [spoiler]
 [list]
-  [*][url="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi"]Python 2.7.3[/url]
-  [*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe"]wxPython 2.8.12.1 unicode for Python 2.7[/url]
-  [*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2[/url]
-  [*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url]
-  [*]Other setups [i]may[/i] work, but this is the only officially supported setup.
-  [*]Python 3.x: [b][u]NOT supported[/u][/b]
+[*][url="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi"]Python 2.7.3[/url]
+[*][url="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe"]wxPython 2.8.12.1 unicode for Python 2.7[/url]
+[*][url="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download"]comtypes 0.6.2[/url]
+[*][url="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.7.exe/download"]PyWin32 for Python 2.7[/url]
+[*]Other setups [i]may[/i] work, but this is the only officially supported setup.
+[*]Python 3.x: [b][u]NOT supported[/u][/b]
 [/list]
 Note that the 32-bit versions are required even if you are on a 64-bit operating system
 [/spoiler]
-Then:
-[list]
-  [*]For manual installations of either the Standalone or Python versions, extract the archive in your Skyrim game folder so that the Mopy directory appears in the Skyrim directory
-  [*]For Python versions, run by double-clicking on Wrye Bash Launcher.pyw
-  [*]For WBSA (Wrye Bash StandAlone), run by double-clicking on Wrye Bash.exe
+Then:[list]
+[*]For manual installations of either the Standalone or Python versions, extract the archive in your Skyrim game folder so that the Mopy directory appears in the Skyrim directory
+[*]For Python versions, run by double-clicking on Wrye Bash Launcher.pyw
+[*]For WBSA (Wrye Bash StandAlone), run by double-clicking on Wrye Bash.exe
 [/list]
 [/spoiler]
-Remember! In Windows Vista and up, don't install Skyrim in the Program Files folder due to User Account Control! See [url==http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html#trouble-permissions]File Permissions[/url].
+Remember! In Windows Vista and up, don't install Skyrim in the Program Files folder due to User Account Control! See File Permissions.
 See Also [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html#trouble-permissions"]File Permissions[/url]
 
 [b]Development[/b]:
-The project is hosted at [url=https://sourceforge.net/projects/oblivionworks/develop]SourceForge[/url]. You don't need a SourceForge account to create or add data to bug reports and feature requests  -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
+The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url]. You don't need a SourceForge account to create or add data to bug reports and feature requests  -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
 [spoiler]
 If going from Standalone version to Python version, use the latest installer to install the Python version before continuing.  It will install all required dependencies for you.
 
-The latest svn is always here >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/]Click and Bookmark it[/url]<< - Then just click "Download GNU Tarball" at the bottom.  Note: If you have been told to try a specific revision number instead of the latest, type the revision number in the sticky revision box and press return, the Download GNU Tarball will now grab that revision's set of files.
+The latest svn is always here &--#62;&--#62;[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/"]Click and Bookmark it[/url]&--#60;&--#60; - Then just click "Download GNU Tarball" at the bottom.  Note: If you have been told to try a specific revision number instead of the latest, type the revision number in the sticky revision box and press return, the Download GNU Tarball will now grab that revision's set of files.
 
-Use >>[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=log]this link[/url]<< to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong...
+Use &--#62;&--#62;[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=log"]this link[/url]&--#60;&--#60; to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong...
 
 [b]A screenshot walkthrough:[/b]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn1.jpg]Screenshot 1[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg]Screenshot 2[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg]Screenshot 3[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg]Screenshot 4[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5s.jpg]Screenshot 5[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg]Screenshot 6[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg]Screenshot 7[/url]
-[url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8s.jpg]Screenshot 8[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn1.jpg"]Screenshot 1[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg"]Screenshot 2[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg"]Screenshot 3[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg"]Screenshot 4[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5s.jpg"]Screenshot 5[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg"]Screenshot 6[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg"]Screenshot 7[/url]
+[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8s.jpg"]Screenshot 8[/url]
 
 Rinse and repeat when a new svn comes out.
 
-[b]Beware:[/b] Its a good idea to rename the tarball according to the revision number and keep it around.  Keep a few weeks worth of them so if there is a problem found later with a particular set of committed files in the tarball you can go back to a previous known good revision.  There's no need to go back this far but note svn revision 1309 was the directory structure change, and if you go back to a revision earlier than that you will probably have to follow [url=http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/page__view__findpost__p__18000658]this post[/url] to get WB running again.
+[b]Beware:[/b] Its a good idea to rename the tarball according to the revision number and keep it around.  Keep a few weeks worth of them so if there is a problem found later with a particular set of committed files in the tarball you can go back to a previous known good revision.  There's no need to go back this far but note svn revision 1309 was the directory structure change, and if you go back to a revision earlier than that you will probably have to follow [url="http://forums.bethsoft.com/index.php?/topic/1205502-relz-wrye-bash/page__view__findpost__p__18000658"]this post[/url] to get WB running again.
 [/spoiler]
 
 [b]Reporting Bugs[/b]: Try to give us enough information to diagnose your problem.  The following information is useful to us:
-[spoiler]
-[list]
+[spoiler][list]
 [*]What version of Wrye Bash are you using?  If you're using the SVN, be sure to include the revision number.
 [*]What game are you running Wrye Bash for?
 [*]What are all the symptoms?  Be sure to include what you did (step-by-step is helpful), what you expected, and what happened.
 [*]What do you see?  Error messages are very valuable to us.
 [*]What version of Windows are you using?  Is UAC enabled and is Skyrim in the default directory? (If it is, please install it somewhere else.  This can cause lots of problems)
 [*]Are you using a bash.ini?  If so, include its contents (in spoiler tags, please!)
-[*][s]Is the problem related to the Bashed Patch?  If so include the following:
+[*][s]Is the problem related to the Bashed Patch?  If so include the following:[/s]
 [list]
- [*]Your Load Order (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Mods...'
- [*]Your Bashed Tags (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Bash Tags...'
- [*]Your Bashed Patch config (in spoiler tags).  Get this by right clicking on the Bashed Patch and selecting 'List Patch Config...'
+[*][s]Your Load Order (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Mods...'[/s]
+[*][s]Your Bashed Tags (in spoiler tags).  Get this by right clicking on a column header in the Mods tab, and selecting 'List Bash Tags...'[/s]
+[*][s]Your Bashed Patch config (in spoiler tags).  Get this by right clicking on the Bashed Patch and selecting 'List Patch Config...'[/s]
 [/list]
-[/s]
 [/list]
 [/spoiler]
 
-[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url=http://skyrim.nexusmods.com/mods/1840]Skyrim Nexus[/url], [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
+[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do!  But be sure to link to either [url="http://skyrim.nexusmods.com/mods/1840"]Skyrim Nexus[/url], [url="http://oblivion.nexusmods.com/mods/22368"]TESNexus[/url], or [url="http://sourceforge.net/projects/oblivionworks/"]SourceForge[/url].  Don't link to the actual download file, since that changes fairly frequently.
 
-[b]Related Projects[/b]:
-[list]
+[b]Related Projects[/b]:[list]
 [*]The Official [topic=1384517]Wrye Bash for Oblivion thread[/topic].
-[*]Load orders should be managed with [url=http://skyrim.nexusmods.com/mods/6]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
+[*]Load orders should be managed with [url="http://skyrim.nexusmods.com/mods/6"]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1129389]Wrye Flash NV[/topic])
 [/list]
-
 [b]Changelog for Latest Version[/b]:
 [size=5]302 [2012/11/11] [Various community members][/size]
 [spoiler]
