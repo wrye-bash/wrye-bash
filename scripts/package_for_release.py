@@ -112,8 +112,8 @@ def CreateStandaloneExe(version, file_version, pipe=None):
         print >> pipe, " Could not find python module 'py2exe', aborting StandAlone creation."
         return False
     if not VerifyPy2Exe():
-        print " You have not installed the replacement zipextimporter.py file."
-        print >> pipe, " You have not installed the replacement zipextimporter.py file."
+        print " You have not installed the replacement zipextimporter.py file.  Place it in <Python Path>\\Lib\\site-packages."
+        print >> pipe, " You have not installed the replacement zipextimporter.py file.  Place it in <Python Path>\\Lib\\site-packages."
         return False
     wbsa = os.path.join(scripts, 'build', 'standalone')
     reshacker = os.path.join(wbsa, 'Reshacker.exe')

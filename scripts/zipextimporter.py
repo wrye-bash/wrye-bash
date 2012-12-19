@@ -83,7 +83,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
             for s in ('.pyd','.pyc','.py'):
                 try:
                     with open(filename+s,'U') as fp:
-                        return imp.load_module(fullname,fp,filename,(s,'U',1))
+                        return imp.load_module(fullname,fp,filename+s,(s,'U',1))
                 except:
                     continue
         except:
