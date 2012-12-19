@@ -54,7 +54,13 @@ def Init(path):
         return
 
     try:
-        libbsa = CDLL(path)
+        # CDLL doesn't play with unicode path strings nicely on windows :(
+        # Use this workaround
+        handle = None
+        if isinstance(path,unicode) and os.name in ('nt','ce'):
+            LoadLibrary = windll.kernel32.LoadLibraryW
+            handle = LoadLibrary(path)
+        libbsa = CDLL(path,handle=handle)
     except Exception as e:
         libbsa = None
         raise
