@@ -17584,9 +17584,9 @@ class MreMgef(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-#--Mergeable record types
+# Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, 
         MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj, MreEqup, 
