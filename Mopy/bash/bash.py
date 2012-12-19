@@ -234,10 +234,10 @@ def exit():
                         sys.argv = sys.argv[1:]
                     import win32api
                     if hasattr(sys,'frozen'):
-                        win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join('"%s"' % x for x in sys.argv[1:]),os.getcwdu(),True)
+                        win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join('"%s"' % x for x in sys.argv[1:]),None,True)
                     else:
                         args = u' '.join([u'%s',u'"%s"'][u' ' in x] % x for x in sys.argv)
-                        win32api.ShellExecute(0,'runas',exePath.s,args,os.getcwdu(),True)
+                        win32api.ShellExecute(0,'runas',exePath.s,args,None,True)
                     return
                 else:
                     import subprocess
