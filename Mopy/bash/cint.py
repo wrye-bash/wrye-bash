@@ -24,6 +24,7 @@
 from ctypes import *
 import struct
 import math
+import os
 from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
