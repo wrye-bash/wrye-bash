@@ -755,7 +755,7 @@
 			<td><img src="../bash/images/paintshopprox332.png" width="32" height="32" alt="tool image"/><td><a href="http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051">PaintShop Photo Pro</a>
 				<td><td>
 					<td><td>
-		<tr><td><td>
+			<tr><td><td>
 			<td><img src="../bash/images/photobie32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photobie.com/">Photobie Design Studio</a>
 				<td><td>
 					<td><td>
@@ -840,7 +840,7 @@
 			<li>Start Wrye Bash as Administrator:  This will give Wrye Bash full Administrator Rights, allowing it to function fully with no further action.
 			<li>Start normally.  This will start Wrye Bash without Administartor Rights.
 				<ul>
-					<li>Any actions that require Administrator Privileges will cause a UAC prompt to be shown.  Commonly, these are:
+					<li>Many actions that require Administrator Privileges will cause a UAC prompt to be shown.  Commonly, these are:
 						<ul>
 							<li>The first time Wrye Bash is started, approximately 4-6 times, depending on the number of directories Wrye Bash needs to create.
 							<li>When the Bashed Patch is rebuilt, 2 times, once for the Bashed Patch itself, once for the associated readme.
@@ -851,6 +851,7 @@
 						<ul>
 							<li>Saving files into the UAC protected area: Windows does not allow the Save File dialog to select a target within a UAC protected folder.
 							<li>Ghosting: Wrye Bash will not be able to un-ghost already ghosted mods.  Wrye Bash will not ghost mods.  Both of these require renaming mod files.
+							<li>Other actions that require Administrator Privileges may not have workarounds coded.  Be warned, any errors you encounter while running as a non-Admin under a UAC protected directory will most likely not be fixed.  Either run as Admin or reinstall your game to a different location to solve these errors.
 						</ul>
 				</ul>
 		</ol>
@@ -939,6 +940,7 @@ MemoryError</code>
 				<li>If running the Standalone executable, try enabling the LAA flag on Wrye Bash.exe.
 				<li>If you do not need access to CBash, you can setup your Python environment using 64-bit Python.
 			</ul>
+		<tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
 </table>
 
 
