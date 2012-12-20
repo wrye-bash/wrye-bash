@@ -33,10 +33,10 @@ class UnicodeImporter(object):
     def find_module(self,fullname,path=None):
         if isinstance(fullname,unicode):
             fullname = fullname.replace(u'.',u'\\')
-            exts = (u'.pyc',u'.py')
+            exts = (u'.pyc',u'.pyo',u'.py')
         else:
             fullname = fullname.replace('.','\\')
-            exts = ('.pyc','.py')
+            exts = ('.pyc','.pyo','.py')
         if os.path.exists(fullname) and os.path.isdir(fullname):
             return self
         for ext in exts:
