@@ -8858,7 +8858,7 @@ class Files_Unhide(Link):
             #--Move it?
             else:
                 srcFiles.append(srcPath)
-                dsestFiles.append(destPath)
+                destFiles.append(destPath)
                 if isSave:
                     coSavesMove[destPath] = bosh.CoSaves(srcPath)
         #--Now move everything at once
