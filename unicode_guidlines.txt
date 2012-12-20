@@ -102,7 +102,7 @@ that I(Lojack) learned converting everything to be unicode.
 
   Others:  A good example of this is the 'author' field in a mod.
     Use _unicode for input.  This will utilize Mozilla's encoding detection library to attemp
-	    to pick the best encoding.  Failing that, it will use an encoding that
+	    to pick the best encoding.  Failing that, it will use an encoding tt
 		does not throw a UnicodeDecodeError.
 	Use _encode for output.  This will try various codecs that don't throw a UnicodeEncodeError,
 	    then using Mozilla's encoding detection library, see if that encoded string gets
@@ -133,3 +133,30 @@ that I(Lojack) learned converting everything to be unicode.
     _(u'Apply %(tweakFile)s to %(targetFile)s?') % {'tweakFile':tweakFile.s,'targetFile':targetFile.s}
   This way, the translater can specify the string as:
     'Should ye be going to change %(targetFile)s by applying the %(tweakFile)s?'
+
+* Loading DLLs with ctypes:  Specifically, loading a dll that's full path name cannot be encoded
+  in ASCII - basically every DLL, because you have no idea where the user will install Bash.
+  Internally, ctypes uses LoadLibraryA to load DLLs on windows, meaning it tries to encode to
+  ASCII before passing the file name.  Silly Python.
+
+  The fix is to manually load the library via LoadLibraryW, then pass the handle to ctypes to
+  gain control.
+
+  Like this usually:
+
+    try:
+        handle = None
+        if isinstance(path,unicode) and os.name in ('nt','ce'):
+            LoadLibrary = ctypes.windll.kernel32.LoadLibraryW
+            handle = LoadLibrary(path)
+        dll = ctypes.CDLL(path,handle=handle)
+
+* The Python interpreter falls flat on its face when you tell it to import a module that happens
+  to reside in a directory that contains Unicode.  Specifically, the interpreter tryies to encode
+  that path in the OS's default encoding (MBCS on Windows), rather than the filesystems encoding
+  (UTF-16 for NTFS/FAT).  So you end up with a "module not found" type of error, since the path
+  encodes to something that doesn't exist.
+
+  Solution: Use Import Hooks to fix this.  It doesn't solve the problem for py2exe, and it
+  doesn't solve the problem of Windows file associations not working, but at least Bash
+  can run in Debug mode just fine.
