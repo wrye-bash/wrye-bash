@@ -837,7 +837,10 @@
 	<li>Give yourself <q>Full Control</q> permissions over your game install folder. This will allow you to make any edits you desire while keeping UAC active and on guard for any edits made by programs you do not run, and also means that you do not need to reinstall your game to a new location.
 	<li>Do nothing.  Wrye Bash will detect if it needs to run as Administrator, and give you a dialog with a few opotions:
 		<ol>
-			<li>Start Wrye Bash as Administrator:  This will give Wrye Bash full Administrator Rights, allowing it to function fully with no further action.
+			<li>Start Wrye Bash as Administrator:  This will give Wrye Bash full Administrator Rights, allowing it to function fully with no further action, with one exception:
+			    <ul>
+				    <li>You will not be able to drag and drop archives into the Installers window to move or copy those archives into BAIN.  This is because non-Admin processes (explorer.exe) are not allowed to communicate with Admin processes (Wrye Bash) in this manner.
+				</ul>
 			<li>Start normally.  This will start Wrye Bash without Administartor Rights.
 				<ul>
 					<li>Many actions that require Administrator Privileges will cause a UAC prompt to be shown.  Commonly, these are:
@@ -851,7 +854,7 @@
 						<ul>
 							<li>Saving files into the UAC protected area: Windows does not allow the Save File dialog to select a target within a UAC protected folder.
 							<li>Ghosting: Wrye Bash will not be able to un-ghost already ghosted mods.  Wrye Bash will not ghost mods.  Both of these require renaming mod files.
-							<li>Other actions that require Administrator Privileges may not have workarounds coded.  Be warned, any errors you encounter while running as a non-Admin under a UAC protected directory will most likely not be fixed.  Either run as Admin or reinstall your game to a different location to solve these errors.
+							<li>Other actions that require Administrator Privileges may not have workarounds coded.  Be warned, any errors you encounter while running as a non-Admin under a UAC protected directory will most likely not be fixed.  Follow one of the alternate solutions to solve these errors.
 						</ul>
 				</ul>
 		</ol>
