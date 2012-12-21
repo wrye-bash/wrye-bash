@@ -11742,7 +11742,10 @@ class INI_FileOpenOrCopy(Link):
             if bosh.dirs['tweaks'].join(file).isfile():
                 dir.join(file).start()
             else:
-                bosh.iniInfos[file].dir.join(file).copyTo(bosh.dirs['tweaks'].join(file))
+                srcFile = bosh.iniInfos[file].dir.join(file)
+                destFile = bosh.dirs['tweaks'].join(file)
+                balt.shellMakeDirs(bosh.dirs['tweaks'],self.window)
+                balt.shellCopy(srcFile,destFile,self.window,False,False,False)
                 iniList.data.refresh()
                 iniList.RefreshUI()
 
