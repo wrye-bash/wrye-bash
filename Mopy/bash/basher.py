@@ -6362,6 +6362,25 @@ class BashFrame(wx.Frame):
                     path.remove()
 
 #------------------------------------------------------------------------------
+class CheckList_SelectAll(Link):
+    def __init__(self,select=True):
+        Link.__init__(self)
+        self.select = select
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        if self.select:
+            text = _(u'Select All')
+        else:
+            text = _(u'Select None')
+        menuItem = wx.MenuItem(menu,self.id,text)
+        menu.AppendItem(menuItem)
+
+    def Execute(self,event):
+        for i in xrange(self.window.GetCount()):
+            self.window.Check(i,self.select)
+
+#------------------------------------------------------------------------------
 class ListBoxes(wx.Dialog):
     """A window with 1 or more lists."""
     def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={},Cancel=True):
@@ -6374,6 +6393,9 @@ class ListBoxes(wx.Dialog):
         [title,tooltip,....],
         """
         wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=style)
+        self.itemMenu = Links()
+        self.itemMenu.append(CheckList_SelectAll())
+        self.itemMenu.append(CheckList_SelectAll(False))
         self.SetIcons(bashBlue)
         minWidth = self.GetTextExtent(title)[0]*1.2+64
         sizer = wx.FlexGridSizer(len(lists)+1,1)
@@ -6391,6 +6413,8 @@ class ListBoxes(wx.Dialog):
             subsizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
             if liststyle == 'check':
                 checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+                checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
+                checks.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
                 for i in xrange(len(items)):
                     checks.Check(i,True)
             elif liststyle == 'list':
@@ -6403,10 +6427,9 @@ class ListBoxes(wx.Dialog):
                     for subitem in group[2][item]:
                         sub = checks.AppendItem(child,subitem.s)
             self.ids[title] = checks.GetId()
-            checks.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
             checks.SetToolTip(balt.tooltip(tip))
             subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
-            sizer.Add(subsizer,1,wx.EXPAND|wx.ALL,5)
+            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i)
         okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
         okButton.SetDefault()
@@ -6433,15 +6456,16 @@ class ListBoxes(wx.Dialog):
         """Char events"""
         ##Ctrl-A - check all
         obj = event.GetEventObject()
-        if not isinstance(obj,wx.CheckListBox): event.Skip()
         if event.CmdDown() and event.GetKeyCode() == ord('A'):
+            check = not event.ShiftDown()
             for i in xrange(len(obj.GetStrings())):
-                    obj.Check(i)
-        ##Ctrl-D - decheck all
-        elif event.CmdDown() and event.GetKeyCode() == ord('D'):
-            obj.SetSelection(wx.NOT_FOUND)
-            for i in xrange(len(obj.GetStrings())):
-                obj.Check(i,False)
+                    obj.Check(i,check)
+        else:
+            event.Skip()
+
+    def OnContext(self,event):
+        """Context Menu"""
+        self.itemMenu.PopupMenu(event.GetEventObject(),bashFrame,event.GetEventObject().GetSelections())
         event.Skip()
 
     def OnClick(self,event):
@@ -9378,9 +9402,9 @@ class Installers_MonitorInstall(Link):
         touchedFiles.sort()
         # Show results, select which files to include
         checklists = []
-        newFilesKey = _(u'New Files')
-        changedFilesKey = _(u'Changed Files')
-        touchedFilesKey = _(u'Touched Files')
+        newFilesKey = _(u'New Files: %(count)i') % {'count':len(newFiles)}
+        changedFilesKey = _(u'Changed Files: %(count)i') % {'count':len(changedFiles)}
+        touchedFilesKey = _(u'Touched Files: %(count)i') % {'count':len(touchedFiles)}
         delFilesKey = _(u'Deleted Files')
         if newFiles:
             group = [newFilesKey,
