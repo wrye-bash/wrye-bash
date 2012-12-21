@@ -38,7 +38,7 @@
   [*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)
   [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]  (For Oblivion, new guide for Skyrim pending)
   [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url]
-  [*]Translated documentation and guides: [url=http://bbs.3dmgame.com/thread-2490955-1-1.html]简体中文[/url]
+  [*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye%20bash/]简体中文[/url]
 [/list]
 
 [b]Requirements and Installation[/b]: Short version: just use the installer and install to the Oblivion folder!   When you install dependencies, just install them to their default locations.
