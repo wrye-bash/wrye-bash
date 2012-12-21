@@ -16331,6 +16331,12 @@ class Saves_ProfilesData(balt.ListEditorData):
             balt.showError(self.parent,
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
+        try:
+            newName.encode('cp1252')
+        except UnicodeEncodeError:
+            balt.showError(self.parent,
+                _(u'Name must be encodable in Windows Codepage 1252 (Western European), due to limitations of %(gameIni)s.') % {'gameIni':bush.game.iniFiles[0]})
+            return False
         self.baseSaves.join(newName).makedirs()
         newSaves = u'Saves\\'+newName+u'\\'
         bosh.saveInfos.profiles.setItem(newSaves,'vOblivion',bosh.modInfos.voCurrent)
