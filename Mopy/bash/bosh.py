@@ -3658,7 +3658,7 @@ class OblivionIni(IniFile):
         if doRedirect == self.getBsaRedirection():
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs['mopy'].join(u'templates',bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs['templates'].join(bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 balt.shellCopy(source,aiBsa,askOverwrite=False)
