@@ -9676,6 +9676,7 @@ class InstallersData(bolt.TankData, DataDict):
                         removedFilesAdd(dir)
                         # Add in this directory's head for testing, if it's not the mods dir
                         if dir.head != modsDir:
+                            emptyDirsAdd(dir.head)
         #--Do the deletion
         balt.shellDelete(removedFiles,progress.getParent(),False,False)
         #--Update InstallersData
