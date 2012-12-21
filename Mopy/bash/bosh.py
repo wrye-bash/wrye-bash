@@ -9622,38 +9622,60 @@ class InstallersData(bolt.TankData, DataDict):
                     removes.discard(file)
                 masked |= files
         #--Remove files
-        emptyDirs = set()
         modsDir = dirs['mods']
-        removedPlugins = []
-        removedFiles = []
+        modsDirJoin = modsDir.join
+        removedPlugins = set()
+        removedFiles = set()
+        removedFilesAdd = removedFiles.add
+        removedPluginsAdd = removedPlugins.add
+        emptyDirs = set()
+        emptyDirsAdd = emptyDirs.add
+        emptyDirsClear = emptyDirs.clear
         data_sizeCrcDate_removes = set()
+        data_sizeCrcDate_removesAdd = data_sizeCrcDate_removes.add
+        reModExtSearch = reModExt.search
         #--Construct list of files to delete
         for file in removes:
-            if reModExt.search(file.s):
-                removedPlugins.append(file)
+            if reModExtSearch(file.s):
+                removedPluginsAdd(file)
                 # Line below added to hopefully stop mtime error for ghosted plugins.
-                removedPlugins.append(file+u'.ghost')
-            path = modsDir.join(file)
+                removedPluginsAdd(file+u'.ghost')
+            path = modsDirJoin(file)
             if path.exists():
-                removedFiles.append(path)
+                removedFilesAdd(path)
             if (path+u'.ghost').exists():
-                removedFiles.append(path+u'.ghost')
-            data_sizeCrcDate_removes.add(file)
-            emptyDirs.add(path.head)
-        #--Add in folders that will be empty
-        for emptyDir in emptyDirs:
-            if emptyDir.isdir():
-                items = emptyDir.list()
-                if not items:
-                    removedFiles.append(emptyDir)
-                else:
-                    # Has files in it, if all of them are being removed,
-                    # it's ok
-                    for item in items:
-                        if item not in removedFiles:
-                            break
+                removedFilesAdd(path+u'.ghost')
+            data_sizeCrcDate_removesAdd(file)
+            emptyDirsAdd(path.head)
+        #--Now add in directories
+        while emptyDirs:
+            testDirs = set(emptyDirs)
+            emptyDirsClear()
+            for dir in testDirs:
+                if dir.isdir():
+                    remove = False
+                    items = dir.list()
+                    if not items:
+                        # Already empty, so remove this dir
+                        remove = True
                     else:
-                        removedFiles.append(emptyDir)
+                        # Has files/folders in it
+                        dirJoin = dir.join
+                        for item in items:
+                            if dirJoin(item) not in removedFiles:
+                                # One of the files in it won't be removed,
+                                # don't remove the dir
+                                break
+                        else:
+                            # All items are going to be removed, remove this dir
+                            remove = True
+                    if remove:
+                        # Directory should be removed, pull out all files that are subdirs/files of this one
+                        removedFiles ^= set(x for x in removedFiles if x.cs.startswith(dir.cs))
+                        # Add in this directory
+                        removedFilesAdd(dir)
+                        # Add in this directory's head for testing, if it's not the mods dir
+                        if dir.head != modsDir:
         #--Do the deletion
         balt.shellDelete(removedFiles,progress.getParent(),False,False)
         #--Update InstallersData
