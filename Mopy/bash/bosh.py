@@ -3091,6 +3091,7 @@ class IniFile(object):
     reDeletedSetting = re.compile(ur';-\s*(\w.*?)\s*(;.*$|=.*$|$)',re.U)
     reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
     reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
+    encoding = None
 
     def __init__(self,path,defaultSection=u'General'):
         """Initialize."""
@@ -3142,7 +3143,7 @@ class IniFile(object):
         else:
             def makeSetting(match,lineNo): return match.group(2).strip()
         #--Read ini file
-        with tweakPath.open('r') as iniFile:
+        with tweakPath.open('r',encoding=self.encoding) as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
@@ -3186,7 +3187,7 @@ class IniFile(object):
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
         #--Read ini file
-        with tweakPath.open('r') as iniFile:
+        with tweakPath.open('r',encoding=self.encoding) as iniFile:
             section = LString(self.defaultSection)
             for i,line in enumerate(iniFile.readlines()):
                 maDeletedSetting = reDeleted.match(line)
@@ -3254,8 +3255,8 @@ class IniFile(object):
         reSetting = self.reSetting
         #--Read init, write temp
         section = sectionSettings = None
-        with self.path.open('r') as iniFile:
-            with self.path.temp.open('w') as tmpFile:
+        with self.path.open('r',encoding=self.encoding) as iniFile:
+            with self.path.temp.open('w',encoding=self.encoding) as tmpFile:
                 tmpFileWrite = tmpFile.write
                 for line in iniFile:
                     maDeleted = reDeleted.match(line)
@@ -3326,7 +3327,7 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
-        with tweakPath.open('r') as tweakFile:
+        with tweakPath.open('r',encoding=self.encoding) as tweakFile:
             ini_settings = {}
             deleted_settings = {}
             section = sectionSettings = None
@@ -3602,6 +3603,7 @@ class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = set((u'archiveinvalidationinvalidated!.bsa',
                           u'..\\obmm\\bsaredirection.bsa'))
+    encoding = 'cp1252'
 
     def __init__(self,name):
         """Initialize."""
@@ -6154,6 +6156,14 @@ class SaveInfos(FileInfos):
         baseSaves = dirs['saveBase'].join(u'Saves')
         if baseSaves.exists():
             localSaveDirs = [x for x in baseSaves.list() if (x != u'Bash' and baseSaves.join(x).isdir())]
+            # Filter out non-encodable names
+            bad = []
+            for dir in localSaveDirs:
+                try:
+                    dir.s.encode('cp1252')
+                except UnicodeEncodeError:
+                    bad.append(dir)
+            localSaveDirs = [x for x in localSaveDirs if x not in bad]
         else:
             localSaveDirs = []
         localSaveDirs.sort()
@@ -6182,7 +6192,7 @@ class SaveInfos(FileInfos):
         self.localSave = localSave
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
-                                _encode(localSave))
+                                localSave)
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,u'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
