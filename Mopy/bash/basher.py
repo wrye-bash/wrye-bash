@@ -18415,144 +18415,141 @@ class App_ModChecker(StatusBar_Button):
 
 #------------------------------------------------------------------------------
 class CreateNewProject(wx.Dialog):
-    def __init__(self, parent, id, title):
-        wx.Dialog.__init__(self, parent, id, title=u'Create New Project', size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE)
+    def __init__(self,parent,id,title):
+        wx.Dialog.__init__(self,parent,id,title=_(u'Create New Project'),size=wx.DefaultSize,style=wx.DEFAULT_DIALOG_STYLE)
 
-        self.mopyDir = os.getcwd()
-        self.bashinstallersDir = gInstallers.data.dir
+        #--Build a list of existind directories
+        #  The text control will use this to change background color when name collisions occur
+        self.existingProjects = [x for x in bosh.dirs['installers'].list() if bosh.dirs['installers'].join(x).isdir()]
 
-        self.existingprojects = [] #start with a empty list.
-        for dirname in os.listdir(u'%s' %self.bashinstallersDir):
-            # print dirname
-            if os.path.isdir(u'%s' %self.bashinstallersDir + os.sep + u'%s' %dirname):
-                self.existingprojects.append(dirname)#Fill the list with the existing projects so the text control can identify duplicates and change background color
-
-        # print self.existingprojects
-
-        # Attributes
-        self.panel = wx.Panel(self)
-        self.statictext1 = wx.StaticText(self.panel, -1, u'What do you what to name the New Project?', (-1, -1), style=wx.TE_RICH2)
-        self.textctrl = wx.TextCtrl(self.panel, -1, u'New Project Name-#####',(-1,-1))
-        self.statictext2 = wx.StaticText(self.panel, -1, u'What do you what to add to the New Project?', (-1, -1))
-        self.checkboxblankesp = wx.CheckBox(self.panel, -1, u'Blank.esp', (-1, -1))
-        self.checkboxblankesp.SetValue(True)
-        self.checkboxblankwizard = wx.CheckBox(self.panel, -1, u'Blank wizard.txt', (-1, -1))
-        self.checkboxwizardimagesdirectory = wx.CheckBox(self.panel, -1, u'Wizard Images Directory', (-1, -1))
+        #--Attributes
+        self.textName = wx.TextCtrl(self,wx.ID_ANY,_(u'New Project Name-#####'))
+        self.checkEsp = wx.CheckBox(self,wx.ID_ANY,_(u'Blank.esp'))
+        self.checkEsp.SetValue(True)
+        self.checkWizard = wx.CheckBox(self,wx.ID_ANY,_(u'Blank wizard.txt'))
+        self.checkWizardImages = wx.CheckBox(self,wx.ID_ANY,_(u'Wizard Images Directory'))
         if not bEnableWizard:
-            self.checkboxblankwizard.Disable() #pyWin32 not installed
-            self.checkboxwizardimagesdirectory.Disable() #pyWin32 not installed
-        self.checkboxdocsdirectory = wx.CheckBox(self.panel, -1, u'Docs Directory', (-1, -1))
-        self.checkboxscreenshotnoext = wx.CheckBox(self.panel, -1, u'Preview Screenshot(No.ext)(re-enable for BAIT)', (-1, -1))
-        self.checkboxscreenshotnoext.Disable() #Remove this when BAIT gets preview stuff done
-        self.staticline = wx.StaticLine(self.panel, -1, size=(-1, 2))
-        self.okbutton = wx.Button(self.panel, -1, label=u'Ok', size=(100, 30))
-        self.cancelbutton = wx.Button(self.panel, -1, label=u'Cancel', size=(100, 30))
+            # pywin32 not installed
+            self.checkWizard.Disable()
+            self.checkWizardImages.Disable()
+        self.checkDocs = wx.CheckBox(self,wx.ID_ANY,_(u'Docs Directory'))
+        self.checkScreenshot = wx.CheckBox(self,wx.ID_ANY,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
+        self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
+        okButton = wx.Button(self,wx.ID_OK)
+        cancelButton = wx.Button(self,wx.ID_CANCEL)
         # Panel Layout
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
-        hsizer.Add(self.okbutton, 0, wx.ALL|wx.ALIGN_CENTER, 10)
-        hsizer.Add(self.cancelbutton, 0, wx.ALL|wx.ALIGN_CENTER, 10)
+        hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
+        hsizer.Add(cancelButton,0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer = wx.BoxSizer(wx.VERTICAL)
-        vsizer.Add(self.statictext1, 0, wx.ALL|wx.ALIGN_CENTER, 10)
-        vsizer.Add(self.textctrl, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 2)
-        vsizer.Add(self.statictext2, 0, wx.ALL|wx.ALIGN_CENTER, 10)
-        vsizer.Add(self.checkboxblankesp, 0, wx.ALL|wx.ALIGN_TOP, 5)
-        vsizer.Add(self.checkboxblankwizard, 0, wx.ALL|wx.ALIGN_TOP, 5)
-        vsizer.Add(self.checkboxwizardimagesdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
-        vsizer.Add(self.checkboxdocsdirectory, 0, wx.ALL|wx.ALIGN_TOP, 5)
-        vsizer.Add(self.checkboxscreenshotnoext, 0, wx.ALL|wx.ALIGN_TOP, 5)
-        vsizer.Add(self.staticline, 0, wx.ALL|wx.EXPAND, 5)
+        vsizer.Add(wx.StaticText(self,wx.ID_ANY,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
+        vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
+        vsizer.Add(wx.StaticText(self,wx.ID_ANY,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
+        vsizer.Add(self.checkEsp,0,wx.ALL|wx.ALIGN_TOP,5)
+        vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
+        vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)
+        vsizer.Add(self.checkDocs,0,wx.ALL|wx.ALIGN_TOP,5)
+        vsizer.Add(self.checkScreenshot,0,wx.ALL|wx.ALIGN_TOP,5)
+        vsizer.Add(wx.StaticLine(self,wx.ID_ANY))
         vsizer.AddStretchSpacer()
-        vsizer.Add(hsizer, 0, wx.ALIGN_CENTER)
+        vsizer.Add(hsizer,0,wx.ALIGN_CENTER)
         vsizer.AddStretchSpacer()
-        self.panel.SetSizer(vsizer)
-        # Frame Layout
-        fsizer = wx.BoxSizer(wx.VERTICAL)
-        fsizer.Add(self.panel, 1, wx.EXPAND)
-        self.SetSizer(fsizer)
+        self.SetSizer(vsizer)
         self.SetInitialSize()
         # Event Handlers
-        self.okbutton.Bind(wx.EVT_BUTTON, self.OnOK, id=-1)
-        self.cancelbutton.Bind(wx.EVT_BUTTON, self.OnDestroyCustomDialog, id=-1)
-        self.Bind(wx.EVT_CLOSE, self.OnDestroyCustomDialog, id=-1)
-        self.textctrl.Bind(wx.EVT_TEXT, self.OnCheckProjectsColorTextCtrl, id=-1)
-        self.checkboxblankesp.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxChange, id=-1)
-        self.checkboxblankwizard.Bind(wx.EVT_CHECKBOX, self.OnCheckBoxChange, id=-1)
+        self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
+        self.checkEsp.Bind(wx.EVT_CHECKBOX,self.OnCheckBoxChange)
+        self.checkWizard.Bind(wx.EVT_CHECKBOX,self.OnCheckBoxChange)
+        okButton.Bind(wx.EVT_BUTTON,self.OnClose)
+        cancelButton.Bind(wx.EVT_BUTTON,self.OnClose)
         # Dialog Icon Handlers
-        self.SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_white_off.png', wx.BITMAP_TYPE_PNG))
+        self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,wx.BITMAP_TYPE_PNG))
         self.OnCheckBoxChange(self)
 
-    def OnCheckProjectsColorTextCtrl(self, event):
-        projectname = self.textctrl.GetValue()
-        if projectname in self.existingprojects: #Fill this in. Compare this with the self.existingprojects list
-            self.textctrl.SetBackgroundColour('#FF0000')
+    def OnCheckProjectsColorTextCtrl(self,event):
+        projectName = GPath(self.textName.GetValue())
+        if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
+            self.textName.SetBackgroundColour('#FF0000')
+            self.textName.SetToolTip(tooltip(_(u'There is already a project with that name!')))
         else:
-            self.textctrl.SetBackgroundColour('#FFFFFF')
-        self.textctrl.Refresh()
-        # print ('Text has been changed')
+            self.textName.SetBackgroundColour('#FFFFFF')
+            self.textName.SetToolTip(None)
+        self.textName.Refresh()
 
     def OnCheckBoxChange(self, event):
         ''' Change the Dialog Icon to represent what the project status will be when created. '''
-        if self.checkboxblankesp.IsChecked():
-            if self.checkboxblankwizard.IsChecked():
-                super(CreateNewProject,self).SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_white_off_wiz.png', wx.BITMAP_TYPE_PNG))
+        if self.checkEsp.IsChecked():
+            if self.checkWizard.IsChecked():
+                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off_wiz.png').s,wx.BITMAP_TYPE_PNG))
             else:
-                super(CreateNewProject,self).SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_white_off.png', wx.BITMAP_TYPE_PNG))
+                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,wx.BITMAP_TYPE_PNG))
         else:
-            super(CreateNewProject,self).SetIcon(wx.Icon(self.mopyDir + os.sep + u'bash' + os.sep + u'images' + os.sep + u'diamond_grey_off.png', wx.BITMAP_TYPE_PNG))
-        # print ('Changed Dialog Icon')
+            self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_grey_off.png').s,wx.BITMAP_TYPE_PNG))
 
-    def OnOK(self, event):
+    def OnClose(self,event):
         ''' Create the New Project and add user specified extras. '''
-        projectname = self.textctrl.GetValue()#The name of the directory to be created
+        if event.GetId() == wx.ID_CANCEL:
+            event.Skip()
+            return
 
-        if not os.path.exists(u'%s' %self.bashinstallersDir + os.sep + u'%s' %projectname): #This checks to see if the Generated New Project directory exists first,
-            os.mkdir(u'%s' %self.bashinstallersDir + os.sep + u'%s' %projectname) #then creates it if it doesn't exist
-            #Then check what checkboxes are checked and add extras.
-            ExtrasDir = self.mopyDir + os.sep + u'templates'
-            NewProjectDir = u'%s' %self.bashinstallersDir + os.sep + u'%s' %projectname
-            if self.checkboxblankesp.IsChecked(): #Copy the Blank.esp into the New Project
-                sourcefile = (ExtrasDir + os.sep + u'Blank.esp') #This is the file to be copied into the created New Project Directory.
-                destinationfile = (NewProjectDir + os.sep + u'Blank.esp')   #This is the destination of the sourcefile.
-                shutil.copy(sourcefile, destinationfile) #This copies the Blank.esp into the New Project folder that was generated in the code above.
-            if self.checkboxblankwizard.IsChecked(): #Create the wizard.txt here
-                text_file = open(NewProjectDir + os.sep + u'wizard.txt', 'w')
-                text_file.write(u';# ' + projectname + u' BAIN Wizard Installation Script')
-                text_file.close()
-            if self.checkboxwizardimagesdirectory.IsChecked(): #Create the 'Wizard Images' Directory
-                os.mkdir(NewProjectDir + os.sep + u'Wizard Images')
-            if self.checkboxdocsdirectory.IsChecked(): #Create the 'Docs' Directory
-                os.mkdir(NewProjectDir + os.sep + u'Docs')
-            if self.checkboxscreenshotnoext.IsChecked(): #Copy the dummy default 'Screenshot' into the New Project
-                sourcefile = (ExtrasDir + os.sep + u'Screenshot') #This is the file to be copied into the created New Project Directory.
-                destinationfile = (NewProjectDir + os.sep + u'Screenshot') #This is the destination of the sourcefile.
-                shutil.copy(sourcefile, destinationfile) #This copies the Screenshot into the New Project folder that was generated in the code above.
-            refresh = True #Refresh Data so project shows up
-        else:
-            dialog = wx.MessageDialog(self, u'There is already a project with that name!\nPick a different name for the project and try again.', u'ERROR', wx.OK | wx.ICON_ERROR)
-            dialog.ShowModal()
-            dialog.Destroy()
+        projectName = GPath(self.textName.GetValue())
+        projectDir = bosh.dirs['installers'].join(projectName)
 
-        if refresh:
-            self.Destroy()
-            self.fullRefresh = False
-            gInstallers.refreshed = False
-            gInstallers.fullRefresh = self.fullRefresh
-            gInstallers.OnShow()
-            # print projectname
+        if projectDir.exists():
+            balt.showError(self,_(u'There is already a project with that name!')
+                                + u'\n' +
+                                _(u'Pick a different name for the project and try again.'))
+            return
+        event.Skip()
 
-    def OnDestroyCustomDialog(self, event):
-        self.Destroy()
+        # Create project in temp directory, so we can move it via
+        # Shell commands (UAC workaround)
+        tempDir = bolt.Path.tempDir(u'WryeBash_')
+        tempProject = tempDir.join(projectName)
+        extrasDir = bosh.dirs['templates'].join(bush.game.name)
+        if self.checkEsp.IsChecked():
+            # Copy blank esp into project
+            fileName = u'Blank, %s.esp' % bush.game.name
+            extrasDir.join(fileName).copyTo(tempProject.join(fileName))
+        if self.checkWizard.IsChecked():
+            # Create empty wizard.txt
+            wizardPath = tempProject.join(u'wizard.txt')
+            with wizardPath.open('w',encoding='utf-8') as out:
+                out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
+        if self.checkWizardImages.IsChecked():
+            # Create 'Wizard Images' directory
+            tempProject.join(u'Wizard Images').makedirs()
+        if self.checkDocs.IsChecked():
+            #Create the 'Docs' Directory
+            tempProject.join(u'Docs').makedirs()
+        if self.checkScreenshot.IsChecked():
+            #Copy the dummy default 'Screenshot' into the New Project
+            extraDirs.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
+
+        # Move into the target location
+        try:
+            balt.shellMove(tempProject,projectDir,self,False,False,False)
+        except:
+            pass
+        finally:
+            tempDir.rmtree(tempDir.s)
+
+        # Move successfull
+        self.fullRefresh = False
+        gInstallers.refreshed = False
+        gInstallers.fullRefresh = self.fullRefresh
+        gInstallers.OnShow()
 
 class Installer_CreateNewProject(InstallerLink):
     """Open the Create New Project Dialog"""
     def AppendToMenu(self, menu, window, data):
         Link.AppendToMenu(self, menu, window, data)
         title = _(u'Create New Project...')
-        menuItem = wx.MenuItem(menu, self.id, title, help=_(u'Create a new project...'))
+        menuItem = wx.MenuItem(menu,self.id,title,help=_(u'Create a new project...'))
         menu.AppendItem(menuItem)
 
     def Execute(self, event):
-        dialog = CreateNewProject(None,-1,u'Create New Project')
+        dialog = CreateNewProject(None,wx.ID_ANY,_(u'Create New Project'))
         dialog.ShowModal()
         dialog.Destroy()
 
