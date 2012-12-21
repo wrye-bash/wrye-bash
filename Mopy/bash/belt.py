@@ -404,7 +404,7 @@ class PageFinish(PageInstaller):
                 espmShow.append(x)
         espmShow = [x.replace(u'&',u'&&') for x in espmShow]
 
-        sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
+        sizerMain = wx.BoxSizer(wx.VERTICAL)
 
         parent.parser.choiceIdex += 1
 
@@ -412,13 +412,13 @@ class PageFinish(PageInstaller):
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
         textTitle = wx.StaticText(self, wx.ID_ANY, _(u"The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
-        sizerTitle.Add(textTitle, 0, wx.ALIGN_CENTER|wx.ALL)
-        sizerMain.Add(sizerTitle, 0, wx.EXPAND)
+        sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
+        sizerMain.Add(sizerTitle,0,wx.EXPAND)
 
         #--Subpackages and Espms
-        sizerLists = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerLists.Add(wx.StaticText(self, wx.ID_ANY, _(u'Sub-Packages')))
-        sizerLists.Add(wx.StaticText(self, wx.ID_ANY, _(u'Esp/ms')))
+        sizerSubsEspms = wx.BoxSizer(wx.HORIZONTAL)
+        subPackageSizer = wx.BoxSizer(wx.VERTICAL)
+        subPackageSizer.Add(wx.StaticText(self, wx.ID_ANY, _(u'Sub-Packages')),0,wx.BOTTOM,2)
         self.listSubs = wx.CheckListBox(self, wx.ID_ANY, choices=subs)
         self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
         for index,key in enumerate(subs):
@@ -426,69 +426,61 @@ class PageFinish(PageInstaller):
             if subsList[key]:
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
+        subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
+        espmSizer = wx.BoxSizer(wx.VERTICAL)
+        espmSizer.Add(wx.StaticText(self, wx.ID_ANY, _(u'Esp/ms')),0,wx.BOTTOM,2)
         self.listEspms = wx.CheckListBox(self, wx.ID_ANY, choices=espmShow)
         self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)
                 self.parent.ret.SelectEspms.append(key)
+        espmSizer.Add(self.listEspms,1,wx.EXPAND)
         self.parent.ret.RenameEspms = espmRenames
-        sizerLists.Add(self.listSubs, 0, wx.ALL|wx.EXPAND)
-        sizerLists.Add(self.listEspms, 0, wx.ALL|wx.EXPAND)
-        sizerLists.AddGrowableRow(1)
-        sizerLists.AddGrowableCol(0)
-        sizerLists.AddGrowableCol(1)
-        sizerMain.Add(sizerLists, 1, wx.EXPAND)
+        sizerSubsEspms.Add(subPackageSizer,1,wx.EXPAND|wx.RIGHT,5)
+        sizerSubsEspms.Add(espmSizer,1,wx.EXPAND)
+        sizerMain.Add(sizerSubsEspms,2,wx.EXPAND|wx.TOP|wx.BOTTOM,5)
 
         #--Ini tweaks
-        sizerInis = wx.FlexGridSizer(2, 2, 5, 5)
-        sizerInis.Add(wx.StaticText(self, wx.ID_ANY, _(u'Ini Tweaks:')))
-        sizerInis.Add(wx.StaticText(self, wx.ID_ANY, u''))
+        sizerIniTweaks = wx.BoxSizer(wx.HORIZONTAL)
+        sizerTweaks = wx.BoxSizer(wx.VERTICAL)
+        sizerTweaks.Add(wx.StaticText(self,wx.ID_ANY,_(u'Ini Tweaks:')),0,wx.BOTTOM,2)
         self.listInis = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
-        self.listTweaks = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE)
-        sizerInis.Add(self.listInis, 0, wx.ALL|wx.EXPAND)
-        sizerInis.Add(self.listTweaks, 0, wx.ALL|wx.EXPAND)
-        sizerInis.AddGrowableRow(1)
-        sizerInis.AddGrowableCol(0)
-        sizerInis.AddGrowableCol(1)
-        sizerMain.Add(sizerInis, 1, wx.EXPAND)
+        sizerTweaks.Add(self.listInis,1,wx.EXPAND)
+        sizerContents = wx.BoxSizer(wx.VERTICAL)
+        sizerContents.Add(wx.StaticText(self,wx.ID_ANY,u''),0,wx.BOTTOM,2)
+        self.listTweaks = wx.ListBox(self,wx.ID_ANY,style=wx.LB_SINGLE)
+        sizerContents.Add(self.listTweaks,1,wx.EXPAND)
+        sizerIniTweaks.Add(sizerTweaks,1,wx.EXPAND|wx.RIGHT,5)
+        sizerIniTweaks.Add(sizerContents,1,wx.EXPAND)
+        sizerMain.Add(sizerIniTweaks,2,wx.EXPAND|wx.BOTTOM,5)
         self.parent.ret.IniEdits = iniedits
 
         #--Notes
-        sizerNotes = wx.FlexGridSizer(2, 1, 5, 0)
-        sizerNotes.Add(wx.StaticText(self, wx.ID_ANY, _(u'Notes:')))
-        sizerNotes.Add(wx.TextCtrl(self, wx.ID_ANY, u''.join(notes), style=wx.TE_READONLY|wx.TE_MULTILINE), 1, wx.EXPAND)
-        sizerNotes.AddGrowableCol(0)
-        sizerNotes.AddGrowableRow(1)
-        sizerMain.Add(sizerNotes, 2, wx.TOP|wx.EXPAND)
+        sizerMain.Add(wx.StaticText(self,wx.ID_ANY,_(u'Notes:')),0,wx.BOTTOM,2)
+        sizerMain.Add(wx.TextCtrl(self,wx.ID_ANY,u''.join(notes),style=wx.TE_READONLY|wx.TE_MULTILINE),1,wx.EXPAND)
 
-        sizerChecks = wx.FlexGridSizer(2, 2, 5, 0)
+        checkSizer = wx.BoxSizer(wx.HORIZONTAL)
+        checkSubSizer = wx.BoxSizer(wx.VERTICAL)
+        checkSizer.AddStretchSpacer()
         # Apply the selections
         self.checkApply = wx.CheckBox(self, wx.ID_ANY, _(u'Apply these selections'))
         self.checkApply.SetValue(bAuto)
         self.checkApply.Bind(wx.EVT_CHECKBOX, self.OnCheckApply)
-        sizerChecks.AddStretchSpacer()
-        sizerChecks.Add(self.checkApply)
+        checkSubSizer.Add(self.checkApply,0,wx.BOTTOM,2)
         # Also install/anneal the package
         self.checkInstall = wx.CheckBox(self, wx.ID_ANY, _(u'Install this package'))
         self.checkInstall.SetValue(basher.settings['bash.installers.autoWizard'])
         self.checkInstall.Bind(wx.EVT_CHECKBOX, self.OnCheckInstall)
         self.parent.ret.Install = basher.settings['bash.installers.autoWizard']
-        sizerChecks.AddStretchSpacer()
-        sizerChecks.Add(self.checkInstall)
-        sizerChecks.AddGrowableRow(0)
-        sizerChecks.AddGrowableRow(1)
-        sizerChecks.AddGrowableCol(0)
-        sizerMain.Add(sizerChecks, 3, wx.EXPAND|wx.TOP)
+        checkSubSizer.Add(self.checkInstall)
+        checkSizer.Add(checkSubSizer,0,wx.EXPAND)
+        sizerMain.Add(checkSizer,0,wx.TOP|wx.RIGHT|wx.EXPAND,5)
 
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(bAuto)
         self.parent.finishing = True
 
-        sizerMain.AddGrowableCol(0)
-        sizerMain.AddGrowableRow(1)
-        sizerMain.AddGrowableRow(2)
-        sizerMain.AddGrowableRow(3)
         sizerMain.SetSizeHints(self)
         self.SetSizer(sizerMain)
         self.Layout()
