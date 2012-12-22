@@ -10410,6 +10410,8 @@ class Installer_Install(InstallerLink):
                     tweaks = self.data.install(self.filterInstallables(),progress,last,override)
                 except (CancelError,SkipError):
                     pass
+                except StateError as e:
+                    balt.showError(self.window,u'%s'%e)
                 else:
                     if tweaks:
                         balt.showInfo(self.window,
