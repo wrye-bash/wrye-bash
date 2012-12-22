@@ -8484,15 +8484,21 @@ class InstallerArchive(Installer):
             command = u'"%s" l %s' % (exe7z, args)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
             reExtracting = re.compile(ur'^Extracting\s+(.+)',re.U)
-            reError = re.compile(u'^Error:',re.U)
+            reError = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U)
             numFiles = 0
             errorLine = []
             for line in ins:
+                line = unicode(line,'utf8')
                 if len(errorLine) or reError.match(line):
-                    errorLine.append(_unicode(line))
+                    errorLine.append(line.rstrip())
                 # we'll likely get a few extra lines, but that's ok
                 numFiles += 1
-            if ins.close():
+            if ins.close() or errorLine:
+                if len(errorLine) > 10:
+                    if bolt.deprintOn:
+                        for line in errorLine:
+                            print line
+                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
                 raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
             progress = progress or bolt.Progress()
             progress.state = 0
@@ -8506,7 +8512,7 @@ class InstallerArchive(Installer):
                 line = unicode(line,'utf8')
                 maExtracting = reExtracting.match(line)
                 if len(errorLine) or reError.match(line):
-                    errorLine.append(line)
+                    errorLine.append(line.rstrip())
                 if maExtracting:
                     extracted.append(maExtracting.group(1).strip())
                     progress(index,archive.s+u'\n'+_(u'Extracting files...')+u'\n'+maExtracting.group(1).strip())
@@ -8516,7 +8522,12 @@ class InstallerArchive(Installer):
             # Clear ReadOnly flag if set
             cmd = ur'attrib -R "%s\*" /S /D' % (self.getTempDir().s)
             ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
-            if result:
+            if result or errorLine:
+                if len(errorLine) > 10:
+                    if bolt.deprintOn:
+                        for line in errorLine:
+                            print line
+                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
                 raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
         #--Done -> don't clean out temp dir, it's going to be used soon
 
