@@ -50,22 +50,6 @@ SET REGCMD=reg query HKCU\SOFTWARE\Python\PythonCore\2.7\InstallPath /ve
 %REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
 IF NOT x"%PYPATH%"==x"" GOTO FOUND
 
-SET REGCMD=reg query HKLM\SOFTWARE\Wow6432Node\Python\PythonCore\2.6\InstallPath /ve
-%REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
-IF NOT x"%PYPATH%"==x"" GOTO FOUND
-
-SET REGCMD=reg query HKLM\SOFTWARE\Python\PythonCore\2.6\InstallPath /ve
-%REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
-IF NOT x"%PYPATH%"==x"" GOTO FOUND
-
-SET REGCMD=reg query HKCU\SOFTWARE\Wow6432Node\Python\PythonCore\2.6\InstallPath /ve
-%REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
-IF NOT x"%PYPATH%"==x"" GOTO FOUND
-
-SET REGCMD=reg query HKCU\SOFTWARE\Python\PythonCore\2.6\InstallPath /ve
-%REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
-IF NOT x"%PYPATH%"==x"" GOTO FOUND
-
 
 :: if all that failed, try querying the .py file association
 SET REGCMD=reg query HKCR\Python.File\shell\open\command /ve
