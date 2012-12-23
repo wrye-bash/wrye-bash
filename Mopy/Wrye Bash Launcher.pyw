@@ -78,7 +78,8 @@ class UnicodeImporter(object):
             exec code in mod.__dict__
         return mod
 
-sys.meta_path = [UnicodeImporter()]
+if not hasattr(sys,'frozen'):
+    sys.meta_path = [UnicodeImporter()]
 
 if __name__ == '__main__':
     # Need to call freeze_support before importing bash,
