@@ -3091,7 +3091,7 @@ class IniFile(object):
     reDeletedSetting = re.compile(ur';-\s*(\w.*?)\s*(;.*$|=.*$|$)',re.U)
     reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
     reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
-    encoding = None
+    encoding = 'utf-8'
 
     def __init__(self,path,defaultSection=u'General'):
         """Initialize."""
@@ -3134,6 +3134,10 @@ class IniFile(object):
         deleted_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
+        if tweakPath != self.path:
+            encoding = 'utf-8'
+        else:
+            encoding = self.encoding
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -3143,7 +3147,7 @@ class IniFile(object):
         else:
             def makeSetting(match,lineNo): return match.group(2).strip()
         #--Read ini file
-        with tweakPath.open('r',encoding=self.encoding) as iniFile:
+        with tweakPath.open('r',encoding=encoding) as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
@@ -3181,6 +3185,10 @@ class IniFile(object):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
+        if tweakPath != self.path:
+            encoding = 'utf-8'
+        else:
+            encoding = self.encoding
         iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True,True)
         reComment = self.reComment
         reSection = self.reSection
@@ -3322,12 +3330,16 @@ class IniFile(object):
             return
         if not tweakPath.exists() or not tweakPath.isfile():
             return
+        if tweakPath != self.path:
+            encoding = 'utf-8'
+        else:
+            encoding = self.encoding
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
-        with tweakPath.open('r',encoding=self.encoding) as tweakFile:
+        with tweakPath.open('r',encoding=encoding) as tweakFile:
             ini_settings = {}
             deleted_settings = {}
             section = sectionSettings = None
