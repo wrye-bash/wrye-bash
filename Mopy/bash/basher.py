@@ -10168,7 +10168,7 @@ class Installer_OpenReadme(InstallerLink):
             with balt.BusyCursor():
                 # This is going to leave junk temp files behind...
                 archive.unpackToTemp(installer, [archive.hasReadme])
-            archive.tempDir.join(archive.hasReadme).start()
+            archive.getTempDir().join(archive.hasReadme).start()
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(InstallerLink):
