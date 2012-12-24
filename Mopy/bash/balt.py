@@ -448,7 +448,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id in labels:
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            buttons.append((id,label[id]))
+            buttons.append((id,labels[id]))
         buttons.append((wx.ID_CANCEL,labels.get(wx.ID_CANCEL,'cancel')))
         result = vistaDialog(parent,
                              title=title,
@@ -468,7 +468,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         #--Layout
         buttonSizer = hSizer(spacer)
         if wx.ID_OK in labels:
-            okButton = button(dialog,id=wx.ID_OK,label=lables[wx.ID_OK])
+            okButton = button(dialog,id=wx.ID_OK,label=labels[wx.ID_OK])
         else:
             okButton = button(dialog,id=wx.ID_OK)
         buttonSizer.Add(okButton,0,wx.RIGHT,4)
