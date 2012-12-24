@@ -8528,6 +8528,7 @@ class InstallerArchive(Installer):
             index = 0
             for line in ins:
                 line = unicode(line,'utf8')
+                deprint(line)
                 maExtracting = reExtracting.match(line)
                 if len(errorLine) or reError.match(line):
                     errorLine.append(line.rstrip())
