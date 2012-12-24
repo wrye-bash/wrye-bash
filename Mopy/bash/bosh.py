@@ -8741,8 +8741,9 @@ class InstallerProject(Installer):
             def timestamps(x):
                 if reModExt.search(x.s):
                     newTime = x.mtime
-                    while newTime in mtimes.values():
+                    while newTime in mtimes:
                         newTime += 1
+                    x.mtime = newTime
                     mtimesAdd(newTime)
         else:
             def timestamps(*args):
