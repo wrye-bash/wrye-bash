@@ -3337,7 +3337,10 @@ class InstallersList(balt.Tank):
             refreshNeeded = False
             for archive in selected:
                 installer = self.data[archive]
-                newName = GPath(root+numStr+archive.ext)
+                if InstallerType is bosh.InstallerProject:
+                    newName = GPath(root+numStr)
+                else:
+                    newName = GPath(root+numStr+archive.ext)
                 if InstallerType is bosh.InstallerMarker:
                     newName = GPath(u'==' + newName.s + u'==')
                 if newName != archive:
