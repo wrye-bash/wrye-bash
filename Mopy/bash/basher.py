@@ -8887,13 +8887,13 @@ class Files_Unhide(Link):
                 srcFiles.append(srcPath)
                 destFiles.append(destPath)
                 if isSave:
-                    coSavesMove[destPath] = bosh.CoSaves(srcPath)
+                    coSavesMoves[destPath] = bosh.CoSaves(srcPath)
         #--Now move everything at once
         if not srcFiles:
             return
         try:
             balt.shellMove(srcFiles,destFiles,window,False,False,False)
-            for dest in coSavesMove:
+            for dest in coSavesMoves:
                 coSavesMoves[dest].move(dest)
         except (CancelError,SkipError):
             pass
