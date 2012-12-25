@@ -111,6 +111,7 @@
         <li><a href="#tools-checker">Mod Checker</a>
         <li><a href="#tools-swapping">Oblivion.esm Swapping</a>
         <li><a href="#tools-shortcuts">Keyboard Shortcuts</a>
+        <li><a href="#tools-arguments">Command Line Arguments</a>
     </ol>
     <li><a href="#international">Internationalisation</a>
     <ol>
@@ -1685,6 +1686,109 @@
         <tr><td><code>ctrl-numpad plus (+)</code><td>Auto-sizes the columns to fit what is displayable.
         <tr><td><code>ctrl-a</code><td>Selects all.
         <tr><td><code>shift-ctrl-a</code><td>Deselects all.
+</table>
+
+<h3 id="tools-arguments">Command Line Arguments</h3>
+<p>The following table lists all command-line arguments Wrye Bash
+	supports.
+<p>
+<table>
+	<thead>
+		<tr>
+			<th>Argument
+			<th>Function
+	<tbody>
+		<tr>
+			<td><code>-g&nbsp;GAMENAME, --game=GAMENAME</code>
+			<td>Specifies the game Wrye Bash should try to manage. Use this
+				argument if more than one game Wrye Bash supports is installed.
+		<tr>
+			<td><code>-d, --debug</code>
+			<td>Useful if bash is crashing on startup or if you want to
+				print a lot of information (e.g. while developing or debugging).
+		<tr>
+			<td><code>--no-psyco</code>
+			<td>Disables import of Psyco.
+		<tr>
+			<td><code>-C, --Cbash-mode</code>
+			<td>enables CBash and uses CBash to build the bashed patch.
+		<tr>
+			<td><code>-P, --Python-mode</code>
+			<td>disables CBash and uses python code to build the bashed
+				patch.
+		<tr>
+			<td><code>-L&nbsp;LANGUAGE, --language=LANGUAGE</code>
+			<td>Specify the user language overriding the system language
+				settings.
+		<tr>
+			<th>Path Arguments
+			<th>All path arguments must be absolute paths and use either
+				forward slashes (/) or two backward slashes (\\). All of these can
+				also be set in the ini (where you can also use relative paths) and
+				if set in both cmd line takes pecedence.
+		<tr>
+			<td><code>-o&nbsp;OBLIVIONPATH,
+					--oblivionPath=OBLIVIONPATH</code>
+			<td>Specifies the game directory (the one containing the game's
+				exe). Use this argument if Bash is located outside of the game
+				directory, and the <code>--game</code> argument failed to find it.
+		<tr>
+			<th>User Directory Arguments
+			<th>These arguments allow you to specify your user directories
+				in several wasy. These are only useful if the regular procedure for
+				geting the user directory fails. And even in that case, the user is
+				probably better off installing win32com.
+		<tr>
+			<td><code>-p&nbsp;PERSONALPATH,
+					--personalPath=PERSONALPATH</code>
+			<td>Specify the user's personal directory. (Like "C:\\Documents
+				and Settings\\Wrye\\My Documents") If you need to set this then you
+				probably need to set <code>-l</code> too.
+		<tr>
+			<td><code>-u&nbsp;USERPATH, --userPath=USERPATH</code>
+			<td>Specify the user profile path. May help if HOMEDRIVE and/or
+				HOMEPATH are missing from the user's environment.
+		<tr>
+			<td><code>-l&nbsp;LOCALAPPDATAPATH,
+					--localAppDataPath=LOCALAPPDATAPATH</code>
+			<td>Specify the user's local application data directory. If you
+				need to set this then you probably need to set <code>-p</code> too.
+			
+		<tr>
+			<th>Backup and Restore Arguments
+			<th>These arguments allow you to do backup and restore settings
+				operations.
+		<tr>
+			<td><code>-b, --backup</code>
+			<td>Backup all Bash settings to an archive file before the app
+				launches. Either specify the filepath with the <code>-f/--filename</code>
+				options or Wrye Bash will prompt the user for the backup file path.
+			
+		<tr>
+			<td><code>-r, --restore</code>
+			<td>Backup all Bash settings to an archive file before the app
+				launches. Either specify the filepath with the <code>-f/--filname</code>
+				options or Wrye Bash will prompt the user for the backup file path.
+			
+		<tr>
+			<td><code>-f FILENAME, --filename=FILENAME</code>
+			<td>The file to use with the <code>-r</code> or <code>-b</code>
+				options. Must end in '.7z' and be a valid path and for <code>-r</code>
+				exist and for <code>-b</code> not already exist.
+		<tr>
+			<td><code>-q, --quiet-quit</code>
+			<td>Close Bash after creating or restoring backup and do not
+				display any prompts or message dialogs.
+		<tr>
+			<td><code>-i, --include-changed-images</code>
+			<td>Include changed images from mopy/bash/images in the backup.
+				Include any image(s) from backup file in restore.
+		<tr>
+			<td><code>-I, --include-all-images</code>
+			<td>Include all images from mopy/bash/images in the
+				backup/restore (if present in backup file).</td>
+		</tr>
+	</tbody>
 </table>
 
 <h2 id="international">Internationalisation</h2>
