@@ -7137,14 +7137,14 @@ class ScreensData(DataDict):
         self.data = newData
         return changed
 
-    def delete(self,fileName,noRecycle=False):
+    def delete(self,fileName,askOk=True,dontRecycle=False):
         """Deletes member file."""
         dirJoin = self.dir.join
         if isinstance(fileName,(list,set)):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath,recycle=not noRecycle)
+        deleted = balt.shellDelete(filePath,askOk=askOk,recycle=not dontRecycle)
         if deleted is not None:
             for file in filePath:
                 del self.data[file.tail]
