@@ -1715,7 +1715,9 @@ class INILineCtrl(wx.ListCtrl):
                 if page != self.GetParent().GetParent().GetParent():
                     warn = False
             if warn:
-                balt.showWarning(self, _(u"%s does not exist yet.  %s will create this file on first run.  INI tweaks will not be usable until then.") % (bosh.iniInfos.ini.path, bush.game.iniFiles[0]))
+                balt.showWarning(self, _(u"%(ini)s does not exist yet.  %(game)s will create this file on first run.  INI tweaks will not be usable until then.")
+                                 % {'ini':bosh.iniInfos.ini.path,
+                                    'game':bush.game.name})
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
