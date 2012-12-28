@@ -3147,10 +3147,14 @@ class IniFile(object):
         else:
             def makeSetting(match,lineNo): return match.group(2).strip()
         #--Read ini file
-        with tweakPath.open('r',encoding=encoding) as iniFile:
+        with tweakPath.open('r') as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
+                try:
+                    line = unicode(line,encoding)
+                except UnicodeDecodeError:
+                    line = unicode(line,'cp1252')
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -3195,9 +3199,13 @@ class IniFile(object):
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
         #--Read ini file
-        with tweakPath.open('r',encoding=self.encoding) as iniFile:
+        with tweakPath.open('r') as iniFile:
             section = LString(self.defaultSection)
             for i,line in enumerate(iniFile.readlines()):
+                try:
+                    line = unicode(line,encoding)
+                except UnicodeDecodeError:
+                    line = unicode(line,'cp1252')
                 maDeletedSetting = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -3263,10 +3271,14 @@ class IniFile(object):
         reSetting = self.reSetting
         #--Read init, write temp
         section = sectionSettings = None
-        with self.path.open('r',encoding=self.encoding) as iniFile:
+        with self.path.open('r') as iniFile:
             with self.path.temp.open('w',encoding=self.encoding) as tmpFile:
                 tmpFileWrite = tmpFile.write
                 for line in iniFile:
+                    try:
+                        line = unicode(line,self.encoding)
+                    except UnicodeDecodeError:
+                        line = unicode(line,'cp1252')
                     maDeleted = reDeleted.match(line)
                     stripped = reComment.sub(u'',line).strip()
                     maSection = reSection.match(stripped)
@@ -3339,11 +3351,15 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
-        with tweakPath.open('r',encoding=encoding) as tweakFile:
+        with tweakPath.open('r') as tweakFile:
             ini_settings = {}
             deleted_settings = {}
             section = sectionSettings = None
             for line in tweakFile:
+                try:
+                    line = unicode(line,encoding)
+                except UnicodeDecodeError:
+                    line = unicode(line,'cp1252')
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
