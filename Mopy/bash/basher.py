@@ -10672,6 +10672,7 @@ class Installer_Uninstall(InstallerLink):
             pass
         finally:
             self.data.refresh(what='NS')
+            bosh.modInfos.refresh()
             bosh.modInfos.plugins.saveLoadOrder()
             gInstallers.RefreshUIMods()
             bashFrame.RefreshData()
