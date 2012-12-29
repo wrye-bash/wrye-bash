@@ -4039,7 +4039,9 @@ class Plugins:
                 raise bolt.BoltError(u'Cannot load plugins before masters.')
         # Now reset the mtimes cache or LockLO feature will revert intentional changes.
         for name in modInfos.mtimes:
-            modInfos.mtimes[name] = modInfos[name].getPath().mtime
+            path = modInfos[name].getPath()
+            if path.exists():
+                modInfos.mtimes[name] = modInfos[name].getPath().mtime
         if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
