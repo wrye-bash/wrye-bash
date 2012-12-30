@@ -1149,7 +1149,9 @@ class Path(object):
         """Temp file path.  If unicodeSafe is True, the returned
         temp file will be a fileName that can be passes through Popen
         (Popen automatically tries to encode the name)"""
-        dirJoin = GPath(tempfile.gettempdir()).join(u'WryeBash_temp').join
+        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
+        baseDir.makedirs()
+        dirJoin = baseDir.join
         if unicodeSafe:
             try:
                 self._s.encode('ascii')
