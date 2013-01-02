@@ -11368,7 +11368,7 @@ class InstallerConverter_ApplyEmbedded(InstallerLink):
 
         #--Error checking
         if not destArchive.s:
-            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % destArchive.s)
             return
         if destArchive.cext not in bosh.writeExts:
             balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
@@ -18365,10 +18365,14 @@ class App_GenPickle(StatusBar_Button):
         is dropped in Mopy directory."""
         #--Data base
         import cPickle
-        fids = cPickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
-        if fids:
-            maxId = max(fids.values())
-        else:
+        try:
+            fids = cPickle.load(GPath(bush.game.pklfile).open('r'))['GMST']
+            if fids:
+                maxId = max(fids.values())
+            else:
+                maxId = 0
+        except:
+            fids = {}
             maxId = 0
         maxId = max(maxId,0xf12345)
         maxOld = maxId
@@ -18382,7 +18386,6 @@ class App_GenPickle(StatusBar_Button):
                 print '%08X  %08X %s' % (0,maxId,eid)
                 #--Source file
         if fileName:
-            init(3)
             sorter = lambda a: a.eid
             loadFactory = bosh.LoadFactory(False,bosh.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
@@ -18531,7 +18534,7 @@ class CreateNewProject(wx.Dialog):
             tempProject.join(u'Docs').makedirs()
         if self.checkScreenshot.IsChecked():
             #Copy the dummy default 'Screenshot' into the New Project
-            extraDirs.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
+            extrasDirs.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
 
         # Move into the target location
         try:
