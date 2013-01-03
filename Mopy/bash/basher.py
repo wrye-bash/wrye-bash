@@ -9985,13 +9985,15 @@ class Installer_EditWizard(InstallerLink):
             archive = self.data[path]
             with balt.BusyCursor():
                 # This is going to leave junk temp files behind...
-                archive.unpackToTemp(path, [archive.hasWizard])
-            try:
-                archive.getTempDir().join(archive.hasWizard).start()
-            finally:
                 try:
-                    archive.rmTempDir()
+                    archive.unpackToTemp(path, [archive.hasWizard])
+                    archive.getTempDir().join(archive.hasWizard).start()
                 except:
+                    # Don't clean up temp dir here.  Sometimes the editor
+                    # That starts to open the wizard.txt file is slower than
+                    # Bash, and the file will be deleted before it opens.
+                    # Just allow Bash's atexit function to clean it when
+                    # quitting.
                     pass
 
 class Installer_Wizard(InstallerLink):
