@@ -3819,7 +3819,7 @@ class OmodFile:
                         output.write(input.readNetString())
             progress(0.48, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nreadme.rtf')
             if extractDir.join(u'readme').exists():
-                with bolt.BinaryFile(tempDir.join(u'readme').s) as input:
+                with bolt.BinaryFile(extractDir.join(u'readme').s) as input:
                     with ocdDir.join(u'readme.rtf').open('w') as output:
                         output.write(input.readNetString())
             progress(0.49, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscreenshot')
