@@ -148,6 +148,8 @@ Younger Hotter NPC's v1.0.esp
  TAG: {{BASH: NpcFaces, NoMerge}}
 Younger Hotter NPC's v1.0 Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
+Younger Hotter NPC's v1.0_GE.esp
+ TAG: {{BASH: NpcFaces, NoMerge}}
 YoungerHotterNPCwithPussies.esp
  TAG: {{BASH: NpcFaces, NoMerge}}
 YH Orcs v1.esp
@@ -354,6 +356,8 @@ Atmospheric Loading Screens.esp
 Atmospheric Loading Screens - Original Text.esp
  TAG: {{BASH: Graphics}}
 Atmospheric Loading Screens - Random Quotes.esp
+ TAG: {{BASH: Graphics}}
+Gr_Loading_Screen.esp
  TAG: {{BASH: Graphics}}
 Loading Screens.esp
  TAG: {{BASH: Graphics, NoMerge}}
@@ -675,6 +679,8 @@ MeosPotionReplacer.esp
  TAG: {{BASH: Graphics}}
 MONSTERGIRL-APOCALYPSE.esp
  TAG: {{BASH: Graphics}}
+MONSTERGIRL-CoC.esp
+ TAG: {{BASH: Graphics}}
 More_Vegetables.esp
  IFCHECKSUM("More_Vegetables.esp",2EAEE466) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Mud Crabs!_coMbO.esp
@@ -808,6 +814,12 @@ Vampire Alchemy V1.1.esp
  TAG: {{BASH: Invent}} or you really won't get much of the effects of this if you use any overhauls.
 wd purse of wonders.esp
  TAG: {{BASH: Scripts}}
+WWF - Gloom.esp
+ TAG: {{BASH: Graphics}}
+WWF - Uniques.esp
+ TAG: {{BASH: Graphics}}
+WWF - Weakest.esp
+ TAG: {{BASH: Graphics}}
 Wyverex's - Runes.esp
  TAG: {{BASH: Invent, Relev}}
 Zombie Replacer_en.esp
@@ -1008,6 +1020,8 @@ MODAssassinsCreed2_Revisited.esp
  IFCHECKSUM("MODAssassinsCreed2_Revisited.esp",AB73F59D) DIRTY: 3 ITM, 6 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 ArmorOfTheWhiteFox.esp
  TAG: {{BASH: Invent}}
+Aspiria_EV.esp
+ IFCHECKSUM("Aspiria_EV.esp",30904F56) DIRTY: 0 ITM, 16 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 AyleidGlass.esp
  TAG: {{BASH: Graphics}}
 ACCCGR SI.esp
@@ -1046,12 +1060,18 @@ Blade Of Woe Replacer.esp
  TAG: {{BASH: Graphics}}
 Blade Of Woe Replacer by Allomerus.esp
  TAG: {{BASH: Graphics}}
+BladeofWoeReplacer9Tongues.esp
+ TAG: {{BASH: Graphics}}
 Blood Glass Armor.esp
  TAG: {{BASH: Graphics}}
 Blood Glass Weapons.esp
  TAG: {{BASH: Graphics}}
+Bloodworm_Helm_Hornless.esp
+ TAG: {{BASH: Graphics}}
 Bloodworm_Helm_Replacer.esp
  TAG: {{BASH: Graphics}}
+BisPainBringer.esp
+ IFCHECKSUM("BisPainBringer.esp",6401529A) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 BladeofWoe.esp
  TAG: {{BASH: Graphics}}
 javbs_mod.esp
@@ -1062,6 +1082,8 @@ Brigand's Gear.esp
  TAG: {{BASH: Invent}}
 BrivasArmor.esp
  IFCHECKSUM("BrivasArmor.esp",5B43D642) DIRTY: 11 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+CB Gothic Mistress.esp
+ IFCHECKSUM("CB Gothic Mistress.esp",64F42FD6) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 CG - Necessity Pack.esp
  TAG: {{BASH: Actors.AIData, Invent}}
 ClothGloves.esp
@@ -1080,6 +1102,8 @@ CV - Kilij.esp
  IFCHECKSUM("CV - Kilij.esp",C4E017B) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Daedric Healer Robes.esp
  TAG: {{BASH: Invent}}
+dan_HGEC-EcupTattooArmor.esp
+ IFCHECKSUM("dan_HGEC-EcupTattooArmor.esp",F34115D4) DIRTY: 2 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 daedric sky armor.esp
  TAG: {{BASH: Invent}}
 DamascusGlamdring.esp
@@ -1093,7 +1117,7 @@ Darkgreen Glass Armour.esp
 replace_glass.esp
  TAG: {{BASH: Graphics}}
 DarkIllusionArmor.esp
- IFCHECKSUM("DarkIllusionArmor.esp",F4353E26) DIRTY: 11 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("DarkIllusionArmor.esp",F4E53E26) DIRTY: 11 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Dark Katana.esp
  TAG: {{BASH: Invent}}
 DarkLeatherArmor.esp
@@ -1101,10 +1125,14 @@ DarkLeatherArmor.esp
  IFCHECKSUM("DarkLeatherArmor.esp",F67F213E) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Dark Mithril Armour.esp
  TAG: {{BASH: Invent}}
+DFSLChina.esp
+ IFCHECKSUM("DFSLChina.esp",E2CC52D8) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Dress WBBW DMRA+.esp
  TAG: {{BASH: Invent}}
 dwr.esp
  TAG: {{BASH: Invent}}
+Deceiver's Armour.esp
+ IFCHECKSUM("Deceiver's Armour.esp",AD8DF1C2) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 dragon weapons.esp
  TAG: {{BASH: Invent}}
 doofdillas_potions_recolored_unsorted_v0_2_1.esp
@@ -1131,9 +1159,13 @@ FB_DC_Mega_Pack_OMOD.esp
  TAG: {{BASH: Invent}}
 Female Helmet Replacer.esp
  TAG: {{BASH: Graphics}}
+Female Helmet Replacer_KotN.esp
+ TAG: {{BASH: Graphics}}
 Fighters Guild Scalemail Full.esp
  TAG: {{BASH: Invent}}
 FineWeapons.esp
+ TAG: {{BASH: Graphics}}
+FlameGlassEquipment.esp
  TAG: {{BASH: Graphics}}
 FLY Armor and Clothing - Non-replacers.esp
  IFCHECKSUM("FLY Armor and Clothing - Non-replacers.esp",B0FDF6F) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -1155,6 +1187,8 @@ HaroK Arrow Forge Revisited.esp
  TAG: {{BASH: Invent}}
 Hemingweys NPC Capes.esp
  TAG: {{BASH: Invent}}
+Hentai Compilation.esp
+ IFCHECKSUM("Hentai Compilation.esp",204D7D47) DIRTY: 7 ITM, 4 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Heretic Robe Replacer.esp
  TAG: {{BASH: Graphics}}
 HiddenSkulls.esp
@@ -1178,10 +1212,14 @@ Jos3006's Japenese Weapons.esp
  IFCHECKSUM("Jos3006's Japenese Weapons.esp",270422C2) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Knight of Skeleton.esp
  IFCHECKSUM("Knight of Skeleton.esp",79E857E0) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Kurese Recolours.esp
+ IFCHECKSUM("Kurese Recolours.esp",4355DABA) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Kusanagi.esp
  TAG: {{BASH: Invent}
 Lady Dark.esp
  IFCHECKSUM("Lady Dark.esp",A18D358B) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+LadyDeath.esp
+ IFCHECKSUM("LadyDeath.esp",0BAC5713) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Lady Dress.esp
  IFCHECKSUM("Lady Dress.esp",25EAFCB1) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Lady INDI.esp
@@ -1234,6 +1272,8 @@ MODArnTemplar.esp
  IFCHECKSUM("MODArnTemplar.esp",958A7C) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Morrigan Swords Axes and Shield by Jojjo v1_1.esp
  IFCHECKSUM("Morrigan Swords Axes and Shield by Jojjo v1_1.esp",AA6DD529) DIRTY: 0 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Midnight Gymnastics.esp
+ IFCHECKSUM("Midnight Gymnastics.esp",8BCA1742) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 mnp Nighteye Goggles.esp
  TAG: {{BASH: Invent}}
 MotoDualGoldbrandEbony.esp
@@ -1255,6 +1295,8 @@ New Frostmourne Sword by Jojjo v1_0.esp
  IFCHECKSUM("New Frostmourne Sword by Jojjo v1_0.esp",770A8BD4) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IFCHECKSUM("New Frostmourne Sword by Jojjo v1_0.esp",E4C84842) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IFCHECKSUM("New Frostmourne Sword by Jojjo v1_0.esp",AF56FD5C) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+NexonsArmoryENG.esp
+ IFCHECKSUM("NexonsArmoryENG.esp",6D03CCDD) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Nicoroshi Creations DW Light.esp
  IFCHECKSUM("Nicoroshi Creations DW Light.esp",3F5B9AB5) DIRTY: 5 ITM, 135 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Nicoroshi Creations DW heavy.esp
@@ -1285,6 +1327,8 @@ Retma Dresses.esp
  IFCHECKSUM("Retma Dresses.esp",2DF18C43) DIRTY: 2 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Robe Replacer2.esp
  TAG: {{BASH: Graphics, Invent}}
+royal garb.esp
+ TAG: {{BASH: Graphics}}
 Royal Shields.esp
  TAG: {{BASH: Invent}}
 Royal Glass.esp
@@ -1299,6 +1343,8 @@ Santa Babe.esp
  IFCHECKSUM("Santa Babe.esp",1006B9C1) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Sauron_Armor_Chest.esp
  IFCHECKSUM("Sauron_Armor_Chest.esp",F496AE96) DIRTY: 5 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+SDHeartbreaker.esp
+ IFCHECKSUM("SDHeartbreaker.esp",F46A4DFA) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 SentientWeapon.esp
  IFCHECKSUM("SentientWeapon.esp",A4E3D11B) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IFCHECKSUM("SentientWeapon.esp",C078A0F2) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -1315,6 +1361,21 @@ SK_Berserk_v0.6.esp
  IFCHECKSUM("SK_Berserk_v0.6.esp",FC1D6B7F) DIRTY: 15 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Slof's Giger Armour.esp
  IFCHECKSUM("Slof's Giger Armour.esp",8B6D4ABC) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+SnowySignatureOutfit.esp
+ IFCHECKSUM("SnowySignatureOutfit.esp",20498F08) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("SnowySignatureOutfit.esp",7E4799B7) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Spell Breaker Replacer.esp
+ TAG: {{BASH: Graphics}}
+Spellbreaker Replacer With Tweak With Reflection.esp
+ TAG: {{BASH: Graphics, Stats}}
+ IFCHECKSUM("Spellbreaker Replacer With Tweak With Reflection.esp",6366D263) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Spellbreaker Replacer With Tweak No Reflection.esp
+ TAG: {{BASH: Graphics, Stats}}
+ IFCHECKSUM("Spellbreaker Replacer With Tweak No Reflection.esp",6366D263) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Spellbreaker Replacer No Tweak With Reflection.esp
+ TAG: {{BASH: Graphics}}
+Spellbreaker Replacer No Tweak No Reflection.esp
+ TAG: {{BASH: Graphics}}
 spartanspears.esp
  TAG: {{BASH: Invent}}
 Shaun's Weapon Replacers.esp
@@ -1325,6 +1386,11 @@ sting.esp
  TAG: {{BASH: Invent}} Not tested.
 strotisNewFood.esp
  IFCHECKSUM("strotisNewFood.esp",833600D6) DIRTY: 31 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Silverlight Armor by Jojjo.esp
+ IFCHECKSUM("Silverlight Armor by Jojjo.esp",DF6CAF40) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("Silverlight Armor by Jojjo.esp",E3B2429F) DIRTY: 8 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+SwordDancer.esp
+ IFCHECKSUM("SwordDancer.esp",E5EF8132) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 talon.esp
  TAG: {{BASH: Invent}}
 tda_Armoury.esp
@@ -1504,6 +1570,9 @@ Dragon Princess.esp
  IFCHECKSUM("Dragon Princess.esp",DC820EA9) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Fairy Wings Darkness.esp
  TAG: {{BASH: Invent}}
+GoddessArmor_Exnem.esp
+ IFCHECKSUM("GoddessArmor_Exnem.esp",FD45C9B9) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("GoddessArmor_Exnem.esp",8568D411) DIRTY: 5 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 HGEC_AmazonArmor.esp
  TAG: {{BASH: Graphics}}
 HGEC Glass Replacement.esp
@@ -1514,6 +1583,8 @@ Imperial Armor Replace.esp
  TAG: {{BASH: Graphics}}
 Imperial_Palace_Armor-2474.esp
  TAG: {{BASH: Graphics}}
+IndigoArmor.esp
+ IFCHECKSUM("IndigoArmor.esp",FED76787) DIRTY: 2 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Lady Style.esp
  IFCHECKSUM("Lady Style.esp",03AD9166) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 LC-Compilation-Exnem.esp
@@ -1528,12 +1599,16 @@ MW  Dremora Armor.esp
  TAG: {{BASH: Graphics}}
 New Exnem Compatible Armors.esp
  TAG: {{BASH: Graphics, NoMerge}} if using overhaul mods.
+R18PN - Lingeries.esp
+ IFCHECKSUM("R18PN - Lingeries.esp",C8F5D0FD) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Roberts Armamentium female.esp
  TAG: {{BASH: Graphics, NoMerge}}
 Sack of Pants.esp
  TAG: {{BASH: Graphics}}
 Sack of PantsRU.esp
  TAG: {{BASH: Graphics}}
+Sexy Ghost Armor.esp
+ IFCHECKSUM("Sexy Ghost Armor.esp",21B8DA71) DIRTY: 2 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Slof's Brighter Arena Raiments.esp
  TAG: {{BASH: Graphics}}
 StockClothingArmorBBBHGEC_Standard_ECupLBotPPN.esp
@@ -1573,10 +1648,17 @@ UFF & RM Gold and Silver Daedric Armor.esp
  IFCHECKSUM("UFF & RM Gold and Silver Daedric Armor.esp",9DFB019) DIRTY: 10 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 YAARM_Steel.esp
  TAG: {{BASH: Graphics, NoMerge}}
+Zombie Slayer Armor.esp
+ IFCHECKSUM("Zombie Slayer Armor.esp",ABA4972B) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Dark_Mistress.esp
+ IFCHECKSUM("Dark_Mistress.esp",86F22D28) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("Dark_Mistress.esp",C1861491) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 a4sFlamingNightmare.esp
  TAG: {{BASH: Graphics, Scripts}}
 a4sFlamingNightmare3.esp
  TAG: {{BASH: Inventory, Graphics, Scripts}}
+MigHorseArmor.esp
+ IFCHECKSUM("MigHorseArmor.esp",1C8F1C26) DIRTY: 0 ITM, 5 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Slof's Horses Base.esp
  TAG: {{BASH: Graphics}}
  IFCHECKSUM("Slof's Horses Base.esp",66C78539) DIRTY: 18 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -1634,6 +1716,8 @@ Shadow Steed.esp
  IFCHECKSUM("Shadow Steed.esp",EDDAB6DB) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 TJ_HorseNames.esp
  TAG: May need {{BASH: Names}} . Untested.
+Imperial Horse Armor.esp
+ TAG: {{BASH: Graphics}}
 Mounted_Spellcasting.esp
  IFCHECKSUM("Mounted_Spellcasting.esp",D60BCB81) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 NV Imperial Guard Horse Armour.esp
@@ -1658,6 +1742,8 @@ SIRMS.esp
  TAG: {{BASH: Invent, Names}}
 Ranokoas Organized Potions.esp
  TAG: {{BASH: Names, Deactivate}} If not using Wrye Bash load with overrides but then incompatible with most overhauls etc.
+Potion Sorter-2081.esp
+ TAG: {{BASH, Names}}
 DLCThievesDen.esp
  TAG: {{BASH: C.Name, C.Light, Actors.ACBS, Actors.AIPackages, Actors.Stats}}
  IFCHECKSUM("DLCThievesDen.esp",05DB8CCC)||IFCHECKSUM("DLCThievesDen.esp",7BF882E1) DIRTY: 5 ITM, 135 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -1861,6 +1947,8 @@ OOO 1.32-Cobl.esp
  IFCHECKSUM("OOO 1.32-Cobl.esp",10E32F6B) DIRTY: 9 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 FCOM_Cobl.esp
  TAG: {{BASH: Delev, Relev}}
+Harvest[Containers] - Vanilla.esp
+ IFCHECKSUM("Harvest[Containers] - Vanilla.esp",D7E2759E) DIRTY: 19 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 MTCDirtierBandits.esp
  TAG: {{BASH: Invent}}
  IFCHECKSUM("MTCDirtierBandits.esp",2AB190D0) DIRTY: 0 ITM, 10 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -2267,6 +2355,8 @@ Fran's Ore Refiner.esp
  IFCHECKSUM("Fran's Ore Refiner.esp",ABE6443D) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 GrayFoxOutfit.esp
  TAG: {{BASH: Invent}}
+ IFCHECKSUM("GrayFoxOutfit.esp",25B1445D) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("GrayFoxOutfit.esp",0224F122) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Daggerfall NPCs.esp
  TAG: {{BASH: Delev}} - not yet tested.
 IABaneOils Wimpy.esp
@@ -2317,6 +2407,9 @@ Trade and Commerce.esp
  IFCHECKSUM("Trade and Commerce.esp",955A7549)||IFCHECKSUM("Trade and Commerce.esp",111317D8) DIRTY: 0 ITM, 18 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 001_LM_ElvenGardenRetreat.esp
  TAG: {{BASH: Invent}}
+0WeynonPrioryAlive.esp
+ TAG: {{BASH: Graphics}}
+ IFCHECKSUM("0WeynonPrioryAlive.esp",420F63BF) DIRTY: 8 ITM, 86 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 300 Regal Imperial City 2.esp
  IFCHECKSUM("300 Regal Imperial City 2.esp",7AC8F55B) DIRTY: 0 ITM, 130 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 300_Artifacts.esp
@@ -2394,6 +2487,8 @@ Auriel's_Retreat Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 AuriCloudRulerAddons.esp
  IFCHECKSUM("AuriCloudRulerAddons.esp",3BCDEE6F) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide". Also contains a wild edit, see special cleaning instructions: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide#AuriCloudRulerAddons.esp_Special_Cleaning_Instructions".
+AWitchTale.esp
+ IFCHECKSUM("AWitchTale.esp",C7F27F01) DIRTY: 4 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 AyleidArrows.esp
  IFCHECKSUM("AyleidArrows.esp",1B13049A) DIRTY: 32 ITM, 77 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 AyleidTemple.esp
@@ -2478,6 +2573,9 @@ cloudcity mod V1.1.esp
  IFCHECKSUM("cloudcity mod V1.1.esp",D89C1AC6) DIRTY: 181 ITM, 50 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 COR-Episode1 Secret of Enourk.esp
  IFCHECKSUM("COR-Episode1 Secret of Enourk.esp",156247AC) DIRTY: 22 ITM, 16 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+CRTRenewed.esp
+ TAG: {{BASH: Invent}}
+ IFCHECKSUM("CRTRenewed.esp",FF523675) DIRTY: 122 ITM, 13 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 CompleteMagePack.esp
  IFCHECKSUM("CompleteMagePack.esp",AE14DF6D) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 CV - Templar Fortress.esp
@@ -2522,6 +2620,8 @@ DSoSFortNocturnaSuppressio.esp
  DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
 Dwarven Mines Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
+DukeCity Vwalk.esp
+ TAG: {{BASH:Actors.Anims, NoMerge}}
 dungeon.esp
  IFCHECKSUM("dungeon.esp",1937E82F) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Dungeons.esp
@@ -2678,6 +2778,8 @@ Lady Stone Villa.esp
 Lady Stone Villa ULCompatable.esp
  IFCHECKSUM("Lady Stone Villa ULCompatable.esp",AEF9E69D) DIRTY: 3 ITM, 1830 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IFCHECKSUM("Lady Stone Villa ULCompatable.esp",5D2B3929) DIRTY: 21 ITM, 1830 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Legacy of Faran.esp
+ IFCHECKSUM("Legacy of Faran.esp",E2D1DB87) DIRTY: 522 ITM, 31 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Legends - Baleful Eye.esp
  IFCHECKSUM("Legends - Baleful Eye.esp",4A2E7217) DIRTY: 15 ITM, 11 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Legion Faction Mod.esp
@@ -2742,6 +2844,8 @@ Your_Personal_Museum_Updated-9300.esp
  IFCHECKSUM("Your_Personal_Museum_Updated-9300.esp",AA358578) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 MvCQuellArkadiensEV.esp
  IFCHECKSUM("MvCQuellArkadiensEV.esp",B9CE0619) DIRTY: 0 ITM, 8 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+mystery of mausoleum.esp
+ IFCHECKSUM("mystery of mausoleum.esp",2A42B949) DIRTY: 32 ITM, 64 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 mystery of mausoleum Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 Mysterious Bear's Ramshackle Armory.esp
@@ -2819,6 +2923,8 @@ Return Of Shadows.esp
  IFCHECKSUM("Return Of Shadows.esp",E29749D7) DIRTY: 5 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Return Of Shadows Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
+Ricks CIP ICTalosPlaza.esp
+ TAG: {{BASH: C.Climate}}
 RomancingAhnassi.esp
  IFCHECKSUM("RomancingAhnassi.esp",91D702AB) DIRTY: 66 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Ruins of Tarnesia.esp
@@ -2842,6 +2948,8 @@ Secrets.esp
  IFCHECKSUM("Secrets.esp",16DFAB8C) DIRTY: 2 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Secrets-UL edition.esp
  IFCHECKSUM("Secrets-UL edition.esp",7FDC6530) DIRTY: 1432 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ShadowRose Manor.esp
+ IFCHECKSUM("ShadowRose Manor.esp",A7EB4436) DIRTY: 47 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 ShadowfangKeep.esp
  IFCHECKSUM("ShadowfangKeep.esp",A970802F) DIRTY: 313 ITM, 2 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Sheogoraths_Accords_of_Madness.esp
@@ -2869,10 +2977,8 @@ Spirit's Edge.esp
  IFCHECKSUM("Spirit's Edge.esp",3987C0D6) DIRTY: 97 ITM, 4 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 sunk ships.esp
  IFCHECKSUM("sunk ships.esp",E238F1EC) DIRTY: 126 ITM, 34 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-SunderedKeep.esp
+IFNOTACTIVE("Better Dungeons.esp") MOD: SunderedKeep.esp
  IFCHECKSUM("SunderedKeep.esp",70719F5B) DIRTY: 50 ITM, 3 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
-SunderedKeep Vwalk.esp
- TAG: {{BASH: Actors.Anims, NoMerge}}
 Sylar_INNMergedCyrodillInnsRevised vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 Sylar_INNMergedCyrodillInnsRevisedV1.1 vwalk.esp
@@ -2951,6 +3057,8 @@ TolawaylAyleidCity_Quest.esp
  IFCHECKSUM("TolawaylAyleidCity_Quest.esp",C5C868BD) DIRTY: 26 ITM, 18 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide". Also deletes a door in the Cheydinhal Castle Private Quarters. 
 Tomb of the Unknown Knight.esp
  IFCHECKSUM("Tomb of the Unknown Knight.esp",52629A3F) DIRTY: 11 ITM, 46 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide".
+Tona's_ModsStore.esp
+ IFCHECKSUM("Tona's_ModsStore.esp",8DD1E120) DIRTY: 0 ITM, 103 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 tq3-Blood-and-Gold.esp
  IFCHECKSUM("tq3-Blood-and-Gold.esp",2153825C) DIRTY: 2 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Trail  South East.esp
@@ -2974,6 +3082,9 @@ TR_Stirk Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge }}
 Stirk_Compatibility_Patch.esp
  IFCHECKSUM("Stirk_Compatibility_Patch.esp",3A9D338B) DIRTY: 0 ITM, 12 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Trashdog's SPB Heavy AB Shop.esp
+ IFCHECKSUM("Trashdog's SPB Heavy AB Shop.esp",93A04A94) DIRTY: 14 ITM, 5 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("Trashdog's SPB Heavy AB Shop.esp",FC0AD4A3) DIRTY: 14 ITM, 5 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 treasure maps v1.esp
  TAG: {{BASH: Invent}}
  IFCHECKSUM("treasure maps v1.esp",C3590CBA) DIRTY: 13 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -2993,6 +3104,8 @@ Treasure Maps Meridias Womb.esp
  IFCHECKSUM("Treasure Maps Meridias Womb.esp",100F394C) DIRTY: 1 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Treasure Maps-Meridias Womb-UL edition.esp
  TAG: {{BASH: Invent}}
+Treasure_Maps_The_Legend_Of_Jauffres_Gold.esp
+ IFCHECKSUM("Treasure_Maps_The_Legend_Of_Jauffres_Gold.esp",9BEABF59) DIRTY: 11 ITM, 1 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide". Also see special cleaning instructions: "http://cs.elderscrolls.com/index.php/TES4Edit_Cleaning_Guide#Treasure_Maps_The_Legend_Of_Jauffres_Gold.esp_Special_Cleaning_Instructions"
 Treasure Maps Revenge Of The Nords.esp
  IFCHECKSUM("Treasure Maps Revenge Of The Nords.esp",41E287B2) DIRTY: 3 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Treasure Maps-Revenge of the Nords-UL edition.esp
@@ -3320,7 +3433,7 @@ Gaelendryl.esp
 Enhanced Daedric Invasion.esp
  IFCHECKSUM("Enhanced Daedric Invasion.esp",D34D61BC) DIRTY: 126 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 ElsweyrAnequina.esp
- IFCHECKSUM("ElsweyrAnequina.esp",832BF961)||IFCHECKSUM("ElsweyrAnequina.esp",3EE060AB) DIRTY: 218 ITM, 1044 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+ IFCHECKSUM("ElsweyrAnequina.esp",832BF961)||IFCHECKSUM("ElsweyrAnequina.esp",3EE060AB)||IFCHECKSUM("ElsweyrAnequina.esp",54674372) DIRTY: 218 ITM, 1044 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 ElsweyrAnequina DV.esp
  IFCHECKSUM("ElsweyrAnequina DV.esp",85B9199D) DIRTY: 218 ITM, 1044 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IFCHECKSUM("ElsweyrAnequina DV.esp",51A6A4D3) DIRTY: 218 ITM, 1044 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
@@ -3467,6 +3580,8 @@ Feldscar Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
 Gottshaw Village Vwalk.esp
  TAG: {{BASH: Actors.Anims, NoMerge}}
+HackdirtAlive.esp
+ IFCHECKSUM("HackdirtAlive.esp",BA4902D9) DIRTY: 12 ITM, 4 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Pinevale.esp
  IFCHECKSUM("Pinevale.esp",A2B61120) DIRTY: 55 ITM, 347 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 PTMudwater.esp
@@ -3790,6 +3905,8 @@ Better dungeons.esp
  TAG: {{BASH: C.Light, C.Water}}
  IFCHECKSUM("Better dungeons.esp",4908CB39) DIRTY: 43 ITM, 2842 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
  IFCHECKSUM("Better dungeons.esp",ADC761D9) DIRTY: 68 ITM, 4164 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+SunderedKeep Vwalk.esp
+ TAG: {{BASH: Actors.Anims, NoMerge}}
 Better Loot v1.0.esp
  TAG: {{BASH: Delev}}
 Better Potions and Poisons.esp
@@ -3882,7 +3999,10 @@ Ghost_better skulls.esp
 GuilesScrollRenamer.esp
  TAG: {{BASH: Names}}
 Goblin Tribal Shields.esp
+ TAG: {{BASH: Invent}}
  IFCHECKSUM("Goblin Tribal Shields.esp",84D18F3C) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+GodStatues.esp
+ IFCHECKSUM("GodStatues.esp",B00847E1) DIRTY: 53 ITM, 30 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 GodStatues KOTN Edition.esp
  IFCHECKSUM("GodStatues KOTN Edition.esp",78810F96) DIRTY: 35 ITM, 30 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Gold Change II.esp
@@ -4010,6 +4130,7 @@ SecretsoftheAyleidsClosure.esp
 Secure Guild Chest.esp
  IFCHECKSUM("Secure Guild Chest.esp",9FE1ED7F) DIRTY: 9 ITM, 13 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Vtoy.esp
+ TAG: {{BASH: Hair, Eyes}}
  IFCHECKSUM("Vtoy.esp",E80F82B8) DIRTY: 314 ITM, 4 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Lovers_NA.esp
  TAG: {{BASH: Hair, Eyes}}
@@ -4444,6 +4565,8 @@ Cernasite - DragonEyes.esp
  TAG: {{BASH: Eyes}}
 Cernasite - DragonEyes - GE.esp
  TAG: {{BASH: Eyes}}
+Cernasite - OracleEyes.esp
+ TAG: {{BASH: Eyes}}
 JCPeepers.esp
  TAG: {{BASH: Eyes}}
 Koldorns Eye Mod.esp
@@ -4518,6 +4641,8 @@ CT-Argonian Headstyles-MM.esp
  TAG: {{BASH: Graphics, Hair, Eyes}}
 CT-Argonian Headstyles-EE+MM.esp
  TAG: {{BASH: Graphics, Hair, Eyes}}
+Lyre's Beautiful Faces Compilation.esp
+ TAG: {{BASH: Graphics, Hair, Eyes}}
 MD_Natural_Faces_DV.esp
  TAG: {{BASH: Graphics, Hair, Eyes}}
 King_O_POPver2.esp
@@ -4556,6 +4681,8 @@ Ayleid Arcane Archer.esp
  IFCHECKSUM("Ayleid Arcane Archer.esp",6F9705F8) DIRTY: 4 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 Blood Elves.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
+AmethystLRCoolsimsforNPCs.esp
+ TAG: {{BASH: Hair}}
 Coolsims Hair for Rens.esp
  TAG: {{BASH: Hair}}
 Dark Seducer Race.esp
@@ -5104,6 +5231,8 @@ AmidalaSaramHair.esp
  TAG: {{BASH: Hair, Eyes}}
 AsharasCMPartners.esp
  TAG: {{BASH: Hair, Eyes}}
+AsharasCMPartnersSV.esp
+ TAG: {{BASH: Hair, Eyes}}
 High_Imperial_Trio.esp
  TAG: {{BASH: Hair, Eyes}}
 kgt_Aida.esp
@@ -5154,7 +5283,11 @@ Siliane.esp
  TAG: {{BASH: Graphics}}
 1em_Vilja_Bruse_as_Slofs_horse_by_Xtudo.esp
  TAG: {{BASH: Graphics}}
+1em_Vilja_Bruse_Pony.esp
+ TAG: {{BASH: Graphics}}
 1em_Vilja_corean14.esp
+ TAG: {{BASH: Hair}}
+1em_Vilja_babehair02.esp
  TAG: {{BASH: Hair}}
 1em_Vilja_babehair03.esp
  TAG: {{BASH: Hair}}
@@ -5385,6 +5518,8 @@ khajiittextfix.esp
  TAG: {{BASH: Body-F, Body-Size-F}}
 Mart's Monster Mod - Resized Races.esp
  TAG: {{BASH: Body-Size-M, Body-Size-F, R.Relations}}
+Martigen's Monster Mod - Resized Races.esp
+ TAG: {{BASH: Body-Size-M, Body-Size-F, R.Relations}}
 Bigger_Dremora.esp
  TAG: {{BASH: Body-Size-M, Body-Size-F}}
 Bigger_Dremora-2369.esp
@@ -5482,6 +5617,8 @@ bgMagicEVAddEnVar.esp
 bgMagicDVAddEnVar.esp
  TAG: {{BASH: Relev}}
  DIRTY: Do not clean. "Dirty" edits are intentional and required for the mod to function.
+bgMagicEVPaperChase.esp
+ IFCHECKSUM("bgMagicEVPaperChase.esp",6DC9FA83) DIRTY: 19 ITM, 0 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
 LoversCreature_SexualOrgans_LAME.esp
  TAG: {{BASH: Graphics, NoMerge}}
 cidnothump.esp
@@ -5603,6 +5740,8 @@ Better Cities - Open Better Cities.esp
 Cyrodiil Rebuild.esp
  TAG: {{BASH: Actors.ACBS, Actors.AIPackages, Invent, Relations}}
  IFCHECKSUM("Cyrodiil Rebuild.esp",A3178EEA) DIRTY: 128 ITM, 257 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide"
+Cyrodiil Rebuild II.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIPackages, Invent, Relations}}
 ROM Patch - Better Cities.esp
  TAG: {{BASH: Stats}}
 HTSCl_base.esp
