@@ -18536,7 +18536,7 @@ class CreateNewProject(wx.Dialog):
             tempProject.join(u'Docs').makedirs()
         if self.checkScreenshot.IsChecked():
             #Copy the dummy default 'Screenshot' into the New Project
-            extrasDirs.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
+            extrasDir.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
 
         # Move into the target location
         try:
