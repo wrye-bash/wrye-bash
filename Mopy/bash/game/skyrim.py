@@ -15429,7 +15429,8 @@ GmstTweaks = [
 
 #--Patchers available when building a Bashed Patch
 patchers = (
-    u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker'
+    u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
+    u'AssortedTweaker'
     )
 
 # For ListsMerger
@@ -16432,14 +16433,14 @@ class MelBipedObjectData(MelStruct):
             (31, 'fx01'),
         ))
 
-    ## Legacy Flags, not needed anymore (For BODT subrecords)
-    #OtherFlags = bolt.Flags(0L,bolt.Flags.getNames(
-    #        (0, 'modulates_voice'), #{>>> From ARMA <<<}
-    #        (1, 'unknown_2'),
-    #        (2, 'unknown_3'),
-    #        (3, 'unknown_4'),
-    #        (4, 'non_playable'), #{>>> From ARMO <<<}
-    #    ))
+    ## Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
+    LegacyFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'modulates_voice'), #{>>> From ARMA <<<}
+            (1, 'unknown_2'),
+            (2, 'unknown_3'),
+            (3, 'unknown_4'),
+            (4, 'non_playable'), #{>>> From ARMO <<<}
+        ))
 
     ArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
         (0, 'light_armor'),
@@ -16466,12 +16467,14 @@ class MelBipedObjectData(MelStruct):
                 raise ModSizeError(ins.inName,readId,12,size,True)
             else:
                 bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
-            # legacyData is discarded
+            # legacyData is discarded except for non-playable status
             setter = record.__setattr__
             setter('bipedFlags',MelBipedObjectData.BipedFlags(bipedFlags))
+            legacyFlags = MelBipedObjectData.LegacyFlags(legacyData)
+            record.flags1[2] = legacyFlags[4]
             setter('armorFlags',MelBipedObjectData.ArmorTypeFlags(armorFlags))
         else:
-            # BOD2 - new style, MeStruct can handle it
+            # BOD2 - new style, MelStruct can handle it
             MelStruct.loadData(self,record,ins,type,size,readId)
 
 #------------------------------------------------------------------------------
