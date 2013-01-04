@@ -20892,12 +20892,12 @@ class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
                 if record.armorFlags.clothing: #true 'clothing' records only
                     full = record.full
                     if not full: continue
-                    if record.script: continue
+                    #if record.scripts: continue
                     if reSkip.search(full): continue #probably truly shouldn't be playable
-                record.flags1[2] = False
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                    record.flags1[2] = False
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(u'=== '+_(u'Playable Clothes'))
         log(u'* '+_(u'Clothes set as playable: %d') % sum(count.values()))
@@ -20945,12 +20945,12 @@ class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
                 if not record.armorFlags.clothing: #true 'armour' records only
                     full = record.full
                     if not full: continue
-                    if record.script: continue
+                    #if record.scripts: continue
                     if reSkip.search(full): continue #probably truly shouldn't be playable
-                record.flags1[2] = False
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
+                    record.flags1[2] = False
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(u'=== '+_(u'Playable Armor'))
         log(u'* '+_(u'Armors set as playable: %d') % sum(count.values()))
