@@ -1576,7 +1576,7 @@ class Flags(object):
         object.__setattr__(self,'_names',names or {})
 
     def __call__(self,newValue=None):
-        """Retuns a clone of self, optionally with new value."""
+        """Returns a clone of self, optionally with new value."""
         if newValue is not None:
             return Flags(int(newValue) | 0L,self._names)
         else:
