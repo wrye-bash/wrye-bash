@@ -9291,10 +9291,11 @@ class File_Open(Link):
             dir.join(file).start()
 #------------------------------------------------------------------------------
 class List_Column(Link):
-    def __init__(self,columnsKey,colName,enable=True):
+    def __init__(self,columnsKey,allColumnsKey,colName,enable=True):
         Link.__init__(self)
         self.colName = colName
         self.columnsKey = columnsKey
+        self.allColumnsKey = allColumnsKey
         self.enable = enable
 
     def AppendToMenu(self,menu,window,data):
@@ -9313,7 +9314,7 @@ class List_Column(Link):
             settings.setChanged(self.columnsKey)
         else:
             #--Ensure the same order each time
-            settings[self.columnsKey] = [x for x in settingDefaults[self.columnsKey] if x in settings[self.columnsKey] or x == self.colName]
+            settings[self.columnsKey] = [x for x in settingDefaults[self.allColumnsKey] if x in settings[self.columnsKey] or x == self.colName]
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
@@ -9333,7 +9334,7 @@ class List_Columns(Link):
         menu.AppendMenu(self.id,_(u"Columns"),subMenu)
         for col in settingDefaults[self.allColumnsKey]:
             enable = col not in self.persistant
-            List_Column(self.columnsKey,col,enable).AppendToMenu(subMenu,window,data)
+            List_Column(self.columnsKey,self.allColumnsKey,col,enable).AppendToMenu(subMenu,window,data)
 
 #------------------------------------------------------------------------------
 class Installers_AddMarker(Link):
