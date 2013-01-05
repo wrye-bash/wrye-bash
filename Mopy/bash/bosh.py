@@ -3091,6 +3091,7 @@ class IniFile(object):
     reDeletedSetting = re.compile(ur';-\s*(\w.*?)\s*(;.*$|=.*$|$)',re.U)
     reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
     reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
+    encoding = 'utf-8'
 
     def __init__(self,path,defaultSection=u'General'):
         """Initialize."""
@@ -3133,6 +3134,10 @@ class IniFile(object):
         deleted_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
+        if tweakPath != self.path:
+            encoding = 'utf-8'
+        else:
+            encoding = self.encoding
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -3146,6 +3151,10 @@ class IniFile(object):
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
+                try:
+                    line = unicode(line,encoding)
+                except UnicodeDecodeError:
+                    line = unicode(line,'cp1252')
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -3180,6 +3189,10 @@ class IniFile(object):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
+        if tweakPath != self.path:
+            encoding = 'utf-8'
+        else:
+            encoding = self.encoding
         iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True,True)
         reComment = self.reComment
         reSection = self.reSection
@@ -3189,6 +3202,10 @@ class IniFile(object):
         with tweakPath.open('r') as iniFile:
             section = LString(self.defaultSection)
             for i,line in enumerate(iniFile.readlines()):
+                try:
+                    line = unicode(line,encoding)
+                except UnicodeDecodeError:
+                    line = unicode(line,'cp1252')
                 maDeletedSetting = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -3255,9 +3272,13 @@ class IniFile(object):
         #--Read init, write temp
         section = sectionSettings = None
         with self.path.open('r') as iniFile:
-            with self.path.temp.open('w') as tmpFile:
+            with self.path.temp.open('w',encoding=self.encoding) as tmpFile:
                 tmpFileWrite = tmpFile.write
                 for line in iniFile:
+                    try:
+                        line = unicode(line,self.encoding)
+                    except UnicodeDecodeError:
+                        line = unicode(line,'cp1252')
                     maDeleted = reDeleted.match(line)
                     stripped = reComment.sub(u'',line).strip()
                     maSection = reSection.match(stripped)
@@ -3321,6 +3342,10 @@ class IniFile(object):
             return
         if not tweakPath.exists() or not tweakPath.isfile():
             return
+        if tweakPath != self.path:
+            encoding = 'utf-8'
+        else:
+            encoding = self.encoding
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
         reSection = self.reSection
@@ -3331,6 +3356,10 @@ class IniFile(object):
             deleted_settings = {}
             section = sectionSettings = None
             for line in tweakFile:
+                try:
+                    line = unicode(line,encoding)
+                except UnicodeDecodeError:
+                    line = unicode(line,'cp1252')
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -3602,6 +3631,7 @@ class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = set((u'archiveinvalidationinvalidated!.bsa',
                           u'..\\obmm\\bsaredirection.bsa'))
+    encoding = 'cp1252'
 
     def __init__(self,name):
         """Initialize."""
@@ -3656,7 +3686,7 @@ class OblivionIni(IniFile):
         if doRedirect == self.getBsaRedirection():
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs['mopy'].join(u'templates',bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs['templates'].join(bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 balt.shellCopy(source,aiBsa,askOverwrite=False)
@@ -3789,7 +3819,7 @@ class OmodFile:
                         output.write(input.readNetString())
             progress(0.48, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nreadme.rtf')
             if extractDir.join(u'readme').exists():
-                with bolt.BinaryFile(tempDir.join(u'readme').s) as input:
+                with bolt.BinaryFile(extractDir.join(u'readme').s) as input:
                     with ocdDir.join(u'readme.rtf').open('w') as output:
                         output.write(input.readNetString())
             progress(0.49, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscreenshot')
@@ -4009,7 +4039,9 @@ class Plugins:
                 raise bolt.BoltError(u'Cannot load plugins before masters.')
         # Now reset the mtimes cache or LockLO feature will revert intentional changes.
         for name in modInfos.mtimes:
-            modInfos.mtimes[name] = modInfos[name].getPath().mtime
+            path = modInfos[name].getPath()
+            if path.exists():
+                modInfos.mtimes[name] = modInfos[name].getPath().mtime
         if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
@@ -4955,18 +4987,16 @@ class FileInfos(DataDict):
         newNames = set()
         added = set()
         updated = set()
-        if not self.dir.exists():
-            # Watched folder either got deleted, or never existed
-            names = []
+        if self.dirdef:
+            # Default items
+            names = {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
         else:
-            #balt.shellMakeDirs(self.dir)
-            #self.dir.makedirs()
-            #--Loop over files in directory
-            names = [ x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x) ]
-            if self.dirdef:
-                names = { x for x in names } | {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
-                names = [ x for x in names ]
-            names.sort(key=lambda x: x.cext == u'.ghost')
+            names = set()
+        if self.dir.exists():
+            # Normal folder items
+            names |= {x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)}
+        names = list(names)
+        names.sort(key=lambda x: x.cext == u'.ghost')
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
@@ -6156,6 +6186,14 @@ class SaveInfos(FileInfos):
         baseSaves = dirs['saveBase'].join(u'Saves')
         if baseSaves.exists():
             localSaveDirs = [x for x in baseSaves.list() if (x != u'Bash' and baseSaves.join(x).isdir())]
+            # Filter out non-encodable names
+            bad = []
+            for dir in localSaveDirs:
+                try:
+                    dir.s.encode('cp1252')
+                except UnicodeEncodeError:
+                    bad.append(dir)
+            localSaveDirs = [x for x in localSaveDirs if x not in bad]
         else:
             localSaveDirs = []
         localSaveDirs.sort()
@@ -6184,7 +6222,7 @@ class SaveInfos(FileInfos):
         self.localSave = localSave
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
-                                _encode(localSave))
+                                localSave)
         self.iniMTime = oblivionIni.path.mtime
         bashDir = dirs['saveBase'].join(localSave,u'Bash')
         self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
@@ -7117,14 +7155,14 @@ class ScreensData(DataDict):
         self.data = newData
         return changed
 
-    def delete(self,fileName,noRecycle=False):
+    def delete(self,fileName,askOk=True,dontRecycle=False):
         """Deletes member file."""
         dirJoin = self.dir.join
         if isinstance(fileName,(list,set)):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath,recycle=not noRecycle)
+        deleted = balt.shellDelete(filePath,askOk=askOk,recycle=not dontRecycle)
         if deleted is not None:
             for file in filePath:
                 del self.data[file.tail]
@@ -7981,8 +8019,6 @@ class Installer(object):
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
     #--Temp Files/Dirs
-    tempDir = GPath(u'InstallerTemp')
-    tempList = GPath(u'InstallerTempList.txt')
     def __init__(self,srcArchives=None, data=None, destArchive=None, BCFArchive=None, blockSize=None, progress=None):
         #--Persistent variables are saved in the data tank for normal operations.
         #--persistBCF is read one time from BCF.dat, and then saved in Converters.dat to keep archive extractions to a minimum
@@ -8060,32 +8096,28 @@ class InstallerConverter(object):
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
         try:
-            f = open(destInstaller.tempDir.join(u"BCF.dat").s, 'wb')
-            cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
-            cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
-            result = f.close()
+            result = 0
+            with Installer.getTempDir().join(u'BCF.dat').open('wb') as f:
+                cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
+                cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
+                result = f.close()
+        except Exception as e:
+            raise StateError(u'Error creating BCF.dat:\nError: %s' % e)
         finally:
-            if f: f.close()
             if result:
                 raise StateError(u"Error creating BCF.dat:\nError Code: %s" % result)
-
-    @staticmethod
-    def clearTemp():
-        """Clear temp install directory -- DO NOT SCREW THIS UP!!!"""
-        try:
-            InstallerConverter.tempDir.rmtree(safety=u'Temp')
-        except:
-            InstallerConverter.tempDir.rmtree(safety=u'Temp')
 
     def apply(self,destArchive,crc_installer,progress=None,embedded=0L):
         """Applies the BCF and packages the converted archive"""
         #--Prepare by fully loading the BCF and clearing temp
         self.load(True)
-        self.clearTemp()
-        progress = progress or bolt.Progress()
+        Installer.rmTempDir()
+        tempDir = Installer.newTempDir()
+        progress = progress if progress else bolt.Progress()
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
+        #--Extract BCF
         with self.fullPath.unicodeSafe() as tempPath:
-            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath,self.tempDir.s)
+            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath,tempDir.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = sio(ins)
             #--Error checking
@@ -8096,7 +8128,7 @@ class InstallerConverter(object):
                 if len(errorLine) or regMatch(line):
                     errorLine.append(line)
             result = ins.close()
-        if result:
+        if result or errorLine:
             raise StateError(self.fullPath.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Extract source archives
         lastStep = 0
@@ -8122,12 +8154,16 @@ class InstallerConverter(object):
         #--Move files around and pack them
         try:
             self.arrangeFiles(SubProgress(progress,lastStep,0.7))
-        except bolt.StateError:
+        except bolt.StateError as e:
             self.hasBCF = False
         else:
-            self.pack(self.tempDir.join(u'BCF-Temp'), destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
+            self.pack(Installer.getTempDir(),destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
             #--Lastly, apply the settings.
             #--That is done by the calling code, since it requires an InstallerArchive object to work on
+        finally:
+            try: tempDir.rmtree(safety=tempDir.s)
+            except: pass
+            Installer.rmTempDir()
 
     def applySettings(self,destInstaller):
         """Applies the saved settings to an Installer"""
@@ -8135,13 +8171,14 @@ class InstallerConverter(object):
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
-        destDir = self.tempDir.join(u"BCF-Temp")
+        tempDir = Installer.getTempDir()
+        destDir = Installer.newTempDir()
         progress(0,_(u"Moving files..."))
         progress.setFull(1+len(self.convertedFiles))
         #--Make a copy of dupeCount
         dupes = dict(self.dupeCount.iteritems())
         destJoin = destDir.join
-        tempJoin = self.tempDir.join
+        tempJoin = tempDir.join
 
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
@@ -8167,12 +8204,14 @@ class InstallerConverter(object):
             else:
                 progress(index,_(u'Moving file...')+u'\n'+destFile.stail)
                 srcFile.moveTo(destFile)
+        #--Done with unpacked directory directory
+        tempDir.rmtree(safety=tempDir.s)
 
     def build(self, srcArchives, data, destArchive, BCFArchive, blockSize, progress=None):
         """Builds and packages a BCF"""
-        progress = progress or bolt.Progress()
+        progress = progress if progress else bolt.Progress()
         #--Initialization
-        self.clearTemp()
+        Installer.rmTempDir()
         srcFiles = {}
         destFiles = []
         destInstaller = data[destArchive]
@@ -8216,15 +8255,16 @@ class InstallerConverter(object):
                 lastStep = nextStep
                 nextStep += step
             #--Note all extracted files
-            for crc in os.listdir(self.tempDir.s):
-                fpath = os.path.join(self.tempDir.s,crc)
-                for root, y, files in os.walk(fpath):
+            tempDir = Installer.getTempDir()
+            for crc in tempDir.list():
+                fpath = tempDir.join(crc)
+                for root,y,files in fpath.walk():
                     for file in files:
-                        file = GPath(os.path.join(root,file))
+                        file = root.join(file)
                         archivedFiles[file.crc] = (crc,file.s[len(fpath)+1:])
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
-            self.clearTemp()
+            Installer.rmTempDir()
         #--Make list of destination files
         for fileSizeCrc in destInstaller.fileSizeCrcs:
             fileName = fileSizeCrc[0]
@@ -8262,27 +8302,29 @@ class InstallerConverter(object):
             convertedFileAppend((fileCRC,srcGet(fileCRC),fileName))
             sProgress(index,BCFArchive.s+u'\n'+_(u'Mapping files...')+u'\n'+fileName)
         #--Build the BCF
+        tempDir2 = Installer.newTempDir().join(u'BCF-Missing')
         if len(self.missingFiles):
             #--Unpack missing files
+            Installer.rmTempDir()
             destInstaller.unpackToTemp(destArchive,self.missingFiles,SubProgress(progress,lastStep, lastStep + 0.2))
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing
             #--Work around since moveTo doesn't allow direct moving of a directory into its own subdirectory
-            tempDir2 = GPath(u'BCF-Missing')
-            destInstaller.tempDir.moveTo(tempDir2)
-            tempDir2.moveTo(destInstaller.tempDir.join(u'BCF-Missing'))
+            Installer.getTempDir().moveTo(tempDir2)
+            tempDir2.moveTo(Installer.getTempDir().join(u'BCF-Missing'))
         #--Make the temp dir in case it doesn't exist
-        destInstaller.tempDir.makedirs()
+        tempDir = Installer.getTempDir()
+        tempDir.makedirs()
         self.save(destInstaller)
         #--Pack the BCF
         #--BCF's need to be non-Solid since they have to have BCF.dat extracted and read from during runtime
         self.isSolid = False
-        self.pack(destInstaller.tempDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
+        self.pack(tempDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
         self.isSolid = destInstaller.isSolid
 
     def pack(self,srcFolder,destArchive,outDir,progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
-        progress = progress or bolt.Progress()
+        progress = progress if progress else bolt.Progress()
         #--Used solely for the progress bar
         length = sum([len(files) for x,y,files in os.walk(srcFolder.s)])
         #--Determine settings for 7z
@@ -8305,7 +8347,7 @@ class InstallerConverter(object):
                 solid = u' %s' % inisettings['7zExtraCompressionArguments']
             else: solid += u' %s' % inisettings['7zExtraCompressionArguments']
 
-        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % dirs['mopy'].join(srcFolder).s)
+        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % srcFolder.s)
 
         progress(0,destArchive.s+u'\n'+_(u'Compressing files...'))
         progress.setFull(1+length)
@@ -8326,12 +8368,12 @@ class InstallerConverter(object):
                 progress(index,destArchive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
                 index += 1
         result = ins.close()
-        if result:
+        if result or errorLine:
             outFile.temp.remove()
             raise StateError(destArchive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
         #--Finalize the file, and cleanup
         outFile.untemp()
-        self.clearTemp()
+        Installer.rmTempDir()
 
     def unpack(self,srcInstaller,fileNames,progress=None):
         """Recursive function: completely extracts the source installer to subTempDir.
@@ -8339,9 +8381,11 @@ class InstallerConverter(object):
         Each archive and sub-archive is extracted to its own sub-directory to prevent file thrashing"""
         #--Sanity check
         if not fileNames: raise ArgumentError(u"No files to extract for %s." % srcInstaller.s)
+        tempDir = Installer.getTempDir()
+        tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
-            out = self.tempList.open('w',encoding='utf-8-sig')
+            out = tempList.open('w',encoding='utf-8-sig')
             out.write(u'\n'.join(fileNames))
         finally:
             result = out.close()
@@ -8354,11 +8398,11 @@ class InstallerConverter(object):
             apath = dirs['installers'].join(srcInstaller)
         else:
             apath = srcInstaller
-        subTempDir = GPath('InstallerTemp').join(u"%08X" % installerCRC)
+        subTempDir = tempDir.join(u"%08X" % installerCRC)
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
-        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8' % (exe7z, apath.s, subTempDir.s, self.tempList.s)
+        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8' % (exe7z, apath.s, subTempDir.s, tempList.s)
         #--Extract files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
@@ -8379,14 +8423,14 @@ class InstallerConverter(object):
                 if progress:
                     progress(index,srcInstaller.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
                 if extracted.cext in readExts:
-                    subArchives.append(self.tempDir.join(u'%08X' % installerCRC, extracted.s))
+                    subArchives.append(subTempDir.join(extracted.s))
                 index += 1
         result = ins.close()
-        self.tempList.remove()
+        tempList.remove()
         # Clear ReadOnly flag if set
         cmd = ur'attrib -R "%s\*" /S /D' % (subTempDir.s)
         ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
-        if result:
+        if result or errorLine:
             raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Done
         #--Recursively unpack subArchives
@@ -8476,15 +8520,21 @@ class InstallerArchive(Installer):
             command = u'"%s" l %s' % (exe7z, args)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
             reExtracting = re.compile(ur'^Extracting\s+(.+)',re.U)
-            reError = re.compile(u'^Error:',re.U)
+            reError = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U)
             numFiles = 0
             errorLine = []
             for line in ins:
+                line = unicode(line,'utf8')
                 if len(errorLine) or reError.match(line):
-                    errorLine.append(_unicode(line))
+                    errorLine.append(line.rstrip())
                 # we'll likely get a few extra lines, but that's ok
                 numFiles += 1
-            if ins.close():
+            if ins.close() or errorLine:
+                if len(errorLine) > 10:
+                    if bolt.deprintOn:
+                        for line in errorLine:
+                            print line
+                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
                 raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
             progress = progress or bolt.Progress()
             progress.state = 0
@@ -8496,9 +8546,10 @@ class InstallerArchive(Installer):
             index = 0
             for line in ins:
                 line = unicode(line,'utf8')
+                deprint(line)
                 maExtracting = reExtracting.match(line)
                 if len(errorLine) or reError.match(line):
-                    errorLine.append(line)
+                    errorLine.append(line.rstrip())
                 if maExtracting:
                     extracted.append(maExtracting.group(1).strip())
                     progress(index,archive.s+u'\n'+_(u'Extracting files...')+u'\n'+maExtracting.group(1).strip())
@@ -8508,7 +8559,12 @@ class InstallerArchive(Installer):
             # Clear ReadOnly flag if set
             cmd = ur'attrib -R "%s\*" /S /D' % (self.getTempDir().s)
             ins, err = Popen(cmd, stdout=PIPE, startupinfo=startupinfo).communicate()
-            if result:
+            if result or errorLine:
+                if len(errorLine) > 10:
+                    if bolt.deprintOn:
+                        for line in errorLine:
+                            print line
+                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
                 raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
         #--Done -> don't clean out temp dir, it's going to be used soon
 
@@ -8703,8 +8759,9 @@ class InstallerProject(Installer):
             def timestamps(x):
                 if reModExt.search(x.s):
                     newTime = x.mtime
-                    while newTime in mtimes.values():
+                    while newTime in mtimes:
                         newTime += 1
+                    x.mtime = newTime
                     mtimesAdd(newTime)
         else:
             def timestamps(*args):
@@ -9238,11 +9295,12 @@ class InstallersData(bolt.TankData, DataDict):
             name = GPath(installer.archive)
             progress(i,name.s)
             #--Extract the embedded BCF and move it to the Converters folder
+            Installer.rmTempDir()
             installer.unpackToTemp(name,[installer.hasBCF],progress)
-            bcfFile = GPath(installer.hasBCF)
-            bcfFile = dirs['converters'].join(u'temp-'+bcfFile.stail)
-            installer.tempDir.join(installer.hasBCF).moveTo(bcfFile)
-            installer.clearTemp()
+            srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
+            bcfFile = dirs['converters'].join(u'temp-'+srcBcfFile.stail)
+            srcBcfFile.moveTo(bcfFile)
+            Installer.rmTempDir()
             #--Creat the converter, apply it
             destArchive = destArchives[i]
             converter = InstallerConverter(bcfFile.tail)
@@ -9624,38 +9682,61 @@ class InstallersData(bolt.TankData, DataDict):
                     removes.discard(file)
                 masked |= files
         #--Remove files
-        emptyDirs = set()
         modsDir = dirs['mods']
-        removedPlugins = []
-        removedFiles = []
+        modsDirJoin = modsDir.join
+        removedPlugins = set()
+        removedFiles = set()
+        removedFilesAdd = removedFiles.add
+        removedPluginsAdd = removedPlugins.add
+        emptyDirs = set()
+        emptyDirsAdd = emptyDirs.add
+        emptyDirsClear = emptyDirs.clear
         data_sizeCrcDate_removes = set()
+        data_sizeCrcDate_removesAdd = data_sizeCrcDate_removes.add
+        reModExtSearch = reModExt.search
         #--Construct list of files to delete
         for file in removes:
-            if reModExt.search(file.s):
-                removedPlugins.append(file)
+            if reModExtSearch(file.s):
+                removedPluginsAdd(file)
                 # Line below added to hopefully stop mtime error for ghosted plugins.
-                removedPlugins.append(file+u'.ghost')
-            path = modsDir.join(file)
+                removedPluginsAdd(file+u'.ghost')
+            path = modsDirJoin(file)
             if path.exists():
-                removedFiles.append(path)
+                removedFilesAdd(path)
             if (path+u'.ghost').exists():
-                removedFiles.append(path+u'.ghost')
-            data_sizeCrcDate_removes.add(file)
-            emptyDirs.add(path.head)
-        #--Add in folders that will be empty
-        for emptyDir in emptyDirs:
-            if emptyDir.isdir():
-                items = emptyDir.list()
-                if not items:
-                    removedFiles.append(emptyDir)
-                else:
-                    # Has files in it, if all of them are being removed,
-                    # it's ok
-                    for item in items:
-                        if item not in removedFiles:
-                            break
+                removedFilesAdd(path+u'.ghost')
+            data_sizeCrcDate_removesAdd(file)
+            emptyDirsAdd(path.head)
+        #--Now add in directories
+        while emptyDirs:
+            testDirs = set(emptyDirs)
+            emptyDirsClear()
+            for dir in testDirs:
+                if dir.isdir():
+                    remove = False
+                    items = dir.list()
+                    if not items:
+                        # Already empty, so remove this dir
+                        remove = True
                     else:
-                        removedFiles.append(emptyDir)
+                        # Has files/folders in it
+                        dirJoin = dir.join
+                        for item in items:
+                            if dirJoin(item) not in removedFiles:
+                                # One of the files in it won't be removed,
+                                # don't remove the dir
+                                break
+                        else:
+                            # All items are going to be removed, remove this dir
+                            remove = True
+                    if remove:
+                        # Directory should be removed, pull out all files that are subdirs/files of this one
+                        removedFiles ^= set(x for x in removedFiles if x.cs.startswith(dir.cs))
+                        # Add in this directory
+                        removedFilesAdd(dir)
+                        # Add in this directory's head for testing, if it's not the mods dir
+                        if dir.head != modsDir:
+                            emptyDirsAdd(dir.head)
         #--Do the deletion
         balt.shellDelete(removedFiles,progress.getParent(),False,False)
         #--Update InstallersData
@@ -20770,6 +20851,112 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
+class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
+    """Sets all clothes to playable"""
+    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
+            _(u'Sets all clothing to be playable.'),
+            u'PlayableClothing',
+            (u'1.0',  u'1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('ARMO',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('ARMO',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.ARMO
+        for record in modFile.ARMO.getActiveRecords():
+            if record.flags1[2] and record.armorFlags.clothing:
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        reSkip = self.reSkip
+        for record in patchFile.ARMO.records:
+            if record.flags1[2]: #not playable
+                if record.armorFlags.clothing: #true 'clothing' records only
+                    full = record.full
+                    if not full: continue
+                    #if record.scripts: continue
+                    if reSkip.search(full): continue #probably truly shouldn't be playable
+                    record.flags1[2] = False
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(u'=== '+_(u'Playable Clothes'))
+        log(u'* '+_(u'Clothes set as playable: %d') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+#------------------------------------------------------------------------------
+class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
+    """Sets all clothes to playable"""
+    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"All Armor Playable"),
+            _(u'Sets all armor to be playable.'),
+            u'PlayableArmour',
+            (u'1.0',  u'1.0'),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('ARMO',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('ARMO',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchRecords = patchFile.ARMO
+        for record in modFile.ARMO.getActiveRecords():
+            if record.flags1[2] and not record.armorFlags.clothing:
+                record = record.getTypeCopy(mapper)
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        reSkip = self.reSkip
+        for record in patchFile.ARMO.records:
+            if record.flags1[2]: #not playable
+                if not record.armorFlags.clothing: #true 'armour' records only
+                    full = record.full
+                    if not full: continue
+                    #if record.scripts: continue
+                    if reSkip.search(full): continue #probably truly shouldn't be playable
+                    record.flags1[2] = False
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(u'=== '+_(u'Playable Armor'))
+        log(u'* '+_(u'Armors set as playable: %d') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
@@ -23089,6 +23276,55 @@ class CBash_AssortedTweak_TextlessLSCRs(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class AssortedTweak_Skyrim_Arrows_Playable(MultiTweakItem):
+    """Makes all arrows playable."""
+
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        MultiTweakItem.__init__(self,_(u"Playable Arrows"),
+            _(u'All arrows will be set playable.'),
+            u'PlayableArrows',
+            (u'0',    0),
+            )
+
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('AMMO',)
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('AMMO',)
+
+    def scanModFile(self,modFile,progress,patchFile):
+        """Scans specified mod file to extract info. May add record to patch mod,
+        but won't alter it."""
+        mapper = modFile.getLongMapper()
+        patchBlock = patchFile.AMMO
+        id_records = patchBlock.id_records
+        for record in modFile.AMMO.getActiveRecords():
+            if mapper(record.fid) in id_records: continue
+            if record.flags.nonPlayable:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress,patchFile):
+        """Edits patch file as desired. Will write to log."""
+        count = {}
+        keep = patchFile.getKeeper()
+        for record in patchFile.AMMO.records:
+            if record.flags.nonPlayable:
+                record.flags.nonPlayable = False
+                keep(record.fid)
+                srcMod = record.fid[0]
+                count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(u'=== '+_(u'Playable Arrows'))
+        log(u'* '+_(u'Arrows set to playable: %d') % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -23096,48 +23332,55 @@ class AssortedTweaker(MultiTweaker):
     name = _(u'Tweak Assorted')
     text = _(u"Tweak various records in miscellaneous ways.")
     defaultConfig = {'isEnabled':True}
-    tweaks = sorted([
-        AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
-            _(u"Prevents armor from hiding amulets."),
-            u'armorShowsAmulets',
-            ),
-        AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
-            _(u"Prevents armor from hiding rings."),
-            u'armorShowsRings',
-            ),
-        AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
-            _(u"Prevents Clothing from hiding amulets."),
-            u'ClothingShowsAmulets',
-            ),
-        AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
-            _(u"Prevents Clothing from hiding rings."),
-            u'ClothingShowsRings',
-            ),
-        AssortedTweak_ArmorPlayable(),
-        AssortedTweak_ClothingPlayable(),
-        AssortedTweak_BowReach(),
-        AssortedTweak_ConsistentRings(),
-        AssortedTweak_DarnBooks(),
-        AssortedTweak_FogFix(),
-        AssortedTweak_NoLightFlicker(),
-        AssortedTweak_PotionWeight(),
-        AssortedTweak_PotionWeightMinimum(),
-        AssortedTweak_StaffWeight(),
-        AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
-        AssortedTweak_WindSpeed(),
-        AssortedTweak_UniformGroundcover(),
-        AssortedTweak_HarvestChance(),
-        AssortedTweak_IngredientWeight(),
-        AssortedTweak_ArrowWeight(),
-        AssortedTweak_ScriptEffectSilencer(),
-        AssortedTweak_DefaultIcons(),
-        AssortedTweak_SetSoundAttenuationLevels(),
-        AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
-        AssortedTweak_FactioncrimeGoldMultiplier(),
-        AssortedTweak_LightFadeValueFix(),
-        AssortedTweak_SkyrimStyleWeapons(),
-        AssortedTweak_TextlessLSCRs(),
-        ],key=lambda a: a.label.lower())
+    if bush.game.name == u'Oblivion':
+        tweaks = sorted([
+            AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
+                _(u"Prevents armor from hiding amulets."),
+                u'armorShowsAmulets',
+                ),
+            AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
+                _(u"Prevents armor from hiding rings."),
+                u'armorShowsRings',
+                ),
+            AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
+                _(u"Prevents Clothing from hiding amulets."),
+                u'ClothingShowsAmulets',
+                ),
+            AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
+                _(u"Prevents Clothing from hiding rings."),
+                u'ClothingShowsRings',
+                ),
+            AssortedTweak_ArmorPlayable(),
+            AssortedTweak_ClothingPlayable(),
+            AssortedTweak_BowReach(),
+            AssortedTweak_ConsistentRings(),
+            AssortedTweak_DarnBooks(),
+            AssortedTweak_FogFix(),
+            AssortedTweak_NoLightFlicker(),
+            AssortedTweak_PotionWeight(),
+            AssortedTweak_PotionWeightMinimum(),
+            AssortedTweak_StaffWeight(),
+            AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
+            AssortedTweak_WindSpeed(),
+            AssortedTweak_UniformGroundcover(),
+            AssortedTweak_HarvestChance(),
+            AssortedTweak_IngredientWeight(),
+            AssortedTweak_ArrowWeight(),
+            AssortedTweak_ScriptEffectSilencer(),
+            AssortedTweak_DefaultIcons(),
+            AssortedTweak_SetSoundAttenuationLevels(),
+            AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
+            AssortedTweak_FactioncrimeGoldMultiplier(),
+            AssortedTweak_LightFadeValueFix(),
+            AssortedTweak_SkyrimStyleWeapons(),
+            AssortedTweak_TextlessLSCRs(),
+            ],key=lambda a: a.label.lower())
+    elif bush.game.name == u'Skyrim':
+        tweaks = sorted([
+            AssortedTweak_Skyrim_ArmourPlayable(),
+            AssortedTweak_Skyrim_Arrows_Playable(),
+            AssortedTweak_Skyrim_ClothingPlayable(),
+            ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):

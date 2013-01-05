@@ -24,6 +24,7 @@
 from ctypes import *
 import struct
 import math
+import os
 from os.path import exists, join
 try:
     #See if cint is being used by Wrye Bash
@@ -146,7 +147,13 @@ else: #attempt to force path to CBash dll
 try:
     for path in paths:
         if exists(path):
-            CBash = CDLL(path)
+            # CDLL doesn't play with unicode path strings nicely on windows :(
+            # Use this workaround
+            handle = None
+            if isinstance(path,unicode) and os.name in ('nt','ce'):
+                LoadLibrary = windll.kernel32.LoadLibraryW
+                handle = LoadLibrary(path)
+            CBash = CDLL(path,handle=handle)
             break
     del paths
 except (AttributeError,ImportError,OSError) as error:

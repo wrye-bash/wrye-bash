@@ -1149,7 +1149,9 @@ class Path(object):
         """Temp file path.  If unicodeSafe is True, the returned
         temp file will be a fileName that can be passes through Popen
         (Popen automatically tries to encode the name)"""
-        dirJoin = GPath(tempfile.gettempdir()).join(u'WryeBash_temp').join
+        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
+        baseDir.makedirs()
+        dirJoin = baseDir.join
         if unicodeSafe:
             try:
                 self._s.encode('ascii')
@@ -1574,7 +1576,7 @@ class Flags(object):
         object.__setattr__(self,'_names',names or {})
 
     def __call__(self,newValue=None):
-        """Retuns a clone of self, optionally with new value."""
+        """Returns a clone of self, optionally with new value."""
         if newValue is not None:
             return Flags(int(newValue) | 0L,self._names)
         else:

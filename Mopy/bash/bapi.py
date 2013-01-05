@@ -55,7 +55,13 @@ def Init(path):
         return
 
     try:
-        BAPI = CDLL(path)
+        # CDLL doesn't play with unicode path strings nicely on windows :(
+        # Use this workaround
+        handle = None
+        if isinstance(path,unicode) and os.name in ('nt','ce'):
+            LoadLibrary = windll.kernel32.LoadLibraryW
+            handle = LoadLibrary(path)
+        BAPI = CDLL(path,handle=handle)
     except Exception as e:
         BAPI = None
         raise
