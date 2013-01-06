@@ -10986,10 +10986,11 @@ class CBash_FidReplacer:
 #------------------------------------------------------------------------------
 class FullNames:
     """Names for records, with functions for importing/exporting from/to mod/text file."""
-    defaultTypes = set((
+    defaultTypes = {u'Oblivion':set((
         'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
         'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
-        'SLGM', 'SPEL','WEAP',))
+        'SLGM', 'SPEL','WEAP',)),
+        u'Skyrim':set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))}[bush.game.name]
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
@@ -20750,9 +20751,10 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+rePlayableSkips = re.compile(ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
+
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20785,13 +20787,12 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
                 full = record.full
                 if not full: continue
                 if record.script: continue
-                if reSkip.search(full): continue #probably truly shouldn't be playable
+                if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                 #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
                 if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
@@ -20809,7 +20810,6 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _(u'Playable Clothes')
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20830,7 +20830,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             full = record.full
             if not full: return
             if record.script: return
-            if self.reSkip.search(full): return #probably truly shouldn't be playable
+            if rePlayableSkips.search(full): return #probably truly shouldn't be playable
             #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
             if record.IsLeftRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail:
                 override = record.CopyAsOverride(self.patchFile)
@@ -20853,8 +20853,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
 
 class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
-
+    
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
@@ -20886,14 +20885,13 @@ class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
             if record.flags1[2]: #not playable
                 if record.armorFlags.clothing: #true 'clothing' records only
                     full = record.full
                     if not full: continue
                     #if record.scripts: continue
-                    if reSkip.search(full): continue #probably truly shouldn't be playable
+                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                     record.flags1[2] = False
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -20906,8 +20904,7 @@ class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
-
+    
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -20939,14 +20936,13 @@ class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
             if record.flags1[2]: #not playable
                 if not record.armorFlags.clothing: #true 'armour' records only
                     full = record.full
                     if not full: continue
                     #if record.scripts: continue
-                    if reSkip.search(full): continue #probably truly shouldn't be playable
+                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                     record.flags1[2] = False
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -20960,8 +20956,7 @@ class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
-
+    
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -20993,13 +20988,12 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
             if record.flags.notPlayable:
                 full = record.full
                 if not full: continue
                 if record.script: continue
-                if reSkip.search(full): continue #probably truly shouldn't be playable
+                if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                 # We only want to set playable if the record has at least one body flag... otherwise most likely a token.
                 if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
                     record.flags.notPlayable = 0
@@ -21017,7 +21011,6 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
     name = _(u'Playable Armor')
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -21037,7 +21030,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
             full = record.full
             if not full: return
             if record.script: return
-            if self.reSkip.search(full): return #probably truly shouldn't be playable
+            if rePlayableSkips.search(full): return #probably truly shouldn't be playable
             #If no body flags are set it is probably a token.
             if record.IsLeftRing or record.IsRightRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail or record.IsShield:
                 override = record.CopyAsOverride(self.patchFile)
@@ -23314,6 +23307,7 @@ class AssortedTweak_Skyrim_Arrows_Playable(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
             if record.flags.nonPlayable:
+                if not record.full: continue
                 record.flags.nonPlayable = False
                 keep(record.fid)
                 srcMod = record.fid[0]

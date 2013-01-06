@@ -15174,7 +15174,7 @@ gmstEids = ['bAutoAimBasedOnDistance','fActionPointsAttackMagic','fActionPointsA
     ]
 
 #--Tags supported by this game
-allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate'))
+allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names'))
 
 #--GLOB record tweaks used by bosh's GmstTweaker
 #  Each entry is a tuple in the following format:
@@ -15430,7 +15430,7 @@ GmstTweaks = [
 #--Patchers available when building a Bashed Patch
 patchers = (
     u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
-    u'AssortedTweaker'
+    u'AssortedTweaker', u'NamesPatcher'
     )
 
 # For ListsMerger
