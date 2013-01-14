@@ -11687,7 +11687,8 @@ class ItemStats:
                           'duration':self.sint,
                           'quality':self.sfloat,
                           'uses':self.sint,
-                          'reach':self.sfloat,}
+                          'reach':self.sfloat,
+                          'armorRating':self.sint,}
 
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
