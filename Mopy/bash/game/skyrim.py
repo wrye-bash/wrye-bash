@@ -15174,7 +15174,7 @@ gmstEids = ['bAutoAimBasedOnDistance','fActionPointsAttackMagic','fActionPointsA
     ]
 
 #--Tags supported by this game
-allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate'))
+allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names',u'Stats'))
 
 #--GLOB record tweaks used by bosh's GmstTweaker
 #  Each entry is a tuple in the following format:
@@ -15430,11 +15430,36 @@ GmstTweaks = [
 #--Patchers available when building a Bashed Patch
 patchers = (
     u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
-    u'AssortedTweaker'
+    u'AssortedTweaker', u'NamesPatcher', u'StatsPatcher'
     )
 
 # For ListsMerger
 listTypes = ('LVLI','LVLN','LVSP',)
+
+namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
+pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
+statsTypes = {
+            'AMMO':('eid', 'value', 'damage'),
+            'ARMO':('eid', 'weight', 'value', 'armorRating'), 
+            'APPA':('eid', 'weight', 'value'),
+            'MISC':('eid', 'weight', 'value'),
+            }
+statsHeaders = (
+                #--Ammo
+                (u'AMMO',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #--Armo
+                (u'ARMO',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_('armorRating'))) + u'"\n')),
+                (u'APPA',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                (u'MISC',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                )
 
 #--CBash patchers available when building a Bashed Patch
 CBash_patchers = tuple()

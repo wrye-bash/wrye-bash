@@ -10986,10 +10986,7 @@ class CBash_FidReplacer:
 #------------------------------------------------------------------------------
 class FullNames:
     """Names for records, with functions for importing/exporting from/to mod/text file."""
-    defaultTypes = set((
-        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
-        'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
-        'SLGM', 'SPEL','WEAP',))
+    defaultTypes = bush.game.namesTypes
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
@@ -11656,22 +11653,7 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
 #------------------------------------------------------------------------------
 class ItemStats:
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
-    class_attrs = {
-        'ALCH':('eid', 'weight', 'value'),
-        'AMMO':('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
-        'APPA':('eid', 'weight', 'value', 'quality'),
-        'ARMO':('eid', 'weight', 'value', 'health', 'strength'),
-        'BOOK':('eid', 'weight', 'value', 'enchantPoints'),
-        'CLOT':('eid', 'weight', 'value', 'enchantPoints'),
-        'INGR':('eid', 'weight', 'value'),
-        'KEYM':('eid', 'weight', 'value'),
-        'LIGH':('eid', 'weight', 'value', 'duration'),
-        'MISC':('eid', 'weight', 'value'),
-        'SGST':('eid', 'weight', 'value', 'uses'),
-        'SLGM':('eid', 'weight', 'value'),
-        'WEAP':('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints'),
-        }
-
+    class_attrs = bush.game.statsTypes
     @staticmethod
     def sstr(value):
         return _coerce(value, unicode, AllowNone=True)
@@ -11705,7 +11687,8 @@ class ItemStats:
                           'duration':self.sint,
                           'quality':self.sfloat,
                           'uses':self.sint,
-                          'reach':self.sfloat,}
+                          'reach':self.sfloat,
+                          'armorRating':self.sint,}
 
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
@@ -11713,7 +11696,7 @@ class ItemStats:
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-        typeClasses = [MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
         loadFactory= LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -11725,7 +11708,7 @@ class ItemStats:
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-        typeClasses = [MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
         loadFactory= LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -11791,61 +11774,7 @@ class ItemStats:
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
-            for group,header in (
-                #--Alch
-                (u'ALCH',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #Ammo
-                (u'AMMO',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Damage'),_(u'Speed'),_(u'EPoints'))) + u'"\n')),
-                #--Apparatus
-                (u'APPA',
-                    (u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Quality'))) + u'"\n')),
-                #--Armor
-                (u'ARMO',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'))) + u'"\n')),
-                #Books
-                (u'BOOK',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
-                #Clothing
-                (u'CLOT',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
-                #Ingredients
-                (u'INGR',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #--Keys
-                (u'KEYM',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #Lights
-                (u'LIGH',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
-                #--Misc
-                (u'MISC',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #Sigilstones
-                (u'SGST',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Uses'))) + u'"\n')),
-                #Soulgems
-                (u'SLGM',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #--Weapons
-                (u'WEAP',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
-                    _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
-                ):
+            for group,header in bush.game.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
@@ -12060,14 +11989,14 @@ class ItemPrices:
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
-        self.class_fid_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
+        self.class_fid_stats = bush.game.pricesTypes
         self.attrs = ('value', 'eid', 'full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        typeClasses = [MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -12080,7 +12009,7 @@ class ItemPrices:
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        typeClasses = [MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP')]
+        typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
         loadFactory= LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -20750,9 +20679,10 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+rePlayableSkips = re.compile(ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
+
 class AssortedTweak_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20785,13 +20715,12 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.CLOT.records:
             if record.flags.notPlayable:
                 full = record.full
                 if not full: continue
                 if record.script: continue
-                if reSkip.search(full): continue #probably truly shouldn't be playable
+                if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                 #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
                 if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
                     record.flags.notPlayable = 0
@@ -20809,7 +20738,6 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _(u'Playable Clothes')
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20830,7 +20758,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             full = record.full
             if not full: return
             if record.script: return
-            if self.reSkip.search(full): return #probably truly shouldn't be playable
+            if rePlayableSkips.search(full): return #probably truly shouldn't be playable
             #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
             if record.IsLeftRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail:
                 override = record.CopyAsOverride(self.patchFile)
@@ -20853,8 +20781,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
 
 class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
-
+    
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
@@ -20886,14 +20813,13 @@ class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
             if record.flags1[2]: #not playable
                 if record.armorFlags.clothing: #true 'clothing' records only
                     full = record.full
                     if not full: continue
                     #if record.scripts: continue
-                    if reSkip.search(full): continue #probably truly shouldn't be playable
+                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                     record.flags1[2] = False
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -20906,8 +20832,7 @@ class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
     """Sets all clothes to playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
-
+    
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -20939,14 +20864,13 @@ class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
             if record.flags1[2]: #not playable
                 if not record.armorFlags.clothing: #true 'armour' records only
                     full = record.full
                     if not full: continue
                     #if record.scripts: continue
-                    if reSkip.search(full): continue #probably truly shouldn't be playable
+                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                     record.flags1[2] = False
                     keep(record.fid)
                     srcMod = record.fid[0]
@@ -20960,8 +20884,7 @@ class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
 #------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
-
+    
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -20993,13 +20916,12 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
-        reSkip = self.reSkip
         for record in patchFile.ARMO.records:
             if record.flags.notPlayable:
                 full = record.full
                 if not full: continue
                 if record.script: continue
-                if reSkip.search(full): continue #probably truly shouldn't be playable
+                if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
                 # We only want to set playable if the record has at least one body flag... otherwise most likely a token.
                 if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
                     record.flags.notPlayable = 0
@@ -21017,7 +20939,6 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
     name = _(u'Playable Armor')
-    reSkip = re.compile(ur'(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)',re.I)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         CBash_MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -21037,7 +20958,7 @@ class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
             full = record.full
             if not full: return
             if record.script: return
-            if self.reSkip.search(full): return #probably truly shouldn't be playable
+            if rePlayableSkips.search(full): return #probably truly shouldn't be playable
             #If no body flags are set it is probably a token.
             if record.IsLeftRing or record.IsRightRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail or record.IsShield:
                 override = record.CopyAsOverride(self.patchFile)
@@ -23314,6 +23235,7 @@ class AssortedTweak_Skyrim_Arrows_Playable(MultiTweakItem):
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
             if record.flags.nonPlayable:
+                if not record.full: continue
                 record.flags.nonPlayable = False
                 keep(record.fid)
                 srcMod = record.fid[0]
