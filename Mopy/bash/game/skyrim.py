@@ -16400,17 +16400,6 @@ class MreHeader(MreHeaderBase):
 
 # MAST and DATA need to be grouped together like MAST DATA MAST DATA, are they that way already?
 #------------------------------------------------------------------------------
-class MreAact(MelRecord):
-    """Action record."""
-    classType = 'AACT'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelColorN(),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
 class MreActi(MelRecord):
     """Activator."""
     classType = 'ACTI'
@@ -16435,6 +16424,95 @@ class MreActi(MelRecord):
         MelLString('RNAM','rnam'),
         MelBase('FNAM','fnam_p'),
         MelOptStruct('KNAM','I',(FID,'keyword')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreTact(MelRecord):
+    """Talking Activator"""
+    classType = 'TACT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelAltModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelBase('PNAM','pnam_p'),
+        MelOptStruct('SNAM','I',(FID,'loopingSound')),
+        MelBase('FNAM','fnam_p'),
+        MelOptStruct('VNAM','I',(FID,'voiceType')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreAlch(MelRecord):
+    """Ingestible"""
+    classType = 'ALCH'
+
+    IngestibleFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'No Auto-Calc (Unused)'),
+        (0, 'Food Item'),
+        (0, 'Unknown 3'),
+        (0, 'Unknown 4'),
+        (0, 'Unknown 5'),
+        (0, 'Unknown 6'),
+        (0, 'Unknown 7'),
+        (0, 'Unknown 8'),
+        (0, 'Unknown 9'),
+        (0, 'Unknown 10'),
+        (0, 'Unknown 11'),
+        (0, 'Unknown 12'),
+        (0, 'Unknown 13'),
+        (0, 'Unknown 14'),
+        (0, 'Unknown 15'),
+        (0, 'Unknown 16'),
+        (0, 'Medicine'),
+        (0, 'Poison'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelLString('DESC','description'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelAltModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelOptStruct('ETYP','I',(FID,'equipType')),
+        MelStruct('DATA','f','weight_p'),
+        MelStruct('DATA','i2IfI',
+                  'value_pd',(IngestibleFlags,'flags',0L),'addiction','addictionChance','soundConsume',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreAact(MelRecord):
+    """Action record."""
+    classType = 'AACT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelColorN(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -16918,7 +16996,7 @@ class MreSpgd(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreFlst(MelRecord):
@@ -16931,7 +17009,7 @@ class MreFlst(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreIpds(MelRecord):
@@ -16946,7 +17024,7 @@ class MreIpds(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MelLgtmData(MelStruct):
@@ -16986,7 +17064,7 @@ class MreLgtm(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# If Syntax Correct, Verified Correct for Skyrim
+# If Syntax Correct, Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreOtft(MelRecord):
@@ -16998,7 +17076,7 @@ class MreOtft(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreVtyp(MelRecord):
@@ -17021,7 +17099,7 @@ class MreVtyp(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreEyes(MelRecord):
@@ -17045,7 +17123,7 @@ class MreEyes(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreMovt(MelRecord):
@@ -17062,7 +17140,7 @@ class MreMovt(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreBook(MelRecord):
     """Book Item"""
@@ -17130,7 +17208,7 @@ class MreBook(MelRecord):
 # BookTypeFlags needs syntax check.
 # bookTypes needs syntax check.
 # skillTypes needs syntax check.
-# After syntax checks and DATA is formated correctly, this record is correct for Skyrim
+# After syntax checks and DATA is formated correctly, this record is correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreEqup(MelRecord):
@@ -17143,7 +17221,7 @@ class MreEqup(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreClfm(MelRecord):
@@ -17157,7 +17235,7 @@ class MreClfm(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreFstp(MelRecord):
@@ -17170,7 +17248,7 @@ class MreFstp(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreRfct(MelRecord):
@@ -17182,7 +17260,7 @@ class MreRfct(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreSoun(MelRecord):
@@ -17197,7 +17275,7 @@ class MreSoun(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreBptd(MelRecord):
@@ -17226,11 +17304,12 @@ class MreBptd(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
-        MelLString('BPTN','fxPath'),
-        MelString('BPNN','fxPath'),
-        MelString('BPNT','fxPath'),
-        MelString('BPNI','fxPath'),
-        MelStruct('SDSC','f3Bb2BH2I2f3I7f2I2BHf','damageMult',(BptdDamageFlags,'flags',0L),
+        MelLString('BPTN','partName'),
+        MelString('PNAM','poseMatching'),
+        MelString('BPNN','partNode'),
+        MelString('BPNT','vatsTarget'),
+        MelString('BPNI','startNode'),
+        MelStruct('BPND','f3Bb2BH2I2f3I7f2I2BHf','damageMult',(BptdDamageFlags,'flags',0L),
             (BptdPartTypes,'flags',0L),'healthPcnt','actorValue','toHitChance',
             'explodableExplosionChancePcnt','explodableDebrisCount',(FID,'explodableDebris'),
             (FID,'explodableExplosion'),'trackingMaxAngle','explodableDebrisScale',
@@ -17239,13 +17318,13 @@ class MreBptd(MelRecord):
             (FID,'severableImpactDataset'),(FID,'explodableImpactDataset'),'severableDecalCount',
             'explodableDecalCount','unknown','limbReplacementScale',
         ),
-        MelString('NAM1','fxPath'),
-        MelString('NAM4','fxPath'),
+        MelString('NAM1','limbReplacementModel'),
+        MelString('NAM4','goreEffectsTargetBone'),
         MelBase('NAM5','textFileHashes'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreFlor(MelRecord):
@@ -17269,13 +17348,13 @@ class MreFlor(MelRecord):
         MelBase('PNAM','unknown01'),
         MelLString('RNAM','activateTextOverride'),
         MelBase('FNAM','unknown02'),
-		MelStruct('PFIG','I',(FID,'harvestIngredient')),
-		MelStruct('SNAM','I',(FID,'harvestSound')),
-		MelStruct('PFPC','4B','spring','summer','fall','winter',),
+        MelStruct('PFIG','I',(FID,'harvestIngredient')),
+        MelStruct('SNAM','I',(FID,'harvestSound')),
+        MelStruct('PFPC','4B','spring','summer','fall','winter',),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreTree(MelRecord):
@@ -17295,7 +17374,7 @@ class MreTree(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 
 class MreMgef(MelRecord):
@@ -17616,11 +17695,11 @@ class MreMgef(MelRecord):
 #------------------------------------------------------------------------------
 # Mergeable record types
 mergeClasses = (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, 
-        MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj, MreEqup, 
-        MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds, MreLgtm, 
-        MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft, MreRfct, 
-        MreSoun, MreSpgd, MreTree, MreVtyp,
+        MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
+        MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj,
+        MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds,
+        MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft,
+        MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
         )
 
 #--Extra read/write classes
@@ -17637,11 +17716,11 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj, MreEqup,
-        MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds, MreLgtm,
-        MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft, MreRfct,
-        MreSoun, MreSpgd, MreTree, MreVtyp,
+        MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
+        MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj,
+        MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds,
+        MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft,
+        MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
         MreHeader,
         ))
 
