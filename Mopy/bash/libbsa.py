@@ -19,7 +19,7 @@ libbsa = None
 version = None
 
 # Version of libbsa this Python script is written for.
-PythonLibbsaVersion = (1,0)
+PythonLibbsaVersion = (2,0)
 
 DebugLevel = 0
 # DebugLevel
@@ -68,24 +68,23 @@ def Init(path):
     # Some types
     bsa_handle = c_void_p
     bsa_handle_p = POINTER(bsa_handle)
-    c_uint32_p = POINTER(c_uint32)
-    c_uint32_p_p = POINTER(c_uint32_p)
+    c_uint_p = POINTER(c_uint)
+    c_uint_p_p = POINTER(c_uint_p)
     c_bool_p = POINTER(c_bool)
-    c_uint8_p = c_char_p
-    c_uint8_p_p = POINTER(c_uint8_p)
-    c_uint8_p_p_p = POINTER(c_uint8_p_p)
+    c_char_p_p = POINTER(c_char_p)
+    c_char_p_p_p = POINTER(c_char_p_p)
     c_size_t_p = POINTER(c_size_t)
     class bsa_asset(Structure):
-        _fields_ = [('sourcePath',c_uint8_p),
-                    ('destPath',c_uint8_p),
+        _fields_ = [('sourcePath',c_char_p),
+                    ('destPath',c_char_p),
                     ]
     bsa_asset_p = POINTER(bsa_asset)
     bsa_asset_p_p = POINTER(bsa_asset_p)
     def list_of_strings(strings):
-        lst = (c_uint8_p * len(strings))()
-        lst = cast(lst,c_uint8_p_p)
+        lst = (c_char_p * len(strings))()
+        lst = cast(lst,c_char_p_p)
         for i,string in enumerate(strings):
-            lst[i] = cast(create_string_buffer(string),c_uint8_p)
+            lst[i] = cast(create_string_buffer(string),c_char_p)
         return lst
 
     # utility unicode functions
@@ -97,18 +96,18 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## bool IsCompatibleVersion(const uint32_t versionMajor, const uint32_t versionMinor, const uint32_t versionPatch)
-    _CIsCompatibleVersion = libbsa.IsCompatibleVersion
-    _CIsCompatibleVersion.restype = c_bool
-    _CIsCompatibleVersion.argtypes = [c_uint32, c_uint32, c_uint32]
+    ## bool bsa_is_compatible(const unsigned int versionMajor, const unsigned int versionMinor, const unsigned int versionPatch)
+    _Cbsa_is_compatible = libbsa.bsa_is_compatible
+    _Cbsa_is_compatible.restype = c_bool
+    _Cbsa_is_compatible.argtypes = [c_uint, c_uint, c_uint]
     def IsCompatibleVersion(majorVersion, minorVersion, patchVersion=0):
         return True
-        return _CIsCompatibleVersion(majorVersion,minorVersion,patchVersion)
+        return _Cbsa_is_compatible(majorVersion,minorVersion,patchVersion)
     if not IsCompatibleVersion(*PythonLibbsaVersion):
+        verMajor = c_uint()
+        verMinor = c_uint()
+        verPatch = c_uint()
         try:
-            verMajor = c_uint32()
-            verMinor = c_uint32()
-            verPatch = c_uint32()
             libbsa.GetVersionNums(byref(verMajor), byref(verMinor), byref(verPatch))
             ver = _uni(ver.value)
         except:
@@ -158,11 +157,10 @@ def Init(path):
     for name in ['OK',
                  'ERROR_INVALID_ARGS',
                  'ERROR_NO_MEM',
-                 'ERROR_FILE_NOT_FOUND',
-                 'ERROR_FILE_WRITE_FAIL',
-                 'ERROR_FILE_READ_FAIL',
+                 'ERROR_FILESYSTEM_ERROR',
                  'ERROR_BAD_STRING',
                  'ERROR_ZLIB_ERROR',
+                 'ERROR_PARSE_FAIL',
                  ]:
         name = 'LIBBSA_'+name
         errors[name] = c_uint.in_dll(libbsa,name).value
@@ -173,13 +171,13 @@ def Init(path):
     # =========================================================================
     # API Functions - Error Handling
     # =========================================================================
-    ## uint32_t GetLastErrorDetails(const uint8_t **details)
-    _CGetLastErrorDetails = libbsa.GetLastErrorDetails
-    _CGetLastErrorDetails.restype = c_uint32
-    _CGetLastErrorDetails.argtypes = [c_uint8_p_p]
+    ## unsigned int bsa_get_error_message(const uint8_t ** const details)
+    _Cbsa_get_error_message = libbsa.bsa_get_error_message
+    _Cbsa_get_error_message.restype = c_uint
+    _Cbsa_get_error_message.argtypes = [c_char_p_p]
     def GetLastErrorDetails():
-        details = c_uint8_p()
-        ret = _CGetLastErrorDetails(byref(details))
+        details = c_char_p()
+        ret = _Cbsa_get_error_message(byref(details))
         if ret != LIBBSA_OK:
             raise Exception(u'An error occurred while getting the details of a libbsa error: %i' % (ret))
         return unicode(details.value,'utf8')
@@ -219,16 +217,16 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## uint32_t GetVersionNums(uint32_t * versionMajor, uint32_t * versionMinor, uint32_t * versionPatch)
-    _CGetVersionNums = libbsa.GetVersionNums
-    _CGetVersionNums.argtypes = [c_uint32_p, c_uint32_p, c_uint32_p]
+    ## unsigned int bsa_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
+    _Cbsa_get_version = libbsa.bsa_get_version
+    _Cbsa_get_version.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
-    version = c_uint8_p()
+    version = c_char_p()
     try:
-        verMajor = c_uint32()
-        verMinor = c_uint32()
-        verPatch = c_uint32()
-        _CGetVersionNums(byref(verMajor),byref(verMinor),byref(verPatch))
+        verMajor = c_uint()
+        verMinor = c_uint()
+        verPatch = c_uint()
+        _Cbsa_get_version(byref(verMajor),byref(verMinor),byref(verPatch))
         version = u'%i.%i.%i' % (verMajor.value,verMinor.value,verPatch.value)
     except LibbsaError as e:
         print u'Error getting libbsa version:', e
@@ -237,30 +235,30 @@ def Init(path):
     # =========================================================================
     # API Functions - Lifecycle Management
     # =========================================================================
-    ## uint32_t OpenBSA(bsa_handle * bh, const uint8_t * path)
-    _COpenBSA = libbsa.OpenBSA
-    _COpenBSA.restype = LibbsaErrorCheck
-    _COpenBSA.argtypes = [bsa_handle_p, c_uint8_p]
-    ## uint32_t SaveBSA(bsa_handle bh, const uint8_t * path, const uint32_t flags)
-    _CSaveBSA = libbsa.SaveBSA
-    _CSaveBSA.restype = LibbsaErrorCheck
-    _CSaveBSA.argtypes = [bsa_handle, c_uint8_p, c_uint32]
-    ## void CloseBSA(bsa_handle bh)
-    _CCloseBSA = libbsa.CloseBSA
-    _CCloseBSA.restype = None
-    _CCloseBSA.argtypes = [bsa_handle]
+    ## unsigned int bsa_open(bsa_handle * bh, const char * const path)
+    _Cbsa_open = libbsa.bsa_open
+    _Cbsa_open.restype = LibbsaErrorCheck
+    _Cbsa_open.argtypes = [bsa_handle_p, c_char_p]
+    ## unsigned int bsa_save(bsa_handle bh, const char * const path, const unsigned int flags)
+    _Cbsa_save = libbsa.bsa_save
+    _Cbsa_save.restype = LibbsaErrorCheck
+    _Cbsa_save.argtypes = [bsa_handle, c_char_p, c_uint]
+    ## void bsa_close(bsa_handle bh)
+    _Cbsa_close = libbsa.bsa_close
+    _Cbsa_close.restype = None
+    _Cbsa_close.argtypes = [bsa_handle]
 
     # =========================================================================
     # API Functions - Content Reading
     # =========================================================================
-    ## uint32_t GetAssets(bsa_handle bh, const uint8_t * contentPath, uint8_t *** assetPaths, size_t * numAssets)
-    _CGetAssets = libbsa.GetAssets
-    _CGetAssets.restype = LibbsaErrorCheck
-    _CGetAssets.argtypes = [bsa_handle, c_uint8_p, c_uint8_p_p_p, c_size_t_p]
-    ## uint32_t IsAssetInBSA(bsa_handle bh, const uint8_t * assetPath, bool * result)
-    _CIsAssetInBSA = libbsa.IsAssetInBSA
-    _CIsAssetInBSA.restype = LibbsaErrorCheck
-    _CIsAssetInBSA.argtypes = [bsa_handle, c_uint8_p, c_bool_p]
+    ## unsigned int bsa_get_assets(bsa_handle bh, const char * const contentPath, char *** const assetPaths, size_t * const numAssets)
+    _Cbsa_get_assets = libbsa.bsa_get_assets
+    _Cbsa_get_assets.restype = LibbsaErrorCheck
+    _Cbsa_get_assets.argtypes = [bsa_handle, c_char_p, c_char_p_p_p, c_size_t_p]
+    ## unsigned int bsa_contains_asset(bsa_handle bh, const char * const assetPath, bool * const result)
+    _Cbsa_contains_asset = libbsa.bsa_contains_asset
+    _Cbsa_contains_asset.restype = LibbsaErrorCheck
+    _Cbsa_contains_asset.argtypes = [bsa_handle, c_char_p, c_bool_p]
 
     # =========================================================================
     # API Functions - Content Writing
@@ -270,14 +268,14 @@ def Init(path):
     # =========================================================================
     # API Functions - Content Extraction
     # =========================================================================
-    ## uint32_t ExtractAssets(bsa_handle bh, const uint8_t * contentPath, const uint8_t * destPath, uint8_t *** assetPaths, size_t * numAssets)
-    _CExtractAssets = libbsa.ExtractAssets
-    _CExtractAssets.restype = LibbsaErrorCheck
-    _CExtractAssets.argtypes = [bsa_handle, c_uint8_p, c_uint8_p, c_uint8_p_p_p, c_size_t_p, c_bool]
-    ## uint32_t ExtractAsset(bsa_handle bh, const uint8_t * assetPath, const uint8_t * destPath)
-    _CExtractAsset = libbsa.ExtractAsset
-    _CExtractAsset.restype = LibbsaErrorCheck
-    _CExtractAsset.argtypes = [bsa_handle, c_uint8_p, c_uint8_p, c_bool]
+    ## unsigned int bsa_extract_assets(bsa_handle bh, const char * const contentPath, const char * const destPath, char *** const assetPaths, size_t * const numAssets)
+    _Cbsa_extract_assets = libbsa.bsa_extract_assets
+    _Cbsa_extract_assets.restype = LibbsaErrorCheck
+    _Cbsa_extract_assets.argtypes = [bsa_handle, c_char_p, c_char_p, c_char_p_p_p, c_size_t_p, c_bool]
+    ## unsigned int bsa_extract_asset(bsa_handle bh, const char * assetPath, const char * destPath)
+    _Cbsa_extract_asset = libbsa.bsa_extract_asset
+    _Cbsa_extract_asset.restype = LibbsaErrorCheck
+    _Cbsa_extract_asset.argtypes = [bsa_handle, c_char_p, c_char_p, c_bool]
 
     # =========================================================================
     # Class Wrapper
@@ -285,11 +283,11 @@ def Init(path):
     class BSAHandle(object):
         def __init__(self,path):
             self._handle = bsa_handle()
-            _COpenBSA(byref(self._handle),_enc(path))
+            _Cbsa_open(byref(self._handle),_enc(path))
 
         def __del__(self):
             if self._handle is not None:
-                _CCloseBSA(self._handle)
+                _Cbsa_close(self._handle)
                 self._handle = None
 
         # 'with' statement
@@ -300,14 +298,14 @@ def Init(path):
         # Content Reading
         # ---------------------------------------------------------------------
         def GetAssets(self, contentPath):
-            assets = c_uint8_p_p()
+            assets = c_char_p_p()
             num = c_size_t()
-            _CGetAssets(self._handle, _enc(contentPath), byref(assets), byref(num))
+            _Cbsa_get_assets(self._handle, _enc(contentPath), byref(assets), byref(num))
             return [GPath(_uni(assets[i])) for i in xrange(num.value)]
 
         def IsAssetInBSA(self, assetPath):
             result = c_bool()
-            _CIsAssetInBSA(self._handle, _enc(assetPath), byref(result))
+            _Cbsa_contains_asset(self._handle, _enc(assetPath), byref(result))
             return result.value
 
         # ---------------------------------------------------------------------
@@ -319,13 +317,13 @@ def Init(path):
         # Content Extraction
         # ---------------------------------------------------------------------
         def ExtractAssets(self, contentPath, destPath):
-            assets = c_uint8_p_p()
+            assets = c_char_p_p()
             num = c_size_t()
-            _CExtractAssets(self._handle, _enc(contentPath), _enc(destPath), byref(assets), byref(num), True)
+            _Cbsa_extract_assets(self._handle, _enc(contentPath), _enc(destPath), byref(assets), byref(num), True)
             return [GPath(_uni(assets[i])) for i in xrange(num.value)]
 
         def ExtractAsset(self, assetPath, destPath):
-            _CExtractAsset(self._handle, _enc(assetPath), _enc(destPath), True)
+            _Cbsa_extract_asset(self._handle, _enc(assetPath), _enc(destPath), True)
 
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())
