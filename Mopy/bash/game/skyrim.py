@@ -17389,6 +17389,36 @@ class MreCont(MelRecord):
 # MelComponents(), COCT, and CNTO needs to be finished.
 #------------------------------------------------------------------------------
 
+class MreCsty(MelRecord):
+    """Csty Item"""
+    classType = 'CSTY'
+    
+    CstyTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'dueling'),
+        (1, 'flanking'),
+        (2, 'allowDualWielding'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+		# esm = Equipment Score Mult
+        MelStruct('CSGD','10f','offensiveMult','defensiveMult','groupOffensiveMult',
+		'esmMelee','esmMagic','esmRanged','esmShout','esmUnarmed','esmStaff',
+		'avoidThreatChance',),
+        MelBase('CSMD','unknownValue'),
+        MelStruct('CSME','8f','atkStaggeredMult','powerAtkStaggeredMult','powerAtkBlockingMult',
+		'bashMult','bashRecoilMult','bashAttackMult','bashPowerAtkMult','specialAtkMult',),
+        MelStruct('CSCR','4f','circleMult','fallbackMult','flankDistance','stalkTime',),
+        MelStruct('CSLR','f','strafeMult'),
+        MelStruct('CSFL','8f','hoverChance','diveBombChance','groundAttackChance','hoverTime',
+		'groundAttackTime','perchAttackChance','perchAttackTime','flyingAttackChance',),
+        MelStruct('DATA','I',(CstyTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+
 class MreSoun(MelRecord):
     """Soun Item"""
     classType = 'SOUN'
