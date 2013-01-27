@@ -136,12 +136,6 @@ def Init(path):
         }
 
     # =========================================================================
-    # API Constants - Load Order Method
-    # =========================================================================
-    BOSS_API_LOMETHOD_TIMESTAMP = c_uint.in_dll(BAPI,'BOSS_API_LOMETHOD_TIMESTAMP').value
-    BOSS_API_LOMETHOD_TEXTFILE = c_uint.in_dll(BAPI,'BOSS_API_LOMETHOD_TEXTFILE').value
-
-    # =========================================================================
     # API Constants - Cleanliness
     # =========================================================================
     BOSS_API_CLEAN_NO = c_uint.in_dll(BAPI,'BOSS_API_CLEAN_NO').value
@@ -282,51 +276,10 @@ def Init(path):
     # =========================================================================
     # API Functions - Plugin Sorting
     # =========================================================================
-    ## uint32_t GetLoadOrderMethod(boss_db db, uint32_t *method);
-    _CGetLoadOrderMethod = BAPI.GetLoadOrderMethod
-    _CGetLoadOrderMethod.restype = c_uint32
-    _CGetLoadOrderMethod.argtypes = [boss_db, c_uint32_p]
-
     ## uint32_t SortMods(boss_db db, const bool trialOnly, uint8_t ***sortedPlugins, size_t *listLength, size_t *lastRecPos)
     _CSortMods = BAPI.SortMods
     _CSortMods.restype = BossErrorCheck
     _CSortMods.argtypes = [boss_db, c_bool, c_uint8_p_p_p, c_size_t_p, c_size_t_p]
-    ## uint32_t GetLoadOrder(boss_db db, uint8_t ***plugins, size_t *numPlugins)
-    _CGetLoadOrder = BAPI.GetLoadOrder
-    _CGetLoadOrder.restype = BossErrorCheck
-    _CGetLoadOrder.argtypes = [boss_db, c_uint8_p_p_p, c_size_t_p]
-    ## uint32_t SetLoadOrder(boss_db db, uint8_t **plugins, const size_t numPlugins)
-    _CSetLoadOrder = BAPI.SetLoadOrder
-    _CSetLoadOrder.restype = BossErrorCheck
-    _CSetLoadOrder.argtypes = [boss_db, c_uint8_p_p, c_size_t]
-    ## uint32_t GetActivePlugins(boss_db db, uint8_t ***plugins, size_t *numPlugins)
-    _CGetActivePlugins = BAPI.GetActivePlugins
-    _CGetActivePlugins.restype = BossErrorCheck
-    _CGetActivePlugins.argtypes = [boss_db, c_uint8_p_p_p, c_size_t_p]
-    ## uint32_t SetActivePlugins(boss_db db, uint8_t **plugins, const size_t numPlugins)
-    _CSetActivePlugins = BAPI.SetActivePlugins
-    _CSetActivePlugins.restype = BossErrorCheck
-    _CSetActivePlugins.argtypes = [boss_db, c_uint8_p_p, c_size_t]
-    ## uint32_t GetPluginLoadOrder(boss_db db, const uint8_t *plugin, size_t *index)
-    _CGetPluginLoadOrder = BAPI.GetPluginLoadOrder
-    _CGetPluginLoadOrder.restype = BossErrorCheck
-    _CGetPluginLoadOrder.argtypes = [boss_db, c_uint8_p, c_size_t_p]
-    ## uint32_t SetPluginLoadOrder(boss_db db, const uint8_t *plugin, size_t index)
-    _CSetPluginLoadOrder = BAPI.SetPluginLoadOrder
-    _CSetPluginLoadOrder.restype = BossErrorCheck
-    _CSetPluginLoadOrder.argtypes = [boss_db, c_uint8_p, c_size_t]
-    ## uint32_t GetIndexedPlugin(boss_db db, const size_t index, uint8_t **plugin)
-    _CGetIndexedPlugin = BAPI.GetIndexedPlugin
-    _CGetIndexedPlugin.restype = BossErrorCheck
-    _CGetIndexedPlugin.argtypes = [boss_db, c_size_t, c_uint8_p_p]
-    ## uint32_t SetPluginActive(boss_db db, const uint8_t *plugin, const bool active)
-    _CSetPluginActive = BAPI.SetPluginActive
-    _CSetPluginActive.restype = BossErrorCheck
-    _CSetPluginActive.argtypes = [boss_db, c_uint8_p, c_bool]
-    ## uint32_t IsPluginActive(boss_db db, const uint8_t *plugin, bool *isActive)
-    _CIsPluginActive = BAPI.IsPluginActive
-    _CIsPluginActive.restype = BossErrorCheck
-    _CIsPluginActive.argtypes = [boss_db, c_uint8_p, c_bool_p]
 
     # =========================================================================
     # API Functions - Database Access
@@ -363,13 +316,6 @@ def Init(path):
             self.tags = {}   # BashTag map
             self._DB = boss_db()
             _CCreateBossDb(byref(self._DB),game,_enc(gamePath))
-            # Get Load Order Method
-            method = c_uint32()
-            _CGetLoadOrderMethod(self._DB,byref(method))
-            self._LOMethod = method.value
-
-        @property
-        def LoadOrderMethod(self): return self._LOMethod
 
         def __del__(self):
             if self._DB is not None:
@@ -438,34 +384,14 @@ def Init(path):
             ## TODO: Possibly make this call BOSS's auto-sorting
             def sort(self,*args,**kwdargs): raise Exception('BossDb.LoadOrder does not support sort.')
             def reverse(self,*args,**kwdargs): raise Exception('BossDb.LoadOrder does not support reverse.')
+            def insert(self,i,x): raise Exception('BossDb.LoadOrder does not support insert.')
+            def index(self,x): raise Exception('BossDb.LoadOrder does not support index.')
 
             # Override the following with custom functions
-            def insert(self,i,x):
-                # Change Load Order of single plugin
-                self._DB.SetPluginLoadOrder(x, i)
-            def index(self,x):
-                # Get Load Order of single plugin
-                return self._DB.GetPluginLoadOrder(x)
             def count(self,x):
                 # 1 if the plugin is in the Load Order, 0 otherwise
                 # (plugins can't be in the load order multiple times)
                 return 1 if x in self else 0
-
-        def GetLoadOrder(self):
-            plugins = c_uint8_p_p()
-            num = c_size_t()
-            _CGetLoadOrder(self._DB, byref(plugins), byref(num))
-            return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
-        def _GetLoadOrder(self):
-            ret = self.LoadOrderList(self.GetLoadOrder())
-            ret.SetBossDb(self)
-            return ret
-        def SetLoadOrder(self, plugins):
-            plugins = [_enc(x) for x in plugins]
-            num = len(plugins)
-            plugins = list_of_strings(plugins)
-            _CSetLoadOrder(self._DB, plugins, num)
-        LoadOrder = property(_GetLoadOrder,SetLoadOrder)
 
         def SortMods(self,trialOnly=False):
             plugins = c_uint8_p_p()
@@ -473,132 +399,6 @@ def Init(path):
             lastRec = c_size_t()
             _CSortMods(self._DB,byref(plugins),byref(num),byref(lastRec))
             return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
-
-        def GetPluginLoadOrder(self, plugin):
-            plugin = _enc(plugin)
-            index = c_size_t()
-            _CGetPluginLoadOrder(self._DB,plugin,byref(index))
-            return index.value
-
-        def SetPluginLoadOrder(self, plugin, index):
-            plugin = _enc(plugin)
-            _CSetPluginLoadOrder(self._DB,plugin,index)
-
-        def GetIndexedPlugin(self, index):
-            plugin = c_uint8_p()
-            _CGetIndexedPlugin(self._DB,index,byref(plugin))
-            return GPath(_uni(plugin.value))
-
-        # ---------------------------------------------------------------------
-        # Active plugin management
-        # ---------------------------------------------------------------------
-        class ActivePluginsList(list):
-            """list-like object for modiying which plugins are active.
-               Currently, you cannot change the Load Order through this
-               object, perhaps in the future."""
-            def SetBossDb(self,db):
-                self._DB = db
-
-            def ReSync(self):
-                """Resync's contents with the BOSS API"""
-                list.__setslice__(self,0,len(self),self._DB.ActivePlugins)
-
-            # Block the following 'list' functions, since they don't make sense
-            # for use with the BOSS API and Active Plugins
-            ## ActivePlugins[i] = x
-            def __setitem__(self,key,value): raise Exception('BossDb.ActivePlugins does not support item setting')
-            ## LoadOrder *= 3
-            ##  and other compound assignment operators
-            def __imul__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __idiv__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __itruediv__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __ifloordiv__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __imod__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __ipow__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __ilshift__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __irshift__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __iand__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __ixor__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def __ior__(self,other): raise Exception('BossDb.ActivePlugins does not support compound assignment')
-            def pop(self,item): raise Exception('BossDb.ActivePlugins does not support pop.')
-            def sort(self,*args,**kwdargs): raise Exception('BossDb.ActivePlugins does not support sort.')
-            def reverse(self,*args,**kwdargs): raise Exception('BossDb.ActivePlugins does not support reverse.')
-
-
-            ## del ActivePlugins[i]
-            def __delitem__(self,key):
-                # Deactivate the plugin
-                self._DB.SetPluginActive(self[key],False)
-                self.ReSync()
-
-            ## ActivePlugins += ['test.esp','another.esp']
-            def __iadd__(self,other):
-                for plugin in other:
-                    self._DB.SetPluginActive(plugin,True)
-                self.ReSync()
-                return self
-            ## ActivePlugins -= ['test.esp','another.esp']
-            def __isub__(self,other):
-                for plugin in other:
-                    self._DB.SetPluginActive(plugin,False)
-                self.ReSync()
-                return self
-
-            ## ActivePlugins.append('test.esp')
-            def append(self,item):
-                self._DB.SetPluginActive(item,True)
-                self.ReSync()
-
-            ## ActivePlugins.extend(['test.esp','another.esp'])
-            def extend(self,items):
-                for plugin in items:
-                    self._DB.SetPluginActive(plugin,True)
-                self.ReSync()
-
-            ## ActivePlugins.remove('test.esp')
-            def remove(self,item):
-                self._DB.SetPluginActive(item,False)
-                self.ReSync()
-
-            ## ActivePlugins.insert('test.esp')
-            def insert(self,index,item):
-                self._DB.SetPluginActive(item,True)
-                self.ReSync()
-
-            ## ActivePlugins.count('test.esp')
-            def count(self,item):
-                return 1 if item in self else 0
-
-        def GetActivePlugins(self):
-            plugins = c_uint8_p_p()
-            num = c_size_t()
-            try:
-                _CGetActivePlugins(self._DB, byref(plugins), byref(num))
-            except BossError as e:
-                if e.code == BOSS_API_ERROR_FILE_NOT_FOUND:
-                    self.SetActivePlugins([])
-                    _CGetActivePlugins(self._DB, byref(plugins), byref(num))
-                else:
-                    raise
-            return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
-        def _GetActivePlugins(self):
-            ret = self.ActivePluginsList(self.GetActivePlugins())
-            ret.SetBossDb(self)
-            return ret
-        def SetActivePlugins(self,plugins):
-            plugins = [_enc(x) for x in plugins]
-            num = len(plugins)
-            plugins = list_of_strings(plugins)
-            _CSetActivePlugins(self._DB, plugins, num)
-        ActivePlugins = property(_GetActivePlugins,SetActivePlugins)
-
-        def SetPluginActive(self,plugin,active=True):
-            _CSetPluginActive(self._DB,_enc(plugin),active)
-
-        def IsPluginActive(self,plugin):
-            active = c_bool()
-            _CIsPluginActive(self._DB,_enc(plugin),byref(active))
-            return active.value
 
         # ---------------------------------------------------------------------
         # DB Access
@@ -629,22 +429,12 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)
         # ---------------------------------------------------------------------
-        def FilterActive(self,plugins,active=True):
-            """Given a list of plugins, returns the subset of that list,
-               consisting of:
-                - only active plugins if 'active' is True
-                - only inactive plugins if 'active' is False"""
-            return [x for x in plugins if self.IsPluginActive(x)]
 
         def FilterDirty(self,plugins,cleanCode=BOSS_API_CLEAN_YES):
             """Given a list of plugins, returns the subset of that list,
                consisting of plugins that meet the given BOSS_API_CLEAN_*
                code"""
             return [x for x in plugins if self.GetDirtyMessage(x)[1] == cleanCode]
-
-        def DeactivatePlugins(self,plugins):
-            for plugin in plugins:
-                self.SetPluginActive(plugin,False)
 
         def GetOrdered(self,plugins):
             """Returns a list of the given plugins, sorted accoring to their
