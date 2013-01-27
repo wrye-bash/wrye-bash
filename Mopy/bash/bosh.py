@@ -67,6 +67,7 @@ from brec import _coerce # Since it wont get imported by the import * (it begins
 from chardet.universaldetector import UniversalDetector
 import bapi
 import libbsa
+import liblo
 
 startupinfo = bolt.startupinfo
 
@@ -151,6 +152,7 @@ bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (Boss Master List, etc.)
 boss = None #--BossDb singleton
+lo = None #--LibloHandle singleton
 links = None
 
 def listArchiveContents(fileName):
@@ -3994,8 +3996,8 @@ class Plugins:
             move.copyTo(self.pathOrder)
 
     def loadActive(self):
-        """Get list of active plugins from plugins.txt through BAPI which cleans out bad entries."""
-        self.selected = boss.GetActivePlugins() # GPath list (but not sorted)
+        """Get list of active plugins from plugins.txt through libloadorder which cleans out bad entries."""
+        self.selected = lo.GetActivePlugins() # GPath list (but not sorted)
         if self.pathPlugins.exists():
             self.mtimePlugins = self.pathPlugins.mtime
             self.sizePlugins = self.pathPlugins.size
@@ -4005,13 +4007,13 @@ class Plugins:
 
 
     def loadLoadOrder(self):
-        """Get list of all plugins from loadorder.txt through BAPI which cleans out bad entries."""
-        self.LoadOrder = boss.GetLoadOrder()
+        """Get list of all plugins from loadorder.txt through libloadorder which cleans out bad entries."""
+        self.LoadOrder = lo.GetLoadOrder()
         # game's master might be out of place (if using timestamps for load ordering) so move it up.
         if self.LoadOrder.index(modInfos.masterName) > 0:
             self.LoadOrder.remove(modInfos.masterName)
             self.LoadOrder.insert(0,modInfos.masterName)
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
             if self.selected != modInfos.getOrdered(self.selected,False):
@@ -4021,28 +4023,24 @@ class Plugins:
 
     def save(self):
         """Write data to Plugins.txt file."""
-        try:
-            # BAPI attempts to unghost files, no need to duplicate that here.
-            boss.SetActivePlugins(modInfos.getOrdered(self.selected))
-        except bapi.BossError as e:
-            if e.code != bapi.BOSS_API_ERROR_PLUGINS_FULL:
-                raise
+        # liblo attempts to unghost files, no need to duplicate that here.
+        lo.SetActivePlugins(modInfos.getOrdered(self.selected))
         self.mtimePlugins = self.pathPlugins.mtime
         self.sizePlugins = self.pathPlugins.size
 
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
         try:
-            boss.SetLoadOrder(self.LoadOrder)
-        except bapi.BossError as e:
-            if e.code == bapi.BOSS_API_ERROR_INVALID_ARGS:
+            lo.SetLoadOrder(self.LoadOrder)
+        except liblo.LibloError as e:
+            if e.code == liblo.LIBLO_ERROR_INVALID_ARGS:
                 raise bolt.BoltError(u'Cannot load plugins before masters.')
         # Now reset the mtimes cache or LockLO feature will revert intentional changes.
         for name in modInfos.mtimes:
             path = modInfos[name].getPath()
             if path.exists():
                 modInfos.mtimes[name] = modInfos[name].getPath().mtime
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE and self.pathOrder.exists():
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
 
@@ -4053,7 +4051,7 @@ class Plugins:
             self.mtimePlugins != self.pathPlugins.mtime or
             self.sizePlugins != self.pathPlugins.size):
             return True
-        if boss.LoadOrderMethod != bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if lo.LoadOrderMethod != liblo.LIBLO_METHOD_TEXTFILE:
             return True  # Until we find a better way, Oblivion always needs True
         return self.pathOrder.exists() and (
                 self.mtimeOrder != self.pathOrder.mtime or
@@ -4066,7 +4064,7 @@ class Plugins:
         # Remove mods from cache
         self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
         self.selected  = [x for x in self.selected  if x not in plugins]
-        # Refresh BAPI
+        # Refresh liblo
         if refresh:
             self.saveLoadOrder()
             self.save()
@@ -4347,8 +4345,8 @@ class FileInfo:
         normal = self.dir.join(self.name)
         ghost = normal+u'.ghost'
         # Refresh current status - it may have changed due to things like
-        # the BOSS API automatically unghosting plugins when activating them.
-        # The BOSS API only un-ghosts automatically, so if both the normal
+        # libloadorder automatically unghosting plugins when activating them.
+        # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         if normal.exists():
             if self.isGhost:
@@ -5237,7 +5235,7 @@ class ModInfos(FileInfos):
         if not self.lockLO: return False
         if settings['bosh.modInfos.obmmWarn'] == 1: return False
         if settings.dictFile.readOnly: return False
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
             return False
         #--Else
         return True
@@ -5958,7 +5956,7 @@ class ModInfos(FileInfos):
 
     def hasTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
             return False
         else:
             mtime = self[modName].mtime
@@ -5967,7 +5965,7 @@ class ModInfos(FileInfos):
 
     def hasActiveTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
             return False
         elif not self.isSelected(modName): return False
         else:
@@ -5977,7 +5975,7 @@ class ModInfos(FileInfos):
 
     def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
             # Doesn't matter - LO isn't determined by mtime
             return time.time()
         else:
@@ -5997,13 +5995,13 @@ class ModInfos(FileInfos):
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
         try:
-            oldIndex = boss.GetPluginLoadOrder(oldName)
+            oldIndex = lo.GetPluginLoadOrder(oldName)
         except (CancelError,SkipError):
             return
         isSelected = self.isSelected(oldName)
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
-        boss.SetPluginLoadOrder(newName, oldIndex)
+        lo.SetPluginLoadOrder(newName, oldIndex)
         self.plugins.loadLoadOrder()
         self.refreshInfoLists()
         if isSelected: self.select(newName)
@@ -6486,6 +6484,12 @@ class ConfigHelpers:
         if not libbsa.libbsa:
             raise bolt.BoltError(u'The libbsa API could not be loaded.')
         deprint(u'Using libbsa API version:', libbsa.version)
+        
+        liblo.Init(dirs['compiled'].s)
+        # That didn't work - Wrye Bash isn't installed correctly
+        if not liblo.liblo:
+            raise bolt.BoltError(u'The libloadorder API could not be loaded.')
+        deprint(u'Using libloadorder API version:', liblo.version)
 
         global boss
         if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
@@ -6494,7 +6498,14 @@ class ConfigHelpers:
             boss = bapi.BossDb(dirs['app'].s,bush.game.name)
         deprint(u'Using BOSS API version:', bapi.version)
         bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
-                              ConfigHelpers.bossLOMismatchCallback)
+                              ConfigHelpers.libloLOMismatchCallback)
+                              
+        global lo
+        lo = liblo.LibloHandle(dirs['app'].s,bush.game.name)
+        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
+            lo.SetGameMaster(u'Nehrim.esm')
+        liblo.RegisterCallback(liblo.LIBLO_WARN_LO_MISMATCH,
+                              ConfigHelpers.libloLOMismatchCallback)
 
         self.bossVersion = dirs['boss'].join(u'BOSS.exe').version
         if self.bossVersion >= (2,0,0,0):
@@ -6514,7 +6525,7 @@ class ConfigHelpers:
         self.refresh(True)
 
     @staticmethod
-    def bossLOMismatchCallback():
+    def libloLOMismatchCallback():
         """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
         # Force a rewrite of both plugins.txt and loadorder.txt
         # In other words, use what's in loadorder.txt to write plugins.txt
@@ -8592,7 +8603,7 @@ class InstallerArchive(Installer):
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
         data_sizeCrcDate_update = {}
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TIMESTAMP:
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TIMESTAMP:
             mtimes = set()
             mtimesAdd = mtimes.add
             def timestamps(x):
@@ -8753,7 +8764,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        if boss.LoadOrderMethod == bapi.BOSS_API_LOMETHOD_TIMESTAMP:
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TIMESTAMP:
             mtimes = set()
             mtimesAdd = mtimes.add
             def timestamps(x):
