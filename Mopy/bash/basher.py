@@ -1022,8 +1022,8 @@ class List(wx.Panel):
                         changed = [x.s for x in changed]
                         removed += changed
                         balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
-                except bapi.BossError as e:
-                    if (e.msg == 'BOSS_API_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.'):
+                except bosh.liblo.LibloError as e:
+                    if (e.msg == 'LIBLO_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.'):
                         msg = _(u'Plugins may not be sorted before the game\'s master file.')
                     else:
                         msg = e.msg
@@ -7704,7 +7704,7 @@ class PatchDialog(wx.Dialog):
                     try:
                         # Note to the regular WB devs:
                         #  The bashed patch wasn't activating when it had been manually deleting. So, on
-                        #   startup, WB would create a new one, but something, somewhere (BAPI?) wasn't
+                        #   startup, WB would create a new one, but something, somewhere (libloadorder?) wasn't
                         #   registering this so when this: bosh.modInfos.select(patchName) executed, bash
                         #   couldn't actually find anything to execute. This fix really belongs somewhere else
                         #   (after the patch is recreated?), but I don't know where it goes, so I'm sticking it
@@ -9058,7 +9058,7 @@ class File_ListMasters(Link):
 class File_Redate(Link):
     """Move the selected files to start at a specified date."""
     def AppendToMenu(self,menu,window,data):
-        if bosh.boss.LoadOrderMethod == bosh.bapi.BOSS_API_LOMETHOD_TEXTFILE:
+        if bosh.lo.LoadOrderMethod == bosh.liblo.LIBLO_METHOD_TEXTFILE:
             return
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Redate...'),

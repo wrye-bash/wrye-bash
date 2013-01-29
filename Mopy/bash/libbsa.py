@@ -108,11 +108,9 @@ def Init(path):
         verMinor = c_uint()
         verPatch = c_uint()
         try:
-            libbsa.GetVersionNums(byref(verMajor), byref(verMinor), byref(verPatch))
-            ver = _uni(ver.value)
+            libbsa.bsa_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
         except:
-            ver = ''
-        raise LibbsaVersionError('libbsa.py is not compatible with the specified libbsa DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
+            raise LibbsaVersionError('libbsa.py is not compatible with the specified libbsa DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
 
     # =========================================================================
     # API Constants - BSA Version Flags
