@@ -17278,6 +17278,229 @@ class MreEnch(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
+
+class MreEyes(MelRecord):
+    """Eyes Item"""
+    classType = 'EYES'
+
+    # {0x01} 'Magic Casting',
+    # {0x02} 'Magic Hit Effect',
+    # {0x04} 'Enchantment Effect',
+    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'playable'),
+            (1, 'notMale'),
+            (2, 'notFemale'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelString('ICON','icon'),
+        MelStruct('DATA','B',(EyesTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreFact(MelRecord):
+    """Fact Faction Records"""
+    classType = 'FACT'
+
+    FactCombatReactionFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Neutral'),
+        (1, 'Enemy'),
+        (2, 'Ally'),
+        (3, 'Friend'),
+    ))
+
+    FactGeneralTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'HiddenFromNPC'),
+        (1, 'SpecialCombat'),
+        (2, 'Unknown3'),
+        (3, 'Unknown4'),
+        (4, 'Unknown5'),
+        (5, 'Unknown6'),
+        (6, 'TrackCrime'),
+        (7, 'IgnoreCrimes:Murder'),
+        (8, 'IgnoreCrimes:Assult'),
+        (9, 'IgnoreCrimes:Stealing'),
+        (10, 'IgnoreCrimes:Trespass'),
+        (11, 'DoNotReportCrimesAgainstMembers'),
+        (12, 'CrimeGold-UseDefaults'),
+        (13, 'IgnoreCrimes:Pickpocket'),
+        (14, 'Vendor'),
+        (15, 'CanBeOwner'),
+        (16, 'IgnoreCrimes:Werewolf'),
+        (17, 'Unknown18'),
+        (18, 'Unknown19'),
+        (19, 'Unknown20'),
+        (20, 'Unknown21'),
+        (21, 'Unknown22'),
+        (22, 'Unknown23'),
+        (23, 'Unknown24'),
+        (24, 'Unknown25'),
+        (25, 'Unknown26'),
+        (26, 'Unknown27'),
+        (27, 'Unknown28'),
+        (28, 'Unknown29'),
+        (29, 'Unknown30'),
+        (30, 'Unknown31'),
+        (31, 'Unknown32'),
+    ))
+
+# wbXNAM :=
+#   wbStructSK(XNAM, [0], 'Relation', [
+#    wbFormIDCkNoReach('Faction', [FACT, RACE]),
+#    wbInteger('Modifier', itS32),
+#    wbInteger('Group Combat Reaction', itU32, wbEnum([
+#      {0x00000001}'Neutral',
+#      {0x00000002}'Enemy',
+#      {0x00000004}'Ally',
+#      {0x00000008}'Friend'
+#    ]))
+# ]);
+
+#   wbPLVD := wbStruct(PLVD, 'Location', [
+#     wbInteger('Type', itS32, wbLocationEnum),
+#     wbUnion('Location Value', wbTypeDecider, [
+#       {0} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
+#       {1} wbFormIDCkNoReach('Cell', [NULL, CELL]),
+#       {2} wbByteArray('Near Package Start Location', 4, cpIgnore),
+#       {3} wbByteArray('Near Editor Location', 4, cpIgnore),
+#       {4} wbFormIDCkNoReach('Object ID', [NULL, ACTI, DOOR, STAT, FURN, SPEL, SCRL, NPC_, CONT, ARMO, AMMO, MISC, WEAP, BOOK, KEYM, ALCH, INGR, LIGH, FACT, FLST, IDLM, SHOU]),
+#       {5} wbInteger('Object Type', itU32, wbObjectTypeEnum),
+#       {6} wbFormIDCk('Keyword', [NULL, KYWD]),
+#       {7} wbByteArray('Unknown', 4, cpIgnore),
+#       {8} wbInteger('Alias ID', itU32),
+#       {9} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
+#      {10} wbByteArray('Unknown', 4, cpIgnore),
+#      {11} wbByteArray('Unknown', 4, cpIgnore),
+#      {12} wbByteArray('Unknown', 4, cpIgnore)
+#     ]),
+#     wbInteger('Radius', itS32)
+#   ]);
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelGroups('relationArray',
+            MelStruct('XNAM','IiI',(FID,'faction'),'modifier',(FactCombatReactionFlags,'combatReactionFlags',0L),),
+            ),
+        MelStruct('DATA','I',(FactGeneralTypeFlags,'factionGeneralFlags',0L),),
+        MelFid('JAIL','exteriorJailMarker'),
+        MelFid('WAIT','followerWaitMarker'),
+        MelFid('STOL','stolenGoodsContainer'),
+        MelFid('PLCN','playerInventoryContainer'),
+        MelFid('CRGR','sharedCrimeFactionList'),
+        MelFid('JOUT','jailOutfit'),
+        MelStruct('CRVA','2B5Hf2H','arrest','attackOnSight','murder','assult','trespass','pickpocket','unknown','stealMultiplier','escape','werewolf'),
+        MelStruct('RNAM','I','rankNumber'),
+        MelLString('MNAM','maleTitle'),
+        MelLString('FNAM','femaleTitle'),
+        MelString('INAM','insigniaUnused'),
+        MelFid('VEND','vendorBuySellList'),
+        MelFid('VENC','merchantContainer'),
+        MelStruct('VENV','4H2BH','startHour','endHour','radius','unknownOne','onlyBuysStolenItems','notSellBuy','UnknownTwo'),
+        MelStruct('PLVD','iIi','type','locationValue','radius',),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# XNAM and PLVD Need to be reviewed
+#------------------------------------------------------------------------------
+class MreFurn(MelRecord):
+    """Furniture"""
+    classType = 'FURN'
+
+    FurnGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'unknownOne'),
+        (1, 'ignoredBySandbox'),
+    ))
+
+    FurnActiveMarkerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'sit0'),
+        (1, 'sit1'),
+        (2, 'sit2'),
+        (3, 'sit3'),
+        (4, 'sit4'),
+        (5, 'sit5'),
+        (6, 'sit6'),
+        (7, 'sit7'),
+        (8, 'sit8'),
+        (9, 'sit9'),
+        (10, 'sit10'),
+        (11, 'sit11'),
+        (12, 'sit12'),
+        (13, 'sit13'),
+        (14, 'sit14'),
+        (15, 'sit15'),
+        (16, 'sit16'),
+        (17, 'sit17'),
+        (18, 'sit18'),
+        (19, 'sit19'),
+        (20, 'sit20'),
+        (21, 'Sit21'),
+        (22, 'Sit22'),
+        (23, 'sit23'),
+        (24, 'unknown25'),
+        (25, 'disablesActivation'),
+        (26, 'isPerch'),
+        (27, 'mustExittoTalk'),
+        (28, 'unknown29'),
+        (29, 'unknown30'),
+        (30, 'unknown31'),
+        (31, 'unknown32'),
+    ))
+
+    FurnBenchTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'None'),
+        (1, 'Create object'),
+        (2, 'Smithing Weapon'),
+        (3, 'Enchanting'),
+        (4, 'Enchanting Experiment'),
+        (5, 'Alchemy'),
+        (6, 'Alchemy Experiment'),
+        (7, 'Smithing Armor'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelAltModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelBase('PNAM','pnam_p'),
+        MelStruct('FNAM','H',(FurnGeneralFlags,'general_f',0L)),
+        MelFid('KNAM','interactionKeyword'),
+        MelStruct('MNAM','I',(FurnActiveMarkerFlags,'activeMarker_f',0L)),
+        # UsesSkill needs to be flags or an Enum at some point
+        MelStruct('WBDT','Bb',(FurnActiveMarkerFlags,'activeMarker_f',0L),'usesSkill',),
+        MelFid('NAM1','associatedSpell'),
+        # markerArray needs to be a repeating Array
+        # Disabled  needs to be flags or an Enum at some point
+        MelGroups('markerArray',
+            MelStruct('ENAM','I','markerIndex',),
+            MelStruct('NAM0','I','unknown','disabledPoints',),
+            MelFid('FNMK','markerKeyword',),
+            ),
+        # furnitureAnimType and furnitureEntryType need to be flags or an Enum at some point
+        MelGroups('markerArray',
+            MelStruct('FNPR','2H','furnitureAnimType','furnitureEntryType',),
+            ),
+        MelString('XMRK','mico_n'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# XNAM and PLVD Need to be reviewed
+#------------------------------------------------------------------------------
 class MreAact(MelRecord):
     """Action record."""
     classType = 'AACT'
@@ -17626,30 +17849,6 @@ class MreVtyp(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('DNAM','B',(VtypTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreEyes(MelRecord):
-    """Eyes Item"""
-    classType = 'EYES'
-
-    # {0x01} 'Magic Casting',
-    # {0x02} 'Magic Hit Effect',
-    # {0x04} 'Enchantment Effect',
-    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'playable'),
-            (1, 'notMale'),
-            (2, 'notFemale'),
-        ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelLString('FULL','full'),
-        MelString('ICON','icon'),
-        MelStruct('DATA','B',(EyesTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
