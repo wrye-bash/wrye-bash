@@ -254,6 +254,12 @@ masterFiles = [
     u'Update.esm',
     ]
 
+#--Plugin files that can't be deactivated
+nonDeactivatableFiles = [
+    u'Skyrim.esm',
+    u'Update.esm',                     
+    ]
+
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
 bethDataFiles = set((
