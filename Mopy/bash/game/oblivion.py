@@ -328,6 +328,9 @@ allBethFiles = set((
     u'DLCList.txt',
     ))
 
+#--Plugin files that can't be deactivated
+nonDeactivatableFiles = []
+
 #--BAIN: Directories that are OK to install to
 dataDirs = set((
     u'bash patches',
