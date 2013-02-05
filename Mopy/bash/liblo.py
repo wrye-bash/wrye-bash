@@ -73,7 +73,7 @@ def Init(path):
     c_char_p_p = POINTER(c_char_p)
     c_char_p_p_p = POINTER(c_char_p_p)
     c_size_t_p = POINTER(c_size_t)
-    
+
     def list_of_strings(strings):
         lst = (c_char_p * len(strings))()
         lst = cast(lst,c_char_p_p)
@@ -205,10 +205,8 @@ def Init(path):
     # =========================================================================
     ## unsigned int lo_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
     _Clo_get_version = liblo.lo_get_version
-    _Clo_get_version.restype = LibloErrorCheck
     _Clo_get_version.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
-    version = c_char_p()
     try:
         verMajor = c_uint()
         verMinor = c_uint()
@@ -262,11 +260,11 @@ def Init(path):
     _Clo_get_indexed_plugin = liblo.lo_get_indexed_plugin
     _Clo_get_indexed_plugin.restype = LibloErrorCheck
     _Clo_get_indexed_plugin.argtypes = [lo_game_handle, c_size_t, c_char_p_p]
-    
+
     # =========================================================================
     # API Functions - Active Plugins
     # =========================================================================
-    
+
     ## unsigned int lo_get_active_plugins(lo_game_handle gh, char *** const plugins, size_t * const numPlugins);
     _Clo_get_active_plugins = liblo.lo_get_active_plugins
     _Clo_get_active_plugins.restype = LibloErrorCheck
@@ -305,7 +303,7 @@ def Init(path):
 
         @property
         def LoadOrderMethod(self): return self._LOMethod
-        
+
         def SetGameMaster(self, plugin):
             _Clo_set_game_master(self._DB,_enc(plugin))
 
@@ -483,13 +481,15 @@ def Init(path):
             plugins = c_char_p_p()
             num = c_size_t()
             _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
-            return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
+            return self.GetOrdered([GPath(_uni(plugins[i])) for i in xrange(num.value)])
         def _GetActivePlugins(self):
             ret = self.ActivePluginsList(self.GetActivePlugins())
             ret.SetHandle(self)
             return ret
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
+            if (u'Update.esm' not in plugins):
+                plugins.append(u'Update.esm')
             num = len(plugins)
             plugins = list_of_strings(plugins)
             _Clo_set_active_plugins(self._DB, plugins, num)
