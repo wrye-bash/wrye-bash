@@ -1008,8 +1008,9 @@ class List(wx.Panel):
 
     def checkUncheckMod(self, *mods):
         removed = []
+        notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
         for item in mods:
-            if item in removed: continue
+            if item in removed or item in notDeactivatable: continue
             oldFiles = bosh.modInfos.ordered[:]
             fileName = GPath(item)
             #--Unselect?
@@ -1759,15 +1760,17 @@ class ModList(List):
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
 
     #-- Drag and Drop-----------------------------------------------------
-    def OnDropIndexes(self, indexes, newPos):
+    def OnDropIndexes(self, indexes, newIndex):
         # Make sure we're not auto-sorting
         for thisFile in self.GetSelected():
             if GPath(thisFile) in bosh.modInfos.autoSorted:
                 balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
                 return
-        start = indexes[0]
-        stop = indexes[-1] + 1
         order = bosh.modInfos.plugins.LoadOrder
+        # Calculating indexes through order.index() so corrupt mods (which don't show in the ModList) don't break Drag n Drop
+        start = order.index(self.items[indexes[0]])
+        stop = order.index(self.items[indexes[-1]]) + 1
+        newPos = order.index(self.items[newIndex]) if (len(self.items) > newIndex) else order.index(self.items[-1])
         # Dummy checks: can't move the game's master file anywhere else but position 0
         if newPos <= 0: return
         master = bosh.modInfos.masterName

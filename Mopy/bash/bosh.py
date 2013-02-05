@@ -2874,9 +2874,11 @@ class CoSaves:
         self.savePath = savePath
         self.paths = CoSaves.getPaths(savePath)
 
-    def delete(self):
+    def delete(self,askOk=False,dontRecycle=False):
         """Deletes cofiles."""
-        for path in self.paths: path.remove()
+        for path in self.paths:
+            if path.exists():
+                balt.shellDelete(path,askOk=askOk,recycle=not dontRecycle)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
