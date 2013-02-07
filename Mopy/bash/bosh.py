@@ -9842,6 +9842,8 @@ class InstallersData(bolt.TankData, DataDict):
         InstallersData.updateTable(removes, u'')
         for file in removes:
             data_sizeCrcDate.pop(file,None)
+        #--Remove mods from load order
+        modInfos.plugins.removeMods(removes, True)
         #--Restore files
         restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
         if restoreArchives:
