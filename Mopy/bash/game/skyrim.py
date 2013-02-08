@@ -17507,12 +17507,78 @@ class MreFurn(MelRecord):
     
 # XNAM and PLVD Need to be reviewed
 #------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# GLOB ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# GMST ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreKywd(MelRecord):
+    """Keyword record."""
+    classType = 'KYWD'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelColorN(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreLcrt(MelRecord):
+    """Location Reference Type record."""
+    classType = 'LCRT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelColorN(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
 class MreAact(MelRecord):
     """Action record."""
     classType = 'AACT'
     melSet = MelSet(
         MelString('EDID','eid'),
         MelColorN(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreTxst(MelRecord):
+    """Texture Set"""
+    classType = 'TXST'
+    TxstTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'No Specular Map'),
+        (1, 'Facegen Textures'),
+        (2, 'Has Model Space Normal Map'),
+    ))
+
+    TxstParaTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'parallax'),
+        (1, 'alphaBlending'),
+        (2, 'alphaTesting'),
+        (3, 'noSubtextures'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelGroups('destructionData',
+            MelString('TX00','difuse'),
+            MelString('TX01','normalGloss'),
+            MelString('TX02','enviroMaskSubSurfaceTint'),
+            MelString('TX03','glowDetailMap'),
+            MelString('TX04','height'),
+            MelString('TX05','environment'),
+            MelString('TX06','multilayer'),
+            MelString('TX07','backlightMaskSpecular'),
+            ),
+        MelStruct('DODT','7f8B','minWidth','maxWidth','minHeight','maxHeight',
+                  'depth','shininess','parallaxScale','parallaxPasses',(TxstParaTypeFlags,'para_flags',0L),
+                  'unknown_01','unknown_02','red','green','blue','unused',),
+        MelStruct('DNAM','H',(TxstTypeFlags,'flags',0L),),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
