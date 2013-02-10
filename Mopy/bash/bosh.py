@@ -9763,7 +9763,7 @@ class InstallersData(bolt.TankData, DataDict):
             data[archive].isActive = False
         #--Restore files
         restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
-        if ['bash.installers.autoAnneal'] and restoreArchives:
+        if settings['bash.installers.autoAnneal'] and restoreArchives:
             progress.setFull(len(restoreArchives))
             for index,archive in enumerate(restoreArchives):
                 progress(index,archive.s)
