@@ -488,7 +488,7 @@ def Init(path):
             return ret
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
-            if (u'Update.esm' not in plugins):
+            if (self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins):
                 plugins.append(u'Update.esm')
             num = len(plugins)
             plugins = list_of_strings(plugins)
