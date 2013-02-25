@@ -251,7 +251,7 @@ def initTranslator(language=None,path=None):
     if not language:
         try:
             language = locale.getlocale()[0].split('_',1)[0]
-            language = _encode(language)
+            language = _unicode(language)
         except UnicodeError:
             deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
             # Default to English
@@ -261,8 +261,8 @@ def initTranslator(language=None,path=None):
     txt,po,mo = (os.path.join(path,language+ext)
                  for ext in (u'.txt',u'.po',u'.mo'))
     if not os.path.exists(txt) and not os.path.exists(mo):
-        if language.lower() != 'english':
-            print 'No translation file for language:', language
+        if language.lower() != u'english':
+            print u'No translation file for language:', language
         trans = gettext.NullTranslations()
     else:
         try:
