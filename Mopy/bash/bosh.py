@@ -5996,15 +5996,13 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        try:
-            oldIndex = lo.GetPluginLoadOrder(oldName)
-        except (CancelError,SkipError):
-            return
         isSelected = self.isSelected(oldName)
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
-        lo.SetPluginLoadOrder(newName, oldIndex)
-        self.plugins.loadLoadOrder()
+        oldIndex = self.plugins.LoadOrder.index(oldName)
+        self.plugins.LoadOrder.remove(oldName)
+        self.plugins.LoadOrder.insert(oldIndex, newName)
+        self.plugins.saveLoadOrder()
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
