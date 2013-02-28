@@ -924,18 +924,13 @@ class WryeParser(ScriptParser.Parser):
                 self.RunLine(newline)
             except ScriptParser.ParserError, e:
                 return PageError(self.parent, _(u'Installer Wizard'),
-                                 _(u'An error occurred in the wizard script')
-                                 +u':\n '+
-                                 _(u'Line')
-                                 +u':\t%s\n'+newline.strip(u'\n')+u' '+
-                                 _(u'Error')
-                                 +u':\t%s' % e)
+                                 _(u'An error occurred in the wizard script:\n'
+                                 + u'Line %s:\t%s\n' % (self.cLine, newline.strip(u'\n'))
+                                 + u'Error:\t%s' % e))
             except Exception:
                 o = StringIO.StringIO()
-                o.write(_(u'An unhandled error occurred while parsing the wizard')
-                        +u' :\n '+
-                        _(u'Line')
-                        +u'(%s):\t%s\n\n' % (self.cLine, newline.strip(u'\n')))
+                o.write(_(u'An unhandled error occurred while parsing the wizard:\n'
+                        + u'Line %s:\t%s\n\n' % (self.cLine, newline.strip(u'\n'))))
                 traceback.print_exc(file=o)
                 msg = o.getvalue()
                 o.close()
