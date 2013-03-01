@@ -18348,7 +18348,7 @@ class App_Restart(StatusBar_Button):
                 (settings['bash.statusbar.iconSize'],
                  settings['bash.statusbar.iconSize'])),
             style=style,
-            tip=u'Restart',
+            tip=_(u'Restart'),
             onClick = self.Execute,
             onRClick = self.DoPopupMenu)
         return self.gButton
