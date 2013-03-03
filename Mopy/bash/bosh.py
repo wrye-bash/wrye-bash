@@ -5753,10 +5753,10 @@ class ModInfos(FileInfos):
             if fileInfo:
                 masters = set(fileInfo.header.masters)
                 missing = sorted([x for x in masters if x not in self])
-                log.setHeader(head+_(u'Missing Masters for %s: ' % fileInfo.name.s))
+                log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name.s)
                 for mod in missing:
                     log(bul+u'xx '+mod.s)
-                log.setHeader(head+_(u'Masters for %s: ' % fileInfo.name.s))
+                log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
                 present = set(x for x in masters if x in self)
                 if fileInfo.name in self: #--In case is bashed patch
                     present.add(fileInfo.name)
