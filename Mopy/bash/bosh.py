@@ -5753,10 +5753,10 @@ class ModInfos(FileInfos):
             if fileInfo:
                 masters = set(fileInfo.header.masters)
                 missing = sorted([x for x in masters if x not in self])
-                log.setHeader(head+_(u'Missing Masters for: ')+fileInfo.name.s)
+                log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name.s)
                 for mod in missing:
                     log(bul+u'xx '+mod.s)
-                log.setHeader(head+_(u'Masters for: ')+fileInfo.name.s)
+                log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
                 present = set(x for x in masters if x in self)
                 if fileInfo.name in self: #--In case is bashed patch
                     present.add(fileInfo.name)
@@ -5996,15 +5996,13 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        try:
-            oldIndex = lo.GetPluginLoadOrder(oldName)
-        except (CancelError,SkipError):
-            return
         isSelected = self.isSelected(oldName)
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
-        lo.SetPluginLoadOrder(newName, oldIndex)
-        self.plugins.loadLoadOrder()
+        oldIndex = self.plugins.LoadOrder.index(oldName)
+        self.plugins.LoadOrder.remove(oldName)
+        self.plugins.LoadOrder.insert(oldIndex, newName)
+        self.plugins.saveLoadOrder()
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
