@@ -4009,7 +4009,7 @@ class Plugins:
 
 
     def loadLoadOrder(self):
-        """Get list of all plugins from loadorder.txt through libloadorder which cleans out bad entries."""
+        """Get list of all plugins from loadorder.txt through libloadorder."""
         self.LoadOrder = lo.GetLoadOrder()
         # game's master might be out of place (if using timestamps for load ordering) so move it up.
         if self.LoadOrder.index(modInfos.masterName) > 0:
@@ -4070,7 +4070,19 @@ class Plugins:
         if refresh:
             self.saveLoadOrder()
             self.save()
-
+            
+    def addMods(self, plugins, refresh=False):
+        """Adds the specified mods at the bottom of the load order."""
+        # Remove any duplicates
+        plugins = set(plugins)
+        # Add plugins
+        for plugin in plugins:
+            self.LoadOrder.append(plugin)
+        # Refresh liblo
+        if refresh:
+            self.saveLoadOrder()
+            self.save()
+            
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = self.hasChanged()
@@ -4079,6 +4091,21 @@ class Plugins:
             self.loadLoadOrder()
         return hasChanged
 
+    def fixLoadOrder(self):
+        """Fix inconsistencies between plugins.txt, loadorder.txt and actually installed mod files"""
+        loadOrder = set(self.LoadOrder)
+        modFiles = set(modInfos.data.keys())
+        removedFiles = loadOrder - modFiles
+        addedFiles = modFiles - loadOrder
+        # Remove non existent plugins from load order
+        self.removeMods(removedFiles)
+        # Add new plugins to load order
+        self.addMods(addedFiles)
+        # Save changes if necessary
+        if removedFiles or addedFiles:
+            self.saveLoadOrder()
+            self.save()
+    
 #------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
