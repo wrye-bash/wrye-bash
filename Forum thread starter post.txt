@@ -72,7 +72,7 @@ Remember! In Windows Vista and up, don't install Oblivion in the Program Files f
 See Also [url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html#trouble-permissions"]File Permissions[/url]
 
 [b]Development[/b]:
-The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/develop"]SourceForge[/url].  You don't need a SourceForge account to create or add data to bug reports and feature requests -- you can always contribute anonymously (but put your name in the comments section if you want credit : ).  Feeling brave?  SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
+The project is hosted at [url="https://sourceforge.net/projects/oblivionworks/"]SourceForge[/url]. You'll need a SourceForge account to create or add data to bug reports and feature requests. Feeling brave? SVN versions are not guaranteed to be release quality, but if you know what you're doing and want to help us test new features and track down bugs, follow alt3rn1ty's SVN guide to use the latest code:
 [spoiler]
 If going from Standalone version to Python version, use the latest installer to install the Python version before continuing.  It will install all required dependencies for you.
 
@@ -81,14 +81,14 @@ The latest svn is always here >>[url="http://oblivionworks.svn.sourceforge.net/v
 Use >>[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/?view=log"]this link[/url]<< to view the log of changes for reference to specific revision numbers and their changes, to revert to as necessary if things go wrong...
 
 [b]A screenshot walkthrough:[/b]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn1.jpg"]Screenshot 1[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn2.jpg"]Screenshot 2[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn3.jpg"]Screenshot 3[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn4.jpg"]Screenshot 4[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn5.jpg"]Screenshot 5[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn6.jpg"]Screenshot 6[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn7.jpg"]Screenshot 7[/url]
-[url="http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/screenshots/svn8.jpg"]Screenshot 8[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn1.jpg"]Screenshot 1[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn2.jpg"]Screenshot 2[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn3.jpg"]Screenshot 3[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn4.jpg"]Screenshot 4[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn5s.jpg"]Screenshot 5[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn6.jpg"]Screenshot 6[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn7.jpg"]Screenshot 7[/url]
+[url="https://sourceforge.net/p/oblivionworks/code/2970/tree/Programs/Wrye%20Bash/screenshots/svn8s.jpg"]Screenshot 8[/url]
 
 Rinse and repeat when a new svn comes out.
 
