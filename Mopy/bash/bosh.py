@@ -4071,13 +4071,18 @@ class Plugins:
             self.saveLoadOrder()
             self.save()
             
-    def addMods(self, plugins, refresh=False):
-        """Adds the specified mods at the bottom of the load order."""
+    def addMods(self, plugins, index=None, refresh=False):
+        """Adds the specified mods to load order at the given index or at the bottom if none is given."""
         # Remove any duplicates
         plugins = set(plugins)
         # Add plugins
         for plugin in plugins:
-            self.LoadOrder.append(plugin)
+            if plugin not in self.LoadOrder:
+                if index is None:
+                    self.LoadOrder.append(plugin)
+                else:
+                    self.LoadOrder.insert(index, plugin)
+                    index += 1
         # Refresh liblo
         if refresh:
             self.saveLoadOrder()
@@ -5279,6 +5284,8 @@ class ModInfos(FileInfos):
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
+        # If files have changed we might need to add/remove mods from load order
+        if hasChanged: self.plugins.fixLoadOrder()
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
@@ -6027,8 +6034,10 @@ class ModInfos(FileInfos):
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
         oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.LoadOrder.remove(oldName)
-        self.plugins.LoadOrder.insert(oldIndex, newName)
+        self.plugins.removeMods(oldName)
+        self.plugins.addMods(oldName, index=oldIndex)
+        #self.plugins.LoadOrder.remove(oldName)
+        #self.plugins.LoadOrder.insert(oldIndex, newName)
         self.plugins.saveLoadOrder()
         self.refreshInfoLists()
         if isSelected: self.select(newName)
@@ -6556,6 +6565,7 @@ class ConfigHelpers:
         """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
         # Force a rewrite of both plugins.txt and loadorder.txt
         # In other words, use what's in loadorder.txt to write plugins.txt
+        # TODO: Check if this actually works.
         modInfos.plugins.loadLoadOrder()
         modInfos.plugins.saveLoadOrder()
 
@@ -8607,7 +8617,7 @@ class InstallerArchive(Installer):
         #--Done -> don't clean out temp dir, it's going to be used soon
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
-        """Install specified files to Oblivion\Data directory."""
+        """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
