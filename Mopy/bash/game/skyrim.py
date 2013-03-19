@@ -18275,6 +18275,7 @@ class MreArmo(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelOptStruct('EITM','I',(FID,'enchantment')),
+        MelOptStruct('EAMT','H','enchantmentAmount',),
         MelModel(),
         MelAltModel('model1','MOD2'),
         MelString('ICON','icon'),
