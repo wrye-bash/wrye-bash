@@ -8669,7 +8669,13 @@ class InstallerArchive(Installer):
         #--Now Move
         try:
             if count:
-                destDir = dirs['mods'].head
+                # TODO: Find the operation that does not properly close the Oblivion\Data dir.
+                # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
+                # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened 
+                # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to 
+                # install a mod for Obilivon.
+                destDir = dirs['mods'].head + u'\\Data'
+                stageDataDir = stageDataDir + u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean up staging dir
@@ -8827,7 +8833,8 @@ class InstallerProject(Installer):
                 progressPlus()
         try:
             if count:
-                destDir = dirs['mods'].head
+                destDir = dirs['mods'].head + u'\\Data'
+                stageDataDir = stageDataDir + u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean out staging dir
