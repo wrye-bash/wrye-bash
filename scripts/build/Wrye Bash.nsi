@@ -982,10 +982,10 @@ NoComTypes:
                 RMDir  "$Path_OB\Mopy\macro\py"
                 RMDir  "$Path_OB\Mopy\macro"
                 RMDir  "$Path_OB\Mopy\bash\images\stc"
-				; As of 303 the below are obsolete locations or files.
-				Delete "$Path_OB\Mopy\templates\Bashed Patch, Skyrim.esp"
-				Delete "$Path_OB\Mopy\templates\Bashed Patch, Oblivion.esp"
-				Delete "$Path_OB\Mopy\templates\Blank.esp"
+                ; As of 303 the below are obsolete locations or files.
+                Delete "$Path_OB\Mopy\templates\Bashed Patch, Skyrim.esp"
+                Delete "$Path_OB\Mopy\templates\Bashed Patch, Oblivion.esp"
+                Delete "$Path_OB\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Nehrim != $Empty
                 Delete "$Path_Nehrim\Mopy\Data\Actor Levels\*"
@@ -1091,10 +1091,10 @@ NoComTypes:
                 RMDir  "$Path_Nehrim\Mopy\macro\py"
                 RMDir  "$Path_Nehrim\Mopy\macro"
                 RMDir  "$Path_Nehrim\Mopy\bash\images\stc"
-				; As of 303 the below are obsolete locations or files.
-				Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Skyrim.esp"
-				Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Oblivion.esp"
-				Delete "$Path_Nehrim\Mopy\templates\Blank.esp"
+                ; As of 303 the below are obsolete locations or files.
+                Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Skyrim.esp"
+                Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Oblivion.esp"
+                Delete "$Path_Nehrim\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Skyrim != $Empty
                 Delete "$Path_Skyrim\Mopy\Data\Actor Levels\*"
@@ -1201,10 +1201,10 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\macro\py"
                 RMDir  "$Path_Skyrim\Mopy\macro"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\stc"
-				; As of 303 the below are obsolete locations or files.
-				Delete "$Path_Skryim\Mopy\templates\Bashed Patch, Skyrim.esp"
-				Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Oblivion.esp"
-				Delete "$Path_Skyrim\Mopy\templates\Blank.esp"
+                ; As of 303 the below are obsolete locations or files.
+                Delete "$Path_Skryim\Mopy\templates\Bashed Patch, Skyrim.esp"
+                Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Oblivion.esp"
+                Delete "$Path_Skyrim\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Ex1 != $Empty
                 Delete "$Path_Ex1\Mopy\Data\Actor Levels\*"
@@ -1310,10 +1310,10 @@ NoComTypes:
                 RMDir  "$Path_Ex1\Mopy\macro\py"
                 RMDir  "$Path_Ex1\Mopy\macro"
                 RMDir  "$Path_Ex1\Mopy\bash\images\stc"
-				; As of 303 the below are obsolete locations or files.
-				Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Skyrim.esp"
-				Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Oblivion.esp"
-				Delete "$Path_Ex1\Mopy\templates\Blank.esp"
+                ; As of 303 the below are obsolete locations or files.
+                Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Skyrim.esp"
+                Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Oblivion.esp"
+                Delete "$Path_Ex1\Mopy\templates\Blank.esp"
             ${EndIf}
             ${If} $Path_Ex2 != $Empty
                 Delete "$Path_Ex2\Mopy\Data\Actor Levels\*"
@@ -1421,10 +1421,10 @@ NoComTypes:
                 RMDir  "$Path_Ex2\Mopy\macro\py"
                 RMDir  "$Path_Ex2\Mopy\macro"
                 RMDir  "$Path_Ex2\Mopy\bash\images\stc"
-				; As of 303 the below are obsolete locations or files.
-				Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Skyrim.esp"
-				Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Oblivion.esp"
-				Delete "$Path_Ex2\Mopy\templates\Blank.esp"
+                ; As of 303 the below are obsolete locations or files.
+                Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Skyrim.esp"
+                Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Oblivion.esp"
+                Delete "$Path_Ex2\Mopy\templates\Blank.esp"
             ${EndIf}
         ${EndIf}
     FunctionEnd
@@ -2027,6 +2027,7 @@ NoComTypes:
                 Delete "$Path_OB\Mopy\Docs\Bash Readme Template.html"
                 Delete "$Path_OB\Mopy\Docs\wtxt_teal.css"
                 Delete "$Path_OB\Mopy\Docs\wtxt_sand_small.css"
+                Delete "$Path_OB\Mopy\bash\windows.pyo"
                 Delete "$Path_OB\Mopy\bash\ScriptParsero"
                 Delete "$Path_OB\Mopy\bash\ScriptParsero.py"
                 Delete "$Path_OB\Mopy\bash\ScriptParser.p*"
@@ -2036,6 +2037,8 @@ NoComTypes:
                 Delete "$Path_OB\Mopy\bash\l10n\Italian.*"
                 Delete "$Path_OB\Mopy\bash\l10n\de.*"
                 Delete "$Path_OB\Mopy\bash\l10n\Chinese*.*"
+                Delete "$Path_OB\Mopy\bash\liblo.pyo"
+                Delete "$Path_OB\Mopy\bash\libbsa.pyo"
                 Delete "$Path_OB\Mopy\bash\libbsa.py"
                 Delete "$Path_OB\Mopy\bash\images\tools\*.*"
                 Delete "$Path_OB\Mopy\bash\images\readme\*.*"
@@ -2091,6 +2094,7 @@ NoComTypes:
                 Delete "$Path_OB\Mopy\Bash Patches\Oblivion\*.*"
                 Delete "$Path_OB\Mopy\*.log"
                 Delete "$Path_OB\Mopy\*.bat"
+                Delete "$Path_OB\Mopy\bash.ico"
                 Delete "$Path_OB\Data\Docs\Bashed patch*.*"
                 Delete "$Path_OB\Data\ArchiveInvalidationInvalidated!.bsa"
                 RMDir  "$Path_OB\Mopy\Wizard Images"
@@ -2242,6 +2246,7 @@ NoComTypes:
                 Delete "$Path_Nehrim\Mopy\Docs\wtxt_sand_small.css"
                 Delete "$Path_Nehrim\Mopy\Docs\Bash Readme Template.txt"
                 Delete "$Path_Nehrim\Mopy\Docs\Bash Readme Template.html"
+                Delete "$Path_Nehrim\Mopy\bash\windows.pyo"
                 Delete "$Path_Nehrim\Mopy\bash\ScriptParsero"
                 Delete "$Path_Nehrim\Mopy\bash\ScriptParsero.py"
                 Delete "$Path_Nehrim\Mopy\bash\ScriptParser.p*"
@@ -2251,6 +2256,8 @@ NoComTypes:
                 Delete "$Path_Nehrim\Mopy\bash\l10n\Italian.*"
                 Delete "$Path_Nehrim\Mopy\bash\l10n\de.*"
                 Delete "$Path_Nehrim\Mopy\bash\l10n\Chinese*.*"
+                Delete "$Path_Nehrim\Mopy\bash\liblo.pyo"
+                Delete "$Path_Nehrim\Mopy\bash\libbsa.pyo"
                 Delete "$Path_Nehrim\Mopy\bash\libbsa.py"
                 Delete "$Path_Nehrim\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Nehrim\Mopy\bash\images\readme\*.*"
@@ -2306,6 +2313,7 @@ NoComTypes:
                 Delete "$Path_Nehrim\Mopy\Bash Patches\Oblivion\*.*"
                 Delete "$Path_Nehrim\Mopy\*.log"
                 Delete "$Path_Nehrim\Mopy\*.bat"
+                Delete "$Path_Nehrim\Mopy\bash.ico"
                 Delete "$Path_Nehrim\Data\Docs\Bashed patch*.*"
                 Delete "$Path_Nehrim\Data\ArchiveInvalidationInvalidated!.bsa"
                 RMDir  "$Path_Nehrim\Mopy\Wizard Images"
@@ -2473,6 +2481,7 @@ NoComTypes:
                 Delete "$Path_Skyrim\Mopy\Docs\wtxt_sand_small.css"
                 Delete "$Path_Skyrim\Mopy\Docs\Bash Readme Template.txt"
                 Delete "$Path_Skyrim\Mopy\Docs\Bash Readme Template.html"
+                Delete "$Path_Skyrim\Mopy\bash\windows.pyo"
                 Delete "$Path_Skyrim\Mopy\bash\ScriptParsero"
                 Delete "$Path_Skyrim\Mopy\bash\ScriptParsero.py"
                 Delete "$Path_Skyrim\Mopy\bash\ScriptParser.p*"
@@ -2482,6 +2491,8 @@ NoComTypes:
                 Delete "$Path_Skyrim\Mopy\bash\l10n\Italian.*"
                 Delete "$Path_Skyrim\Mopy\bash\l10n\de.*"
                 Delete "$Path_Skyrim\Mopy\bash\l10n\Chinese*.*"
+                Delete "$Path_Skyrim\Mopy\bash\liblo.pyo"
+                Delete "$Path_Skyrim\Mopy\bash\libbsa.pyo"
                 Delete "$Path_Skyrim\Mopy\bash\libbsa.py"
                 Delete "$Path_Skyrim\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Skyrim\Mopy\bash\images\readme\*.*"
@@ -2537,6 +2548,7 @@ NoComTypes:
                 Delete "$Path_Skyrim\Mopy\Bash Patches\Oblivion\*.*"
                 Delete "$Path_Skyrim\Mopy\*.log"
                 Delete "$Path_Skyrim\Mopy\*.bat"
+                Delete "$Path_Skyrim\Mopy\bash.ico"
                 Delete "$Path_Skyrim\Data\Docs\Bashed patch*.*"
                 Delete "$Path_Skyrim\Data\ArchiveInvalidationInvalidated!.bsa"
                 RMDir  "$Path_Skyrim\Mopy\Wizard Images"
@@ -2686,6 +2698,7 @@ NoComTypes:
                 Delete "$Path_Ex1\Mopy\Docs\wtxt_sand_small.css"
                 Delete "$Path_Ex1\Mopy\Docs\Bash Readme Template.txt"
                 Delete "$Path_Ex1\Mopy\Docs\Bash Readme Template.html"
+                Delete "$Path_Ex1\Mopy\bash\windows.pyo"
                 Delete "$Path_Ex1\Mopy\bash\ScriptParsero"
                 Delete "$Path_Ex1\Mopy\bash\ScriptParsero.py"
                 Delete "$Path_Ex1\Mopy\bash\ScriptParser.p*"
@@ -2695,6 +2708,8 @@ NoComTypes:
                 Delete "$Path_Ex1\Mopy\bash\l10n\Italian.*"
                 Delete "$Path_Ex1\Mopy\bash\l10n\de.*"
                 Delete "$Path_Ex1\Mopy\bash\l10n\Chinese*.*"
+                Delete "$Path_Ex1\Mopy\bash\liblo.pyo"
+                Delete "$Path_Ex1\Mopy\bash\libbsa.pyo"
                 Delete "$Path_Ex1\Mopy\bash\libbsa.py"
                 Delete "$Path_Ex1\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Ex1\Mopy\bash\images\readme\*.*"
@@ -2750,6 +2765,7 @@ NoComTypes:
                 Delete "$Path_Ex1\Mopy\Bash Patches\Oblivion\*.*"
                 Delete "$Path_Ex1\Mopy\*.log"
                 Delete "$Path_Ex1\Mopy\*.bat"
+                Delete "$Path_Ex1\Mopy\bash.ico"
                 Delete "$Path_Ex1\Data\Docs\Bashed patch*.*"
                 Delete "$Path_Ex1\Data\ArchiveInvalidationInvalidated!.bsa"
                 RMDir  "$Path_Ex1\Mopy\Wizard Images"
@@ -2899,6 +2915,7 @@ NoComTypes:
                 Delete "$Path_Ex2\Mopy\Docs\wtxt_sand_small.css"
                 Delete "$Path_Ex2\Mopy\Docs\Bash Readme Template.txt"
                 Delete "$Path_Ex2\Mopy\Docs\Bash Readme Template.html"
+                Delete "$Path_Ex2\Mopy\bash\windows.pyo"
                 Delete "$Path_Ex2\Mopy\bash\ScriptParsero"
                 Delete "$Path_Ex2\Mopy\bash\ScriptParsero.py"
                 Delete "$Path_Ex2\Mopy\bash\ScriptParser.p*"
@@ -2908,6 +2925,8 @@ NoComTypes:
                 Delete "$Path_Ex2\Mopy\bash\l10n\Italian.*"
                 Delete "$Path_Ex2\Mopy\bash\l10n\de.*"
                 Delete "$Path_Ex2\Mopy\bash\l10n\Chinese*.*"
+                Delete "$Path_Ex2\Mopy\bash\liblo.pyo"
+                Delete "$Path_Ex2\Mopy\bash\libbsa.pyo"
                 Delete "$Path_Ex2\Mopy\bash\libbsa.py"
                 Delete "$Path_Ex2\Mopy\bash\images\tools\*.*"
                 Delete "$Path_Ex2\Mopy\bash\images\readme\*.*"
@@ -2963,6 +2982,7 @@ NoComTypes:
                 Delete "$Path_Ex2\Mopy\Bash Patches\Oblivion\*.*"
                 Delete "$Path_Ex2\Mopy\*.log"
                 Delete "$Path_Ex2\Mopy\*.bat"
+                Delete "$Path_Ex2\Mopy\bash.ico"
                 Delete "$Path_Ex2\Data\Docs\Bashed patch*.*"
                 Delete "$Path_Ex2\Data\ArchiveInvalidationInvalidated!.bsa"
                 RMDir  "$Path_Ex2\Mopy\Wizard Images"
