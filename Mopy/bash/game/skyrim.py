@@ -128,6 +128,12 @@ dontSkip = (
        u'keyboard_italian.txt',
 )
 
+# Directories where specific file extensions should not be skipped by BAIN
+dontSkipDirs = {
+                # This rule is to allow mods with string translation enabled.
+                'interface\\translations':['.txt']
+}
+
 #Folders BAIN should never check
 SkipBAINRefresh = set ((
     #Use lowercase names

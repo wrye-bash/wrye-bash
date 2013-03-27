@@ -7705,6 +7705,9 @@ class Installer(object):
             else: rootLower = rootLower[0]
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
+            filePath = fileLower.split('\\')
+            del filePath[-1]
+            filePath = '\\'.join(filePath)
             #--Silent skips
             if fileEndsWith((u'thumbs.db',u'desktop.ini',u'config')):
                 continue #--Silent skip
@@ -7732,7 +7735,7 @@ class Installer(object):
             elif fileExt in docExts:
                 if reReadMeMatch(file):
                     self.hasReadme = full
-                if skipDocs and not (fileLower.split('\\')[-1] in bush.game.dontSkip):
+                if skipDocs and not (fileLower.split('\\')[-1] in bush.game.dontSkip) and not (fileExt in bush.game.dontSkipDirs.get(filePath, [])):
                     continue
             elif fileStartsWith(u'--'):
                 continue
