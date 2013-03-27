@@ -1835,7 +1835,7 @@ class ModList(List):
             elif col == 'Modified':
                 value = formatDate(fileInfo.getPath().mtime)
             elif col == 'Size':
-                value = formatInteger(fileInfo.size/1024)+u' KB'
+                value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
             elif col == 'Author' and fileInfo.header:
                 value = fileInfo.header.author
             elif col == 'Load Order':
@@ -2848,7 +2848,7 @@ class SaveList(List):
             elif col == 'Modified':
                 value = formatDate(fileInfo.mtime)
             elif col == 'Size':
-                value = formatInteger(fileInfo.size/1024)+u' KB'
+                value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
             elif col == 'Player' and fileInfo.header:
                 value = fileInfo.header.pcName
             elif col == 'PlayTime' and fileInfo.header:
@@ -4004,7 +4004,7 @@ class InstallersPanel(SashTankPanel):
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
             if isinstance(installer,bosh.InstallerProject):
-                info += _(u'Size:')+u' %s KB\n' % formatInteger(installer.size/1024)
+                info += _(u'Size:')+u' %s KB\n' % formatInteger(max(installer.size,1024)/1024 if installer.size else 0)
             elif isinstance(installer,bosh.InstallerMarker):
                 info += _(u'Size:')+u' N/A\n'
             elif isinstance(installer,bosh.InstallerArchive):
@@ -4017,7 +4017,7 @@ class InstallersPanel(SashTankPanel):
                         sSolid = _(u'Solid, Block Size: 7z Default')
                 else:
                     sSolid = _(u'Non-solid')
-                info += _(u'Size: %s KB (%s)') % (formatInteger(installer.size/1024),sSolid) + u'\n'
+                info += _(u'Size: %s KB (%s)') % (formatInteger(max(installer.size,1024)/1024 if installer.size else 0),sSolid) + u'\n'
             else:
                 info += _(u'Size: Unrecognized')+u'\n'
             info += (_(u'Modified:')+u' %s\n' % formatDate(installer.modified),
@@ -4027,7 +4027,7 @@ class InstallersPanel(SashTankPanel):
             info += (_(u'Files:')+u' %s\n' % formatInteger(len(installer.fileSizeCrcs)),
                      _(u'Files:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'Configured:')+u' %s (%s KB)\n' % (
-                formatInteger(nConfigured), formatInteger(installer.unSize/1024)),
+                formatInteger(nConfigured), formatInteger(max(installer.unSize,1024)/1024 if installer.unSize else 0)),
                      _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'  Matched:')+u' %s\n' % formatInteger(nConfigured-nMissing-nMismatched),
                      _(u'  Matched:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
@@ -4420,7 +4420,7 @@ class BSAList(List):
             elif col == 'Modified':
                 value = formatDate(fileInfo.mtime)
             elif col == 'Size':
-                value = formatInteger(fileInfo.size/1024)+u' KB'
+                value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
             else:
                 value = u'-'
             if mode and (colDex == 0):
@@ -11506,7 +11506,7 @@ class InstallerConverter_Create(InstallerLink):
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
             log(u'. '+_(u'Name')+u': '+BCFArchive.s)
-            log(u'. '+_(u'Size')+u': %s KB'%formatInteger(converter.fullPath.size/1024))
+            log(u'. '+_(u'Size')+u': %s KB'% formatInteger(max(converter.fullPath.size,1024)/1024 if converter.fullPath.size else 0))
             log(u'. '+_(u'Remapped')+u': %s'%formatInteger(len(converter.convertedFiles))+(_(u'file'),_(u'files'))[len(converter.convertedFiles) > 1])
             log.setHeader(u'. '+_(u'Requires')+u': %s'%formatInteger(len(converter.srcCRCs))+(_(u'file'),_(u'files'))[len(converter.srcCRCs) > 1])
             log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, self.data.crc_installer[x].archive) for x in converter.srcCRCs if x in self.data.crc_installer)))
@@ -13677,7 +13677,7 @@ class Mod_CopyModInfo(Link):
                 elif col == 'Modified':
                     value = formatDate(fileInfo.mtime)
                 elif col == 'Size':
-                    value = formatInteger(fileInfo.size/1024)+u' KB'
+                    value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
                 elif col == 'Author' and fileInfo.header:
                     value = fileInfo.header.author
                 elif col == 'Load Order':

@@ -213,7 +213,7 @@ class BackupSettings(BaseBackupSettings):
         #returns False if user cancels
         if self.archive == None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
-            file = u'Backup Bash Settings v%s (%s).7z' % (self.verApp,dt.strftime(u'%d-%m-%Y %H%M.%S'))
+            file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (bush.game.name,dt.strftime(u'%Y-%m-%d %H.%M.%S'),self.verDat,self.verApp)
             if not self.quit:
                 path = askSave(self.parent,_(u'Backup Bash Settings'),self.dir,file,u'*.7z')
                 if not path: return False

@@ -4009,7 +4009,7 @@ class Plugins:
 
 
     def loadLoadOrder(self):
-        """Get list of all plugins from loadorder.txt through libloadorder which cleans out bad entries."""
+        """Get list of all plugins from loadorder.txt through libloadorder."""
         self.LoadOrder = lo.GetLoadOrder()
         # game's master might be out of place (if using timestamps for load ordering) so move it up.
         if self.LoadOrder.index(modInfos.masterName) > 0:
@@ -4070,7 +4070,24 @@ class Plugins:
         if refresh:
             self.saveLoadOrder()
             self.save()
-
+            
+    def addMods(self, plugins, index=None, refresh=False):
+        """Adds the specified mods to load order at the given index or at the bottom if none is given."""
+        # Remove any duplicates
+        plugins = set(plugins)
+        # Add plugins
+        for plugin in plugins:
+            if plugin not in self.LoadOrder:
+                if index is None:
+                    self.LoadOrder.append(plugin)
+                else:
+                    self.LoadOrder.insert(index, plugin)
+                    index += 1
+        # Refresh liblo
+        if refresh:
+            self.saveLoadOrder()
+            self.save()
+            
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = self.hasChanged()
@@ -4079,6 +4096,21 @@ class Plugins:
             self.loadLoadOrder()
         return hasChanged
 
+    def fixLoadOrder(self):
+        """Fix inconsistencies between plugins.txt, loadorder.txt and actually installed mod files"""
+        loadOrder = set(self.LoadOrder)
+        modFiles = set(modInfos.data.keys())
+        removedFiles = loadOrder - modFiles
+        addedFiles = modFiles - loadOrder
+        # Remove non existent plugins from load order
+        self.removeMods(removedFiles)
+        # Add new plugins to load order
+        self.addMods(addedFiles)
+        # Save changes if necessary
+        if removedFiles or addedFiles:
+            self.saveLoadOrder()
+            self.save()
+    
 #------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
@@ -5252,6 +5284,8 @@ class ModInfos(FileInfos):
             self.resetMTimes()
         if self.fullBalo: self.autoGroup()
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
+        # If files have changed we might need to add/remove mods from load order
+        if hasChanged: self.plugins.fixLoadOrder()
         hasGhosted = self.autoGhost()
         hasSorted = self.autoSort()
         self.refreshInfoLists()
@@ -6000,8 +6034,10 @@ class ModInfos(FileInfos):
         if isSelected: self.unselect(oldName)
         FileInfos.rename(self,oldName,newName)
         oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.LoadOrder.remove(oldName)
-        self.plugins.LoadOrder.insert(oldIndex, newName)
+        self.plugins.removeMods(oldName)
+        self.plugins.addMods(oldName, index=oldIndex)
+        #self.plugins.LoadOrder.remove(oldName)
+        #self.plugins.LoadOrder.insert(oldIndex, newName)
         self.plugins.saveLoadOrder()
         self.refreshInfoLists()
         if isSelected: self.select(newName)
@@ -6529,6 +6565,7 @@ class ConfigHelpers:
         """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
         # Force a rewrite of both plugins.txt and loadorder.txt
         # In other words, use what's in loadorder.txt to write plugins.txt
+        # TODO: Check if this actually works.
         modInfos.plugins.loadLoadOrder()
         modInfos.plugins.saveLoadOrder()
 
@@ -8580,7 +8617,7 @@ class InstallerArchive(Installer):
         #--Done -> don't clean out temp dir, it's going to be used soon
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
-        """Install specified files to Oblivion\Data directory."""
+        """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
@@ -8632,7 +8669,13 @@ class InstallerArchive(Installer):
         #--Now Move
         try:
             if count:
-                destDir = dirs['mods'].head
+                # TODO: Find the operation that does not properly close the Oblivion\Data dir.
+                # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
+                # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened 
+                # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to 
+                # install a mod for Obilivon.
+                destDir = dirs['mods'].head + u'\\Data'
+                stageDataDir = stageDataDir + u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean up staging dir
@@ -8790,7 +8833,8 @@ class InstallerProject(Installer):
                 progressPlus()
         try:
             if count:
-                destDir = dirs['mods'].head
+                destDir = dirs['mods'].head + u'\\Data'
+                stageDataDir = stageDataDir + u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean out staging dir

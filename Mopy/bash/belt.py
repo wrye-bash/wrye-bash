@@ -922,7 +922,6 @@ class WryeParser(ScriptParser.Parser):
             newline = self.lines[self.cLine]
             try:
                 self.RunLine(newline)
-                raise ScriptParser.ParserError
             except ScriptParser.ParserError, e:
                 return PageError(self.parent, _(u'Installer Wizard'),
                                  _(u'An error occurred in the wizard script:') + '\n'
