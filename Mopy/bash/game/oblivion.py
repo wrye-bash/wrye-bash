@@ -113,6 +113,11 @@ dontSkip = (
 # Nothing so far
 )
 
+# Directories where specific file extensions should not be skipped by BAIN
+dontSkipDirs = {
+# Nothing so far
+}
+
 #Folders BAIN should never check
 SkipBAINRefresh = set ((
     u'tes4edit backups',
