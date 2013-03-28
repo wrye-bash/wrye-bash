@@ -36,6 +36,11 @@
 [*]Metallicow's BAIN [url="http://oblivion.nexusmods.com/mods/38857"]Demo Wizard[/url]
 [*]Translated documentation and guides: [url="http://guides.tesfans.org/wrye%20bash/"]简体中文[/url]
 [/list]
+
+[b]Instalation Video[/b]:[list]
+[*]How to install the SVN GNU Tarball: [url="http://www.youtube.com/watch?v=SzWuZjhNshs"]YouTube Video[/url]
+[/list]
+
 [b]Requirements and Installation[/b]: Short version: just use the installer and install to the Skyrim folder!   When you install dependencies, just install them to their default locations.
 Long version:
 [spoiler]
