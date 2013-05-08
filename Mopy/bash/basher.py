@@ -3718,6 +3718,7 @@ class InstallersPanel(SashTankPanel):
             commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
         #--Events
         #self.Bind(wx.EVT_SIZE,self.OnSize)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
         commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
@@ -3727,6 +3728,11 @@ class InstallersPanel(SashTankPanel):
     def OnShow(self,canCancel=True):
         """Panel is shown. Update self.data."""
         if settings.get('bash.installers.isFirstRun',True):
+            # I have no idea why this is neccesary but if the mouseCaptureLost event is not fired before showing the askYes dialog it thorws an exception
+            event = wx.CommandEvent()
+            event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
+            wx.PostEvent(self.GetEventHandler(), event)
+            
             settings['bash.installers.isFirstRun'] = False
             message = (_(u'Do you want to enable Installers?')
                        + u'\n\n\t' +
@@ -3876,7 +3882,15 @@ class InstallersPanel(SashTankPanel):
         splitter = event.GetEventObject()
         sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
         settings['bash.installers.commentsSplitterSashPos'] = sashPos
-
+    
+    def _onMouseCaptureLost(self, event):
+        """Handle the onMouseCaptureLost event
+        
+        Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
+        
+        """
+        pass
+    
     #--Details view (if it exists)
     def SaveDetails(self):
         """Saves details if they need saving."""
