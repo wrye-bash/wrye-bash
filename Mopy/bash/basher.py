@@ -439,6 +439,7 @@ settingDefaults = {
     'bash.installers.sortStructure':False,
     'bash.installers.conflictsReport.showLower':True,
     'bash.installers.conflictsReport.showInactive':False,
+    'bash.installers.conflictsReport.showBSAConflicts':False,
     'bash.installers.goodDlls':{},
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
@@ -9737,6 +9738,19 @@ class Installers_ConflictsReportShowsLower(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
+        self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Installers_ConflictsReportShowBSAConflicts(BoolLink):
+    """Toggles option to show files inside BSAs on conflicts report."""
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _(u'Show BSA Conflicts'),
+                          'bash.installers.conflictsReport.showBSAConflicts',
+                          )
+        
+    def Execute(self,event):
+        BoolLink.Execute(self, event)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -19290,6 +19304,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
+    InstallersPanel.mainMenu.append(Installers_ConflictsReportShowBSAConflicts())
     InstallersPanel.mainMenu.append(Installers_WizardOverlay())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_SkipOBSEPlugins())
