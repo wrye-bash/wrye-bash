@@ -18553,7 +18553,6 @@ class MreRfct(MelRecord):
 class MreCont(MelRecord):
     """Container"""
     classType = 'CONT'
-    isKeyedByEid = True # NULL fids are acceptible
 
     class MelContCnto(MelGroups):
         def __init__(self):
