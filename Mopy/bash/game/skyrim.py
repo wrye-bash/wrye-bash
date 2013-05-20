@@ -128,6 +128,12 @@ dontSkip = (
        u'keyboard_italian.txt',
 )
 
+# Directories where specific file extensions should not be skipped by BAIN
+dontSkipDirs = {
+                # This rule is to allow mods with string translation enabled.
+                'interface\\translations':['.txt']
+}
+
 #Folders BAIN should never check
 SkipBAINRefresh = set ((
     #Use lowercase names
@@ -18547,6 +18553,20 @@ class MreRfct(MelRecord):
 class MreCont(MelRecord):
     """Container"""
     classType = 'CONT'
+    isKeyedByEid = True # NULL fids are acceptible
+
+    class MelContCnto(MelGroups):
+        def __init__(self):
+            MelGroups.__init__(self,'components',
+                MelStruct('CNTO','=2I',(FID,'item',None),'count'),
+                MelCoed(),
+                )
+
+        def dumpData(self,record,out):
+            # Only write the COCT/CNTO/COED subrecords if count > 0
+            out.packSub('COCT','I',len(record.components))
+            MelGroups.dumpData(self,record,out)
+
 
     ContTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
         (0, 'rotateToFaceTarget'),
@@ -18562,8 +18582,8 @@ class MreCont(MelRecord):
 	#     ]),
 	# 	wbCOED
 	# 	], []);
-	# wbCOCT := wbInteger(COCT, 'Count', itU32);
-	# wbCNTOs := wbRArrayS('Items', wbCNTO);
+	# wbCOCT := wbInteger(COCT, 'Count', itU32)
+	# wbCNTOs := wbRArrayS('Items', wbCNTO)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -18572,8 +18592,10 @@ class MreCont(MelRecord):
         MelLString('FULL','full'),
         MelModel(),
         # One Count: COCT 
+        # Handled by MreContCnto
+        MelNull('COCT'),
         # Repeating CNTO records: CNTO, CNTO, CNTO, CNTO : Of the Count COCT
-        # MelComponents(),
+        MelContCnto(),
         MelBase('DEST','dest_p'),
         MelGroups('destructionData',
             MelBase('DSTD','dstd_p'),
@@ -19208,6 +19230,52 @@ class MreTxst(MelRecord):
                   'depth','shininess','parallaxScale','parallaxPasses',(TxstParaTypeFlags,'para_flags',0L),
                   'unknown_01','unknown_02','red','green','blue','unused',),
         MelStruct('DNAM','H',(TxstTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreHdpt(MelRecord):
+    """Head Part"""
+    classType = 'HDPT'
+    HdptTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'playable'),
+        (1, 'male'),
+        (2, 'female'),
+        (3, 'isExtraPart'),
+        (4, 'useSolidTint'),
+    ))
+
+    HdptTypeFlags02 = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'misc'),
+        (1, 'face'),
+        (2, 'eyes'),
+        (3, 'hair'),
+        (4, 'facialHair'),
+        (5, 'scar'),
+        (6, 'eyebrows'),
+    ))
+
+    HdptTypeFlags03 = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'raceMorph'),
+        (1, 'tri'),
+        (2, 'chargenMorph'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelStruct('DATA','B',(HdptTypeFlags,'hdptDataFlags',0L),),
+        MelStruct('PNAM','I',(HdptTypeFlags02,'hdptDataFlags02',0L),),
+        MelFids('HNAM','extraParts'),
+        MelGroups('partsData',
+            MelStruct('NAM0','I',(HdptTypeFlags03,'hdptDataFlags03',0L),),
+            MelLString('NAM1','filename'),
+            ),
+        MelFids('TNAM','textureSet'),
+        MelFids('CNAM','color'),
+        MelFids('RNAM','validRaces'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -20047,9 +20115,9 @@ class MreMgef(MelRecord):
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
         MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj,
-        MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds,
-        MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft,
-        MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
+		MreCont, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, 
+		MreHdpt, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
+		MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
         )
 
 #--Extra read/write classes
@@ -20068,9 +20136,9 @@ def init():
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
         MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj,
-        MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, MreIpds,
-        MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreOtft,
-        MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
+		MreCont, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, 
+		MreHdpt, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
+		MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
         MreHeader,
         ))
 
