@@ -20899,109 +20899,6 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
-    """Sets all clothes to playable"""
-    
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
-            _(u'Sets all clothing to be playable.'),
-            u'PlayableClothing',
-            (u'1.0',  u'1.0'),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ARMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ARMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags1[2] and record.armorFlags.clothing:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ARMO.records:
-            if record.flags1[2]: #not playable
-                if record.armorFlags.clothing: #true 'clothing' records only
-                    full = record.full
-                    if not full: continue
-                    #if record.scripts: continue
-                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
-                    record.flags1[2] = False
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'=== '+_(u'Playable Clothes'))
-        log(u'* '+_(u'Clothes set as playable: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-#------------------------------------------------------------------------------
-class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
-    """Sets all clothes to playable"""
-    
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"All Armor Playable"),
-            _(u'Sets all armor to be playable.'),
-            u'PlayableArmour',
-            (u'1.0',  u'1.0'),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ARMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ARMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags1[2] and not record.armorFlags.clothing:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ARMO.records:
-            if record.flags1[2]: #not playable
-                if not record.armorFlags.clothing: #true 'armour' records only
-                    full = record.full
-                    if not full: continue
-                    #if record.scripts: continue
-                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
-                    record.flags1[2] = False
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'=== '+_(u'Playable Armor'))
-        log(u'* '+_(u'Armors set as playable: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-#------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
     
@@ -23317,56 +23214,6 @@ class CBash_AssortedTweak_TextlessLSCRs(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_Skyrim_Arrows_Playable(MultiTweakItem):
-    """Makes all arrows playable."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Playable Arrows"),
-            _(u'All arrows will be set playable.'),
-            u'PlayableArrows',
-            (u'0',    0),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('AMMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('AMMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.AMMO
-        id_records = patchBlock.id_records
-        for record in modFile.AMMO.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.flags.nonPlayable:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.AMMO.records:
-            if record.flags.nonPlayable:
-                if not record.full: continue
-                record.flags.nonPlayable = False
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'=== '+_(u'Playable Arrows'))
-        log(u'* '+_(u'Arrows set to playable: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -23417,14 +23264,8 @@ class AssortedTweaker(MultiTweaker):
             AssortedTweak_SkyrimStyleWeapons(),
             AssortedTweak_TextlessLSCRs(),
             ],key=lambda a: a.label.lower())
-    elif bush.game.name == u'Skyrim':
-        tweaks = sorted([
-            AssortedTweak_Skyrim_ArmourPlayable(),
-            AssortedTweak_Skyrim_Arrows_Playable(),
-            AssortedTweak_Skyrim_ClothingPlayable(),
-            ],key=lambda a: a.label.lower())
 
-    #--Patch Phase ------------------------------------------------------------
+   #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         if not self.isActive: return tuple()
