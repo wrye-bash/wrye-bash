@@ -4105,7 +4105,18 @@ class Plugins:
         # Remove non existent plugins from load order
         self.removeMods(removedFiles)
         # Add new plugins to load order
-        self.addMods(addedFiles)
+        indexFirstEsp = None
+        for mod in addedFiles:
+            if modInfos.data[mod].isEsm():
+                if indexFirstEsp is None:
+                    indexFirstEsp = 0
+                    while modInfos[self.LoadOrder[indexFirstEsp]].isEsm():
+                        indexFirstEsp += 1
+                    self.addMods([mod], indexFirstEsp)
+                else:
+                    self.addMods([mod], indexFirstEsp)
+            else:
+                self.addMods([mod])
         # Save changes if necessary
         if removedFiles or addedFiles:
             self.saveLoadOrder()
@@ -7705,6 +7716,9 @@ class Installer(object):
             else: rootLower = rootLower[0]
             fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
+            filePath = fileLower.split('\\')
+            del filePath[-1]
+            filePath = '\\'.join(filePath)
             #--Silent skips
             if fileEndsWith((u'thumbs.db',u'desktop.ini',u'config')):
                 continue #--Silent skip
@@ -7732,7 +7746,7 @@ class Installer(object):
             elif fileExt in docExts:
                 if reReadMeMatch(file):
                     self.hasReadme = full
-                if skipDocs and not (fileLower.split('\\')[-1] in bush.game.dontSkip):
+                if skipDocs and not (fileLower.split('\\')[-1] in bush.game.dontSkip) and not (fileExt in bush.game.dontSkipDirs.get(filePath, [])):
                     continue
             elif fileStartsWith(u'--'):
                 continue
@@ -8594,7 +8608,7 @@ class InstallerArchive(Installer):
             index = 0
             for line in ins:
                 line = unicode(line,'utf8')
-                deprint(line)
+#                deprint(line)
                 maExtracting = reExtracting.match(line)
                 if len(errorLine) or reError.match(line):
                     errorLine.append(line.rstrip())
@@ -9939,7 +9953,7 @@ class InstallersData(bolt.TankData, DataDict):
 
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
-        mode: O: Overrides; U: Underrides"""
+        mode: OVER: Overrides; UNDER: Underrides"""
         data = self.data
         srcOrder = srcInstaller.order
         conflictsMode = (mode == 'OVER')
@@ -9950,10 +9964,49 @@ class InstallersData(bolt.TankData, DataDict):
             mismatched = srcInstaller.underrides
         showInactive = conflictsMode and settings['bash.installers.conflictsReport.showInactive']
         showLower = conflictsMode and settings['bash.installers.conflictsReport.showLower']
+        showBSA = settings['bash.installers.conflictsReport.showBSAConflicts']
         if not mismatched: return u''
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
+        bsaConflicts = []
         getArchiveOrder =  lambda x: data[x].order
+        getBSAOrder = lambda x: list(modInfos.ordered).index(x[1].root + ".esp")
+        # Calculate bsa conflicts
+        if showBSA:
+            # Create list of active BSA files in srcInstaller
+            srcFiles = srcInstaller.data_sizeCrc
+            srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
+#            print("Ordered: {}".format(modInfos.ordered))
+            activeSrcBSAFiles = [x for x in srcBSAFiles if x.root + ".esp" in modInfos.ordered]
+            try:
+                bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
+#                print("BSA Paths: {}".format(bsas))
+            except:
+                deprint(u'   Error loading BSA srcFiles: ',activeSrcBSAFiles,traceback=True)
+            # Create list of all assets in BSA files for srcInstaller
+            srcBSAContents = []
+            for x,y in bsas: srcBSAContents.extend(y.GetAssets('.+')) 
+#            print("srcBSAContents: {}".format(srcBSAContents))
+            
+            # Create a list of all active BSA Files except the ones in srcInstaller
+            activeBSAFiles = []
+            for package in self.data:
+                installer = data[package]
+                if installer.order == srcOrder: continue
+                if not installer.isActive: continue
+#                print("Current Package: {}".format(package))
+                BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
+                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if x.root + ".esp" in modInfos.ordered])
+            # Calculate all conflicts and save them in bsaConflicts
+#            print("Active BSA Files: {}".format(activeBSAFiles))
+            for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
+                curAssets = bsaHandle.GetAssets('.+')
+#                print("Current Assets: {}".format(curAssets))
+                curConflicts = Installer.sortFiles([x.s for x in curAssets if x in srcBSAContents])
+#                print("Current Conflicts: {}".format(curConflicts))
+                if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
+#        print("BSA Conflicts: {}".format(bsaConflicts))
+        # Calculate esp/esm conflicts
         for package in sorted(self.data,key=getArchiveOrder):
             installer = data[package]
             if installer.order == srcOrder: continue
@@ -9964,14 +10017,35 @@ class InstallersData(bolt.TankData, DataDict):
             if curConflicts: packConflicts.append((installer,package.s,curConflicts))
         #--Unknowns
         isHigher = -1
+        # Generate report
         with sio() as buff:
-            for installer,package,files in packConflicts:
+            # Print BSA conflicts
+            if showBSA:
+                buff.write(u'= %s %s\n\n' % (_(u'BSA Conflicts'),u'='*40))
+                for package, bsa, srcFiles in bsaConflicts:
+                    order = getBSAOrder((None,bsa,None))
+                    srcBSAOrder = getBSAOrder((None,activeSrcBSAFiles[0],None))
+                    # Print partitions
+                    if showLower and (order > srcBSAOrder) != isHigher:
+                        isHigher = (order > srcBSAOrder)
+                        buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
+                    buff.write(u'==%d== %s : %s\n' % (order, package, bsa))
+                    # Print files
+                    for file in srcFiles:
+                        buff.write(u'%s \n' % file)
+                    buff.write(u'\n')
+            isHigher = -1
+            if showBSA: buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'),u'='*36))
+            # Print loose file conflicts
+            for installer,package,srcFiles in packConflicts:
                 order = installer.order
+                # Print partitions
                 if showLower and (order > srcOrder) != isHigher:
                     isHigher = (order > srcOrder)
                     buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
                 buff.write(u'==%d== %s\n'% (order,package))
-                for file in files:
+                # Print srcFiles
+                for file in srcFiles:
                     oldName = installer.getEspmName(file)
                     buff.write(oldName)
                     if oldName != file:
@@ -20836,109 +20910,6 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class AssortedTweak_Skyrim_ClothingPlayable(MultiTweakItem):
-    """Sets all clothes to playable"""
-    
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
-            _(u'Sets all clothing to be playable.'),
-            u'PlayableClothing',
-            (u'1.0',  u'1.0'),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ARMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ARMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags1[2] and record.armorFlags.clothing:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ARMO.records:
-            if record.flags1[2]: #not playable
-                if record.armorFlags.clothing: #true 'clothing' records only
-                    full = record.full
-                    if not full: continue
-                    #if record.scripts: continue
-                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
-                    record.flags1[2] = False
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'=== '+_(u'Playable Clothes'))
-        log(u'* '+_(u'Clothes set as playable: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-#------------------------------------------------------------------------------
-class AssortedTweak_Skyrim_ArmourPlayable(MultiTweakItem):
-    """Sets all clothes to playable"""
-    
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"All Armor Playable"),
-            _(u'Sets all armor to be playable.'),
-            u'PlayableArmour',
-            (u'1.0',  u'1.0'),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ARMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ARMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags1[2] and not record.armorFlags.clothing:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ARMO.records:
-            if record.flags1[2]: #not playable
-                if not record.armorFlags.clothing: #true 'armour' records only
-                    full = record.full
-                    if not full: continue
-                    #if record.scripts: continue
-                    if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
-                    record.flags1[2] = False
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'=== '+_(u'Playable Armor'))
-        log(u'* '+_(u'Armors set as playable: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-#------------------------------------------------------------------------------
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
     
@@ -23254,56 +23225,6 @@ class CBash_AssortedTweak_TextlessLSCRs(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_Skyrim_Arrows_Playable(MultiTweakItem):
-    """Makes all arrows playable."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Playable Arrows"),
-            _(u'All arrows will be set playable.'),
-            u'PlayableArrows',
-            (u'0',    0),
-            )
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('AMMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('AMMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.AMMO
-        id_records = patchBlock.id_records
-        for record in modFile.AMMO.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.flags.nonPlayable:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.AMMO.records:
-            if record.flags.nonPlayable:
-                if not record.full: continue
-                record.flags.nonPlayable = False
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'=== '+_(u'Playable Arrows'))
-        log(u'* '+_(u'Arrows set to playable: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-#------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -23354,14 +23275,8 @@ class AssortedTweaker(MultiTweaker):
             AssortedTweak_SkyrimStyleWeapons(),
             AssortedTweak_TextlessLSCRs(),
             ],key=lambda a: a.label.lower())
-    elif bush.game.name == u'Skyrim':
-        tweaks = sorted([
-            AssortedTweak_Skyrim_ArmourPlayable(),
-            AssortedTweak_Skyrim_Arrows_Playable(),
-            AssortedTweak_Skyrim_ClothingPlayable(),
-            ],key=lambda a: a.label.lower())
 
-    #--Patch Phase ------------------------------------------------------------
+   #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         if not self.isActive: return tuple()

@@ -17070,7 +17070,7 @@ GmstTweaks = [
 #--Patchers available when building a Bashed Patch
 patchers = (
     u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
-    u'AssortedTweaker', u'NamesPatcher', u'StatsPatcher'
+    u'NamesPatcher', u'StatsPatcher'
     )
 
 # For ListsMerger

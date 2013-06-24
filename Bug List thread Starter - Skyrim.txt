@@ -1,0 +1,163 @@
+﻿[color=#FF8C00]Bug tracking and progress towards next release[/color] Here's a rundown of what the next release will contain, as well as a list of all known bugs and requested enhancements. Links lead to the sourceforge tracker artifacts. If you have information or opinions pertaining to any particular bug or enhancement, please comment at the tracker link. If you have screenshots or sample files, you can attach them (or links to them) to the trackers too. Any information helps! Users who have reported bugs and are updating from svn: please check the following for any closed/fixed bugs (indicated with a [color=#FF8C00][s]strikethrough[/s][/color]). Confirmation of the fix would be much appreciated.
+
+[b]Upcoming release 304[/b]: Bug fixing[list]
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/168/"]Bug 168[/url][/b] Mod Checker reports ITM and UDR for mods that are clean.
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/163/"]Bug 163[/url][/b] BAIN does not refresh on change of CRCs in Projects
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/167/"]Bug 167[/url][/b] Error with Race Tweaks building bashed patch.
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/102/"]Bug 102[/url][/b] [Oblivion] CTDs if spells imp from FCOM_Convergence (possibly solved)
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/230/"]Bug 230[/url][/b] [Oblivion] Bash resets timestamps on files without being asked to [color=#00FF00][wrinklyninja - via BAPI][/color]
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/242/"]Bug 242[/url][/b] [color=#FF8C00][s]Corrupt mods in Data folder make drag n drop unreliable[/s][/color] [color=#00FF00][daidalos][/color]
+[/list]
+[b][url="https://sourceforge.net/tracker/?group_id=284958&atid=1207901&status=1"]Additional known bugs[/url][/b]:
+[spoiler]
+[list]
+[*][url="https://sourceforge.net/p/oblivionworks/bugs/232/"][b]Bug 232[/b][/url] BOSS run from Bash has no visible CLI
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/229/"]Bug 229[/url][/b] [Oblivion] CBash doesn't handle NoMerge tag correctly.
+[*][url="https://sourceforge.net/p/oblivionworks/bugs/228/"][b]Bug 228[/b][/url] Bashed Patch fails to build in Russian. (might be more general, but the bug was reported for a Russian build)
+[*][url="https://sourceforge.net/p/oblivionworks/bugs/227/"][b]Bug 227[/b][/url] Installer only adds shortcuts for Administrator
+[*][url="https://sourceforge.net/p/oblivionworks/bugs/226/"][b]Bug 226[/b][/url] [Skyrim] Leveled List error when more than 255 items are in a merged lists.
+[*][b][url="https://sourceforge.net/p/oblivionworks/bugs/122/"]Bug 122[/url][/b] Progress bar disappears while autoannealing
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3535829"]Bug 3535827[/url][/b] BAIN ignores package Data folder if Docs is sibling
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3535832"]Bug 3535832[/url][/b] Error occurs when applying BCF
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3535833"]Bug 3535833[/url][/b] CBash does not import Face Data, Hairs or Eyes
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530378"]Bug 3530378[/url][/b] [Oblivion] Item Interchange files generate patch errors.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530366"]Bug 3530366[/url][/b] [Skyrim] Bashed Patch building crashes when AV present.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3414919"]Bug 3414919[/url][/b] Mods flicker on mouse over [color=#00FF00][lojack5][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3414715"]Bug 3414715[/url][/b] [Oblivion] Possible CBash patcher bugs
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3331937"]Bug 3331937[/url][/b] [Oblivion] CBash: Using C.Name blocks other cell record changes [color=#00FF00][lojack5][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3415244"]Bug 3415244[/url][/b] [Oblivion] Invalid FormIDs breaking the patch
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530357"]Bug 3530357[/url][/b] BAIN error during mod installation
+[*][s][b][url="http://sourceforge.net/support/tracker.php?aid=3530373"][color=#FFA500]Bug 3530373[/color][/url][/b][color=#FFA500] Export Names > Reimport File. Bash does nothing.[/color][/s] [color=#00FF00][pacificmorrowind][/color]
+[*][s][b][url="http://sourceforge.net/support/tracker.php?aid=3530374"][color=#FFA500]Bug 3530374[/color][/url][/b][color=#FFA500] [Skyrim] Error when trying to Import FormIDs[/color][/s] [color=#00FF00][pacificmorrowind][/color]
+[*][s][b][url="http://sourceforge.net/support/tracker.php?aid=3530375"][color=#FFA500]Bug 3530375[/color][/url][/b][color=#FFA500] [Skyrim] Export Names does not work.[/color][/s] [color=#00FF00][pacificmorrowind][/color]
+[*][s][b][url="http://sourceforge.net/support/tracker.php?aid=3530376"][color=#FFA500]Bug 3530376[/color][/url][/b][color=#FFA500] [Skyrim] Export Stats does not work.[/color][/s] [color=#00FF00][pacificmorrowind][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530382"]Bug 3530382[/url][/b] Mods tab lists BAIN archive on files where the BAIN is gone.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530383"]Bug 3530383[/url][/b] Corrupts the description of mods after saving it in Cyrillic
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3456263"]Bug 3456263[/url][/b] Program freeze and loss of work
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3425987"]Bug 3425987[/url][/b] Scroll bar menu must be global
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3411634"]Bug 3411634[/url][/b] Bash Memory Problems
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3410269"]Bug 3410269[/url][/b] Issue with certain format INI files.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3402087"]Bug 3402087[/url][/b] [Oblivion] Tweak Actors: Vanilla Beast Skeleton Tweaker broken
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3388557"]Bug 3388557[/url][/b] [Oblivion] CBash: Possible spell patcher problem (need more info)
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3385296"]Bug 3385296[/url][/b] error handling for bosh.initSettings is flawed[/spoiler]
+[/list]
+[b][url="https://sourceforge.net/tracker/?group_id=284958&atid=1207904&status=1"]Current enhancement requests[/url][/b]:
+[spoiler][list]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3537430"]Enhancement 3537430[/url][/b] Refactor Code
+[*][b][url="https://sourceforge.net/p/oblivionworks/enhancements/247/"]Enhancement 247[/url][/b] [Skyrim/Fallout] Update ESMify function to generate ONAM subrecords
+[*][b][url="https://sourceforge.net/tracker/?func=detail&aid=3537477&group_id=284958&atid=1207904"]Enhancement 3537477[/url][/b] Merge back in Wrye Flash, Flash NV
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3537431"]Enhancement 3537431[/url][/b] Replace Wtxt with actual HTML
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3537370"]Enhancement 3537370[/url][/b] Remove Comtypes Dependency / Move to wxPython 2.9
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3537426"]Enhancement 3537426[/url][/b] Reimplement Groups [BALO/Exclusion]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3537428"]Enhancement 3537428[/url][/b] Remove Custom Plugin Timestamping
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3536511"]Enhancement 3536511[/url][/b] Refactor Generic Launchers
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3536509"]Enhancement 3536509[/url][/b] Mopy\Apps launchers improvements
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3413533"]Enhancement 3413533[/url][/b] INI Edits: Hide invalid tweaks [color=#00FF00][lojack5][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3413532"]Enhancement 3413532[/url][/b] Auto-add INI's installed by BAIN to the INI Edits Tab [color=#00FF00][lojack5][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3413519"]Enhancement 3413519[/url][/b] UI usability improvements - stage 1
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3407019"]Enhancement 3407019[/url][/b] highlight but don't select unconfigured mods on bp import [color=#00FF00][myktaylor][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3406435"]Enhancement 3406435[/url][/b] Add help icon in bashed patch dialog
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3393119"]Enhancement 3393119[/url][/b] mod with new, deleted records is still mergeable [color=#00FF00][waruddar][/color] (Partial fix for Python mode done by PacificMorrowind)
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3385784"]Enhancement 3385784[/url][/b] Remove BALO
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3103903"]Enhancement 3103903[/url][/b] Hijackthis for Oblivion.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2997330"]Enhancement 2997330[/url][/b] View details of a BCF [color=#00FF00][waruddar][/color]
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3476805"]Enhancement 3476805[/url][/b] Skyrim: Renumber Saves
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3532383"]Enhancement 3532383[/url][/b] BAIN packaging of project data into a BSA
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3495819"]Enhancement 3495819[/url][/b] Cancel a package install
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3487656"]Enhancement 3487656[/url][/b] Preview of 'Clean Data'
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3479506"]Enhancement 3479506[/url][/b] 'Auto-Anneal' like functionality for changes
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3475090"]Enhancement 3475090[/url][/b] Readme's with name of archive
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3472028"]Enhancement 3472028[/url][/b] Sync to Data - for archives
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3471635"]Enhancement 3471635[/url][/b] Automatic 'Plugin Encoding' detection
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3471619"]Enhancement 3471619[/url][/b] Hide some "always recommened" Bashed Patch options
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3467881"]Enhancement 3467881[/url][/b] 'Hide' feature requests
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3467396"]Enhancement 3467396[/url][/b] SEFF icon tweaker
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3467395"]Enhancement 3467395[/url][/b] New skip: Skip Silent Voices
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3467154"]Enhancement 3467154[/url][/b] Per-plugin encodings
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3462945"]Enhancement 3462945[/url][/b] install conversions per drag and drop
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3462054"]Enhancement 3462054[/url][/b] BAIN/BAIT UI suggestiongs
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3455468"]Enhancement 3455468[/url][/b] Update from file
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3446770"]Enhancement 3446770[/url][/b] NMM integration
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3439187"]Enhancement 3439187[/url][/b] Reverse view of the data files
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3439136"]Enhancement 3439136[/url][/b] NoMerge Tag that does not imply Deactivate
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3438579"]Enhancement 3438579[/url][/b] Customizable locations - oblivion.ini, plugins.txt and saves
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3437929"]Enhancement 3437929[/url][/b] Move vanilla files to special package instead of overwriting
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3437922"]Enhancement 3437922[/url][/b] Jump from mod list to corresponding installer
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3437918"]Enhancement 3437918[/url][/b] Portable source version of Wrye Bash
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3437914"]Enhancement 3437914[/url][/b] Actually visible installer selection highlight
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3436179"]Enhancement 3436179[/url][/b] Create original file cache against overwrites
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3436064"]Enhancement 3436064[/url][/b] Installation of DLLs outside of obse\plugins
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3425443"]Enhancement 3425443[/url][/b] Dockable status bar buttons
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3423164"]Enhancement 3423164[/url][/b] INIzer support
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3418026"]Enhancement 3418026[/url][/b] Installer should prompt to update out-of-date deps
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3412774"]Enhancement 3412774[/url][/b] only mark mergeable when we have to
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3411323"]Enhancement 3411323[/url][/b] Standard bashed patch name should be Bashed Patch.esp
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3411283"]Enhancement 3411283[/url][/b] Make it more obvious how to rebuild a bashed patch
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3408190"]Enhancement 3408190[/url][/b] organize tweakers by semantics instead of implementation
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3408172"]Enhancement 3408172[/url][/b] Import/export ACBS.stats
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3406403"]Enhancement 3406403[/url][/b] Italicize bashed patch settings in non-default states
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3404131"]Enhancement 3404131[/url][/b] Add selection information to List Subpackages command
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3403229"]Enhancement 3403229[/url][/b] prompt to see if user wishes to remove crc-mismatched files
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3402841"]Enhancement 3402841[/url][/b] implement ini-configurable text styles
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400520"]Enhancement 3400520[/url][/b] Make tone imports optional in face import tool
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400506"]Enhancement 3400506[/url][/b] More user-friendly INI Edits tab
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400500"]Enhancement 3400500[/url][/b] startup tips
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400496"]Enhancement 3400496[/url][/b] List unmanaged files
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400495"]Enhancement 3400495[/url][/b] Associate extra files with BAIN packages
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400296"]Enhancement 3400296[/url][/b] Automatically build bashed patch after BAIN installation
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400289"]Enhancement 3400289[/url][/b] Autorun BOSS after BAIN installation
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3400256"]Enhancement 3400256[/url][/b] .esm files should always be considered bashable
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3397660"]Enhancement 3397660[/url][/b] Autoactivate mods after installation
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3396026"]Enhancement 3396026[/url][/b] Better understanding of the .ess file format
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3395297"]Enhancement 3395297[/url][/b] Automatic bug reporting
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3395286"]Enhancement 3395286[/url][/b] Alchemy potion auto-renamer for save game
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3393346"]Enhancement 3393346[/url][/b] Visually indicate that a BCF is missing files
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3391651"]Enhancement 3391651[/url][/b] Remove masters?
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3391647"]Enhancement 3391647[/url][/b] Friendlier UI: create menu bar
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3391289"]Enhancement 3391289[/url][/b] no warn ab dirty mods that BOSS says should not be cleaned
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3390846"]Enhancement 3390846[/url][/b] Automatically enforce MustBeActiveIfImported tag
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3388155"]Enhancement 3388155[/url][/b] Add "Advanced" tweak where power users can alter GMSTs
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3387324"]Enhancement 3387324[/url][/b] Persist bash.ini settings across updates
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3387004"]Enhancement 3387004[/url][/b] One-click mod cleaning
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3384252"]Enhancement 3384252[/url][/b] EOL non-CBash patchers
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3383924"]Enhancement 3383924[/url][/b] Threaded installer
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3383351"]Enhancement 3383351[/url][/b] BAIN Package Update Checker
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3383346"]Enhancement 3383346[/url][/b] BAIN BSA Conflict Support
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3380401"]Enhancement 3380401[/url][/b] Rename "Clean Data" to "Move unowned data files to project"
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3380280"]Enhancement 3380280[/url][/b] Revamp hidden files system
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3379910"]Enhancement 3379910[/url][/b] BAIN interaction with modified INIs
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3379905"]Enhancement 3379905[/url][/b] Have deleted files go to the Recycle Bin
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3349242"]Enhancement 3349242[/url][/b] Allow uninstalling of files not installed by a package.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3333426"]Enhancement 3333426[/url][/b] Launchers for Oblivion/Data in file manager; conscribe log
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3333419"]Enhancement 3333419[/url][/b] package metadata file
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3329193"]Enhancement 3329193[/url][/b] "NoMerge" including "Deactivate" semantics is unintuitive
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3314401"]Enhancement 3314401[/url][/b] Have BAIT show an image for packages
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3314399"]Enhancement 3314399[/url][/b] dnd text/text files into the BAIN comments
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3168471"]Enhancement 3168471[/url][/b] Move mods docs to Docs\
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3149179"]Enhancement 3149179[/url][/b] Bypass AutoRefresh: AutoRefresh on SHIFT-release if needed.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3140786"]Enhancement 3140786[/url][/b] Import faces to NPCs within save files, and ESP
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3139535"]Enhancement 3139535[/url][/b] SubPkg names beside ESP & Data-tab itms +SubPkg Conflicts
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3139504"]Enhancement 3139504[/url][/b] Multi-part/volume archive support (7z)
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3127326"]Enhancement 3127326[/url][/b] BAIN install order list improvements
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3117381"]Enhancement 3117381[/url][/b] Tweaker: zero the disposition of Crime victims and witnesses
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3101356"]Enhancement 3101356[/url][/b] Change the way NpcFaces and NpcFacesForceFullImport work
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3099804"]Enhancement 3099804[/url][/b] Keep info about installed pkgs when source pkgs disappear
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3092291"]Enhancement 3092291[/url][/b] Autoupdate/rollback functionality
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3092281"]Enhancement 3092281[/url][/b] OMOD support
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3091563"]Enhancement 3091563[/url][/b] Visual resource conflict browser
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3091504"]Enhancement 3091504[/url][/b] Redesign UI for Installers Tab
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3059673"]Enhancement 3059673[/url][/b] Each profile has its own data
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2998601"]Enhancement 2998601[/url][/b] Rename installed files
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985605"]Enhancement 2985605[/url][/b] Restructure Bash directories
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985295"]Enhancement 2985295[/url][/b] Customizable Hidden installer directory
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985293"]Enhancement 2985293[/url][/b] Relocate Bash Files
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985278"]Enhancement 2985278[/url][/b] New Container Bash Tag
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985275"]Enhancement 2985275[/url][/b] Sub-package file filtering panel
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985271"]Enhancement 2985271[/url][/b] NoTweaks Bashed Tag
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985270"]Enhancement 2985270[/url][/b] Development Tab
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2985267"]Enhancement 2985267[/url][/b] Doc Browser
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530355"]Enhancement 3530355[/url][/b] BAIN forces install of package with single subpackage.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3530385"]Enhancement 3530385[/url][/b] Add option to not use profile-specific load orders.
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=2902924"]Enhancement 2902924[/url][/b] Compare scripts between mod versions
+[*][b][url="http://sourceforge.net/support/tracker.php?aid=3496972"]Enhancement 3336961[/url][/b] properly support non-Unicode Files[/spoiler]
+[/list]

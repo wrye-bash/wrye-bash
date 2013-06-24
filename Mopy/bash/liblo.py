@@ -295,7 +295,15 @@ def Init(path):
                 else:
                     raise Exception('Game "%s" is not recognized' % game)
             self._DB = lo_game_handle()
-            _Clo_create_handle(byref(self._DB),game,_enc(gamePath))
+            try:
+                _Clo_create_handle(byref(self._DB),game,_enc(gamePath))
+            except LibloError as err:
+                if err.args[0].startswith("LIBLO_WARN_LO_MISMATC"):
+                    # If there is a Mismatch between loadorder.txt and plugns.txt finish initialization
+                    # and fix the missmatch at a later time
+                    pass
+                else:
+                    raise err
             # Get Load Order Method
             method = c_uint32()
             _Clo_get_load_order_method(self._DB,byref(method))

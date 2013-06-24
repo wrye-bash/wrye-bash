@@ -439,6 +439,7 @@ settingDefaults = {
     'bash.installers.sortStructure':False,
     'bash.installers.conflictsReport.showLower':True,
     'bash.installers.conflictsReport.showInactive':False,
+    'bash.installers.conflictsReport.showBSAConflicts':False,
     'bash.installers.goodDlls':{},
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
@@ -3718,6 +3719,7 @@ class InstallersPanel(SashTankPanel):
             commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
         #--Events
         #self.Bind(wx.EVT_SIZE,self.OnSize)
+        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
         commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
@@ -3727,6 +3729,11 @@ class InstallersPanel(SashTankPanel):
     def OnShow(self,canCancel=True):
         """Panel is shown. Update self.data."""
         if settings.get('bash.installers.isFirstRun',True):
+            # I have no idea why this is neccesary but if the mouseCaptureLost event is not fired before showing the askYes dialog it thorws an exception
+            event = wx.CommandEvent()
+            event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
+            wx.PostEvent(self.GetEventHandler(), event)
+            
             settings['bash.installers.isFirstRun'] = False
             message = (_(u'Do you want to enable Installers?')
                        + u'\n\n\t' +
@@ -3876,7 +3883,15 @@ class InstallersPanel(SashTankPanel):
         splitter = event.GetEventObject()
         sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
         settings['bash.installers.commentsSplitterSashPos'] = sashPos
-
+    
+    def _onMouseCaptureLost(self, event):
+        """Handle the onMouseCaptureLost event
+        
+        Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
+        
+        """
+        pass
+    
     #--Details view (if it exists)
     def SaveDetails(self):
         """Saves details if they need saving."""
@@ -9723,6 +9738,19 @@ class Installers_ConflictsReportShowsLower(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
+        self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class Installers_ConflictsReportShowBSAConflicts(BoolLink):
+    """Toggles option to show files inside BSAs on conflicts report."""
+    def __init__(self):
+        BoolLink.__init__(self,
+                          _(u'Show BSA Conflicts'),
+                          'bash.installers.conflictsReport.showBSAConflicts',
+                          )
+        
+    def Execute(self,event):
+        BoolLink.Execute(self, event)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -19276,6 +19304,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersPanel.mainMenu.append(Installers_ConflictsReportShowsLower())
+    InstallersPanel.mainMenu.append(Installers_ConflictsReportShowBSAConflicts())
     InstallersPanel.mainMenu.append(Installers_WizardOverlay())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installers_SkipOBSEPlugins())
