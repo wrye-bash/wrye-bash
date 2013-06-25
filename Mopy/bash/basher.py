@@ -10364,7 +10364,10 @@ class Installer_Rename(InstallerLink):
             help=_(u"Rename selected installer(s)."))
         menu.AppendItem(menuItem)
 
-        # REFACTOR duplicated from OnEditLabel
+        # REFACTOR duplicated type-check from InstallersList OnEditLabel
+        self._archive = bosh.InstallerArchive
+        self._project = bosh.InstallerProject
+        self._marker = bosh.InstallerMarker
         _iType = None # _marker or _project or _archive # item type, formerly InstallerType
         firstItem = window.data[window.GetSelected()[0]]
         if isinstance(firstItem, self._marker):
