@@ -3223,6 +3223,17 @@ class InstallersList(balt.Tank):
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         self.hitItem = None
         self.hitTime = 0
+        # types of items
+        # REFACTOR class and properties definition spread across modules.
+        # REFACTOR this was previously in OnLabelEdited and some others.
+        self._archive = bosh.InstallerArchive
+        self._project = bosh.InstallerProject
+        self._marker = bosh.InstallerMarker
+        # label decorations e.g ==Last==
+        # REFACTOR this belongs in bolt.Tank or bolt.Installer*. Actually, those should be moved "here".
+        # REFACTOR additionally, I feel strongly that this is a user option
+        self._markerPrefix='==' 
+        self._markerSuffix='==' 
 
     @property
     def cols(self): return settings['bash.installers.cols']
@@ -3253,121 +3264,122 @@ class InstallersList(balt.Tank):
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
-        #--Only rename multiple items of the same type
         firstItem = self.data[self.GetSelected()[0]]
-        InstallerType = None
-        if(isinstance(firstItem,bosh.InstallerMarker)):
-            InstallerType = bosh.InstallerMarker
-        elif(isinstance(firstItem,bosh.InstallerArchive)):
-            InstallerType = bosh.InstallerArchive
-        elif(isinstance(firstItem,bosh.InstallerProject)):
-            InstallerType = bosh.InstallerProject
+        _iType = None # _marker or _project or _archive # item type, formerly InstallerType
+
+        if isinstance(firstItem, self._marker):
+            _iType = self._marker
+        elif isinstance(firstItem, self._archive):
+            _iType = self._archive
+        elif isinstance(firstItem, self._project):
+            _iType = self._project
         else:
             event.Veto()
             return
+
         for item in self.GetSelected():
-            if not isinstance(self.data[item],InstallerType):
+            # Only rename multiple items of the same type
+            if not isinstance(self.data[item],_iType):
                 event.Veto()
                 return
-            #--Also, don't allow renaming the 'Last' marker
-            elif item == u'==Last==':
+            # Also, don't allow renaming the 'Last' marker
+            elif item == self._markerPrefix + u'Last' + self._markerSuffix: # ==Last==
                 event.Veto()
                 return
+
         editbox = self.gList.GetEditControl()
         editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
-        #--Markers, change the selection to not include the '=='
-        if InstallerType is bosh.InstallerMarker:
-            to = len(event.GetLabel()) - 2
-            editbox.SetSelection(2,to)
-        #--Archives, change the selection to not include the extension
-        elif InstallerType is bosh.InstallerArchive:
+
+        if _iType is self._marker:
+            # Markers, change the selection to not include the '=='
+            to = len(event.GetLabel()) - len(self._markerSuffix)
+            editbox.SetSelection(len(self._markerPrefix),to)
+
+        elif _iType is self._archive:
+            # Archives, change the selection to not include the extension
             to = len(GPath(event.GetLabel()).sbody)
             editbox.SetSelection(0,to)
 
-    def OnEditLabelChar(self, event):
-        """For pressing F2 on the edit box for renaming"""
-        if event.GetKeyCode() == wx.WXK_F2:
-            editbox = self.gList.GetEditControl()
-            selection = editbox.GetSelection()
-            text = editbox.GetValue()
-            lenWithExt = len(text)
-            if selection[0] != 0:
-                selection = (0,lenWithExt)
-            selectedText = GPath(text[selection[0]:selection[1]])
-            textNextLower = selectedText.body
-            if textNextLower == selectedText:
-                lenNextLower = lenWithExt
-            else:
-                lenNextLower = len(textNextLower.s)
-
-            selected = self.data[self.GetSelected()[0]]
-            if isinstance(selected, bosh.InstallerArchive):
-                selection = (0, lenNextLower)
-            elif isinstance(selected, bosh.InstallerMarker):
-                selection = (2, lenWithExt-2)
-            else:
-                selection = (0, lenWithExt)
-            editbox.SetSelection(*selection)
-        else:
-            event.Skip()
 
     def OnEditLabel(self, event):
         """Renamed some installers"""
         if event.IsEditCancelled(): return
 
-        newName = event.GetLabel()
-
+        newName = event.GetLabel() # returns 'unicode' for marker but not for archive and project? # UI_MARKER_1
         selected = self.GetSelected()
-        if isinstance(self.data[selected[0]], bosh.InstallerArchive):
-            InstallerType = bosh.InstallerArchive
-            rePattern = re.compile(ur'^([^\\/]+?)(\d*)((\.(7z|rar|zip|001))+)$',re.I|re.U)
-        elif isinstance(self.data[selected[0]], bosh.InstallerMarker):
-            InstallerType = bosh.InstallerMarker
-            rePattern = re.compile(ur'^([^\\/]+?)(\d*)$',re.I|re.U)
-        elif isinstance(self.data[selected[0]], bosh.InstallerProject):
-            InstallerType = bosh.InstallerProject
-            rePattern = re.compile(ur'^([^\\/]+?)(\d*)$',re.I|re.U)
+        firstItem = self.data[selected[0]]
+
+        _iType = None # _marker or _project or _archive
+
+        # REFACTOR this is not GUI code, this is input validation, move this to wherever bolt.Tank gets data
+        _validArchive = ur'^([^\\/]+?)(\d*)((\.(7z|rar|zip|001))+)$'
+        _validMarker = ur'^([^\\/]+?)(\d*)$'
+        _validProject = ur'^([^\\/]+?)(\d*)$'
+
+        if isinstance(firstItem, self._archive):
+            _iType = self._archive
+            rePattern = re.compile(_validArchive, re.I|re.U)
+
+        elif isinstance(firstItem, self._marker):
+            _iType = self._marker
+            rePattern =    re.compile(_validMarker, re.I|re.U)
+
+        elif isinstance(firstItem,self._project):
+            _iType = self._project
+            rePattern = re.compile(self._validProject, re.I|re.U)
+
         maPattern = rePattern.match(newName)
         if not maPattern:
             balt.showError(self,_(u'Bad extension or file root: ')+newName)
             event.Veto()
             return
         root,numStr = maPattern.groups()[:2]
-        if InstallerType is bosh.InstallerMarker:
-            root = root.strip(u'=')
+
         #--Rename each installer, keeping the old extension (for archives)
         numLen = len(numStr)
         num = int(numStr or 0)
         installersDir = bosh.dirs['installers']
         with balt.BusyCursor():
-            refreshNeeded = False
+            refreshNeeded = False # REFACTOR private?
             for archive in selected:
                 installer = self.data[archive]
-                if InstallerType is bosh.InstallerProject:
+                if         _iType    is self._project:
                     newName = GPath(root+numStr)
-                else:
+
+                elif _iType    is self._archive:
                     newName = GPath(root+numStr+archive.ext)
-                if InstallerType is bosh.InstallerMarker:
-                    newName = GPath(u'==' + newName.s + u'==')
+
+                elif _iType    is self._marker:
+                    if hasattr(newName, 's'):
+                        # AttributeError: 'unicode' object has no attribute 's' # UI_MARKER_1
+                        # newName = event.GetLabel() returns are inconsistent?
+                        _newName = newName.s
+                    else:
+                        _newName = newName
+                    newName = GPath(self._markerPrefix + _newName.strip('= ') + self._markerSuffix)
+
+                # Have the name, need to move archive or update label
                 if newName != archive:
                     oldPath = installersDir.join(archive)
                     newPath = installersDir.join(newName)
                     if not newPath.exists():
-                        if InstallerType is not bosh.InstallerMarker:
-                            oldPath.moveTo(newPath)
+                        if _iType is not self._marker:
+                            oldPath.moveTo(newPath) # this must happen after data is updated, no? also, catch os io stuff?
+                        # tox_REMOVE WHERE IS THE DATA INTERFACE?!
+                        bolt.deprintOn = True
                         self.data.pop(installer)
                         installer.archive = newName.s
                         #--Add the new archive to Bash
                         self.data[newName] = installer
                         #--Update the iniInfos & modInfos for 'installer'
-                        if InstallerType is not bosh.InstallerMarker:
+                        if _iType is not self._marker:
                             mfiles = (x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail)
                             ifiles = (x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail)
                             for i in mfiles:
                                 bosh.modInfos.table[i]['installer'] = newPath.stail
                             for i in ifiles:
                                 bosh.iniInfos.table[i]['installer'] = newPath.stail
-                    if InstallerType is bosh.InstallerMarker:
+                    if _iType is self._marker:
                         del self.data[archive]
                     refreshNeeded = True
                 num += 1
@@ -3383,6 +3395,34 @@ class InstallersList(balt.Tank):
                     iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
+
+    def OnEditLabelChar(self, event):
+        """For pressing F2 on the edit box for renaming"""
+        if event.GetKeyCode() != wx.WXK_F2:
+            event.Skip()
+            return
+
+        editbox = self.gList.GetEditControl()
+        selection = editbox.GetSelection()
+        text = editbox.GetValue()
+        lenWithExt = len(text)
+        if selection[0] != 0:
+            selection = (0,lenWithExt)
+        selectedText = GPath(text[selection[0]:selection[1]])
+        textNextLower = selectedText.body
+        if textNextLower == selectedText:
+            lenNextLower = lenWithExt
+        else:
+            lenNextLower = len(textNextLower.s)
+
+        selected = self.data[self.GetSelected()[0]]
+        if isinstance(selected, bosh.InstallerArchive):
+            selection = (0, lenNextLower)
+        elif isinstance(selected, bosh.InstallerMarker):
+            selection = (2, lenWithExt-2)
+        else:
+            selection = (0, lenWithExt)
+        editbox.SetSelection(*selection)
 
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
@@ -3589,6 +3629,7 @@ class InstallersList(balt.Tank):
                     self.gList.EditLabel(index)
         ##Ctrl+Shift+N - Add a marker
         elif event.CmdDown() and event.ShiftDown() and code == ord('N'):
+            # REFACTOR _root = _markerPrefix+_markerSuffix
             index = self.GetIndex(GPath(u'===='))
             if index == -1:
                 self.data.addMarker(u'====')
@@ -9366,6 +9407,8 @@ class Installers_AddMarker(Link):
 
     def Execute(self,event):
         """Handle selection."""
+        # REFACTOR _root = _markerPrefix+_markerSuffix
+        # addMarker should know what to prepend and append to the title, not this menu-item.
         index = self.gTank.GetIndex(GPath(u'===='))
         if index == -1:
             self.data.addMarker(u'====')
@@ -10320,19 +10363,20 @@ class Installer_Rename(InstallerLink):
         menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'),
             help=_(u"Rename selected installer(s)."))
         menu.AppendItem(menuItem)
-        self.InstallerType = None
-        ##Only enable if all selected items are of the same type
-        firstItem = window.data[window.GetSelected()[0]]
-        if(isinstance(firstItem,bosh.InstallerMarker)):
-            self.InstallerType = bosh.InstallerMarker
-        elif(isinstance(firstItem,bosh.InstallerArchive)):
-            self.InstallerType = bosh.InstallerArchive
-        elif(isinstance(firstItem,bosh.InstallerProject)):
-            self.InstallerType = bosh.InstallerProject
 
-        if(self.InstallerType):
+        # REFACTOR duplicated from OnEditLabel
+        _iType = None # _marker or _project or _archive # item type, formerly InstallerType
+        firstItem = window.data[window.GetSelected()[0]]
+        if isinstance(firstItem, self._marker):
+            _iType = self._marker
+        elif isinstance(firstItem, self._archive):
+            _iType = self._archive
+        elif isinstance(firstItem, self._project):
+            _iType = self._project
+
+        if _iType is not None:
             for item in window.GetSelected():
-                if not isinstance(window.data[item],self.InstallerType):
+                if not isinstance(window.data[item], _iType):
                     menuItem.Enable(False)
                     return
 
