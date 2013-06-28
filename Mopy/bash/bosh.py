@@ -3663,10 +3663,10 @@ class OblivionIni(IniFile):
     def __init__(self,name):
         """Initialize."""
         # Use local copy of the oblivion.ini if present        if dirs['app'].join(name).exists():
-            IniFile.__init__(self,dirs['app'].join(name),u'General')
-            # is bUseMyGamesDirectory set to 0?
-            if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
-                return
+        IniFile.__init__(self,dirs['app'].join(name),u'General')
+        # is bUseMyGamesDirectory set to 0?
+        if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
+            return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
         IniFile.__init__(self,dirs['saveBase'].join(name),u'General')
