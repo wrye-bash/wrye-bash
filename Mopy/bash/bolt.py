@@ -1346,6 +1346,7 @@ class Path(object):
 
     #--File system info
     #--THESE REALLY OUGHT TO BE PROPERTIES.
+    # because stale information is good? will they be re-read each time the property is accessed?
     def exists(self):
         return os.path.exists(self._s)
     def isdir(self):
@@ -1392,6 +1393,39 @@ class Path(object):
             return codecs.open(self._s,*args,**kwdargs)
         else:
             return open(self._s,*args,**kwdargs)
+    def readLines(self):
+        """ reads text of a file. behavior is undefined for folders.
+        return: 
+            strings file.readLines(), string used codepage
+        """
+        # $ Python27.exe -c 'import locale; print locale.getdefaultlocale() ' ;;;; ('en_US', 'cp932')
+        import locale
+        defaultLocale = locale.getdefaultlocale()[1]
+        err = "can not read lines of %s using with encoding: %s"
+        lines = None
+
+        tryEncoding = 'utf-8'
+        try:
+            with self.open('r', encoding=tryEncoding) as aFile:
+                lines = aFile.readlines()
+
+        # this is really not the way to go, but I can't think of anything better.
+        except UnicodeError:
+            deprint(err % (self._s, tryEncoding))
+            tryEncoding = defaultLocale
+            try:
+                with self.open('r', encoding=tryEncoding) as aFile:
+                    lines = aFile.readlines()
+            except UnicodeError:
+                deprint(err % (self._s, tryEncoding))
+                # using 1252 because previous devs thought it is a good idea.
+                tryEncoding = 'cp1252'
+                try:
+                    with self.open('r', encoding=tryEncoding) as aFile:
+                        lines = aFile.readlines()
+                except UnicodeError:
+                    deprint(err % (self._s, tryEncoding))
+        return lines, tryEncoding
     def makedirs(self):
         if not self.exists(): os.makedirs(self._s)
     def remove(self):
@@ -1482,6 +1516,29 @@ class Path(object):
             self.untemp()
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
+# BUG (revision 3000) fails meserably if parent folder is not created.
+# Traceback (most recent call last):
+#   File "bash\basher.py", line 6336, in OnCloseWindow
+#     self.SaveSettings()
+#   File "bash\basher.py", line 6357, in SaveSettings
+#     self.notebook.GetPage(index).OnCloseWindow()
+#   File "bash\basher.py", line 2710, in OnCloseWindow
+#     bosh.iniInfos.table.save()
+#   File "bash\bolt.py", line 2274, in save
+#     self.hasChanged = not dictFile.save()
+#   File "bash\bosh.py", line 268, in save
+#     saved = bolt.PickleDict.save(self)
+#   File "bash\bolt.py", line 2028, in save
+#     self.path.untemp(True)
+#   File "bash\bolt.py", line 1526, in untemp
+#     shutil.move(self.temp._s, self._s)
+#   File "C:\Python27\lib\shutil.py", line 299, in move
+#     copy2(src, real_dst)
+#   File "C:\Python27\lib\shutil.py", line 128, in copy2
+#     copyfile(src, dst)
+#   File "C:\Python27\lib\shutil.py", line 83, in copyfile
+#     with open(dst, 'wb') as fdst:
+# IOError: [Errno 2] No such file or directory: u'S:\\wrye.bash\\mods\\Bash Mod Data\\INI Data\\Table.dat'
         if self.temp.exists():
             if self.exists():
                 if doBackup:

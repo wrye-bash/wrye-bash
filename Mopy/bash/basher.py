@@ -1701,20 +1701,21 @@ class INILineCtrl(wx.ListCtrl):
             self.EnsureVisible(0)
         ini = None
         try:
-            with bosh.iniInfos.ini.path.open('r') as ini:
-                lines = ini.readlines()
-                for i,line in enumerate(lines):
-                    if i >= num:
-                        self.InsertStringItem(i, line.rstrip())
-                    else:
-                        self.SetStringItem(i, 0, line.rstrip())
-                for i in xrange(len(lines), num):
-                    self.DeleteItem(len(lines))
-        except IOError:
+            lines, iniCodepage = bosh.iniInfos.ini.path.readLines()
+            if lines is None:
+                deprint( "failed to read ini file: %s" % bosh.iniInfos.ini.path.s )
+                return
+            for i,line in enumerate(lines):
+                if i >= num:
+                    self.InsertStringItem(i, line.rstrip())
+                else:
+                    self.SetStringItem(i, 0, line.rstrip())
+            for i in xrange(len(lines), num):
+                self.DeleteItem(len(lines))
+        except IOError: # REFACTOR why is GUI code catching IO exceptions?
             warn = True
             if hasattr(bashFrame,'notebook'):
-                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())
-                if page != self.GetParent().GetParent().GetParent():
+                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())                if page != self.GetParent().GetParent().GetParent():
                     warn = False
             if warn:
                 balt.showWarning(self, _(u"%(ini)s does not exist yet.  %(game)s will create this file on first run.  INI tweaks will not be usable until then.")

@@ -3151,29 +3151,37 @@ class IniFile(object):
         else:
             def makeSetting(match,lineNo): return match.group(2).strip()
         #--Read ini file
-        with tweakPath.open('r') as iniFile:
-            sectionSettings = None
-            section = None
-            for i,line in enumerate(iniFile.readlines()):
+        # REFACTOR client code must not ask Path for file handles but rather an
+        # array of lines or whatever - use Path.readLines [done]
+        read_lines, read_encoding = tweakPath.readLines()
+        sectionSettings = None
+        section = None
+        for i,line in enumerate(read_lines):
+            line_original = line
+            # REFACTOR do not litter the code with string literals
+            # use Path.defaultEncoding, for example
+            if read_encoding != 'utf-8':
                 try:
-                    line = unicode(line,encoding)
+                    line = unicode(line_original,read_encoding)
                 except UnicodeDecodeError:
-                    line = unicode(line,'cp1252')
-                maDeleted = reDeleted.match(line)
-                stripped = reComment.sub(u'',line).strip()
-                maSection = reSection.match(stripped)
-                maSetting = reSetting.match(stripped)
-                if maSection:
-                    section = LString(maSection.group(1))
-                    sectionSettings = ini_settings.setdefault(section,{})
-                elif maSetting:
-                    if sectionSettings == None:
-                        sectionSettings = ini_settings.setdefault(LString(self.defaultSection),{})
-                        if setCorrupted: self.isCorrupted = True
-                    sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
-                elif maDeleted:
-                    if not section: continue
-                    deleted_settings.setdefault(section,{})[LString(maDeleted.group(1))] = i
+                    deprint("Could not convert an entry from the ini file: %s " % tweakPath,
+                             " to unicode. Assumed encoding of file was %s " % read_encoding)
+                             # -- tox2ik, bug 264
+            maDeleted = reDeleted.match(line)
+            stripped = reComment.sub(u'',line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
+            if maSection:
+                section = LString(maSection.group(1))
+                sectionSettings = ini_settings.setdefault(section,{})
+            elif maSetting:
+                if sectionSettings == None:
+                    sectionSettings = ini_settings.setdefault(LString(self.defaultSection),{})
+                    if setCorrupted: self.isCorrupted = True
+                sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
+            elif maDeleted:
+                if not section: continue
+                deleted_settings.setdefault(section,{})[LString(maDeleted.group(1))] = i
         return ini_settings,deleted_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -3635,12 +3643,26 @@ class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = set((u'archiveinvalidationinvalidated!.bsa',
                           u'..\\obmm\\bsaredirection.bsa'))
-    encoding = 'cp1252'
-
+    encoding = 'utf-8'
+    #encoding = 'cp1252'
+    # Trying to fix bug 264 (error initializing INI tab with japanese locale.)
+    # If a string in the ini (contents of file) file can not be converted from
+    # cp932 to unicode, then the tab fails to initialize. RefresUI in basher was
+    # trying to do that.
+    # 
+    # I seriously doubt that Bethesda would distribute inis in Windows-1252
+    # Besides, ascii, cp1252 and utf-8 are compatible for chars 0-127 afaik
+    # 
+    # I only tried this encoding with Skyrim. The game loaded an utf-8 encoded 
+    # C:\Users\jaroslav\Documents\my GAMES\SkyrimSkyrim.ini wihout any trouble.
+    # this is revision 3000 (release 304), if no one reports errors related to
+    # this, it's probably safe to remove this whole comment. -- tox2ik
+    #
+    # It will be fun to hear from happy oblivion players if this messes up 
+    # their ini files.
     def __init__(self,name):
         """Initialize."""
-        # Use local copy of the oblivion.ini if present
-        if dirs['app'].join(name).exists():
+        # Use local copy of the oblivion.ini if present        if dirs['app'].join(name).exists():
             IniFile.__init__(self,dirs['app'].join(name),u'General')
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
