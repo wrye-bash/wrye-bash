@@ -1715,7 +1715,8 @@ class INILineCtrl(wx.ListCtrl):
         except IOError: # REFACTOR why is GUI code catching IO exceptions?
             warn = True
             if hasattr(bashFrame,'notebook'):
-                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())                if page != self.GetParent().GetParent().GetParent():
+                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())
+                if page != self.GetParent().GetParent().GetParent():
                     warn = False
             if warn:
                 balt.showWarning(self, _(u"%(ini)s does not exist yet.  %(game)s will create this file on first run.  INI tweaks will not be usable until then.")
