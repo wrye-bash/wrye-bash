@@ -961,6 +961,7 @@ class sio(StringIO.StringIO):
 #------------------------------------------------------------------------------
 _gpaths = {}
 #Path = None
+# REFACTOR whatever this does, make it part of Path
 def GPath(name):
     """Returns common path object for specified name/path."""
     if name is None: return None
@@ -1002,7 +1003,12 @@ class Path(object):
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
     mtimeResets = [] #--Used by getmtime
-
+    # REFACTOR put ini file IO in one place
+    # bug 254 / japanese locale / u with umlaut (eg Füße) in installed ini file.
+    #
+    # Path is only a representation of a path. probably should not be used to write
+    # for text files, temp workaround. 
+    defaultEncoding = 'utf-8'
     @staticmethod
     def get(name):
         """Returns path object for specified name/path."""
@@ -1154,10 +1160,11 @@ class Path(object):
         dirJoin = baseDir.join
         if unicodeSafe:
             try:
-                self._s.encode('ascii')
+                self._s.encode('ascii') # dafuq? Sorry if I'm wrong but this looks very wrong. --tox
                 return dirJoin(self.tail+u'.tmp')
             except UnicodeEncodeError:
                 ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
+                deprint("UnicodeEncodeError supressed %s " % ret)
                 return dirJoin(ret)
         else:
             return dirJoin(self.tail+u'.tmp')
@@ -1386,6 +1393,8 @@ class Path(object):
                         try: chmod(rootJoin(file),flags)
                         except: pass
 
+    def openWrite(self):
+        return codecs.open(self._s,'w',encoding=self.defaultEncoding)
     def open(self,*args,**kwdargs):
         if self._shead and not os.path.exists(self._shead):
             os.makedirs(self._shead)
@@ -1393,39 +1402,38 @@ class Path(object):
             return codecs.open(self._s,*args,**kwdargs)
         else:
             return open(self._s,*args,**kwdargs)
+
     def readLines(self):
         """ reads text of a file. behavior is undefined for folders.
+
         return: 
-            strings file.readLines(), string used codepage
+        (strings [line, ...], string used codepage)
         """
-        # $ Python27.exe -c 'import locale; print locale.getdefaultlocale() ' ;;;; ('en_US', 'cp932')
         import locale
-        defaultLocale = locale.getdefaultlocale()[1]
-        err = "can not read lines of %s using with encoding: %s"
         lines = None
-
-        tryEncoding = 'utf-8'
-        try:
-            with self.open('r', encoding=tryEncoding) as aFile:
-                lines = aFile.readlines()
-
-        # this is really not the way to go, but I can't think of anything better.
-        except UnicodeError:
-            deprint(err % (self._s, tryEncoding))
-            tryEncoding = defaultLocale
+        codepage = None
+        unknownFileEncoding = None
+        defaultLocale = locale.getdefaultlocale()[1] # getdefaultlocale() => ('en_US', 'cp932')
+        codepages = [self.defaultEncoding, 'cp1252', defaultLocale]
+        err = "unreadable %s as: %9s [%s]" # unreadable file as ascii [UnecodeError]
+        for cp in codepages:
+            codepage = cp
             try:
-                with self.open('r', encoding=tryEncoding) as aFile:
-                    lines = aFile.readlines()
-            except UnicodeError:
-                deprint(err % (self._s, tryEncoding))
-                # using 1252 because previous devs thought it is a good idea.
-                tryEncoding = 'cp1252'
-                try:
-                    with self.open('r', encoding=tryEncoding) as aFile:
-                        lines = aFile.readlines()
-                except UnicodeError:
-                    deprint(err % (self._s, tryEncoding))
-        return lines, tryEncoding
+                with codecs.open(self._s, 'r', encoding=cp ) as ini:
+                    lines = ini.readlines()
+                break
+            except UnicodeError as ue:
+                # deprint(err % (self._s, cp, ue))
+                unknownFileEncoding = ue
+                codepage = None
+                continue
+            except IOError as ioe:
+                deprint("IOError on codecs.open(%s, r, encoding=%s)\n expeption was: %s" % (self._s, cp, ioe))
+                raise
+        if codepage is None:
+            raise unknownFileEncoding
+        return (lines, codepage)
+
     def makedirs(self):
         if not self.exists(): os.makedirs(self._s)
     def remove(self):
@@ -1516,29 +1524,6 @@ class Path(object):
             self.untemp()
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
-# BUG (revision 3000) fails meserably if parent folder is not created.
-# Traceback (most recent call last):
-#   File "bash\basher.py", line 6336, in OnCloseWindow
-#     self.SaveSettings()
-#   File "bash\basher.py", line 6357, in SaveSettings
-#     self.notebook.GetPage(index).OnCloseWindow()
-#   File "bash\basher.py", line 2710, in OnCloseWindow
-#     bosh.iniInfos.table.save()
-#   File "bash\bolt.py", line 2274, in save
-#     self.hasChanged = not dictFile.save()
-#   File "bash\bosh.py", line 268, in save
-#     saved = bolt.PickleDict.save(self)
-#   File "bash\bolt.py", line 2028, in save
-#     self.path.untemp(True)
-#   File "bash\bolt.py", line 1526, in untemp
-#     shutil.move(self.temp._s, self._s)
-#   File "C:\Python27\lib\shutil.py", line 299, in move
-#     copy2(src, real_dst)
-#   File "C:\Python27\lib\shutil.py", line 128, in copy2
-#     copyfile(src, dst)
-#   File "C:\Python27\lib\shutil.py", line 83, in copyfile
-#     with open(dst, 'wb') as fdst:
-# IOError: [Errno 2] No such file or directory: u'S:\\wrye.bash\\mods\\Bash Mod Data\\INI Data\\Table.dat'
         if self.temp.exists():
             if self.exists():
                 if doBackup:
@@ -1547,6 +1532,8 @@ class Path(object):
                 else:
                     os.remove(self._s)
             shutil.move(self.temp._s, self._s)
+        #else:
+        #    self.temp.mkdirs() # works ? TODO (revision 3000) parent folder not present => IOError No such file
     def editable(self):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
