@@ -1651,7 +1651,7 @@ class INITweakLineCtrl(wx.ListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            status = line[4] # REFACTOR Use a struct with named attributes to represent ini lines 
+            status = line[4]
             if status == -10: color = colors['tweak.bkgd.invalid']
             elif status == 10: color = colors['tweak.bkgd.mismatched']
             elif status == 20: color = colors['tweak.bkgd.matched']
