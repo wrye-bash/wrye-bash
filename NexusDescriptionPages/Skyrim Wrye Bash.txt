@@ -1,0 +1,82 @@
+[center][color=red][size=6]We only support Skyrim version 1.9.32.0.8 and[/size][/color][/center]
+[center][color=red][size=6]Wrye Bash 304 or higher.[/size][/color][/center]
+
+[color=orange]Important: Wrye Bash's developers have been MIA for quite some time due to various real life circumstances. As such, development slowed to a crawl with only a few modders that didn't have much experience with Python (in which Bash is written) trying to fix existing bugs.
+
+v304 is the product of these attempted bug fixes on top of what was done before the developers went MIA. As such, it is not a polished release.  Recently we have a few new volunteers willing to work on Wrye Bash.  Because of this we hope to start updating the code to include patcher routines for Skyrim.
+
+If you are familiar with the Python programming language, please consider helping with development. Many of Wrye Bash's features are unique to it, and it needs fixes to outstanding bugs at the least to stay usable.  [url=https://sourceforge.net/p/oblivionworks/bugs/]Our bug tracker[/url] lists everything we're aware of at present.[/color]
+
+[b]What does Wrye Bash do?[/b]
+[list]
+[*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
+[*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"
+[*]It allows you to exceed the 255 mod threshold by automatically merging mods for you
+[/list]
+
+[size=3]Comments? Problems?[/size]  Feel free to join the discussion at the current official threads: [url=http://forums.bethsoft.com/topic/1459682-relz-wrye-bash-thread-97]Oblivion[/url], and [url=http://forums.bethsoft.com/topic/1459790-relz-wrye-bash-thread-31]Skyrim[/url].  If you are have having trouble, you'll find many friendly people there who can help.  Check out the 2nd post to see the list of known bugs, and, more importantly, whether the bug has already been fixed : )
+
+There is much more information in the OP of the Wrye Bash topic at the BethSoft forums: [url=http://forums.bethsoft.com/topic/1459682-relz-wrye-bash-thread-97]Oblivion[/url], [url=http://forums.bethsoft.com/topic/1459790-relz-wrye-bash-thread-31]Skyrim[/url], but here is some stuff to get you started:
+
+[b]Documentation[/b]:[list][*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html]Official Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy\Docs folder)
+  [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]
+  [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url]
+  [*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye%20bash/]Simplified Chinese[/url]
+[/list]
+[b]Requirements and Installation[/b]: Short version: just use the installer and install Wrye Bash to the Skyrim folder!
+Remember! In Windows Vista and up, don't install your games in the Program Files folder due to User Access Controls (UAC).
+
+[color=#00BFFF]Version 305 SVN 3002 contains the following changes:[/color]
+
+Not released.  Stay tuned.
+
+Known Bugs:
+
+- partial fix for bug #264 Extended chars in .ini file causes an exception. [tox2ik]
+
+[color=#00BFFF]Version 304 contains the following changes:[/color]
+
+- [Skyrim] Fixed bug in libloadorder that would stop it from including Update.esm in its list of active plugins if Skyrim.esm wasn't listed in plugins.txt. [wrinklyninja]
+- Fixed libloadorder version display in Bash's log. [wrinklyninja]
+- [Skyrim] Fixed Bash not passing Update.esm in a list of plugins to activate to libloadorder. liblo.py now returns the active plugin list in load order (which libloadorder doesn't), preventing needless load order 'mismatches' being 'corrected'. [wrinklyninja]
+- Fixed issue with Oblivion introduced in r2952. [wrinklyninja]
+- [Skyrim] It is now impossible to deactivate Skyrim.esm and Update.esm, the game force loads them. [d4id4los]
+- Fix for bug #243 "Annealing an activated esp breaks load order.". Anneal will now properly remove deleted plugins from load order. [d4id4los]
+- Fix for bug #244 "Automatically activating the bashed patch after rebuild does not work." [d4id4los]
+- Fix for bug #245 "Auto-Anneal can not be disabled" [d4id4los]
+- Possible fix for special characters in system language name crashing Wrye Bash. [d4id4los]
+- Changes to the text of List Masters... to make translation easier. [d4id4los]
+- Fixed renaming mods in the mods tab causing an exception to be thrown. [d4id4los]
+- Fixed error-messages for Installer Wizards. [d4id4los]
+- Changes to the restart button tool-tip to make it translatable. [d4id4los]
+- Make Headlines in getModList translatable. [d4id4los]
+- Fix renaming/deleting mod files outside of Wrye Bash causing load order issues. [d4id4los]
+- Fix for an exception in bain wizzards, introduced in rev. 2966 [d4id4los]
+- Fix for Bug #246 'Better naming scheme for backups' [Mr_and_Mrs_D]
+- Fix for Bug #247 'Do not report 0 KB for non empty files, plugins, BCFs etc' [Mr_and_Mrs_D]
+- Fix for Bash not installing more than one mod at a time for Oblivion. [d4id4los]
+- Wrye Bash Un-Installer was leaving behind a few files which have not been accounted for. [d4id4los]
+- Fix for Bug #256 'Skip Docs skips translation files for Mods'. [d4id4los]
+- Fix for Bug #258 "#258 LO mismatch between loadorder.txt and plugins.txt causes a crash on statup" [d4id4los]
+- Fix for bug #251 "'Do you want to enable Installers?' dialog throws exception". [d4id4los]
+- Added option to view BSA conflicts in Installer tab. This is an experimental feature and still needs work. [d4id4los]
+- New Dragonborn Files added for Clean Data installer function. [Sharlikran]
+
+[color=#00BFFF]Version 303 contains the following changes:[/color]
+
+- [Oblivion] Fixed issues with CBash saying that files don't exist during the patch building process. [Lojack]
+- Uninstalling a mod in BAIN should no longer throw an error that the ESP/ESM could not be found if it was removed. [Lojack]
+- Encoding format for INI Tweak files has been fixed. [Lokack]
+- Typo corrections, unused variables, and other minor issues cleaned up. [Various]
+- The bash_default.ini file has been cleaned up to remove unused entries and tidy up documentation. [Lojack]
+- BAIN should now properly inform the user if an archive being installed is corrupted. [Lojack]
+- Numerous changes have been made for better UAC support when installed on Vista, Windows 7, and Windows 8. (Note that Windows 8 is not yet officially supported but should still work.) [Lojack]
+- BAIN should no longer leave behind empty folders when a mod is uninstalled. [Lojack]
+- Better support for running Bash from within a folder containing Unicode characters. [Lojack]
+- [Skyrim] Bash can now see string files inside of a BSA and will no longer mark mods with red bars because the files were not packaged loose. [Lojack]
+- Bash will no longer throw errors if it encounters Nehrim.esm (the filename) in a Data folder not belonging to a Nehrim install. [Lojack]
+- Updated the Windows icon used for Bash to something more visually appealing. [Wrinklyninja]
+- Updated UI icon for BOSS. [Wrinklyninja]
+- [Skyrim] Removed the non-functional inventory prompt tweak for buying and selling as Skyrim does not use the value. [Arthmoor]
+- Deleting ghosted mods from the mods tab should no longer throw up errors about deleting the game's master files. [Lojack]
+- Several updates to the documentation for Bash. [Lojack]
