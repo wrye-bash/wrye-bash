@@ -1,0 +1,43 @@
+Many thanks for this.  Here is the test procedure.  It looks like a lot, but I just broke it down into tiny steps to try to be ultra clear on what to do.
+
+Test procedure for narrowing down cause of [url=http://sourceforge.net/support/tracker.php?aid=3329021]Bug 3329021[/url]: just opening Wrye Bash causes Oblivion to CTD
+
+Test setup:
+[list=1]
+[*]First ensure you have a working installation of Oblivion, installed somewhere other than Program Files (or Program Files (x86) if on a 64-bit OS).  This test will go fastest if it is a clean install with no mods.  This means that you'll have to do a fresh install if Oblivion is already broken (which it probably is if you're running this test)
+[*]Download [url=http://tesalliance.org/forums/index.php?/files/download/997-multiple-oblivion-manager-mom/]MOM 1.0.1[/url].  I also have it mirrored [url=http://myk.gotdns.com/MOM-1.0.1.7z]here[/url] if you're not a member of TesAlliance.
+[*]Decompress MOM 1.0.1.7z somewhere, like your desktop
+[*]Read "Multiple Oblivion Manager ReadMe.doc" to get the basics on how it works
+[*]Run "Multiple Oblivion Manager.exe"
+[*]Close all Windows Explorer windows -- they can interfere with MOM, making it get permissions errors when you try to swap
+[*][b]Import[/b] your current working Oblivion installation; call it "safe working version" or something
+[*]Go into [b]Settings[/b] and uncheck "Copy BAIN Folder" (you don't need to copy your BAIN installers for this test)
+[*]Click [b]New[/b] and clone the safe working version.  Call it "test snapshot"
+[*][b]Swap[/b] to "test snapshot" (MOM doesn't automatically swap when you do a New)
+[*]With "test snapshot" as your active clone, install ([b]but do not run[/b]) [url=http://tesnexus.com/downloads/file.php?id=22368]Wrye Bash 295[/url].  Install the Python version, not the standalone.
+[*]Download [url=http://myk.gotdns.com/wbtest.7z]wbtest.7z[/url] and extract it in the directory [b]above[/b] Oblivion.  For example, if Oblivion is installed in c:/Games/Oblivion, extract the archive in c:/Games.  It will extract the following directories and files:
+[list]
+[*]Oblivion/Mopy/Wyre Bash Launcher.pyw (you might get prompted for permission to overwrite this file -- allow it)
+[*]wbtest/wbtest.bat
+[*]wbtest/wbtest.py
+[/list][*]Make sure the "wbtest" directory got created at the same level as "Oblivion". If your Oblivion directory is not called "Oblivion", tell me and I'll tweak the test a bit to get it to work for you.
+[*]Click [b]New[/b] in MOM again and clone "test snapshot".  call it "test"
+[*][b]Swap[/b] to "test" to make it the active image
+[/list]
+Leave MOM running throughout the test.  Now with "test" as your active image, run wbtest.bat (remember to close the Explorer window after running the wbtest.bat file so it doesn't interfere with MOM).  Do not run wbtest.py directly or the output from the test will be lost.  The test app will come up.  The test tool will walk you through what to do.  It will start Wyre Bash and Oblivion for you.  There is no need to run them yourself from this point forward.  If the test gets interrupted for some reason (windows forces you to reboot because of an automatically applied update, for example), you can use the slider in the test tool to continue from where you left off, but hopefully that won't happen, so to save space I won't go into details for how to do that here.
+
+Whenever the test tool gets Oblivion to crash, follow these steps in MOM before starting the next test iteration:
+[list=1]
+[*][b]Swap[/b] to "test snapshot" to make it your active clone
+[*][b]Delete[/b] the "test" clone
+[*]Click [b]New[/b] and create a new "test" clone
+[*][b]Swap[/b] to "test" to make it your active clone
+[/list]
+If Oblivion does not crash in an iteration, there is no need to recreate the test clone for the next iteration.
+
+When the test is over, or if things go horribly wrong, or you get tired of testing (whichever comes first), you can always make "safe working version" your active clone and play normally.  The full test takes about 20 iterations, though hopefully you won't have to restore the test clone more than a few times.  When you're done, please upload the wbtest/BashBugDump.log file [url=http://myk.gotdns.com/upload_form.html]here[/url] so I can take a look at it.
+
+If Oblivion crashes on the first iteration (when we don't run Wrye Bash) or if it doesn't crash on the second iteration (when we let Wrye Bash run all the way through its initialization sequence), please contact me, since either the bug is not reproducible for you or there is something wrong with the test.
+
+Thanks for doing this!
+--Myk

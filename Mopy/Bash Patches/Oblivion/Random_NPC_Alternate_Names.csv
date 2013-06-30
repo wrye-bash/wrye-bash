@@ -1,0 +1,891 @@
+Type,Mod Name,ObjectIndex,Editor Id,Name
+NPC_,Crowded Cities 15.esp,0x000D02,LRccDayFarmerArgo1,Farmer Oleemeet
+NPC_,Crowded Cities 15.esp,0x009008,LRccDayFarmerArgo2,Farmer Eleeme
+NPC_,Crowded Cities 15.esp,0x009009,LRccDayFarmerArgo3,Farmer Heedalur
+NPC_,Crowded Cities 15.esp,0x00900A,LRccDayFarmerArgo4,Farmer Wih-Ju
+NPC_,Crowded Cities 15.esp,0x00900B,LRccDayFarmerArgo5,Farmer An-Zaw
+NPC_,Crowded Cities 15.esp,0x000D03,LRccDayFarmerBlack1,Farmer Nistac
+NPC_,Crowded Cities 15.esp,0x00900C,LRccDayFarmerBlack2,Farmer Kalort
+NPC_,Crowded Cities 15.esp,0x00900D,LRccDayFarmerBlack3,Farmer Dandana
+NPC_,Crowded Cities 15.esp,0x00900E,LRccDayFarmerBlack4,Farmer Riniso
+NPC_,Crowded Cities 15.esp,0x00900F,LRccDayFarmerBlack5,Farmer Ildean
+NPC_,Crowded Cities 15.esp,0x000D04,LRccDayFarmerCat1,Farmer Dro'Baad
+NPC_,Crowded Cities 15.esp,0x009010,LRccDayFarmerCat2,Farmer Jo'Rakha
+NPC_,Crowded Cities 15.esp,0x009011,LRccDayFarmerCat3,Farmer Ri'Dato
+NPC_,Crowded Cities 15.esp,0x009012,LRccDayFarmerCat4,Farmer Jo'Rak
+NPC_,Crowded Cities 15.esp,0x009013,LRccDayFarmerCat5,Farmer Raksada
+NPC_,Crowded Cities 15.esp,0x000D05,LRccDayFarmerDelf1,Farmer Neldam
+NPC_,Crowded Cities 15.esp,0x009014,LRccDayFarmerDelf2,Farmer Maggothe
+NPC_,Crowded Cities 15.esp,0x009015,LRccDayFarmerDelf3,Farmer Maggot
+NPC_,Crowded Cities 15.esp,0x009016,LRccDayFarmerDelf4,Farmer Sedaves
+NPC_,Crowded Cities 15.esp,0x009017,LRccDayFarmerDelf5,Farmer Vedave
+NPC_,Crowded Cities 15.esp,0x000D06,LRccDayFarmerHelf1,Farmer Fainde
+NPC_,Crowded Cities 15.esp,0x009018,LRccDayFarmerHelf2,Farmer Gratis
+NPC_,Crowded Cities 15.esp,0x009019,LRccDayFarmerHelf3,Farmer Inganare
+NPC_,Crowded Cities 15.esp,0x00901A,LRccDayFarmerHelf4,Farmer Estale
+NPC_,Crowded Cities 15.esp,0x00901B,LRccDayFarmerHelf5,Farmer Tyertilar
+NPC_,Crowded Cities 15.esp,0x000D07,LRccDayFarmerImp1,Farmer Raxleon
+NPC_,Crowded Cities 15.esp,0x00901C,LRccDayFarmerImp2,Farmer Hasphat
+NPC_,Crowded Cities 15.esp,0x00901D,LRccDayFarmerImp3,Farmer Silian
+NPC_,Crowded Cities 15.esp,0x00901E,LRccDayFarmerImp4,Farmer Isobelle
+NPC_,Crowded Cities 15.esp,0x00901F,LRccDayFarmerImp5,Farmer Oritonde
+NPC_,Crowded Cities 15.esp,0x000D08,LRccDayFarmerNord1,Farmer Hrard
+NPC_,Crowded Cities 15.esp,0x009020,LRccDayFarmerNord2,Farmer Sifkning
+NPC_,Crowded Cities 15.esp,0x009021,LRccDayFarmerNord3,Farmer Norrid
+NPC_,Crowded Cities 15.esp,0x009022,LRccDayFarmerNord4,Farmer Haakig
+NPC_,Crowded Cities 15.esp,0x009023,LRccDayFarmerNord5,Farmer Raddin
+NPC_,Crowded Cities 15.esp,0x000D09,LRccDayFarmerOrc1,Farmer Rogdul
+NPC_,Crowded Cities 15.esp,0x009024,LRccDayFarmerOrc2,Farmer Ghamul
+NPC_,Crowded Cities 15.esp,0x009025,LRccDayFarmerOrc3,Farmer Umbraam
+NPC_,Crowded Cities 15.esp,0x009026,LRccDayFarmerOrc4,Farmer Guaron
+NPC_,Crowded Cities 15.esp,0x009027,LRccDayFarmerOrc5,Farmer Gakkenfe
+NPC_,Crowded Cities 15.esp,0x000D0A,LRccDayFarmerWelf1,Farmer Faldil
+NPC_,Crowded Cities 15.esp,0x009028,LRccDayFarmerWelf2,Farmer Ulwaengo
+NPC_,Crowded Cities 15.esp,0x009029,LRccDayFarmerWelf3,Farmer Gaeleg
+NPC_,Crowded Cities 15.esp,0x00902A,LRccDayFarmerWelf4,Farmer Bragor
+NPC_,Crowded Cities 15.esp,0x00902B,LRccDayFarmerWelf5,Farmer Monthala
+NPC_,Crowded Cities 15.esp,0x000CE7,LRccDayHunterArgo1,Hunter J'Ram-Ku
+NPC_,Crowded Cities 15.esp,0x00902C,LRccDayHunterArgo2,Hunter Chalur
+NPC_,Crowded Cities 15.esp,0x00902D,LRccDayHunterArgo3,Hunter Utadeeme
+NPC_,Crowded Cities 15.esp,0x00902E,LRccDayHunterArgo4,Hunter Effe-T
+NPC_,Crowded Cities 15.esp,0x00902F,LRccDayHunterArgo5,Hunter Oleeme
+NPC_,Crowded Cities 15.esp,0x000CEE,LRccDayHunterBlack1,Hunter Jartodea
+NPC_,Crowded Cities 15.esp,0x009030,LRccDayHunterBlack2,Hunter Pemeniso
+NPC_,Crowded Cities 15.esp,0x009031,LRccDayHunterBlack3,Hunter Silann
+NPC_,Crowded Cities 15.esp,0x009032,LRccDayHunterBlack4,Hunter Rinison
+NPC_,Crowded Cities 15.esp,0x009033,LRccDayHunterBlack5,Hunter Farmin
+NPC_,Crowded Cities 15.esp,0x000CEB,LRccDayHunterCat1,Hunter S'Baadar
+NPC_,Crowded Cities 15.esp,0x009034,LRccDayHunterCat2,Hunter Baadargo
+NPC_,Crowded Cities 15.esp,0x009035,LRccDayHunterCat3,Hunter Dro'Ba
+NPC_,Crowded Cities 15.esp,0x009036,LRccDayHunterCat4,Hunter S'Baad
+NPC_,Crowded Cities 15.esp,0x009037,LRccDayHunterCat5,Hunter Urjorahn
+NPC_,Crowded Cities 15.esp,0x000CE8,LRccDayHunterDelf1,Hunter Alammus
+NPC_,Crowded Cities 15.esp,0x009038,LRccDayHunterDelf2,Hunter Duldam
+NPC_,Crowded Cities 15.esp,0x009039,LRccDayHunterDelf3,Hunter Gidave
+NPC_,Crowded Cities 15.esp,0x00903A,LRccDayHunterDelf4,Hunter Relamus
+NPC_,Crowded Cities 15.esp,0x00903B,LRccDayHunterDelf5,Hunter Dalamus
+NPC_,Crowded Cities 15.esp,0x000CE9,LRccDayHunterHelf1,Hunter Rumare
+NPC_,Crowded Cities 15.esp,0x00903C,LRccDayHunterHelf2,Hunter Aldaril
+NPC_,Crowded Cities 15.esp,0x00903D,LRccDayHunterHelf3,Hunter Olquar
+NPC_,Crowded Cities 15.esp,0x00903E,LRccDayHunterHelf4,Hunter Iterti
+NPC_,Crowded Cities 15.esp,0x00903F,LRccDayHunterHelf5,Hunter Nelanare
+NPC_,Crowded Cities 15.esp,0x000CEA,LRccDayHunterImp1,Hunter Malpenar
+NPC_,Crowded Cities 15.esp,0x009040,LRccDayHunterImp2,Hunter Lucret
+NPC_,Crowded Cities 15.esp,0x009041,LRccDayHunterImp3,Hunter Falced
+NPC_,Crowded Cities 15.esp,0x009042,LRccDayHunterImp4,Hunter Apelle
+NPC_,Crowded Cities 15.esp,0x009043,LRccDayHunterImp5,Hunter Agripp
+NPC_,Crowded Cities 15.esp,0x000CEC,LRccDayHunterNord1,Hunter Windre
+NPC_,Crowded Cities 15.esp,0x009044,LRccDayHunterNord2,Hunter Alfhed
+NPC_,Crowded Cities 15.esp,0x009045,LRccDayHunterNord3,Hunter Bormir
+NPC_,Crowded Cities 15.esp,0x009046,LRccDayHunterNord4,Hunter Tymvir
+NPC_,Crowded Cities 15.esp,0x009047,LRccDayHunterNord5,Hunter Thonronr
+NPC_,Crowded Cities 15.esp,0x000CED,LRccDayHunterOrc1,Hunter Monsuta
+NPC_,Crowded Cities 15.esp,0x009048,LRccDayHunterOrc2,Hunter Yadbaam
+NPC_,Crowded Cities 15.esp,0x009049,LRccDayHunterOrc3,Hunter Bagamul
+NPC_,Crowded Cities 15.esp,0x00904A,LRccDayHunterOrc4,Hunter Yadbaam
+NPC_,Crowded Cities 15.esp,0x00904B,LRccDayHunterOrc5,Hunter Shakh
+NPC_,Crowded Cities 15.esp,0x000CEF,LRccDayHunterWelf1,Hunter Hingoth
+NPC_,Crowded Cities 15.esp,0x00904C,LRccDayHunterWelf2,Hunter Agaron
+NPC_,Crowded Cities 15.esp,0x00904D,LRccDayHunterWelf3,Hunter Eradrann
+NPC_,Crowded Cities 15.esp,0x00904E,LRccDayHunterWelf4,Hunter Dangot
+NPC_,Crowded Cities 15.esp,0x00904F,LRccDayHunterWelf5,Hunter Meldil
+NPC_,Crowded Cities 15.esp,0x000D0B,LRccDayMageArgo1,Mage Teemee
+NPC_,Crowded Cities 15.esp,0x009536,LRccDayMageArgo2,Mage Milos
+NPC_,Crowded Cities 15.esp,0x009537,LRccDayMageArgo3,Mage Meer-M
+NPC_,Crowded Cities 15.esp,0x009538,LRccDayMageArgo4,Mage Huleed
+NPC_,Crowded Cities 15.esp,0x009539,LRccDayMageArgo5,Mage Peer-Mah
+NPC_,Crowded Cities 15.esp,0x000D0C,LRccDayMageBlack1,Mage Nachae
+NPC_,Crowded Cities 15.esp,0x00953A,LRccDayMageBlack2,Mage Tralen
+NPC_,Crowded Cities 15.esp,0x00953B,LRccDayMageBlack3,Mage Nistacy
+NPC_,Crowded Cities 15.esp,0x00953C,LRccDayMageBlack4,Mage Nemind
+NPC_,Crowded Cities 15.esp,0x00953D,LRccDayMageBlack5,Mage Torlin
+NPC_,Crowded Cities 15.esp,0x000D0D,LRccDayMageCat1,Mage Raksadarg
+NPC_,Crowded Cities 15.esp,0x00953E,LRccDayMageCat2,Mage Qanaro
+NPC_,Crowded Cities 15.esp,0x00953F,LRccDayMageCat3,Mage Ri'Dat
+NPC_,Crowded Cities 15.esp,0x009540,LRccDayMageCat4,Mage J'Dato
+NPC_,Crowded Cities 15.esp,0x009541,LRccDayMageCat5,Mage Ma'Dat
+NPC_,Crowded Cities 15.esp,0x000D0E,LRccDayMageDelf1,Mage Bradas
+NPC_,Crowded Cities 15.esp,0x009542,LRccDayMageDelf2,Mage Elammu
+NPC_,Crowded Cities 15.esp,0x009543,LRccDayMageDelf3,Mage Llaala
+NPC_,Crowded Cities 15.esp,0x009544,LRccDayMageDelf4,Mage Dalam
+NPC_,Crowded Cities 15.esp,0x009545,LRccDayMageDelf5,Mage Maggot
+NPC_,Crowded Cities 15.esp,0x000D0F,LRccDayMageHelf1,Mage Tunenrene
+NPC_,Crowded Cities 15.esp,0x009546,LRccDayMageHelf2,Mage Qorwyne
+NPC_,Crowded Cities 15.esp,0x009547,LRccDayMageHelf3,Mage Anaril
+NPC_,Crowded Cities 15.esp,0x009548,LRccDayMageHelf4,Mage Heceril
+NPC_,Crowded Cities 15.esp,0x009549,LRccDayMageHelf5,Mage Umbaca
+NPC_,Crowded Cities 15.esp,0x000D10,LRccDayMageImp1,Mage Pustius
+NPC_,Crowded Cities 15.esp,0x00954A,LRccDayMageImp2,Mage Procis
+NPC_,Crowded Cities 15.esp,0x00954B,LRccDayMageImp3,Mage Albeci
+NPC_,Crowded Cities 15.esp,0x00954C,LRccDayMageImp4,Mage Atteli
+NPC_,Crowded Cities 15.esp,0x00954D,LRccDayMageImp5,Mage Audeius
+NPC_,Crowded Cities 15.esp,0x000D11,LRccDayMageNord1,Mage Gudlin
+NPC_,Crowded Cities 15.esp,0x00954E,LRccDayMageNord2,Mage Ulfgar
+NPC_,Crowded Cities 15.esp,0x00954F,LRccDayMageNord3,Mage Sifkni
+NPC_,Crowded Cities 15.esp,0x009550,LRccDayMageNord4,Mage Valund
+NPC_,Crowded Cities 15.esp,0x009551,LRccDayMageNord5,Mage Hefadm
+NPC_,Crowded Cities 15.esp,0x000D12,LRccDayMageOrc1,Mage Ugdul
+NPC_,Crowded Cities 15.esp,0x009552,LRccDayMageOrc2,Mage Umbra
+NPC_,Crowded Cities 15.esp,0x009553,LRccDayMageOrc3,Mage Bogamu
+NPC_,Crowded Cities 15.esp,0x009554,LRccDayMageOrc4,Mage Lugdul
+NPC_,Crowded Cities 15.esp,0x009555,LRccDayMageOrc5,Mage Uramul
+NPC_,Crowded Cities 15.esp,0x000D13,LRccDayMageWelf1,Mage Thaernd
+NPC_,Crowded Cities 15.esp,0x009556,LRccDayMageWelf2,Mage Elberond
+NPC_,Crowded Cities 15.esp,0x009557,LRccDayMageWelf3,Mage Aengot
+NPC_,Crowded Cities 15.esp,0x009558,LRccDayMageWelf4,Mage Allimi
+NPC_,Crowded Cities 15.esp,0x009559,LRccDayMageWelf5,Mage Godras
+NPC_,Crowded Cities 15.esp,0x000CF0,LRccDayTravellerArgo1,Traveller Ineeme
+NPC_,Crowded Cities 15.esp,0x00955A,LRccDayTravellerArgo2,Traveller Wih-Ju
+NPC_,Crowded Cities 15.esp,0x00955B,LRccDayTravellerArgo3,Traveller Utadeeme
+NPC_,Crowded Cities 15.esp,0x00955C,LRccDayTravellerArgo4,Traveller Bun-Zaw
+NPC_,Crowded Cities 15.esp,0x00955D,LRccDayTravellerArgo5,Traveller Chaluree
+NPC_,Crowded Cities 15.esp,0x000CF1,LRccDayTravellerBlack1,Traveller Danda
+NPC_,Crowded Cities 15.esp,0x00955E,LRccDayTravellerBlack2,Traveller Hasell
+NPC_,Crowded Cities 15.esp,0x00955F,LRccDayTravellerBlack3,Traveller Charon
+NPC_,Crowded Cities 15.esp,0x009560,LRccDayTravellerBlack4,Traveller Staron
+NPC_,Crowded Cities 15.esp,0x009561,LRccDayTravellerBlack5,Traveller Lanah
+NPC_,Crowded Cities 15.esp,0x000CF2,LRccDayTravellerCat1,Traveller Ma'Dato
+NPC_,Crowded Cities 15.esp,0x009562,LRccDayTravellerCat2,Traveller Wadarg
+NPC_,Crowded Cities 15.esp,0x009563,LRccDayTravellerCat3,Traveller Shavir
+NPC_,Crowded Cities 15.esp,0x009564,LRccDayTravellerCat4,Traveller Urjora
+NPC_,Crowded Cities 15.esp,0x009565,LRccDayTravellerCat5,Traveller Wadargo
+NPC_,Crowded Cities 15.esp,0x000CF3,LRccDayTravellerDelf1,Traveller Bedaves
+NPC_,Crowded Cities 15.esp,0x009566,LRccDayTravellerDelf2,Traveller Maggot
+NPC_,Crowded Cities 15.esp,0x009567,LRccDayTravellerDelf3,Traveller Gidave
+NPC_,Crowded Cities 15.esp,0x009568,LRccDayTravellerDelf4,Traveller Rogus
+NPC_,Crowded Cities 15.esp,0x009569,LRccDayTravellerDelf5,Traveller Llaalam
+NPC_,Crowded Cities 15.esp,0x000CF4,LRccDayTravellerHelf1,Traveller Lorund
+NPC_,Crowded Cities 15.esp,0x00956A,LRccDayTravellerHelf2,Traveller Earmio
+NPC_,Crowded Cities 15.esp,0x00956B,LRccDayTravellerHelf3,Traveller Meanaami
+NPC_,Crowded Cities 15.esp,0x00956C,LRccDayTravellerHelf4,Traveller Molleen
+NPC_,Crowded Cities 15.esp,0x00956D,LRccDayTravellerHelf5,Traveller Norilar
+NPC_,Crowded Cities 15.esp,0x000CF5,LRccDayTravellerImp1,Traveller Ertius
+NPC_,Crowded Cities 15.esp,0x00956E,LRccDayTravellerImp2,Traveller Malpenar
+NPC_,Crowded Cities 15.esp,0x00956F,LRccDayTravellerImp3,Traveller Arenar
+NPC_,Crowded Cities 15.esp,0x009570,LRccDayTravellerImp4,Traveller Gergus
+NPC_,Crowded Cities 15.esp,0x009571,LRccDayTravellerImp5,Traveller Furippin
+NPC_,Crowded Cities 15.esp,0x000CF6,LRccDayTravellerNord1,Traveller Dagljo
+NPC_,Crowded Cities 15.esp,0x009572,LRccDayTravellerNord2,Traveller Onming
+NPC_,Crowded Cities 15.esp,0x009573,LRccDayTravellerNord3,Traveller Odming
+NPC_,Crowded Cities 15.esp,0x009574,LRccDayTravellerNord4,Traveller Haaki
+NPC_,Crowded Cities 15.esp,0x009575,LRccDayTravellerNord5,Traveller Svogre
+NPC_,Crowded Cities 15.esp,0x000CF7,LRccDayTravellerOrc1,Traveller Glush
+NPC_,Crowded Cities 15.esp,0x009576,LRccDayTravellerOrc2,Traveller Yadba
+NPC_,Crowded Cities 15.esp,0x009577,LRccDayTravellerOrc3,Traveller Rogdulg
+NPC_,Crowded Cities 15.esp,0x009578,LRccDayTravellerOrc4,Traveller Snagam
+NPC_,Crowded Cities 15.esp,0x009579,LRccDayTravellerOrc5,Traveller Guaron
+NPC_,Crowded Cities 15.esp,0x000CF8,LRccDayTravellerWelf1,Traveller Anglal
+NPC_,Crowded Cities 15.esp,0x00957A,LRccDayTravellerWelf2,Traveller Bereng
+NPC_,Crowded Cities 15.esp,0x00957B,LRccDayTravellerWelf3,Traveller Glatho
+NPC_,Crowded Cities 15.esp,0x00957C,LRccDayTravellerWelf4,Traveller Clengo
+NPC_,Crowded Cities 15.esp,0x00957D,LRccDayTravellerWelf5,Traveller Barannir
+NPC_,Crowded Cities 15.esp,0x000CF9,LRccDayWarriorArgo1,Warrior Skeeme
+NPC_,Crowded Cities 15.esp,0x00957E,LRccDayWarriorArgo2,Warrior Chalur
+NPC_,Crowded Cities 15.esp,0x00957F,LRccDayWarriorArgo3,Warrior J'Ram-Ku
+NPC_,Crowded Cities 15.esp,0x009580,LRccDayWarriorArgo4,Warrior Neeta
+NPC_,Crowded Cities 15.esp,0x009581,LRccDayWarriorArgo5,Warrior Bun-Zaw
+NPC_,Crowded Cities 15.esp,0x000CFA,LRccDayWarriorBlack1,Warrior Jeanna
+NPC_,Crowded Cities 15.esp,0x009582,LRccDayWarriorBlack2,Warrior Nachael
+NPC_,Crowded Cities 15.esp,0x009583,LRccDayWarriorBlack3,Warrior Raccanna
+NPC_,Crowded Cities 15.esp,0x009584,LRccDayWarriorBlack4,Warrior Jartod Mirel
+NPC_,Crowded Cities 15.esp,0x009585,LRccDayWarriorBlack5,Warrior Glannah
+NPC_,Crowded Cities 15.esp,0x000CFB,LRccDayWarriorCat1,Warrior Bahdah
+NPC_,Crowded Cities 15.esp,0x009586,LRccDayWarriorCat2,Warrior Shabhira
+NPC_,Crowded Cities 15.esp,0x009587,LRccDayWarriorCat3,Warrior Kiseen
+NPC_,Crowded Cities 15.esp,0x009588,LRccDayWarriorCat4,Warrior Tsabhira
+NPC_,Crowded Cities 15.esp,0x009589,LRccDayWarriorCat5,Warrior Ubaashid
+NPC_,Crowded Cities 15.esp,0x000CFC,LRccDayWarriorDelf1,Warrior Hainab
+NPC_,Crowded Cities 15.esp,0x00958A,LRccDayWarriorDelf2,Warrior Fadril
+NPC_,Crowded Cities 15.esp,0x00958B,LRccDayWarriorDelf3,Warrior Dolms
+NPC_,Crowded Cities 15.esp,0x00958C,LRccDayWarriorDelf4,Warrior Tadave
+NPC_,Crowded Cities 15.esp,0x00958D,LRccDayWarriorDelf5,Warrior Dalamus
+NPC_,Crowded Cities 15.esp,0x000CFD,LRccDayWarriorHelf1,Warrior Eraami
+NPC_,Crowded Cities 15.esp,0x00958E,LRccDayWarriorHelf2,Warrior Tarenen
+NPC_,Crowded Cities 15.esp,0x00958F,LRccDayWarriorHelf3,Warrior Volanare
+NPC_,Crowded Cities 15.esp,0x009590,LRccDayWarriorHelf4,Warrior Dhaunare
+NPC_,Crowded Cities 15.esp,0x009591,LRccDayWarriorHelf5,Warrior Tragri
+NPC_,Crowded Cities 15.esp,0x000CFE,LRccDayWarriorImp1,Warrior Ertius
+NPC_,Crowded Cities 15.esp,0x009592,LRccDayWarriorImp2,Warrior Benuni
+NPC_,Crowded Cities 15.esp,0x009593,LRccDayWarriorImp3,Warrior Clagiu
+NPC_,Crowded Cities 15.esp,0x009594,LRccDayWarriorImp4,Warrior Ildoni
+NPC_,Crowded Cities 15.esp,0x009595,LRccDayWarriorImp5,Warrior Cidius
+NPC_,Crowded Cities 15.esp,0x000CFF,LRccDayWarriorNord1,Warrior Snadmu
+NPC_,Crowded Cities 15.esp,0x009596,LRccDayWarriorNord2,Warrior Abbard
+NPC_,Crowded Cities 15.esp,0x009597,LRccDayWarriorNord3,Warrior Eifid
+NPC_,Crowded Cities 15.esp,0x009598,LRccDayWarriorNord4,Warrior Radding
+NPC_,Crowded Cities 15.esp,0x009599,LRccDayWarriorNord5,Warrior Fjolfrin
+NPC_,Crowded Cities 15.esp,0x000D00,LRccDayWarriorOrc1,Warrior Yadbaam
+NPC_,Crowded Cities 15.esp,0x00959A,LRccDayWarriorOrc2,Warrior Guaron
+NPC_,Crowded Cities 15.esp,0x00959B,LRccDayWarriorOrc3,Warrior Rogdul
+NPC_,Crowded Cities 15.esp,0x00959C,LRccDayWarriorOrc4,Warrior Umbraam
+NPC_,Crowded Cities 15.esp,0x00959D,LRccDayWarriorOrc5,Warrior Lorbul
+NPC_,Crowded Cities 15.esp,0x000D01,LRccDayWarriorWelf1,Warrior Ungeva
+NPC_,Crowded Cities 15.esp,0x00959E,LRccDayWarriorWelf2,Warrior Endras
+NPC_,Crowded Cities 15.esp,0x00959F,LRccDayWarriorWelf3,Warrior Elbero
+NPC_,Crowded Cities 15.esp,0x0095A0,LRccDayWarriorWelf4,Warrior Tarhie
+NPC_,Crowded Cities 15.esp,0x0095A1,LRccDayWarriorWelf5,Warrior Dirdin
+NPC_,Crowded Cities 15.esp,0x00120C,LRccNightCommonerArgo1,Commoner Chaluree
+NPC_,Crowded Cities 15.esp,0x0095A2,LRccNightCommonerArgo2,Commoner Utadee
+NPC_,Crowded Cities 15.esp,0x0095A3,LRccNightCommonerArgo3,Commoner Heedal
+NPC_,Crowded Cities 15.esp,0x0095A4,LRccNightCommonerArgo4,Commoner Itan-R
+NPC_,Crowded Cities 15.esp,0x0095A5,LRccNightCommonerArgo5,Commoner Peer-Mah
+NPC_,Crowded Cities 15.esp,0x00120D,LRccNightCommonerBlack1,Commoner Silannah
+NPC_,Crowded Cities 15.esp,0x0095A6,LRccNightCommonerBlack2,Commoner Glannah
+NPC_,Crowded Cities 15.esp,0x0095A7,LRccNightCommonerBlack3,Commoner Alusanna
+NPC_,Crowded Cities 15.esp,0x0095A8,LRccNightCommonerBlack4,Commoner Malenah
+NPC_,Crowded Cities 15.esp,0x0095A9,LRccNightCommonerBlack5,Commoner Iminda
+NPC_,Crowded Cities 15.esp,0x00120E,LRccNightCommonerCat1,Commoner Udaranji
+NPC_,Crowded Cities 15.esp,0x0095AA,LRccNightCommonerCat2,Commoner Khamuzi
+NPC_,Crowded Cities 15.esp,0x0095AB,LRccNightCommonerCat3,Commoner Bahdahni
+NPC_,Crowded Cities 15.esp,0x0095AC,LRccNightCommonerCat4,Commoner Ahdanj
+NPC_,Crowded Cities 15.esp,0x0095AD,LRccNightCommonerCat5,Commoner Dahleena
+NPC_,Crowded Cities 15.esp,0x00120F,LRccNightCommonerDelf1,Commoner Llaala
+NPC_,Crowded Cities 15.esp,0x0095AE,LRccNightCommonerDelf2,Commoner Enarvy
+NPC_,Crowded Cities 15.esp,0x0095AF,LRccNightCommonerDelf3,Commoner Thadas
+NPC_,Crowded Cities 15.esp,0x0095B0,LRccNightCommonerDelf4,Commoner Enarvy
+NPC_,Crowded Cities 15.esp,0x0095B1,LRccNightCommonerDelf5,Commoner Bildam
+NPC_,Crowded Cities 15.esp,0x001210,LRccNightCommonerHelf1,Commoner Hyaril
+NPC_,Crowded Cities 15.esp,0x0095B2,LRccNightCommonerHelf2,Commoner Iroril
+NPC_,Crowded Cities 15.esp,0x0095B3,LRccNightCommonerHelf3,Commoner Armion
+NPC_,Crowded Cities 15.esp,0x0095B4,LRccNightCommonerHelf4,Commoner Tragrilar
+NPC_,Crowded Cities 15.esp,0x0095B5,LRccNightCommonerHelf5,Commoner Eraamion
+NPC_,Crowded Cities 15.esp,0x001211,LRccNightCommonerImp1,Commoner Stenar
+NPC_,Crowded Cities 15.esp,0x0095B6,LRccNightCommonerImp2,Commoner Caccia
+NPC_,Crowded Cities 15.esp,0x0095B7,LRccNightCommonerImp3,Commoner Molvara
+NPC_,Crowded Cities 15.esp,0x0095B8,LRccNightCommonerImp4,Commoner Sabinuni
+NPC_,Crowded Cities 15.esp,0x0095B9,LRccNightCommonerImp5,Commoner Pliton
+NPC_,Crowded Cities 15.esp,0x001212,LRccNightCommonerNord1,Commoner Lasska
+NPC_,Crowded Cities 15.esp,0x0095BA,LRccNightCommonerNord2,Commoner Solding
+NPC_,Crowded Cities 15.esp,0x0095BB,LRccNightCommonerNord3,Commoner Godrelhe
+NPC_,Crowded Cities 15.esp,0x0095BC,LRccNightCommonerNord4,Commoner Brandrel
+NPC_,Crowded Cities 15.esp,0x0095BD,LRccNightCommonerNord5,Commoner Balfhe
+NPC_,Crowded Cities 15.esp,0x001213,LRccNightCommonerOrc1,Commoner Ghamul
+NPC_,Crowded Cities 15.esp,0x0095BE,LRccNightCommonerOrc2,Commoner Optio
+NPC_,Crowded Cities 15.esp,0x0095BF,LRccNightCommonerOrc3,Commoner Mashag
+NPC_,Crowded Cities 15.esp,0x0095C0,LRccNightCommonerOrc4,Commoner Rulfim
+NPC_,Crowded Cities 15.esp,0x0095C1,LRccNightCommonerOrc5,Commoner Gakken
+NPC_,Crowded Cities 15.esp,0x001214,LRccNightCommonerWelf1,Commoner Eradra
+NPC_,Crowded Cities 15.esp,0x0095C2,LRccNightCommonerWelf2,Commoner Minego
+NPC_,Crowded Cities 15.esp,0x0095C3,LRccNightCommonerWelf3,Commoner Pegarond
+NPC_,Crowded Cities 15.esp,0x0095C4,LRccNightCommonerWelf4,Commoner Nalimi
+NPC_,Crowded Cities 15.esp,0x0095C5,LRccNightCommonerWelf5,Commoner Forond
+,,,,
+NPC_,Crowded Cities 30.esp,0x000D02,LRccDayFarmerArgo1,Farmer Oleemeet
+NPC_,Crowded Cities 30.esp,0x009008,LRccDayFarmerArgo2,Farmer Eleeme
+NPC_,Crowded Cities 30.esp,0x009009,LRccDayFarmerArgo3,Farmer Heedalur
+NPC_,Crowded Cities 30.esp,0x00900A,LRccDayFarmerArgo4,Farmer Wih-Ju
+NPC_,Crowded Cities 30.esp,0x00900B,LRccDayFarmerArgo5,Farmer An-Zaw
+NPC_,Crowded Cities 30.esp,0x000D03,LRccDayFarmerBlack1,Farmer Nistac
+NPC_,Crowded Cities 30.esp,0x00900C,LRccDayFarmerBlack2,Farmer Kalort
+NPC_,Crowded Cities 30.esp,0x00900D,LRccDayFarmerBlack3,Farmer Dandana
+NPC_,Crowded Cities 30.esp,0x00900E,LRccDayFarmerBlack4,Farmer Riniso
+NPC_,Crowded Cities 30.esp,0x00900F,LRccDayFarmerBlack5,Farmer Ildean
+NPC_,Crowded Cities 30.esp,0x000D04,LRccDayFarmerCat1,Farmer Dro'Baad
+NPC_,Crowded Cities 30.esp,0x009010,LRccDayFarmerCat2,Farmer Jo'Rakha
+NPC_,Crowded Cities 30.esp,0x009011,LRccDayFarmerCat3,Farmer Ri'Dato
+NPC_,Crowded Cities 30.esp,0x009012,LRccDayFarmerCat4,Farmer Jo'Rak
+NPC_,Crowded Cities 30.esp,0x009013,LRccDayFarmerCat5,Farmer Raksada
+NPC_,Crowded Cities 30.esp,0x000D05,LRccDayFarmerDelf1,Farmer Neldam
+NPC_,Crowded Cities 30.esp,0x009014,LRccDayFarmerDelf2,Farmer Maggothe
+NPC_,Crowded Cities 30.esp,0x009015,LRccDayFarmerDelf3,Farmer Maggot
+NPC_,Crowded Cities 30.esp,0x009016,LRccDayFarmerDelf4,Farmer Sedaves
+NPC_,Crowded Cities 30.esp,0x009017,LRccDayFarmerDelf5,Farmer Vedave
+NPC_,Crowded Cities 30.esp,0x000D06,LRccDayFarmerHelf1,Farmer Fainde
+NPC_,Crowded Cities 30.esp,0x009018,LRccDayFarmerHelf2,Farmer Gratis
+NPC_,Crowded Cities 30.esp,0x009019,LRccDayFarmerHelf3,Farmer Inganare
+NPC_,Crowded Cities 30.esp,0x00901A,LRccDayFarmerHelf4,Farmer Estale
+NPC_,Crowded Cities 30.esp,0x00901B,LRccDayFarmerHelf5,Farmer Tyertilar
+NPC_,Crowded Cities 30.esp,0x000D07,LRccDayFarmerImp1,Farmer Raxleon
+NPC_,Crowded Cities 30.esp,0x00901C,LRccDayFarmerImp2,Farmer Hasphat
+NPC_,Crowded Cities 30.esp,0x00901D,LRccDayFarmerImp3,Farmer Silian
+NPC_,Crowded Cities 30.esp,0x00901E,LRccDayFarmerImp4,Farmer Isobelle
+NPC_,Crowded Cities 30.esp,0x00901F,LRccDayFarmerImp5,Farmer Oritonde
+NPC_,Crowded Cities 30.esp,0x000D08,LRccDayFarmerNord1,Farmer Hrard
+NPC_,Crowded Cities 30.esp,0x009020,LRccDayFarmerNord2,Farmer Sifkning
+NPC_,Crowded Cities 30.esp,0x009021,LRccDayFarmerNord3,Farmer Norrid
+NPC_,Crowded Cities 30.esp,0x009022,LRccDayFarmerNord4,Farmer Haakig
+NPC_,Crowded Cities 30.esp,0x009023,LRccDayFarmerNord5,Farmer Raddin
+NPC_,Crowded Cities 30.esp,0x000D09,LRccDayFarmerOrc1,Farmer Rogdul
+NPC_,Crowded Cities 30.esp,0x009024,LRccDayFarmerOrc2,Farmer Ghamul
+NPC_,Crowded Cities 30.esp,0x009025,LRccDayFarmerOrc3,Farmer Umbraam
+NPC_,Crowded Cities 30.esp,0x009026,LRccDayFarmerOrc4,Farmer Guaron
+NPC_,Crowded Cities 30.esp,0x009027,LRccDayFarmerOrc5,Farmer Gakkenfe
+NPC_,Crowded Cities 30.esp,0x000D0A,LRccDayFarmerWelf1,Farmer Faldil
+NPC_,Crowded Cities 30.esp,0x009028,LRccDayFarmerWelf2,Farmer Ulwaengo
+NPC_,Crowded Cities 30.esp,0x009029,LRccDayFarmerWelf3,Farmer Gaeleg
+NPC_,Crowded Cities 30.esp,0x00902A,LRccDayFarmerWelf4,Farmer Bragor
+NPC_,Crowded Cities 30.esp,0x00902B,LRccDayFarmerWelf5,Farmer Monthala
+NPC_,Crowded Cities 30.esp,0x000CE7,LRccDayHunterArgo1,Hunter J'Ram-Ku
+NPC_,Crowded Cities 30.esp,0x00902C,LRccDayHunterArgo2,Hunter Chalur
+NPC_,Crowded Cities 30.esp,0x00902D,LRccDayHunterArgo3,Hunter Utadeeme
+NPC_,Crowded Cities 30.esp,0x00902E,LRccDayHunterArgo4,Hunter Effe-T
+NPC_,Crowded Cities 30.esp,0x00902F,LRccDayHunterArgo5,Hunter Oleeme
+NPC_,Crowded Cities 30.esp,0x000CEE,LRccDayHunterBlack1,Hunter Jartodea
+NPC_,Crowded Cities 30.esp,0x009030,LRccDayHunterBlack2,Hunter Pemeniso
+NPC_,Crowded Cities 30.esp,0x009031,LRccDayHunterBlack3,Hunter Silann
+NPC_,Crowded Cities 30.esp,0x009032,LRccDayHunterBlack4,Hunter Rinison
+NPC_,Crowded Cities 30.esp,0x009033,LRccDayHunterBlack5,Hunter Farmin
+NPC_,Crowded Cities 30.esp,0x000CEB,LRccDayHunterCat1,Hunter S'Baadar
+NPC_,Crowded Cities 30.esp,0x009034,LRccDayHunterCat2,Hunter Baadargo
+NPC_,Crowded Cities 30.esp,0x009035,LRccDayHunterCat3,Hunter Dro'Ba
+NPC_,Crowded Cities 30.esp,0x009036,LRccDayHunterCat4,Hunter S'Baad
+NPC_,Crowded Cities 30.esp,0x009037,LRccDayHunterCat5,Hunter Urjorahn
+NPC_,Crowded Cities 30.esp,0x000CE8,LRccDayHunterDelf1,Hunter Alammus
+NPC_,Crowded Cities 30.esp,0x009038,LRccDayHunterDelf2,Hunter Duldam
+NPC_,Crowded Cities 30.esp,0x009039,LRccDayHunterDelf3,Hunter Gidave
+NPC_,Crowded Cities 30.esp,0x00903A,LRccDayHunterDelf4,Hunter Relamus
+NPC_,Crowded Cities 30.esp,0x00903B,LRccDayHunterDelf5,Hunter Dalamus
+NPC_,Crowded Cities 30.esp,0x000CE9,LRccDayHunterHelf1,Hunter Rumare
+NPC_,Crowded Cities 30.esp,0x00903C,LRccDayHunterHelf2,Hunter Aldaril
+NPC_,Crowded Cities 30.esp,0x00903D,LRccDayHunterHelf3,Hunter Olquar
+NPC_,Crowded Cities 30.esp,0x00903E,LRccDayHunterHelf4,Hunter Iterti
+NPC_,Crowded Cities 30.esp,0x00903F,LRccDayHunterHelf5,Hunter Nelanare
+NPC_,Crowded Cities 30.esp,0x000CEA,LRccDayHunterImp1,Hunter Malpenar
+NPC_,Crowded Cities 30.esp,0x009040,LRccDayHunterImp2,Hunter Lucret
+NPC_,Crowded Cities 30.esp,0x009041,LRccDayHunterImp3,Hunter Falced
+NPC_,Crowded Cities 30.esp,0x009042,LRccDayHunterImp4,Hunter Apelle
+NPC_,Crowded Cities 30.esp,0x009043,LRccDayHunterImp5,Hunter Agripp
+NPC_,Crowded Cities 30.esp,0x000CEC,LRccDayHunterNord1,Hunter Windre
+NPC_,Crowded Cities 30.esp,0x009044,LRccDayHunterNord2,Hunter Alfhed
+NPC_,Crowded Cities 30.esp,0x009045,LRccDayHunterNord3,Hunter Bormir
+NPC_,Crowded Cities 30.esp,0x009046,LRccDayHunterNord4,Hunter Tymvir
+NPC_,Crowded Cities 30.esp,0x009047,LRccDayHunterNord5,Hunter Thonronr
+NPC_,Crowded Cities 30.esp,0x000CED,LRccDayHunterOrc1,Hunter Monsuta
+NPC_,Crowded Cities 30.esp,0x009048,LRccDayHunterOrc2,Hunter Yadbaam
+NPC_,Crowded Cities 30.esp,0x009049,LRccDayHunterOrc3,Hunter Bagamul
+NPC_,Crowded Cities 30.esp,0x00904A,LRccDayHunterOrc4,Hunter Yadbaam
+NPC_,Crowded Cities 30.esp,0x00904B,LRccDayHunterOrc5,Hunter Shakh
+NPC_,Crowded Cities 30.esp,0x000CEF,LRccDayHunterWelf1,Hunter Hingoth
+NPC_,Crowded Cities 30.esp,0x00904C,LRccDayHunterWelf2,Hunter Agaron
+NPC_,Crowded Cities 30.esp,0x00904D,LRccDayHunterWelf3,Hunter Eradrann
+NPC_,Crowded Cities 30.esp,0x00904E,LRccDayHunterWelf4,Hunter Dangot
+NPC_,Crowded Cities 30.esp,0x00904F,LRccDayHunterWelf5,Hunter Meldil
+NPC_,Crowded Cities 30.esp,0x000D0B,LRccDayMageArgo1,Mage Teemee
+NPC_,Crowded Cities 30.esp,0x009536,LRccDayMageArgo2,Mage Milos
+NPC_,Crowded Cities 30.esp,0x009537,LRccDayMageArgo3,Mage Meer-M
+NPC_,Crowded Cities 30.esp,0x009538,LRccDayMageArgo4,Mage Huleed
+NPC_,Crowded Cities 30.esp,0x009539,LRccDayMageArgo5,Mage Peer-Mah
+NPC_,Crowded Cities 30.esp,0x000D0C,LRccDayMageBlack1,Mage Nachae
+NPC_,Crowded Cities 30.esp,0x00953A,LRccDayMageBlack2,Mage Tralen
+NPC_,Crowded Cities 30.esp,0x00953B,LRccDayMageBlack3,Mage Nistacy
+NPC_,Crowded Cities 30.esp,0x00953C,LRccDayMageBlack4,Mage Nemind
+NPC_,Crowded Cities 30.esp,0x00953D,LRccDayMageBlack5,Mage Torlin
+NPC_,Crowded Cities 30.esp,0x000D0D,LRccDayMageCat1,Mage Raksadarg
+NPC_,Crowded Cities 30.esp,0x00953E,LRccDayMageCat2,Mage Qanaro
+NPC_,Crowded Cities 30.esp,0x00953F,LRccDayMageCat3,Mage Ri'Dat
+NPC_,Crowded Cities 30.esp,0x009540,LRccDayMageCat4,Mage J'Dato
+NPC_,Crowded Cities 30.esp,0x009541,LRccDayMageCat5,Mage Ma'Dat
+NPC_,Crowded Cities 30.esp,0x000D0E,LRccDayMageDelf1,Mage Bradas
+NPC_,Crowded Cities 30.esp,0x009542,LRccDayMageDelf2,Mage Elammu
+NPC_,Crowded Cities 30.esp,0x009543,LRccDayMageDelf3,Mage Llaala
+NPC_,Crowded Cities 30.esp,0x009544,LRccDayMageDelf4,Mage Dalam
+NPC_,Crowded Cities 30.esp,0x009545,LRccDayMageDelf5,Mage Maggot
+NPC_,Crowded Cities 30.esp,0x000D0F,LRccDayMageHelf1,Mage Tunenrene
+NPC_,Crowded Cities 30.esp,0x009546,LRccDayMageHelf2,Mage Qorwyne
+NPC_,Crowded Cities 30.esp,0x009547,LRccDayMageHelf3,Mage Anaril
+NPC_,Crowded Cities 30.esp,0x009548,LRccDayMageHelf4,Mage Heceril
+NPC_,Crowded Cities 30.esp,0x009549,LRccDayMageHelf5,Mage Umbaca
+NPC_,Crowded Cities 30.esp,0x000D10,LRccDayMageImp1,Mage Pustius
+NPC_,Crowded Cities 30.esp,0x00954A,LRccDayMageImp2,Mage Procis
+NPC_,Crowded Cities 30.esp,0x00954B,LRccDayMageImp3,Mage Albeci
+NPC_,Crowded Cities 30.esp,0x00954C,LRccDayMageImp4,Mage Atteli
+NPC_,Crowded Cities 30.esp,0x00954D,LRccDayMageImp5,Mage Audeius
+NPC_,Crowded Cities 30.esp,0x000D11,LRccDayMageNord1,Mage Gudlin
+NPC_,Crowded Cities 30.esp,0x00954E,LRccDayMageNord2,Mage Ulfgar
+NPC_,Crowded Cities 30.esp,0x00954F,LRccDayMageNord3,Mage Sifkni
+NPC_,Crowded Cities 30.esp,0x009550,LRccDayMageNord4,Mage Valund
+NPC_,Crowded Cities 30.esp,0x009551,LRccDayMageNord5,Mage Hefadm
+NPC_,Crowded Cities 30.esp,0x000D12,LRccDayMageOrc1,Mage Ugdul
+NPC_,Crowded Cities 30.esp,0x009552,LRccDayMageOrc2,Mage Umbra
+NPC_,Crowded Cities 30.esp,0x009553,LRccDayMageOrc3,Mage Bogamu
+NPC_,Crowded Cities 30.esp,0x009554,LRccDayMageOrc4,Mage Lugdul
+NPC_,Crowded Cities 30.esp,0x009555,LRccDayMageOrc5,Mage Uramul
+NPC_,Crowded Cities 30.esp,0x000D13,LRccDayMageWelf1,Mage Thaernd
+NPC_,Crowded Cities 30.esp,0x009556,LRccDayMageWelf2,Mage Elberond
+NPC_,Crowded Cities 30.esp,0x009557,LRccDayMageWelf3,Mage Aengot
+NPC_,Crowded Cities 30.esp,0x009558,LRccDayMageWelf4,Mage Allimi
+NPC_,Crowded Cities 30.esp,0x009559,LRccDayMageWelf5,Mage Godras
+NPC_,Crowded Cities 30.esp,0x000CF0,LRccDayTravellerArgo1,Traveller Ineeme
+NPC_,Crowded Cities 30.esp,0x00955A,LRccDayTravellerArgo2,Traveller Wih-Ju
+NPC_,Crowded Cities 30.esp,0x00955B,LRccDayTravellerArgo3,Traveller Utadeeme
+NPC_,Crowded Cities 30.esp,0x00955C,LRccDayTravellerArgo4,Traveller Bun-Zaw
+NPC_,Crowded Cities 30.esp,0x00955D,LRccDayTravellerArgo5,Traveller Chaluree
+NPC_,Crowded Cities 30.esp,0x000CF1,LRccDayTravellerBlack1,Traveller Danda
+NPC_,Crowded Cities 30.esp,0x00955E,LRccDayTravellerBlack2,Traveller Hasell
+NPC_,Crowded Cities 30.esp,0x00955F,LRccDayTravellerBlack3,Traveller Charon
+NPC_,Crowded Cities 30.esp,0x009560,LRccDayTravellerBlack4,Traveller Staron
+NPC_,Crowded Cities 30.esp,0x009561,LRccDayTravellerBlack5,Traveller Lanah
+NPC_,Crowded Cities 30.esp,0x000CF2,LRccDayTravellerCat1,Traveller Ma'Dato
+NPC_,Crowded Cities 30.esp,0x009562,LRccDayTravellerCat2,Traveller Wadarg
+NPC_,Crowded Cities 30.esp,0x009563,LRccDayTravellerCat3,Traveller Shavir
+NPC_,Crowded Cities 30.esp,0x009564,LRccDayTravellerCat4,Traveller Urjora
+NPC_,Crowded Cities 30.esp,0x009565,LRccDayTravellerCat5,Traveller Wadargo
+NPC_,Crowded Cities 30.esp,0x000CF3,LRccDayTravellerDelf1,Traveller Bedaves
+NPC_,Crowded Cities 30.esp,0x009566,LRccDayTravellerDelf2,Traveller Maggot
+NPC_,Crowded Cities 30.esp,0x009567,LRccDayTravellerDelf3,Traveller Gidave
+NPC_,Crowded Cities 30.esp,0x009568,LRccDayTravellerDelf4,Traveller Rogus
+NPC_,Crowded Cities 30.esp,0x009569,LRccDayTravellerDelf5,Traveller Llaalam
+NPC_,Crowded Cities 30.esp,0x000CF4,LRccDayTravellerHelf1,Traveller Lorund
+NPC_,Crowded Cities 30.esp,0x00956A,LRccDayTravellerHelf2,Traveller Earmio
+NPC_,Crowded Cities 30.esp,0x00956B,LRccDayTravellerHelf3,Traveller Meanaami
+NPC_,Crowded Cities 30.esp,0x00956C,LRccDayTravellerHelf4,Traveller Molleen
+NPC_,Crowded Cities 30.esp,0x00956D,LRccDayTravellerHelf5,Traveller Norilar
+NPC_,Crowded Cities 30.esp,0x000CF5,LRccDayTravellerImp1,Traveller Ertius
+NPC_,Crowded Cities 30.esp,0x00956E,LRccDayTravellerImp2,Traveller Malpenar
+NPC_,Crowded Cities 30.esp,0x00956F,LRccDayTravellerImp3,Traveller Arenar
+NPC_,Crowded Cities 30.esp,0x009570,LRccDayTravellerImp4,Traveller Gergus
+NPC_,Crowded Cities 30.esp,0x009571,LRccDayTravellerImp5,Traveller Furippin
+NPC_,Crowded Cities 30.esp,0x000CF6,LRccDayTravellerNord1,Traveller Dagljo
+NPC_,Crowded Cities 30.esp,0x009572,LRccDayTravellerNord2,Traveller Onming
+NPC_,Crowded Cities 30.esp,0x009573,LRccDayTravellerNord3,Traveller Odming
+NPC_,Crowded Cities 30.esp,0x009574,LRccDayTravellerNord4,Traveller Haaki
+NPC_,Crowded Cities 30.esp,0x009575,LRccDayTravellerNord5,Traveller Svogre
+NPC_,Crowded Cities 30.esp,0x000CF7,LRccDayTravellerOrc1,Traveller Glush
+NPC_,Crowded Cities 30.esp,0x009576,LRccDayTravellerOrc2,Traveller Yadba
+NPC_,Crowded Cities 30.esp,0x009577,LRccDayTravellerOrc3,Traveller Rogdulg
+NPC_,Crowded Cities 30.esp,0x009578,LRccDayTravellerOrc4,Traveller Snagam
+NPC_,Crowded Cities 30.esp,0x009579,LRccDayTravellerOrc5,Traveller Guaron
+NPC_,Crowded Cities 30.esp,0x000CF8,LRccDayTravellerWelf1,Traveller Anglal
+NPC_,Crowded Cities 30.esp,0x00957A,LRccDayTravellerWelf2,Traveller Bereng
+NPC_,Crowded Cities 30.esp,0x00957B,LRccDayTravellerWelf3,Traveller Glatho
+NPC_,Crowded Cities 30.esp,0x00957C,LRccDayTravellerWelf4,Traveller Clengo
+NPC_,Crowded Cities 30.esp,0x00957D,LRccDayTravellerWelf5,Traveller Barannir
+NPC_,Crowded Cities 30.esp,0x000CF9,LRccDayWarriorArgo1,Warrior Skeeme
+NPC_,Crowded Cities 30.esp,0x00957E,LRccDayWarriorArgo2,Warrior Chalur
+NPC_,Crowded Cities 30.esp,0x00957F,LRccDayWarriorArgo3,Warrior J'Ram-Ku
+NPC_,Crowded Cities 30.esp,0x009580,LRccDayWarriorArgo4,Warrior Neeta
+NPC_,Crowded Cities 30.esp,0x009581,LRccDayWarriorArgo5,Warrior Bun-Zaw
+NPC_,Crowded Cities 30.esp,0x000CFA,LRccDayWarriorBlack1,Warrior Jeanna
+NPC_,Crowded Cities 30.esp,0x009582,LRccDayWarriorBlack2,Warrior Nachael
+NPC_,Crowded Cities 30.esp,0x009583,LRccDayWarriorBlack3,Warrior Raccanna
+NPC_,Crowded Cities 30.esp,0x009584,LRccDayWarriorBlack4,Warrior Jartod Mirel
+NPC_,Crowded Cities 30.esp,0x009585,LRccDayWarriorBlack5,Warrior Glannah
+NPC_,Crowded Cities 30.esp,0x000CFB,LRccDayWarriorCat1,Warrior Bahdah
+NPC_,Crowded Cities 30.esp,0x009586,LRccDayWarriorCat2,Warrior Shabhira
+NPC_,Crowded Cities 30.esp,0x009587,LRccDayWarriorCat3,Warrior Kiseen
+NPC_,Crowded Cities 30.esp,0x009588,LRccDayWarriorCat4,Warrior Tsabhira
+NPC_,Crowded Cities 30.esp,0x009589,LRccDayWarriorCat5,Warrior Ubaashid
+NPC_,Crowded Cities 30.esp,0x000CFC,LRccDayWarriorDelf1,Warrior Hainab
+NPC_,Crowded Cities 30.esp,0x00958A,LRccDayWarriorDelf2,Warrior Fadril
+NPC_,Crowded Cities 30.esp,0x00958B,LRccDayWarriorDelf3,Warrior Dolms
+NPC_,Crowded Cities 30.esp,0x00958C,LRccDayWarriorDelf4,Warrior Tadave
+NPC_,Crowded Cities 30.esp,0x00958D,LRccDayWarriorDelf5,Warrior Dalamus
+NPC_,Crowded Cities 30.esp,0x000CFD,LRccDayWarriorHelf1,Warrior Eraami
+NPC_,Crowded Cities 30.esp,0x00958E,LRccDayWarriorHelf2,Warrior Tarenen
+NPC_,Crowded Cities 30.esp,0x00958F,LRccDayWarriorHelf3,Warrior Volanare
+NPC_,Crowded Cities 30.esp,0x009590,LRccDayWarriorHelf4,Warrior Dhaunare
+NPC_,Crowded Cities 30.esp,0x009591,LRccDayWarriorHelf5,Warrior Tragri
+NPC_,Crowded Cities 30.esp,0x000CFE,LRccDayWarriorImp1,Warrior Ertius
+NPC_,Crowded Cities 30.esp,0x009592,LRccDayWarriorImp2,Warrior Benuni
+NPC_,Crowded Cities 30.esp,0x009593,LRccDayWarriorImp3,Warrior Clagiu
+NPC_,Crowded Cities 30.esp,0x009594,LRccDayWarriorImp4,Warrior Ildoni
+NPC_,Crowded Cities 30.esp,0x009595,LRccDayWarriorImp5,Warrior Cidius
+NPC_,Crowded Cities 30.esp,0x000CFF,LRccDayWarriorNord1,Warrior Snadmu
+NPC_,Crowded Cities 30.esp,0x009596,LRccDayWarriorNord2,Warrior Abbard
+NPC_,Crowded Cities 30.esp,0x009597,LRccDayWarriorNord3,Warrior Eifid
+NPC_,Crowded Cities 30.esp,0x009598,LRccDayWarriorNord4,Warrior Radding
+NPC_,Crowded Cities 30.esp,0x009599,LRccDayWarriorNord5,Warrior Fjolfrin
+NPC_,Crowded Cities 30.esp,0x000D00,LRccDayWarriorOrc1,Warrior Yadbaam
+NPC_,Crowded Cities 30.esp,0x00959A,LRccDayWarriorOrc2,Warrior Guaron
+NPC_,Crowded Cities 30.esp,0x00959B,LRccDayWarriorOrc3,Warrior Rogdul
+NPC_,Crowded Cities 30.esp,0x00959C,LRccDayWarriorOrc4,Warrior Umbraam
+NPC_,Crowded Cities 30.esp,0x00959D,LRccDayWarriorOrc5,Warrior Lorbul
+NPC_,Crowded Cities 30.esp,0x000D01,LRccDayWarriorWelf1,Warrior Ungeva
+NPC_,Crowded Cities 30.esp,0x00959E,LRccDayWarriorWelf2,Warrior Endras
+NPC_,Crowded Cities 30.esp,0x00959F,LRccDayWarriorWelf3,Warrior Elbero
+NPC_,Crowded Cities 30.esp,0x0095A0,LRccDayWarriorWelf4,Warrior Tarhie
+NPC_,Crowded Cities 30.esp,0x0095A1,LRccDayWarriorWelf5,Warrior Dirdin
+NPC_,Crowded Cities 30.esp,0x00120C,LRccNightCommonerArgo1,Commoner Chaluree
+NPC_,Crowded Cities 30.esp,0x0095A2,LRccNightCommonerArgo2,Commoner Utadee
+NPC_,Crowded Cities 30.esp,0x0095A3,LRccNightCommonerArgo3,Commoner Heedal
+NPC_,Crowded Cities 30.esp,0x0095A4,LRccNightCommonerArgo4,Commoner Itan-R
+NPC_,Crowded Cities 30.esp,0x0095A5,LRccNightCommonerArgo5,Commoner Peer-Mah
+NPC_,Crowded Cities 30.esp,0x00120D,LRccNightCommonerBlack1,Commoner Silannah
+NPC_,Crowded Cities 30.esp,0x0095A6,LRccNightCommonerBlack2,Commoner Glannah
+NPC_,Crowded Cities 30.esp,0x0095A7,LRccNightCommonerBlack3,Commoner Alusanna
+NPC_,Crowded Cities 30.esp,0x0095A8,LRccNightCommonerBlack4,Commoner Malenah
+NPC_,Crowded Cities 30.esp,0x0095A9,LRccNightCommonerBlack5,Commoner Iminda
+NPC_,Crowded Cities 30.esp,0x00120E,LRccNightCommonerCat1,Commoner Udaranji
+NPC_,Crowded Cities 30.esp,0x0095AA,LRccNightCommonerCat2,Commoner Khamuzi
+NPC_,Crowded Cities 30.esp,0x0095AB,LRccNightCommonerCat3,Commoner Bahdahni
+NPC_,Crowded Cities 30.esp,0x0095AC,LRccNightCommonerCat4,Commoner Ahdanj
+NPC_,Crowded Cities 30.esp,0x0095AD,LRccNightCommonerCat5,Commoner Dahleena
+NPC_,Crowded Cities 30.esp,0x00120F,LRccNightCommonerDelf1,Commoner Llaala
+NPC_,Crowded Cities 30.esp,0x0095AE,LRccNightCommonerDelf2,Commoner Enarvy
+NPC_,Crowded Cities 30.esp,0x0095AF,LRccNightCommonerDelf3,Commoner Thadas
+NPC_,Crowded Cities 30.esp,0x0095B0,LRccNightCommonerDelf4,Commoner Enarvy
+NPC_,Crowded Cities 30.esp,0x0095B1,LRccNightCommonerDelf5,Commoner Bildam
+NPC_,Crowded Cities 30.esp,0x001210,LRccNightCommonerHelf1,Commoner Hyaril
+NPC_,Crowded Cities 30.esp,0x0095B2,LRccNightCommonerHelf2,Commoner Iroril
+NPC_,Crowded Cities 30.esp,0x0095B3,LRccNightCommonerHelf3,Commoner Armion
+NPC_,Crowded Cities 30.esp,0x0095B4,LRccNightCommonerHelf4,Commoner Tragrilar
+NPC_,Crowded Cities 30.esp,0x0095B5,LRccNightCommonerHelf5,Commoner Eraamion
+NPC_,Crowded Cities 30.esp,0x001211,LRccNightCommonerImp1,Commoner Stenar
+NPC_,Crowded Cities 30.esp,0x0095B6,LRccNightCommonerImp2,Commoner Caccia
+NPC_,Crowded Cities 30.esp,0x0095B7,LRccNightCommonerImp3,Commoner Molvara
+NPC_,Crowded Cities 30.esp,0x0095B8,LRccNightCommonerImp4,Commoner Sabinuni
+NPC_,Crowded Cities 30.esp,0x0095B9,LRccNightCommonerImp5,Commoner Pliton
+NPC_,Crowded Cities 30.esp,0x001212,LRccNightCommonerNord1,Commoner Lasska
+NPC_,Crowded Cities 30.esp,0x0095BA,LRccNightCommonerNord2,Commoner Solding
+NPC_,Crowded Cities 30.esp,0x0095BB,LRccNightCommonerNord3,Commoner Godrelhe
+NPC_,Crowded Cities 30.esp,0x0095BC,LRccNightCommonerNord4,Commoner Brandrel
+NPC_,Crowded Cities 30.esp,0x0095BD,LRccNightCommonerNord5,Commoner Balfhe
+NPC_,Crowded Cities 30.esp,0x001213,LRccNightCommonerOrc1,Commoner Ghamul
+NPC_,Crowded Cities 30.esp,0x0095BE,LRccNightCommonerOrc2,Commoner Optio
+NPC_,Crowded Cities 30.esp,0x0095BF,LRccNightCommonerOrc3,Commoner Mashag
+NPC_,Crowded Cities 30.esp,0x0095C0,LRccNightCommonerOrc4,Commoner Rulfim
+NPC_,Crowded Cities 30.esp,0x0095C1,LRccNightCommonerOrc5,Commoner Gakken
+NPC_,Crowded Cities 30.esp,0x001214,LRccNightCommonerWelf1,Commoner Eradra
+NPC_,Crowded Cities 30.esp,0x0095C2,LRccNightCommonerWelf2,Commoner Minego
+NPC_,Crowded Cities 30.esp,0x0095C3,LRccNightCommonerWelf3,Commoner Pegarond
+NPC_,Crowded Cities 30.esp,0x0095C4,LRccNightCommonerWelf4,Commoner Nalimi
+NPC_,Crowded Cities 30.esp,0x0095C5,LRccNightCommonerWelf5,Commoner Forond
+,,,,
+NPC_,Crowded Roads Revisited.esp,0x000CE6,LRcrTravellerCommoner13N,Traveller Ilfhil
+NPC_,Crowded Roads Revisited.esp,0x000CE7,LRcrTravellerCommoner2N,Traveller Fanar
+NPC_,Crowded Roads Revisited.esp,0x000CED,LRcrTravellerCommoner11N,Traveller Aumsi
+NPC_,Crowded Roads Revisited.esp,0x000CEE,LRcrTravellerCommoner12N,Traveller Thales
+NPC_,Crowded Roads Revisited.esp,0x000CEF,LRcrTravellerCommoner1N,Traveller Hjotra
+NPC_,Crowded Roads Revisited.esp,0x000CF0,LRcrTravellerCommoner21N,Traveller Sifkni
+NPC_,Crowded Roads Revisited.esp,0x000CF1,LRcrTravellerCommoner22N,Traveller Lasskar
+NPC_,Crowded Roads Revisited.esp,0x000CF2,LRcrTravellerCommoner23N,Traveller Kjelhe
+NPC_,Crowded Roads Revisited.esp,0x000CF5,LRcrTravellerMiddle2I,Traveller Malpen
+NPC_,Crowded Roads Revisited.esp,0x000CF6,LRcrTravellerMiddle1I,Traveller Felannus
+NPC_,Crowded Roads Revisited.esp,0x000CFB,LRcrTravellerMiddle11I,Traveller Pallia
+NPC_,Crowded Roads Revisited.esp,0x000CFC,LRcrTravellerMiddle12I,Traveller Menanius
+NPC_,Crowded Roads Revisited.esp,0x000CFD,LRcrTravellerMiddle13I,Traveller Livia
+NPC_,Crowded Roads Revisited.esp,0x000CFE,LRcrTravellerMiddle21I,Traveller Zenoripp
+NPC_,Crowded Roads Revisited.esp,0x000CFF,LRcrTravellerMiddle22I,Traveller Leonde
+NPC_,Crowded Roads Revisited.esp,0x000D00,LRcrTravellerMiddle23I,Traveller Tappin
+NPC_,Crowded Roads Revisited.esp,0x000D01,LRcrTravellerSupplierI,Supplier Seguri
+NPC_,Crowded Roads Revisited.esp,0x000D02,LRcrTravellerSupplier1I,Supplier Albecius
+NPC_,Crowded Roads Revisited.esp,0x000D03,LRcrTravellerSupplier3I,Supplier Pania
+NPC_,Crowded Roads Revisited.esp,0x000D04,LRcrTravellerSupplier2I,Supplier Percan
+NPC_,Crowded Roads Revisited.esp,0x000D05,LRcrTravellerSupplier4I,Supplier Murber
+NPC_,Crowded Roads Revisited.esp,0x000D08,LRcrTravellerSupplier6I,Supplier Albeci
+NPC_,Crowded Roads Revisited.esp,0x000D09,LRcrTravellerSupplier5I,Supplier Ildoni
+NPC_,Crowded Roads Revisited.esp,0x000D0A,LRcrTravellerSupplier7I,Supplier Arenar
+NPC_,Crowded Roads Revisited.esp,0x000D0B,LRcrTravellerSupplier8I,Supplier Ticedo
+NPC_,Crowded Roads Revisited.esp,0x0061AB,LRcrTravellerCommoner1A,Traveller Shatalg
+NPC_,Crowded Roads Revisited.esp,0x0061AC,LRcrTravellerCommoner1K,Traveller Inorra
+NPC_,Crowded Roads Revisited.esp,0x006693,LRcrTravellerCommoner11A,Traveller Hul
+NPC_,Crowded Roads Revisited.esp,0x006694,LRcrTravellerCommoner11K,Traveller Arabhira
+NPC_,Crowded Roads Revisited.esp,0x006695,LRcrTravellerCommoner12A,Traveller Okur
+NPC_,Crowded Roads Revisited.esp,0x006696,LRcrTravellerCommoner12K,Traveller Habanj
+NPC_,Crowded Roads Revisited.esp,0x006697,LRcrTravellerCommoner13A,Traveller Ereese
+NPC_,Crowded Roads Revisited.esp,0x006698,LRcrTravellerCommoner13K,Traveller Inerri
+NPC_,Crowded Roads Revisited.esp,0x006699,LRcrTravellerCommoner2A,Traveller Chalur
+NPC_,Crowded Roads Revisited.esp,0x00669A,LRcrTravellerCommoner2K,Traveller Qa'Barri
+NPC_,Crowded Roads Revisited.esp,0x00669B,LRcrTravellerCommoner21A,Traveller Meer-Mah
+NPC_,Crowded Roads Revisited.esp,0x00669C,LRcrTravellerCommoner21K,Traveller Ra'Darsha
+NPC_,Crowded Roads Revisited.esp,0x00669D,LRcrTravellerCommoner22A,Traveller Eleemeet
+NPC_,Crowded Roads Revisited.esp,0x00669E,LRcrTravellerCommoner22K,Traveller Jo'Jidarr
+NPC_,Crowded Roads Revisited.esp,0x00669F,LRcrTravellerCommoner23A,Traveller Hides-His-Eyes
+NPC_,Crowded Roads Revisited.esp,0x0066A0,LRcrTravellerCommoner23K,Traveller Ri'Dara
+NPC_,Crowded Roads Revisited.esp,0x006B87,LRcrTravellerMiddle1K,Traveller Shabhi
+NPC_,Crowded Roads Revisited.esp,0x006B88,LRcrTravellerMiddle1A,Traveller An-Dee
+NPC_,Crowded Roads Revisited.esp,0x006B89,LRcrTravellerMiddle11A,Traveller Tern-Feather
+NPC_,Crowded Roads Revisited.esp,0x006B8A,LRcrTravellerMiddle11K,Traveller Idharani
+NPC_,Crowded Roads Revisited.esp,0x006B8B,LRcrTravellerMiddle12A,Traveller Ah-Meese
+NPC_,Crowded Roads Revisited.esp,0x006B8C,LRcrTravellerMiddle12K,Traveller Bahdah
+NPC_,Crowded Roads Revisited.esp,0x006B8D,LRcrTravellerMiddle2A,Traveller Also-He-Washes
+NPC_,Crowded Roads Revisited.esp,0x006B8E,LRcrTravellerMiddle13A,Traveller Nakuma
+NPC_,Crowded Roads Revisited.esp,0x006B8F,LRcrTravellerMiddle13K,Traveller Kiseen
+NPC_,Crowded Roads Revisited.esp,0x006B90,LRcrTravellerMiddle2K,Traveller Ma'Radirr
+NPC_,Crowded Roads Revisited.esp,0x006B91,LRcrTravellerMiddle21A,Traveller Wud-Neet
+NPC_,Crowded Roads Revisited.esp,0x006B92,LRcrTravellerMiddle21K,Traveller J'Farahn
+NPC_,Crowded Roads Revisited.esp,0x006B93,LRcrTravellerMiddle22A,Traveller Dan-Za
+NPC_,Crowded Roads Revisited.esp,0x006B94,LRcrTravellerMiddle22K,Traveller J'Zhirr
+NPC_,Crowded Roads Revisited.esp,0x006B95,LRcrTravellerMiddle23A,Traveller Oleeme
+NPC_,Crowded Roads Revisited.esp,0x006B96,LRcrTravellerMiddle23K,Traveller Ri'Rava
+NPC_,Crowded Roads Revisited.esp,0x006B97,LRcrTravellerMiddle1O,Traveller Orakh
+NPC_,Crowded Roads Revisited.esp,0x006B98,LRcrTravellerCommoner1O,Traveller Bugdub
+NPC_,Crowded Roads Revisited.esp,0x006B99,LRcrTravellerCommoner11O,Traveller Gakken
+NPC_,Crowded Roads Revisited.esp,0x006B9A,LRcrTravellerCommoner12O,Traveller Durash
+NPC_,Crowded Roads Revisited.esp,0x006B9B,LRcrTravellerCommoner13O,Traveller Kharzu
+NPC_,Crowded Roads Revisited.esp,0x006B9C,LRcrTravellerCommoner2O,Traveller Yadbaam
+NPC_,Crowded Roads Revisited.esp,0x006B9D,LRcrTravellerCommoner21O,Traveller Bagamul
+NPC_,Crowded Roads Revisited.esp,0x006B9E,LRcrTravellerCommoner22O,Traveller Bugdul
+NPC_,Crowded Roads Revisited.esp,0x006B9F,LRcrTravellerCommoner23O,Traveller Ghamul
+NPC_,Crowded Roads Revisited.esp,0x006BA0,LRcrTravellerMiddle11O,Traveller Muzgonk
+NPC_,Crowded Roads Revisited.esp,0x006BA1,LRcrTravellerMiddle12O,Traveller Koffutto
+NPC_,Crowded Roads Revisited.esp,0x006BA2,LRcrTravellerMiddle13O,Traveller Mogduk
+NPC_,Crowded Roads Revisited.esp,0x006BA3,LRcrTravellerMiddle2O,Traveller Logrob
+NPC_,Crowded Roads Revisited.esp,0x006BA4,LRcrTravellerMiddle21O,Traveller Ugruma
+NPC_,Crowded Roads Revisited.esp,0x006BA5,LRcrTravellerMiddle22O,Traveller Urim
+NPC_,Crowded Roads Revisited.esp,0x006BA6,LRcrTravellerMiddle23O,Traveller Lurog
+NPC_,Crowded Roads Revisited.esp,0x006BA7,LRcrTravellerSupplierA,Supplier Gam-Kur
+NPC_,Crowded Roads Revisited.esp,0x006BA8,LRcrTravellerSupplierK,Supplier Dro'Thri-Dar
+NPC_,Crowded Roads Revisited.esp,0x006BA9,LRcrTravellerSupplierO,Supplier Ghamborz gro-Ghasharzol
+NPC_,Crowded Roads Revisited.esp,0x006BAA,LRcrTravellerSupplier1A,Supplier An-Zaw
+NPC_,Crowded Roads Revisited.esp,0x006BAB,LRcrTravellerSupplier1K,Supplier S'Zahn
+NPC_,Crowded Roads Revisited.esp,0x006BAC,LRcrTravellerSupplier1O,Supplier Lorbul
+NPC_,Crowded Roads Revisited.esp,0x007093,LRcrTravellerSupplier2A,Supplier Oleen-Gei
+NPC_,Crowded Roads Revisited.esp,0x007094,LRcrTravellerSupplier4A,Supplier Enjoys-Shiny-Things
+NPC_,Crowded Roads Revisited.esp,0x007095,LRcrTravellerSupplier2K,Supplier Jo'Kothre
+NPC_,Crowded Roads Revisited.esp,0x007096,LRcrTravellerSupplier4K,Supplier Ri'Dato
+NPC_,Crowded Roads Revisited.esp,0x007097,LRcrTravellerSupplier2O,Supplier Bugdul
+NPC_,Crowded Roads Revisited.esp,0x007098,LRcrTravellerSupplier4O,Supplier Snagamul
+NPC_,Crowded Roads Revisited.esp,0x007099,LRcrTravellerSupplier3O,Supplier Durzum
+NPC_,Crowded Roads Revisited.esp,0x00709A,LRcrTravellerSupplier6O,Supplier Urzob
+NPC_,Crowded Roads Revisited.esp,0x00709B,LRcrTravellerSupplier8O,Supplier Bugdul
+NPC_,Crowded Roads Revisited.esp,0x00709C,LRcrTravellerSupplier3A,Supplier Nam-La
+NPC_,Crowded Roads Revisited.esp,0x00709D,LRcrTravellerSupplier3K,Supplier Abanji
+NPC_,Crowded Roads Revisited.esp,0x00709E,LRcrTravellerSupplier5K,Supplier Raksada
+NPC_,Crowded Roads Revisited.esp,0x00709F,LRcrTravellerSupplier7K,Supplier Baadargo
+NPC_,Crowded Roads Revisited.esp,0x0070A0,LRcrTravellerSupplier5A,Supplier Does-Not-Worry
+NPC_,Crowded Roads Revisited.esp,0x0070A1,LRcrTravellerSupplier7A,Supplier Okan-Ru
+NPC_,Crowded Roads Revisited.esp,0x0070A2,LRcrTravellerSupplier7O,Supplier Bogamu
+NPC_,Crowded Roads Revisited.esp,0x0070A3,LRcrTravellerSupplier5O,Supplier Shakh
+NPC_,Crowded Roads Revisited.esp,0x0070A4,LRcrTravellerSupplier6A,Supplier Beekatan
+NPC_,Crowded Roads Revisited.esp,0x0070A5,LRcrTravellerSupplier8A,Supplier J'Ram-Ku
+NPC_,Crowded Roads Revisited.esp,0x0070A6,LRcrTravellerSupplier6K,Supplier Khamuzi
+NPC_,Crowded Roads Revisited.esp,0x0070A7,LRcrTravellerSupplier8K,Supplier J'Dato
+NPC_,Crowded Roads Revisited.esp,0x0070A9,LRcrTravellerAdventurer1I,Adventurer Alcedonia
+NPC_,Crowded Roads Revisited.esp,0x0070AA,LRcrTravellerAdventurer11I,Adventurer Cania
+NPC_,Crowded Roads Revisited.esp,0x0070AB,LRcrTravellerAdventurer11A,Adventurer On-Wazei
+NPC_,Crowded Roads Revisited.esp,0x0070AC,LRcrTravellerAdventurer11K,Adventurer Nisaba
+NPC_,Crowded Roads Revisited.esp,0x0070AD,LRcrTravellerAdventurer11O,Adventurer Lorzub
+NPC_,Crowded Roads Revisited.esp,0x0070AE,LRcrTravellerAdventurer12I,Adventurer Pritia
+NPC_,Crowded Roads Revisited.esp,0x0070AF,LRcrTravellerAdventurer12A,Adventurer On-Wanal
+NPC_,Crowded Roads Revisited.esp,0x0070B0,LRcrTravellerAdventurer12K,Adventurer Abanji
+NPC_,Crowded Roads Revisited.esp,0x0070B1,LRcrTravellerAdventurer12O,Adventurer Ushar
+NPC_,Crowded Roads Revisited.esp,0x0070B2,LRcrTravellerAdventurer13I,Adventurer Thraccenia
+NPC_,Crowded Roads Revisited.esp,0x0070B3,LRcrTravellerAdventurer13A,Adventurer Breech-Star
+NPC_,Crowded Roads Revisited.esp,0x0070B4,LRcrTravellerAdventurer13K,Adventurer Adanja
+NPC_,Crowded Roads Revisited.esp,0x0070B5,LRcrTravellerAdventurer13O,Adventurer Marob
+NPC_,Crowded Roads Revisited.esp,0x0070B6,LRcrTravellerAdventurer2I,Adventurer Jonus
+NPC_,Crowded Roads Revisited.esp,0x0070B7,LRcrTravellerAdventurer21I,Adventurer Clagius
+NPC_,Crowded Roads Revisited.esp,0x0070B8,LRcrTravellerAdventurer21A,Adventurer Dreaded-Water
+NPC_,Crowded Roads Revisited.esp,0x0070B9,LRcrTravellerAdventurer21K,Adventurer S'Saddha
+NPC_,Crowded Roads Revisited.esp,0x0070BA,LRcrTravellerAdventurer21O,Adventurer Shelur
+NPC_,Crowded Roads Revisited.esp,0x0070BB,LRcrTravellerAdventurer22I,Adventurer Valvius
+NPC_,Crowded Roads Revisited.esp,0x0070BC,LRcrTravellerAdventurer22A,Adventurer Skink-in-Tree's-Shade
+NPC_,Crowded Roads Revisited.esp,0x0070BD,LRcrTravellerAdventurer22K,Adventurer M'Zahn
+NPC_,Crowded Roads Revisited.esp,0x0070BE,LRcrTravellerAdventurer22O,Adventurer Dumburz
+NPC_,Crowded Roads Revisited.esp,0x0070BF,LRcrTravellerAdventurer23I,Adventurer Bacola
+NPC_,Crowded Roads Revisited.esp,0x0070C0,LRcrTravellerAdventurer23A,Adventurer Han-Zaw
+NPC_,Crowded Roads Revisited.esp,0x0070C1,LRcrTravellerAdventurer23K,Adventurer Jo'Shavir
+NPC_,Crowded Roads Revisited.esp,0x0070C2,LRcrTravellerAdventurer23O,Adventurer Urim
+NPC_,Crowded Roads Revisited.esp,0x007A90,LRcrTravellerAdventurer11D,Adventurer Relvessea
+NPC_,Crowded Roads Revisited.esp,0x007A91,LRcrTravellerAdventurer12D,Adventurer Rolmi
+NPC_,Crowded Roads Revisited.esp,0x007A92,LRcrTravellerAdventurer13D,Adventurer Folrue
+NPC_,Crowded Roads Revisited.esp,0x007A93,LRcrTravellerAdventurer21D,Adventurer Danarnas
+NPC_,Crowded Roads Revisited.esp,0x007A94,LRcrTravellerAdventurer22D,Adventurer Girosi
+NPC_,Crowded Roads Revisited.esp,0x007A95,LRcrTravellerAdventurer23D,Adventurer Dillen
+NPC_,Crowded Roads Revisited.esp,0x007A96,LRcrTravellerCommoner11D,Traveller Miaren
+NPC_,Crowded Roads Revisited.esp,0x007A97,LRcrTravellerCommoner12D,Traveller Eriram
+NPC_,Crowded Roads Revisited.esp,0x007A98,LRcrTravellerCommoner13D,Traveller Velave
+NPC_,Crowded Roads Revisited.esp,0x007A99,LRcrTravellerCommoner1D,Traveller Guldyn
+NPC_,Crowded Roads Revisited.esp,0x007A9A,LRcrTravellerCommoner21D,Traveller Tedril
+NPC_,Crowded Roads Revisited.esp,0x007A9B,LRcrTravellerCommoner22D,Traveller Bradasou
+NPC_,Crowded Roads Revisited.esp,0x007A9C,LRcrTravellerCommoner23D,Traveller Svadas
+NPC_,Crowded Roads Revisited.esp,0x007A9D,LRcrTravellerCommoner2D,Traveller Nibarrab
+NPC_,Crowded Roads Revisited.esp,0x007A9E,LRcrTravellerSupplier1D,Supplier Uro
+NPC_,Crowded Roads Revisited.esp,0x007A9F,LRcrTravellerSupplier3D,Supplier Nadnea
+NPC_,Crowded Roads Revisited.esp,0x007AA0,LRcrTravellerSupplier2D,Supplier Darvynvil
+NPC_,Crowded Roads Revisited.esp,0x007AA1,LRcrTravellerSupplier4D,Supplier Ulvenven
+NPC_,Crowded Roads Revisited.esp,0x007AA2,LRcrTravellerSupplier6D,Supplier Dovtu
+NPC_,Crowded Roads Revisited.esp,0x007AA3,LRcrTravellerSupplier5D,Supplier Bredvan
+NPC_,Crowded Roads Revisited.esp,0x007AA4,LRcrTravellerSupplier7D,Supplier Darvel
+NPC_,Crowded Roads Revisited.esp,0x007AA5,LRcrTravellerSupplier8D,Supplier Sadlam
+NPC_,Crowded Roads Revisited.esp,0x007AA6,LRcrTravellerSupplierD,Supplier Gomam
+NPC_,Crowded Roads Revisited.esp,0x007AA7,LRcrTravellerMiddle11D,Traveller Ilmysea
+NPC_,Crowded Roads Revisited.esp,0x007AA8,LRcrTravellerMiddle12D,Traveller Fontu
+NPC_,Crowded Roads Revisited.esp,0x007AA9,LRcrTravellerMiddle13D,Traveller Thadasou
+NPC_,Crowded Roads Revisited.esp,0x007AAA,LRcrTravellerMiddle1D,Traveller Asso
+NPC_,Crowded Roads Revisited.esp,0x007AAB,LRcrTravellerMiddle21D,Traveller Nillen
+NPC_,Crowded Roads Revisited.esp,0x007AAC,LRcrTravellerMiddle22D,Traveller Tiler
+NPC_,Crowded Roads Revisited.esp,0x007AAD,LRcrTravellerMiddle23D,Traveller Gulther
+NPC_,Crowded Roads Revisited.esp,0x007AAE,LRcrTravellerMiddle2D,Traveller Velvos
+NPC_,Crowded Roads Revisited.esp,0x00B0BF,LRcrTravellerAdventurer1H,Smooth Criminal
+NPC_,Crowded Roads Revisited.esp,0x00B0C0,LRcrTravellerAdventurer11H,Adventurer Elaninde
+NPC_,Crowded Roads Revisited.esp,0x00B0C1,LRcrTravellerAdventurer12H,Adventurer Termanwan
+NPC_,Crowded Roads Revisited.esp,0x00B0C2,LRcrTravellerAdventurer13H,Adventurer Estelenda
+NPC_,Crowded Roads Revisited.esp,0x00B0C3,LRcrTravellerAdventurer21H,Adventurer Volantil
+NPC_,Crowded Roads Revisited.esp,0x00B0C4,LRcrTravellerAdventurer22H,Adventurer Moranurg
+NPC_,Crowded Roads Revisited.esp,0x00B0C5,LRcrTravellerAdventurer1A,Adventurer Keel-Raniur
+NPC_,Crowded Roads Revisited.esp,0x00B0C6,LRcrTravellerAdventurer1D,Adventurer Medrue
+NPC_,Crowded Roads Revisited.esp,0x00B0C7,LRcrTravellerAdventurer1K,Adventurer Ahdni
+NPC_,Crowded Roads Revisited.esp,0x00B0C8,LRcrTravellerAdventurer1O,Adventurer Ufthamph
+NPC_,Crowded Roads Revisited.esp,0x00B0C9,LRcrTravellerAdventurer2A,Adventurer Milos
+NPC_,Crowded Roads Revisited.esp,0x00B0CA,LRcrTravellerAdventurer2D,Adventurer Gadadar
+NPC_,Crowded Roads Revisited.esp,0x00B0CB,LRcrTravellerAdventurer2K,Adventurer Dro'Shur
+NPC_,Crowded Roads Revisited.esp,0x00B0CC,LRcrTravellerAdventurer2H,Adventurer Riminan
+NPC_,Crowded Roads Revisited.esp,0x00B0CD,LRcrTravellerAdventurer2O,Adventurer Matuk
+NPC_,Crowded Roads Revisited.esp,0x00B0CE,LRcrTravellerAdventurer23H,Adventurer Tauren
+NPC_,Crowded Roads Revisited.esp,0x00B0CF,LRcrTravellerCommoner11H,Traveller Erissara
+NPC_,Crowded Roads Revisited.esp,0x00B0D0,LRcrTravellerCommoner12H,Traveller Taarnila
+NPC_,Crowded Roads Revisited.esp,0x00B0D1,LRcrTravellerCommoner13H,Traveller Cumuninda
+NPC_,Crowded Roads Revisited.esp,0x00B0D2,LRcrTravellerCommoner1H,Traveller Tareriona
+NPC_,Crowded Roads Revisited.esp,0x00B0D3,LRcrTravellerCommoner21H,Traveller Narienalmo
+NPC_,Crowded Roads Revisited.esp,0x00B0D4,LRcrTravellerCommoner22H,Traveller Volanon
+NPC_,Crowded Roads Revisited.esp,0x00B0D5,LRcrTravellerCommoner23H,Traveller Fiirdil
+NPC_,Crowded Roads Revisited.esp,0x00B0D6,LRcrTravellerCommoner2H,Traveller Falanar
+NPC_,Crowded Roads Revisited.esp,0x00B0D7,LRcrTravellerMiddle11H,Traveller Siltayna
+NPC_,Crowded Roads Revisited.esp,0x00B0D8,LRcrTravellerMiddle12H,Traveller Elanin
+NPC_,Crowded Roads Revisited.esp,0x00B0D9,LRcrTravellerMiddle13H,Traveller Anirne
+NPC_,Crowded Roads Revisited.esp,0x00B0DA,LRcrTravellerMiddle1H,Traveller Siltal
+NPC_,Crowded Roads Revisited.esp,0x00B0DB,LRcrTravellerMiddle21H,Traveller Fangayne
+NPC_,Crowded Roads Revisited.esp,0x00B0DC,LRcrTravellerMiddle22H,Traveller Moranande
+NPC_,Crowded Roads Revisited.esp,0x00B0DD,LRcrTravellerMiddle23H,Traveller Sanyail
+NPC_,Crowded Roads Revisited.esp,0x00B0DE,LRcrTravellerMiddle2H,Traveller Tyertil
+NPC_,Crowded Roads Revisited.esp,0x00B0DF,LRcrTravellerSupplier1H,Supplier Aldarilar
+NPC_,Crowded Roads Revisited.esp,0x00B0E0,LRcrTravellerSupplier2H,Supplier Meanaa
+NPC_,Crowded Roads Revisited.esp,0x00B0E1,LRcrTravellerSupplier3H,Supplier Celria
+NPC_,Crowded Roads Revisited.esp,0x00B0E2,LRcrTravellerSupplier6H,Supplier Calman
+NPC_,Crowded Roads Revisited.esp,0x00B0E3,LRcrTravellerSupplier4H,Supplier Kardryar
+NPC_,Crowded Roads Revisited.esp,0x00B0E4,LRcrTravellerSupplier5H,Supplier Fainde
+NPC_,Crowded Roads Revisited.esp,0x00B0E5,LRcrTravellerSupplier7H,Supplier Sondil
+NPC_,Crowded Roads Revisited.esp,0x00B0E6,LRcrTravellerSupplier8H,Supplier Tunenre
+NPC_,Crowded Roads Revisited.esp,0x00C98A,LRcrTravellerAdventurer11N,Adventurer Thalestr
+NPC_,Crowded Roads Revisited.esp,0x00C98B,LRcrTravellerAdventurer12N,Adventurer Haema
+NPC_,Crowded Roads Revisited.esp,0x00C98C,LRcrTravellerAdventurer13N,Adventurer Metter
+NPC_,Crowded Roads Revisited.esp,0x00C98D,LRcrTravellerAdventurer1N,Adventurer Heddvi
+NPC_,Crowded Roads Revisited.esp,0x00C98E,LRcrTravellerAdventurer21N,Adventurer Sold
+NPC_,Crowded Roads Revisited.esp,0x00C98F,LRcrTravellerAdventurer22N,Adventurer Haklang
+NPC_,Crowded Roads Revisited.esp,0x00C990,LRcrTravellerAdventurer23N,Adventurer Bathmar
+NPC_,Crowded Roads Revisited.esp,0x00C991,LRcrTravellerAdventurer2N,Adventurer Tharsten
+NPC_,Crowded Roads Revisited.esp,0x00C992,LRcrTravellerSupplier1N,Supplier Crazyjo
+NPC_,Crowded Roads Revisited.esp,0x00C993,LRcrTravellerSupplier2N,Supplier Haaki
+NPC_,Crowded Roads Revisited.esp,0x00C994,LRcrTravellerSupplier3N,Supplier Eydis
+NPC_,Crowded Roads Revisited.esp,0x00C995,LRcrTravellerSupplier4N,Supplier Andrel
+NPC_,Crowded Roads Revisited.esp,0x00C996,LRcrTravellerSupplier5N,Supplier Ingmar
+NPC_,Crowded Roads Revisited.esp,0x00C997,LRcrTravellerSupplier6N,Supplier Hidar
+NPC_,Crowded Roads Revisited.esp,0x00C998,LRcrTravellerSupplier7N,Supplier Hulgarth
+NPC_,Crowded Roads Revisited.esp,0x00C999,LRcrTravellerSupplier8N,Supplier Hagar
+NPC_,Crowded Roads Revisited.esp,0x00C99A,LRcrTravellerSupplierN,Supplier Sjorvar
+NPC_,Crowded Roads Revisited.esp,0x00CE81,LRcrTravellerCommoner11I,Traveller Nebia
+NPC_,Crowded Roads Revisited.esp,0x00CE82,LRcrTravellerCommoner12I,Traveller Cocius
+NPC_,Crowded Roads Revisited.esp,0x00CE83,LRcrTravellerCommoner13I,Traveller Fralvi
+NPC_,Crowded Roads Revisited.esp,0x00CE84,LRcrTravellerCommoner1I,Traveller Ladiaia
+NPC_,Crowded Roads Revisited.esp,0x00CE85,LRcrTravellerCommoner21I,Traveller Surudu
+NPC_,Crowded Roads Revisited.esp,0x00CE86,LRcrTravellerCommoner22I,Traveller Falced
+NPC_,Crowded Roads Revisited.esp,0x00CE87,LRcrTravellerCommoner23I,Traveller Daripp
+NPC_,Crowded Roads Revisited.esp,0x00CE88,LRcrTravellerCommoner2I,Traveller Somuti
+NPC_,Crowded Roads Revisited.esp,0x00CE89,LRcrTravellerMiddle11N,Traveller Mette
+NPC_,Crowded Roads Revisited.esp,0x00CE8A,LRcrTravellerMiddle12N,Traveller Oddbjorg
+NPC_,Crowded Roads Revisited.esp,0x00CE8B,LRcrTravellerMiddle13N,Traveller Rannveig
+NPC_,Crowded Roads Revisited.esp,0x00CE8C,LRcrTravellerMiddle1N,Traveller Greidil
+NPC_,Crowded Roads Revisited.esp,0x00CE8D,LRcrTravellerMiddle21N,Traveller Viguri
+NPC_,Crowded Roads Revisited.esp,0x00CE8E,LRcrTravellerMiddle22N,Traveller Hlard
+NPC_,Crowded Roads Revisited.esp,0x00CE8F,LRcrTravellerMiddle23N,Traveller Ergnin
+NPC_,Crowded Roads Revisited.esp,0x00CE90,LRcrTravellerMiddle2N,Traveller Kolfhedi
+NPC_,Crowded Roads Revisited.esp,0x00D85D,LRcrTravellerAdventurer11R,Adventurer Dandsa
+NPC_,Crowded Roads Revisited.esp,0x00D85E,LRcrTravellerAdventurer12R,Adventurer Gwen
+NPC_,Crowded Roads Revisited.esp,0x00D85F,LRcrTravellerAdventurer1R,Adventurer Kanet
+NPC_,Crowded Roads Revisited.esp,0x00D860,LRcrTravellerAdventurer13R,Adventurer Anora
+NPC_,Crowded Roads Revisited.esp,0x00E713,LRcrTravellerAdventurer21R,Adventurer Rinina
+NPC_,Crowded Roads Revisited.esp,0x00E714,LRcrTravellerAdventurer22R,Adventurer Sorian
+NPC_,Crowded Roads Revisited.esp,0x00E715,LRcrTravellerAdventurer23R,Adventurer Alusaron
+NPC_,Crowded Roads Revisited.esp,0x00EBFC,LRcrTravellerAdventurer2R,Adventurer Nannithon
+NPC_,Crowded Roads Revisited.esp,0x00F0E3,LRcrTravellerCommoner11R,Traveller Senyndie
+NPC_,Crowded Roads Revisited.esp,0x00F0E4,LRcrTravellerCommoner12R,Traveller Kirgin
+NPC_,Crowded Roads Revisited.esp,0x00FAB1,LRcrTravellerCommoner13R,Traveller Dulian
+NPC_,Crowded Roads Revisited.esp,0x00FAB2,LRcrTravellerCommoner1R,Traveller Monsey
+NPC_,Crowded Roads Revisited.esp,0x00FAB3,LRcrTravellerCommoner21R,Traveller Iminda
+NPC_,Crowded Roads Revisited.esp,0x00FAB4,LRcrTravellerCommoner22R,Traveller Nistacy
+NPC_,Crowded Roads Revisited.esp,0x00FAB5,LRcrTravellerCommoner23R,Traveller Malen
+NPC_,Crowded Roads Revisited.esp,0x00FAB6,LRcrTravellerCommoner2R,Traveller Torlinda
+NPC_,Crowded Roads Revisited.esp,0x00FAB8,LRcrTravellerMiddle11R,Traveller Senynd
+NPC_,Crowded Roads Revisited.esp,0x00FABA,LRcrTravellerMiddle12R,Traveller Chalan
+NPC_,Crowded Roads Revisited.esp,0x00FABB,LRcrTravellerMiddle13R,Traveller Lairah
+NPC_,Crowded Roads Revisited.esp,0x00FABC,LRcrTravellerMiddle1R,Traveller Jalian
+NPC_,Crowded Roads Revisited.esp,0x00FABD,LRcrTravellerMiddle21R,Traveller Domas
+NPC_,Crowded Roads Revisited.esp,0x00FABE,LRcrTravellerMiddle22R,Traveller Farminda
+NPC_,Crowded Roads Revisited.esp,0x00FABF,LRcrTravellerMiddle23R,Traveller Clusanna
+NPC_,Crowded Roads Revisited.esp,0x00FAC0,LRcrTravellerMiddle2R,Traveller Jeanna
+NPC_,Crowded Roads Revisited.esp,0x00FAC1,LRcrTravellerSupplier1R,Supplier Alusan
+NPC_,Crowded Roads Revisited.esp,0x00FAC2,LRcrTravellerSupplier2R,Supplier Daron
+NPC_,Crowded Roads Revisited.esp,0x00FAC3,LRcrTravellerSupplier3R,Supplier Minia
+NPC_,Crowded Roads Revisited.esp,0x00FAC4,LRcrTravellerSupplier6R,Supplier Elone
+NPC_,Crowded Roads Revisited.esp,0x00FAC5,LRcrTravellerSupplier4R,Supplier Nistacey
+NPC_,Crowded Roads Revisited.esp,0x00FAC6,LRcrTravellerSupplier8R,Supplier Kaye
+NPC_,Crowded Roads Revisited.esp,0x00FAC7,LRcrTravellerSupplier5R,Supplier Rinina
+NPC_,Crowded Roads Revisited.esp,0x00FAC8,LRcrTravellerSupplier7R,Supplier Hickim
+NPC_,Crowded Roads Revisited.esp,0x00FAC9,LRcrTravellerSupplierR,Supplier Jarthlanie
+,,,,
+NPC_,PTRoamingNPCs.esp,0x00457D,PTAdventurer01Lev26,Adventurer Tymvirri
+NPC_,PTRoamingNPCs.esp,0x0059FF,PTAdventurer02Lev16,Adventurer Bun-Za
+NPC_,PTRoamingNPCs.esp,0x0082FE,PTAdventurer03Lev26,Adventurer Mediloie
+NPC_,PTRoamingNPCs.esp,0x009E5A,PTAdventurer04Lev8,Adventurer Agaron
+NPC_,PTRoamingNPCs.esp,0x01500A,PTAdventurer05Lev28,Adventurer Daripp
+NPC_,PTRoamingNPCs.esp,0x004C53,PTBattleMage01Lev9,Battlemage Thaernd
+NPC_,PTRoamingNPCs.esp,0x000ED5,PTKnight01Lev7,Knight Gualva
+NPC_,PTRoamingNPCs.esp,0x006E7D,PTKnight02Lev9,Knight Heddvild
+NPC_,PTRoamingNPCs.esp,0x009783,PTKnight03Lev27,Knight Lucret
+NPC_,PTRoamingNPCs.esp,0x01492F,PTKnight04Lev18,Knight Jeanele
+NPC_,PTRoamingNPCs.esp,0x000ED7,PTMage01Lev17,Mage Arenara
+NPC_,PTRoamingNPCs.esp,0x0015AD,PTMage02Lev16,Mage Ardarume
+NPC_,PTRoamingNPCs.esp,0x0089D5,PTMage03Lev28,Mage Fenandre
+NPC_,PTRoamingNPCs.esp,0x015006,PTMage04Lev7,Mage Olquaril
+NPC_,PTRoamingNPCs.esp,0x017FE0,PTMerchantAnvilBruma,Merchant Relie
+NPC_,PTRoamingNPCs.esp,0x0231BD,PTMerchantCheydinhalSkingrad,Merchant Dandana
+NPC_,PTRoamingNPCs.esp,0x026190,PTMerchantChorrolBravil,Merchant Irwaen
+NPC_,PTRoamingNPCs.esp,0x026F45,PTMerchantLeyawiinIC,Merchant Caccia
+NPC_,PTRoamingNPCs.esp,0x01BD54,PTMerchantMercenaryAnvilBruma,Mercenary Mashagam
+NPC_,PTRoamingNPCs.esp,0x02389A,PTMerchantMercenaryCheydSkingrad,Mercenary Nebiaia
+NPC_,PTRoamingNPCs.esp,0x026199,PTMerchantMercenaryChorrolBravil,Mercenary Esdruf
+NPC_,PTRoamingNPCs.esp,0x026F50,PTMerchantMercenaryLeyawiinIC,Mercenary Sedaves
+NPC_,PTRoamingNPCs.esp,0x002359,PTRanger01Lev18,Ranger Abelle
+NPC_,PTRoamingNPCs.esp,0x004C56,PTRanger02Lev8,Ranger Nachae
+NPC_,PTRoamingNPCs.esp,0x007C27,PTRanger03Lev17,Ranger Fanar
+NPC_,PTRoamingNPCs.esp,0x0090AC,PTRanger04Lev27,Ranger Shabhira
+NPC_,PTRoamingNPCs.esp,0x00A52F,PTRider01,Adventurer Raesaia
+NPC_,PTRoamingNPCs.esp,0x00B9AF,PTRider02,Knight Gakkenfe
+NPC_,PTRoamingNPCs.esp,0x00C08D,PTRider03,Battlemage Wih-Ju
+NPC_,PTRoamingNPCs.esp,0x00C768,PTRider04,Ranger Heniel
+NPC_,PTRoamingNPCs.esp,0x017907,PTRider05,Adventurer Tsabhi
+,,,,
+CREA,ShiveringIsleTravellers.esp,0x005A39,MMPRoamingTraderBaliwog01,Grimmie
+CREA,ShiveringIsleTravellers.esp,0x005A3B,MMPRoamingTraderHound01,Windfield
+CREA,ShiveringIsleTravellers.esp,0x005A40,MMPRoamingTraderSIElytra01,Elzar
+CREA,ShiveringIsleTravellers.esp,0x005A3D,MMPRoamingTraderSIGuar11,Clare
+CREA,ShiveringIsleTravellers.esp,0x005A42,MMPWizardSIImp01,Sherwin
+INGR,ShiveringIsleTravellers.esp,0x003146,TradersBaliwogLeg,Trader's Baliwog Leg
+NPC_,ShiveringIsleTravellers.esp,0x0067ED,SIRoamingTraderBardGuard01,Guard Umek
+,,,,
+NPC_,TamrielTravellers.esm,0x008552,MMPRoamingTraderSI01,Doni Nuccius
+NPC_,TamrielTravellers.esm,0x008553,MMPRoamingTraderSI02,Elvia Critiu
+NPC_,TamrielTravellers.esm,0x008554,MMPRoamingTraderSI03,Ashul Batul
+NPC_,TamrielTravellers.esm,0x008555,MMPRoamingTraderSI04,Dilin
+NPC_,TamrielTravellers.esm,0x008556,MMPRoamingTraderSI05,Eontene
+NPC_,TamrielTravellers.esm,0x008557,MMPRoamingTraderSI06,Ruth Keen
+NPC_,TamrielTravellers.esm,0x008558,MMPRoamingTraderSI07,Edrial Arenim
+NPC_,TamrielTravellers.esm,0x027EFA,MMPRoamingBardGuard01,Guard Karkash
+NPC_,TamrielTravellers.esm,0x027EFB,MMPRoamingBardGuard02,Guard Arwena
+NPC_,TamrielTravellers.esm,0x027EFC,MMPRoamingBardGuard03,Guard Rockel
+NPC_,TamrielTravellers.esm,0x027EFD,MMPRoamingBardGuard04,Guard Juslan
+NPC_,TamrielTravellers.esm,0x027EFE,MMPRoamingBardGuard05,Guard Rillian
+NPC_,TamrielTravellers.esm,0x027EFF,MMPRoamingBardGuard06,Guard Hughen
+NPC_,TamrielTravellers.esm,0x027F00,MMPRoamingBardGuard07,Guard Kellstra
+NPC_,TamrielTravellers.esm,0x027F01,MMPRoamingBardGuard08,Guard Fahrnam
+NPC_,TamrielTravellers.esm,0x027F02,MMPRoamingBardGuard09,Guard Alisa
+NPC_,TamrielTravellers.esm,0x00AE7B,MMPRoamingBardGuard10,Guard Keldorn
+,,,,
+NPC_,MannimarcoComplete.esp,0x04E986,000Mvisitora,Commoner Olo
+NPC_,MannimarcoComplete.esp,0x050C01,000Mvisitorb,Commoner Kliopes
+NPC_,MannimarcoComplete.esp,0x050C02,000Mvisitorc,Commoner Faragyl
+NPC_,MannimarcoComplete.esp,0x050C03,000Mvisitord,Commoner Ulmer
+NPC_,MannimarcoComplete.esp,0x050C04,000Mvisitore,Commoner Mathro
+NPC_,MannimarcoComplete.esp,0x03E1B6,00DeadNecromancer1,Necromancer Teth
+NPC_,MannimarcoComplete.esp,0x03E1B7,00DeadNecromancer2,Necromancer Seth
+NPC_,MannimarcoComplete.esp,0x03E1B8,00DeadNecromancer3,Necromancer Osirion
+NPC_,MannimarcoComplete.esp,0x03E1BA,00DeadNecromancer4,Necromancer Ra
+,,,,
+NPC_,Origin of the Mages Guild.esp,0x098FD2,OMGMageAU1,Mage Hugnal
+NPC_,Origin of the Mages Guild.esp,0x098FD3,OMGMageAU2,Mage Jubin
+NPC_,Origin of the Mages Guild.esp,0x098FD4,OMGMageAU3,Mage Muaang
+NPC_,Origin of the Mages Guild.esp,0x098FD5,OMGMageAU4,Mage Sarvo
+NPC_,Origin of the Mages Guild.esp,0x098FD6,OMGMageAU5,Mage Ithildur
+NPC_,Origin of the Mages Guild.esp,0x098FD7,OMGMageAU6,Mage Steek
+NPC_,Origin of the Mages Guild.esp,0x08897F,OMGMageJourneyman1,Apprentice Zuba
+NPC_,Origin of the Mages Guild.esp,0x088980,OMGMageJourneyman2,Apprentice Marshal
+NPC_,Origin of the Mages Guild.esp,0x088981,OMGMageJourneyman3,Apprentice Watt
+NPC_,Origin of the Mages Guild.esp,0x088982,OMGMageJourneyman4,Apprentice Ohm
+NPC_,Origin of the Mages Guild.esp,0x088983,OMGMageJourneyman5,Apprentice Joule
+NPC_,Origin of the Mages Guild.esp,0x009D12,OMGMageVault1,Clerk Newton
+NPC_,Origin of the Mages Guild.esp,0x00A3E7,OMGMageVault3,Clerk Voltaire
+NPC_,Origin of the Mages Guild.esp,0x03E095,OMGMageVault4,Clerk Edison
+,,,,
+NPC_,PTMudwater.esp,0x0746AB,PTArgTravelingMerchant,Traveling Merchant Klaus

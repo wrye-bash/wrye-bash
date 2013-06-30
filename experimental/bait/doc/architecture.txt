@@ -1,0 +1,161 @@
+
+
+Title: Wrye Bash Installer Tab Architecture Document
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+=========================
+  Design Considerations
+=========================
+Modularity
+  As with any complex piece of software, the logical components should be as
+decoupled as possible to promote clarity, flexibility, and testability.  The
+module APIs should hide implementation details well enough for the module
+implementations to be changed freely without affecting client modules.
+
+Testability
+  An extension of modularity.  Modules should be designed so that their inputs
+and outputs (sources and sinks) are encapsulated so that they can be easily
+replaced with test harness equivalents (think resource injection).
+
+Responsiveness
+  The program should be as prompt as possible to respond to the user.
+Therefore, the event loops that respond to user input should be as tight as
+possible.  Long-running tasks should be executed asynchronously.
+
+Scalability
+  The GIL severely limits concurrency within a single process, artificially
+limiting the performance of a multi-threaded application on multi-core machines.
+Initially, all components will run in the same process for the sake of
+simplicity.  However, once implementation is far enough along to do some
+real-world performance testing, it will likely prove beneficial to move one or
+more components into separate processes and use Python multiprocessing
+primitives for communication.  The module APIs should be designed to allow this
+transition to be transparent.
+
+Graceful degradation
+  If possible, out of memory errors should not result in program termination.
+Instead, caches should be dropped or loaded data should be swapped to disk.
+Another possible solution is to split memory-using hot spots into different
+processes and allow the OS to do any needed swapping.
+
+Unicode compliance
+  All string data read from disk should be converted into some
+Unicode-compatible encoding, and all strings that are output should have the
+target encoding explicitly specified.
+
+I18n and l10n
+  All static text displayed on the UI will follow WB's existing mechanism for
+internationalization.  New strings will be added to  WB's localization files as
+necessary.
+
+
+===================
+  Design Patterns
+===================
+As mentioned in the overview document, I chose the MVP (Model View Presenter)
+overall design pattern.  Moreover, I chose the "Presentation Model" variant in
+order to make the view as "dumb" as possible to minimize the onus of testing the
+GUI-bound code.  The external application code interacts only with the View.
+The View interacts only with the Presenter, and the Presenter interacts only
+with the Model.  All three layers interact with the IO gateway module, but via
+separate layer-specific APIs.
+
+The Presenter and Model components implement a degenerate version of the
+Observer pattern (i.e. an output message queue read by the component's client),
+as there is exactly one observer for each of those components.
+
+
+==================
+  Module Summary
+==================
+View
+- Provides a wx-based GUI that allows users to interact with the data
+- Prompt, consistent responsiveness to user actions
+- Persists widget-specific state (such as splitter sash positions)
+- Captures UI events and informs presenter of pertinent user actions
+- Reads ViewCommand bundles from the Presenter's output queue and uses the
+contained information to incrementally update the UI
+- Contains all localizable text
+- Stores settings and retrieves rendered images from the view API in the I/O
+Gateway module
+
+Presenter
+- Retrieves data from the Model, filters it according to current settings, and
+prepares the data for display
+- Controls access to Model functionality
+- Calculates and streams small, efficient diffs to update view state
+- Fulfills requests asynchronously, returning errors as elements in output queue
+- Implements wizard scripting logic
+- Stores settings and retrieves wizard scripts from the presenter API in the I/O
+Gateway module
+
+Model
+- Keeps loaded data synchronized with disk contents
+- Generates metadata from analysis of loaded data
+- Calculates conflict relationships among files
+- Coordinates I/O actions (e.g. ensures a project is not deleted while it is
+being installed)
+- Streams update notifications via its output queue
+- Fulfills requests asynchronously, returning errors as elements in output queue
+- Stores settings and cached metadata, and performs all I/O operations
+through the model API in the I/O Gateway module
+
+I/O Gateway
+- Abstracts ALL I/O operations at a level that makes testing the other
+components convenient
+- Encapsulates knowledge of persisted data
+
+Please see the func_spec_*.txt, api_spec_*.txt, and design_doc_*.txt files for
+details on the individual modules, as well as component_diagram_*.jpg for visual
+summaries.
+
+
+=======================
+  Directory Structure
+=======================
+The code is organized into a directory structure that emphasizes the modularity
+of the design:
+
+bait/                   bait public factory functions
+
+bait/model/             model component API classes and constants
+bait/presenter/         presenter component API classes and constants
+bait/view/              view component API classes and constants
+bait/io_gateway/        I/O gateway API classes and constants
+bait/util/              utility classes and functions
+
+bait/*/impl/            private implementation.  not intended for outside access
+
+bait/test/              mock objects used in the interactive tests
+
+
+==================================
+  Multiprocessing Considerations
+==================================
+Logging
+  All code uses standard Python logging mechanisms.  Any created subprocesses
+must be set up with a logging handler that passes the messages back to the
+parent process for output.  This way we can keep the log output ungarbled and
+write to rotated log files safely.  Log verbosity for each namespace, regardless
+of what process it is running in, is configured by the logging.conf file.
+
+Transparent multiprocessing
+  To facilitate testing, components should be able to be used in-process or in a
+separate process via the same API.  Components can be abstracted into a separate
+process using multiprocessing.Manager objects to create a proxy.  The Manager
+object should be initialized with a function that configures logging with an
+appropriate logging handler.  All this should be handled transparently by the
+bait factory functions.
+
+Lifecycle management
+  A python process will not die if it has written something to an output queue
+that has not been read yet.  When shutting down, it is imperative to drain all
+queues before exiting to avoid leaving hung processes.
+
+Process status monitoring
+  Each process should run a monitoring thread that keeps statistics on process
+state.  Not only will this let the process know when to reduce memory usage,
+but it can also provide the developers with valuable knowledge of real-world
+performance, enabling targeted optimizations in future releases.

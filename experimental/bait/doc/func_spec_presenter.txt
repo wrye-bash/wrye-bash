@@ -1,0 +1,31 @@
+
+
+Title: Wrye Bash Installer Tab Presenter Functional Specification
+Author: Myk Taylor (myk002)
+Status: unorganized notes
+
+
+
+Overview
+--------
+The presenter makes all decisions about how data is displayed and implements all
+filtering and searching algorithms.  It also handles wizard script execution.
+It is called by the view to communicate user actions.  It calls the model to
+perform low-level actions, retrieve data, and to communicate current areas of
+interest so the model can focus its calculations.  It reads from the model
+update queue and writes commands to the view queue.  It also communicates with
+the Presenter I/O gateway for file-related tasks, such as settings persistence
+and wizard script retrieval.
+
+
+Presenter
+  Keeps data display state
+  Performs filtering and searches
+  Sends user-initiated commands to model
+  Streams small, efficient diffs to update view state
+
+
+Show names of group members in group name when collapsed.
+
+actions on mod groups filter down to group members.  visually indicate this by
+auto-selecting group members when a group head is selected

@@ -1,0 +1,91 @@
+
+
+Title: Wrye Bash Installer Tab Model API Specification
+Author: Myk Taylor (myk002)
+Status: working draft (partially prototyped)
+
+
+===========
+  Context
+===========
+  The Model API is used exclusively by the Presenter module.  It takes in
+settings changes and operation requests and emits a stream of update
+notifications for nodes that have been changed.  Please see the files
+under the model/ directory for the full specifications of the enums and
+classes listed below.
+
+
+=======
+  API
+=======
+ROOT_NODE_ID
+
+FlagEnum NodeTypes
+Enum Errors
+Enum Status
+Enum Operations
+FlagEnum UpdateTypes
+
+UPDATE_TUPLE_IDX_TYPE
+UPDATE_NODE_TUPLE_IDX_NODE_TYPE
+UPDATE_NODE_TUPLE_IDX_NODE_ID
+UPDATE_NODE_TUPLE_IDX_VERSION
+UPDATE_ERROR_TUPLE_IDX_CODE
+UPDATE_ERROR_TUPLE_IDX_RESOURCE_NAME
+
+class StatusOkData
+class StatusLoadingData
+class StatusDirtyData
+class StatusUnstableData
+
+class RootNodeAttributes
+class PackageNodeAttributes
+class GroupNodeAttributes
+class SubPackageNodeAttributes
+class DirectoryNodeAttributes
+class FileNodeAttributes
+
+class NodeChildren
+
+class PackageNodeDetails
+class FileNodeDetails
+class EspFileNodeDetails
+class BsaFileNodeDetails
+class ResourceFileNodeDetails
+
+
+class BaitModel:
+  updateNotificationQueue
+    Contains errors and update notifications
+
+  __init__(self, modelIoGateway, updateNotificationQueue)
+
+  start(self)
+    Loads saved state, starts threads, starts loading data from disk
+
+  shutdown(self)
+    Saves any dirty state, shuts down threads
+
+  pause(self)
+    Suggests that bait suspend operations; may not take effect immediately
+
+  resume(self)
+    Resumes from a pause
+
+  # TODO: add "sinceVersion=0" parameter to only send diff?
+  get_node_attributes(self, nodeId)
+  get_node_children(self, nodeId)
+  get_node_details(self, nodeId)
+    Retrieve node metadata
+
+  # TODO: functions to implement menu commands
+  sync(groupOrProjectNodeId)
+  move_to(groupOrProjectNodeId, newParentNodeId, predecessorNodeId)
+  convert_to_project(projectNodeId)
+  convert_to_archive(projectNodeId, archiveType, creationArgs)
+  delete(groupOrProjectNodeId)
+  rename(groupOrProjectNodeId, newName)
+  open(fileOrNonArchivedDirectoryNodeId)
+  set_hidden(groupOrProjectNodeId, value)
+  set_is_marked_for_install(nodeId, value)
+  set_is_cruft(fileOrDirectoryNodeId, value)

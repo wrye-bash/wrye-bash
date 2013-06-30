@@ -1,0 +1,1408 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2011-12-18 18:26+Alaskan Standard Time\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1252\n"
+"Content-Transfer-Encoding: utf8\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: bash\bush.py:73
+msgid "Top (Type)"
+msgstr ""
+
+#: bash\bush.py:74
+msgid "World Children"
+msgstr ""
+
+#: bash\bush.py:75
+msgid "Int Cell Block"
+msgstr ""
+
+#: bash\bush.py:76
+msgid "Int Cell Sub-Block"
+msgstr ""
+
+#: bash\bush.py:77
+msgid "Ext Cell Block"
+msgstr ""
+
+#: bash\bush.py:78
+msgid "Ext Cell Sub-Block"
+msgstr ""
+
+#: bash\bush.py:79
+msgid "Cell Children"
+msgstr ""
+
+#: bash\bush.py:80
+msgid "Topic Children"
+msgstr ""
+
+#: bash\bush.py:81
+msgid "Cell Persistent Childen"
+msgstr ""
+
+#: bash\bush.py:82
+msgid "Cell Temporary Children"
+msgstr ""
+
+#: bash\bush.py:83
+msgid "Cell Visible Distant Children"
+msgstr ""
+
+#: bash\bush.py:99
+msgid "Argonian"
+msgstr ""
+
+#: bash\bush.py:100
+msgid "Breton"
+msgstr ""
+
+#: bash\bush.py:101
+msgid "Dark Elf"
+msgstr ""
+
+#: bash\bush.py:102
+msgid "High Elf"
+msgstr ""
+
+#: bash\bush.py:103
+msgid "Imperial"
+msgstr ""
+
+#: bash\bush.py:104
+msgid "Khajiit"
+msgstr ""
+
+#: bash\bush.py:105
+msgid "Nord"
+msgstr ""
+
+#: bash\bush.py:106
+msgid "Orc"
+msgstr ""
+
+#: bash\bush.py:107
+msgid "Redguard"
+msgstr ""
+
+#: bash\bush.py:108
+msgid "Vampire"
+msgstr ""
+
+#: bash\bush.py:109
+msgid "Wood Elf"
+msgstr ""
+
+#: bash\bush.py:407
+msgid "Faction"
+msgstr ""
+
+#: bash\bush.py:408
+msgid "Armor"
+msgstr ""
+
+#: bash\bush.py:409
+msgid "Book"
+msgstr ""
+
+#: bash\bush.py:410
+msgid "Clothing"
+msgstr ""
+
+#: bash\bush.py:411
+msgid "Light"
+msgstr ""
+
+#: bash\bush.py:412
+msgid "Misc. Item"
+msgstr ""
+
+#: bash\bush.py:413
+msgid "Weapon"
+msgstr ""
+
+#: bash\bush.py:414
+msgid "NPC"
+msgstr ""
+
+#: bash\bush.py:415
+msgid "Creature"
+msgstr ""
+
+#: bash\bush.py:416
+msgid "Key"
+msgstr ""
+
+#: bash\bush.py:417
+msgid "Cell"
+msgstr "Cella"
+
+#: bash\bush.py:418
+msgid "Object Ref"
+msgstr ""
+
+#: bash\bush.py:419
+msgid "NPC Ref"
+msgstr ""
+
+#: bash\bush.py:420
+msgid "Creature Ref"
+msgstr ""
+
+#: bash\bush.py:421
+msgid "Dialog Entry"
+msgstr ""
+
+#: bash\bush.py:422
+msgid "Quest"
+msgstr ""
+
+#: bash\bush.py:423
+msgid "AI Package"
+msgstr ""
+
+#: bash\bush.py:428
+msgid "Alchemical Ingredients I"
+msgstr ""
+
+#: bash\bush.py:429
+msgid "Alchemical Ingredients II"
+msgstr ""
+
+#: bash\bush.py:430
+msgid "Alchemical Ingredients III"
+msgstr ""
+
+#: bash\bush.py:431
+msgid "Alchemical Ingredients IV"
+msgstr ""
+
+#: bash\bush.py:434
+msgid "Alchemical Effects I"
+msgstr ""
+
+#: bash\bush.py:435
+msgid "Alchemical Effects II"
+msgstr ""
+
+#: bash\bush.py:436
+msgid "Alchemical Effects III"
+msgstr ""
+
+#: bash\bush.py:437
+msgid "Alchemical Effects IV"
+msgstr ""
+
+#: bash\bosh.py:66
+msgid "Abstract section called."
+msgstr "Chiamata a sezione Abstract."
+
+#: bash\bosh.py:82
+msgid "Section is not coded yet."
+msgstr "Sezione non ancora implementata."
+
+#: bash\bosh.py:96
+msgid "Unknown File: "
+msgstr "File non trovato:"
+
+#: bash\bosh.py:291
+msgid " is not a directory."
+msgstr ""
+
+#: bash\bosh.py:293
+msgid " is not safe to remove."
+msgstr ""
+
+#: bash\bosh.py:757
+msgid "Scale must not equal zero!"
+msgstr "La scala non può essere zero!"
+
+#: bash\bosh.py:801
+msgid "%s: Attempted to read before (%d) beginning of file/buffer."
+msgstr "%s: Tentativo di lettura prima (%d) dell'inizio del file/buffer."
+
+#: bash\bosh.py:804
+msgid "%s: Attempted to read past (%d) end (%d) of file/buffer."
+msgstr "%s: Tentativo di lettura oltre (%d) dalla fine (%d) del file/buffer."
+
+#: bash\bosh.py:817
+msgid "%s: Expected size == %d, but got: %d "
+msgstr "%s: Dimensione attesa == %d, riscontrata: %d "
+
+#: bash\bosh.py:819
+msgid "%s: Expected size <= %d, but got: %d "
+msgstr "%s: Dimensione attesa <= %d, riscontrata: %d "
+
+#: bash\bosh.py:827
+msgid "Extraneous subrecord (%s) in %s record."
+msgstr "Il subrecord (%s) non appartiene al record %s."
+
+#: bash\bosh.py:871
+msgid "Exceded limit of: "
+msgstr ""
+
+#: bash\bosh.py:912
+msgid "Bad Top GRUP type: "
+msgstr ""
+
+#: bash\bosh.py:926
+msgid "%s: Expected %s subrecord, but found %s instead."
+msgstr "%s: Subrecord %s atteso, riscontrato invece %s."
+
+#: bash\bosh.py:1545
+msgid "Unexpected subrecord: "
+msgstr ""
+
+#: bash\bosh.py:1575
+msgid "FormIds not in long format"
+msgstr ""
+
+#: bash\bosh.py:1631
+msgid "Data changed: "
+msgstr "Dati modificati:"
+
+#: bash\bosh.py:1632
+msgid "Data undefined: "
+msgstr "Dati non definiti:"
+
+#: bash\bosh.py:1672
+msgid "Mis-sized compressed data. Expected %d, got %d."
+msgstr ""
+
+#: bash\bosh.py:1741
+msgid "Packing Error: %s %s: Formids in long format."
+msgstr ""
+
+#: bash\bosh.py:2659
+msgid "No valid mapping for mod index 0x%02X"
+msgstr ""
+
+#: bash\bosh.py:2848
+msgid "Unexpected %s record in %s group."
+msgstr ""
+
+#: bash\bosh.py:3003
+msgid "Invalid top group type: "
+msgstr ""
+
+#: bash\bosh.py:3016
+msgid "Improperly grouped file."
+msgstr ""
+
+#: bash\bosh.py:3051
+msgid "Insufficient data to write file."
+msgstr "Dati insufficienti per scrittura file."
+
+#: bash\bosh.py:3316
+msgid "File does not exist."
+msgstr ""
+
+#: bash\bosh.py:3559
+msgid "Missing Master "
+msgstr ""
+
+#: bash\bosh.py:3562
+msgid "Abomb Counter"
+msgstr ""
+
+#: bash\bosh.py:3563
+msgid "  Integer:\t0x%08X"
+msgstr ""
+
+#: bash\bosh.py:3564
+msgid "  Float:\t%.2f"
+msgstr ""
+
+#: bash\bosh.py:3567
+msgid "Created Items"
+msgstr ""
+
+#: bash\bosh.py:3568
+msgid "Records"
+msgstr ""
+
+#: bash\bosh.py:3569
+msgid "FormIds"
+msgstr ""
+
+#: bash\bosh.py:3621
+msgid "Unknown"
+msgstr ""
+
+#: bash\bosh.py:3660
+msgid "Load list is full."
+msgstr "Lista caricamento piena."
+
+#: bash\bosh.py:3710
+msgid "Plugins.txt has changed"
+msgstr ""
+
+#: bash\bosh.py:3981
+msgid "Can't get snapshot parameters for file outside main directory."
+msgstr ""
+
+#: bash\bosh.py:4060
+msgid "Expected TES4, but got "
+msgstr ""
+
+#: bash\bosh.py:4065
+msgid "Struct.error: "
+msgstr ""
+
+#: bash\bosh.py:4436
+msgid "Copying Files..."
+msgstr "Copia Files..."
+
+#: bash\bosh.py:4791
+msgid "Loading "
+msgstr "Caricamento"
+
+#: bash\bosh.py:4801
+msgid "Loading Oblivion.esm"
+msgstr ""
+
+#: bash\bosh.py:4810
+msgid "Writing "
+msgstr ""
+
+#: bash\bosh.py:4812
+msgid "FormId"
+msgstr ""
+
+#: bash\bosh.py:4812
+msgid "EditorId"
+msgstr ""
+
+#: bash\bosh.py:4812
+msgid "Offset"
+msgstr ""
+
+#: bash\bosh.py:4812
+msgid "CalcMin"
+msgstr ""
+
+#: bash\bosh.py:4812
+msgid "CalcMax"
+msgstr ""
+
+#: bash\bosh.py:4813
+msgid "Old bOffset"
+msgstr ""
+
+#: bash\bosh.py:4813
+msgid "Old Offset"
+msgstr ""
+
+#: bash\bosh.py:4813
+msgid "Old CalcMin"
+msgstr ""
+
+#: bash\bosh.py:4813
+msgid "Old CalcMax"
+msgstr ""
+
+#: bash\bosh.py:4825
+msgid "Done"
+msgstr ""
+
+#: bash\bosh.py:4833
+msgid "Reading "
+msgstr ""
+
+#: bash\bosh.py:4852
+msgid "Saving "
+msgstr ""
+
+#: bash\bosh.py:4911
+msgid "Item"
+msgstr ""
+
+#: bash\bosh.py:4911
+msgid "Spell"
+msgstr ""
+
+#: bash\bosh.py:4913
+msgid "Merged %s Lists:"
+msgstr "%s Liste Combinate:"
+
+#: bash\bosh.py:4961
+msgid "Salan's Catalog of %s\r"
+"\r"
+""
+msgstr ""
+
+#: bash\bosh.py:5070
+msgid "Type"
+msgstr "Tipo"
+
+#: bash\bosh.py:5070
+msgid "Editor Id"
+msgstr ""
+
+#: bash\bosh.py:5070
+msgid "Name"
+msgstr ""
+
+#: bash\bosh.py:5094
+msgid "Failed to find pcName in PC ACRH record."
+msgstr ""
+
+#: bash\bosh.py:5269
+msgid "Face dump from save game."
+msgstr ""
+
+#: bash\bosh.py:5424
+msgid "Undefined home directory. [%s]"
+msgstr ""
+
+#: bash\bosh.py:5426
+msgid "Undefined system setting. [%s]"
+msgstr ""
+
+#: bash\bosh.py:5444
+msgid "UNDEFINED HOME DIRECTORY."
+"See Wrye Bash docs for help. Additional info:"
+""
+msgstr ""
+
+#: bash\bosh.py:5448
+msgid "Install Error"
+"Failed to find Oblivion.exe in %s."
+"Note that the Mopy folder should be in the same folder as Oblivion.exe."
+msgstr ""
+
+#: bash\bosh.py:5463
+msgid "Compiled"
+msgstr "Compilato"
+
+#: bash\basher.py:91
+msgid "Author"
+msgstr "Autore"
+
+#: bash\basher.py:93
+msgid "Save Order"
+msgstr ""
+
+#: bash\basher.py:94
+msgid "Day"
+msgstr "Giorno"
+
+#: bash\basher.py:95
+msgid "File"
+msgstr ""
+
+#: bash\basher.py:96
+msgid "Rating"
+msgstr "Voto"
+
+#: bash\basher.py:97
+msgid "Group"
+msgstr "Gruppo"
+
+#: bash\basher.py:98
+msgid "Load Order"
+msgstr "Ordine caricamento"
+
+#: bash\basher.py:99
+msgid "Modified"
+msgstr "Data modifica"
+
+#: bash\basher.py:100
+msgid "MI"
+msgstr ""
+
+#: bash\basher.py:101
+msgid "Player"
+msgstr "Giocatore"
+
+#: bash\basher.py:102
+msgid "Hours"
+msgstr ""
+
+#: bash\basher.py:104
+msgid "Size"
+msgstr "Dimensione"
+
+#: bash\basher.py:105
+msgid "Status"
+msgstr "Stato"
+
+#: bash\basher.py:230
+msgid "Error"
+msgstr "Errore"
+
+#: bash\basher.py:234
+msgid "Warning"
+msgstr "Attenzione"
+
+#: bash\basher.py:242
+msgid "Information"
+msgstr "Informazione"
+
+#: bash\basher.py:291
+msgid "Don't show this in the future."
+msgstr "Non mostrare più queste informazioni."
+
+#: bash\basher.py:306
+msgid "Choose a directory."
+msgstr "Scegli una cartella."
+
+#: bash\basher.py:331
+msgid "Progress"
+msgstr "Avanzamento"
+
+#: bash\basher.py:341
+msgid "Dialog already destroyed."
+msgstr "Finestra di dialogo già eliminata."
+
+#: bash\basher.py:611
+msgid "Add"
+msgstr "Aggiungi"
+
+#: bash\basher.py:614
+msgid "Edit"
+msgstr "Modifica"
+
+#: bash\basher.py:617
+msgid "Rename"
+msgstr "Rinomina"
+
+#: bash\basher.py:620
+msgid "Remove"
+msgstr "Rimuovi"
+
+#: bash\basher.py:623
+msgid "Save"
+msgstr ""
+
+#: bash\basher.py:675
+msgid "Rename to:"
+msgstr "Rinomina in:"
+
+#: bash\basher.py:686
+msgid "Name must be unique."
+msgstr "Il nome deve essere unico."
+
+#: bash\basher.py:1046
+msgid "Unrecognized sort key: "
+msgstr "Chiave ordinamento non riconosciuta: "
+
+#: bash\basher.py:1104
+msgid "Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving."
+msgstr ""
+
+#: bash\basher.py:1105
+msgid "Update Masters"
+msgstr "Aggiorna master"
+
+#: bash\basher.py:1127
+msgid "File\"%\" does not exist."
+msgstr "File\"%\" non trovato."
+
+#: bash\basher.py:1332
+msgid "File:"
+msgstr ""
+
+#: bash\basher.py:1347
+msgid "Author:"
+msgstr ""
+
+#: bash\basher.py:1355
+msgid "Modified:"
+msgstr ""
+
+#: bash\basher.py:1364
+msgid "Description:"
+msgstr ""
+
+#: bash\basher.py:1367
+msgid "Show Doc Browser"
+msgstr ""
+
+#: bash\basher.py:1380
+msgid "Masters:"
+msgstr ""
+
+#: bash\basher.py:1462
+msgid "Incorrect file extension: "
+msgstr "Estensione file errata:"
+
+#: bash\basher.py:1466
+msgid "File %s already exists."
+msgstr "Il file %s é già presente."
+
+#: bash\basher.py:1488
+msgid "Unrecognized date: "
+msgstr "Data non riconosciuta: "
+
+#: bash\basher.py:1492
+msgid "Bash cannot handle files dates greater than January 19, 2038.)"
+msgstr ""
+
+#: bash\basher.py:1521
+msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed."
+""
+"Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted."
+msgstr ""
+
+#: bash\basher.py:1523
+msgid "This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed."
+""
+"Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted."
+msgstr ""
+
+#: bash\basher.py:1525
+msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed."
+msgstr ""
+
+#: bash\basher.py:1564
+msgid "File corrupted on save!"
+msgstr "File danneggiato durante il salvataggio!"
+
+#: bash\basher.py:1756
+msgid " "
+" "
+" "
+msgstr ""
+
+#: bash\basher.py:1810
+msgid "%s"
+"Level %d, Day %d, Play %d:%02d"
+"%s"
+msgstr ""
+
+#: bash\basher.py:1919
+msgid "Mods"
+msgstr "Mod"
+
+#: bash\basher.py:1921
+msgid "Saves"
+msgstr "Partite salvate"
+
+#: bash\basher.py:1998
+msgid "Modified dates have been reset for some mod files:"
+"* %s"
+msgstr ""
+
+#: bash\basher.py:2012
+msgid "Missing files have been removed from load list. (%s)"
+msgstr "I file mancanti sono stati rimossi dalla lista di caricamento. (%s)"
+
+#: bash\basher.py:2018
+msgid "Load list has been truncated because it was too long. (%s)"
+msgstr "La lista di caricamento é stata troncata perché troppo lunga. (%s)"
+
+#: bash\basher.py:2026
+msgid "The following mod files have corrupted headers: "
+msgstr "I seguenti file mod hanno intestazioni rovinate: "
+
+#: bash\basher.py:2032
+msgid "The following save files have corrupted headers: "
+msgstr "I seguenti file partita salvata hanno intestazioni rovinate: "
+
+#: bash\basher.py:2038
+msgid "Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: "
+msgstr ""
+
+#: bash\basher.py:2092
+msgid "Doc Browser"
+msgstr "Elenco documentazione"
+
+#: bash\basher.py:2104
+msgid "Set Doc..."
+msgstr "Imposta Doc..."
+
+#: bash\basher.py:2108
+msgid "Forget Doc..."
+msgstr "Rimuovi Doc dalla lista..."
+
+#: bash\basher.py:2112
+msgid "Rename Doc..."
+msgstr "Rinomina Doc..."
+
+#: bash\basher.py:2116
+msgid "Edit Doc..."
+msgstr "Modifica Doc..."
+
+#: bash\basher.py:2210
+msgid "Select doc for %s:"
+msgstr "Seleziona doc per %s:"
+
+#: bash\basher.py:2229
+msgid "Rename file to:"
+msgstr "Rinomina file in:"
+
+#: bash\basher.py:2254
+msgid "Filename not defined."
+msgstr "Nome file non definito."
+
+#: bash\basher.py:2292
+msgid "My Readme Template.txt"
+msgstr ""
+
+#: bash\basher.py:2293
+msgid "Bash Readme Template.txt"
+msgstr ""
+
+#: bash\basher.py:2374
+msgid "Help"
+msgstr "Guida"
+
+#: bash\basher.py:2391
+msgid "Wrye Bash.html"
+msgstr ""
+
+#: bash\basher.py:2527
+msgid "Unhide..."
+msgstr "Recupera..."
+
+#: bash\basher.py:2554
+msgid "You can't unhide files from this directory."
+msgstr "Non puoi recuperare i file in questa cartella. "
+
+#: bash\basher.py:2559
+msgid "File skipped: %s. File is already present."
+msgstr "File saltato: %s. Il file é già presente."
+
+#: bash\basher.py:2573
+msgid "Delete"
+msgstr "Elimina"
+
+#: bash\basher.py:2578
+msgid "Delete Files"
+msgstr "Elimina file"
+
+#: bash\basher.py:2597
+msgid "Duplicate..."
+msgstr "Duplica..."
+
+#: bash\basher.py:2612
+msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod."
+""
+"Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created."
+msgstr ""
+
+#: bash\basher.py:2614
+msgid "This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod."
+""
+"Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created."
+msgstr ""
+
+#: bash\basher.py:2616
+msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod."
+msgstr ""
+
+#: bash\basher.py:2623
+msgid "Duplicate as:"
+msgstr "Duplica come:"
+
+#: bash\basher.py:2631
+msgid "Files cannot be duplicated to themselves!"
+msgstr "Un file non può essere duplicato con lo stesso nome!"
+
+#: bash\basher.py:2648
+msgid "Hide"
+msgstr "Nascondi"
+
+#: bash\basher.py:2652
+msgid "Hide Files"
+msgstr "Nascondi file"
+
+#: bash\basher.py:2675
+msgid "A file named %s already exists in the hidden files directory. Overwrite it?"
+msgstr "Un file %s é già presente nella cartella file nascosti. Lo sovrascrivo?"
+
+#: bash\basher.py:2693
+msgid "Redate..."
+msgstr "Cambia data..."
+
+#: bash\basher.py:2700
+msgid "Redate selected mods starting at..."
+msgstr "Cambia data ai mod selezionati partendo da..."
+
+#: bash\basher.py:2701
+msgid "Redate Mods"
+msgstr "Cambia data ai mod"
+
+#: bash\basher.py:2713
+msgid "Bash cannot handle dates greater than January 19, 2038.)"
+msgstr "Mash non può gestire date successive al 19 Gennaio 2038.)"
+
+#: bash\basher.py:2730
+msgid "Sort"
+msgstr "Ordina"
+
+#: bash\basher.py:2735
+msgid "Reorder selected mods in alphabetical order? The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments."
+""
+"Note that this operation cannot be undone. Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order."
+msgstr ""
+
+#: bash\basher.py:2736
+msgid "Sort Mods"
+msgstr "Ordina mod"
+
+#: bash\basher.py:2754
+msgid "Snapshot..."
+msgstr "Istantanea..."
+
+#: bash\basher.py:2764
+msgid "Save snapshot as:"
+msgstr "Salva istantanea come..."
+
+#: bash\basher.py:2790
+msgid "Revert to Snapshot..."
+msgstr "Ripristina istantanea..."
+
+#: bash\basher.py:2804
+msgid "Revert %s to snapshot:"
+msgstr "Ripristina %s a istantanea:"
+
+#: bash\basher.py:2813
+msgid "Revert %s to snapshot %s dated %s?"
+msgstr "Ripristinare %s a istantanea %s del %s?"
+
+#: bash\basher.py:2815
+msgid "Revert to Snapshot"
+msgstr "Ripristina istantanea"
+
+#: bash\basher.py:2827
+msgid "Snapshot file is corrupt!"
+msgstr "Il file istantanea é rovinato!"
+
+#: bash\basher.py:2837
+msgid "Backup"
+msgstr ""
+
+#: bash\basher.py:2856
+msgid "Revert to Backup"
+msgstr "Ripristina backup"
+
+#: bash\basher.py:2862
+msgid "Revert to First Backup"
+msgstr "Ripristina primo backup"
+
+#: bash\basher.py:2876
+msgid "Revert %s to backup dated %s?"
+msgstr "Ripristina %s al backup del %s?"
+
+#: bash\basher.py:2888
+msgid "Old file is corrupt!"
+msgstr "Il file vecchio é rovinato!"
+
+#: bash\basher.py:2914
+msgid "Name must be between 1 and 64 characters long."
+msgstr "Il nome deve essere di lunghezza compresa tra 1 e 64 caratteri."
+
+#: bash\basher.py:2944
+msgid "None"
+msgstr "Nessuno"
+
+#: bash\basher.py:2945
+msgid "Save List..."
+msgstr "Salva lista..."
+
+#: bash\basher.py:2946
+msgid "Edit Lists..."
+msgstr "Modifica liste..."
+
+#: bash\basher.py:2974
+msgid "Unable to add mod %s because load list is full."
+msgstr "Non posso aggiungere il mod %s perché la lista di caricamento é piena."
+
+#: bash\basher.py:2984
+msgid "All load list slots are full. Please delete an existing load list before adding another."
+msgstr "Liste caricamento piene. E' necessario cancellarne una per poter aggiungere una nuova lista."
+
+#: bash\basher.py:2987
+msgid "Save current load list as:"
+msgstr "Salva lista caricamento corrente come:"
+
+#: bash\basher.py:2995
+msgid "Load list name must be between 1 and 64 characters long."
+msgstr "Il nome della lista di caricamento deve essere di lunghezza compresa tra 1 e 64 caratteri."
+
+#: bash\basher.py:3005
+msgid "Load Lists"
+msgstr "Carica liste"
+
+#: bash\basher.py:3035
+msgid "Selection"
+msgstr "Selezione"
+
+#: bash\basher.py:3048
+msgid "Lock Times"
+msgstr "Blocca date"
+
+#: bash\basher.py:3105
+msgid "Replacers..."
+msgstr "Scambiatori..."
+
+#: bash\basher.py:3110
+msgid "Replacers"
+msgstr "Scambiatori"
+
+#: bash\basher.py:3120
+msgid "Update Archive Invalidator"
+msgstr ""
+
+#: bash\basher.py:3124
+msgid "Update ArchiveInvalidation.txt? This updates the file that forces the game engine to recognize replaced textures. Note that this feature is experimental and most probably somewhat incomplete. You may prefer to use another program to do AI.txt file updating."
+msgstr ""
+
+#: bash\basher.py:3125
+msgid "ArchiveInvalidation.txt"
+msgstr ""
+
+#: bash\basher.py:3136
+msgid "NPC Levels"
+msgstr ""
+
+#: bash\basher.py:3141
+msgid "This command will export the level info for NPCs whose level is offset with respect to the PC. The exported file can be edited with most spreadsheet programs and then reimported."
+""
+"See the Bash help file for more info."
+msgstr ""
+
+#: bash\basher.py:3142
+msgid "Export NPC Levels"
+msgstr ""
+
+#: bash\basher.py:3146
+msgid "_NPC_Levels.csv"
+msgstr ""
+
+#: bash\basher.py:3149
+msgid "Export NPC levels to:"
+msgstr ""
+
+#: bash\basher.py:3170
+msgid "NPC Levels..."
+msgstr ""
+
+#: bash\basher.py:3175
+msgid "This command will import NPC level info from a previously exported file."
+""
+"See the Bash help file for more info."
+msgstr ""
+
+#: bash\basher.py:3176
+msgid "Import NPC Levels"
+msgstr ""
+
+#: bash\basher.py:3204
+msgid "Add Master..."
+msgstr ""
+
+#: bash\basher.py:3209
+msgid "WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs."
+msgstr ""
+
+#: bash\basher.py:3214
+msgid "Oblivion Masters"
+msgstr ""
+
+#: bash\basher.py:3215
+msgid "Add master:"
+msgstr ""
+
+#: bash\basher.py:3223
+msgid "File must be selected from Oblivion Data Files directory."
+msgstr ""
+
+#: bash\basher.py:3226
+msgid "%s is already a master!"
+msgstr ""
+
+#: bash\basher.py:3239
+msgid "Copy to Esm"
+msgstr "Copia come Esm"
+
+#: bash\basher.py:3246
+msgid "Copy to Esp"
+msgstr "Copia come Esp"
+
+#: bash\basher.py:3256
+msgid "Replace existing %s?"
+msgstr "Sostituisco il vecchio %s?"
+
+#: bash\basher.py:3277
+msgid "Face..."
+msgstr ""
+
+#: bash\basher.py:3284
+msgid "Oblivion Files"
+msgstr ""
+
+#: bash\basher.py:3302
+msgid "Face imported."
+msgstr ""
+
+#: bash\basher.py:3438
+msgid "Edit Groups..."
+msgstr "Modifica gruppi..."
+
+#: bash\basher.py:3439
+msgid "Groups"
+msgstr "gruppi"
+
+#: bash\basher.py:3440
+msgid "Add group:"
+msgstr "Aggiungi gruppo:"
+
+#: bash\basher.py:3452
+msgid "Merge"
+msgstr ""
+
+#: bash\basher.py:3454
+msgid "Check ONLY mods that need to override their masters."
+"E.g. OOO, MMM, Franceso, FranOOOMMM."
+msgstr ""
+
+#: bash\basher.py:3481
+msgid "Merged Lists..."
+msgstr ""
+
+#: bash\basher.py:3496
+msgid "Merged Lists: Dominant Mods"
+msgstr ""
+
+#: bash\basher.py:3513
+msgid "Compiling Alchemical Catalogs"
+msgstr ""
+
+#: bash\basher.py:3515
+msgid "Alchemical Catalogs Compiled"
+msgstr ""
+
+#: bash\basher.py:3517
+msgid "Dominant Mods/Overridden Masters:"
+msgstr ""
+
+#: bash\basher.py:3520
+msgid "Reading: "
+msgstr ""
+
+#: bash\basher.py:3529
+msgid "Completing Merge"
+msgstr ""
+
+#: bash\basher.py:3532
+msgid "Saving: "
+msgstr "Salvataggio:"
+
+#: bash\basher.py:3544
+msgid "No lists required merging."
+msgstr "Nessuna lista ha richiesto di essere ricombinata."
+
+#: bash\basher.py:3554
+msgid "Object Names"
+msgstr ""
+
+#: bash\basher.py:3559
+msgid "Export names for various objects to a text file, where they can be edited and then reimported -- possibly to a different mod."
+msgstr ""
+
+#: bash\basher.py:3561
+msgid "Export Object Names"
+msgstr ""
+
+#: bash\basher.py:3565
+msgid "_Names.csv"
+msgstr ""
+
+#: bash\basher.py:3568
+msgid "Export object names to:"
+msgstr ""
+
+#: bash\basher.py:3581
+msgid "Reading %s."
+msgstr ""
+
+#: bash\basher.py:3583
+msgid "Exporting to %s."
+msgstr ""
+
+#: bash\basher.py:3585
+msgid "Done."
+msgstr ""
+
+#: bash\basher.py:3594
+msgid "Object Names..."
+msgstr ""
+
+#: bash\basher.py:3599
+msgid "Import object names from a text file. This will replace existing names and is not reversible!"
+msgstr ""
+
+#: bash\basher.py:3601
+msgid "Import Object Names"
+msgstr ""
+
+#: bash\basher.py:3608
+msgid "Import object names from:"
+msgstr ""
+
+#: bash\basher.py:3620
+msgid "Source file must be mod (.esp or .esm) or csv file."
+msgstr ""
+
+#: bash\basher.py:3633
+msgid "Applying to %s."
+msgstr ""
+
+#: bash\basher.py:3640
+msgid "No changes required."
+msgstr ""
+
+#: bash\basher.py:3648
+msgid "Objects Renamed"
+msgstr ""
+
+#: bash\basher.py:3657
+msgid "Edit Ratings..."
+msgstr "Modifica voti..."
+
+#: bash\basher.py:3658
+msgid "Ratings"
+msgstr "Voti"
+
+#: bash\basher.py:3659
+msgid "Add rating:"
+msgstr "Aggiungi voto:"
+
+#: bash\basher.py:3669
+msgid "Version 0.8"
+msgstr ""
+
+#: bash\basher.py:3675
+msgid "WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way."
+msgstr ""
+
+#: bash\basher.py:3676
+msgid "Set File Version"
+msgstr ""
+
+#: bash\basher.py:3689
+msgid "Readme..."
+msgstr "Leggimi..."
+
+#: bash\basher.py:3707
+msgid "Espify Masters"
+msgstr ""
+
+#: bash\basher.py:3717
+msgid "Esmify Masters"
+msgstr ""
+
+#: bash\basher.py:3722
+msgid "WARNING! For advanced modders only! Converts esm masters into esp masters and vice versa where both versions are available."
+msgstr ""
+
+#: bash\basher.py:3754
+msgid "Enter profile name:"
+msgstr "Inserisci un nome profilo:"
+
+#: bash\basher.py:3793
+msgid "Active profile cannot be removed."
+msgstr "Il profilo attivo non può essere rimosso"
+
+#: bash\basher.py:3799
+msgid "Delete profile %s and the %d save files it contains?"
+msgstr "Vuoi davvero eliminare il profilo %s e le %d partite salvate in esso contenute?"
+
+#: bash\basher.py:3800
+msgid "Delete Profile"
+msgstr "Elimina profilo"
+
+#: bash\basher.py:3804
+msgid "Sanity check failed: No\"Oblivio\" in %s."
+msgstr ""
+
+#: bash\basher.py:3824
+msgid "Edit Profiles..."
+msgstr "Modifica profili..."
+
+#: bash\basher.py:3828
+msgid "Default"
+msgstr "Standard"
+
+#: bash\basher.py:3843
+msgid "Save Profiles"
+msgstr "Salva profili..."
+
+#: bash\basher.py:3884
+msgid "Load Masters"
+msgstr "Carica master"
+
+#: bash\basher.py:3910
+msgid "Some master mods are missing and could not be loaded:"
+"- %s"
+msgstr ""
+
+#: bash\basher.py:3942
+msgid "Race"
+msgstr ""
+
+#: bash\basher.py:3944
+msgid "Gender"
+msgstr ""
+
+#: bash\basher.py:3963
+msgid "Import"
+msgstr "Importa"
+
+#: bash\basher.py:4022
+msgid "Face"
+msgstr ""
+
+#: bash\basher.py:4027
+msgid "Import a face? Note that this feature is BETA! It is strongly suggested that you only work on a duplicate of your save file. Also note that importing a face from an esp will only import faces whose Editor ID ends in 'pc'."
+msgstr ""
+
+#: bash\basher.py:4028
+msgid "Import Face"
+msgstr ""
+
+#: bash\basher.py:4067
+msgid "No player (PC) faces found in %s."
+msgstr ""
+
+#: bash\basher.py:4089
+msgid "Oblivion Mod Files"
+msgstr ""
+
+#: bash\basher.py:4137
+msgid "No NPCs releveled."
+msgstr ""
+
+#: bash\basher.py:4141
+msgid "%d NPCs releveled."
+msgstr ""
+
+#: bash\basher.py:4157
+msgid "Created object with no name."
+msgstr ""
+
+#: bash\basher.py:4187
+msgid "Name is too long."
+msgstr ""
+
+#: bash\basher.py:4201
+msgid " updated."
+msgstr ""
+
+#: bash\basher.py:4206
+msgid "New Enchantments..."
+msgstr ""
+
+#: bash\basher.py:4206
+msgid "New Spells..."
+msgstr ""
+
+#: bash\basher.py:4234
+msgid "No items to edit."
+msgstr ""
+
+#: bash\basher.py:4283
+msgid "Spell List..."
+msgstr ""
+
+#: bash\basher.py:4287
+msgid "Edit your players spell book. To remove spells, uncheck them in the list and click save."
+""
+"WARNING: Spells once removed cannot be readded. While most spells can be repurchased, and custom spells can be recreated, quest and other spells may require use of the console to readd."
+msgstr ""
+
+#: bash\basher.py:4288
+msgid "Edit PC Spells"
+msgstr ""
+
+#: bash\basher.py:4293
+msgid "Spell List"
+msgstr ""
+
+#: bash\basher.py:4302
+msgid "Repair Abomb"
+msgstr ""
+
+#: bash\basher.py:4317
+msgid "Abomb counter too low (0x%08X) to reset."
+msgstr ""
+
+#: bash\basher.py:4319
+msgid "Reset Abomb counter from 0x%08X to 0x%08X?"
+""
+"Abomb related animation slowing typically becomes noticeable after Abomb counter reaches 0x49000000."
+""
+"NOTE: While this action should repair animation slowing, it\'s possible that it may break something else, perhaps rendering your game unplayable in some other way."
+msgstr ""
+
+#: bash\basher.py:4325
+msgid "Abomb counter reset from 0x%08X to 0x%08X."
+msgstr ""
+
+#: bash\basher.py:4332
+msgid "Repair Hair"
+msgstr ""
+
+#: bash\basher.py:4341
+msgid "Hair repaired."
+msgstr ""
+
+#: bash\basher.py:4343
+msgid "No repair necessary."
+msgstr ""
+
+#: bash\basher.py:4350
+msgid "Statistics"
+msgstr "Statistiche"
+
+#: bash\basher.py:4372
+msgid "Copy List"
+msgstr "Copia lista"
+
+#: bash\basher.py:4379
+msgid "Masters for %s:"
+msgstr "Master di %s:"
+
+#: bash\basher.py:4400
+msgid "Change to..."
+msgstr "Cambia in..."
+
+#: bash\basher.py:4410
+msgid "Change master name to:"
+msgstr "Cambia il nome master in:"
+
+#: bash\basher.py:4437
+msgid "Launch Oblivion"
+msgstr ""
+
+#: bash\basher.py:4453
+msgid "Help File"
+msgstr "File guida"
+
+#: bash\basher.py:4509
+msgid "Sort by"
+msgstr "Ordina per"
+
+#: bash\basher.py:4529
+msgid "Load"
+msgstr "Carica"
+
+#: bash\basher.py:4579
+msgid "Export"
+msgstr "Esporta"
+
+#: bash\basher.py:4609
+msgid "Profile"
+msgstr "Profilo"

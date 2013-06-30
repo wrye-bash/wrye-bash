@@ -1,0 +1,38 @@
+
+
+Title: Wrye Bash Installer Tab Model Functional Specification
+Author: Myk Taylor (myk002)
+Status: unorganized notes
+
+
+
+Model
+  Keeps loaded data synchronized with disk contents
+  Generates metadata from analysis of saved state and loaded data
+  Calculates conflict relationships among files
+  Performs system actions (e.g. copies the files to the target directory)
+  Streams update notifications to presenter
+  All actions performed asynchronously.  errors come back as elements in update
+queue
+  Projects movable immediately
+  Projects installable as soon as data dir finishes loading (end of thread group
+1, stage 2)
+
+Data file backup could take the form of a permanently marked-for-install
+"virtual project" at the top (lowest priority) of the tree. This would have the
+convenient side effect of restoring the original files when the overwrites are
+uninstalled. It might be difficult to decide what gets copied in to the virtual
+project, though, if it's not just constrained to a "vanilla files" list. I
+wouldn't want to get in a state where an install has been "forgotten" (due to
+database deletion), then when the user reinstalls projects, /everything/ gets
+copied to the backup project.
+
+needs mechanism for asking yes/no questions (e.g. "file exists, overwrite?")
+  send message like an error message, but with a unique questionId
+  view sends answer back down the stack with the questionId
+
+
+model does not guarantee data consistency for get_ calls, but any inconsistency
+will be rectified in short order via an update notification.
+test: whether multiprocess calls are concurrent (should the presenter data
+loader be multithreaded?)

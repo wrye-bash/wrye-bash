@@ -1,0 +1,188 @@
+
+
+Title: Wrye Bash Installer Tab Presenter Design Document
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+See component_diagram_presenter.* for a visual representation of the following
+design.
+
+
+================
+  Design Goals
+================
+1) Be super-responsive to UI events.  This means that events received from the
+model are low priority
+2) Send minimal updates to the UI -- diffs instead of wipe/rebuild sequences
+
+
+================
+  Thread Model
+================
+There are three types of input to the presenter.  The first is the group of
+model-bound operations -- menu item selections, mostly -- that get sanity
+checked and passed on to the model, all within the calling thread.
+
+The second is the group of widget events that affect the state of the widget
+managers.  These get enqueued as a "state change event" in the manager-specific
+queue, so each manager's thread can modify its internal state safely.  Widget
+events may also call the manager's "head's up" API directly to notify it that a
+particular kind of state change event is in the pipe.  This lets the manager
+know to skip certain kinds of processing that will be obsoleted soon by the
+pending state change event.
+
+The third is the update notifications read from the model output queue.  These
+are dispatched to the relevant widget manager, which checks it for relevance
+and, if it is relevant, passes it to the data loading thread.  The data loading
+thread will make an asynchronous call to the model and then enqueue the loaded
+data as a state change event for the widget manager.
+
+The most complicated components are the widget managers, which must manage
+interactions among multiple threads:
+- the update dispatcher thread when it checks for relevance
+- the out-of-band "head's up" calls from widget events
+- out-of-band state change notifications from other widget managers
+- the internal processing thread that dequeues from the state change queue
+
+
+===========
+  Classes
+===========
+Update Dispatcher
+-----------------
+API:
+  __init__(self, modelUpdateQueue, viewCommandQueue, widgetManagers)
+  start(self)
+  shutdown_output(self) # after this returns no more updates will be processed
+  shutdown_input(self) # after this returns, processing thread has been joined
+
+Data:
+  Queue _modelUpdateQueue
+  Queue _viewCommandQueue
+  list _widgetManagers
+  Thread _monitorThread
+
+Algorithm:
+  pop _modelUpdateNotificationQueue
+    if None, break
+    if error, propagate to view
+    send to each widget manager in turn until one handles it
+    TODO: would it be faster if we map update types directly to managers?
+
+
+DataFetcher
+-----------
+API:
+  __init__(self, numThreads)
+  start(self)
+  shutdown(self)
+  async_fetch(self, nodeId, updateTypeMask, stateChangeQueue)
+  _fetch_loop(self)
+
+Data:
+  Queue _fetchQueue
+  list<Thread> _fetchThreads # each runs _fetch_loop
+  bool _shutdown
+  Model _model
+
+Algorithm:
+  async_fetch
+    if _shutdown: return
+    else: enqueue on _fetchQueue
+
+  shutdown
+    set shutdown flag
+    drain queue and ignore popped elements
+    enqueue a None for each thread
+    join threads
+
+  _fetch_loop
+    while True
+      pop _fetchQueue
+      if None, break
+      for each update type in mask, request data from model
+      enqueue results in stateChangeQueue
+
+
+Widget Manager Base
+-------------------
+API:
+  __init__(self, dataFetcher, viewUpdateQueue)
+  start(self)
+  shutdown(self)
+  bool handle_update(self, modelUpdateNotification)
+  bool _is_relevant(self, modelUpdateNotification) # default impl returns True
+
+Data:
+  Queue _viewUpdateQueue    # output queue
+  DataFetcher _dataFetcher  # async data fetching engine
+  Queue _stateChangeQueue   # input queue to internal thread
+  Thread _processingThread  # internal thread
+
+Algorithm:
+  handle_update
+    check update for scope; if out of scope, return False
+    if in scope, check relevance
+    if relevant, send to dataFetcher
+    return True
+
+
+Filters
+-------
+This design is approximate.  I suspect we will use a hierarchy of filter
+classes.  One filter class for each filter defined in the UI, then aggregate
+filters that combine them in proper AND and OR groups, then top-level filters
+that represent all filters that affect a particular widget.  Filters keep their related UI button labels up to date.
+
+API:
+  __init__(self, viewUpdateQueue)
+  bool matches(self, nodeId, nodeAttributes)
+  remove(self, nodeId) # remove nodeId from _matchedSet
+  bool set_active_mask(self, filterMask)  # returns whether state was changed
+  update_view(self) # send ViewUpdateCommand to update filter btn state/label
+  reset(self) # clear sets
+  set get_matched_node_ids(self)
+
+Data:
+  int _idMask # can be multiple filter ids or'd together for aggregate fitlers
+  bool _active
+  set _matchedSet # used by underlying individual filters
+  set _visibleSet # used by top-level filters
+
+Algorithm:
+  matches
+    if node matches filter, add to _matchedSet
+    if node matches all filters, add to _visibleSet
+    if node matches and filter is enabled, return true; otherwise false
+
+  set_filter_mask
+    re-evaluate _visibleSet and _enabled and return whether _visibleSet changed
+
+
+Diff Engine
+-----------
+Diff engine thread reads from state change queue.  This is the only thread that
+can touch the tree state or send view commands.  Out-of-band calls may set
+flags that are read by the diff engine thread during processing so the diff
+engine knows when to ignore current filters (for example).  Out-of-band calls
+should usually be accompanied by a state change object enqueued for the diff
+engine thread.  There will be at least two different diff engines (for the
+packages tree and for the package contents), so this design is approximate.
+
+API:
+  __init__(self, viewCommandQueue)
+  set_filter_mask(self, filterMask)
+  set_selected_node_ids(self, nodeIds)
+  other methods that describe the different state changes for the diff engine
+
+Data:
+  Filter _filters
+
+Algorithm:
+  When nodes are added, updated, or removed, the diff engine informs the
+filters so they can keep their sets and statistics up to date.  When items are
+added/removed from the visible set, the diff engine sends the appropriate
+updates to the view.  When user selections change, or when filter changes change
+the number of visible selected items, the diff engine informs any interested
+widget managers so they can set their foci.

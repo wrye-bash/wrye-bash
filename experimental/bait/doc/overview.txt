@@ -1,0 +1,182 @@
+
+
+Title: Wrye Bash Installer Tab Overview
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+=========
+  Intro
+=========
+I have an itch to scratch.  I have been using Wrye Bash for a few years now, and
+although it has made great strides in its bashed patch functionality, the
+installers tab has remained largely unchanged.  This is not due to neglect, of
+course, but rather to the incredible work Wrye (and others since him) have done
+there to effectively solve people's mod management needs.
+
+However, as my mod library has grown, so has my frustration with the tab's long
+load times and slow response times.  Moreover, I am tired of repeating routine
+multi-step tasks, such as upgrading a mod and transferring INI settings, that
+seem like they can (and should) be automated.  Once I got thinking, I came up
+with a whole slew of features and usability improvements that would make Wrye
+Bash more useful and convenient.
+
+Finally, this gives me the opportunity to learn Python, work with some excellent
+developers and community members, and contribute something valuable to a tool
+that has been, and continues to be, indispensable to a large number of people.
+
+I realize that this document describes a lot of work, and I have no idea what my
+future will grant me in terms of free time in which to do it.  If I can't
+actually get everything done myself, my hope is that I can at least provide a
+solid foundation, and solid documentation, on which others can build.  I do note
+that the work done here should remain relevant for quite some time, as the
+problems that this tool solves tend to recur in a wide variety of games.  Even
+if popular enthusiasm for Oblivion fades, a few changes makes the program just
+as useful for Fallout3, Skyrim, or pretty much any other moddable game out
+there.
+
+
+==============
+  Background
+==============
+For readers unfamiliar with Wrye Bash, it is a mod management tool for the game
+"The Elder Scrolls IV: Oblivion".  Its two main features are the Bashed Patch,
+a mechanism for combining multiple conflicting mods into a functioning whole,
+and the BAIN installer, a mod management system that keeps track of individual
+file origins and guarantees a consistent installed fileset at all times (i.e. it
+"heals" the installed files after one component is uninstalled).
+
+This document describes the proposed next version of the BAIN installer and its
+UI, the Installers tab.
+
+
+=========
+  Goals
+=========
+Primary Goals
+-------------
+- Make common use cases fast and easy:
+    clicking on the Installers tab and organizing/installing new packages
+    clicking on the Installers tab just to find and check/modify settings for a
+      single package
+    upgrading to a later version of a package
+- Enhance the general usability of the installers tab
+- Actively prevent inadvertent loss of work/data
+
+Secondary Goals
+---------------
+- Create an extensible framework that facilitates the addition of future
+    functionality while keeping complexity manageable
+- Extract, analyze, and present more information about mods and resource files
+
+
+===================
+  Feature Summary
+===================
+1) No-wait UI due to asynchronous operation and incremental data loading
+2) Collapsible groups in the UI enabling hierarchical package organization
+3) Granular access to package contents
+4) Searching, filtering, and hiding of displayed data
+5) Automated package upgrades
+6) Low user impact and smooth transition from existing installer tab
+7) Capabilities for working with persisted state
+8) Feature parity with existing installers tab
+9) Groundwork for future functionality
+
+Please see project_plan.txt for details.
+
+
+===============
+  UI Overview
+===============
+When the Installers tab first appears, a tree of groups and packages will begin
+to be populated based on saved preferences and the current contents of the Bash
+Installers directory.  The packages shown can be filtered via three toggle
+elements displayed at the top of the tree: Hidden, Installed, and Not Installed.
+A panel to the right of the packages tree shows details on the selected
+package.  A tree below the package details panel shows the file hierarchy of the
+currently selected package, again with various toggle filters.  A search bar
+above the packages tree can filter the shown packages further, restricted to the
+scope of the selected toggles.  A panel to the right of the file tree displays
+details about the selected file.  A small, one-line panel between the search bar
+and the installers tree view indicates the status of the BAIN system, such
+as whether all data has been loaded or whether a package is currently being
+installed.  All in all, the appearance is similar to the existing UI layout, and
+should be immediately familiar to any long-time user of Wrye Bash.
+
+As more detailed information is loaded/derived about the packages displayed in
+the tree, they may change their appearance, e.g. they might acquire an orange
+background color to indicate that they are out of sync with the installed data.
+Likewise, if an installed package were deleted from the Bash Installers
+directory, the status panel would acquire the orange background color.  If
+anything is currently selected when its metadata is updated, the information in
+the appropriate details panel is automatically refreshed.  At any time, packages
+and groups can be dragged around the tree to reorganize their relative priority
+in resolving conflicting file lists.
+
+The current notion of checking subpackages and esp/m files is extended to cover
+all installable files in a package (non-installable files can be double-clicked
+to be opened in an associated application, but cannot be marked for
+installation).  The user can make any number of changes to which files will be
+installed/uninstalled before r-clicking one or more out-of-sync packages and
+selecting "Anneal".
+
+Please see the func_spec_view.txt document for further details on UI behavior
+and gui_mockup.png for a visual representation of the GUI layout described
+above.
+
+
+==================
+  Design Summary
+==================
+To reiterate the primary goals listed at the beginning of this document, this
+proposal seeks to make common use cases, such as clicking on the Installers tab
+and organizing/installing new mods, clicking on the Installers tab just to
+review or modify settings for a single mod, or upgrading to a later version of a
+mod fast and easy.  It also attempts to enhance the overall usability of the
+installers tab, as well as to provide a foundation on which future features can
+be added without impacting the time the user has to wait before performing
+desired actions.
+
+The central theme that this design is based on to achieve the above goals is
+asynchronous, incremental loading.  In contrast to the existing installer tab,
+this design calls for no preloading sequence at all.  The tab is shown instantly
+(allowing the user to leave the tab just as quickly if the tab were clicked by
+mistake), and packages are added to the browsing tree as they are loaded.
+Metadata about the packages is added to the visual representation as it becomes
+available.  In this way, the list of packages is accessible very quickly so the
+user can reorder packages and start marking items for installation.  More
+complex information such as determining conflict winners is loaded more slowly,
+and may be retroactively applied if the user installed a package before its
+conflicts were known.  Thus, functionality can be layered incrementally, and the
+user only has to wait long enough for the desired layer to be loaded.  Moreover,
+we can determine areas of user interest by monitoring click activity and load
+those areas at a higher priority, further enhancing the user experience.
+
+To manage the complexity of the code required for this, I chose the MVP (Model
+View Presenter) design pattern.  I chose this pattern over other similar
+patterns, such as MVC (Model View Controller) since there is significant
+functionality represented by the presenter module which would have been lumped
+into the view in MVC.  GUI components are notoriously difficult to test, so it
+made sense to minimize the logic housed in the view.  Moreover I wanted to keep
+the Python GIL (Global Interpreter Lock) that services the code that responds to
+user events as unencumbered as possible to promote UI responsiveness.
+
+Please see architecture.txt and architecture_overview.jpg for more details on
+the modules and their interactions.
+
+
+==============
+  References
+==============
+http://en.wikipedia.org/wiki/Model_View_Presenter
+
+http://www.martinfowler.com/eaaDev/PresentationModel.html
+
+Wrye Bash bug tracker (3099804, 3092495, 3000823, and 2985586):
+http://sourceforge.net/tracker/?group_id=284958&atid=1207901
+
+Wrye Bash enhancement tracker (3168475, 3168471, 3168469, 3168467, 3139535,
+3139504, 3127326, 3092510, 3092281, 3091563, 3091504, 2998602, 2998601, 2997330,
+2985605, 2985295, 2985275, 2985268, 2985267, 2893593):
+http://sourceforge.net/tracker/?group_id=284958&atid=1207904

@@ -1,0 +1,353 @@
+
+
+Title: Wrye Bash Installer Tab Project Plan
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+================
+  Feature List
+================
+1) No-wait UI due to asynchronous operation and incremental data loading
+  1a) Immediate access to install tab functions, including the ability to leave
+	the tab at any time, even if data is not finished loading
+  1b) Increased UI responsiveness due to all operations occurring in other
+	threads/processes
+  1c) Breadth-first loading to grant fast access to top-level data
+  1d) Packages that user is actively viewing loaded first, allowing desired
+	install actions to be initiated before other irrelevant data is loaded
+2) Collapsible package groups
+  2a) Create "group" tree nodes to reduce clutter at the top-level
+  2b) Allow actions on groups (install, uninstall, move, etc.)
+  2c) Add option to ignore conflicts within groups (like tes4edit)
+  2d) Auto-group new packages with similar names, or same tesnexus numbers
+  2e) Auto-group according user-specified wildcard/regex
+3) Direct access to package files
+  3a) Can fully expand the structure of packages down to the file level
+  3b) Manage circular conflicts
+  3c) Open any file with associated program
+  3d) Support for rename-on-install of BSA files
+4) Searching, filtering, and hiding
+  4a) Package toggle filters (Hidden, Installed, Not Installed)
+  4b) File toggle filters (Plugins, Resources, Other)
+  4c) Hide packages "in place"
+  4d) Package search bar with recent search history
+  4e) Simple string searches or complex attribute==value queries (whoosh?)
+5) Automated package upgrades
+  5a) Automatic transition of file selections if upgrading an existing mod
+  5b) Automatic moving of updated package to be adjacent to the previous version
+  5c) Ini file management
+6) Low user impact and smooth transition from existing installer tab
+  6a) Bash Installers directory structure untouched
+  6b) Autoderivation of package selection state from analysis of installed data
+  6c) Will work with existing BAIN wizards
+  6d) Can be added as an extra tab and used as a beta alternative to the current
+	Installers tab until feature parity is reached, bugs are worked out, and
+	user feedback is addressed
+7) Capabilities for working with persisted state
+  7a) Keep saved state from N previous runs
+  7b) Regular automatic backups of state for current run
+  7c) On start, automatically find most recent non-corrupt state to load
+  7d) User can force a state save
+  7e) Ability to manually load state saved from a previous run
+  7f) State import/export
+8) Feature parity with existing installer tab
+  8a) Drag and drop priority reordering
+  8b) Dropping packages onto the installers tab from an external source
+  8c) All r-click on package actions
+  8d) All r-click on header actions
+  8e) Select all/none
+  8f) Keyboard shortcuts
+9) Groundwork for future functionality
+  - Automatic creation of "virtual" project containing edited .ini and .esp
+      files from an associated project
+  - Decomposition and dependency analysis (not only esp->esp, but also
+      esp->mesh(bsa), esp->texture(bsa), mesh(bsa)->texture(bsa))
+  - Conflict analysis with contents of bsa files
+  - Resource (texture, mesh) previews
+  - Visual conflict comparison and conflict winner selection
+  - Online BCF database, automatic repackaging vs. allowing manual reorg
+  - Online wizard database
+  - When .esp is selected, display: masters, bash tags, boss notes, mod load
+      position (from Gabba)
+  - Indicate whether a mod has deleted records (from leandro)
+  - Show whether .esp has landscape edits (from Gabba)
+  - Detect conflicting worldspace modifications (from Gabba)
+  - Caching of esp decomposition from dependency analysis for use in building
+      bashed patch (instant bashing)
+  - Data directory browser with source package information
+  - File type filters for data directory browser (from Gabba)
+  - Conflict winner selection from data directory browser
+  - TesNexus integration - mod update alerts, description scraping, etc.
+  - Automatic bsa invalidation
+  - Associate a picture with a BAIN archive or project (from Malonn)
+  - Editing an installed .ini file (from Gabba)
+  - A special "vanilla Oblivion files" project that backs up any overwritten
+      originals (from Gabba)
+  - Warning or automatic backup/restore of overwritten origin-unknown files,
+      e.g. tweaked .ini, customized .esp (from Gabba)
+  - BSA redate button that does what the OBMM "reset timestamps" button does.
+      Marks all BSAs as 1/1/2006 (from Arthmoor)
+  - Allow wizard.txt outside of archive (i.e. user wizard scripts for existing
+      installer archives)
+  - Group wizards (e.g. FCOM wizard script encompassing multiple installers)
+  - New installer tab functionality available in wizards (rename-on-install,
+      select/deselect subtree or file)
+  - Recognize simple structure: MyAwesomeMod.7z --> MyAwesomeMod --> readme.txt,
+      Data --> mod.esp, Textures, etc. (from Gabba)
+  - User-defined weblinks for packages (from Klaus)
+  - Ability to mark an esp/m or package as needing manual (un)install steps
+      would be nice if this worked on deactivate in mods tab too (from Gabba)
+  - Duplicate file detection (from Gabba)
+  - Popup warning when installation is in inconsistent state (from Gabba)
+  - Undo/redo
+  - Make doc viewer grab docs out of the installers
+  - Highlight packages/files that currently selected item(s) depend on
+  - Attribute filter for search box: "depends on targetnamesubstring"
+  - BAIN wizard configuring the ini file for a mod (from andalaybay)
+  - A back button on the BAIN wizard (from Psymon)
+  - Resizable BAIN wizard elements and window (from Metallicow, Vargr, utumno)
+  - Scale images correctly in wizard window (from Metallicow)
+  - Create silent voice files for people who don't want voice acting but don't
+      have Elys silent voice
+  - Merge/compile shaders on install (install like ini tweaks? shader basher?)
+
+
+==================
+  Execution Plan
+==================
+Note that this is not a /schedule/; it is just a logical sequence of groups of
+tasks.  There are no specific dates attached to the phase deliverables.
+
+Phase 0: Planning, design
+-------------------------
+Goals:
+  Create list of requirements (features) that will drive the architecture design
+  Design and document proposed architecture and algorithms to sufficient detail
+    to enable meaningful discussion with Wrye Bash developers
+Additional tasks and notes:
+  Research pertinent design patterns and technologies
+  Spend time considering possible challenges
+  Study WB code to understand style and existing implementation (keeping an eye
+    out for integration points post-demo)
+  Create personal git repository for change tracking of documents (and
+    eventually, the code)
+Acceptance criteria:
+  Documents checked in and completed to a sufficient level of detail to
+  facilitate discussion:
+    overview.txt (plus gui mockup)
+    project_plan.txt (plus visual timeline)
+    architecture.txt (plus diagram)
+    func_spec_{model,view,presenter}.txt
+    api_spec_{model,view,presenter}.txt
+    design_doc_{model,view,presenter}.txt (plus diagrams)
+  The *{model,presenter} documents will likely not be fleshed out to the same
+    degree as the *view.txt documents
+Retrospective:
+  Spent about 2 months in my spare time, researched patterns and created several
+prototypes before settling on the current proposed architecture
+  I feel optimistic about the architecture (it seems both practical and
+interesting) and am looking forward to feedback from other developers and
+getting things implemented!
+
+
+Phase 1: View basics, demo
+--------------------------
+Goals:
+  Socialization of ideas
+  Developer discussion, consensus, and buy-in
+  GUI specification refinement
+  Presenter API first draft
+Features:
+  1a) Immediate access to install tab functions, including the ability to leave
+	the tab at any time, even if data is not finished loading
+  2a) Create "group" tree nodes to reduce clutter at the top-level
+  3a) Can fully expand the structure of packages down to the file level
+Additional tasks and notes:
+  Fully lay out UI and wire up most of the view internals -- messages will be
+    sent to the presenter but functionality will be stubbed out there
+  Create interactive UI test
+  Deliver UI test code along with all documentation to Wrye Bash developers for
+    feedback; iterate until consensus is reached
+  In particular, reach consensus on architecture and module func specs
+  Integrate with code coverage tools (coverage.py? figleaf?)
+  Code review
+  Move everything to public repository
+  Possible division of labor (if anyone else is interested)
+Acceptance criteria:
+  View behaves according to agreed-upon functional specification when
+    communicating with a mock presenter
+  Code is reviewed and tested with high coverage
+Retrospective:
+  It took several prototypes and an immense amount of research to design the UI.
+Usability guidelines, accessibility guidelines, menu organization
+considerations, etc., but I believe we finally have something much better than
+the original.  Code is now checked into the main Wrye Bash repository (SVN)
+under the 'experimental' tree.  It's still just me writing it, though, and
+feedback has been minimal.
+
+
+Phase 2: Presenter basics
+-------------------------
+Goals:
+  Presenter specification refinement
+  Presenter API soft freeze
+  Model API first draft
+  Close relationship with other devs -- ongoing code reviews are important!
+Features:
+  1b) Increased UI responsiveness due to all operations occurring in other
+	threads/processes
+  4a) Package toggle filters (Hidden, Installed, Not Installed)
+  4b) File toggle filters (Plugins, Resources, Other)
+Additional tasks and notes:
+  Create comprehensive unit tests for presenter (high code coverage)
+  Verify that the presenter can be transparently moved to a different process
+  Filter algorithms can be simple; may use search library later
+Acceptance criteria:
+  Presenter behaves according to func spec when communicating with a mock model
+  Integration tests with view pass
+  Code is reviewed and tested with high coverage
+Retrospective:
+  Presenter went very well.  Unit testing and coverage tools (nose with the
+coverage plugin) were invaluable.  Need to go back and update the view with
+some lessons learned, though.
+
+
+Phase 3: Model basics
+---------------------
+Goals:
+  Model specification refinement
+  Model API soft freeze
+Features:
+  1c) Breadth-first loading to grant fast access to top-level data
+  3b) Manage circular conflicts
+  3c) Open any file with associated program
+  4c) Hide packages "in place"
+  6a) Bash Installers directory structure untouched
+Additional tasks and notes:
+  Create comprehensive unit tests for model (high code coverage)
+  Use programmatic 7z processing instead of running an external process
+  No actual I/O actions yet (e.g. can't install yet)
+Acceptance criteria:
+  Model behaves according to functional spec when reading from specified test
+    data set
+  Integration tests with presenter and view pass
+  Code is reviewed and tested with high coverage
+
+
+Phase 4: State management
+-------------------------
+Goals:
+  Preparation for alpha
+Features:
+  6b) Autoderivation of package selection state from analysis of installed data
+  7a) Keep saved state from N previous runs
+  7b) Regular automatic backups of state for current run
+  7c) On start, automatically find most recent non-corrupt state to load
+  7d) User can force a state save
+  7e) Ability to manually load state saved from a previous run
+  7f) State import/export
+Additional tasks and notes:
+  Unit tests
+  Version on-disk formats to facilitate forward and backward compatibility
+Acceptance criteria:
+  Documentation updated
+  Code is reviewed and tested with high coverage
+
+
+Phase 5: Feature parity, alpha
+------------------------------
+Goals:
+  Release early, release often
+  Community feedback
+Features:
+  6c) Will work with existing BAIN wizards
+  6d) Can be added as an extra tab and used as a beta alternative to the current
+	Installers tab until feature parity is reached, bugs are worked out, and
+	user feedback is addressed
+  8a) Drag and drop priority reordering
+  8b) Dropping packages onto the installers tab from an external source
+  8c) All r-click on package actions
+  8d) All r-click on header actions
+  8e) Select all/none
+  8f) Keyboard shortcuts
+Additional tasks and notes:
+  When it is made publicly available, clearly label it as "alpha"
+  Popup when tab is first clicked, saying what is implemented and what is not
+Acceptance criteria:
+  For every feature in the old installers tab that makes sense to carry forward,
+    there is an analogue in the new installers tab
+  Documentation updated
+  Code is reviewed and tested with high coverage
+
+
+Phase 6: Beta
+-------------
+Goals:
+  Harden code as remaining bugs are uncovered by public use
+Features:
+  1d) Packages that user is actively viewing loaded first, allowing desired
+	install actions to be initiated before other irrelevant data is loaded
+  2b) Allow actions on groups (install, uninstall, move, etc.)
+  2c) Add option to ignore conflicts within groups (like tes4edit)
+  3d) Support for rename-on-install of BSA files
+Additional tasks and notes:
+  Incorporate public feedback
+  Work with TomLong and alt3rn1ty regarding "HOWTO" guides
+  Bug fixes, refactoring of earlier code, modularize anything that has become
+    too complex to grok
+  Public poll to help determine priority of remaining planned features/tasks
+Acceptance criteria:
+  Documentation updated
+  Code is reviewed and tested with high coverage
+  Generally accepted by the community as ready to be used full-time (we may
+still
+    decide to keep old tab for a while, though)
+
+
+Phase 7: Searching
+------------------
+Goals:
+  Increase usability when user has large numbers of mods
+Features:
+  4d) Package search bar with recent search history
+  4e) Simple string searches or complex attribute==value queries (whoosh?)
+Additional tasks and notes:
+  Research whoosh lib to see if we can get the searching capabilities for "free"
+  Make searching by package name really easy and really fast
+Acceptance criteria:
+  Searching works as expected
+  Documentation updated
+  Code is reviewed and tested with high coverage
+
+
+Phase 8: Automation
+-------------------
+Goals:
+  Decrease time user has to spend not playing the game
+Features:
+  2d) Auto-group new packages with similar names, or same tesnexus numbers
+  2e) Auto-group according user-specified wildcard/regex
+  5a) Automatic transition of file selections if upgrading an existing mod
+  5b) Automatic moving of updated package to be adjacent to the previous version
+  5c) Ini file management
+Additional tasks and notes:
+  Make "auto" functionality optional -- there will always be users that want to
+    do things manually
+  Research merge tools/libraries that we can leverage
+Acceptance criteria:
+  Automated features work as expected and are generally regarded as an
+    improvement and not a hindrance
+  Documentation updated
+  Code is reviewed and tested with high coverage
+
+
+Future features
+------------------------
+Additional tasks and notes:
+  Likely integrate with cbash for file parsing tasks
+  Use red background to indicate files/projects that are missing dependencies
+  Use external tools (PIL? nvidia tools?) for texture thumbnailing, show
+    generated thumbnail in details
+  Remember, test at every step.  keep code coverage high.  users deserve high
+    quality.

@@ -1,0 +1,190 @@
+
+
+Title: Wrye Bash Installer Tab Model Design Document
+Author: Myk Taylor (myk002)
+Status: unorganized notes
+
+
+See component_diagram_model.* for a visual representation of the following
+design.
+
+
+  Version all persistent state so upgrades can be handled seamlessly
+  3c - use programmatic API to 7z/rar/zip libraries to extract individual files
+-- this will make auto-annealing much more efficient
+  5a,b,c - integration with external merge tools, save original ini in cache in
+case orig is deleted before upgrade
+
+I toyed with the idea of using installer/directory modification dates to "store"
+priority order, but I think there are too many situations that can lead to
+unexpected behavior, like the user archiving the installation, redeploying on
+another computer, and suddenly losing the priority order due to the archiving
+tool not recording the original dates (like zip). I also considered naming the
+files with their priorities, but I was concerned that this would hinder users
+that download updates from tesnexus and like to just drop them in the Bash
+Installers folder and overwrite the old file.
+Instead, I had some other ideas that would hopefully make the install order
+database much more difficult to lose:
+- State saved in smaller "packages". e.g. state for each project is stored in a
+separate file, and overall install order is stored in its own file. If one file
+is corrupted/lost most state is still salvageable
+- On-disk state is versioned, allowing for smooth transition when an upgrade
+changes the file formats
+- Each session (program execution) saves in a different slot. state from the
+previous N executions are kept in case most current state is corrupt
+(transparent fallback)
+- Automatic state saves in the current slot every 2 mins or so
+- UI elements: force save state, revert to previous state slot
+
+[quote]
+- About loading priority
+be careful about second-guessing too much the user. Meaning that I'd rather have
+a "reload THIS package now you stupid program" button than a 'smart' algorithm
+which doesn't work.
+[/quote]
+The algorithm I had in mind was fairly simple. All projects get some worker
+thread attention to avoid starvation, but the most recently clicked-on project
+gets the greatest priority. We'll have to see how this works in practice, but it
+is intended to fill the currently-shown details pane ASAP.
+
+[quote]
+- What happens if you drop a package in the Bash Installers dir, and BAIT
+discovers that every one of its files are already fully installed?...I imagine
+you want to keep the "install status", since if some files from installed
+packages get deleted in the Data folder (by OBMM for instance), the next
+annealing should reinstall them....In the case of a completely lost BAIT
+database, provided you more or less remember which packages you had installed,
+you'd just have to select those, "copy installed status from sync status", and
+you'd almost be back in business.
+Also in the same spirit when selecting a file in the Data tree that doesn't come
+from any installed mods, but that several mods could install, you could list
+"potential owners".
+[/quote]
+Each project/file will have a checkbox next to it to control the
+"isMarkedForInstall" flag. Additionally, files that match the installed version
+will be highlighted in green, regardless of whether they are marked for install.
+Files that are marked for install, are conflict winners, but do not match what
+is installed will be highlighted in orange (like the current projects that need
+annealing). Files that are newly deselected and would result in the file being
+deleted from the data directory would also be highlighted as "needs annealing".
+Analysis could certainly be performed on the installed data to reconstruct a
+lost database. In fact, that would be a great way to initialize the database on
+first use when transitioning from the old tab! As long as a user hasn't manually
+resolved any circular conflicts, it shouldn't be too hard to automate.
+
+[quote]
+- I imagine you'll display the tree of unrecognized packages to allow examining
+and opening files, but grey out their whole tree and prevent installation?
+[/quote]
+that's the idea : ) each file/directory will have a flag: "isCruft" that will
+affect whether it is grayed our or not in the UI. Unrecognized structures will
+have everything marked as isCruft.
+
+
+
+Model Internals
+---------------
+-- Model Thread Model --
+The model performs all the disk IO, and is therefore highly multithreaded to
+avoid getting stuck on Python's blocking read and write operations.  A worker
+pool dequeues tasks and executes them, acquiring locks and updating the node
+metadata database as necessary.  Asynchronous tasks from API calls are handled
+at a higher priority than background loading or anaysis tasks.  Synchronous API
+calls (the get_ methods) are handled in the calling thread.  Whenever a node is
+modified, an update event is enqueued on the output queue so clients can know to
+retrieve the updated data if they are interested.
+
+  thread group 1:
+    Stage 1: load Data directory listing (populates pathId map)
+    Stage 2: load Data dir crcs (conflict management)
+    Stage 3: deep inspection of Data dir data
+  thread group 2:
+    Stage 1: load group and project list
+    Stage 2: load project crcs (conflict management)
+    Stage 3: deep inspection of project dir data
+  thread group 3: respond to user activity
+
+-- Model Data Structures --
+node dictionary (nodeId -> Node)
+conflict resolution structures
+
+Performance
+-----------
+We can increase performance by caching previous calculations on disk (such as
+crc, dependency lists, etc.).  These can be considered current if the file size
+and modification time are the same.  (es[mp] crc must be recalculated to be
+sure)
+
+model state saved in files: basename.<prog start timestamp>.  keep last X
+states.  provide "revert state" command
+
+mod group organization is kept in metadata, just like mod ordering already is
+
+use LIFO stack of FIFO "load queues" to allow localized breadth-first loading
+
+Array<nodeGuid, Node>                m_nodes
+HashMap<lcase(sourcepath), pathGuid> m_sourcePaths
+HashMap<pathGuid, targetPath)        m_targetPaths
+HashMap<pathGuid, List<nodeGuid>>    m_conflictLists
+HashMap<pathGuid, List<nodeGuid>>    m_activeConflictLists
+HashMap<pathGuid, int>               m_installedFileCrcs
+
+
+Scheduler algorithm:
+  if focus request:
+    if focusNodeId is None: continue # already handled
+    lock focusNodeId
+    n = focusNodeId
+    focusNodeId = None
+    focusPkgNodeId = n.package
+    unlock
+  elif i/o request:
+    acquire write lock on package and perform in this thread
+  elif free thread:
+    if len(dataLoadCrcSet) > 0:
+      if numDataThreads < maxThreads/2
+        process uninterruptibly
+    elif focusPkgNode is not None:
+      if numFocusThreads < maxThreads/3
+        process for 2 seconds (load CRCs first, then analyze deps)
+    else:
+      for unloadedPkgSet in (newPackages, installedPackages,
+                             uninstalledPackages, hiddenPackages:
+        if len(unloadedPkgSet) > 0
+          load package file lists
+      for needCrcPkgSet in (newPackages, installedPackages,
+                            uninstalledPackages, hiddenPackages:
+        if len(needCrcPkgSet) > 0
+          load package file CRCs for 2 secs
+      if len(dataLoadCrcSet) > 0
+        process for 2 secs
+      if focusPkg is not None:
+        process for 2 secs
+      all above again for deps and other analysis stages
+
+
+Data writer tasks
+-----------------
+update_crc(nodeId, crc)
+  Update CRC field, update attributes and conflict lists for this node and all
+conflicting nodes.  conflict list should include (nodeId, crc) so we know which
+are the same and which actually conflict
+
+init_node(nodeId, nodeAttributes, children, details)
+  update conflict lists if crc is included is is file node
+
+update_path(packageNodeId, path)
+  may need to update preview handles for non-archives
+
+update_install_order(nodeId, newPredNodeId)
+  must be package or group
+
+update_marked_for_install(nodeId, bool)
+
+reset_marked_for_install(packageNodeId, nodeIds)
+  used in wizards
+
+update_preview_handle(nodeId, fileHandle)
+
+mark_package_loaded(packageNodeId)
+  mark package as safe to save to persisted state.

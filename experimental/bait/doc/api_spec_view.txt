@@ -1,0 +1,34 @@
+
+
+Title: Wrye Bash Installer Tab View API Specification
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+===========
+  Context
+===========
+  The View API will be used by external classes in the Wrye Bash code.  It is
+the main API for interacting with the BAIT stack.  BAIT is fairly
+self-contained, though, so the only methods required at this level relate to
+lifecycle management.
+
+
+=======
+  API
+=======
+class BaitView:
+  __init__(self, wxParent, presenter, viewIoGateway)
+    Creates and configures bait widget hierarchies
+
+  start(self)
+    Loads saved state, starts threads and subcomponents (including presenter)
+
+  shutdown(self)
+    Saves any dirty state, shuts down threads and subcomponents
+
+  pause(self)
+    Suggests that bait suspend operations; may not take effect immediately
+
+  resume(self)
+    Resumes from a pause

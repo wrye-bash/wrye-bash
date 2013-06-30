@@ -1,0 +1,105 @@
+
+
+Title: Wrye Bash Installer Tab Test Plan
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+============
+  Overview
+============
+There are both automated and interactive test frameworks for BAIT.  The
+automated tests are the unit tests that get developed as the associated code is
+developed.  They test the low-level APIs in each module, and use Python Mock
+to keep dummy object APIs in sync with the objects they are replacing.  The
+interactive tests are more high-level.  They run inside the production GUI,
+but mock out all functionality below a certain level.  Their purpose is to test
+the integration of entire component stacks and to provide a way for us to
+visually sanity check emergent behavior.
+
+Please see the readme.txt file in the bait/ directory for instructions on how
+to run the unit and interactive tests.
+
+
+==============
+  Unit Tests
+==============
+Each Python code file should have an associated file with the same name (but
+with "_test" appended to it) that holds the unit tests for that file.  The unit
+tests should test the file to 100% coverage; no less.  This will ensure there
+are no silly typos in the code, which is a remarkably easy error to make in
+Python. Also, exploring the corner cases helps expose deficiencies in the APIs.
+If code cannot be covered, then it cannot be reached and should be removed.  It
+is rare that unit testing is required to be so complete, but in this case it is
+the cost we pay for the otherwise convenient and time-saving features of Python.
+
+
+===============================
+  Interactive Component Tests
+===============================
+  There are three interactive tests prepared, one for each architectural layer.
+All tests require portions of the I/O Gateway module to be mocked out in
+addition to what is specifically called out below.  When an interactive test is
+run, code coverage monitoring should also be activated so we can assess which
+portions of the code we are actually testing when we interact.
+
+View Test
+---------
+  This test requires that a simple mock Presenter be written that just logs the
+calls that the view makes.  The logs should be visually correlated with
+expectations.  Data in all widgets is static after the initial load.  No
+operations, such as filtering and searching, are implemented in the mock
+Presenter and displayed data does not change in response to user input.  Data
+should be voluminous and varied sufficiently to exercise View module code paths.
+
+Presenter Test
+--------------
+  The Presenter should be tested for performance as well as functionality, since
+if it slow then the user will have to wait for common operations like filtering
+and searching.  The test should probe the limits of how much data we can handle
+before the UI starts to feel sluggish.
+  In this test, if we need to, we can dynamically create nodes according to user
+input. We can accept configuration parameters for how to create the nodes in
+package comments fields, or simply perform actions in response to users
+selecting a tree item (intercepting the request for node details).
+  This test requires that a mock Model be written with at least the following
+capabilities:
+- Provide a package list that has the following groups and packages:
+  - ResetGroup
+    - Edit comments to reset package list
+  - MovingGroup
+    - Several packages that change order within the group periodically
+  - BlinkerGroup
+    - Several packages that change their attributes periodically
+  - FileTestGroup
+    - Package with files with expected attribute combinations
+    - Package with files with all other attribute combinations
+  - ConflictGroup
+    - Several packages with mutually conflicting files and supporting metadata
+  - Packages with expected attribute combinations
+    - ...
+  - Packages with all other attribute combinations
+    - ...
+- All generated packages and files should have names that describe their
+    attributes so that they can be visually verified to be behaving properly.
+
+Model Test
+----------
+This test requires that a mock I/O Gateway be written with at least the
+following capabilities:
+- A virtual file hierarchy in the Oblivion Data folder
+- Sample uninstalled package
+- Sample installed package (matches files in Oblivion data folder)
+- Sample hidden package
+- Sample project with wizard
+- Sample archive with wizard
+- Group of projects that have conflicting files that can be installed, moved
+    around, annealed
+- All file names should have their CRCs in them so conflict status can be
+    visually verified.
+- Mock I/O Gateway should track "installations" and alter virtual file
+    hierarchies accordingly
+- New content cannot be added (say via drag and drop of real archives), but
+    maybe a reset project like in the Presenter Test could be added ("delete me
+    to reset packages") that we could intercept in the mock I/O gateway and feed
+    file system update notifications to the model to reset the package list.

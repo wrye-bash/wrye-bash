@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# generate_second_post
+
+## USAGE:
+##   ./generate_second_post <release_num> <release_theme> <exported_XML_filename>
+## 
+## EXAMPLE:
+##   ./generate_second_post 294 "Getting CBash patchers on par with the Python patchers" oblivionworks_export.xml
+## 
+## project admin must export tracker data from:
+##   https://sourceforge.net/export/xml_export2.php?group_id=284958
+## then pass the name of the downloaded file to this script
+## 
+## to run this script, you must have xsltproc installed, which is part of the
+## standard libxslt package on Linux.  Windows users can get it from
+##   http://www.zlatkovic.com/libxml.en.html
+## alternately, most browsers have xsl functionality and can do the conversion,
+## though the exported XML must be modified to directly refer to the xsl
+## transformation file first.
+
+if [ 3 -gt $# ]; then
+  grep '^## ' "$0" | sed 's/^## //' 1>&2
+  exit 1
+fi
+
+# --novalid is required since the DTD specified in sourceforge's exported XML
+# isn't available online yet
+xsltproc --novalid --stringparam release_num "$1" --stringparam release_theme "$2" second_post_template.xsl "$3"

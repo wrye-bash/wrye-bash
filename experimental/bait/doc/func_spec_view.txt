@@ -1,0 +1,513 @@
+
+
+Title: Wrye Bash Installer Tab View Functional Specification
+Author: Myk Taylor (myk002)
+Status: working draft
+
+
+Please see gui_mockup.png for a screenshot of the UI described below.
+
+
+=============
+  Concepts
+=============
+The BAIT UI is grounded with a few core concepts:
+1) Asynchronous operation
+2) Tree-based browsing
+3) Dynamically filtered lists
+
+Asynchronous operation
+  With BAIT, you don't wait.  When the "Installers" tab is clicked, the UI is
+displayed immediately and the user can start working without waiting for all
+data to load.  When an action such as installation is initiated, it is executed
+in the background so the user can work on other things while the installation
+is completed.  The UI is designed to integrate incremental updates from the
+backend into the displayed data without disrupting the user's current focus.
+
+Tree-based browsing
+  The UI follows the successful model of file managers with a hierarchical tree
+display of packages and files.  This solves the organizational problems that
+many users have been reporting, and is only natural for the new file display.
+
+Dynamically filtered lists
+  All trees and lists have filter buttons associated with them.  Each filter
+button displays its target attribute, how many items have that attribute, and
+how many items are currently displayed (or would be displayed, if the filter is
+not active) because of the filter.  For example, the packages tree has a
+"Hidden" filter button.  If the user has, say, 15 hidden packages, the filter
+button will have the label "Hidden (15)", and if clicked will add the 15 hidden
+packages to the package tree.  If the user types in the search string "UOP",
+and one of the hidden packages matches that search string, the label will
+change to "Hidden (1/15)" and will only display that one package if clicked.  A
+more complex example would be the Selected tab of the package details.  It has
+five filter buttons: "Matched", "Mismatched", "Missing", "Unique", and
+"Non-unique".  "Matched", "Mismatched", and "Missing" are essentially "or"
+filters, and just add files to the list that have those attributes.  "Unique"
+and "Non-unique" are "and" filters, and restrict the list to only files that
+have those attributes.  If the user wants to see only files that are unique to
+this package, they would select all the buttons except "Non-unique".  The
+labels of the buttons would change to reflect how many files of each type are
+shown once the uniqueness filter is applied.  For example, the "Matched" button
+might show "Matched (0/399)" to indicate that 399 files in this package match
+what is in the data directory, but none of them are unique to this package.  In
+this way, filter buttons allow a great amount of convenient flexibility in
+providing a wide range of information that would otherwise be very difficult to
+discover.
+
+
+
+===============
+  UI Elements
+===============
+The BAIT UI consists of the following main elements:
+
+1) Menu button
+2) Search bar
+3) Status panel
+4) Packages tree
+5) Package details tabs
+6) Package settings menu
+7) Package contents tree
+8) File details panel
+9) Comments box
+
+
+Menu button
+-----------
+The menu button provides a place to initiate top-level actions and to set
+global settings.  Here are the operations that can be initiated from the menu
+button:
+- Anneal all (clean up any "dirty" files -- that is, ensure installed files
+match what /should/ be installed according to how the packages are configured in
+the installers tab.)
+- Refresh installed data (re-read the contents of the Data directory)
+- Refresh packages (re-read the contents of the Bash Installers directory)
+- Import/export/reset configuration
+- Force a save of the current configuration (this will get done periodically in
+the background anyway)
+- Derive configuration from current set of files installed in the Data
+directory (this makes a "best guess" on how the user had the packages
+configured if this is the first time using the tab or if configuration has been
+lost for some reason)
+- Remember tree expansion state (that is, remember which nodes have been
+expanded when the program is closed and restarted, useful for modders)
+
+The menu button also provides a place to set the following options (the options
+set here can be overridden per-package):
+- Skip DistantLOD by default (enable this if you have TES4LODGen and want to
+run it manually to generate correct DistantLOD files for your load order)
+- Skip LOD meshes by default (TODO: why would one want this?)
+- Skip LOD textures by default (TODO: why would one want this?)
+- Skip LOD normals by default (TODO: why would one want this?)
+- Skip all voices by default (enable this if you use Elys Silent voice and
+don't want the voice acting shipped with mods)
+- Skip silent voices by default (enable this if you use Elys Silent voice to
+save space taken up by silent mp3 files) (future feature)
+
+
+Search bar
+----------
+The search bar allows the user to filter the packages shown in the packages
+tree.  Initially, this will probably just do a case-insensitive substring search
+for the package name, but eventually this may understand more complex filter
+queries (like showing packages more recent than a certain date), provide
+"awesome bar"-like autocomplete from a search history, or have Google-like
+suggestions based on substrings seen in the installers.  Depending on
+performance, it may support find-as-you-type.  The search results will be
+filtered further by the toggle filters selected in the packages tree.
+
+
+Status panel
+------------
+The status panel changes color (or maybe shows an icon) to indicate which of
+the following states the BAIT subsystem is currently in:
+- [Red] An operation is in progress that would cause data inconsistency if it
+were interrupted.  For example, installing a package would cause the status to
+become red for the duration of the disk I/O.  The operation that is causing
+status to be red is displayed on the status panel with a cancel button,
+allowing the user to cancel pending operations.  We may attempt to undo
+partially completed operations (e.g. if the operation was an install, we may
+try to automatically uninstall the files that had been copied so far).  If
+multiple "reddening" actions were enqueued, they will all be canceled if the
+user clicks the cancel button, and we show a popup listing all the canceled
+operations.  A user should not close the program while the panel is red.  We
+may pop up a warning if the user tries to close the program or leave the tab
+while we are in this state.
+- [Orange] At least one package is dirty -- that is, a file that should not be
+installed is, or a file that should be installed isn't.  The panel will show a
+button to allow easy access to the "anneal all" functionality.  We may list as
+many dirty packages as we have space for in the panel itself.
+- [Yellow] We are currently loading data from the disk or analyzing metadata
+such that the information shown in the UI is incomplete.  A progress bar is
+shown to indicate how much longer the yellow state is expected to last.  The
+panel starts in the yellow state.  If the panel is yellow when a user initiates
+an action that causes the panel to turn red, the panel will stay red until
+enough data is loaded to prove that the action didn't result in any
+inconsistent side effects.  For example, if a user installs a package before
+conflict lists have been assembled, every selected file in that package will be
+installed.  The panel will stay red until conflict lists have been loaded (or,
+rather, all conflicts in higher-precedence packages have been detected) and we
+know which files we need to "fix" to make the installation comply with package
+precedence (conflict list) rules.
+- [Green] All data is loaded and no inconsistencies have been detected.  Some
+statistics about the library and installed data may be shown.  It may also show
+other interesting statistics like remaining disk space.
+
+
+Packages tree
+-------------
+The packages tree shows the packages that exist in the Bash Installers
+directory and "groups" which do not appear in any form on the file system in
+the Bash Installers directory, but are in the tree as parent nodes for
+organizational purposes.  Group nodes can be children of other group nodes,
+leading to a potential hierarchical structure.  If no groups are used, the tree
+degenerates (in appearance) to a list similar to the one in the old installer
+tab (except that it has no columns).
+
+A group is created by selecting one or more packages, r-clicking and selecting
+"create group from selected packages".  Once a group is created, packages can
+be freely moved in and out of them, either by dragging them around with the
+mouse or by selecting one of the "move to" menu items.  If a group ever becomes
+empty, it is deleted.  Thus, we can avoid the problem of how to display and
+work with empty groups.
+
+Three filter buttons appear at the top of the packages tree: Hidden, Installed,
+and Not Installed.  These filter buttons restrict which packages are displayed
+in the tree.  Any package (or entire group) can be marked as "hidden" and will
+retain its position in the tree.  However, it will only be shown if the
+"Hidden" filter button is depressed.  The filter buttons also show how many
+packages they govern.  If a search string is specified, they will also show how
+many of the packages they govern match the given search string.
+
+A file/directory can be dragged directly to the desired position in the tree
+from an external file manager application.  The file/directory will be copied
+(or moved, if shift is held down when the mouse button is released) to the Bash
+Installers directory and the package will appear at the indicated position in
+the tree.  We will also support Ctrl-V pasting of files that have been copied or
+cut from a file manager window.
+
+When a package is being dragged, packages that are currently not being shown
+due to a search string or filter setting appear, grayed out, in the vicinity of
+the cursor, allowing precise positioning. (hopefully this is possible)
+
+Each installable package (i.e. all non-group nodes) has an icon associated with
+it to indicate its status.  The icons have the following meanings:
+- if the package is an archive (compressed file), the icon is a square
+- if the package is a directory (a "project"), the icon is a diamond
+- if the package is installed or is configured to be installed, the icon
+contains a '+' symbol
+- if the package has a wizard script associated with it, a small wand is
+superimposed on the icon
+- if all files configured to be installed in a package match what's in the data
+directory, the icon is green
+- if any files configured to be installed in a package do not match a file with
+the same name installed in the data directory, the icon is orange
+- if any files configured to be installed in a package are not found in the
+data directory, the icon is red
+- if there are no files configured to be installed, the icon is white and
+cannot contain the plus symbol, even if the user requests that the package be
+installed
+- if Wrye Bash does not recognize the package structure, the icon is gray and
+cannot contain the plus symbol, even if the user requests that the package be
+installed
+- if a file is unreadable due to file system permissions or corruption, the
+icon is a red 'x'
+
+The text of each package changes in appearance as well to indicate additional
+state:
+- if the package is new since the last time the installers tab was opened, the
+package name is displayed in bold
+- if the package needs attention, for example it is dirty, corrupt, missing
+dependencies, or has an update available online, the package name is displayed
+in italics
+- if the package is marked as "hidden", the package name is displayed in a gray
+font color
+- if the package has subpackages, the package name is displayed in a navy blue
+font color
+
+Additionally, a background text highlight indicates more status:
+- if the package is unreadable or has unrecognized structure, the package name
+is highlighted in gray
+- if a file in the package is missing a dependency, the package name is
+highlighted in red
+- if the package is dirty, it is highlighted in orange
+
+Text colors, styles, and highlights are inherited by a package's containing
+group(s).  If more than one color is to be inherited, the "most important" one
+will be propagated to the parent group.
+
+If the user hovers the mouse cursor over a package that has a name too long to
+be displayed in the current window, a tooltip popup will appear with the full
+name.
+
+The installation priority number will appear before the name of each package or
+group.  Groups have priority numbers to assist in positioning a package in the
+"Move To..." dialog.
+
+R-clicking on a package or group will allow the following actions:
+- File operations
+  - open in associated application
+  - rename
+  - duplicate
+  - delete
+- Package operations
+  - List structure (display copyable text in a window listing the package
+contents)
+  - force refresh (refresh the package's calculated metadata, like CRCs)
+  - create BCF (initiate the Bain Conversion File creation process)
+  - apply BCF (convert a package with a BCF)
+  - extract to project (similar to "duplicate" but extracts the archive)
+  - copy mismatched files to project (creates a project and copies mismatched
+files to it
+  - sync mismatched files from data (copies mismatched files into this project)
+  - pack to archive (creates an archive from all the files in the project)
+  - pack to release archive (creates an archive from the project, filtering out
+known "modders'" directories)
+- Package options (if not set for a package, will use global defaults)
+  - has non-standard directories (functionally treats all "other" files as
+"resource" files, allowing all files to be marked for installation)
+  - allow OBSE plugins
+  - skip distantLOD
+  - skip LOD meshes
+  - skip LOD textures
+  - skip LOD normals
+  - skip all voices
+  - skip silent voices
+- Web operations
+  - open homepage (opens the package home page in a browser)
+  - set homepage (if homepage autodetection fails, it can be explicitly set
+here)
+  - search for in Google (failsafe)
+- Move operations
+  - to top (appears at the top of the tree)
+  - to bottom (appears at the bottom of the tree)
+  - to group (appears at the top of specified group; this is the same as
+dragging a package to a group node)
+  - to position (specify parent group and predecessor package; this is the same
+as dragging a package to a specific position between two other packages)
+- Group operations
+  - create group from selected packages (creates a new group with the selected
+packages as members)
+  - ignore conflicts within group (affects what shows up the the "Conflicts"
+package info tab
+- manual wizard (defaults will be selected, but you still have to click 'next')
+- auto wizard (where applicable, screens with defaults won't even appear)
+- Edit the wizard script (opens the wizard script in a text editor)
+- Anneal (ensures files that are marked for install are actually installed, and
+ensures files that are not aren't)
+- Install (equivalent to checking a package and selecting Anneal)
+- Uninstall (equivalent to unchecking a package and selecting Anneal)
+- Hide/unhide (toggles the 'hidden' flag.  installed or dirty packages cannot
+be hidden)
+
+New packages will appear at the bottom of the tree at first, but once we
+implement automatic upgrades, they will appear adjacent to the package that
+they are upgrading, if applicable.
+
+
+Package details tabs
+--------------------
+If exactly one package is selected in the tree, the package details tabs will
+be populated with information.  There are six tabs: General, Dirty, Conflicts,
+Selected, Unselected, and Skipped.
+
+The General tab gives an overview of the package, showing information like
+package type, size, and modification date and how many files of each category
+the package contains.  If the package has an associated screenshot, it will be
+displayed here.
+
+The Dirty tab shows how many files are scheduled to be added, updated, or
+deleted.  There are three filter buttons at the top of the tab to allow
+listings of each type of operation to be filtered independently.  In the list,
+names of added files are colored green, updated, blue, and deleted, red.
+
+The Conflicts tab shows which of the other packages have files that conflict
+with files in the current package.  If a group is marked as "ignore conflicts
+within group", then a conflict that would otherwise show may not show up here.
+However the conflicted file may still show up as a mismatched file in the other
+tabs.  The Conflicts tab has eight filters: selected, unselected, active,
+inactive, higher, lower, mismatched, and matched.  Selected/unselected refer to
+the file's status in the current package.  Active/inactive refer to the file's
+status in any conflicting package.  Higher/lower refer to the conflicting
+package's position in the install order.  Mismatched/matched refer to whether
+the conflicting file in the other package is actually identical to the one in
+this package.  Paired filters are additive (e.g. if both active and inactive are
+selected, both active and inactive files are shown, as long as they match the
+other selected filters), but otherwise the filters are subtractive (if selected,
+active, and higher are on, only conflicting files that are selected in the
+current package and active in some higher priority package are shown.  The files
+shown are grouped by conflicting package.  A file may appear more than once if
+it has more than one conflict.
+TODO: is it useful to show conflicting packages whose conflicting files are
+all masked by currently selected filters?  It would be more informative if we
+do show them, but we would have to be careful not to clutter up the screen.
+
+The Selected tab shows the list of selected files, that is, the list of files
+that have their checkmarks checked, indicating that they should be installed.
+It has five filters: matched, mismatched, missing, unique, and non-unique.  The
+first three are additive filters, and the last two are subtractive.  For
+example, to see the list of selected files unique to this package (no
+conflicts), select matched, mismatched, missing, and unique.
+
+The Unselected tab is similar to the Selected tab, but is restricted to showing
+files that are not checked in the current package.
+
+The final tab is the Skipped tab.  It shows files that are not considered for
+installation.  It has two filters: non-game, which shows files that have
+unrecognized file extensions or are in unrecognized directories, and masked,
+which shows files that are skipped due to global or package settings.  For
+example, if Skip DistantLOD is selected in the package settings, distantLOD
+files will show up here and not in any of the other tabs.
+
+
+Package settings menu
+---------------------
+This button allows package-specific options to be set.  This is the same as the
+package options submenu accessible by r-clicking a package or group of
+packages, available as a separate button for convenience.
+
+
+Package contents tree
+---------------------
+The package contents tree shows the file structure of the project or archive,
+adjusted to indicate where files will go once installed.  For example, for an
+archive that has all files in a subdirectory, the subdirectory will be elided
+and all files will be shown at the top level, since that better represents how
+files will be installed in the data directory.  The package contents tree has
+three filters: plugins, resources, and other.  Plugins shows .esp and .esm
+files as well as OBSE plugins.  Resources shows all other recognized files,
+such as bsa files, ini files, and all loose mesh and texture files.  Other shows
+everything else, usually documentation and screenshots.  The three filters are
+additive.  Bsa files may be expandable to view their contents, but files inside
+bsas will not be individually installable (though we may choose to allow this in
+the future).
+
+All subprojects and installable files (that is, all plugin and resource files,
+not directories, screenshots, or readmes) have a checkbox next to them.  If the
+check is active, the subproject/file is marked for installation.
+
+R-clicking an item in the tree will provide access to the following actions:
+- open (in associated application)
+- check (i.e. select for installation)
+- uncheck
+- select all
+- copy to project...
+- rename (may involve repacking)
+
+If it is a directory, check and uncheck become "check tree" and "uncheck tree",
+and if it is a .bsa file, an additional option "rename on install" becomes
+available.
+
+In the future, another action may be "compare conflicts" where the user is
+shown previews of all the conflicts for the selected file, and is given the
+ability to choose the winner visually.
+
+The name of each file is displayed in a font style that communicates attributes
+of the file:
+- if the package is an upgrade of an existing package, new or changed files
+will be displayed in bold
+- if the file needs attention, for example it is dirty, corrupt, or missing
+dependencies, is is displayed in italics
+- if the file will not be installed due do "skip" settings or because it is a
+member of the "other" group, it is displayed in a gray font color
+- if the file does not match what is installed due to an override, it is
+displayed in an orange font color
+
+Additionally, a background text highlight indicates more status:
+- if the file is missing a dependency, it is highlighted in red
+- if the file is dirty, it is highlighted in orange
+
+
+File details panel
+------------------
+When a single file is selected in the package contents tree, the file details
+panel shows information about the currently selected file.  It may show a
+screenshot of image files, including textures.  If we can manage it, it may
+embed a nifskope window for meshes.  Plugin files may show dependency
+information, record counts, etc.  Meshes may show texture dependencies.  If we
+can, when we show dependencies, it would be nice if we could generate a
+hyperlink to take the user to the current active conflict winner for that
+dependency.  All files should show their personal conflict lists here, with
+hyperlinks if possible.
+
+
+Comments box
+------------
+The comments box allows the user to enter personal comments about the selected
+package or group.  Comments are saved automatically when the comments box loses
+focus.
+
+
+Future
+------
+In the future, there may be a notification icon that displays messages such as
+"new files available on TesNexus" or "installed mesh file missing texture".
+
+
+
+===================================
+  Changes from old Installers tab
+===================================
+
+- Auto-anneal is effectively always on.  That is, when a package is uninstalled,
+new conflict winners will automatically be installed to take the place of the
+uninstalled file.  If a file is dirty for any other reason, for example if a
+user manually cleaned a plugin file, it will not be automatically annealed
+(this behavior is the same as in the old installers tab).
+
+- There is no longer any difference in icon color to distinguish between the
+cases where a package has a mismatched plugin vs. a mismatched resource file.
+If they are due to override, both are unimportant to the user, and if they are
+dirty, they are equally important, and they will both be highlighted as dirty
+the same way.
+
+- yellow text background (meaning "has underrides") has been removed (the
+overriding package will already be highlighted in orange, indicating dirty)
+
+- gray background now indicates "unknown or unreadable" instead of the current
+meaning: "some files will not be installed"  Almost every package has some
+files that will not be installed.  The old semantics do not add useful
+information.
+
+- markers are removed in favor of groups.  new packages are printed in bold, so
+there is no need for a ==Last== marker
+
+- there is no longer any way to sort the installers other than by priority
+order.  sorting has been replaced by searching (the plan is to allow queries in
+the search box, such as "date > 10/10/2011" or something.  if we can't do this,
+maybe a "sort by" dropdown, but it could complicate UI semantics)
+
+- packages can obtain the '+' symbol on their icons just by clicking on the
+icon.  It does not necessarily mean the package is installed yet, just that it
+is /marked/ for install.  The package will immediately be highlighted as
+'dirty', though, until it is properly installed.
+
+- to maintain transparency, only .bsa files have the 'rename on install'
+functionality.  other files can be renamed in-place, but the renames won't
+carry over on package upgrades (though they would show up in the diff that is
+displayed when an automated upgrade is performed).
+
+- doc files are now directly openable from the files tree.  doc files are no
+longer installed (implications for doc browser?)
+
+- the 'avoid at startup' option is gone.  now we always wait until the
+installers tab is opened to start processing (though we could add an ini option
+for users who actually want the installers tab to start initializing as soon as
+WB starts...).
+
+- clean data directory is effectively always on
+
+- screenshots, images, docs are effectively always "skipped", but are always
+available as previews in the file details or openable from the package contents
+tree
+
+
+
+=========
+  Notes
+=========
+Warn on installing OBSE plugin: "This package is trying to install an OBSE
+binary plugin.  Do not allow this unless you trust the reputation of the
+author.  OBSE plugins are opaque binary blobs, and unless you have examined,
+understood, and compiled the source code yourself, you cannot be sure of what it
+will or will not do to your computer."
