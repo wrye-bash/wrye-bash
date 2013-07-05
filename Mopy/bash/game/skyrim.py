@@ -18184,13 +18184,17 @@ class MreHeader(MreHeaderBase):
 #------------------------------------------------------------------------------
 class MreAchr(MelRecord):
     classType = 'ACHR'
-    _flags = Flags(0L,Flags.getNames('oppositeParent'))
+
+    AchrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'oppositeParent'),
+    ))
+
     melSet=MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelXpci('XPCI'),
         MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelOptStruct('XESP','IB3s',(FID,'parent'),(AchrTypeFlags,'flags',0L),('unused1',null3)),
         MelFid('XMRC','merchantContainer'),
         MelFid('XHRS','horse'),
         MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
@@ -18494,10 +18498,29 @@ class MreBook(MelRecord):
 class MreCell(MelRecord):
     """Cell record."""
     classType = 'CELL'
-    cellFlags = Flags(0L,Flags.getNames((0, 'isInterior'),(1,'hasWater'),(2,'invertFastTravel'),
-        (3,'forceHideLand'),(5,'publicPlace'),(6,'handChanged'),(7,'behaveLikeExterior')))
-    inheritFlags = Flags(0L,Flags.getNames('ambientColor','directionalColor','fogColor','fogNear','fogFar',
-        'directionalRotation','directionalFade','clipDistance','fogPower'))
+
+    cellFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'isInterior'),
+        (1,'hasWater'),
+        (2,'invertFastTravel'),
+        (3,'forceHideLand'),
+        (5,'publicPlace'),
+        (6,'handChanged'),
+        (7,'behaveLikeExterior'),
+    ))
+
+    inheritFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'ambientColor'),
+        (0, 'directionalColor'),
+        (0, 'fogColor'),
+        (0, 'fogNear'),
+        (0, 'fogFar'),
+        (0, 'directionalRotation'),
+        (0, 'directionalFade'),
+        (0, 'clipDistance'),
+        (0, 'fogPower'),
+    ))
+
     class MelCoordinates(MelOptStruct):
         """Handle older trucated XCLC for CELL subrecord."""
         def loadData(self,record,ins,type,size,readId):
@@ -18706,6 +18729,17 @@ class MreCont(MelRecord):
     """Container"""
     classType = 'CONT'
 
+	# wbCNTO :=
+	#   wbRStructExSK([0], [1], 'Item', [
+	#     wbStructExSK(CNTO, [0], [1], 'Item', [
+	#       wbFormIDCk('Item', [ARMO, AMMO, APPA, MISC, WEAP, BOOK, LVLI, KEYM, ALCH, INGR, LIGH, SLGM, SCRL]),
+	#       wbInteger('Count', itS32)
+	#     ]),
+	# 	wbCOED
+	# 	], []);
+	# wbCOCT := wbInteger(COCT, 'Count', itU32)
+	# wbCNTOs := wbRArrayS('Items', wbCNTO)
+
     class MelContCnto(MelGroups):
         def __init__(self):
             MelGroups.__init__(self,'components',
@@ -18724,17 +18758,6 @@ class MreCont(MelRecord):
         (1, 'attachToCamera'),
         (2, 'inheritRotation'),
     ))
-
-	# wbCNTO :=
-	#   wbRStructExSK([0], [1], 'Item', [
-	#     wbStructExSK(CNTO, [0], [1], 'Item', [
-	#       wbFormIDCk('Item', [ARMO, AMMO, APPA, MISC, WEAP, BOOK, LVLI, KEYM, ALCH, INGR, LIGH, SLGM, SCRL]),
-	#       wbInteger('Count', itS32)
-	#     ]),
-	# 	wbCOED
-	# 	], []);
-	# wbCOCT := wbInteger(COCT, 'Count', itU32)
-	# wbCNTOs := wbRArrayS('Items', wbCNTO)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -18759,7 +18782,7 @@ class MreCont(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# MelComponents(), COCT, and CNTO needs to be finished.
+# MelContCnto, COCT, and CNTO needs to be finished.
 #------------------------------------------------------------------------------
 
 class MreCsty(MelRecord):
@@ -18952,7 +18975,7 @@ class MreDoor(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# MelComponents(), COCT, and CNTO needs to be finished.
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreEfsh(MelRecord):
     """Efsh Record"""
@@ -19307,7 +19330,7 @@ class MreFurn(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
-# XNAM and PLVD Need to be reviewed
+# Needs syntax check, but should be Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # GLOB ------------------------------------------------------------------------
@@ -19502,16 +19525,20 @@ class MreIdlm(MelRecord):
 class MreProj(MelRecord):
     """Projectile record."""
     classType = 'PROJ'
-    _flags = Flags(0,Flags.getNames('hitscan',
-                                    'explosive',
-                                    'altTriger',
-                                    'muzzleFlash',
-                                    'unknown4',
-                                    'canbeDisable',
-                                    'canbePickedUp',
-                                    'superSonic',
-                                    'pinsLimbs',
-                                    'passThroughSmallTransparent'))
+
+    ProjTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'hitscan'),
+        (1, 'explosive'),
+        (2, 'altTriger'),
+        (0, 'muzzleFlash'),
+        (1, 'unknown4'),
+        (2, 'canbeDisable'),
+        (0, 'canbePickedUp'),
+        (1, 'superSonic'),
+        (2, 'pinsLimbs'),
+        (0, 'passThroughSmallTransparent'),
+    ))
+
     class MelProjData(MelStruct):
         """Handle older trucated DATA for PROJ subrecord."""
         def loadData(self,record,ins,type,size,readId):
@@ -19536,7 +19563,7 @@ class MreProj(MelRecord):
         MelString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelProjData('DATA','HHfffIIfffIIfffIII ffff',(_flags,'flags'),'type',
+        MelProjData('DATA','HHfffIIfffIIfffIII ffff',(ProjTypeFlags,'flags',0L),'type',
                   ('gravity',0.00000),('speed',10000.00000),('range',10000.00000),
                   (FID,'light',0),(FID,'muzzleFlash',0),('tracerChance',0.00000),
                   ('explosionAltTrigerProximity',0.00000),('explosionAltTrigerTimer',0.00000),
@@ -19591,6 +19618,7 @@ class MreSlgm(MelRecord):
         MelStruct('SLCP','B',('capacity',1)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
 # Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
 class MreNavi(MelRecord):
@@ -19634,6 +19662,7 @@ class MreNavi(MelRecord):
                    'unknown1',(FID,'navigationMesh'),(FID,'location'),'gridX','gridY','unknown2'),
        )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
 # Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
 class MreNavm(MelRecord):
@@ -19651,6 +19680,7 @@ class MreNavm(MelRecord):
         MelStructA('NVEX','=IIH','externalConnections','nvexUnknown',(FID,'navigationMesh'),'triangle'),
        )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
 # Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
 class MreAddn(MelRecord):
