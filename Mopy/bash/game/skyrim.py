@@ -19335,8 +19335,12 @@ class MreFurn(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # GLOB ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# GMST ------------------------------------------------------------------------
+class MreGmst(MreGmstBase):
+    """Skyrim GMST record"""
+    Master = u'Skyrim'
+    isKeyedByEid = True # NULL fids are acceptable.
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreKywd(MelRecord):
     """Keyword record."""
@@ -19748,8 +19752,94 @@ class MreDebr(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # IMGS ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# IMAD ------------------------------------------------------------------------
+class MreImad(MelRecord):
+    """Image space modifier record."""
+    classType = 'IMAD'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBase('DNAM','dnam_p'),
+        MelBase('BNAM','bnam_p'),
+        MelBase('VNAM','vnam_p'),
+        MelBase('TNAM','tnam_p'),
+        MelBase('NAM3','nam3_p'),
+        MelBase('RNAM','rnam_p'),
+        MelBase('SNAM','snam_p'),
+        MelBase('UNAM','unam_p'),
+        MelBase('NAM1','nam1_p'),
+        MelBase('NAM2','nam2_p'),
+        MelBase('WNAM','wnam_p'),
+        MelBase('XNAM','xnam_p'),
+        MelBase('YNAM','ynam_p'),
+        MelBase('NAM4','nam4_p'),
+        MelBase('aIAD','_aiad_p'),
+        MelBase('\x00IAD','_00iad_p'),
+        MelBase('@IAD','_atiad_p'),
+        MelBase('bIAD','_biad_p'),
+        MelBase('\x01IAD','_01iad_p'),
+        MelBase('AIAD','aiad_p'),
+        MelBase('cIAD','_ciad_p'),
+        MelBase('\x02IAD','_02iad_p'),
+        MelBase('BIAD','biad_p'),
+        MelBase('\x03IAD','_03iad_p'),
+        MelBase('dIAD','_diad_p'),
+        MelBase('CIAD','ciad_p'),
+        MelBase('\x04IAD','_04iad_p'),
+        MelBase('eIAD','_eiad_p'),
+        MelBase('DIAD','diad_p'),
+        MelBase('\x05IAD','_05iad_p'),
+        MelBase('fIAD','_fiad_p'),
+        MelBase('EIAD','eiad_p'),
+        MelBase('\x06IAD','_06iad_p'),
+        MelBase('gIAD','_giad_p'),
+        MelBase('FIAD','fiad_p'),
+        MelBase('\x07IAD','_07iad_p'),
+        MelBase('hIAD','_hiad_p'),
+        MelBase('GIAD','giad_p'),
+        MelBase('\x08IAD','_08iad_p'),
+        MelBase('iIAD','_iiad_p'),
+        MelBase('HIAD','hiad_p'),
+        MelBase('\x09IAD','_09iad_p'),
+        MelBase('jIAD','_jiad_p'),
+        MelBase('IIAD','iiad_p'),
+        MelBase('\x0aIAD','_0aiad_p'),
+        MelBase('kIAD','_kiad_p'),
+        MelBase('JIAD','jiad_p'),
+        MelBase('\x0bIAD','_0biad_p'),
+        MelBase('lIAD','_liad_p'),
+        MelBase('KIAD','kiad_p'),
+        MelBase('\x0cIAD','_0ciad_p'),
+        MelBase('mIAD','_miad_p'),
+        MelBase('LIAD','liad_p'),
+        MelBase('\x0dIAD','_0diad_p'),
+        MelBase('nIAD','_niad_p'),
+        MelBase('MIAD','miad_p'),
+        MelBase('\x0eIAD','_0eiad_p'),
+        MelBase('oIAD','_oiad_p'),
+        MelBase('NIAD','niad_p'),
+        MelBase('\x0fIAD','_0fiad_p'),
+        MelBase('pIAD','_piad_p'),
+        MelBase('OIAD','oiad_p'),
+        MelBase('\x10IAD','_10iad_p'),
+        MelBase('qIAD','_qiad_p'),
+        MelBase('PIAD','piad_p'),
+        MelBase('\x11IAD','_11iad_p'),
+        MelBase('rIAD','_riad_p'),
+        MelBase('QIAD','qiad_p'),
+        MelBase('\x12IAD','_12iad_p'),
+        MelBase('sIAD','_siad_p'),
+        MelBase('RIAD','riad_p'),
+        MelBase('\x13IAD','_13iad_p'),
+        MelBase('tIAD','_tiad_p'),
+        MelBase('SIAD','siad_p'),
+        MelBase('\x14IAD','_14iad_p'),
+        MelBase('uIAD','_uiad_p'),
+        MelBase('TIAD','tiad_p'),
+        MelFid('RDSD','soundIntro'),
+        MelFid('RDSI','soundOutro'),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
 class MreFlst(MelRecord):
     """Flst Item"""
@@ -19909,6 +19999,596 @@ class MrePerk(MelRecord):
 
 # Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
+class MreBptd(MelRecord):
+    """Bptd Item"""
+    classType = 'BPTD'
+    
+    BptdDamageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'severable'),
+            (1, 'ikData'),
+            (2, 'ikDataBipedData'),
+            (3, 'explodable'),
+            (4, 'ikDataIsHead'),
+            (5, 'ikDataHeadtracking'),
+            (6, 'toHitChanceAbsolute'),
+        ))
+
+    BptdPartTypes = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'torso'),
+            (1, 'head'),
+            (2, 'eye'),
+            (3, 'lookAt'),
+            (4, 'flyGrab'),
+            (5, 'saddle'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelLString('BPTN','partName'),
+        MelString('PNAM','poseMatching'),
+        MelString('BPNN','partNode'),
+        MelString('BPNT','vatsTarget'),
+        MelString('BPNI','startNode'),
+        MelStruct('BPND','f3Bb2BH2I2f3I7f2I2BHf','damageMult',(BptdDamageFlags,'flags',0L),
+            (BptdPartTypes,'flags',0L),'healthPcnt','actorValue','toHitChance',
+            'explodableExplosionChancePcnt','explodableDebrisCount',(FID,'explodableDebris'),
+            (FID,'explodableExplosion'),'trackingMaxAngle','explodableDebrisScale',
+            'severableDebrisCount',(FID,'severableDebris'),(FID,'severableExplosion'),
+            'severableDebrisScale','transx','transy','transz','rotx','roty','rotz',
+            (FID,'severableImpactDataset'),(FID,'explodableImpactDataset'),'severableDecalCount',
+            'explodableDecalCount','unknown','limbReplacementScale',
+        ),
+        MelString('NAM1','limbReplacementModel'),
+        MelString('NAM4','goreEffectsTargetBone'),
+        MelBase('NAM5','textFileHashes'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreAvif(MelRecord):
+    """ActorValue Information record."""
+    classType = 'AVIF'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelString('DESC','description'),
+        MelString('ICON','largeIconPath'),
+        MelString('MICO','smallIconPath'),
+        MelString('ANAM','shortName'),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# CAMS ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# CPTH ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreVtyp(MelRecord):
+    """Vtyp Item"""
+    classType = 'VTYP'
+
+    # {0x00} 'Magic Casting',
+    # {0x01} Not Used
+    # {0x02} 'Allow Default Dialog',
+    # {0x04} 'Female',
+    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'male'),
+            (1, 'allowDefaultDialog'),
+            (2, 'female'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DNAM','B',(VtypTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# MATT ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreIpct(MelRecord):
+    """Impact record."""
+    classType = 'IPCT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelStruct('DATA','fIffII','effectDuration','effectOrientation','angleThreshold','placementRadius',
+                  'soundLevel','flags'),
+        MelOptStruct('DODT','7fBB2s3Bs','minWidth','maxWidth','minHeight','maxHeight','depth','shininess',
+                     'parallaxScale','parallaxPasses','decalFlags',('unused1',null2),'red','green','blue',('unused2',null1)),
+        MelFid('DNAM','textureSet'),
+        MelFid('SNAM','sound1'),
+        MelFid('NAM1','sound2'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreIpds(MelRecord):
+    """Ipds Item"""
+    classType = 'IPDS'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
+        MelGroups('data',
+            MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreEczn(MelRecord):
+    """Encounter Zone record."""
+    classType = 'ECZN'
+    _flags = Flags(0L,Flags.getNames('neverResets','matchPCBelowMinimumLevel'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','=I2b2B',(FID,'owner',None),'rank','minimumLevel',(_flags,'flags',0L),('unused1',null1)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# LCTN ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# MESG ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelLgtmData(MelStruct):
+    def __init__(self,type='DALC'):
+        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
+                           'red','green','blue','unknown', # 'X+'
+                           'red','green','blue','unknown', # 'X-'
+                           'red','green','blue','unknown', # 'Y+'
+                           'red','green','blue','unknown', # 'Y-'
+                           'red','green','blue','unknown', # 'Z+'
+                           'red','green','blue','unknown', # 'Z-'
+                           'red','green','blue','unknown', # Specular Color Values
+                           'fresnelPower' # Fresnel Power
+                           )
+
+class MreLgtm(MelRecord):
+    """Lgtm Item"""
+    classType = 'LGTM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # 92 Bytes
+        MelStruct('DATA','4B4B4B2f2i3f8I4B3fI',
+            'red','green','blue','unknown',
+            'red','green','blue','unknown',
+            'red','green','blue','unknown',
+            'fogNear','fogFar',
+            'dirRotXY','dirRotZ',
+            'directionalFade','fogClipDist','fogPower',
+            'unknown','unknown','unknown','unknown',
+            'unknown','unknown','unknown','unknown',
+            'red','green','blue','unknown',
+            'fogMax',
+            'lightFaceStart','lightFadeEnd',
+            'unknown',),
+        # 32 Bytes
+        MelLgtmData(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# If Syntax Correct, Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreMusc(MelRecord):
+    """Music type record."""
+    classType = 'MUSC'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FNAM','filename'),
+        MelStruct('ANAM','f','dB'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreFstp(MelRecord):
+    """Fstp Item"""
+    classType = 'FSTP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelOptStruct('DATA','I',(FID,'impactSet')),
+        MelString('ANAM','eid'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# FSTS ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SMBN ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SMQN ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SMEN ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# MUST ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# DLVW ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# WOOP ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SHOU ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreEqup(MelRecord):
+    """Equp Item"""
+    classType = 'EQUP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFids('PNAM','equpment'),
+        MelStruct('DATA','I','useallParents'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# RELA ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SCEN ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Astp record (Association type)"""
+    classType = 'ASTP'
+
+    # DATA Flags
+    # {0x00000001} 'Related'
+    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MPRT','maleParent'),
+        MelString('FPRT','femaleParent'),
+        MelString('MCHT','maleChild'),
+        MelString('FCHT','femaleChild'),
+        MelStruct('DATA','I',(AstpTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreOtft(MelRecord):
+    """Otft Item"""
+    classType = 'OTFT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFidList('INAM','items'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreArto(MelRecord):
+    """Arto record (Art effect object)"""
+    classType = 'ARTO'
+
+    #{0x00000001} 'Magic Casting',
+    #{0x00000002} 'Magic Hit Effect',
+    #{0x00000004} 'Enchantment Effect'
+    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'magic_casting'),
+            (1, 'magic_hit_effect'),
+            (2, 'enchantment_effect'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DNAM','I',(ArtoTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# MATO ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreMovt(MelRecord):
+    """Movt Item"""
+    classType = 'MOVT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MNAM','mnam_n'),
+        MelStruct('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
+                  'forwardWalk','forwardRun','backWalk','backRun',
+                  'rotateInPlaceWalk','rotateInPlaceRun',
+                  'rotateWhileMovingRun'),
+        MelStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SNDR ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# DUAL ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SNCT ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# SOPM ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# COLL ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreClfm(MelRecord):
+    """Clfm Item"""
+    classType = 'CLFM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelColorN(),
+        MelStruct('FNAM','I','playable'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# REVB ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreGras(MelRecord):
+    """Grass record."""
+    classType = 'GRAS'
+    _flags = Flags(0,Flags.getNames('vLighting','uScaling','fitSlope'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('OBND','=6h',
+                  'corner0X','corner0Y','corner0Z',
+                  'corner1X','corner1Y','corner1Z'),
+        MelModel(),
+        MelStruct('DATA','3BsH2sI4fB3s','density','minSlope',
+                  'maxSlope',('unused1',null1),'waterDistance',('unused2',null2),
+                  'waterOp','posRange','heightRange','colorRange',
+                  'wavePeriod',(_flags,'flags'),('unused3',null3)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreIdle(MelRecord):
+    """Idle record."""
+    classType = 'IDLE'
+    #--Mel IDLE DATA
+    class MelIdleData(MelStruct):
+        """Handle older trucated DATA for IDLE subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 8:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 6:
+                #--Else 6 byte record (skips flags and unknown2...
+                unpacked = ins.unpack('4BH',size,readId)
+            else:
+                raise "Unexpected size encountered for IDLE:DATA subrecord: %s" % size
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelConditions(),
+        MelStruct('ANAM','II',(FID,'parent'),(FID,'prevId')),
+        MelIdleData('DATA','4BH2B','group','loopMin','loopMax','unknown1','delay','flags','unknown2'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreInfo(MelRecord):
+    """Info (dialog entry) record."""
+    classType = 'INFO'
+    _flags = Flags(0,Flags.getNames(
+        'goodbye','random','sayOnce','runImmediately','infoRefusal','randomEnd','runForRumors','sayOnceADay','alwaysDarken'))
+    _variableFlags = Flags(0L,Flags.getNames('isLongOrShort'))
+    class MelInfoData(MelStruct):
+        """Support older 2 byte version."""
+        def loadData(self,record,ins,type,size,readId):
+            if size != 2:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            unpacked = ins.unpack('2B',size,readId)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print (record.dialType,record.flags.getTrueAttrs())
+
+    class MelInfoSchr(MelStruct):
+        """Print only if schd record is null."""
+        def dumpData(self,record,out):
+            if not record.schd_p:
+                MelStruct.dumpData(self,record,out)
+    #--MelSet
+    melSet = MelSet(
+        MelInfoData('DATA','HH','dialType',(_flags,'flags')),
+        MelFid('QSTI','quests'),
+        MelFid('TPIC','topic'),
+        MelFid('PNAM','prevInfo'),
+        MelFids('NAME','addTopics'),
+        MelGroups('responses',
+            MelStruct('TRDT','Ii4sB3sIB3s','emotionType','emotionValue',('unused1',null4),'responseNum',('unused2','0xcd0xcd0xcd'),
+                      (FID,'sound'),'flags',('unused3','0xcd0xcd0xcd')),
+            MelString('NAM1','responseText'),
+            MelString('NAM2','actorNotes'),
+            MelString('NAM3','edits'),
+            MelFid('SNAM','speakerAnimation'),
+            MelFid('LNAM','listenerAnimation'),
+            ),
+        MelConditions(),
+        MelFids('TCLT','choices'),
+        MelFids('TCLF','linksFrom'),
+        MelFids('TCFU','tcfu_p'),
+        # MelBase('SCHD','schd_p'), #--Old format script header?
+        MelGroup('scriptBegin',
+            MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+            MelBase('SCDA','compiled_p'),
+            MelString('SCTX','scriptText'),
+            MelGroups('vars',
+                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
+                MelString('SCVR','name')),
+            MelScrxen('SCRV/SCRO','references'),
+            ),
+        MelGroup('scriptEnd',
+            MelBase('NEXT','marker'),
+            MelInfoSchr('SCHR','4s4I',('unused2',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+            MelBase('SCDA','compiled_p'),
+            MelString('SCTX','scriptText'),
+            MelGroups('vars',
+                MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
+                MelString('SCVR','name')),
+            MelScrxen('SCRV/SCRO','references'),
+            ),
+        # MelFid('SNDD','sndd_p'),
+        MelString('RNAM','prompt'),
+        MelFid('ANAM','speaker'),
+        MelFid('KNAM','acterValuePeak'),
+        MelStruct('DNAM', 'I', 'speechChallenge')
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreIngr(MelRecord,MreHasEffects):
+    """INGR (ingredient) record."""
+    classType = 'INGR'
+    _flags = Flags(0L,Flags.getNames('noAutoCalc','isFood'))
+    _etype = Flags(0L,Flags.getNames(
+        'alcohol','bigGuns','bodyWear','chems','energyWeapons','food','handWear','headWear',
+        'meleeWeapons','mine','none','smallGuns','stimpack','thrownWeapons','unarmedWeapon'
+    ))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFull0(),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelFid('SCRI','script'),
+        MelStruct('ETYP','I',(_etype,'etype',0L)),
+        MelStruct('DATA','f','weight'),
+        MelStruct('ENIT','iB3s','value',(_flags,'flags',0L),('unused1',null3)),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreKeym(MelRecord):
+    """KEYM Key records."""
+    classType = 'KEYM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('OBND','=6h',
+                  'corner0X','corner0Y','corner0Z',
+                  'corner1X','corner1Y','corner1Z'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelString('ICON','largeIconPath'),
+        MelString('MICO','smallIconPath'),
+        MelFid('SCRI','script'),
+        MelDestructible(),
+        MelFid('YNAM','soundPickUp'),
+        MelFid('ZNAM','soundDrop'),
+        MelStruct('DATA','if','value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+# Commented out for performance reasons. Slows down loading quite a bit.
+# If Bash ever wants to be able to add masters to a mod, this minimal definition is required
+# It has to be able to convert the formIDs found in BTXT, ATXT, and VTEX to not break the mod
+#class MreLand(MelRecord):
+#    """Land structure. Part of exterior cells."""
+#    ####Could probably be loaded via MelStructA,
+#    ####but little point since it is too complex to manipulate
+#    classType = 'LAND'
+#    melSet = MelSet(
+#        MelBase('DATA','data_p'),
+#        MelBase('VNML','normals_p'),
+#        MelBase('VHGT','heights_p'),
+#        MelBase('VCLR','vertexColors_p'),
+#        MelStructs('BTXT','IBBh','baseTextures', (FID,'texture'), 'quadrant', 'unused1', 'layer'),
+#        MelGroups('alphaLayers',
+#            MelStruct('ATXT','IBBh',(FID,'texture'), 'quadrant', 'unused1', 'layer'),
+#            MelStructA('VTXT','H2Bf', 'opacities', 'position', 'unused1', 'opacity'),
+#        ),
+#        MelFidList('VTEX','vertexTextures'),
+#    )
+#    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+# --
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light source record."""
+    classType = 'LIGH'
+    _flags = Flags(0L,Flags.getNames('dynamic','canTake','negative','flickers',
+        'unk1','offByDefault','flickerSlow','pulse','pulseSlow','spotLight','spotShadow'))
+    #--Mel NPC DATA
+    class MelLighData(MelStruct):
+        """Handle older trucated DATA for LIGH subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 32:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 24:
+                #--Else 24 byte record (skips value and weight...
+                unpacked = ins.unpack('iI3BsIff',size,readId)
+            else:
+                raise ModError(ins.inName,_('Unexpected size encountered for LIGH:DATA subrecord: ')+str(size))
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('OBND','=6h',
+                  'corner0X','corner0Y','corner0Z',
+                  'corner1X','corner1Y','corner1Z'),
+        MelModel(),
+        MelFid('SCRI','script'),
+        MelDestructible(), ### Rescue unexpected (or out of order) subrecord in EVE FNV.esp
+        MelString('FULL','full'),
+        MelString('ICON','iconPath'),
+        MelLighData('DATA','iI3BsIffIf','duration','radius','red','green','blue',('unused1',null1),
+            (_flags,'flags',0L),'falloff','fov','value','weight'),
+        MelOptStruct('FNAM','f',('fade',None)),
+        MelFid('SNAM','sound'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
 class MreAddn(MelRecord):
     """Addon"""
     classType = 'ADDN'
@@ -19959,29 +20639,6 @@ class MreAppa(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-class MreArto(MelRecord):
-    """Arto record (Art effect object)"""
-    classType = 'ARTO'
-
-    #{0x00000001} 'Magic Casting',
-    #{0x00000002} 'Magic Hit Effect',
-    #{0x00000004} 'Enchantment Effect'
-    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'magic_casting'),
-            (1, 'magic_hit_effect'),
-            (2, 'enchantment_effect'),
-        ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelModel(),
-        MelStruct('DNAM','I',(ArtoTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
 class MreAspc(MelRecord):
     """Aspc record (Acoustic Space)"""
     classType = 'ASPC'
@@ -19991,26 +20648,6 @@ class MreAspc(MelRecord):
         MelOptStruct('SNAM','I',(FID,'ambientSound')),
         MelOptStruct('RDAT','I',(FID,'regionData')),
         MelOptStruct('BNAM','I',(FID,'reverb')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAstp(MelRecord):
-    """Astp record (Association type)"""
-    classType = 'ASTP'
-
-    # DATA Flags
-    # {0x00000001} 'Related'
-    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('MPRT','maleParent'),
-        MelString('FPRT','femaleParent'),
-        MelString('MCHT','maleChild'),
-        MelString('FCHT','femaleChild'),
-        MelStruct('DATA','I',(AstpTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -20043,13 +20680,6 @@ class MreCobj(MelRecord):
         MelStruct('NAM1','H','resultingQuantity'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
-    """Skyrim GMST record"""
-    Master = u'Skyrim'
-    isKeyedByEid = True # NULL fids are acceptable.
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
@@ -20148,152 +20778,6 @@ class MreMisc(MelRecord):
 
 # If VMAD correct then Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-class MreIpds(MelRecord):
-    """Ipds Item"""
-    classType = 'IPDS'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
-        MelGroups('data',
-            MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
-            ),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MelLgtmData(MelStruct):
-    def __init__(self,type='DALC'):
-        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
-                           'red','green','blue','unknown', # 'X+'
-                           'red','green','blue','unknown', # 'X-'
-                           'red','green','blue','unknown', # 'Y+'
-                           'red','green','blue','unknown', # 'Y-'
-                           'red','green','blue','unknown', # 'Z+'
-                           'red','green','blue','unknown', # 'Z-'
-                           'red','green','blue','unknown', # Specular Color Values
-                           'fresnelPower' # Fresnel Power
-                           )
-
-class MreLgtm(MelRecord):
-    """Lgtm Item"""
-    classType = 'LGTM'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        # 92 Bytes
-        MelStruct('DATA','4B4B4B2f2i3f8I4B3fI',
-            'red','green','blue','unknown',
-            'red','green','blue','unknown',
-            'red','green','blue','unknown',
-            'fogNear','fogFar',
-            'dirRotXY','dirRotZ',
-            'directionalFade','fogClipDist','fogPower',
-            'unknown','unknown','unknown','unknown',
-            'unknown','unknown','unknown','unknown',
-            'red','green','blue','unknown',
-            'fogMax',
-            'lightFaceStart','lightFadeEnd',
-            'unknown',),
-        # 32 Bytes
-        MelLgtmData(),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# If Syntax Correct, Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreOtft(MelRecord):
-    """Otft Item"""
-    classType = 'OTFT'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelFidList('INAM','items'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreVtyp(MelRecord):
-    """Vtyp Item"""
-    classType = 'VTYP'
-
-    # {0x00} 'Magic Casting',
-    # {0x01} Not Used
-    # {0x02} 'Allow Default Dialog',
-    # {0x04} 'Female',
-    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'male'),
-            (1, 'allowDefaultDialog'),
-            (2, 'female'),
-        ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelStruct('DNAM','B',(VtypTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreMovt(MelRecord):
-    """Movt Item"""
-    classType = 'MOVT'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('MNAM','mnam_n'),
-        MelStruct('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
-                  'forwardWalk','forwardRun','backWalk','backRun',
-                  'rotateInPlaceWalk','rotateInPlaceRun',
-                  'rotateWhileMovingRun'),
-        MelStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreEqup(MelRecord):
-    """Equp Item"""
-    classType = 'EQUP'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelFids('PNAM','equpment'),
-        MelStruct('DATA','I','useallParents'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreClfm(MelRecord):
-    """Clfm Item"""
-    classType = 'CLFM'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelLString('FULL','full'),
-        MelColorN(),
-        MelStruct('FNAM','I','playable'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreFstp(MelRecord):
-    """Fstp Item"""
-    classType = 'FSTP'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelOptStruct('DATA','I',(FID,'impactSet')),
-        MelString('ANAM','eid'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
 
 class MreSoun(MelRecord):
     """Soun Item"""
@@ -20304,55 +20788,6 @@ class MreSoun(MelRecord):
         MelString('FNAM','fxPath'),
         MelBase('SNDD','soundData'),
         MelStruct('SDSC','I',(FID,'soundDescriptor')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
-class MreBptd(MelRecord):
-    """Bptd Item"""
-    classType = 'BPTD'
-    
-    BptdDamageFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'severable'),
-            (1, 'ikData'),
-            (2, 'ikDataBipedData'),
-            (3, 'explodable'),
-            (4, 'ikDataIsHead'),
-            (5, 'ikDataHeadtracking'),
-            (6, 'toHitChanceAbsolute'),
-        ))
-
-    BptdPartTypes = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'torso'),
-            (1, 'head'),
-            (2, 'eye'),
-            (3, 'lookAt'),
-            (4, 'flyGrab'),
-            (5, 'saddle'),
-        ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelModel(),
-        MelLString('BPTN','partName'),
-        MelString('PNAM','poseMatching'),
-        MelString('BPNN','partNode'),
-        MelString('BPNT','vatsTarget'),
-        MelString('BPNI','startNode'),
-        MelStruct('BPND','f3Bb2BH2I2f3I7f2I2BHf','damageMult',(BptdDamageFlags,'flags',0L),
-            (BptdPartTypes,'flags',0L),'healthPcnt','actorValue','toHitChance',
-            'explodableExplosionChancePcnt','explodableDebrisCount',(FID,'explodableDebris'),
-            (FID,'explodableExplosion'),'trackingMaxAngle','explodableDebrisScale',
-            'severableDebrisCount',(FID,'severableDebris'),(FID,'severableExplosion'),
-            'severableDebrisScale','transx','transy','transz','rotx','roty','rotz',
-            (FID,'severableImpactDataset'),(FID,'explodableImpactDataset'),'severableDecalCount',
-            'explodableDecalCount','unknown','limbReplacementScale',
-        ),
-        MelString('NAM1','limbReplacementModel'),
-        MelString('NAM4','goreEffectsTargetBone'),
-        MelBase('NAM5','textFileHashes'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
     
