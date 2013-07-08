@@ -17284,14 +17284,14 @@ class MelDestructible(MelGroup):
                     MelBase('DMDT','dmdt'),
                     #  wbDMDSs := wbArrayS(DMDS, 'Alternate Textures', -- This is a Sorted Array
                     #    wbStructSK([0, 2], 'Alternate Texture', [ -- I forget what the [0,2] means you would have to ask Zilav
-                    #      wbLenString('3D Name'),
+                    #      wbLenString('3D Name'), -- 4byte length code
                     #      wbFormIDCk('New Texture', [TXST]),
                     #      wbInteger('3D Index', itS32)
                     #    ]),
                     #  -1);
                     MelGroups('alternateTexture',
-                        # Problem: '3dName' is an LString
-                        MelStruct('DMDS','sIi','3dName',(FID,'explosion',None),'3D Index',),
+                        # '3dName' is a string with a 4 byte Length code
+                        MelStruct('DMDS','4sIi','3dName',(FID,'explosion',None),'3dIndex',),
                     ),
                 ),
             ),
@@ -19683,6 +19683,232 @@ class MreNavm(MelRecord):
 
 # Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
+class MreExpl(MelRecord):
+    """Explosion record."""
+    classType = 'EXPL'
+    _flags = Flags(0,Flags.getNames('unknown1',
+                                    'alwaysUsesWorldOrientation',
+                                    'knockDownAlways',
+                                    'knockDownByFormular',
+                                    'IgnoreLosCheck',
+                                    'pushExplosionSourceRefOnly',
+                                    'ignoreImageSpaceSwap'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('OBND','=6h',
+                  'corner0X','corner0Y','corner0Z',
+                  'corner1X','corner1Y','corner1Z'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelFid('EITM','objectEffect'),
+        MelFid('MNAM','imageSpaceModifier'),
+        MelStruct('DATA','fffIIHfIIfffI','force','damage','radius',(FID,'light',None),
+                  (FID,'sound1',None),(_flags,'flags'),'isRadius',(FID,'impactDataset',None),
+                  (FID,'sound2',None),'radiationLevel','radiationTime','radiationRadius','soundLevel'),
+        MelFid('INAM','placedImpactObject'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+class MreDebr(MelRecord):
+    """Debris record."""
+    classType = 'DEBR'
+    class MelDebrData(MelStruct):
+        def __init__(self):
+            """Initialize."""
+            MelStruct.__init__(self,'DATA','IsI',('percentage',0),('modPath',null1),('flags',0))
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            data = ins.read(size,readId)
+            (record.percentage,) = struct.unpack('B',data[0:1])
+            record.modPath = data[1:-2]
+            if data[-2] != null1:
+                raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
+            (record.flags,) = struct.unpack('B',data[-1])
+        def dumpData(self,record,out):
+            """Dumps data from record to outstream."""
+            data = ''
+            data += struct.pack('B',record.percentage)
+            data += record.modPath
+            data += null1
+            data += struct.pack('B',record.flags)
+            out.packSub('DATA',data)
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGroups('models',
+            MelDebrData(),
+            MelBase('MODT','modt_p'),
+        ),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# IMGS ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# IMAD ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreFlst(MelRecord):
+    """Flst Item"""
+    classType = 'FLST'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is repeating
+        MelOptStruct('LNAM','I',(FID,'pickupSound')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MrePerk(MelRecord):
+    """Perk record."""
+    classType = 'PERK'
+    class MelPerkData(MelStruct):
+        """Handle older trucated DATA for PERK subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 5:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 4:
+                unpacked = ins.unpack('BBBB',size,readId)
+            else:
+                raise "Unexpected size encountered for DATA subrecord: %s" % size
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flagsA.getTrueAttrs()
+    class MelPerkEffectData(MelBase):
+        def hasFids(self,formElements):
+            formElements.add(self)
+        def loadData(self,record,ins,type,size,readId):
+            target = MelObject()
+            record.__setattr__(self.attr,target)
+            if record.type == 0:
+                format,attrs = ('II',('quest','queststage'))
+            elif record.type == 1:
+                format,attrs = ('I',('ability',))
+            elif record.type == 2:
+                format,attrs = ('HB',('entrypoint','function'))
+            else:
+                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
+            unpacked = ins.unpack(format,size,readId)
+            setter = target.__setattr__
+            for attr,value in zip(attrs,unpacked):
+                setter(attr,value)
+            if self._debug: print unpacked
+        def dumpData(self,record,out):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.type == 0:
+                format,attrs = ('II',('quest','queststage'))
+            elif record.type == 1:
+                format,attrs = ('I',('ability',))
+            elif record.type == 2:
+                format,attrs = ('HB',('entrypoint','function'))
+            else:
+                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
+            values = []
+            valuesAppend = values.append
+            getter = target.__getattribute__
+            for attr in attrs:
+                value = getter(attr)
+                valuesAppend(value)
+            try:
+                out.packSub(self.subType,format,*values)
+            except struct.error:
+                print self.subType,format,values
+                raise
+        def mapFids(self,record,function,save=False):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.type == 0:
+                result = function(target.quest)
+                if save: target.quest = result
+            elif record.type == 1:
+                result = function(target.ability)
+                if save: target.ability = result
+    class MelPerkEffects(MelGroups):
+        def __init__(self,attr,*elements):
+            MelGroups.__init__(self,attr,*elements)
+        def setMelSet(self,melSet):
+            self.melSet = melSet
+            self.attrLoaders = {}
+            for element in melSet.elements:
+                attr = element.__dict__.get('attr',None)
+                if attr: self.attrLoaders[attr] = element
+        def loadData(self,record,ins,type,size,readId):
+            if type == 'DATA' or type == 'CTDA':
+                effects = record.__getattribute__(self.attr)
+                if not effects:
+                    if type == 'DATA':
+                        element = self.attrLoaders['_data']
+                    elif type == 'CTDA':
+                        element = self.attrLoaders['conditions']
+                    element.loadData(record,ins,type,size,readId)
+                    return
+            MelGroups.loadData(self,record,ins,type,size,readId)
+    class MelPerkEffectParams(MelGroups):
+        def loadData(self,record,ins,type,size,readId):
+            if type in ('EPFD','EPFT','EPF2','EPF3','SCHR'):
+                target = self.getDefault()
+                record.__getattribute__(self.attr).append(target)
+            else:
+                target = record.__getattribute__(self.attr)[-1]
+            element = self.loaders[type]
+            slots = ['recordType']
+            slots.extend(element.getSlotsUsed())
+            target.__slots__ = slots
+            target.recordType = type
+            element.loadData(target,ins,type,size,readId)
+        def dumpData(self,record,out):
+            for target in record.__getattribute__(self.attr):
+                element = self.loaders[target.recordType]
+                if not element:
+                    raise ModError(ins.inName,_('Unexpected type: %d') % target.recordType)
+                element.dumpData(target,out)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelString('DESC','description'),
+        MelString('ICON','largeIconPath'),
+        MelString('MICO','smallIconPath'),
+        MelConditions(),
+        MelGroup('_data',
+            MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0), ('ranks',0), ('playable',0), ('hidden',0)),
+            ),
+        MelPerkEffects('effects',
+            MelStruct('PRKE', 'BBB', 'type', 'rank', 'priority'),
+            MelPerkEffectData('DATA','effectData'),
+            MelGroups('effectConditions',
+                MelStruct('PRKC', 'B', 'runOn'),
+                MelConditions(),
+            ),
+            MelPerkEffectParams('effectParams',
+                MelBase('EPFD', 'floats'), # [Float] or [Float,Float], todo rewrite specific class
+                MelStruct('EPFT','B','_epft'),
+                MelString('EPF2','buttonLabel'),
+                MelStruct('EPF3','H','scriptFlag'),
+                MelGroup('embeddedScript',
+                    MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+                    MelBase('SCDA','compiled_p'),
+                    MelString('SCTX','scriptText'),
+                    MelScrxen('SCRV/SCRO','references'),
+                ),
+            ),
+            MelBase('PRKF','footer'),
+            ),
+        )
+    melSet.elements[-1].setMelSet(melSet)
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
+#------------------------------------------------------------------------------
 class MreAddn(MelRecord):
     """Addon"""
     classType = 'ADDN'
@@ -19922,20 +20148,6 @@ class MreMisc(MelRecord):
 
 # If VMAD correct then Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-
-class MreFlst(MelRecord):
-    """Flst Item"""
-    classType = 'FLST'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        # This is repeating
-        MelOptStruct('LNAM','I',(FID,'pickupSound')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-    
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-
 class MreIpds(MelRecord):
     """Ipds Item"""
     classType = 'IPDS'
@@ -20517,9 +20729,9 @@ class MreMgef(MelRecord):
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
         MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj,
-		MreCont, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, 
-		MreHdpt, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
-		MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
+        MreCont, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, 
+        MreHdpt, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
+        MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
         )
 
 #--Extra read/write classes
@@ -20538,9 +20750,9 @@ def init():
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
         MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClfm, MreCobj,
-		MreCont, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, 
-		MreHdpt, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
-		MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
+        MreCont, MreEqup, MreEyes, MreFlor, MreFlst, MreFstp, MreGlob, MreGmst, 
+        MreHdpt, MreIpds, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
+        MreMovt, MreOtft, MreRfct, MreSoun, MreSpgd, MreTact, MreTree, MreVtyp,
         MreHeader,
         ))
 
