@@ -19670,9 +19670,7 @@ class MreExpl(MelRecord):
                                     'ignoreImageSpaceSwap'))
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('EITM','objectEffect'),
@@ -20350,9 +20348,7 @@ class MreGras(MelRecord):
     _flags = Flags(0,Flags.getNames('vLighting','uScaling','fitSlope'))
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelModel(),
         MelStruct('DATA','3BsH2sI4fB3s','density','minSlope',
                   'maxSlope',('unused1',null1),'waterDistance',('unused2',null2),
@@ -20498,9 +20494,7 @@ class MreKeym(MelRecord):
     classType = 'KEYM'
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','largeIconPath'),
@@ -20565,9 +20559,7 @@ class MreLigh(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                'corner0X','corner0Y','corner0Z',
-                'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelModel(),
         MelFid('SCRI','script'),
         # Rescue unexpected (or out of order) subrecord in EVE FNV.esp
@@ -21184,9 +21176,7 @@ class MreNpc(MreActor):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelModel(),
         MelStruct('ACBS','=I2Hh3Hf2H',
             (_flags,'flags',0L),'fatigue','barterGold',
@@ -22035,9 +22025,7 @@ class MreStat(MelRecord):
     classType = 'STAT'
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelModel(),
         MelStruct('BRUS','=B',('passthroughSound',255)),
         MelFid('RNAM','soundRandomLooping'),
@@ -22264,9 +22252,7 @@ class MreWeap(MelRecord):
             if self._debug: print unpacked
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel('model'),
         MelString('ICON','largeIconPath'),
