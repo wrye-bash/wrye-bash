@@ -17395,22 +17395,28 @@ class MelBounds(MelStruct):
             'x1','y1','z1',
             'x2','y2','z2')
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MelColorN(MelStruct):
         def __init__(self):
                 MelStruct.__init__(self,'CNAM','=4B',
                         'red','green','blue','unused')
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
-    """Handles XOWN, XRNK, and XGLB for cells and cell children."""
+    """Handles XOWN, XRNK for cells and cell children."""
+
+#  wbOwnership := wbRStruct('Ownership', [
+#    wbFormIDCkNoReach(XOWN, 'Owner', [FACT, ACHR, NPC_]),
+#    wbInteger(XRNK, 'Faction rank', itS32)
+#  ], []);
 
     def __init__(self):
         """Initialize."""
         MelGroup.__init__(self, 'ownership',
             MelFid('XOWN','owner'),
             MelOptStruct('XRNK','i',('rank',None)),
-            MelFid('XGLB','global'),
         )
 
     def dumpData(self,record,out):
@@ -17418,12 +17424,31 @@ class MelOwnership(MelGroup):
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
 
-# Taken from Wrye Flash for FNV, Needs update for Skyrim
+# Needs systax check but otherwise Correct for Skyrim
 #------------------------------------------------------------------------------
-class MelCoed(MelOptStruct):
-    def __init__(self):
-        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'rank_or_glob_or_unk'), ('rank'))
+class MelIcons(MelGroup):
+    """Handles ICON and MICO."""
 
+#  wbICON := wbRStruct('Icon', [
+#    wbString(ICON, 'Large Icon filename'),
+#    wbString(MICO, 'Small Icon filename')
+#  ], [], cpNormal, False, nil, True);
+
+    def __init__(self):
+        """Initialize."""
+        # iconsIaM = icons ICON and MICO
+        MelGroup.__init__(self, 'iconsIaM',
+            MelString('ICON','icon'),
+            MelString('MICO','mico_n'),
+        )
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.ownership and record.ownership.owner:
+            MelGroup.dumpData(self,record,out)
+
+# Needs systax check but otherwise Correct for Skyrim
+#------------------------------------------------------------------------------
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
 #var
 #  Container  : IwbContainer;
@@ -17459,6 +17484,12 @@ class MelCoed(MelOptStruct):
 #         ]),
 #    {08} wbFloat('Item Condition')
 #  ]);
+
+class MelCoed(MelOptStruct):
+    def __init__(self):
+        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'rank_or_glob_or_unk'), ('rank'))
+
+# Once more records are entered needs update for wbCOEDOwnerDecider
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
@@ -17469,6 +17500,7 @@ class MelKeywords(MelFidList):
             out.packSub('KSIZ','I',len(keywords))
             MelFidList.dumpData(self,record,out)
 
+# Verified Correct for Skyrim
 #-------------------------------------------------------------------------------
 class MelComponents(MelStructs):
     """Handle writing COCT subrecord for the CNTO subrecord"""
@@ -17479,6 +17511,7 @@ class MelComponents(MelStructs):
             out.packSub('COCT','I',len(components))
             MelStructs.dumpData(self,record,out)
 
+# Verified Correct for Skyrim
 #------------------------------------------------------------------------------
 class MelString16(MelString):
     """Represents a mod record string element."""
@@ -17794,7 +17827,9 @@ class MelBipedObjectData(MelStruct):
             # BOD2 - new style, MelStruct can handle it
             MelStruct.loadData(self,record,ins,type,size,readId)
 
-# Record Elements --------------------------------------------------------------
+# Verified Correct for Skyrim
+#-------------------------------------------------------------------------------
+# Record Elements
 #-------------------------------------------------------------------------------
 class MelVmad(MelBase):
     """Virtual Machine data (VMAD)"""
@@ -18372,8 +18407,7 @@ class MreAlch(MelRecord):
         MelLString('DESC','description'),
         MelModel(),
         MelDestructible(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelOptStruct('ETYP','I',(FID,'equipType')),
@@ -18400,8 +18434,7 @@ class MreAmmo(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -18440,8 +18473,7 @@ class MreArmo(MelRecord):
         MelOptStruct('EAMT','H','enchantmentAmount',),
         MelModel(),
         MelAltModel('model1','MOD2'),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelAltModel('model3','MOD4'),
         MelString('ICO2','ico2_n'),
         MelString('MIC2','mic2_n'),
@@ -18534,8 +18566,7 @@ class MreBook(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelLString('DESC','description'),
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -18704,8 +18735,7 @@ class MreClas(MelRecord):
         MelString('EDID','eid'),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelStruct('DATA','Ib2BfIB','unknownValue',(ClasTeachesFlags,'teachesSkill',0L),'maxTrainingLvl',
         (ClasSkillWeightsFlags,'skillWeights',0L),'bleedoutDefault','voicePoints',(ClasAttributeWeightsFlags,'attributeWeights',0L),),
         )
@@ -19645,11 +19675,11 @@ class MreProj(MelRecord):
     class MelProjData(MelStruct):
         """Handle older trucated DATA for PROJ subrecord."""
         def loadData(self,record,ins,type,size,readId):
-            if size == 84:
+            if size == 88:
                 MelStruct.loadData(self,record,ins,type,size,readId)
                 return
-            elif size == 68:
-                unpacked = ins.unpack('HHfffIIfffIIfffIII',size,readId)
+            elif size == 80:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4f',size,readId)
             else:
                 raise "Unexpected size encountered for PROJ:DATA subrecord: %s" % size
             unpacked += self.defaults[len(unpacked):]
@@ -19683,7 +19713,7 @@ class MreProj(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Taken from Wrye Flash for FNV, Needs update for Skyrim
+# Needs syntax check but otherwise correct for Skyrim
 #------------------------------------------------------------------------------
 class MreHazd(MelRecord):
     """Hazard"""
@@ -19715,17 +19745,24 @@ class MreSlgm(MelRecord):
     classType = 'SLGM'
     melSet = MelSet(
         MelString('EDID','eid'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
-        MelString('ICON','iconPath'),
-        MelFid('SCRI','script'),
+        MelIcons(),
+        MelDestructible(),
+        MelFid('YNAM','soundPickUp'),
+        MelFid('ZNAM','soundDrop'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelIcons(),
         MelStruct('DATA','If','value','weight'),
         MelStruct('SOUL','B',('soul',0)),
         MelStruct('SLCP','B',('capacity',1)),
+        MelFid('NAM0','linkedTo'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Taken from Wrye Flash for FNV, Needs update for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreNavi(MelRecord):
     """Navigation Mesh Info Map."""
@@ -20070,8 +20107,7 @@ class MrePerk(MelRecord):
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelString('DESC','description'),
-        MelString('ICON','largeIconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelConditions(),
         MelGroup('_data',
             MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0), ('ranks',0), ('playable',0), ('hidden',0)),
@@ -20173,8 +20209,7 @@ class MreAvif(MelRecord):
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelString('DESC','description'),
-        MelString('ICON','largeIconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelString('ANAM','shortName'),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -20677,8 +20712,7 @@ class MreKeym(MelRecord):
         MelBounds(),
         MelString('FULL','full'),
         MelModel(),
-        MelString('ICON','largeIconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelFid('SCRI','script'),
         MelDestructible(),
         MelFid('YNAM','soundPickUp'),
@@ -21207,8 +21241,7 @@ class MreMisc(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
@@ -21237,8 +21270,7 @@ class MreAppa(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
+        MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -22222,8 +22254,7 @@ class MreRegn(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelString('ICON','largeIconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelStruct('RCLR','3Bs','mapRed','mapBlue','mapGreen',('unused1',null1)),
         MelFid('WNAM','worldspace'),
         MelGroups('areas',
@@ -22523,8 +22554,7 @@ class MreWeap(MelRecord):
         MelBounds(),
         MelString('FULL','full'),
         MelModel('model'),
-        MelString('ICON','largeIconPath'),
-        MelString('MICO','smallIconPath'),
+        MelIcons(),
         MelFid('SCRI','script'),
         MelFid('EITM','effect'),
         MelOptStruct('EAMT','H', 'enchantment'),
