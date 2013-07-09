@@ -18213,12 +18213,7 @@ class MreActi(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelBase('PNAM','pnam_p'),
@@ -18242,12 +18237,7 @@ class MreTact(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelBase('PNAM','pnam_p'),
@@ -18292,12 +18282,7 @@ class MreAlch(MelRecord):
         MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -18328,12 +18313,7 @@ class MreAmmo(MelRecord):
         MelModel(),
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
@@ -18377,12 +18357,7 @@ class MreArmo(MelRecord):
         MelString('ICO2','ico2_n'),
         MelString('MIC2','mic2_n'),
         MelBipedObjectData(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelString('BMCT','ragConTemp'), #Ragdoll Constraint Template
@@ -18473,12 +18448,7 @@ class MreBook(MelRecord):
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
         MelLString('DESC','description'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelNull('KSIZ'),
@@ -18770,12 +18740,7 @@ class MreCont(MelRecord):
         MelNull('COCT'),
         # Repeating CNTO records: CNTO, CNTO, CNTO, CNTO : Of the Count COCT
         MelContCnto(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelStruct('DATA','Bf',(ContTypeFlags,'flags',0L),'weight'),
         MelFid('SNAM','openSound'),
         MelFid('QNAM','closeSound'),
@@ -18962,12 +18927,7 @@ class MreDoor(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelFid('SNAM','openSound'),
         MelFid('ANAM','openSound'),
         MelFid('BNAM','openSound'),
@@ -19300,12 +19260,7 @@ class MreFurn(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelBase('PNAM','pnam_p'),
@@ -19476,51 +19431,49 @@ class MreAspc(MelRecord):
 class MreMstt(MelRecord):
     """Moveable static record."""
     classType = 'MSTT'
+
+    MsttTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'onLocalMap'),
+        (1, 'unknown2'),
+    ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelBase('DATA','data_p'),
+        MelStruct('DATA','B',(MsttTypeFlags,'flags',0L),),
         MelFid('SNAM','sound'),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-# Taken from Wrye Flash for FNV, Needs update for Skyrim
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreIdlm(MelRecord):
     """Idle marker record."""
     classType = 'IDLM'
-    class MelIdlmIdlc(MelStruct):
-        """Handle older trucated IDLC for IDLM subrecord."""
-        def loadData(self,record,ins,type,size,readId):
-            if size == 4:
-                MelStruct.loadData(self,record,ins,type,size,readId)
-                return
-            elif size == 1:
-                unpacked = ins.unpack('B',size,readId)
-            else:
-                raise "Unexpected size encountered for TERM:DNAM subrecord: %s" % size
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
+
+    IdlmTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'runInSequence'),
+        (1, 'unknown1'),
+        (2, 'doOnce'),
+        (3, 'unknown3'),
+        (4, 'ignoredBySandbox'),
+    ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
-        MelStruct('IDLF','B','flags'),
-        MelIdlmIdlc('IDLC','B3s','animationCount',('unused',null3)),
+        MelBounds(),
+        MelStruct('IDLF','B',(IdlmTypeFlags,'flags',0L),),
+        MelStruct('IDLC','B','animationCount',),
         MelStruct('IDLT','f','idleTimerSetting'),
         MelFidList('IDLA','animations'),
+        MelModel(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-# Taken from Wrye Flash for FNV, Needs update for Skyrim
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreProj(MelRecord):
     """Projectile record."""
@@ -19530,13 +19483,32 @@ class MreProj(MelRecord):
         (0, 'hitscan'),
         (1, 'explosive'),
         (2, 'altTriger'),
-        (0, 'muzzleFlash'),
-        (1, 'unknown4'),
-        (2, 'canbeDisable'),
-        (0, 'canbePickedUp'),
-        (1, 'superSonic'),
-        (2, 'pinsLimbs'),
-        (0, 'passThroughSmallTransparent'),
+        (3, 'muzzleFlash'),
+        (4, 'unknown4'),
+        (5, 'canbeDisable'),
+        (6, 'canbePickedUp'),
+        (7, 'superSonic'),
+        (8, 'pinsLimbs'),
+        (9, 'passThroughSmallTransparent'),
+        (10, 'disableCombatAimCorrection'),
+        (11, 'rotation'),
+    ))
+
+    ProjectileTypes = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Missile'),
+        (1, 'Lobber'),
+        (2, 'Beam'),
+        (3, 'Flame'),
+        (4, 'Cone'),
+        (5, 'Barrier'),
+        (6, 'Arrow'),
+    ))
+
+    ProjSoundLevels = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'Loud'),
+        (1, 'Normal'),
+        (2, 'Silent'),
+        (3, 'Very Loud'),
     ))
 
     class MelProjData(MelStruct):
@@ -19555,28 +19527,31 @@ class MreProj(MelRecord):
                 if callable(action): value = action(value)
                 setter(attr,value)
             if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'corner0X','corner0Y','corner0Z',
-                  'corner1X','corner1Y','corner1Z'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelProjData('DATA','HHfffIIfffIIfffIII ffff',(ProjTypeFlags,'flags',0L),'type',
+        MelProjData('DATA','2H3f2I3f2I3f3I4f2I',(ProjTypeFlags,'flags',0L),(ProjectileTypes,'type',0L),
                   ('gravity',0.00000),('speed',10000.00000),('range',10000.00000),
                   (FID,'light',0),(FID,'muzzleFlash',0),('tracerChance',0.00000),
                   ('explosionAltTrigerProximity',0.00000),('explosionAltTrigerTimer',0.00000),
                   (FID,'explosion',0),(FID,'sound',0),('muzzleFlashDuration',0.00000),
                   ('fadeDuration',0.00000),('impactForce',0.00000),
                   (FID,'soundCountDown',0),(FID,'soundDisable',0),(FID,'defaultWeaponSource',0),
-                  ('rotationX',0.00000),('rotationY',0.00000),('rotationZ',0.00000),
-                  ('bouncyMult',0.00000)),
-        MelString('NAM1','muzzleFlashPath'),
-        MelBase('NAM2','_nam2'), #--Should be a struct. Maybe later.
-        MelStruct('VNAM','I','soundLevel'),
+                  ('coneSpread',0.00000),('collisionRadius',0.00000),('lifetime',0.00000),
+                  ('relaunchInterval',0.00000),(FID,'decalData',0),(FID,'collisionLayer',0),
+                  ),
+        MelGroups('models',
+            MelString('NAM1','muzzleFlashPath'),
+            MelBase('NAM2','_nam2'), #--Should be a struct. Maybe later.
+        ),
+        MelStruct('VNAM','I',(ProjSoundLevels,'soundLevel',0L),),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
 # Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
 class MreHazd(MelRecord):
@@ -21048,12 +21023,7 @@ class MreMisc(MelRecord):
         MelModel(),
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelNull('KSIZ'),
@@ -21083,12 +21053,7 @@ class MreAppa(MelRecord):
         MelModel(),
         MelString('ICON','icon'),
         MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelStruct('QUAL','I',(AppaTypeFlags,'flags',0L)),
@@ -22110,12 +22075,7 @@ class MreFlor(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelAltModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelBase('PNAM','unknown01'),
