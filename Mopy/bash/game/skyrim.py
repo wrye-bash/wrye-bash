@@ -20531,19 +20531,33 @@ class MreGras(MelRecord):
     classType = 'GRAS'
 
     GrasTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'vLighting'),
-            (1, 'uScaling'),
-            (2, 'fitSlope'),
+            (0, 'vertexLighting'),
+            (1, 'uniformScaling'),
+            (2, 'fitToSlope'),
+        ))
+
+    GrasWaterDistFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'aboveAtLeast'),
+        (0,'aboveAtMost'),
+        (0,'belowAtLeast'),
+        (0,'belowAtMost'),
+        (0,'eitherAtLeast'),
+        (0,'eitherAtMost'),
+        (0,'eitherAtMostAbove'),
+        (0,'eitherAtMostBelow'),
         ))
 
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelModel(),
-        MelStruct('DATA','3BsH2sI4fB3s','density','minSlope',
-                  'maxSlope',('unused1',null1),'waterDistance',('unused2',null2),
-                  'waterOp','posRange','heightRange','colorRange',
-                  'wavePeriod',(GrasTypeFlags,'flags',0L),('unused3',null3)),
+        MelStruct('DATA','4B2HI4f4B','density','minSlope','maxSlope',
+                  ('unused1',null1),'waterDistance',('unused2',null2),
+                  (GrasWaterDistFlags,'flags',0L),'posRange',
+                  'heightRange','colorRange','wavePeriod',
+                  (GrasTypeFlags,'flags',0L),('unused3',null3),('unused4',null3),
+                  ('unused5',null3),
+                  ),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -22843,10 +22857,10 @@ mergeClasses = (
         MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClas, MreClfm,
         MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDial, MreDoor, MreEczn,
         MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-        MreFstp, MreFsts, MreFurn, MreGmst, MreHazd, MreHdpt, MreIdlm, MreIpds,
-        MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc,
-        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun,
-        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdlm,
+        MreIpds, MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef,
+        MreMisc, MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm,
+        MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
         )
 
 #--Extra read/write classes
@@ -22867,10 +22881,10 @@ def init():
         MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClas, MreClfm,
         MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDial, MreDoor, MreEczn,
         MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-        MreFstp, MreFsts, MreFurn, MreGmst, MreHazd, MreHdpt, MreIdlm, MreIpds,
-        MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc,
-        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun,
-        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdlm,
+        MreIpds, MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef,
+        MreMisc, MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm,
+        MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
         MreHeader,
         ))
 
