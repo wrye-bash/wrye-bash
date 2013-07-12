@@ -17079,7 +17079,7 @@ patchers = (
 listTypes = ('LVLI','LVLN','LVSP',)
 
 namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
-pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{},}
+pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
 statsTypes = {
             'AMMO':('eid', 'value', 'damage'),
             'ARMO':('eid', 'weight', 'value', 'armorRating'), 
