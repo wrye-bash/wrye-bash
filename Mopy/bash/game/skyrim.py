@@ -17079,7 +17079,7 @@ patchers = (
 listTypes = ('LVLI','LVLN','LVSP',)
 
 namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
-pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
+pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{},}
 statsTypes = {
             'AMMO':('eid', 'value', 'damage'),
             'ARMO':('eid', 'weight', 'value', 'armorRating'), 
@@ -17378,9 +17378,9 @@ class MelOwnership(MelGroup):
 #    wbInteger(XRNK, 'Faction rank', itS32)
 #  ], []);
 
-    def __init__(self):
+    def __init__(self,attr='ownership'):
         """Initialize."""
-        MelGroup.__init__(self, 'ownership',
+        MelGroup.__init__(self,attr,
             MelFid('XOWN','owner'),
             MelOptStruct('XRNK','i',('rank',None)),
         )
@@ -17400,18 +17400,23 @@ class MelIcons(MelGroup):
 #    wbString(MICO, 'Small Icon filename')
 #  ], [], cpNormal, False, nil, True);
 
-    def __init__(self):
+    def __init__(self,attr='iconsIaM'):
         """Initialize."""
         # iconsIaM = icons ICON and MICO
-        MelGroup.__init__(self, 'iconsIaM',
+        MelGroup.__init__(self,attr,
             MelString('ICON','icon'),
             MelString('MICO','mico_n'),
         )
 
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        if record.ownership and record.ownership.owner:
-            MelGroup.dumpData(self,record,out)
+#------------------------------------------------------------------------------
+# Is this required?  How can it be modified to only output what is present in
+# the record.  Example, if ICON is there but MICO is not Skip MICO but if MICO
+# is there but ICON is not Skip ICON
+#------------------------------------------------------------------------------
+#    def dumpData(self,record,out):
+#        """Dumps data from record to outstream."""
+#        if record.iconsIaM and record.iconsIaM.icon:
+#            MelGroup.dumpData(self,record,out)
 
 # Needs systax check but otherwise Correct for Skyrim
 #------------------------------------------------------------------------------
@@ -17621,15 +17626,17 @@ class MelModel(MelGroup):
 
 #-------------------------------------------------------------------------------
 class MelAltModel(MelGroup):
-    """Represents a model record."""
+    """Represents a Alternate model record."""
+    # Use this until MODB and MODD have been investigated further
     typeSets = {
+        'MODL': ('MODL','MODT','MODS'),
         'MOD2': ('MOD2','MO2T','MO2S'),
         'MOD3': ('MOD3','MO3T','MO3S'),
         'MOD4': ('MOD4','MO4T','MO4S'),
         'MOD5': ('MOD5','MO5T','MO5S'),
         'DMDL': ('DMDL','DMDT','DMDS'),
         }
-    def __init__(self,attr='model',type='MODL'):
+    def __init__(self,attr='altModel',type='MODL'):
         """Initialize."""
         types = self.__class__.typeSets[type]
         MelGroup.__init__(self,attr,
@@ -18283,7 +18290,7 @@ class MreActi(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
@@ -18307,7 +18314,7 @@ class MreTact(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
@@ -18352,7 +18359,7 @@ class MreAlch(MelRecord):
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelIcons(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -18381,7 +18388,7 @@ class MreAmmo(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
@@ -18401,7 +18408,7 @@ class MreAnio(MelRecord):
     classType = 'ANIO'
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelModel(),
+        MelAltModel(),
         MelString('BNAM','unloadEvent'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -18419,7 +18426,6 @@ class MreArmo(MelRecord):
         MelLString('FULL','full'),
         MelOptStruct('EITM','I',(FID,'enchantment')),
         MelOptStruct('EAMT','H','enchantmentAmount',),
-        MelModel(),
         MelAltModel('model1','MOD2'),
         MelIcons(),
         MelAltModel('model3','MOD4'),
@@ -18438,8 +18444,8 @@ class MreArmo(MelRecord):
         MelKeywords('KWDA','keywords'),
         MelLString('DESC','description'),
         MelFids('MODL','addons'),
-        MelStruct('DATA','=If','value','weight'),
-        MelStruct('DNAM','I','armorRating'),
+        MelStruct('DATA','=if','value','weight'),
+        MelStruct('DNAM','i','armorRating'),
         MelFid('TNAM','baseItem'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -18513,7 +18519,7 @@ class MreBook(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelIcons(),
         MelLString('DESC','description'),
         MelDestructible(),
@@ -18611,7 +18617,7 @@ class MreClmt(MelRecord):
         MelStruct('WLST','IiI',(FID,'weather',None),'chance',(FID,'global',None),),
         MelLString('FNAM','sunTexture'),
         MelLString('GNAM','sunGlareTexture'),
-        MelModel(),
+        MelAltModel(),
         MelStruct('TNAM','6B','timingBegin','timingEnd','sunsetBegin','sunsetEnd',
         'volatility','moonsPhaseLength',),
         )
@@ -18742,7 +18748,7 @@ class MreCont(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         # One Count: COCT 
         # Handled by MreContCnto
         MelNull('COCT'),
@@ -18944,7 +18950,7 @@ class MreDoor(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelFid('SNAM','openSound'),
         MelFid('ANAM','openSound'),
@@ -19298,7 +19304,7 @@ class MreFurn(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),
@@ -19438,7 +19444,7 @@ class MreHdpt(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelStruct('DATA','B',(HdptTypeFlags,'hdptDataFlags',0L),),
         MelStruct('PNAM','I',(HdptTypeFlags02,'hdptDataFlags02',0L),),
         MelFids('HNAM','extraParts'),
@@ -19481,7 +19487,7 @@ class MreMstt(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelStruct('DATA','B',(MsttTypeFlags,'flags',0L),),
         MelFid('SNAM','sound'),
@@ -19509,7 +19515,7 @@ class MreIdlm(MelRecord):
         MelStruct('IDLC','B','animationCount',),
         MelStruct('IDLT','f','idleTimerSetting'),
         MelFidList('IDLA','animations'),
-        MelModel(),
+        MelAltModel(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -19572,7 +19578,7 @@ class MreProj(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelProjData('DATA','2H3f2I3f2I3f3I4f2I',(ProjTypeFlags,'flags',0L),(ProjectileTypes,'type',0L),
                   ('gravity',0.00000),('speed',10000.00000),('range',10000.00000),
@@ -19610,7 +19616,7 @@ class MreHazd(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelStruct('DATA','I4f5I','limit','radius','lifetime',
                   'imageSpaceRadius','targetInterval',(HazdTypeFlags,'flags',0L),
                   (FID,'spell'),(FID,'light'),(FID,'impactDataSet'),(FID,'sound'),),
@@ -19626,7 +19632,7 @@ class MreSlgm(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelIcons(),
         MelDestructible(),
         MelFid('YNAM','soundPickUp'),
@@ -19669,7 +19675,7 @@ class MreExpl(MelRecord):
         MelString('EDID','eid'),
         MelBounds(),
         MelString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelFid('EITM','objectEffect'),
         MelFid('MNAM','imageSpaceModifier'),
         MelStruct('DATA','6I5f2I',(FID,'light',None),(FID,'sound1',None),(FID,'sound2',None),
@@ -19746,7 +19752,7 @@ class MreBptd(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelModel(),
+        MelAltModel(),
         MelLString('BPTN','partName'),
         MelString('PNAM','poseMatching'),
         MelString('BPNN','partNode'),
@@ -19775,7 +19781,7 @@ class MreAddn(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
-        MelModel(),
+        MelAltModel(),
         MelBase('DATA','data_p'),
         MelOptStruct('SNAM','I',(FID,'ambientSound')),
         MelBase('DNAM','addnFlags'),
@@ -19856,7 +19862,7 @@ class MreIpct(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelModel(),
+        MelAltModel(),
         MelStruct('DATA','fIffIBBH','effectDuration',(IpctEffectOrientation,'orientationFlags',0L),
                   'angleThreshold','placementRadius', (IpctSoundLevel,'soundLevel',0L),
                   (IpctTypeFlags,'flags',0L),(IpctResultFlags,'resultFlags',0L),'unknown1'
@@ -20082,7 +20088,7 @@ class MreArto(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
-        MelModel(),
+        MelAltModel(),
         MelStruct('DNAM','I',(ArtoTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -20163,7 +20169,7 @@ class MreGras(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
-        MelModel(),
+        MelAltModel(),
         MelStruct('DATA','4B2HI4f4B','density','minSlope','maxSlope',
                   ('unused1',null1),'waterDistance',('unused2',null2),
                   (GrasWaterDistFlags,'flags',0L),'posRange',
@@ -20613,7 +20619,7 @@ class MreMisc(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelIcons(),
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -20642,7 +20648,7 @@ class MreAppa(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelIcons(),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
@@ -20827,7 +20833,7 @@ class MreStat(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
-        MelModel(),
+        MelAltModel(),
         MelStruct('DNAM','fI','maxAngle30to120',(FID,'material'),),
         # Contains null-terminated mesh filename followed by random data up to 260 bytes
         MelBase('MNAM','distantLOD'),
@@ -20843,7 +20849,7 @@ class MreTree(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
-        MelModel(),
+        MelAltModel(),
         MelFid('PFIG','harvestIngredient'),
         MelFid('SNAM','harvestSound'),
         MelStruct('PFPC','4B','spring','summer','fall','wsinter',),
@@ -20865,7 +20871,7 @@ class MreFlor(MelRecord):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelModel(),
+        MelAltModel(),
         MelDestructible(),
         MelNull('KSIZ'),
         MelKeywords('KWDA','keywords'),

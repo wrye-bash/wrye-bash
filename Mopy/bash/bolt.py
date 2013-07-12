@@ -58,19 +58,19 @@ if os.name == u'nt':
 class Path(object): pass
 
 # Unicode ---------------------------------------------------------------------
-#--decode unicode strings
+#: list of encodings to try when uncertain about input.
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 encodingOrder = (
+    'mbcs',     # "multibyte" character set (ms win filenames)
     'ascii',    # Plain old ASCII (0-127)
+    'cp1252',   # English (extended ASCII)
+    'utf8',     # universal character set transformation format 8-bit
     'gbk',      # GBK (simplified Chinese + some)
     'cp932',    # Japanese
     'cp949',    # Korean
-    'cp1252',   # English (extended ASCII)
-    'utf8',
-    'cp500',
     'UTF-16LE',
-    'mbcs',
+    'cp500',    # IBM International (is it even realistic to expect this?)
     )
 
 _encodingSwap = {
@@ -89,33 +89,59 @@ _encodingSwap = {
 # setting it tries the specified encoding first
 pluginEncoding = None
 
-def _getbestencoding(text):
-    """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
-       detection library to find the best match (heurisitcs)"""
+_encodingsofFiles = {} #: naive way to speed up character detection. stores Path.s -> chardet.detect(path.readLines())
+def _chardetectPath(blob, aPath):
+    result = _encodingsofFiles.get(aPath.s)
+    mtime = aPath.getmtime()
+    if result and result['mtime'] == mtime:
+		return result
+    result = _chardetect(blob)
+	#if result['encoding'] and result['confidence'] >= 0.6:
+    result = {
+	    'encoding': result['encoding'],
+        'confidence': result['confidence'],
+        'mtime': mtime
+    }
+    _encodingsofFiles.update({aPath.s: result })
+    return result 
+
+def _chardetect(text):
+    """ As smart as your browser.
+    @return: Detected encoding and confidence of the guess
+    @rtype: dictionary {encoding, confidence} """
     result = chardet.detect(text)
-    encoding,confidence = result['encoding'],result['confidence']
-    encoding = _encodingSwap.get(encoding,encoding)
-    ## Debug: uncomment the following to output stats on encoding detection
-    #print
-    #print '%s: %s (%s)' % (repr(text),encoding,confidence)
-    return encoding,confidence
+    encoding = _encodingSwap.get(result['encoding'], result['encoding'])
+    return result
+
+def deprint(*args,**keyargs): pass
 
 def _unicode(text,encoding=None,avoidEncodings=()):
     if isinstance(text,unicode) or text is None: return text
-    # Try the user specified encoding first
+    
     if encoding:
-        try: return unicode(text,encoding)
+        try: return unicode(text, encoding)
         except UnicodeDecodeError: pass
-    # Try to detect the encoding next
-    encoding,confidence = _getbestencoding(text)
-    if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
-        try: return unicode(text,encoding)
-        except UnicodeDecodeError: pass
-    # If even that fails, fall back to the old method, trial and error
+
     for encoding in encodingOrder:
-        try: return unicode(text,encoding)
+        try: return unicode(text, encoding)
+        except LookupError: continue
         except UnicodeDecodeError: pass
-    raise UnicodeDecodeError(u'Text could not be decoded using any method')
+
+    result = _chardetect(text)
+    encoding = result['encoding']
+    confidence = result['confidence']
+	# 55% may not be "good enough". It may be better to inform the user.
+	# 70% confidence is probably a good minimum.
+	# TODO: Unit tests with Chinese, Japanese, German, French and Russian encodings
+    if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
+        try: return unicode(text, encoding)
+        except UnicodeDecodeError: raise
+
+    message = 'Unable to convert text to unicode!\n'
+    message += 'The input which caused this issue was:\n'
+    message += repr(text)
+    class WryeBashUnicodeError(Exception): pass
+    raise WryeBashUnicodeError(message)
 
 def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
     if isinstance(text,str) or text is None:
@@ -134,7 +160,7 @@ def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False
     for encoding in encodings:
         try:
             temp = text.encode(encoding)
-            detectedEncoding = _getbestencoding(temp)
+            detectedEncoding = _chardetect(temp)['encoding']
             if detectedEncoding == encoding:
                 # This encoding also happens to be detected
                 # By the encoding detector as the same thing,
@@ -248,15 +274,43 @@ def dumpTranslator(outPath,language,*files):
     return outTxt
 
 def initTranslator(language=None,path=None):
+    #if not language:
+    #    try:
+    #        language = locale.getlocale()
+    #        if language == (None, None):
+    #            language = locale.getdefaultlocale()
+    #            if language == (None, None):
+    #            print "def %s" % repr(language)
+    #            language = language[0].split('_',1)[0]
+    #        else:
+    #            print "%s" % repr(language)
+    #            language = locale.getlocale()[0].split('_',1)[0]
+    #        print "initTranslator ", language
+    #        language = _unicode(language)
+    #    except UnicodeError:
+    #        deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
+    #        # Default to English
+    #        language = u'English'
+
     if not language:
         try:
-            language = locale.getlocale()[0].split('_',1)[0]
-            language = _unicode(language)
+            noloc = (None, None)
+            userLocale = locale.getlocale()
+            systemLocale = locale.getdefaultlocale()
+            if userLocale == noloc and systemLocale == noloc:
+                language = u'English'
+            elif userLocale != noloc and userLocale[0] != None:
+                language = userLocale[0].split('_',1)[0]
+            elif systemLocale != noloc and systemLocale[0] != None:
+                language = systemLocale[0].split('_',1)[0]
+            language = _unicode(language) # why?
         except UnicodeError:
             deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
             # Default to English
             language = u'English'
-    path = path or os.path.join(u'bash',u'l10n')
+
+
+    path = path or os.path.join(u'bash',u'l10n') # REFACTOR 110n should be a module and export capabilities to other modules
     if language.lower() == u'german': language = u'de'
     txt,po,mo = (os.path.join(path,language+ext)
                  for ext in (u'.txt',u'.po',u'.mo'))
@@ -295,6 +349,9 @@ if locale.getlocale() == (None,None):
 initTranslator(bass.language)
 
 CBash = 0
+# REFACTOR move this to barb, the only place where it is used.
+# even better, don't bother detecting changed images or
+# at least define "unchanged" sizes in images/sizes.txt and not in the code ;)
 images_list = {
     295 : {
         u'3dsmax16.png' : 1176,
@@ -961,6 +1018,7 @@ class sio(StringIO.StringIO):
 #------------------------------------------------------------------------------
 _gpaths = {}
 #Path = None
+# REFACTOR whatever this does, make it part of Path
 def GPath(name):
     """Returns common path object for specified name/path."""
     if name is None: return None
@@ -996,13 +1054,15 @@ def GPathPurge():
 
 #------------------------------------------------------------------------------
 class Path(object):
-    """A file path. May be just a directory, filename or full path."""
-    """Paths are immutable objects that represent file directory paths."""
+    """A file path. May be just a directory, filename or full path.
+    Paths are immutable objects that represent file directory paths."""
 
-    #--Class Vars/Methods -------------------------------------------
-    norm_path = {} #--Dictionary of paths
+    # Class Members
+    norm_path = {} #--Dictionary of paths # not used for anything?
     mtimeResets = [] #--Used by getmtime
-
+    _cp1252 = 'cp1252'
+    _utf8 = 'utf-8'
+    defaultEncoding = _cp1252
     @staticmethod
     def get(name):
         """Returns path object for specified name/path."""
@@ -1029,21 +1089,30 @@ class Path(object):
 
     @staticmethod
     def getcwd():
+        """ @rtype: Path
+        @return: Path based on a unicode object representing the current working directory.
+        """
         return Path(os.getcwdu())
 
     def setcwd(self):
-        """Set cwd. Works as either instance or class method."""
+        """Change directory (os.chdir()). Works as either instance or class method."""
         if isinstance(self,Path): dir = self._s
         else: dir = self
         os.chdir(dir)
 
-    #--Instance stuff --------------------------------------------------
-    #--Slots: _s is normalized path. All other slots are just pre-calced
-    #  variations of it.
+    @staticmethod
+    def tempDir(prefix=None):
+        return GPath(tempfile.mkdtemp(prefix=prefix))
+
+    @staticmethod
+    def baseTempDir():
+        return GPath(tempfile.gettempdir())
+
+    # Instance members
+    #: _s is the unicode representation of a path. The rest are convenience properties
     __slots__ = ('_s','_cs','_csroot','_sroot','_shead','_stail','_ext','_cext','_sbody','_csbody')
 
     def __init__(self, name):
-        """Initialize."""
         if isinstance(name,Path):
             self.__setstate__(name._s)
         else:
@@ -1054,78 +1123,139 @@ class Path(object):
         return self._s
 
     def __setstate__(self,norm):
-        """Used by unpickler. Reconstruct _cs."""
+        """Used by unpickler. Reconstruct _cs.
+        @param: norm string representation of a path (same as given to Path(name)) """
         # Older pickle files stored filename in str, not unicode
-        if not isinstance(norm,unicode): norm = _unicode(norm)
-        self._s = norm
-        self._cs = os.path.normcase(self._s)
-        self._sroot,self._ext = os.path.splitext(self._s)
-        self._shead,self._stail = os.path.split(self._s)
-        self._cext = os.path.normcase(self._ext)
-        self._csroot = os.path.normcase(self._sroot)
-        self._sbody = os.path.basename(os.path.splitext(self._s)[0])
-        self._csbody = os.path.normcase(self._sbody)
+        if not isinstance(norm, unicode): norm = _unicode(norm)
+        self._s                    = norm                          #: unicode
+        self._cs                   = os.path.normcase(self._s)     #: string (ascii?)
+        self._sroot, self._ext     = os.path.splitext(self._s)
+        self._shead, self._stail   = os.path.split(self._s)
+        self._cext                 = os.path.normcase(self._ext)   #: lowercase extension (no case change on unix)
+        self._csroot               = os.path.normcase(self._sroot) #: path without extension, including directories
+        self._sbody                = os.path.basename(os.path.splitext(self._s)[0]) #: filename of path without extension
+        self._csbody               = os.path.normcase(self._sbody) #: lowercase filename (no case change on unix)
 
     def __len__(self):
+        """@rtype: int
+        @return: string length of the whole path"""
         return len(self._s)
 
+    def __str__(self):
+        return self._s
+
     def __repr__(self):
-        return u"bolt.Path("+repr(self._s)+u")"
+        return u"Path("+repr(self._s)+u")"
 
     def __unicode__(self):
         return self._s
+
+    #--Hash/Compare
+    def __hash__(self):
+        return hash(self._cs)
+
+    def __cmp__(self, other):
+        if isinstance(other,Path):
+            return cmp(self._cs, other._cs)
+        else:
+            return cmp(self._cs, Path.getCase(other))
+
+    def __add__(self,other):
+        return GPath(self._s + Path.getNorm(other))
+
 
     #--Properties--------------------------------------------------------
     #--String/unicode versions.
     @property
     def s(self):
-        "Path as string."
+        """Single-string (unicode) representation of the path """
+        #return self._s.encode('utf8', 'xmlcharrefreplace')
         return self._s
     @property
     def cs(self):
-        "Path as string in normalized case."
+        """Path as string in normalized case
+        
+        (if windows [A-Z] -> [a-z],  [/] -> [\] )."""
         return self._cs
     @property
     def csroot(self):
-        "Root as string."
+        """@return: normalized path without extension, including directories"""
         return self._csroot
     @property
     def sroot(self):
-        "Root as string."
+        """@return: path without extension, including directories"""
         return self._sroot
     @property
     def shead(self):
-        "Head as string."
+        """@return: Directories of a path, excluding file name"""
         return self._shead
     @property
     def stail(self):
-        "Tail as string."
+        """@return: The filename in a path or the last directory """
         return self._stail
     @property
     def sbody(self):
-        "For alpha\beta.gamma returns beta as string."
+        """@return: The filename, excluding extension. "C:\hello\world\Moo.txt" S{->} Moo """
         return self._sbody
     @property
     def csbody(self):
-        "For alpha\beta.gamma returns beta as string in normalized case."
+        """@return: The normalized filename, excluding extension. "C:\hello\world\Moo.txt" S{->} moo """
         return self._csbody
 
     #--Head, tail
     @property
     def headTail(self):
-        "For alpha\beta.gamma returns (alpha,beta.gamma)"
+        """
+        @rtype: [Path, Path]
+        @return: List with two elements, containing Path(head) and Path(tail)
+        e.g
+        Path("C:\hello\World\Moo.txt").headTail S{->}
+        [Path(u'C:\\hello\\World'), Path(u'Moo.txt')]
+        """
         return map(GPath,(self._shead,self._stail))
     @property
     def head(self):
-        "For alpha\beta.gamma, returns alpha."
+        """
+        @rtype: Path
+        @return: Path name, excluding file name
+        e.g
+        Path("C:/hello/World/Moo.txt").head ' S{->}
+        Path(u'C:\\hello\\World')
+        """
         return GPath(self._shead)
     @property
     def tail(self):
-        "For alpha\beta.gamma, returns beta.gamma."
+        """
+        @rtype: Path
+        @return: File name, excluding leading path
+        e.g
+        Path("C:/hello/World/Moo.txt").head ' S{->}
+        Path(u'Moo.txt')
+        """
         return GPath(self._stail)
     @property
+    def dirname(self):
+        """
+        @rtype: Path
+        @return: a Path based on self with its last non-slash component and trailing slashes removed"""
+        if os.sep not in self._s: return Path('.')
+        return Path(self.head)
+    @property
+    def basename(self):
+        """
+        @rtype: Path
+        @return: a Path based on self with any leading directory components removed."""
+        return Path(self.tail)
+    def mkdirhier(self):
+        """Makes a directory hierarchy (imake). Does not check if a path ends with an extension"""
+        return self.makedirs()
+    @property
     def body(self):
-        "For alpha\beta.gamma, returns beta."
+        """
+        @rtype: Path
+        @return: File name, excluding leading path and extension
+        e.g Path("C:\hello\world\Moo.txt").body S{->} Path("Moo")
+        """
         return GPath(self._sbody)
 
     #--Root, ext
@@ -1134,45 +1264,76 @@ class Path(object):
         return (GPath(self._sroot),self._ext)
     @property
     def root(self):
-        "For alpha\beta.gamma returns alpha\beta"
+        """" @rtype: Path
+        @return: Filename without extension, including directories
+        e.g
+        Path("C:\hello\World\Moo.txt").root '
+        Path(u'C:\\hello\\World\\Moo')
+        """
         return GPath(self._sroot)
     @property
     def ext(self):
-        "Extension (including leading period, e.g. '.txt')."
+        """@rtype: string
+        @return: Extension (including leading period, e.g. '.txt')."""
         return self._ext
     @property
     def cext(self):
-        "Extension in normalized case."
+        """@rtype: string
+        @return: Normalized extension (including leading period, e.g. '.txt')."""
         return self._cext
     @property
     def temp(self,unicodeSafe=True):
-        """Temp file path.  If unicodeSafe is True, the returned
-        temp file will be a fileName that can be passes through Popen
-        (Popen automatically tries to encode the name)"""
+        """ @rtype: Path
+        @return: Path based on self in the temporary directory as provided by the OS
+        (see tempfile.tempdir).
+
+        If unicodeSafe is True, the returned temporary file will be a file name that
+        can be passes through Popen (Popen automatically tries to encode the name)"""
         baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
         baseDir.makedirs()
         dirJoin = baseDir.join
         if unicodeSafe:
             try:
                 self._s.encode('ascii')
+# TODO
+# 1. The method below returns "?" which is not a legal character for a windows filename/path [1]
+#    e.g
+# $  winPython -c 'from bolt import Path; p=Path("C:\hello\World\Møøæ_错误.txt"); print "p:", p; print "t:", p.temp'
+#    p: bolt.Path(u'C:\\hello\\World\\Mooa_??.txt')
+#    t: bolt.Path(u'c:\\users\\jaroslav\\appdata\\local\\temp\\WryeBash_temp\\Mooa_??.txt.tmp')
+# 2. Win7 supports unicode file names (XP can be configured to), so why bother with this?
+# 3. Simple trial (\n is a really bad character to put in a file name).
+#    $ winPython error.py
+#    # -*- coding: utf-8 -*-
+#    from bolt import Path;
+#    with open('error.py') as py:
+#        for i in py.readlines():
+#            print i.strip('\n')
+#        print '------------'
+#    p=Path("C:\hello\World\Møøæå.txt");
+#    print "p:", p; print "t:", p.temp
+#    ------------
+#    p: bolt.Path(u'C:\\hello\\World\\M\xf8\xf8\xe6\xe5.txt')
+#    t: bolt.Path(u'C:\\hello\\World\\M&#248;&#248;&#230;&#229;.txt&#229;\n.moo_unicode_safe.tmp')
+# 4. What happens when this method is called on a "personal" path? Something like: C:\Users\Яrøslæv.
+# 5. The obvious: what if TMP/{base}_unicode_safe.tmp already exists?
+# 6. Can join handle enicode?
+# [1] http://msdn.microsoft.com/en-us/library/aa365247%28VS.85%29.aspx
                 return dirJoin(self.tail+u'.tmp')
-            except UnicodeEncodeError:
+            except UnicodeEncodeError as eee:
+# 7. Supressing exceptions is very risky for a problem that is not well understood
+                deprint("UnicodeEncodeError: ", uee, " input: ", self._s)
                 ret = unicode(self._s.encode('ascii','xmlcharrefreplace'),'ascii')+u'_unicode_safe.tmp'
                 return dirJoin(ret)
         else:
+            # REFACTOR looks like dead code because you can never call Path.temp(True)
+            # grep -r *py -e '\.temp([\ a-zA-Z_]\+' returns only the line above
             return dirJoin(self.tail+u'.tmp')
-
-    @staticmethod
-    def tempDir(prefix=None):
-        return GPath(tempfile.mkdtemp(prefix=prefix))
-
-    @staticmethod
-    def baseTempDir():
-        return GPath(tempfile.gettempdir())
 
     @property
     def backup(self):
-        "Backup file path."
+        """ @rtype: Path
+        @return: this path with .bak at the end"""
         return self+u'.bak'
 
     #--size, atime, ctime
@@ -1205,22 +1366,31 @@ class Path(object):
     def ctime(self):
         return os.path.getctime(self._s)
 
-    #--Mtime
     def getmtime(self,maxMTime=False):
-        """Returns mtime for path. But if mtime is outside of epoch, then resets
-        mtime to an in-epoch date and uses that."""
+        """
+        @param: maxMTime if true, and path is a folder, looks for the oldest mtime in that folder
+        @return: mtime for path. But if mtime is outside of epoch, then resets mtime to an in-epoch date and uses that."""
         if self.isdir() and maxMTime:
-            #fastest implementation I could make
             c = []
             cExtend = c.extend
             join = os.path.join
             getM = os.path.getmtime
             try:
-                [cExtend([getM(join(root,dir)) for dir in dirs] + [getM(join(root,file)) for file in files]) for root,dirs,files in os.walk(self._s)]
-            except: #slower but won't fail (fatally) on funky unicode files when Bash in ANSI Mode.
-                [cExtend([GPath(join(root,dir)).mtime for dir in dirs] + [GPath(join(root,file)).mtime for file in files]) for root,dirs,files in os.walk(self._s)]
+                #for rdf in os.walk(self._s):
+                #    root, dirs, files = rdf
+                #    for d in dirs: c.append(int(getM(join(root,d))))
+                #    for f in files: c.append(int(getM(join(root,f))))
+                # the above loop marginally slower, but in the long run, it counts.
+                [cExtend([getM(join(root,dir )) for dir  in dirs ] + 
+                         [getM(join(root,file)) for file in files]) 
+                for root,dirs,files in os.walk(self._s)]
+            except:
+                # slower but won't fail (fatally) on funky unicode files when Bash in ANSI Mode.
+                [cExtend([GPath(join(root,dir)).mtime  for dir  in dirs ] +
+                         [GPath(join(root,file)).mtime for file in files])
+                for root,dirs,files in os.walk(self._s)]
             try:
-                return max(c)
+                return int(max(c))
             except ValueError:
                 return 0
         try:
@@ -1244,11 +1414,12 @@ class Path(object):
         except WindowsError, werr:
             if werr.winerror != 123: raise
             deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
+
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
     @property
     def stat(self):
-        """File stats"""
+        """ os.stat(self) """
         return os.stat(self._s)
 
     @property
@@ -1259,7 +1430,7 @@ class Path(object):
             info = win32api.GetFileVersionInfo(self._s,u'\\')
             ms = info['FileVersionMS']
             ls = info['FileVersionLS']
-            version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
+            version = (win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), win32api.LOWORD(ls))
         except:
             version = (0,0,0,0)
         return version
@@ -1307,8 +1478,6 @@ class Path(object):
 
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
-    def __add__(self,other):
-        return GPath(self._s + Path.getNorm(other))
     def join(*args):
         norms = [Path.getNorm(x) for x in args]
         return GPath(os.path.join(*norms))
@@ -1327,25 +1496,29 @@ class Path(object):
                 yield (GPath(root),[GPath(x) for x in dirs],[GPath(x) for x in files])
 
     def split(self):
-        """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
-           would return ['C:','Program Files','Bethesda Softworks']"""
+        """@rtype: ['C:', 'games', 'skyrim', ...]
+        @return: Splits the path and returns directories and file as separate elements.
+        e.g. C:\Program Files\Bethesda Softworks S{->}
+        ['C:','Program Files','Bethesda Softworks']"""
         dirs = []
-        drive, path = os.path.splitdrive(self.s)
+        drive, path = os.path.splitdrive(self)
         path = path.strip(os.path.sep)
         l,r = os.path.split(path)
-        while l != u'':
+        while l not in ('','/'):
             dirs.append(r)
             l,r = os.path.split(l)
         dirs.append(r)
-        if drive != u'':
+        if drive != '':
             dirs.append(drive)
         dirs.reverse()
         return dirs
+
     def relpath(self,path):
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
     #--File system info
     #--THESE REALLY OUGHT TO BE PROPERTIES.
+    # because stale information is good? will they be re-read each time the property is accessed?
     def exists(self):
         return os.path.exists(self._s)
     def isdir(self):
@@ -1385,6 +1558,8 @@ class Path(object):
                         try: chmod(rootJoin(file),flags)
                         except: pass
 
+    def openWriteWindows1252(self):
+        return codecs.open(self._s,'w',encoding=self._cp1252)
     def open(self,*args,**kwdargs):
         if self._shead and not os.path.exists(self._shead):
             os.makedirs(self._shead)
@@ -1392,6 +1567,29 @@ class Path(object):
             return codecs.open(self._s,*args,**kwdargs)
         else:
             return open(self._s,*args,**kwdargs)
+    def readLines(self):
+        """ Reads text of a file. Behavior is undefined for folders.
+        @return: (strings [line, ...], string used codepage)"""
+        import locale
+        lines = None
+        codepage = None
+        unknownFileEncoding = None
+        result = None
+        selflines = None
+        try: 
+            with open(self.s, 'rb') as fp:
+                blob = fp.read()
+                result = _chardetectPath(blob, self)
+        except IOError as ioe:
+                raise
+
+        with codecs.open(self.s, 'r', encoding=result['encoding']) as fp:
+            try:
+                selflines = fp.readlines()  
+            except UnicodeError as ue:
+                raise
+        return (selflines, result['encoding'])
+
     def makedirs(self):
         if not self.exists(): os.makedirs(self._s)
     def remove(self):
@@ -1487,8 +1685,8 @@ class Path(object):
                 if doBackup:
                     self.backup.remove()
                     shutil.move(self._s, self.backup._s)
-                else:
-                    os.remove(self._s)
+                else: os.remove(self._s)
+            else: self.dirname.mkdirhier()
             shutil.move(self.temp._s, self._s)
     def editable(self):
         """Safely check whether a file is editable."""
@@ -1505,15 +1703,6 @@ class Path(object):
                     os.remove(self._s)
                 except:
                     pass
-
-    #--Hash/Compare
-    def __hash__(self):
-        return hash(self._cs)
-    def __cmp__(self, other):
-        if isinstance(other,Path):
-            return cmp(self._cs, other._cs)
-        else:
-            return cmp(self._cs, Path.getCase(other))
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
