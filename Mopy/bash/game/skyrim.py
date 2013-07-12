@@ -15652,6 +15652,8 @@ allBethFiles = set((
     u'Strings\\Update_English.STRINGS',
     # Section 4: Video Clips
     u'Video\\BGS_Logo.bik',
+    # Section 5: SKSE INI File
+    u'SKSE\\skse.ini',
     ))
 
 #--BAIN: Directories that are OK to install to
