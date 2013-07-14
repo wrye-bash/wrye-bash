@@ -19840,8 +19840,31 @@ class MreAddn(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# AVIF ------------------------------------------------------------------------
+class MreAvif(MelRecord):
+    """ActorValue Information record."""
+    classType = 'AVIF'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelString('DESC','description'),
+        MelString('ANAM','description'),
+        MelBase('CNAM','cnam_p'),
+		MelStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult','skillImproveOffset',),
+        MelGroups('perkTree',
+            MelFid('PNAM', 'perk',),
+            MelBase('FNAM','fnam_p'),
+            MelStruct('XNAM','I','perkGridX'),
+            MelStruct('YNAM','I','perkGridY'),
+            MelStruct('HNAM','f','horizontalPosition'),
+            MelStruct('VNAM','f','verticalPosition'),
+            MelFid('SNAM','associatedSkill',),
+            MelStructs('CNAM','I','connectionLinetoIndex',),
+            MelStruct('INAM','I','index',),
+        ),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Taken from Wrye Flash for FNV, Needs update for Skyrim
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # CAMS ------------------------------------------------------------------------
@@ -19944,8 +19967,24 @@ class MreIpds(MelRecord):
     
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# ECZN ------------------------------------------------------------------------
+class MreEczn(MelRecord):
+    """Encounter Zone record."""
+    classType = 'ECZN'
+
+    EcznTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'neverResets'),
+            (1, 'matchPCBelowMinimumLevel'),
+            (2, 'disableCombatBoundary'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','2I2bBb',(FID,'owner',None),(FID,'location',None),'rank','minimumLevel',
+                  (EcznTypeFlags,'flags',0L),('maxLevel',null1)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # LCTN ------------------------------------------------------------------------
@@ -20241,8 +20280,27 @@ class MreGras(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # INGR ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# KEYM ------------------------------------------------------------------------
+class MreKeym(MelRecord):
+    """KEYM Key records."""
+    classType = 'KEYM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelString('FULL','full'),
+        MelAltModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelFid('SCRI','script'),
+        MelFid('YNAM','soundPickUp'),
+        MelFid('ZNAM','soundDrop'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelStruct('DATA','if','value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Commented out for performance reasons. Slows down loading quite a bit.
 # If Bash ever wants to be able to add masters to a mod, this minimal definition is required
@@ -20973,11 +21031,11 @@ class MreFlor(MelRecord):
 # Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
-        MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClas, MreClfm,
+        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreClas, MreClfm,
         MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDoor, MreEfsh, MreEnch, 
-        MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, MreFsts, 
+        MreEqup, MreEczn, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, MreFsts, 
         MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdlm, MreIpct, MreIpds, 
-        MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
+        MreKeym, MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
         MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, 
         MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
    )
@@ -20997,11 +21055,11 @@ def init():
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
-        MreArmo, MreArto, MreAspc, MreAstp, MreBook, MreBptd, MreClas, MreClfm,
+        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreClas, MreClfm,
         MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDoor, MreEfsh, MreEnch, 
-        MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, MreFsts, 
+        MreEqup, MreEczn, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, MreFsts, 
         MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdlm, MreIpct, MreIpds, 
-        MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
+        MreKeym, MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
         MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, 
         MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
         MreHeader,
