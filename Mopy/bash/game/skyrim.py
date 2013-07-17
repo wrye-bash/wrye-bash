@@ -19847,7 +19847,7 @@ class MreAvif(MelRecord):
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelString('DESC','description'),
-        MelString('ANAM','description'),
+        MelString('ANAM','abbreviation'),
         MelBase('CNAM','cnam_p'),
         MelStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult','skillImproveOffset',),
         MelGroups('perkTree',
@@ -19864,7 +19864,7 @@ class MreAvif(MelRecord):
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Taken from Wrye Flash for FNV, Needs update for Skyrim
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # CAMS ------------------------------------------------------------------------
@@ -19894,8 +19894,27 @@ class MreVtyp(MelRecord):
     
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# MATT ------------------------------------------------------------------------
+class MreMatt(MelRecord):
+    """Material Type Record."""
+    classType = 'MATT'
+
+    MattTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'stairMaterial'),
+            (1, 'arrowsStick'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM', 'materialParent',),
+        MelString('MNAM','materialName'),
+        MelStruct('CNAM','3f','red','green','blue',),
+        MelStruct('BNAM','f','buoyancy',),
+        MelStruct('FNAM','I',(MattTypeFlags,'flags',0L),),
+        MelFid('HNAM', 'havokImpactDataSet',),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreIpct(MelRecord):
     """Impact record."""
@@ -19989,8 +20008,33 @@ class MreEczn(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # LCTN ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# MESG ------------------------------------------------------------------------
+class MreMesg(MelRecord):
+    """Message Record."""
+    classType = 'MESG'
+
+    MesgTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'messageBox'),
+            (1, 'autoDisplay'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('DESC','description'),
+        MelString('FULL','full'),
+        # 'INAM' leftover
+        MelFid('INAM','iconUnused'),
+        MelFid('QNAM','materialParent'),
+        MelStruct('DNAM','I',(MesgTypeFlags,'flags',0L),),
+        # Don't Show
+        MelStruct('TNAM','I','displayTime',),
+        MelGroups('menuButtons',
+        	MelLString('ITXT','buttonText'),
+        	MelConditions(),
+        	),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # DOBJ ------------------------------------------------------------------------
@@ -21110,10 +21154,10 @@ mergeClasses = (
         MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, 
         MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, 
         MreIdlm, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLgtm, 
-        MreLscr, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreMstt, 
-        MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, MreSpel, MreSpgd, 
-        MreStat, MreTact, MreTree, MreTxst, MreVtyp,
-   )
+        MreLscr, MreLvli, MreLvln, MreLvsp, MreMatt, MreMesg, MreMgef, MreMisc,
+        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun,
+        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+  )
 
 #--Extra read/write classes
 readClasses = ()
@@ -21135,9 +21179,9 @@ def init():
         MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, 
         MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, 
         MreIdlm, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLgtm, 
-        MreLscr, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreMstt, 
-        MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, MreSpel, MreSpgd, 
-        MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreLscr, MreLvli, MreLvln, MreLvsp, MreMatt, MreMesg, MreMgef, MreMisc,
+        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun,
+        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
         MreHeader,
         ))
 
