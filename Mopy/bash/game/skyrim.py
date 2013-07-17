@@ -20149,11 +20149,35 @@ class MreFsts(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # DLVW ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# WOOP ------------------------------------------------------------------------
+class MreWoop(MelRecord):
+    """Word of Power"""
+    classType = 'WOOP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        # TNAM is a Null terminated string with no length Byte
+        MelString('TNAM','translation'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# SHOU ------------------------------------------------------------------------
+class MreShou(MelRecord):
+    """Shout Records"""
+    classType = 'SHOU'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelFids('MDOB','menuDisplayObject'),
+        MelString('DESC','description'),
+        # Don't sort
+        MelGroups('wordsOfPower',
+        	MelStruct('SNAM','2If',(FID,'word',None),(FID,'spell',None),'recoveryTime',),
+        	),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreEqup(MelRecord):
     """Equp Item"""
@@ -20228,8 +20252,29 @@ class MreArto(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# MATO ------------------------------------------------------------------------
+class MreMato(MelRecord):
+    """Material Object Records"""
+    classType = 'MATO'
+
+    MatoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'singlePass'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelAltModel(),
+        MelGroups('wordsOfPower',
+        	MelBase('SNAM','propertyData',),
+        	),
+        MelStruct('DATA','11fI','falloffScale','falloffBias','noiseUVScale',
+                  'materialUVScale','projectionVectorX','projectionVectorY',
+                  'projectionVectorZ','normalDampener',
+                  'singlePassColor','singlePassColor',
+                  'singlePassColor',(MatoTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreMovt(MelRecord):
     """Movt Item"""
@@ -20247,8 +20292,40 @@ class MreMovt(MelRecord):
     
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# SNDR ------------------------------------------------------------------------
+class MreSndr(MelRecord):
+    """Movt Item"""
+    classType = 'SNDR'
+
+    # $00 , 'None',
+    # $08 , 'Loop',
+    # $10 , 'Envelope Fast',
+    # $20 , 'Envelope Slow'
+    SndrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'none'),
+            (1, 'loop'),
+            (2, 'envelopeFast'),
+            (3, 'envelopeSlow'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBase('CNAM','cnam_p'),
+        MelFid('GNAM','category',),
+        MelFid('SNAM','alternateSoundFor',),
+        MelGroups('soundFiles',
+        	MelString('ANAM','fileName',),
+        	),
+        MelFid('ONAM','outputModel',),
+        MelString('FNAM','string'),
+        MelConditions(),
+        MelStruct('LNAM','4B','unknown1',(SndrTypeFlags,'looping',0L),'unknown2',
+                  'rumbleSendValue',),
+        MelStruct('BNAM','4BH','pctFrequencyShift','pctFrequencyVariance','priority',
+                  'dbVariance','staticAttenuation',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # DUAL ------------------------------------------------------------------------
@@ -20444,6 +20521,7 @@ class MreLscr(MelRecord):
         MelStructs('RNAM','3h','rotGridY','rotGridX''rotGridZ',),
         MelStructs('ONAM','2h','rotOffsetMin','rotOffsetMax',),
         MelStructs('XNAM','3h','transGridY','transGridX''transGridZ',),
+        # TNAM is a Null terminated string with no length Byte
         MelString('MOD2','cameraPath'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -21154,9 +21232,10 @@ mergeClasses = (
         MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, 
         MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, 
         MreIdlm, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLgtm, 
-        MreLscr, MreLvli, MreLvln, MreLvsp, MreMatt, MreMesg, MreMgef, MreMisc,
-        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun,
-        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreLscr, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt, MreMesg, MreMgef,
+        MreMisc, MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm,
+        MreSndr, MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst,
+        MreVtyp, MreWoop,
   )
 
 #--Extra read/write classes
@@ -21179,9 +21258,10 @@ def init():
         MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, 
         MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, 
         MreIdlm, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLgtm, 
-        MreLscr, MreLvli, MreLvln, MreLvsp, MreMatt, MreMesg, MreMgef, MreMisc,
-        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun,
-        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreLscr, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt, MreMesg, MreMgef,
+        MreMisc, MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm,
+        MreSndr, MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst,
+        MreVtyp, MreWoop,
         MreHeader,
         ))
 
