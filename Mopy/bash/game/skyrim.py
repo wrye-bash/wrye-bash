@@ -20316,6 +20316,7 @@ class MreSndr(MelRecord):
         	MelString('ANAM','fileName',),
         	),
         MelFid('ONAM','outputModel',),
+        # FNAM is a Null terminated string with no length Byte
         MelString('FNAM','string'),
         MelConditions(),
         MelStruct('LNAM','4B','unknown1',(SndrTypeFlags,'looping',0L),'unknown2',
