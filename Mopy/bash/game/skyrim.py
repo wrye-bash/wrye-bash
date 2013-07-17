@@ -19849,7 +19849,7 @@ class MreAvif(MelRecord):
         MelString('DESC','description'),
         MelString('ANAM','description'),
         MelBase('CNAM','cnam_p'),
-		MelStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult','skillImproveOffset',),
+        MelStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult','skillImproveOffset',),
         MelGroups('perkTree',
             MelFid('PNAM', 'perk',),
             MelBase('FNAM','fnam_p'),
@@ -20271,14 +20271,72 @@ class MreGras(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# IDLE ------------------------------------------------------------------------
+class MreIdle(MelRecord):
+    """Idle record."""
+    classType = 'IDLE'
+
+    IdleTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'parent'),
+            (1, 'sequence'),
+            (2, 'noAttacking'),
+            (3, 'blocking'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelConditions(),
+        MelString('DNAM','filename'),
+        MelString('ENAM','animationEvent'),
+        # Needs Syntax check.  This is an array of 'ANAM' with two FormIDs
+        # 'Parent' and 'Previous ID'
+        MelGroups('idleAnimations',
+            MelStruct('ANAM','II',(FID,'parent'),(FID,'prevId'),),
+            ),
+        MelStruct('DATA','4BH','loopMin','loopMax',(IdleTypeFlags,'flags',0L),
+                  'animationGroupSection','replayDelay',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Syntax check but otherwise, Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # INFO ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# INGR ------------------------------------------------------------------------
+class MreIngr(MelRecord):
+    """INGR (ingredient) record."""
+    classType = 'INGR'
+
+    IngrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'No auto-calculation'),
+            (1, 'Food item'),
+            (2, 'Unknown 3'),
+            (3, 'Unknown 4'),
+            (4, 'Unknown 5'),
+            (5, 'Unknown 6'),
+            (6, 'Unknown 7'),
+            (7, 'Unknown 8'),
+            (8, 'References Persist'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelString('FULL','full'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelAltModel(),
+        MelIcons(),
+        MelFid('ETYP','equipmentType',),
+        MelFid('YNAM','soundPickUp'),
+        MelFid('ZNAM','soundDrop'),
+        MelStruct('DATA','if','value','weight'),
+        MelStruct('ENIT','iI','ingrValue',(IngrTypeFlags,'flags',0L),),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreKeym(MelRecord):
     """KEYM Key records."""
@@ -20329,8 +20387,24 @@ class MreKeym(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # LIGH ------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# LSCR ------------------------------------------------------------------------
+class MreLscr(MelRecord):
+    """Load screen."""
+    classType = 'LSCR'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelIcons(),
+        MelString('DESC','text'),
+        MelConditions(),
+        MelFid('NNAM','loadingScreenNIF'),
+        MelStruct('SNAM','f','initialScale',),
+        MelStructs('RNAM','3h','rotGridY','rotGridX''rotGridZ',),
+        MelStructs('ONAM','2h','rotOffsetMin','rotOffsetMax',),
+        MelStructs('XNAM','3h','transGridY','transGridX''transGridZ',),
+        MelString('MOD2','cameraPath'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # LTEX ------------------------------------------------------------------------
@@ -21031,13 +21105,14 @@ class MreFlor(MelRecord):
 # Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
-        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreClas, MreClfm,
-        MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDoor, MreEfsh, MreEnch, 
-        MreEqup, MreEczn, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, MreFsts, 
-        MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdlm, MreIpct, MreIpds, 
-        MreKeym, MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
-        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, 
-        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreClas, 
+        MreClfm, MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDoor, MreEczn, 
+        MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, 
+        MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, 
+        MreIdlm, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLgtm, 
+        MreLscr, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreMstt, 
+        MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, MreSpel, MreSpgd, 
+        MreStat, MreTact, MreTree, MreTxst, MreVtyp,
    )
 
 #--Extra read/write classes
@@ -21055,13 +21130,14 @@ def init():
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
-        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreClas, MreClfm,
-        MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDoor, MreEfsh, MreEnch, 
-        MreEqup, MreEczn, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, MreFsts, 
-        MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdlm, MreIpct, MreIpds, 
-        MreKeym, MreKywd, MreLcrt, MreLgtm, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, 
-        MreMovt, MreMstt, MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, 
-        MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreClas, 
+        MreClfm, MreClmt, MreCobj, MreCont, MreCsty, MreDebr, MreDoor, MreEczn, 
+        MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, 
+        MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, 
+        MreIdlm, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLgtm, 
+        MreLscr, MreLvli, MreLvln, MreLvsp, MreMgef, MreMisc, MreMovt, MreMstt, 
+        MreMusc, MreOtft, MreProj, MreRfct, MreSlgm, MreSoun, MreSpel, MreSpgd, 
+        MreStat, MreTact, MreTree, MreTxst, MreVtyp,
         MreHeader,
         ))
 
