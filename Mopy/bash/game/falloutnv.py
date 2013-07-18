@@ -41,15 +41,15 @@ null3 = null1*3
 null4 = null1*4
 
 #--Name of the game
-name = u'Skyrim'
-altName = u'Wrye Smash'
+name = u'FalloutNV'
+altName = u'Wrye Bash'
 
 #--exe to look for to see if this is the right game
-exe = u'TESV.exe'
+exe = u'FalloutNV.exe'
 
 #--Registry keys to read to find the install location
 regInstallKeys = [
-    (u'Bethesda Softworks\\Skyrim',u'Installed Path'),
+    (u'Bethesda Softworks\\FalloutNV',u'Installed Path'),
     ]
 
 #--patch information
@@ -57,9 +57,9 @@ patchURL = u'' # Update via steam
 patchTip = u'Update via Steam'
 
 #--URL to the Nexus site for this game
-nexusUrl = u'http://skyrim.nexusmods.com/'
-nexusName = u'Skyrim Nexus'
-nexusKey = 'bash.installers.openSkyrimNexus'
+nexusUrl = u'http://newvegas.nexusmods.com/'
+nexusName = u'FalloutNV Nexus'
+nexusKey = 'bash.installers.openFalloutNVNexus'
 
 #--Creation Kit Set information
 class cs:
@@ -137,7 +137,7 @@ dontSkipDirs = {
 #Folders BAIN should never check
 SkipBAINRefresh = set ((
     #Use lowercase names
-    u'tes5edit backups',
+    u'fnvedit backups',
 ))
 
 #--Some stuff dealing with INI files

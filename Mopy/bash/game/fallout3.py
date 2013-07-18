@@ -137,7 +137,7 @@ dontSkipDirs = {
 #Folders BAIN should never check
 SkipBAINRefresh = set ((
     #Use lowercase names
-    u'fo3edit Backups',
+    u'fo3edit backups',
 ))
 
 #--Some stuff dealing with INI files
