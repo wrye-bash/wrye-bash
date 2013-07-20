@@ -1430,13 +1430,6 @@ class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
 
-	# REFACTOR add INILineListCtrl as a parent?
-    from bosh import IniFile 
-    NOT_IN_INI    = IniFile.Line.NOT_IN_INI     # -10
-    VALUE_NONE    = IniFile.Line.VALUE_NONE     # 0  
-    VALUE_DIFFERS = IniFile.Line.VALUE_DIFFERS  # 10 
-    VALUE_SAME    = IniFile.Line.VALUE_SAME     # 20 
-
     def __init__(self,parent):
         #--Columns
         self.colsKey = 'bash.ini.cols'
@@ -1470,10 +1463,10 @@ class INIList(List):
         invalid = 0
         for tweak in self.data.keys():
             status = self.data[tweak].status
-            if   status == self.NOT_IN_INI:      invalid += 1
-            elif status == self.VALUE_NONE:  not_applied += 1
-            elif status == self.VALUE_DIFFERS:  mismatch += 1
-            elif status == self.VALUE_SAME:      applied += 1
+            if status == -10: invalid += 1
+            elif status == 0: not_applied += 1
+            elif status == 10: mismatch += 1
+            elif status == 20: applied += 1
         return (applied,mismatch,not_applied,invalid)
 
     def ListTweaks(self):
@@ -1508,10 +1501,6 @@ class INIList(List):
         bashFrame.SetStatusCount()
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
-        NOT_IN_INI    = self.NOT_IN_INI    # -10
-        VALUE_NONE    = self.VALUE_NONE    # 0 
-        VALUE_DIFFERS = self.VALUE_DIFFERS # 10
-        VALUE_SAME    = self.VALUE_SAME    # 20
         #--String name of item?
         if not isinstance(itemDex,int):
             itemDex = self.items.index(itemDex)
@@ -1533,22 +1522,21 @@ class INIList(List):
         checkMark = 0
         icon = 0    # Ok tweak, not applied
         mousetext = u''
-
-        if status == VALUE_SAME:
+        if status == 20:
             # Valid tweak, applied
             checkMark = 1
             mousetext = _(u'Tweak is currently applied.')
-        elif status == 15: # TODO define in IniFile.Line
+        elif status == 15:
             # Valid tweak, some settings applied, others are
             # overwritten by values in another tweak from same installer
             checkMark = 3
             mousetext = _(u'Some settings are applied.  Some are overwritten by another tweak from the same installer.')
-        elif status == VALUE_DIFFERS:
+        elif status == 10:
             # Ok tweak, some parts are applied, others not
             icon = 10
             checkMark = 3
             mousetext = _(u'Some settings are changed.')
-        elif status == NOT_IN_INI:
+        elif status == -10:
             # Bad tweak
             if not settings['bash.ini.allowNewLines']: icon = 20
             else: icon = 0
@@ -1594,7 +1582,7 @@ class INIList(List):
         (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
         if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
         tweak = bosh.iniInfos[self.items[hitItem]]
-        if tweak.status == self.VALUE_SAME: return # already applied
+        if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.GetParent().GetParent().GetParent()
         choice = iniPanel.GetChoice().tail
@@ -1629,14 +1617,7 @@ class INIList(List):
         settings.setChanged('bash.ini.colWidths')
 
 #------------------------------------------------------------------------------
-class INILineListCtrl(wx.ListCtrl):
-    from bosh import IniFile 
-    NOT_IN_INI    = IniFile.Line.NOT_IN_INI     # -10
-    VALUE_NONE    = IniFile.Line.VALUE_NONE     # 0  
-    VALUE_DIFFERS = IniFile.Line.VALUE_DIFFERS  # 10 
-    VALUE_SAME    = IniFile.Line.VALUE_SAME     # 20 
-
-class INITweakLineCtrl(INILineListCtrl):
+class INITweakLineCtrl(wx.ListCtrl):
     def __init__(self, parent, iniContents, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
         wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
@@ -1670,10 +1651,10 @@ class INITweakLineCtrl(INILineListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            status = line[4] # REFACTOR iniline Use a struct with named attributes to represent ini lines 
-            if   status == self.NOT_IN_INI:    color = colors['tweak.bkgd.invalid']
-            elif status == self.VALUE_DIFFERS: color = colors['tweak.bkgd.mismatched']
-            elif status == self.VALUE_SAME:    color = colors['tweak.bkgd.matched']
+            status = line[4]
+            if status == -10: color = colors['tweak.bkgd.invalid']
+            elif status == 10: color = colors['tweak.bkgd.mismatched']
+            elif status == 20: color = colors['tweak.bkgd.matched']
             elif line[6]: color = colors['tweak.bkgd.mismatched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
@@ -1694,7 +1675,7 @@ class INITweakLineCtrl(INILineListCtrl):
         self.SetColumnWidth(0,wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class INILineCtrl(INILineListCtrl):
+class INILineCtrl(wx.ListCtrl):
     def __init__(self, parent, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
         wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
@@ -1720,18 +1701,16 @@ class INILineCtrl(INILineListCtrl):
             self.EnsureVisible(0)
         ini = None
         try:
-            lines, iniCodepage = bosh.iniInfos.ini.path.readLines()
-            if lines is None:
-                deprint( "failed to read ini file: %s" % bosh.iniInfos.ini.path.s )
-                return
-            for i,line in enumerate(lines):
-                if i >= num:
-                    self.InsertStringItem(i, line.rstrip())
-                else:
-                    self.SetStringItem(i, 0, line.rstrip())
-            for i in xrange(len(lines), num):
-                self.DeleteItem(len(lines))
-        except IOError: # REFACTOR why is GUI code catching IO exceptions?
+            with bosh.iniInfos.ini.path.open('r') as ini:
+                lines = ini.readlines()
+                for i,line in enumerate(lines):
+                    if i >= num:
+                        self.InsertStringItem(i, line.rstrip())
+                    else:
+                        self.SetStringItem(i, 0, line.rstrip())
+                for i in xrange(len(lines), num):
+                    self.DeleteItem(len(lines))
+        except IOError:
             warn = True
             if hasattr(bashFrame,'notebook'):
                 page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())
@@ -2582,9 +2561,7 @@ class INIPanel(SashPanel):
             iniList.RefreshUI()
 
     def SetBaseIni(self,path=None):
-        """I like carrots because they are healthy"""
-		# REFACTOR Set what? What to show in the ini tab? Or where to tweaks should apply? What target? Target file for edits? Then why is this in the GUI class?
-		# BTW, why set anything at all? 
+        """Sets the target INI file."""
         refresh = True
         choicePath = self.GetChoice()
         isGameIni = False
@@ -2598,7 +2575,7 @@ class INIPanel(SashPanel):
         if not isGameIni:
             if not path:
                 path = choicePath
-            ini = bosh.bestIniFile(path)
+            ini = bosh.BestIniFile(path)
             refresh = bosh.iniInfos.ini != ini
             bosh.iniInfos.setBaseIni(ini)
             self.button.Enable(True)
@@ -11935,7 +11912,7 @@ class INI_CreateNew(Link):
         # Now edit it with the values from the target INI
         iniList.data.refresh()
         oldTarget = iniList.data.ini
-        target = bosh.bestIniFile(path)
+        target = bosh.BestIniFile(path)
         settings,deleted = target.getSettings()
         new_settings,deleted = oldTarget.getSettings()
         deleted = {}
