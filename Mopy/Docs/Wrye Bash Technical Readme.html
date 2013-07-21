@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link rel="shortcut icon" href="../bash/images/bash_32.ico"/>
+<title>Wrye Bash Technical Readme</title>
+<style>
+	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
+	h1, h2 { background: #9ACD32; margin-left: -8px; margin-right: -8px; padding:0.6em; }
+	h1 { margin-top:-8px; padding-left:1.5em;margin-bottom:0;}
+	h2 { margin-top:5em; padding-left:2em;}
+	h3 { font-size:1.1em; margin-top:3em;}
+	a:link { text-decoration:none; }
+	a:hover { text-decoration:underline; }
+	li ul, li ol {margin-top:0.4em;}
+	li {margin-bottom:10px;}
+	ol ol {list-style:lower-alpha;}
+ ol ol li {margin-bottom:0.2em;}
+	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
+	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
+	thead {font-weight:bold; background:#8af;}
+	img {border:0;}
+	a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);}
+	q {font-style:italic;}
+	code {display:inline-block; padding:2px 5px; background:#DDD;}
+	code.box {line-height:20px; white-space:pre; margin:1em 0 0 3em; display:table; padding:5px 10px;}
+	blockquote {background:#E6E6FA; display:table; padding:5px 30px 5px 10px;}
+	figure {margin:0;}
+	figcaption {font-style:italic; margin-bottom:2em;}
+ .missing {background:red; color:white; border:0.25em solid black;}
+	abbr {cursor:help;}
+	
+	.indent {margin-left:2em;}
+	td > code.box {margin:0;}
+</style>
+
+<h1>Wrye Bash Technical Readme</h1>
+
+<h2 style="margin-top:0;">Contents</h2>
+<ol>
+	<li><a href="#intro">Introduction</a>
+	<li><a href="#wizards">BAIN Wizards</a>
+	<ol>
+		<li><a href="#wizards-overview">Overview</a>
+		<li><a href="#wizards-dialog">Dialogues</a>
+		<li><a href="#wizards-language">Language Structure</a>
+		<li><a href="#wizards-functions">Functions</a>
+		<li><a href="#wizards-keywords">Keywords</a>
+		<li><a href="#wizards-operators">Operators</a>
+		<li><a href="#wizards-constants">Standard Constants</a>
+		<li><a href="#wizards-escape">Escape Sequences</a>
+		<li><a href="#wizards-examples">Examples</a>
+		<li><a href="#wizards-obmm">Wizards vs. OBMM Scripts</a>
+	</ol>
+	<li><a href="#rulesets">Mod Checker Rulesets</a>
+	<ol>
+		<li><a href="#rulesets-overview">Overview</a>
+		<li><a href="#rulesets-syntax">Syntax</a>
+		<li><a href="#rulesets-example">Example</a>
+	</ol>
+	<li><a href="#pm">PM Archive Format</a>
+	<ol>
+		<li><a href="#pm-overiew">Overview</a>
+		<li><a href="#pm-convert">How To Convert Exported PMs</a>
+	</ol>
+</ol>
+
+
+<h2 id="intro">Introduction</h2>
+<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion and TES V: Skyrim. Its features include:
+<ul>
+	<li>A mod installation and conflict manager
+	<li>A plugin load order manager
+	<li>Increased mod compatibility
+	<li>Lifting of the 255 plugin limit through automatic merging of compatible mods
+	<li>.ini and settings files tweak management
+	<li>Screenshot management
+	<li>Many, many more features
+</ul>
+<p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
+<p>This readme covers the most technical aspects of Wrye Bash, being the Wizard scripting language, the syntax used in Mod Checker rulesets and the formatting of PMs archives expected by the PM Archive tab. Information on the most commonly used aspects of Wrye Bash may be found in the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, and the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a> holds information on more advanced and less commonly used features. Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.
+
+<h2 id="darn">DarNified Books Wtxt Formatting</h2>
+<p>The DarNified Books setting in the Bashed Patch's tweaks allows the use of Wtxt formatting, which is applied if the first line of a book is <code>== title ==</code>
+<ul>
+	<li><code>&lt;&lt;</code>, <code>^^</code> or <code>&gt;&gt;</code> at the beginning of a line generate a <code>div align=left</code>, <code>div align=center</code> or <code>div align=right</code> tag respectively.
+	<li><code>== text ==</code> generates a level 2 header.
+	<li><code>=== text</code> generates a level 3 header.
+	<li><code>__text__</code>, <code>~~text~~</code> and <code>**text**</code> generate emphasised text.
+</ul>
+	
+<h2 id="wizards">BAIN Wizards</h2>
+<h3 id="wizards-overview">Overview</h3>
+<p>Bain Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and esps/esms will be selected, and any INI tweaks that will be applied. 
+<p>Those using Notepad++ to write their install scripts may want to use utumno's <a href="http://oblivion.nexusmods.com/mods/32654">BAIN wizard Script Highlighter for Notepad plus plus</a> as it features code folding and syntax highlighting to make spotting mistakes easier.
+<p>There is a similar <a href="http://oblivion.nexusmods.com/mods/34240">BAIN Wizard Syntax for EmEditor</a> syntax highlighter for EmEditor created by broken85.
+
+<h3 id="wizards-dialog">Dialogues</h3>
+<p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.
+
+<p><dfn>SelectOne</dfn> - This <a href="../bash/images/readme/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#SelectOne1">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+
+<p><dfn>SelectMany</dfn> - This <a href="../bash/images/readme/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#SelectMany1">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+
+<p><dfn>Cancel</dfn> - This <a href="../bash/images/readme/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#Cancel1">Cancel</a> keyword.  If a reason is given, it will be displayed.
+
+<p><dfn>Error</dfn> - This <a href="../bash/images/readme/error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
+
+<p><dfn>Finish</dfn> - This <a href="../bash/images/readme/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#Return">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
+
+<p><dfn>Version Warning</dfn> - This <a href="../bash/images/readme/versions.png">dialog</a> is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements.
+
+
+<h3 id="wizards-language">Language Structure</h3>
+<p>Each line of a Wizard contains one statement. To carry a statement across multiple lines, end each line of the statement with a backslash <code>\</code>. This will cause BAIN to read the next line as if it were part of the first.
+<p>Wizard syntax is case-sensitive, apart from filenames. Make sure when writing Wizards that you use the correct case.
+<p>Variable names may contain any alphanumeric characters (a-z, A-Z, 0-9) and underscores (_), but cannot start with a number. You cannot declare a variable with the same name as a keyword, function or constant. Variables can be assigned values using an assignment operator, and can hold the following data types:
+<ul>
+	<li>Integers: whole numbers that can be either positive, negative or zero. You can perform mathematical operations on integers using the mathematical operators.
+	<li>Decimals: real numbers that contain a decimal point, eg. <code>0.123</code>, <code>-3.5</code>, <code>7.0</code>. You can perform mathematical operations on decimals using the mathematical operators.
+	<li>Strings: any string of characters, eg. <code>"Hello"</code>, <code>'World!'</code>. As in the examples, strings must be enclosed within double or single quotes. Special characters may be included in strings by using an escape sequence. Strings can be added and multiplied using the addition and multiplication operators. One string may be checked for within another using the in operator.
+</ul>
+<p>Constants are variables that are pre-defined by BAIN and cannot have their values changed. You cannot create new constants.
+<p>Comments are extra text ignored by the Wizard engine, to explain what the Wizard code does to other readers. Comments begin with a semicolon <code>;</code> and last until the end of the line.
+<p>Expressions are evaluated using the standard order of operations, eg. <code>3 + 6 * 2</code> will evaluate to <code>15</code>.
+<h4>Common Mistakes</h4>
+<ul>
+	<li>Incorrect case. For example, make sure you're using <code>SelectSubPackage</code> and not <code>SeleCtsUbpacKage</code>.
+	<li>Mismatched quotes. Make sure that if you start a string with a double quote, you end it with a double quote, and similarly strings that start with a single quote should end with a single quote.
+	<li>Missing or extra backslashes at the end of a line. This causes an error or not all options to display.
+	<li>Extra spaces or tabs at the end of a line can cause issues with options showing up, eg. <code class="box">"","",""\                  </code>
+	<li>Referencing images that don't exist. Make sure any images you try to display in the Wizard actually exist.
+</ul>
+
+
+<h3 id="wizards-functions">Functions</h3>
+<p><dfn id="CompareObVersion">CompareObVersion</dfn> - Used to test the installed version of Oblivion against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareGameVersion">CompareGameVersion</a> instead.
+<p><dfn id="wizardsCompareGameVersion">CompareGameVersion</dfn> - Used to test the installed version of the game Wrye Bash is running for against the version you specify.
+<code class="box">CompareGameVersion(version_string)</code>
+<ul>
+	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"1.2.0.416"</code>.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>-1</code> - Installed version is less than the version specified in <var>version_string</var>.
+	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
+	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
+</ul>
+<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - Used to test the installed version of OBSE against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareSEVersion">CompareSEVersion</a> instead.
+<p><dfn id="wizardsCompareSEVersion">CompareSEVersion</dfn> - Used to test the installed version of the Script Extender of the game that Wrye Bash is running for against the one you specify.
+<code class="box">CompareSEVersion(version_string)</code>
+<ul>
+	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"0.0.20.1"</code>.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>-1</code> - Installed version is less than the version specified in <var>version_string</var>.
+	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
+	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>, or there is no Script Extender available for the game.
+</ul>
+<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - Used to test the installed version of OBGE against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareGEVersion">CompareGEVersion</a> instead.
+<p><dfn id="wizardsCompareGEVersion">CompareGEVersion</dfn> - Used to test the installed version of the Graphics Extender of the game that Wrye Bash is running for against the one you specify.
+<code class="box">CompareGEVersion(version_string)</code>
+<ul>
+	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"0.0.20.1"</code>.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>-1</code> - Installed version is less than the version specified in <var>version_string</var>.
+	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
+	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>, or there is no Graphics Extender available for the game.
+</ul>
+<p><dfn>CompareWBVersion</dfn> - Used to test the installed version of Wrye Bash against the one you specify.
+<code class="box">CompareWBVersion(version_string)</code>
+<ul>
+	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"0.0.20.1"</code>.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>-1</code> - Installed version is less than the version specified in <var>version_string</var>.
+	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
+	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
+</ul>
+<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existance of a file in the Data directory. If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file. 
+<code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
+<ul>
+	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example using "test.esp" would test for "<var>[path to game]</var>\Data\test.esp"
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>True</code> - All of the files exist.
+	<li><code>False</code> - One or more of the files do not exist.
+</ul>
+<p><dfn id="wizardsGetEspmStatus">GetEspmStatus</dfn> - Tests the current status of an ESP or ESM in the Data directory.  This function takes esp/m ghosting into account when testing the status.
+<code class="box">GetEspmStatus(file_name)</code>
+<ul>
+	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory for the esp or esm to test.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>-1</code> - The esp/m does not exist.
+	<li><code>0</code> - The esp/m is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_off.png" alt="Inactive"/>.
+	<li><code>1</code> - The esp/m is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_imp.png" alt="Imported"/>.
+	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_on.png" alt="Active"/>.
+	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_inc.png" alt="Merged"/>.
+</ul>
+<p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually. 
+<code class="box">EditINI(file_name, section, setting, value [,comment])</code>
+<ul>
+	<li><var>file_name</var> - The name of the ini file you wish to edit, relative to the Data directory.
+	<li><var>section</var> - The section in the ini where <var>setting</var> resides, or 'set' or 'setGS' (see examples below).
+	<li><var>setting</var> - The setting you wish to change.
+	<li><var>value</var> - The value to set the setting to.
+	<li><var>comment</var> - Optional comment to include with this tweak.
+</ul>
+<p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is usefull for creating dynamically generated menus. 
+<code class="box">Exec(lines)</code>
+<ul>
+	<li><var>lines</var> - A string containing lines to execute, seperated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. Eg. <code>\'</code> should be written <code>\\\'</code>.
+</ul>
+<p><dfn>str</dfn> - Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string. 
+<code class="box">str(value)</code>
+<ul>
+	<li><var>value</var> - Any value. An integer, decimal, variable, constant or string.
+</ul>
+<p class="indent">Returns:
+<ul class="indent">
+	<li>String representation of <var>value</var>. For example, <code>str(5)</code> would return <code>"5"</code>.
+</ul>
+<p><dfn>int</dfn> - Used to convert a value to an integer, for example converting a value held in a string to a integer value. 
+<code class="box">int(value)</code>
+<ul>
+	<li><var>value</var> - Any value. An integer, decimal, variable, constant or string.
+</ul>
+<p class="indent">Returns:
+<ul class="indent">
+	<li>Integer value of <var>value</var>, if possible. For example <code>int('65')</code> would return <code>65</code>.
+	<li><code>0</code> - If integer conversion is not possible.
+</ul>
+<p><dfn>float</dfn> - Used to convert a value to decimal, for example converting a value held in a string to a decimal value.
+<code class="box">float(value)</code>
+<ul>
+	<li><var>value</var> - Any value. An integer, decimal, variable, constant or string.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li>Decimal value of <var>value</var>, if possible. For example <code>int('2.4')</code> would return <code>2.4</code>.
+	<li><code>0.0</code> - If decimal conversion is not possible.
+</ul>
+<p><dfn>len</dfn> - Used to find the length of a string.
+<code class="box">len(string)</code>
+<ul>
+	<li><var>string</var> - A string, variable, or constant.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li>Length of the string if possible.
+	<li><code>0</code> - If length calculation was not possible.
+</ul>
+<p><dfn id="wizardsendswith">endswith</dfn> - Test what a string ends with. 
+<code class="box">endswith(string, ending_1 [, ..., ending_n])</code>
+<ul>
+	<li><var>string</var> - A string, variable or constant.
+	<li><var>ending_1</var> through <var>ending_n</var> - A string, variable or constant.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>True</code> - If the string ends in any of the endings specified.
+	<li><code>False</code> - If the string does not end in any of the endings specified.
+</ul>
+<p><dfn id="wizardsstartswith">startswith</dfn> - Test what a string starts with. 
+<code class="box">startswith(string, prefix_1 [, ..., prefix_n])</code>
+<ul>
+	<li><var>string</var> - A string, variable or constant.
+	<li><var>prefix_1</var> through <var>prefix_n</var> - A string, variable or constant.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><code>True</code> - If the string begin with any of the prefixes specified.
+	<li><code>False</code> - If the string does not begin with any of the prefixes specified.
+</ul>
+<p><dfn id="wizardslower">lower</dfn> - Convert a string to lower case. 
+<code class="box">lower(string)</code>
+<ul>
+	<li><var>string</var> - A string or variable.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li><var>string</var> converted to lowercase if possible.
+	<li>The original <var>string</var> if an error occurred.
+</ul>
+<p><dfn id="wizardsfind">find</dfn> - Return index of first occurrance of a substring.
+<code class="box">find(string, substring [, start, stop])</code>
+<ul>
+	<li><var>string</var> - A string or variable to search in.
+	<li><var>substring</var> - A string or variable to search for.
+	<li><var>start</var> - Index at which to start searching in <var>string</var>. If not specified, searching will start at the beggining of <var>string</var>.
+	<li><var>stop</var> - Index at which to stop searching. Optional. If not specified, searching will stop at the end of <var>string</var>.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li>The index of the first occurance of <var>substring</var> in <var>string</var>.
+	<li><code>-1</code> - If <var>substring</var> could not be found.
+</ul>
+<p><dfn id="wizardsrfind">rfind</dfn> - Return index of last occurrance of a substring.
+<code class="box">rfind(string, substring [, start, stop])</code>
+<ul>
+	<li><var>string</var> - A string or variable to search in.
+	<li><var>substring</var> - A string or variable to search for.
+	<li><var>start</var> - Index at which to start searching in <var>string</var>. If not specified, searching will start at the beggining of <var>string</var>.
+	<li><var>stop</var> - Index at which to stop searching. Optional. If not specified, searching will stop at the end of <var>string</var>.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li>The index of the last occurance of <var>substring</var> in <var>string</var>.
+	<li><code>-1</code> - If <var>substring</var> could not be found.
+</ul>
+<p><dfn id="wizardsGetFilename">GetFilename</dfn> - For a string that contains a path, returns the filename part of the string. 
+<code class="box">GetFilename(path_string)</code>
+<ul>
+	<li><var>path_string</var> - A string or variable of the path to work with.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li>The filename in <var>path_string</var>.
+	<li>An empty string, if <var>path_string</var> is not a path.
+</ul>
+<p><dfn id="wizardsGetFolder">GetFolder</dfn> - For a string that contains a path, returns the folder part of the string. 
+<code class="box">GetFolder(path_string)</code>
+<ul>
+	<li><var>path_string</var> - A string or variable of the path to work with.
+</ul>
+<p class="indent">Return values:
+<ul class="indent">
+	<li>The folder in <var>path_string</var>.
+	<li>An empty string if <var>path_string</var> does not contain a folder, or is not a path.
+</ul>
+
+<h3 id="wizards-keywords">Keywords</h3>
+<p>Keywords are like functions, but don't require brackets around their arguments, and are used for controlling the flow of a wizard or performing special tasks.
+<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window. 
+<code class="box">SelectSubPackage name</code>
+<ul>
+	<li><var>name</var> - A string or variable holding the name of the sub-package to select.
+</ul>
+<p><dfn>DeSelectSubPackage</dfn> - Cause the specified sub-package to be de-selected from installation. This is equivilant to un-checking the sub-package in the BAIN window. 
+<code class="box">DeSelectSubPackage name</code>
+<ul>
+	<li><code>name</code> - A string or variable holding the name of the sub-package to de-select.
+</ul>
+<p><dfn>SelectEspm</dfn> - Cause the specified esp or esm to be selected for installation. This is equivilant to checking the esp or esm from the BAIN window. 
+<code class="box">SelectEspm name</code>
+<ul>
+	<li><var>name</var> - A string or variable holding the name of the esp or esm to select.
+</ul>
+<p><dfn>DeSelectEspm</dfn> - Cause the specified esp or esm to be deselected from installation. This is equivilant to un-checking the esp or esm from the BAIN window. 
+<code class="box">DeSelectEspm name</code>
+<ul>
+	<li><var>name</var> - A string or variable holding the name of the esp or esm to de-select.
+</ul>
+<p><dfn>SelectAll</dfn> - Cause all sub-packages, esps, and esms to be selected for installation. This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window. 
+<code class="box">SelectAll</code>
+<p><dfn>DeSelectAll</dfn> - Cause all sub-packages, esps, and esms to be de-selected from installation. This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window. 
+<code class="box">DeSelectAll</code>
+<p><dfn>SelectAllEspms</dfn> - Cause all esps and esms to be selected for installation. This is equivilant to checking all esps and esms in the BAIN window.
+<code class="box">SelectAllEspms</code>
+<p><dfn>DeSelectAllEspms</dfn> - Cause all esps and esms to be de-selected from installation. This is equivilant to un-checking all esps and esms in the BAIN window. 
+<code class="box">DeSelectAllEspms</code>
+<p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - Change the installed name of an esp or esm. 
+<code class="box">RenameEspm original_name, new_name</code>
+<ul>
+	<li><var>original_name</var> - The name of the esp or esm, as it appears in the BAIN package.
+	<li><var>new_name</var> - The new name you want to have the esp or esm installed as.
+</ul>
+<p><dfn>ResetEspmName</dfn> - Resets the name of an esp or esm back to its default name. 
+<code class="box">ResetEspmName original_name</code>
+<ul>
+	<li><var>original_name</var> - The name of the esp or esm, as it appears in the BAIN package.
+</ul>
+<p><dfn>ResetAllEspmNames</dfn> - Resets the names of all the esps and esms back to their default names. 
+<code class="box">ResetAllEspmNames</code>
+<p><dfn>Note</dfn> - Add a note to the user to be displayed at the end of the wizard, on the finish page. The <code>'- '</code> will be added automatically. 
+<code class="box">Note text</code>
+<ul>
+	<li><var>text</var> - A string, string variable, or expression that evalutates to a string, to be displayed on the finish page.
+</ul>
+<p><dfn>Return</dfn> - Signals completion of the wizard. This will jump right to the finish page. 
+<code class="box">Return</code>
+<p><dfn>Cancel</dfn> - Cancels the wizard, with an optional text to display in a dialog as to why the wizard was canceled. 
+<code class="box">Cancel [text]</code>
+<ul>
+	<li><var>text</var> - Optional. Text to display in a dialog as to why the wizard was canceled. 
+</ul>
+<p><dfn id="wizardsRequireVersions">RequireVersions</dfn> - Tests the users system agains version requirements you specify. If the requirements are not met, a warning dialog will be shown asking if you wish to continue anyway. 
+<code class="box">RequireVersions game_version [, se_version, ge_version, wrye_bash_version]</code>
+<ul>
+	<li><var>game_version</var> - Version of the game to test for. See <a href="#wizardsCompareGameVersion">CompareGameVersion</a> for the proper format of the string.
+	<li><var>se_version</var> - Optional. Version of the Script Extender to test for. See <a href="#wizardsCompareSEVersion">CompareSEVersion</a> for the proper format of the string.
+	<li><var>ge_version</var> - Optional. Version of the Graphics Extender to test for. See <a href="#wizardsCompareGEVersion">CompareGEVersion</a> for the proper format of the string.
+	<li><var>wrye_bash_version</var> - Optional. Version of Wrye Bash to test for. See <a href="#wizardsCompareWBVersion">CompareWBVersion</a> for more info.
+</ul>
+<p><dfn>If-Elif-Else-EndIf</dfn> - A basic If control block.
+<code class="box">If statement
+   lines
+Elif statement
+   lines
+Elif statement
+   lines
+Else
+   lines
+EndIf</code>
+<ul>
+	<li><code>If</code> - Begins the control block.
+	<ul>
+		<li><var>statement</var> - If <var>statement</var> evaluates to <code>True</code>, then the lines following it will be run, until the next Elif, Else, or EndIf.
+	</ul>
+	<li><code>Elif</code>
+	<ul>
+		<li><var>statement</var> - If <var>statement</var> evaluates to <code>True</code>, and the initial <code>If</code> and none of the previous <code>Elif</code>s were <code>True</code>, then the lines following this <code>Elif</code> will be run, until the next <code>Elif</code>, <code>Else</code>, or <code>EndIf</code>.
+	</ul>
+	<li><code>Else</code> - If the initail <code>If</code> and none of the previous <code>Elif</code>s were <code>True</code>, then the lines following will be run until an <code>EndIf</code> is met.
+	<li><code>EndIf</code> - Signals the end of the <code>If</code> control block.
+</ul>
+<p><dfn>While-Continue-Break-EndWhile</dfn> - A while loop.
+<code class="box">While statement
+    lines
+    Continue
+    lines
+    Break
+    lines
+EndWhile</code>
+<ul>
+	<li><code>While</code> - Begins the while loop.
+	<ul>
+		<li><var>statement</var> - If <var>statement</var> evaluates to <code>True</code>, execution of the lines begins, otherwise execution skips to after the <code>EndWhile</code>.
+	</ul>
+	<li><code>Continue</code> - Signals the while loop to begin over again at the <code>While</code> statement.
+	<li><code>Break</code> - Signals the while loop to end execution, skipping to after the <code>EndWhile</code>.
+	<li><code>EndWhile</code> - Ends the while loop. <var>statement</var> is re-evaluated, and if <code>True</code>, execution begins again at the start of the <code>While</code> block.
+</ul>
+<p><dfn id="wizardsForContinueBreakEndFor">For-Continue-Break-EndFor</dfn> - A For loop.
+<code class="box">For <var>var</var> to <var>start_value</var> to <var>end_value</var> [by <var>increment_value</var>]
+    lines
+    Continue
+    lines
+    Break
+    lines
+EndFor
+
+For sub in SubPackages
+    For file in sub
+        lines
+    EndFor
+EndFor</code>
+<ul>
+	<li><code>For</code> - Begins the for loop. There are three types of for loop.
+	<ul>
+		<li><code><var>var</var> from <var>start_value</var> to <var>end_value</var> [by <var>increment_value</var>]</code>
+		<ul>
+			<li><var>var</var> - A variable that will hold values.
+			<li><var>start_value</var> - Initial value of <var>var</var>.
+			<li><var>end_value</var> - value of <var>var</var> that will end the for loop.
+			<li><var>increment_value</var> - Optional. This the value that will be added to <var>var</var> at the end of each run of the loop. Defaults to <code>1</code> if <var>start_value</var> is greater than <var>end_value</var> or <code>-1</code> otherwise.
+		</ul>
+		<li><code><var>sub</var> in SubPackages</code> - This type of for loop iterates over the names of the SubPackages in the current package.
+		<ul>
+			<li><var>sub</var> - A variable that holds the names of the SubPackages.
+		</ul>
+		<li><code><var>file</var> in <var>sub</var></code> - This type of for loop iterates over the names of the files in the given subpackage. Filenames are relative to the Data directory, before any remapping that would normally be done by BAIN.
+		<ul>
+			<li><var>file</var> - A variable that holds the filenames.
+			<li><var>sub</var> - The name of the subpackage to iterate through.
+		</ul>
+	</ul>
+	<li><code>Continue</code> - Signals the for loop to begin over again at the <code>For</code> statement.
+	<li><code>Break</code> - Signals the for loop to end execution, skipping to after the <code>EndFor</code>.
+	<li><code>EndFor</code> - Ends the for loop.
+</ul>
+<p><dfn id="wizardsSelectOne">SelectOne</dfn> - Shows a dialog where the user can select one option from a list of options. 
+<code class="box">SelectOne 'description', \
+        'option 1', 'description 1', 'image 1', \
+        'option 2', 'description 2', 'image 2', \
+        ...,  \
+        'option n', 'description n', 'image n'
+Case 'option 1'
+    lines
+    Break
+Case 'option 2'
+    lines
+    Break
+ 
+Case 'option n'
+    lines
+    Break
+Default
+    lines
+    Break
+EndSelect</code>
+<ul>
+	<li><code>SelectOne</code> - After the user presses the "Next" button, this begins a Select control block. 
+	<ul>
+		<li><var>description</var> - The text that will be displayed at the top of the dialog. 
+		<li><var>option n</var> - The text of the specific option. If the text begins with a "|", this is considered the default option and will be selected by default.
+		<li><var>description n</var> - The description to display when <var>option n</var> is selected.
+		<li><var>image n</var> - The image to display when <var>option n</var> is selected. An empty string will make no image display.
+	</ul>
+	<li><code>Case <var>option</var></code> - The lines following the <code>Case</code> will be run if the user selected its corresponding option on the dialog, until a <code>Break</code> or <code>EndSelect</code> is met.
+	<ul>
+		<li><var>option</var> - The option that the <code>Case</code> corresponds to.
+	</ul>
+	<li><code>Default</code> - The lines following the <code>Default</code> will be run, until a <code>Break</code> or <code>EndSelect</code>, if none of the <code>Case</code>  options have been run.
+	<li><code>Break</code> - Stops running lines in the current <code>Case</code> or <code>Default</code> block.
+	<li><code>EndSelect</code> - Signals the end of the Select control block.
+</ul>
+<p><dfn id="wizardsSelectMany">SelectMany</dfn> - Shows a dialog where the user can select multiple options from a list. After the user presses the "Next" button, this begins a Select control block. See SelectOne for usage. 
+<code class="box">SelectMany 'description', \
+        'option 1', 'description 1', 'image 1', \
+        'option 2', 'description 2', 'image 2', \
+        ...,  \
+        'option n', 'description n', 'image n'
+Case 'option 1'
+    lines
+    Break
+Case 'option 2'
+    lines
+    Break
+ 
+Case 'option n'
+    lines
+    Break
+EndSelect</code>
+
+<h3 id="wizards-operators">Operators</h3>
+<h4>Assignment Operators</h4>
+<p>Assignment operators are used to assign values to variables. Compound assignment operators are a combination of assignment operator and mathematical operator, performing the operation and assigning it to a variable in one step.
+<p><dfn>Assignment</dfn>: <code>=</code>
+<code class="box">variable = value</code>
+<p><dfn>Compound Assignment</dfn>: <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>^=</code>
+<code class="box">variable += value
+variable -= value
+variable *= value
+variable /= value
+variable ^= value
+</code>
+<h4>Mathematical Operators</h4>
+<p>Mathematical operators allow you to add, subtract, multiply, divide and exponentiate integers and decimals. The addition and multiplication operators can also be used on strings.
+<p><dfn>Addition</dfn>: <code>+</code>
+<code class="box">var1 + var2</code>
+<p><dfn>Subtraction</dfn>: <code>-</code>
+<code class="box">var1 - var2</code>
+<p><dfn>Multiplication</dfn>: <code>*</code>
+<code class="box">var1 * var2</code>
+<p><dfn>Division</dfn>: <code>/</code>
+<code class="box">var1 / var2</code>
+<p><dfn>Exponentiation</dfn>: <code>^</code>.
+<code class="box">var1 ^ var2</code>
+<h4>Boolean Operators</h4>
+<p>Boolean operators can be used to test the logical truth of values.
+<p><dfn>And</dfn>: <code>&amp;</code>, <code>and</code>. Returns <code>True</code> if both sides of the expression are true and <code>False</code> otherwise.
+<code class="box">var1 & var2</code>
+<code class="box">var1 and var2</code>
+<p><dfn>Or</dfn>: <code>|</code>, <code>or</code>. Returns <code>True</code> if either side of the expression is true and <code>False</code> otherwise.
+<code class="box">var1 | var2</code>
+<code class="box">var1 or var2</code>
+<p><dfn>Not</dfn>: <code>!</code>, <code>not</code>. Returns <code>True</code> if the expression is <code>False</code>, and <code>False</code> if the expression is <code>True</code>.
+<code class="box">!value</code>
+<code class="box">not value</code>
+<p><dfn>In</dfn>: <code>in</code>. Returns <code>True</code> if the left hand side of the expression is contained in the right hand side, and <code>False</code> otherwise.
+<code class="box">var1 in var2</code>
+<h4>Comparison Operators</h4>
+<p>Comparison operators are used to compare two values or variables with one another.
+<p><dfn>Equal</dfn>: <code>==</code>. Returns <code>True</code> if the left hand side of the expression is equal to the right hand side of the expression, and <code>False</code> otherwise.
+<code class="box">var1 == var2</code>
+<p><dfn>Not Equal</dfn>: <code>!=</code>. Returns <code>True</code> if the left hand side of the expression is not equal to the right hand side of the expression, and <code>False</code> otherwise.
+<code class="box">var1 != var2</code>
+<p><dfn>Greater Than or Equal</dfn>: <code>&gt;=</code>. Returns <code>True</code> if the left hand side of the expression is greater than or equal to the right hand side of the expression, and <code>False</code> otherwise.
+<code class="box">var1 &gt;= var2</code>
+<p><dfn>Greater Than</dfn>: <code>&gt;</code>. Returns <code>True</code> if the left hand side of the expression is greater than the right hand side of the expression, and <code>False</code> otherwise.
+<code class="box">var1 &gt; var2</code>
+<p><dfn>Less Than or Equal</dfn>: <code>&lt;=</code>. Returns <code>True</code> if the left hand side of the expression is less than or equal to the right hand side of the expression, and <code>False</code> otherwise.
+<code class="box">var1 &lt;= var2</code>
+<p><dfn>Less Than</dfn>: <code>&lt;</code>. Returns <code>True</code> if the left hand side of the expression is less than the right hand side of the expression, and <code>False</code> otherwise.
+<code class="box">var1 &lt; var2</code>
+<h4 id="wizards-operators-ci">Case Insensitive Operators</h4>
+<p>Some of the operators have case insensitive versions, which function in the same way as their normal versions, but when comparing strings they ignore case. Case insensitive versions of operators end with a colon <code>:</code>. The following case insensitive operators are available:
+<ul>
+	<li><code>==:</code>
+	<li><code>!=:</code>
+	<li><code>&gt;=:</code>
+	<li><code>&gt;:</code>
+	<li><code>&lt;=:</code>
+	<li><code>&lt;:</code>
+	<li><code>in:</code>
+</ul>
+<h4 id="wizards-operators-dot">Dot Operator</h4>
+<p>The dot operator can be used to call a function on a variable without having to specify the variable in the function's arguments. This functionality will be familiar to anyone with experience in Object-Orientated programming. The syntax is:
+<code class="box">variable.function</code>
+<p>The following functions can be used with the dot operator:
+<ul>
+	<li><code>len</code>
+	<li><code>endswith</code>
+	<li><code>startswith</code>
+	<li><code>lower</code>
+	<li><code>find</code>
+	<li><code>rfind</code>
+</ul>
+<h4>Indexing</h4>
+<p>Indexing is used to access a specific location in a sequence. Currently only strings and string variables can be indexed. The syntax used is similar to Python's indexing syntax.
+<code class="box">string[start:stop:step]</code>
+<p>Arguments:
+<ul>
+	<li><var>start</var>: The index to start at. The first item in a sequence has an index of 0. If not specified, indexing will begin at 0.
+	<li><var>stop</var>: The index to stop at. If not specified but a colon <code>:</code> is supplied, indexing will continue to the end of the sequence. If not specified and no colon is supplied, only one character will be indexed.
+	<li><var>step</var>: How much to increment by when indexing. For example, a value of <code>2</code> would return every second item in the sequence. If not specified, a value of <code>1</code> will be used.
+</ul>
+<p>Negative valus for <var>start</var> and <var>stop</var> will be relative to the end of the sequence. For example, <code>-1</code> would mean the first character from the end of the sequence.
+<p>Examples:
+<code class="box">"Hello"[0]   ;returns "H"
+"Hello"[0:]  ;returns "Hello"
+"Hello"[:]   ;returns "Hello"
+"Hello"[0:2] ;returns "He"
+"Hello"[-1]  ;returns "o"
+"Hello"[1:3] ;returns "el"
+"Hello"[-2:] ;returns "lo"
+</code>
+
+<h3 id="wizards-constants">Standard Constants</h3>
+<p>Only two constants are defined in BAIN Wizards.
+<p><dfn>True</dfn> - <code>True</code>. Equal to boolean <code>true</code> (text representation) or <code>1</code> (binary representation).
+<p><dfn>False</dfn> - <code>False</code>. Equal to boolean <code>false</code> (text representation) or <code>0</code> (binary representation).
+
+<h3 id="wizards-escape">Escape Sequences</h3>
+<p>Escape sequences are special sequences of characters you can use to get a different character outputted. The escape sequences allowed are:
+<ul>
+	<li><code>\"</code>: Outputs a double quote character <code>"</code>. This allows you to put quotes in a string without causing the Wizard engine to think it's reached the end of the string.
+	<li><code>\'</code>: Outputs a single quote character <code>'</code>. This allows you to put quotes in a string without causing the Wizard engine to think it's reached the end of the string.
+	<li><code>\t</code>: Outputs a tab.
+	<li><code>\n</code>: Outputs a new line.
+	<li><code>\\</code>: Outputs a backslash <code>\</code>.
+</ul>
+
+<h3 id="wizards-examples">Examples</h3>
+<h4>Wizards In The Wild</h4>
+<p>The following mods have Wizard scripts that may be useful references: <a href="http://oblivion.nexusmods.com/mods/19628">Animated Window Lighting System and Chimneys - AWLS</a>,  <a href="http://oblivion.nexusmods.com/mods/31062">Bain Conversion Files</a>,  <a href="http://oblivion.nexusmods.com/mods/16513">Bananasplit Better Cities</a>,  <a href="http://oblivion.nexusmods.com/mods/36005">Fast and Easy Frans WIZBAIN Archive Maker -ENGLISH ONLY-</a>,  <a href="http://oblivion.nexusmods.com/mods/35856">Metallicow Cursor Mod</a>,  <a href="http://oblivion.nexusmods.com/mods/19370">Unique Landscapes Compilation</a>,  <a href="http://oblivion.nexusmods.com/mods/18305">Weather - All Natural</a>.
+<h4>Create A Package Overview</h4>
+<p>Every Wizard should have a short overview for the user to read before proceeding with the actual installation questions. Notice how in the example below there are no <code>Case</code> statements used and the default character <code>|</code> is before the <code>Start Here_Readme</code>.
+<code class="box">SelectOne "Welcome to the ExampleMod's mod Setup Wizard", \
+    "|Start Here_Readme", "If this is the first time you install this mod it's recommended that you carefully read the rest of the selections readme's to have an idea of what the optional parts of this mod do.", "", \
+    "ExampleMod Overview", "ExampleText bla bla bla \n\nBla Bla Bla \n\n Bla Bla\n Bla", "", \
+    "Changelog", "Example Fixes Release 1.01 \nExample Full Public 1.0 Release \nExample 2nd Beta Release 0.91 \n0.9 - Example Beta Release \n0.3 - Example Alpha Release \n0.01 - Example Initial Release", "", \
+    "Guidelines for a Example install", "", "", \
+    "ExampleMod Screenshots", "", "Screenshots\\ExampleScreenshot.jpg", \
+    "Credits\\Authors", "Wrye - For BAIN. Woooooooot! \nLojack - For the wonderful BAIN wizard installer feature. \nMetallicow - For chewing the cud.", "", \
+    "Language", "Language or Nationality this BAIN wizard was written in. \n\n English (USA)", "Wizard Images\\EnglishUSA.jpg"
+EndSelect
+</code>
+<h4>Yes/No Question</h4>
+<p>Useful for when you want to ask the user a yes/no question. <code>SelectOne</code> and <code>SelectSubPackage</code> in the example below could be replaced by another keyword.
+<code class="box">SelectOne "Example: Yes/No Question?", \
+      "Yes", "Description", "Wizard Images\\Yes.jpg", \
+      "No", "Description", "Wizard Images\\No.jpg"
+    Case "Yes"
+        SelectSubPackage "00 Example Subpackage" ;;;Action/No Action
+        Break
+    Case "No"
+        ;No Plugin ;;Action/No Action
+        Break
+EndSelect
+</code>
+<h4>Check For A Plugin</h4>
+<p>Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.
+<code class="box">If DataFileExists("ExamplePlugin.esp")
+    Note "ExamplePlugin Detected." ;;;Action/No Action
+    SelectEspm "PatchPlugin.esp"   ;;;Action/No Action
+Else ; ExamplePlugin.esp wasn't detected
+    ;No Plugin                     ;;;Action/No Action
+EndIf
+</code>
+<h4>Use New BAIN Wizard Features Safely</h4>
+<p>Useful for when you use features available only in recent versions of Wrye Bash but want to retain support for users with older versions.
+<code class="box">If CompareWBVersion('292') >= 0
+    ; User is running 292+
+    ; Do some 292+ only stuff here, like...
+    EditINI('Oblivion.ini', 'Display', 'bAllowScreenShot', 1)
+Else
+    ; User is running &lt; 292, so EditINI is unavailable.
+    Note "Don't forget to enable screenshots in Oblivion.ini"
+EndIf
+</code>
+<h4>Misc. Function Examples</h4>
+<p>These:
+<code class="box">EditINI('TargetINI.ini', 'set', 'ANVars.UseEW', 1)
+EditINI('TargetINI.ini', 'setGS', 'fPCBaseMagickaMult', 1)
+</code>
+<p>Would create Ini Tweaks:
+<code class="box">set ANVars.UseEW to 1
+setGS fPCBaseMagickaMult 1
+</code>
+<p>This:
+<code class="box">GetFilename("C:\Program Files\Bethesda Softworks\Oblivion\Oblivion.exe")</code>
+<p>Would return <code>"Oblivion.exe"</code>. This:
+<code class="box">GetFilename("C:\Program Files\Bethesda Softworks\Oblivion")</code>
+<p>Would return an empty string.
+<p>This:
+<code class="box">GetFolder("Data\mine.esp")</code>
+<p>Would return <code>"Data"</code>. This:
+<code class="box">GetFolder("mine.esp")</code>
+<p>Would return an empty string.
+
+<h3 id="wizards-obmm">Wizards vs. OBMM Scripts</h3>
+<p>This section compares the functions and keywords available in Wizards against those available in OBMM scripts.
+<h4>Functionality with direct correlation between OBMM scripts and Wizards</h4>
+<table>
+	<thead><tr><th>OBMM Script<th>Wizards
+	<tbody>
+		<tr><td><code class="box">If &lt;function&gt; [...]
+IfNot &lt;function&gt; [...]</code>
+			<td><code class="box">If statement
+If not statement</code>
+		<tr><td><code class="box">Else
+EndIf</code>
+			<td><code class="box">Elif
+Else
+EndIf</code>
+		<tr><td><code class="box">If DialogYesNo &lt;Message&gt; [Title]</code>
+			<td><code class="box">SelectOne message, "Yes", yes_description, yes_image, "No", no_description, no_image
+Case "Yes"
+    statements
+    Break
+Case "NO"
+    statements
+    Break
+EndSelect</code>
+		<tr><td><code class="box">If DataFileExists &lt;FileName&gt;</code>
+			<td><code class="box">If DataFileExists(filename)</code>
+		<tr><td><code class="box">If ScriptExtenderPresent</code>
+			<td><code class="box">If CompareSEVersion("0.0.0.0") == 1</code>
+		<tr><td><code class="box">If ScriptExtenderNewerThan &lt;version&gt;</code>
+			<td><code class="box">If CompareSEVersion(version) == 1</code>
+		<tr><td><code class="box">If GraphicsExtenderPresent</code>
+			<td><code class="box">If CompareGEVersion("0.0.0.0") == 1</code>
+		<tr><td><code class="box">If GraphicsExtenderNewerThan &lt;version&gt;</code>
+			<td><code class="box">If CompareGEVersion(version) == 1</code>
+		<tr><td><code class="box">If OblivionNewerThan &lt;version&gt;</code>
+			<td><code class="box">If CompareGameVersion(version) == 1</code>
+		<tr><td><code class="box">If Equal &lt;arg1&gt; &lt;arg2&gt;
+If GreaterThan &lt;arg1&gt; &lt;arg2&gt;
+If GreaterEqual &lt;arg1&gt; &lt;arg2&gt;
+If fGreaterThan &lt;arg1&gt; &lt;arg2&gt;
+If fGreaterEqual &lt;arg1&gt; &lt;arg2&gt;</code>
+			<td><code class="box">If statement == statement
+If statement > statement
+If statement >= statement
+If statement > statement
+If statement >= statement</code>
+		<tr><td><code class="box">Select &lt;Title&gt; &lt;Option1&gt; [Option2] [...]
+SelectWithPreview &lt;Title&gt; &lt;Option1&gt; &lt;ImagePath1&gt; [Option2] [ImagePath2] [...]
+SelectWithDescriptions &lt;Title&gt; &lt;Option1&gt; &lt;Description1&gt; [Option2] [Description2] [...]
+SelectWithDescriptionsAndPreviews &lt;Title&gt; &lt;Option1&gt; &lt;ImagePath1&gt; &lt;Description1&gt; [Option2] [ImagePath2] [Description2] [...]</code>
+			<td><code class="box">SelectOne title, option1, description1, image1, option2, description2, image2 [...]</code>
+		<tr><td><code class="box">SelectMany &lt;Title&gt; &lt;Option1&gt; [Option2] [...]
+SelectManyWithPreview &lt;Title&gt; &lt;Option1&gt; &lt;ImagePath1&gt; [Option2] [ImagePath2] [...]
+SelectManyWithDescriptions &lt;Title&gt; &lt;Option1&gt; &lt;Description1&gt; [Option2] [Description2] [...]
+SelectManyWithDescriptionsAndPreviews &lt;Title&gt; &lt;Option1&gt; &lt;ImagePath1&gt; &lt;Description1&gt; [Option2] [ImagePath2] [Description2] [...]</code>
+			<td><code class="box">SelectMany title, option1, description1, image1 [...]</code>
+		<tr><td><code class="box">Case &lt;option&gt;
+    Default
+    Break
+EndSelect</code>
+			<td><code class="box">Case option
+    Default
+    Break
+EndSelect</code>
+		<tr><td><code class="box">For Count &lt;Variable&gt; &lt;Start&gt; &lt;End&gt; [Step]
+    Continue
+    Exit
+EndFor</code>
+			<td><code class="box">For variable from start to end by step
+    Continue
+    Break
+EndFor</code>
+		<tr><td><code class="box">Return</code>
+			<td><code class="box">Return</code>
+		<tr><td><code class="box">DontInstallPlugin &lt;Plugin&gt;
+InstallPlugin &lt;Plugin&gt;</code>
+			<td><code class="box">DeSelectEspm plugin
+SelectEspm plugin</code>
+		<tr><td><code class="box">CopyPlugin &lt;CopyFrom&gt; &lt;CopyTo&gt;</code>
+			<td><code class="box">RenameEspm original_name new_name</code>
+		<tr><td><code class="box">EditINI &lt;section&gt; &lt;key&gt; &lt;value&gt;</code>
+			<td><code class="box">EditINI("Oblivion.ini", section, setting, value)</code>
+		<tr><td><code class="box">FatalError</code>
+			<td><code class="box">Cancel [message]</code>
+		<tr><td><code class="box">SetVar &lt;Variable&gt; &lt;Value&gt;</code>
+			<td><code class="box">variable = value</code>
+		<tr><td><code class="box">StringLength &lt;Variable&gt; &lt;String&gt;</code>
+			<td><code class="box">variable = len(string)
+variable = string.len()</code>
+		<tr><td><code class="box">iSet &lt;Variable&gt; &lt;expression&gt;
+fSet &lt;Variable&gt; &lt;expression&gt;</code>
+			<td><code class="box">variable = expression</code>
+		<tr><td><code class="box">ExecLines &lt;lines&gt;</code>
+			<td><code class="box">Exec(lines)</code>
+		<tr><td><code class="box">SubString &lt;Variable&gt; &lt;String&gt; &lt;startfrom&gt; [length]</code>
+			<td><code class="box">find(variable, string, start, stop)
+variable.find(string, start, stop)</code>
+</table>
+<h4>Functions in OBMM with equivalent methods in Wizards</h4>
+<table>
+	<thead><tr><th>OBMM Script<th>Wizards
+	<tbody>
+		<tr><td><code class="box">If VersionGreaterThan &lt;version&gt;
+If VersionLessThan &lt;version&gt;</code>
+			<td>Use <code>CompareWBVersion</code> to check the Wrye Bash version.
+		<tr><td><code class="box">Message &lt;Message&gt; [Title]
+DisplayImage &lt;Image File Path&gt; [Title]
+DisplayText &lt;Text File Path&gt; [Title]</code>
+			<td>Similar functionality can be reproduced using <code>Note</code> and <code>SelectOne</code> or <code>SelectMany</code> keywords.
+		<tr><td><code class="box">ConflictWith &lt;ModName&gt; [Comment] [Level]
+DependsOn &lt;ModName&gt; [Comment] [Level]</code>
+			<td>Similar functionality can be reproduced using <code>If DataFileExists(modname)</code>.
+		<tr><td><code class="box">DontInstallDataFile &lt;FileName&gt;
+InstallDataFile &lt;FileName&gt;
+DontInstallDataFolder &lt;FolderName&gt; [RecurseSubfolders]
+InstallDataFolder &lt;FolderName&gt; [RecurseSubfolders]
+CopyDataFile &lt;CopyFrom&gt; &lt;CopyTo&gt;
+CopyDataFolder &lt;CopyFrom&gt; &lt;CopyTo&gt; [RecurseSubfolders]</code>
+			<td>Similar functionality can be obtained by packaging the mod differently, and then using <code>SelectSubPackage</code> and <code>DeSelectSubPackage</code>.
+			<tr><td><code class="box">For Each DataFolder &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchString]
+For Each DataFile &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchString]
+For Each PluginFolder &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchString]
+For Each Plugin &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchString]</code>
+			<td>Use:
+			<code class="box">For subpackage in SubPackages</code>
+			<p>and/or:
+			<code class="box">For file in subpackage</code>
+			<p>to iterate over files and folders in an installer. Then use:
+			<code class="box">file.lower().endswith(".esp")
+GetFilename(file)
+GetFolder(file)</code>
+			<p>and other string manipulation functions to test file names and folders. 
+</table>
+<h4>Functions in OBMM without equivalent methods in Wizards</h4>
+<code class="box">SelectVar &lt;Variable&gt;
+SelectString &lt;Variable&gt;
+Goto &lt;label&gt;
+Label &lt;label&gt;
+LoadBefore &lt;Plugin1&gt; &lt;Plugin2&gt;
+LoadAfter &lt;Plugin1&gt; &lt;Plugin2&gt;
+UncheckESP &lt;plugin&gt;
+SetDeactivationWarning &lt;plugin&gt; &lt;warning&gt;
+ConflictsWith &lt;ModName&gt; &lt;MinMajorVersion&gt; &lt;MinMinorVersion&gt;&lt;MaxMajorVersion&gt; &lt;MaxMinorVersion&gt; [Comment] [Level]
+ConflictsWithRegex &lt;ModName&gt; [Comment] [Level]
+ConflictsWithRegex &lt;ModName&gt; &lt;MinMajorVersion&gt; &lt;MinMinorVersion&gt;&lt;MaxMajorVersion&gt; &lt;MaxMinorVersion&gt; [Comment] [Level]
+DependsOn &lt;ModName&gt; &lt;MinMajorVersion&gt; &lt;MinMinorVersion&gt;&lt;MaxMajorVersion&gt; &lt;MaxMinorVersion&gt; [Comment] [Level]
+DependsOnRegex &lt;ModName&gt; [Comment] [Level]
+DependsOnRegex &lt;ModName&gt; &lt;MinMajorVersion&gt; &lt;MinMinorVersion&gt;&lt;MaxMajorVersion&gt; &lt;MaxMinorVersion&gt; [Comment] [Level]
+RegisterBSA &lt;FileName&gt;
+UnregisterBSA &lt;FileName&gt;
+EditShader &lt;ShaderPackage&gt; &lt;ShaderName&gt; &lt;BinaryObjectPath&gt;
+SetGMST &lt;file&gt; &lt;Editor ID&gt; &lt;new value&gt;
+SetGlobal &lt;file&gt; &lt;Editor ID&gt; &lt;new value&gt;
+SetPluginByte &lt;file&gt; &lt;offset&gt; &lt;new value&gt;
+SetPluginByte &lt;file&gt; &lt;offset&gt; &lt;new value&gt;
+SetPluginShort &lt;file&gt; &lt;offset&gt; &lt;new value&gt;
+SetPluginLong &lt;file&gt; &lt;offset&gt; &lt;new value&gt;
+SetPluginFloat &lt;file&gt; &lt;offset&gt; &lt;new value&gt;
+GetFolderName &lt;Variable&gt; &lt;path&gt;
+GetFileName &lt;Variable&gt; &lt;path&gt;
+GetFileNameWithoutExtension &lt;Variable&gt; &lt;path&gt;
+CombinePaths &lt;Variable&gt; &lt;path1&gt; &lt;path2&gt;
+RemoveString &lt;Variable&gt; &lt;String&gt; &lt;startfrom&gt; [length]
+InputString &lt;Variable&gt; [Title] [Initial]
+ReadINI &lt;Variable&gt; &lt;section&gt; &lt;value&gt;
+ReadRenderInfo &lt;Variable&gt; &lt;value&gt;
+EditXMLLine &lt;file&gt; &lt;line number&gt; &lt;new line&gt;
+EditXMLReplace &lt;file&gt; &lt;text to find&gt; &lt;text to replace&gt;
+</code>
+<h4>Functions in Wizards without equivalent methods in OBMM</h4>
+<code class="box">CompareWBVersion(version)
+GetEspmStatus(plugin)
+str(value)
+int(value)
+float(value)
+SelectAll
+DeSelectAll
+SelectAllEspms
+DeSelectAllEspms
+While expression
+    Continue
+    Break
+EndWhile
+RequireVersions oblivion, obse, obge, wrye_bash
+</code>
+<h4>Functions in OBMM that are meaningless in Wrye Bash</h4>
+<table>
+	<thead><tr><th>OBMM Script<th>Wizards
+	<tbody>
+		<tr><td><code class="box">PatchDataFile &lt;NewFile&gt; &lt;FileToPatch&gt; [Create]
+PatchPlugin &lt;NewFile&gt; &lt;FileToPatch&gt; [Create]</code>
+			<td>Unnecessary due to BAIN's conflict resolution abilities.
+		<tr><td><code class="box">AllowRunOnLines</code><td>Wizards support run-on lines as standard.
+</table>
+
+<h2 id="rulesets">Mod Checker Rulesets</h2>
+<h3 id="rulesets-overview">Overview</h3>
+<p>Rulesets allow the expansion of Wrye Bash's Mod Checker to analyse active load orders based on additional rules. There can be any number of ruleset files, which must be plain text files located in <code><var>[Game]</var>\Data\Bash Patches</code>, with filenames ending in <code>Rules.txt</code>, for Wrye Bash to recognise them.
+<p>Rulesets are processed in alphabetical order of their filenames. A ruleset's output is given in the following order:
+<ol>
+	<li>A header containing the ruleset name, and any supplied header text.
+	<li>Warnings for any rules violated.
+	<li>ModSet reports, in the order that they are defined in the ruleset. These consist of:
+	<ol>
+		<li>A configuration recap.
+		<li>Any suggestions made.
+		<li>Any include, exclude or merge only warnings generated.
+	</ol>
+</ol>
+
+<h3 id="rulesets-syntax">Syntax</h3>
+<h4>Comments</h4>
+<p>Any text beginning with <code>##</code> will be ignored when the ruleset is processed, so can be used for making silent comments.
+<code class="box ruleset">xxx ## [comment]</code>
+<h4>Header</h4>
+<p>The header command can be used to define what text is displayed in the header of the ruleset's output.
+<code class="box ruleset">&gt;&gt; HEADER [text]
+
+## A bulleted list:
+* [text]
+* [text]
+* [text]
+</code>
+<h4>NOTES</h4>
+<p>The <code>NOTES</code> command lets you output notes to the Mod Checker report. The possible formatting options are given in the formatting sub-section below. Notes can be multiline.
+<h4>ONLYONE</h4>
+<p>The <code>ONLYONE</code> command is a simple rule that states that only one of the rules following it may be active at any one time.
+<code class="box ruleset">&gt;&gt; ONLYONE
+Cobl Races.esp
+Cobl Races - Balanced.esp
+</code>
+<h4>IF</h4>
+<p>The <code>IF</code> command is used to specify that the <code>NOTES</code>, <code>CONFIG</code>, <code>SUGGEST</code> and <code>WARN</code> commands following it are conditional on the existence of the plugin(s) specified as part of the <code>IF</code> command. The effect of an <code>IF</code> command lasts until the next <code>IF</code> command or the end of the file, whichever comes first.
+<p>If the <code>IF</code> command lists more than one plugin, then the condition statement is a logical AND combination of all listed plugins. You can also specify logical OR and NOT combinations.
+<ul>
+	<li><code>|</code>: This is the symbol for an OR combination of the previous plugin and the following plugin.
+	<li><code>-</code>: This is the symbol for a NOT combination of the following plugin.
+</ul>
+<p>To specify that none of a set of plugins may exist, use a NOT for the first plugin of the set, then OR combine the it with the rest.
+<code class="box ruleset">&gt;&gt; IF Alpha.esp
+Beta.esp
+| Gamma.esp
+| Delta.esp
+- Epsilon.esp
+- Zeta.esp
+| Eta.esp
+Theta.esp
+</code>
+<p>The above equates to Alpha AND (Beta or Gamma or Delta) AND NOT(Epsilon) AND NOT(Zeta or Eta) AND Theta.</p>
+<h4>CONFIG</h4>
+<p>The <code>CONFIG</code> command lets you specify check the status of a plugin or plugins and output its/their status (active/inactive/merged) and a comment. It is intended as a way of reminding the user what plugins they have active.
+<code class="box ruleset">&gt;&gt; CONFIG
+o Plugin1.esp  //[comment]
+o Plugin2.esp  //[comment]
+</code>
+<p>The <code>o</code> symbol denotes an <q>Option</q> rule type.
+<h4>SUGGEST</h4>
+<p>The <code>SUGGEST</code> command is intended as a way of providing non-critical suggestions. Its syntax is similar to that of the <code>CONFIG</code> command, but it has different rule types available for usage. The rule types are:
+<ul>
+	<li><code>x</code>: <q>Inclusion</q> rule type. The specified plugin must be active. If the plugin is not active, the Mod Checker will output a message.
+	<li><code>-</code>: <q>Exclusion</q> rule type. The specified plugin must <b>not</b> be active. If the plugin is active, the Mod Checker will output a message.
+	<li><code>+</code>: <q>Merge Only</q> rule type. The specified plugin must be merged but <b>not</b> active. If the plugin is active or inactive and not merged, the Mod Checker will output a message.
+	<li><code>e</code>: <q>Existence</q> rule type. The specified file must exist. The file can be any file type, with the file path being given relative to the Data folder. If the file does not exist, the Mod Checker will output a message.
+</ul>
+<code class="box ruleset">&gt;&gt; SUGGEST
+x Plugin1.esp  //[comment]
+- Plugin2.esp  //[comment]
++ Plugin3.esp  //[comment]
+e Plugin4.esp  //[comment]
+</code>
+<h4>WARN</h4>
+<p>The <code>WARN</code> command is intended as a way of providing critical suggestions. It shares the same rule types as the <code>SUGGEST</code> command.
+<code class="box ruleset">&gt;&gt; WARN
+x Plugin1.esp  //[comment]
+- Plugin2.esp  //[comment]
++ Plugin3.esp  //[comment]
+e Plugin4.esp  //[comment]
+</code>
+<h4>ASSUME</h4>
+<p>The <code>ASSUME</code> command inserts the assumption that the given plugin exists into any <code>IF</code> statements following the command.
+<ul>
+	<li><code>ASSUME</code> commands last until the next <code>ASSUME</code> command or until the end of the file, whichever occurs first. 
+	<li><code>ASSUME</code> commands are <b>not</b> additive: each <code>ASSUME</code> command completely replaces the previous one. 
+	<li>To cancel the effect of an <code>ASSUME</code> command, use an <code>ASSUME</code> command with no mod listed for it.
+	<li>To assume the existence of multiple plugins, list them on separate lines after the <code>ASSUME</code> command, like how is done for the <code>IF</code> command.
+</ul>
+<code class="box ruleset">&gt;&gt; ASSUME Master.esm
+Plugin1.esp
+Plugin2.esp
+</code>
+<h4>Formatting</h4>
+<p>Non-silent comment lines have a few formatting options:
+<ul>
+	<li><code>__[bold text]__</code>
+	<li><code>~~[italic text]~~</code>
+	<li><code>**[bold italic text]**</code>
+	<li><code>[[http://example.com|Link to example.com]]</code>
+</ul>
+<h3 id="rulesets-example">Example</h3>
+<p>The example ruleset below is a simple ruleset for Cobl.
+<code class="box ruleset">&gt;&gt; HEADER This ruleset covers Cobl (Common Oblivion) and related mods.
+
+&gt;&gt; ONLYONE
+Cobl Races - Balanced.esp
+bgBalancingEVCore.esp
+
+&gt;&gt; IF Cobl Main.esm
+&gt;&gt; CONFIG
+o Cobl Glue.esp // Glues Cobl items into vanilla lists, cells
+o Cobl Si.esp // Glues Cobl items into Shivering Isles cells.
+o Cobl Tweaks.esp // Adds Cobl items to creatures and NPCs.
+o Cobl Races.esp // Additional races, hairs, eyes.
+o Cobl Races - Balanced.esp // Races and birthsigns given better balanced pros and cons.
+o Salmo the Baker, Cobl.esp // Enhances Salmo the Baker in Skingrad.
+o Cobl Filter Late.esp // Adds foods from various mods to the Dinner Plate. (Requires OBSE.)
+&gt;&gt; SUGGEST
+- Denock Arrows.esp // **Deactivate** and use Cobl Denock instead. (See Options menu.)
+## HOMES
+- AlchemistsCave.esp // Use [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=3996|Coblized version]] instead.
+- Jagnot-SI-Bliss Aquaduct House.esp // Use [[http://ljosa.proboards57.com/index.cgi?board=releases&amp;action=display&amp;thread=548|Coblized version]] instead.
+- PrincessImperialCityApartment.esp // Use [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=3997|Coblized version]] instead.
+- PrisonersCampsite.esp // Use [[http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=4106|Coblized version]] instead.
+- SkyShip.esp // Use [[http://ljosa.proboards57.com/index.cgi?board=releases&amp;action=display&amp;thread=548|Coblized version]] instead.
+&gt;&gt; WARN
+## Required
+e meshes\Cobl\StaticApp\apparatusalembics.nif // __Missing meshes [StaticApp].__ Try reinstalling full Cobl package (including all textures/meshes).
+## Obsolete components
+- Cobl Glue MW Ingred.esp // **Deactivate.** Obsolete. (Merged into Cobl Glue.esp.) 
+## Superceded mods.
+- Beer! for Oblivion.esp [1.2.3:]-- **Deactivate.** Included in Cobl Main.esm.
+- DaggerfallBooks.esp // **Deactivate.** Included in Cobl Main.esm.
+- FirstEditionGuidetotheEmpire.esp // **Deactivate.** Included in Cobl Main.esm.
+- Ingredient Storage Shelves.esp // **Deactivate.** Included in Cobl Glue.esp
+- MorrowindBooks.esp // **Deactivate.** Included in Cobl Main.esm.
+- Salmo the Baker v2.0.esp // **Deactivate** Use Salmo the Baker, Cobl instead.
+- Tamrielic_Ingredients.esm // **Deactivate.** Included in Cobl Main.esm.
+- Tamrielic_Ingredients.esp // **Deactivate.** Included in Cobl Main.esm.
+
+&gt;&gt; ASSUME Cobl Main.esm
+
+&gt;&gt; IF Cobl Races.esp
+&gt;&gt; WARN
+e meshes\characters\saram\femalehair\type0\01.nif // __Missing meshes [Saram].__ Be sure that you have installed [[http://oblivion.nexusmods.com/mods/21104|Cobl Cosmetics Res 01]].
+e meshes\clothes\asxivilai\xivilaicollar.nif // __Missing meshes [xivilai].__ Be sure that you have installed [[http://oblivion.nexusmods.com/mods/21104|Cobl Cosmetics Res 01]].
+x DLCShiveringIsles.esp // **Activate** Required (meshes and textures).
+
+&gt;&gt; IF Cobl Races - Balanced.esp
+&gt;&gt; WARN
+x Cobl Races.esp // **Activate.** Required.
+
+&gt;&gt; IF Cobl Si.esp
+&gt;&gt; WARN
+x DLCShiveringIsles.esp // **Activate.** Required.
+
+## Patch Mods ----------------------------------------------------------------
+&gt;&gt; IF FF_REAL_Thirst.esp
+&gt;&gt; SUGGEST
+x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
+</code>
+
+<h2 id="pm">PM Archive Format</h2>
+<h3 id="pm-overiew">Overview</h3>
+<p>Wrye Bash's PM Archive tab expects the PM archives it reads to be in a specific format. This section details the format and how to most easily convert PM archives to it.
+<h3 id="pm-format">Wrye Bash PM Archive Format</h3>
+<p>Wrye Bash's PM archive format uses HTML formatting. The formatting can be broken down into a header, a set of PMs in a specific HTML formatting and a footer.
+<p>As well as the formatting of the file itself being important, so too is the filename, which must begin with the date that the archive was created, in the format <code>YY.MM.DD</code>, eg. <code>07.11.06 archive.html</code>. PM archive files must be saved as <code>.html</code> files, but can be created in any text editor.
+<p>The header:
+<code class="box html">&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv="content-type" content="text/html; charset=iso-8859-1" /&gt;
+	&lt;title&gt;Private Message Archive&lt;/title&gt;
+	&lt;style type="text/css"&gt;
+		html{
+			overflow-x: auto;
+		}
+		
+		body{
+			background-color: #fff;
+			color: #000;
+			font-family: Verdana, Tahoma, Arial, sans-serif;
+			font-size: 11px;
+			margin:0px;
+			padding:0px;
+			text-align:center;
+		   }
+		   
+		a:link, a:visited, a:active{
+			color: #000;
+			text-decoration: underline;
+		}
+		
+		a:hover{
+			color: #465584;
+			text-decoration:underline;
+		}
+		
+		img{
+			border: 0;
+			vertical-align: middle;
+		}
+				
+		#ipbwrapper{
+			margin: 0 auto 0 auto;
+			text-align: left;
+			width: 95%;
+		}
+		
+		.post1{
+			background-color: #F5F9FD;
+		}
+		
+		.post2{
+			background-color: #EEF2F7;
+		}
+	
+		/* Common elements */
+		.row1{
+			background-color: #F5F9FD;
+		}
+		
+		.row1{
+			background-color: #DFE6EF;
+		}
+		
+		.row3{
+			background-color: #EEF2F7;
+		}
+		
+		.row2{
+			background-color: #E4EAF2;
+		}
+	
+		/* tableborders gives the white column / row lines effect */
+		.plainborder{
+			background-color: #F5F9FD
+			border: 1px solid #345487;
+		}
+		
+		.tableborder{
+			background-color: #FFF;
+			border: 1px solid #345487;
+			margin: 0;
+			padding: 0;
+		}
+		
+		.tablefill{
+			background-color: #F5F9FD;
+			border: 1px solid #345487;
+			padding: 6px;
+		}
+		
+		.tablepad{
+			background-color: #F5F9FD;
+			padding:6px;
+		}
+		
+		.tablebasic{
+			border: 0;
+			margin: 0;
+			padding: 0;
+			width:100%;
+		}
+	
+		.pformstrip{
+			background-color: #D1DCEB;
+			color: #3A4F6C;
+			font-weight: bold;
+			margin-top:1px
+			padding:7px;
+		}
+		
+		#QUOTE{
+			background-color: #FAFCFE;
+			border: 1px solid #000;
+			color: #465584;
+			font-family: Verdana, Arial;
+			font-size: 11px;
+			padding: 2px;
+		}
+		
+		#CODE{
+			background-color: #FAFCFE;
+			border: 1px solid #000;
+			color: #465584;
+			font-family: Courier, Courier New, Verdana, Arial;
+			font-size: 11px;
+			padding: 2px;
+		}
+		/* Main table top (dark blue gradient by default) */
+		.maintitle{
+			background-color: #D1DCEB;
+			background-image: url(http://www.bethsoft.com/bgsforums/style_images/bgsdark/tile_back.gif);
+			color: #FFF;
+			font-weight: bold;
+			padding:8px 0px 8px 5px;
+			vertical-align:middle;
+		}
+		
+		.maintitle a:link, .maintitle  a:visited, .maintitle  a:active{
+			color: #fff;
+			text-decoration: none;
+		}
+		
+		.maintitle a:hover{
+			text-decoration: underline;
+		}
+		
+		/* Topic View elements */
+		.signature{
+			color: #339;
+			font-size: 10px;
+			line-height:150%;
+		}
+		
+		.postdetails{
+			font-size: 10px;
+		}
+		
+		.postcolor{
+			font-size: 12px;
+			line-height: 160%;
+		}
+	&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+ &lt;div id="ipbwrapper"&gt;
+</code>
+<p>The footer:
+<code class="box">&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code>
+<p>The PM formatting:
+<code class="box html">&lt;div class="borderwrapm"&gt;
+	&lt;div class="maintitle"&gt;PM: Re:Next Cobl Update&lt;/div&gt;
+	&lt;div class="tablefill"&gt;&lt;div class="postcolor"&gt;&lt;!--quoteo--&gt;&lt;div class='quotetop'&gt;QUOTE&lt;/div&gt;&lt;div class='quotemain'&gt;&lt;!--quotec--&gt;&lt;!--quoteo--&gt;&lt;div class='quotetop'&gt;QUOTE&lt;/div&gt;&lt;div class='quotemain'&gt;&lt;!--quotec--&gt;&lt;!--quoteo--&gt;&lt;div class='quotetop'&gt;QUOTE&lt;/div&gt;&lt;div class='quotemain'&gt;&lt;!--quotec--&gt;Haama,&lt;br /&gt;&lt;br /&gt;I'd like to include OBSE sorter in next Cobl release...Wrye&lt;/div&gt;&lt;/div&gt;
+	&lt;div class="formsubtitle"&gt;Sent by &lt;b&gt;Wrye&lt;/b&gt; on Jan 10 2008, 05:34 PM&lt;/div&gt;
+&lt;/div&gt;
+&lt;br /&gt;
+</code>
+<h3 id="pm-convert">How To Convert Exported PMs</h3>
+<p>The easiest way to convert PMs is to create a new file for the converted PMs, open up the existing PM file in a text editor with regular expression search/replace functionality (eg. Notepad++) and follow these instructions:
+<ol>
+	<li>Copy/paste the header above into the top of your new file.
+	<li>In the existing PM archive file, create a blank new line at the end of the file.
+	<li>Open the search/replace menu in your existing PM archive file and set it to use regular expressions.
+	<li>In the Find or Search box, use <code>"([^"]*)","([^"]*)","([^"]*)","([\s\S]*?)"\n</code> (copy/paste it in to be sure).
+	<li>In the Replace box, use <code>&lt;div class="borderwrapm"&gt;\n\t&lt;div class="maintitle"&gt;PM: $1&lt;/div&gt;\n\t&lt;div class="tablefill"&gt;&lt;div class="postcolor"&gt;&lt;!--quoteo--&gt;&lt;div class='quotetop'&gt;QUOTE&lt;/div&gt;&lt;div class='quotemain'&gt;&lt;!--quotec--&gt;$4&lt;/div&gt;&lt;/div&gt;\n\t&lt;div class="formsubtitle"&gt;Sent by &lt;b&gt;$3&lt;/b&gt; on $2&lt;/div&gt;\n&lt;/div&gt;\n&lt;br /&gt;</code> (copy/paste it in to be sure).
+	<li>Copy/paste each of the PMs in the existing file into the new file.
+</ol>
+
+<script>
+//Syntax highlighter. Colours need adjusting.
+function SyntaxHighlight(element) {
+	var raw = element.innerHTML;
+	//String highlighting. This is fully working.
+	raw = raw.replace(/(('|")[^\n"]*('|"))/g, "<span style='color:green;'>$1</span>");
+	//Comment highlighting. This is fully working.
+	raw = raw.replace(/(\/\/[^\n]*\n)/g, "<span style='color:green;'>$1</span>");
+	raw = raw.replace(/([^tp];(?!'>)[^\n]*)/g, "<span style='color:green;'>$1</span>");
+	//raw = raw.replace(/([^t](;|\/\/)[^\n]+\n)/g, "<span style='color:green;'>$1</span>");
+	//Function highlighting. This is fully working.
+	raw = raw.replace(/(\w+)\(/g, "<span style='color:blue;'>$1</span>(");  //This matches a function of the form "text(".
+	//Digit highlighting. This is fully working.
+	raw = raw.replace(/(\\n|\W)(\d[.\d]*)/g, "$1<span style='color:brown;'>$2</span>");
+	//Keyword highlighting. This is fully working. It works too well...
+	raw = raw.replace(/^(\w+)/, "<span style='color:blue;'>$1</span>");
+	raw = raw.replace(/\n(\w+)/g, "\n<span style='color:blue;'>$1</span>");
+	raw = raw.replace(/    ([CBFENDS]\w+)/g, "    <span style='color:blue;'>$1</span>");
+	raw = raw.replace(/ (in) /g, " <span style='color:blue;'>$1</span> ");
+	raw = raw.replace(/ (SubPackages)/g, " <span style='color:blue;'>$1</span>");
+	//Var highlighting. Doesn't handle keyword vars.
+	raw = raw.replace(/\[([a-zA-Z_]+)\]/g, "[<var>$1</var>]");
+	raw = raw.replace(/&lt;([\w ]+)&gt;/g, "&lt;<var>$1</var>&gt;");
+	raw = raw.replace(/((\(|,)[\w, ]+\))/g, "<var>$1</var>");
+	element.innerHTML = raw;
+}
+
+var codes = document.getElementsByTagName('code');
+for (var i=0; i < codes.length; i++) {
+	if (codes[i].className == 'box') {
+		SyntaxHighlight(codes[i]);
+	}
+}
+</script>
+
+
+
+
+

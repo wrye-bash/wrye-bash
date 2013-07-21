@@ -1,0 +1,83 @@
+## Template for the setup.py used to make the WBSA
+#
+# ModuleFinder can't handle runtime changes to __path__, but win32com uses them
+try:
+    # py2exe 0.6.4 introduced a replacement modulefinder.
+    # This means we have to add package paths there, not to the built-in
+    # one.  If this new modulefinder gets integrated into Python, then
+    # we might be able to rever this some day.
+    # if this doesn't work, try import modulefinder
+    try:
+        import py2exe.mf as modulefinder
+    except ImportError:
+        import modulefinder
+    import win32com, sys
+    for p in win32com.__path__[1:]:
+        modulefinder.AddPackagePath('win32com', p)
+    for extra in ['win32com.shell']: #, 'win32com.mapi'
+        __import__(extra)
+        m = sys.modules[extra]
+        for p in m.__path__[1:]:
+            modulefinder.AddPackagePath(extra, p)
+except ImportError:
+    # no build path setup, no worries
+    pass
+
+from distutils.core import setup
+import py2exe, os, subprocess
+
+manifest = %(manifest)s
+RT_MANIFEST = 24
+
+class Target:
+    def __init__(self, script):
+        self.name = 'Wrye Bash'
+        self.description = 'Wrye Bash'
+        self.version = '%(version)s'
+        self.author = 'Wrye Bash development team'
+        self.url = 'http://tesnexus.com/downloads/file.php?id=22368'
+        self.download_url = self.url
+        self.script = script
+        if manifest is not None:
+            self.other_resources = [(RT_MANIFEST, 1, manifest)]
+windows = Target('Wrye Bash Launcher.pyw')
+
+setup(
+    windows = [windows],
+    options = {
+        'py2exe': {
+            'dll_excludes': [
+                # Make sure the MSVC 2008 Redist doesn't get included.
+                'MSVCP90.dll',
+                'MSVCR90.dll',
+                'MSVCM90.dll',
+                'mswsock.dll',  # Prevent x64 versions (for win32api)
+                'powrprof.dll', # Prevent x64 versions (for win32api)
+                ],
+            'includes': [%(includes)s],
+            'excludes': [
+                '_ssl',     # Suggested in the py2exe tutorial
+                'doctest',  # Suggested in the py2exe tutorial
+                'pdb',      # Suggested in the py2exe tutorial
+                'unittest', # Suggested in the py2exe tutorial
+                'difflib',  # Suggested in the py2exe tutorial
+                'pywin',                # Suggested in the wxPython example
+                'pywin.debugger',       # Suggested in the wxPython example
+                'pywin.debugger.dbgcon',# Suggested in the wxPython example
+                'pywin.dialogs',        # Suggested in the wxPython example
+                'pywin.dialogs.list',   # Suggested in the wxPython example
+                 # Don't need Tkinter in the standalone, since wxPython is present for sure
+                'Tkinter',
+                'Tkconstants',
+                'tcl',
+                ],
+            'ignores': [
+                'psyco'
+                ],
+            'bundle_files': 1,  # 1 = bundle in the exe
+            'optimize': 2,      # 2 = full code optimization
+            'compressed': True, # Compress the data files
+            },
+        },
+    zipfile = None,     # Don't include data files in a zip along side
+    )
