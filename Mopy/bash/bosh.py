@@ -6519,13 +6519,6 @@ class ConfigHelpers:
         except ImportError:
             pass
 
-
-        bapi.Init(dirs['compiled'].s)
-        # That didn't work - Wrye Bash isn't installed correctly
-        if not bapi.BAPI:
-            raise bolt.BoltError(u'The BOSS API could not be loaded.')
-
-
         libbsa.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not libbsa.libbsa:
@@ -6537,6 +6530,12 @@ class ConfigHelpers:
         if not liblo.liblo:
             raise bolt.BoltError(u'The libloadorder API could not be loaded.')
         deprint(u'Using libloadorder API version:', liblo.version)
+        
+        bapi.Init(dirs['compiled'].s)
+        # That didn't work - Wrye Bash isn't installed correctly
+        if not bapi.BAPI:
+            raise bolt.BoltError(u'The BOSS API could not be loaded.')
+        deprint(u'Using BOSS API version:', bapi.version)
 
         global boss
         if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():

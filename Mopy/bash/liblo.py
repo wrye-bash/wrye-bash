@@ -298,7 +298,7 @@ def Init(path):
             try:
                 _Clo_create_handle(byref(self._DB),game,_enc(gamePath))
             except LibloError as err:
-                if err.args[0].startswith("LIBLO_WARN_LO_MISMATC"):
+                if err.args[0].startswith("LIBLO_WARN_LO_MISMATCH"):
                     # If there is a Mismatch between loadorder.txt and plugns.txt finish initialization
                     # and fix the missmatch at a later time
                     pass
