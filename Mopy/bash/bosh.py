@@ -6542,7 +6542,6 @@ class ConfigHelpers:
             boss = bapi.BossDb(dirs['app'].s,u'Nehrim')
         else:
             boss = bapi.BossDb(dirs['app'].s,bush.game.name)
-        deprint(u'Using BOSS API version:', bapi.version)
         bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
                               ConfigHelpers.libloLOMismatchCallback)
                               
