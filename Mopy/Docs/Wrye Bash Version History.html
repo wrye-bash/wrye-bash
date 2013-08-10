@@ -36,6 +36,40 @@
 
 <p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
 
+<h2>304.1 Hotfix [2013/08/10] [Various community members]</h2>
+<ul>
+<li>Fixed runtime (boost) error in non English locales introduced in 2942. [wrinklyninja]</li>
+</ul>
+
+<h2>304 [2013/06/30] [Various community members]</h2>
+<ul>
+<li>Fixed bug in libloadorder that would stop it from including Update.esm in its list of active plugins if Skyrim.esm wasn't listed in plugins.txt. [wrinklyninja]</li>
+<li>Fixed libloadorder version display in Bash's log. [wrinklyninja]</li>
+<li>Fixed Bash not passing Update.esm in a list of plugins to activate to libloadorder. liblo.py now returns the active plugin list in load order (which libloadorder doesn't), preventing needless load order 'mismatches' being 'corrected'. [wrinklyninja]</li>
+<li>Fixed issue with Oblivion introduced in r2952. [wrinklyninja]</li>
+<li>It is now impossible to deactivate Skyrim.esm and Update.esm, the game force loads them. [d4id4los]</li>
+<li>Fix for bug #243 "Annealing an activated esp breaks load order.". Anneal will now properly remove deleted plugins from load order. [d4id4los]</li>
+<li>Fix for bug #244 "Automatically activating the bashed patch after rebuild does not work." [d4id4los]</li>
+<li>Fix for bug #245 "Auto-Anneal can not be disabled" [d4id4los]</li>
+<li>Possible fix for special characters in system language name crashing Wrye Bash. [d4id4los]</li>
+<li>Changes to the text of List Masters... to make translation easier. [d4id4los]</li>
+<li>Fixed renaming mods in the mods tab causing an exception to be thrown. [d4id4los]</li>
+<li>Fixed error-messages for Installer Wizards. [d4id4los]</li>
+<li>Changes to the restart button tool-tip to make it translatable. [d4id4los]</li>
+<li>Make Headlines in getModList translatable. [d4id4los]</li>
+<li>Fix renaming/deleting mod files outside of Wrye Bash causing load order issues. [d4id4los]</li>
+<li>Fix for an exception in bain wizzards, introduced in rev. 2966 [d4id4los]</li>
+<li>Fix for Bug #246 'Better naming scheme for backups' [Mr_and_Mrs_D]</li>
+<li>Fix for Bug #247 'Do not report 0 KB for non empty files, plugins, BCFs etc' [Mr_and_Mrs_D]</li>
+<li>Fix for Bash not installing more than one mod at a time for Oblivion. [d4id4los]</li>
+<li>Wrye Bash Un-Installer was leaving behind a few files which have not been accounted for. [d4id4los]</li>
+<li>Fix for Bug #256 'Skip Docs skips translation files for Mods'. [d4id4los]</li>
+<li>Fix for Bug #258 "#258 LO mismatch between loadorder.txt and plugins.txt causes a crash on statup" [d4id4los]</li>
+<li>Fix for bug #251 "'Do you want to enable Installers?' dialog throws exception". [d4id4los]</li>
+<li>Added option to view BSA conflicts in Installer tab. This is an experimental feature and still needs work. [d4id4los]</li>
+<li>New Dragonborn Files added for Clean Data installer function. [Sharlikran]</li>
+</ul>
+
 <h2>303 [2013/01/02] [Various community members]</h2>
 <ul>
 <li>[Oblivion] Fixed issues with CBash saying that files don't exist during the patch building process. [Lojack]</li>
