@@ -1053,6 +1053,7 @@ class List(wx.Panel):
         #--Mark sort as dirty
         if self.selectedFirst:
             self.sortDirty = 1
+            self.colReverse[self.sort] = not self.colReverse.get(self.sort,0)
 
     def GetSortSettings(self,col,reverse):
         """Return parsed col, reverse arguments. Used by SortSettings.
