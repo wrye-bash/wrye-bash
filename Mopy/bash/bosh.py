@@ -9940,9 +9940,17 @@ class InstallersData(bolt.TankData, DataDict):
             if skip: continue
             path = dirs['mods'].join(file)
             try:
-                path.moveTo(destDir.join(file))
+                if path.exists():
+                    path.moveTo(destDir.join(file))
+                else:
+                    ghost = GPath(path.s+u'.ghost')
+                    if ghost.exists():
+                        ghost.moveTo(destDir.join(file))
             except:
-                GPath(path.s+u'.ghost').moveTo(destDir.join(file))
+                # It's not imperative that files get moved, so if errors happen, just ignore them.
+                # Would could put a deprint in here so that when debug mode is enabled we at least
+                # see that some files failed for some reason.
+                pass            
             data_sizeCrcDate.pop(file,None)
             emptyDirs.add(path.head)
         for emptyDir in emptyDirs:
