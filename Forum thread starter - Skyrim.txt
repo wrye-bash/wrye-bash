@@ -73,20 +73,18 @@
  
 [b]Documentation[/b]:
 [LIST]
-[*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye Bash/Mopy/Docs/Wrye Bash General Readme.html]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
+[*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
 [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url] (For Oblivion, new guide for Skyrim pending)[/*]
 [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url][/*]
-[*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye bash/]简体中文[/url][/*]
+[*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye]简体中文[/url][/*]
 [/LIST]
-[b]Requirements and Installation[/b]: 
- 
+[b]Requirements and Installation[/b]:
+
+I suggest looking here for the approproate version [url=http://support.microsoft.com/kb/2019667]Latest Supported Visual C++ Downloads[/url].  The previous link may have more up to date information but here are some direct links [url=http://www.microsoft.com/en-us/download/details.aspx?id=5553]MSVC++ 2005 Redistributable Suite SP1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=10986]MSVC++ 2008 SP1 Redistributable[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=23691]MSVC++ 2010 Redistributable Service Pack 1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=30679]MSVC++ 2012 Redistributable Update 3[/url].
+
 Short version: 
  
 Just use the installer and install to the Skyrim folder! When you install dependencies, just install them to their default locations.
- 
-For the Standalone version you may need one of the MSVC Redistributable packadges:
- 
-I suggest looking here for the approproate version [url=http://support.microsoft.com/kb/2019667]Latest Supported Visual C++ Downloads[/url].  The previous link may have more up to date information but here are some direct links [url=http://www.microsoft.com/en-us/download/details.aspx?id=5553]MSVC++ 2005 Redistributable Suite SP1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=10986]MSVC++ 2008 SP1 Redistributable[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=23691]MSVC++ 2010 Redistributable Service Pack 1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=30679]MSVC++ 2012 Redistributable Update 3[/url].
  
 Long version:
 [spoiler]
@@ -144,9 +142,15 @@ You can see all the known bugs in the [url=http://sourceforge.net/p/oblivionwork
 [*]Load orders should be managed with [url=https://code.google.com/p/better-oblivion-sorting-software/downloads/list]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)[/*]
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1234195]Wrye Flash NV[/topic])[/*]
 [/LIST]
- 
 [b]Changelog for Latest Version[/b]:
-[size=5]304 [2013/06/30][Various community members][/size]
+[size=5]Version 304.1 Hotfix [2013/08/11][/size]
+[spoiler]
+[LIST]
+[*]Fixed runtime (boost) error in non English locales introduced in 2942. [wrinklyninja][/*]
+[/LIST]
+[/spoiler]
+[b]Changelog for Version 304[/b]:
+[size=5]304 [2013/06/30] [Various community members][/size]
 [spoiler]
 [LIST]
 [*]Fixed bug in libloadorder that would stop it from including Update.esm in its list of active plugins if Skyrim.esm wasn't listed in plugins.txt. [wrinklyninja][/*]
@@ -176,7 +180,7 @@ You can see all the known bugs in the [url=http://sourceforge.net/p/oblivionwork
 [*]New Dragonborn Files added for Clean Data installer function. [Sharlikran][/*]
 [/LIST]
 [/spoiler]
-[b]Changelog for Latest Version[/b]:
+[b]Changelog for Version 303[/b]:
 [size=5]303 [2013/01/02] [Various community members][/size]
 [spoiler]
 [LIST]
