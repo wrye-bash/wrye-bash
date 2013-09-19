@@ -39,7 +39,7 @@ Continuing from the [topic=1459682]previous thread[/topic]...
 
 [b]Documentation[/b]:
 [LIST]
-[*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye Bash/Mopy/Docs/Wrye Bash General Readme.html]Official General Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
+[*][url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20General%20Readme.html]General Readme[/url], [url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20Advanced%20Readme.html]Advanced Readme[/url], [url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20Technical%20Readme.html]Technical Readme[/url], [url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20Version%20History.html]Version History[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
 [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url] (For Oblivion, new guide for Skyrim pending)[/*]
 [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url][/*]
 [*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye bash/]简体中文[/url][/*]
