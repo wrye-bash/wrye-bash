@@ -31,14 +31,11 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 
 #--Python
 import cPickle
-import glob
-import shutil
 import StringIO
 import string
 import struct
 import sys
 import os
-from os import path
 import textwrap
 import time
 import wx
@@ -882,7 +879,7 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
     abspath = os.path.abspath
 
     if isinstance(source,(bolt.Path,basestring)):
-        source = [GPath(abspath(GPath(source).s))]
+        source = GPath(abspath(GPath(source).s))
     else:
         source = [GPath(abspath(GPath(x).s)) for x in source]
 
@@ -895,85 +892,37 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
     parent = parent.GetHandle() if parent else None
 
     if shell is not None:
-        #convert any bolt.Path into a string path and check for wildcards
-        for i in range(len(source)):
-            if isinstance(source[i],bolt.Path):
-                source[i] = source[i].s
+        if isinstance(source,bolt.Path):
+            source = source.s
+        else:
+            source = u'\x00'.join(x.s for x in source)
 
-            sourceglob = glob.glob(source[i])
-
-            #handle globbing(wildcards) for cases with only one match
-            """WARNING file names need to be escaped properly to avoid being clobbered!"""
-            if len(sourceglob) == 1:
-                source[i] = sourceglob[0]
-            if len(sourceglob) > 1:
-                #glob evaluated to more than one string, replace the pattern with the result
-                source[i-1:i+1] = sourceglob
-
-        #TODO: add multidestfiles support(?)
         if isinstance(target,bolt.Path):
             target = target.s
             multiDestFiles = 0
-        #else:
-        #    target = u'\x00'.join(x.s for x in target)
-        #    multiDestFiles = shellcon.FOF_MULTIDESTFILES
+        else:
+            target = u'\x00'.join(x.s for x in target)
+            multiDestFiles = shellcon.FOF_MULTIDESTFILES
 
-        if operation == FO_COPY:
-            for file in source:
-                # if the target dir doesn't exist, create it
-                if not path.lexists(target):
-                   deprint(u"creating target directory, %s" % (target))
-                   os.makedirs(target)
-                #check if the file exists before attempting copy
-                if path.lexists(file):
-                    # dir exists at target, copy contents individually/recursively
-                    if path.isdir(file) and path.lexists(path.join(target, path.basename(file))):
-                        for content in os.listdir(file):
-                            deprint(u"copying dir contents recursively from %s to %s" % (path.join(file, content), path.join(target, path.basename(file))))
-                            self.fileOperation(FO_COPY, path.join(file, content), path.join(target, path.basename(file)), False)
-                    # dir doesn't exist at the target, copy it
-                    if path.isdir(file) and not path.lexists(path.join(target, path.basename(file))):
-                        deprint(u"copying dir from %s to %s" % (file, target))
-                        shutil.copytree(file,target)
-                    # copy the file, overwrite as needed
-                    if path.isfile(file) or path.islink(file):
-                        deprint(u"copying file from %s to %s" % (file, target))
-                        shutil.copy2(file,target)
+        flags = (shellcon.FOF_WANTMAPPINGHANDLE|
+                 multiDestFiles)
+        if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
+        if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
+        if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
+        if silent: flags |= shellcon.FOF_SILENT
 
-        if operation == FO_MOVE:
-            for file in source:
-                # if the target dir doesn't exist, create it
-                if not path.lexists(target):
-                    deprint(u"creating target directory, %s" % (target))
-                    os.makedirs(target)
-                #check if the file exists before attempting move
-                if path.lexists(file):
-                    # dir exists at target, move contents individually/recursively
-                    if path.isdir(file) and path.lexists(path.join(target, path.basename(file))):
-                        for content in os.listdir(file):
-                            deprint(u"moving dir contents recursively from %s to %s" % (path.join(file, content), path.join(target, path.basename(file))))
-                            fileOperation(FO_MOVE, path.join(file, content), path.join(target, path.basename(file)), False)
-                    # dir doesn't exist at the target, move it
-                    if path.isdir(file) and not path.lexists(path.join(target, path.basename(file))):
-                        deprint(u"moving dir from %s to %s" % (file, target))
-                        shutil.move(file,target)
-                    # move may not work if the target exists, copy instead
-                    if path.isfile(file) or path.islink(file):
-                        deprint(u"moving file from %s to %s" % (file, target))
-                        shutil.copy2(file,target)
-                        os.remove(file)
+        result,nAborted,mapping = shell.SHFileOperation(
+            (parent,operation,source,target,flags,None,None))
 
-        if operation == FO_DELETE:
-            for file in source:
-                if path.lexists(file):
-                    if path.isdir(file):
-                        deprint("removing dir %s" % (file))
-                        shutil.rmtree(file, True)
-                    else:
-                        deprint("removing file %s" % (file))
-                        os.remove(file)
-
-        sys.stdout.flush
+        if result == 0:
+            if nAborted:
+                raise SkipError(nAborted if nAborted is not True else None)
+            return dict(mapping)
+        elif result == 2 and operation == FO_DELETE:
+            # Delete failed because file didnt exist
+            return dict(mapping)
+        else:
+            raise FileOperationErrorMap.get(result,FileOperationError(result))
 
     else:
         # Use custom dialogs and such
