@@ -3980,6 +3980,7 @@ class Plugins:
         self.selected = []  # list of the currently active plugins (not always in order)
         #--Create dirs/files if necessary
         self.dir.makedirs()
+        self._cleanLoadOrderFiles()
 
     def copyTo(self,toDir):
         """Save plugins.txt and loadorder.txt to a different directory (for backup)"""
@@ -4124,6 +4125,22 @@ class Plugins:
         if removedFiles or addedFiles:
             self.saveLoadOrder()
             self.save()
+    
+    def _cleanLoadOrderFiles(self):
+        """Cleans all files relevant to the load ordering of non existant entries"""
+        # This is primarily used to mask what is probably a bug in liblo that makes it fail if loadorder.txt contains a non existing .esm file entry.
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE: 
+            loFiles = [x.s for x in (self.pathPlugins, self.pathOrder) if x.exists()]
+            for loFile in loFiles:
+                f = open(loFile, 'r')
+                lines = f.readlines()
+                f.close()
+                f = open(loFile, 'w')
+                for line in lines:
+                    if dirs['mods'].join(line.strip()).exists():
+                        f.write(line)
+                f.close()
+                
     
 #------------------------------------------------------------------------------
 class MasterInfo:
