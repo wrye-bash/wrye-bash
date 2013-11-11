@@ -4097,7 +4097,7 @@ class Plugins:
         return hasChanged
 
     def fixLoadOrder(self):
-        """Fix inconsistencies between plugins.txt, loadorder.txt and actually installed mod files"""
+        """Fix inconsistencies between plugins.txt, loadorder.txt and actually installed mod files as well as impossible load orders"""
         loadOrder = set(self.LoadOrder)
         modFiles = set(modInfos.data.keys())
         removedFiles = loadOrder - modFiles
@@ -4106,7 +4106,7 @@ class Plugins:
         self.removeMods(removedFiles)
         # Add new plugins to load order
         indexFirstEsp = 0
-        while modInfos[self.LoadOrder[indexFirstEsp]].isEsm():
+        while indexFirstEsp < len(self.LoadOrder) and modInfos[self.LoadOrder[indexFirstEsp]].isEsm():
             indexFirstEsp += 1
         for mod in addedFiles:
             if modInfos.data[mod].isEsm():
