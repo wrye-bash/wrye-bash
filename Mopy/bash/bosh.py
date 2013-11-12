@@ -3980,7 +3980,7 @@ class Plugins:
         self.selected = []  # list of the currently active plugins (not always in order)
         #--Create dirs/files if necessary
         self.dir.makedirs()
-        self._cleanLoadOrderFiles()
+        self.cleanLoadOrderFiles()
 
     def copyTo(self,toDir):
         """Save plugins.txt and loadorder.txt to a different directory (for backup)"""
@@ -4126,7 +4126,7 @@ class Plugins:
             self.saveLoadOrder()
             self.save()
     
-    def _cleanLoadOrderFiles(self):
+    def cleanLoadOrderFiles(self):
         """Cleans all files relevant to the load ordering of non existant entries"""
         # This is primarily used to mask what is probably a bug in liblo that makes it fail if loadorder.txt contains a non existing .esm file entry.
         if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE: 
@@ -5086,6 +5086,9 @@ class FileInfos(DataDict):
         for name in deleted:
             # Can run into multiple pops if one of the files is corrupted
             if name in data: data.pop(name)
+        if deleted:
+            # If an .esm file was deleted we need to clean the loadorder.txt file else liblo crashes
+            modInfos.plugins.cleanLoadOrderFiles()
         return bool(added) or bool(updated) or bool(deleted)
 
     #--Right File Type? [ABSTRACT]
@@ -5158,7 +5161,8 @@ class FileInfos(DataDict):
                     if not filePath.exists():
                         self.table.delRow(tableUpdate[filePath])
             #--Refresh
-            if doRefresh: self.refresh()
+            if doRefresh: 
+                self.refresh()
 
     #--Move Exists
     def moveIsSafe(self,fileName,destDir):
