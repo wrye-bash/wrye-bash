@@ -1345,7 +1345,7 @@ class MasterList(List):
         #--ESMs First?
         settings['bash.masters.esmsFirst'] = self.esmsFirst
         if self.esmsFirst or col == 'Load Order':
-            self.items.sort(key=lambda a:data[a].name.cext)
+            self.items.sort(key=lambda a: not data[a].isEsm())
 
     #--Relist
     def ReList(self):
