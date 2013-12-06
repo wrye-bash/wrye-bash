@@ -1,6 +1,6 @@
 ﻿Continuing from [topic=1465301]Thread 32[/topic]...
  
-[b]Threads:[/b]
+[size=5][color=#3366ff]Threads:[/color][/size]
 [spoiler]
 [topic=1465301]Thread 32[/topic]
 [topic=1459790]Thread 31[/topic]
@@ -35,13 +35,13 @@
 [topic=1294281]Thread 2[/topic]
 [topic=1256835]Thread 1[/topic]
 [/spoiler]
-[b]What does Wrye Bash do?[/b]
+[size=5][color=#3366ff]What does Wrye Bash do?[/color][/size]
 [LIST]
 [*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod[/*]
 [*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"[/*]
 [*]It allows you to exceed the 255 mod threshold by automatically merging some types of mods for you[/*]
 [/LIST]
-[b]FAQ[/b]:
+[size=5][color=#3366ff]FAQ:[/color][/size]
 [spoiler]
 [LIST=1]
 [*]What the heck do all these acronyms mean?[/*]
@@ -69,16 +69,16 @@
 [/*]
 [/LIST]
 [/spoiler]
-[b]Download[/b]: [url=http://skyrim.nexusmods.com/mods/1840]Skyrim Nexus[/url] and, of course, [url=http://sourceforge.net/projects/oblivionworks/files/]SourceForge[/url].
+[size=5][color=#3366ff]Download:[/color][/size] [url=http://www.nexusmods.com/skyrim/mods/1840]Skyrim Nexus[/url] and, of course, [url=http://sourceforge.net/projects/oblivionworks/files/]SourceForge[/url].
  
-[b]Documentation[/b]:
+[size=5][color=#3366ff]Documentation:[/color][/size]
 [LIST]
-[*][url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20General%20Readme.html]General Readme[/url], [url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20Advanced%20Readme.html]Advanced Readme[/url], [url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20Technical%20Readme.html]Technical Readme[/url], [url=http://oblivionworks.sourceforge.net/Wrye%20Bash%20Version%20History.html]Version History[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
-[*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url] (For Oblivion, new guide for Skyrim pending)[/*]
-[*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url][/*]
-[*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye]简体中文[/url][/*]
+[*][url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20General%20Readme.html]General Readme[/url], [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20Advanced%20Readme.html]Advanced Readme[/url], [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20Technical%20Readme.html]Technical Readme[/url], [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20Version%20History.html]Version History[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
+[*]alt3rn1ty's [url=http://www.nexusmods.com/oblivion/mods/35230]Wrye Bash Pictorial Guide[/url] (For Oblivion, new guide for Skyrim pending)[/*]
+[*]Metallicow's BAIN [url=http://www.nexusmods.com/oblivion/mods/38857]Demo Wizard[/url][/*]
+[*]Translated documentation and guides: [url=http://guides.tesfans.org]简体中文[/url][/*]
 [/LIST]
-[b]Requirements and Installation[/b]:
+[size=5][color=#3366ff]Requirements and Installation:[/color][/size]
 
 I suggest looking here for the approproate version [url=http://support.microsoft.com/kb/2019667]Latest Supported Visual C++ Downloads[/url].  The previous link may have more up to date information but here are some direct links [url=http://www.microsoft.com/en-us/download/details.aspx?id=5553]MSVC++ 2005 Redistributable Suite SP1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=10986]MSVC++ 2008 SP1 Redistributable[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=23691]MSVC++ 2010 Redistributable Service Pack 1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=30679]MSVC++ 2012 Redistributable Update 3[/url].
 
@@ -113,12 +113,12 @@ Then:
 [*]For WBSA (Wrye Bash StandAlone), run by double-clicking on Wrye Bash.exe[/*]
 [/LIST]
 Remember! In Windows Vista and up, don't install Skyrim in the Program Files folder due to User Account Control! See File Permissions.
-See Also [url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye]File Permissions[/url]
+See Also [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20General%20Readme.html#trouble-permissions]File Permissions[/url]
 [/spoiler]
-[b]Development[/b]:
-The project is hosted at [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]. You'll need a SourceForge account to create or add data to bug reports and feature requests. Feeling brave? SVN versions are not guaranteed to be release quality. If you want to help us test new features and track down bugs look for a new installer in the downloads section on the Skyrim or Oblivion Nexus or at this mirror: [url=https://code.google.com/p/wrye-bash/downloads/list]Wrye Bash SVN Installer[/url]
+[size=5][color=#3366ff]Development:[/color][/size]
+The project is hosted at [url=https://sourceforge.net/projects/oblivionworks/]SourceForge[/url]. You'll need a SourceForge account to create or add data to bug reports and feature requests. Feeling brave? SVN versions are not guaranteed to be release quality. If you want to help us test new features and track down bugs look for any installer labelled as an SVN version in the downloads section on the Skyrim or Oblivion Nexus.  If you don't see one then none are available at this time.
 
-[b]Reporting Bugs[/b]: Try to give us enough information to diagnose your problem. The following information is useful to us:
+[size=5][color=#3366ff]Reporting Bugs:[/color][/size] Try to give us enough information to diagnose your problem. The following information is useful to us:
 [spoiler]
 [LIST]
 [*]What version of Wrye Bash are you using? If you're using the SVN, be sure to include the revision number.[/*]
@@ -134,31 +134,60 @@ The project is hosted at [url=https://sourceforge.net/projects/oblivionworks/]So
 [/spoiler]
 You can see all the known bugs in the [url=http://sourceforge.net/p/oblivionworks/bugs/?limit=250]Sourceforge Bug tracker[/url].
  
-[b]Linking[/b]: If you'd like to link to Bash from somewhere else, please do! But be sure to link to either [url=http://skyrim.nexusmods.com/mods/1840]Skyrim Nexus[/url], [url=http://oblivion.nexusmods.com/mods/22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url]. Don't link to the actual download file, since that changes fairly frequently.
+[size=5][color=#3366ff]Linking:[/color][/size] If you'd like to link to Bash from somewhere else, please do! But be sure to link to either [url=http://www.nexusmods.com/skyrim/mods/1840]Skyrim Nexus[/url], [url=http://www.nexusmods.com/oblivion/mods/22368]TESNexus[/url], or [url=http://sourceforge.net/projects/oblivionworks/]SourceForge[/url]. Don't link to the actual download file, since that changes fairly frequently.
  
-[b]Related Projects[/b]:
+[size=5][color=#3366ff]Related Projects:[/color][/size]
 [LIST]
-[*]The Official [topic=1459682]Wrye Bash for Oblivion thread[/topic].[/*]
-[*]Load orders should be managed with [url=https://code.google.com/p/better-oblivion-sorting-software/downloads/list]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)[/*]
+[*]The Official [topic=1471926]Wrye Bash for Oblivion thread[/topic].[/*]
+[*]Load orders should be managed with [url=http://boss-developers.github.io/]BOSS for Skyrim[/url], which also supplies updated lists of tags used for importing (though even if you don't use BOSS, a basic taglist is shipped with each version of Wrye Bash)[/*]
 [*]Valda ported and maintains Wrye Bash for Fallout3 ([topic=1211142]Wrye Flash[/topic]) and Fallout3 New Vegas ([topic=1234195]Wrye Flash NV[/topic])[/*]
 [/LIST]
-[b]Changelog for Latest Version[/b]:
-[size=5]Version 304.2 Beta [2013/10/5][/size]
+[color=#3366ff][size=5]A note about Wrye Bash 304.3:[/size][/color]
+ 
+The program has only a few, if not one, volunteer to work on it so updates are sparse. None of the versions 304, 304.1, 304.2, or 304.3 should be considered stable, final, or "nearly bug free" versions.  Whether or not 304.3 is marked as Beta it's still the current version. Do not post any bug reports or Tracelogs except from 304.3 because you will be asked to install the latest version before resubmitting another Tracelog.  The reason for that is the line numbers may be different depending on the version and the logs need to point to the correct lines in order to resolve the error.
+ 
+[size=5][color=#3366ff]Join the Wrye Bash Team:[/color][/size]
+ 
+Currently we are looking for volunteers to contribute Wrye Bash.  The main focus is updating Wrye Bash's code so that it can handle more than just leveled lists for Skyrim.  However, that does not mean that the Oblivion version will be ignored.  Wrye Bash is written in Python but does use some external C++ files.  For that reason we need Python programmers primarily but could use anyone with C++ experience to update the external libraries that Wrye Bash uses.  If you would like to volunteer please PM me.  Your help will be greatly Appreciated.
+ 
+[size=5][color=#3366ff]The updates that are needed:[/color][/size]
+ 
+1) Refactor out just the patcher routines and then update them so Wrye Bash can process Skyrim's files as it does for Oblivion
+2) Refactor all of Wrye Bashes code so that bugs can be worked on and resolved the first time. Currently some bug fixes are just temporary workarounds.
+3) Properly solve all UTF8 implementation
+4) Update to a newer version of Python
+5) Update things on a case by case basis such as the UI or CBash[1].
+ 
+[1] CBash is the exception in that it can be updated at any time as long as there is a volunteer to work on it.
+
+[size=5][color=#3366ff]Changelog for Latest Version:[/color][/size]
+[size=5]Version 304.3[2013/11/21][/size]
+[spoiler]
+[LIST]
+[*]275 Wrye Bash crashes on startup if there are no .esp files in the Data directory. [Daidalos][/*]
+[*]274 Bash throws an error when deleting esm files in the mods tab. [Daidalos][/*]
+[*]273 Order of masters on a file does not match mod list view Current. [Daidalos][/*]
+[*]272 Bash throws an error when renaming files using the mods tab. [Daidalos][/*]
+[/LIST]
+[/spoiler]
+[size=5][color=#3366ff]Changelog for Version:[/color][/size]
+[size=5]Version 304.2 Beta [2013/08/11][/size]
 [spoiler]
 [LIST]
 [*]Fix for Bug 267 using "sort by selected" provided by Edwyn Lannister[/*]
-[*]Updated bosh.py to add a potential fix for "Clean Data" when files are removed while Wrye Bash is open by Lojack[/*]
-[*]Updated basher.py to add a potential fix bug 268 onMouseCaptureLost not handled under wine for Installers tab by Rifter[/*]
+[*]Updated bosh.py to add a potential fix for "Clean Data" when files are removed while Wrye Bash is open[/*]
+[*]Updated basher.py to add a potential fix bug 268 onMouseCaptureLost not handled under wine for Installers tab by rifter[/*]
 [*]Fix for Bug [#270] "False flagged ESP files cannot be sorted with the ESM group as expected." by Daidalos[/*]
 [/LIST]
 [/spoiler]
+[size=5][color=#3366ff]Changelog for Version:[/color][/size]
 [size=5]Version 304.1 Hotfix [2013/08/11][/size]
 [spoiler]
 [LIST]
 [*]Fixed runtime (boost) error in non English locales introduced in 2942. [wrinklyninja][/*]
 [/LIST]
 [/spoiler]
-[b]Changelog for Version 304[/b]:
+[size=5][color=#3366ff]Changelog for Version 304:[/color][/size]
 [size=5]304 [2013/06/30] [Various community members][/size]
 [spoiler]
 [LIST]
@@ -189,7 +218,7 @@ You can see all the known bugs in the [url=http://sourceforge.net/p/oblivionwork
 [*]New Dragonborn Files added for Clean Data installer function. [Sharlikran][/*]
 [/LIST]
 [/spoiler]
-[b]Changelog for Version 303[/b]:
+[size=5][color=#3366ff]Changelog for Version 303:[/color][/size]
 [size=5]303 [2013/01/02] [Various community members][/size]
 [spoiler]
 [LIST]

@@ -1,38 +1,88 @@
 [center][color=red][size=6]We only support Skyrim version 1.9.32.0.8 and[/size][/color][/center]
-[center][color=red][size=6]Wrye Bash 304 or higher.[/size][/color][/center]
+[center][color=red][size=6]Wrye Bash 304.3.[/size][/color][/center]
 
-[color=orange]Important: Wrye Bash's developers have been MIA for quite some time due to various real life circumstances. As such, development slowed to a crawl with only a few modders that didn't have much experience with Python (in which Bash is written) trying to fix existing bugs.
+[center][color=red][size=6]When using ModOrganizer you have to launch Wrye Bash from MO as covered on their description page.[/size][/color][/center]
 
-v304 is the product of these attempted bug fixes on top of what was done before the developers went MIA. As such, it is not a polished release.  Recently we have a few new volunteers willing to work on Wrye Bash.  Because of this we hope to start updating the code to include patcher routines for Skyrim.
+[color=orange]Important: Wrye Bash's developers have been MIA for quite some time due to various real life circumstances. As such, development slowed to a crawl with only a few modders that didn't have much experience with Python (in which Bash is written) trying to fix existing bugs.  Starting with version 303 Wrye Bash is the product of these attempted bug fixes on top of what was done before the developers went MIA. As such, it is not a polished release.  
 
 If you are familiar with the Python programming language, please consider helping with development. Many of Wrye Bash's features are unique to it, and it needs fixes to outstanding bugs at the least to stay usable.  [url=https://sourceforge.net/p/oblivionworks/bugs/]Our bug tracker[/url] lists everything we're aware of at present.[/color]
 
-[b]What does Wrye Bash do?[/b]
+[size=3][color=#3366ff]What does Wrye Bash do?[/color][/size]
+
 [list]
 [*]It makes it safe to try out new mods because it will restore everything to the way it was when you uninstall a mod
 [*]It makes more mods compatible with each other by importing information from different mods into a "bashed patch"
 [*]It allows you to exceed the 255 mod threshold by automatically merging mods for you
 [/list]
+[size=3][color=#3366ff]Comments? Problems?[/color][/size]
 
-[size=3]Comments? Problems?[/size]  Feel free to join the discussion at the current official threads: [url=http://forums.bethsoft.com/topic/1459682-relz-wrye-bash-thread-97]Oblivion[/url], and [url=http://forums.bethsoft.com/topic/1459790-relz-wrye-bash-thread-31]Skyrim[/url].  If you are have having trouble, you'll find many friendly people there who can help.  Check out the 2nd post to see the list of known bugs, and, more importantly, whether the bug has already been fixed : )
+Feel free to join the discussion at the current official threads: [url=http://forums.bethsoft.com/topic/1471926-relz-wrye-bash-thread-98/]Oblivion[/url], and [url=http://forums.bethsoft.com/topic/1471586-relz-wrye-bash-thread-33/]Skyrim[/url].  If you are have having trouble, you'll find many friendly people there who can help.  Check out the 2nd post to see the list of known bugs, and, more importantly, whether the bug has already been fixed : )
 
-There is much more information in the OP of the Wrye Bash topic at the BethSoft forums: [url=http://forums.bethsoft.com/topic/1459682-relz-wrye-bash-thread-97]Oblivion[/url], [url=http://forums.bethsoft.com/topic/1459790-relz-wrye-bash-thread-31]Skyrim[/url], but here is some stuff to get you started:
+There is much more information in the OP of the Wrye Bash topic at the BethSoft forums: [url=http://forums.bethsoft.com/topic/1471926-relz-wrye-bash-thread-98/]Oblivion[/url], [url=http://forums.bethsoft.com/topic/1471586-relz-wrye-bash-thread-33/]Skyrim[/url], but here is some stuff to get you started:
 
-[b]Documentation[/b]:[list][*][url=http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html]Official Readme[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy\Docs folder)
-  [*]alt3rn1ty's [url=http://oblivion.nexusmods.com/mods/35230]Wrye Bash Pictorial Guide[/url]
-  [*]Metallicow's BAIN [url=http://oblivion.nexusmods.com/mods/38857]Demo Wizard[/url]
-  [*]Translated documentation and guides: [url=http://guides.tesfans.org/wrye%20bash/]Simplified Chinese[/url]
-[/list]
-[b]Requirements and Installation[/b]: Short version: just use the installer and install Wrye Bash to the Skyrim folder!
-Remember! In Windows Vista and up, don't install your games in the Program Files folder due to User Access Controls (UAC).
+[size=3][color=#3366ff]Documentation[/color][/size]
 
-[color=#00BFFF]Version 305 SVN 3002 contains the following changes:[/color]
+[LIST]
+[*][url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20General%20Readme.html]General Readme[/url], [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20Advanced%20Readme.html]Advanced Readme[/url], [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20Technical%20Readme.html]Technical Readme[/url], [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20Version%20History.html]Version History[/url] (also included in the download as "Wrye Bash General Readme.html" in the Mopy folder)[/*]
+[*]alt3rn1ty's [url=http://www.nexusmods.com/oblivion/mods/35230]Wrye Bash Pictorial Guide[/url] (For Oblivion, new guide for Skyrim pending)[/*]
+[*]Metallicow's BAIN [url=http://www.nexusmods.com/oblivion/mods/38857]Demo Wizard[/url][/*]
+[*]Translated documentation and guides: [url=http://guides.tesfans.org]简体中文[/url][/*]
+[/LIST]
+[size=3][color=#3366ff]Requirements and Installation:[/color][/size]
 
-Not released.  Stay tuned.
+I suggest looking here for the approproate version [url=http://support.microsoft.com/kb/2019667]Latest Supported Visual C++ Downloads[/url].  The previous link may have more up to date information but here are some direct links [url=http://www.microsoft.com/en-us/download/details.aspx?id=5553]MSVC++ 2005 Redistributable Suite SP1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=10986]MSVC++ 2008 SP1 Redistributable[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=23691]MSVC++ 2010 Redistributable Service Pack 1[/url], [url=http://www.microsoft.com/en-us/download/details.aspx?id=30679]MSVC++ 2012 Redistributable Update 3[/url].
 
-Known Bugs:
+[size=2][color=#3366ff]Short version:[/color][/size] 
+ 
+Just use the installer and install to the Skyrim folder! When you install dependencies, just install them to their default locations.
+ 
+[size=2][color=#3366ff]Long version:[/color][/size] 
 
-- partial fix for bug #264 Extended chars in .ini file causes an exception. [tox2ik]
+There are two versions available: the Python version and the Standalone version. They are functionally equivalent. Most people should run the Standalone version since it is slightly simpler (no external Python components to install). You don't need to install the Python version, however, you can if you want to be more involved with development or if you already have Python installed on your system for other reasons.
+ 
+First, if you're using Windows XP, Wrye Bash needs the [url=http://www.microsoft.com/download/en/details.aspx?id=14431]MSVC++ 2005 SP1 Redistributable with ATL Security Update[/url] installed, the x86 version. This is required for the custom 7z executable that Wrye Bash uses to run. Later versions of Windows already have this installed.
+ 
+If you're using the Standalone version, the only other thing you need to install manually is the [url=http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2]MSVC++ 2008 Redistributable[/url].
+ 
+If you are using the Python version, dependency installation will be handled automatically by the installer. However, if you want or need to do things manually:
+ 
+[url=http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi]Python 2.7.3[/url]
+[url=http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe]wxPython 2.8.12.1 unicode for Python 2.7[/url]
+[url=http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download]comtypes 0.6.2[/url]
+[url=http://sourceforge.net/projects/pywin32/files/pywin32/Build]PyWin32 for Python 2.7[/url]
+
+Other setups [i]may[/i] work, but this is the only officially supported setup.
+Python 3.x: [b]NOT supported[/b]
+ 
+Note that the 32-bit versions are required even if you are on a 64-bit operating system
+Then:
+[LIST]
+[*]For manual installations of either the Standalone or Python versions, extract the archive in your Skyrim game folder so that the Mopy directory appears in the Skyrim directory[/*]
+[*]For Python versions, run by double-clicking on Wrye Bash Launcher.pyw[/*]
+[*]For WBSA (Wrye Bash StandAlone), run by double-clicking on Wrye Bash.exe[/*]
+[/LIST]
+Remember! In Windows Vista and up, don't install Skyrim in the Program Files folder due to User Account Control! See File Permissions.
+See Also [url=http://oblivionworks.sourceforge.net/readme/Wrye%20Bash%20General%20Readme.html#trouble-permissions]File Permissions[/url]
+
+[size=3][color=#3366ff]Version history:[/color][/size]
+
+[color=#00BFFF]Version 304.3 contains the following changes:[/color]
+
+- 275 Wrye Bash crashes on startup if there are no .esp files in the Data directory. [Daidalos]
+- 274 Bash throws an error when deleting esm files in the mods tab. [Daidalos]
+- 273 Order of masters on a file does not match mod list view	Current. [Daidalos]
+- 272 Bash throws an error when renaming files using the mods tab. [Daidalos]
+
+[color=#00BFFF]Version 304.2 Beta contains the following changes:[/color]
+
+- Fix for Bug 267 using "sort by selected" provided by Edwyn Lannister
+- Updated bosh.py to add a potential fix for "Clean Data" when files are removed while Wrye Bash is open
+- Updated basher.py to add a potential fix bug 268 onMouseCaptureLost not handled under wine for Installers tab by rifter
+- Fix for Bug [#270] "False flagged ESP files cannot be sorted with the ESM group as expected." by Daidalos
+
+[color=#00BFFF]Version 304.1 Hotfix contains the following changes:[/color]
+
+- Fixed runtime (boost) error in non English locales introduced in 2942. [wrinklyninja]
 
 [color=#00BFFF]Version 304 contains the following changes:[/color]
 
