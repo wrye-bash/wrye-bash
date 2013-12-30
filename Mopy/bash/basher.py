@@ -10765,7 +10765,7 @@ class Installer_CopyConflicts(InstallerLink):
                             srcFull = bosh.dirs['installers'].join(srcArchive,src)
                             destFull = bosh.dirs['installers'].join(destDir,GPath(srcArchive.s),src)
                             if srcFull.exists():
-                                progress(curFile,srcArchive.s+u'\n'+_(u'Copying files...')+u'\n'++src)
+                                progress(curFile,srcArchive.s+u'\n'+_(u'Copying files...')+u'\n'+src)
                                 srcFull.copyTo(destFull)
                                 curFile += 1
                     else:
