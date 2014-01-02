@@ -27,11 +27,11 @@
 from operator import itemgetter
 import struct
 # Wrye Bash imports
-from bolt import AbstractError, ArgumentError
-from brec import ModError, ModReader
-from bolt import GPath, sio
-import bush
-import bosh
+from bash.bolt import AbstractError, ArgumentError
+from bash.brec import ModError, ModReader
+from bash.bolt import GPath, sio
+import bash.bush
+import bash.bosh
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
