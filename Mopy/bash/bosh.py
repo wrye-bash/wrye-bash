@@ -15853,7 +15853,7 @@ class CBash_ListPatcher(CBash_Patcher):
             return [item for item in self.configItems if self.configChecks[item] and (item in self.patchFile.allMods or not reModExt.match(item.s))]
 
 #------------------------------------------------------------------------------
-class MultiTweakItem:
+class MultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     def __init__(self,label,tip,key,*choices,**kwargs):
         """Initialize."""
@@ -15909,65 +15909,11 @@ class MultiTweakItem:
         else: value = None
         configs[self.key] = self.isEnabled,value
 
-class CBash_MultiTweakItem:
+class CBash_MultiTweakItem(MultiTweakItem):
     """A tweak item, optionally with configuration choices."""
     iiMode = False
     scanRequiresChecked = False
     applyRequiresChecked = False
-
-    def __init__(self,label,tip,key,*choices,**kwargs):
-        """Initialize."""
-        self.label = label
-        self.tip = tip
-        self.key = key
-        self.choiceLabels = []
-        self.choiceValues = []
-        self.default = 0
-        for choice in choices:
-            self.choiceLabels.append(choice[0])
-            if choice[0][0] == u'[':
-                self.default = choices.index(choice)
-            self.choiceValues.append(choice[1:])
-        #--Config
-        self.isEnabled = False
-        self.defaultEnabled = kwargs.get('defaultEnabled', False)
-        self.chosen = 0
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        self.isEnabled,self.chosen = self.defaultEnabled,0
-        if self.key in configs:
-            self._isNew = False
-            self.isEnabled,value = configs[self.key]
-            if value in self.choiceValues:
-                self.chosen = self.choiceValues.index(value)
-            else:
-                for label in self.choiceLabels:
-                    if label.startswith(_(u'Custom')):
-                        self.chosen = self.choiceLabels.index(label)
-                        self.choiceValues[self.chosen] = value
-        else:
-            self._isNew = True
-            if self.default:
-                self.chosen = self.default
-
-    def isNew(self):
-        """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
-        return getattr(self, "_isNew", False)
-
-    def getListLabel(self):
-        """Returns label to be used in list"""
-        label = self.label
-        if len(self.choiceLabels) > 1:
-            label += u' [' + self.choiceLabels[self.chosen] + u']'
-        return label
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        if self.choiceValues: value = self.choiceValues[self.chosen]
-        else: value = None
-        configs[self.key] = self.isEnabled,value
 
 #------------------------------------------------------------------------------
 class MultiTweaker(Patcher):
