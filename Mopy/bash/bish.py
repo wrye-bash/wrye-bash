@@ -54,6 +54,8 @@ import types
 from subprocess import *
 from operator import attrgetter,itemgetter
 from patcher.RecordGroups import MobCell, MobWorld
+from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, MreWeap,\
+MreSkil, MreInfo, MreDial, MreRegn
 
 #--Local
 import bolt
@@ -263,7 +265,7 @@ def convertFace(fileName,eid,fromEid,toEid):
     face = bosh.PCFaces.mod_getFaces(modInfo)[eid]
     face.convertRace(fromRace,toRace)
     #--Save back over original face
-    loadFactory = bosh.LoadFactory(True,bosh.MreNpc)
+    loadFactory = bosh.LoadFactory(True,MreNpc)
     modFile = bosh.ModFile(modInfo,loadFactory)
     modFile.load(True)
     npc = modFile.NPC_.getRecordByEid(eid)
@@ -278,8 +280,8 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     init(3)
     if dstMod.lower() == 'oblivion.esm':
         raise bolt.BoltError(u"You don't REALLY want to overwrite Oblivion.esm, do you?")
-    srcFactory = bosh.LoadFactory(False,bosh.MreRace)
-    dstFactory = bosh.LoadFactory(True,bosh.MreRace)
+    srcFactory = bosh.LoadFactory(False,MreRace)
+    dstFactory = bosh.LoadFactory(True,MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
     dstInfo = bosh.modInfos[GPath(dstMod)]
     srcFile = bosh.ModFile(srcInfo,srcFactory)
@@ -333,7 +335,7 @@ def diffScripts(oldFile,newFile):
     init(3)
     oldScripts, newScripts = {},{}
     for scripts,fileName in ((oldScripts,oldFile),(newScripts,newFile)):
-        loadFactory = bosh.LoadFactory(False,bosh.MreScpt)
+        loadFactory = bosh.LoadFactory(False,MreScpt)
         modInfo = bosh.modInfos[GPath(fileName)]
         modFile = bosh.ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -357,7 +359,7 @@ def diffScripts2(oldFile,newFile):
     init(3)
     oldScripts, newScripts = {},{}
     for scripts,fileName in ((oldScripts,oldFile),(newScripts,newFile)):
-        loadFactory = bosh.LoadFactory(False,bosh.MreScpt)
+        loadFactory = bosh.LoadFactory(False,MreScpt)
         modInfo = bosh.modInfos[GPath(fileName)]
         modFile = bosh.ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -378,7 +380,7 @@ def diffScripts2(oldFile,newFile):
 def scriptVars(fileName=None,printAll=None):
     """Print variables for scripts for specified mod file."""
     init(3)
-    loadFactory = bosh.LoadFactory(False,bosh.MreScpt)
+    loadFactory = bosh.LoadFactory(False,MreScpt)
     modInfo = bosh.modInfos[GPath(fileName)]
     modFile = bosh.ModFile(modInfo,loadFactory)
     modFile.load(True)
@@ -399,7 +401,7 @@ def bookExport(fileName=None):
     #--Data from mod
     doImport = True
     modInfo = bosh.modInfos[fileName]
-    loadFactory= bosh.LoadFactory(doImport,bosh.MreBook)
+    loadFactory= bosh.LoadFactory(doImport,MreBook)
     modFile = bosh.ModFile(modInfo,loadFactory)
     modFile.load(True)
     data = {}
@@ -498,7 +500,7 @@ def bookImport(fileName=None):
     ins.close()
     #--Export to book
     modInfo = bosh.modInfos[fileName]
-    loadFactory= bosh.LoadFactory(True,bosh.MreBook)
+    loadFactory= bosh.LoadFactory(True,MreBook)
     modFile = bosh.ModFile(modInfo,loadFactory)
     modFile.load(True)
     for book in modFile.BOOK.records:
@@ -519,7 +521,7 @@ def perfTest():
     test = 0.0
     total = 0.0
     from timeit import Timer
-    for testClasses in ['bosh.MreClmt','bosh.MreCsty','bosh.MreIdle','bosh.MreLtex','bosh.MreRegn','bosh.MreSbsp']:
+    for testClasses in ['bosh.MreClmt','bosh.MreCsty','bosh.MreIdle','bosh.MreLtex','MreRegn','bosh.MreSbsp']:
         test = Timer('testClasses = (%s,);loadFactory = bosh.LoadFactory(False,*testClasses);modInfo = bosh.modInfos[GPath("Oblivion.esm")];modFile = bosh.ModFile(modInfo,loadFactory);modFile.load(True)' % testClasses, "import bosh;from bolt import GPath").timeit(1)
         print testClasses, ":", test
         total += test
@@ -527,12 +529,12 @@ def perfTest():
     sys.exit()
     test = 0.0
     total = 0.0
-    for testClasses in ['bosh.MreAchr,bosh.MreCell,bosh.MreWrld','bosh.MreAcre,bosh.MreCell,bosh.MreWrld','bosh.MreActi','bosh.MreAlch','bosh.MreAmmo','bosh.MreAnio','bosh.MreAppa','bosh.MreArmo','bosh.MreBook','bosh.MreBsgn','bosh.MreCell,bosh.MreWrld','bosh.MreClas','bosh.MreClot','bosh.MreCont','bosh.MreCrea','bosh.MreDial,bosh.MreInfo','bosh.MreDoor','bosh.MreEfsh','bosh.MreEnch','bosh.MreEyes','bosh.MreFact','bosh.MreFlor','bosh.MreFurn','bosh.MreGlob','bosh.MreGmst','bosh.MreGras','bosh.MreHair','bosh.MreIngr','bosh.MreKeym','bosh.MreLigh','bosh.MreLscr','bosh.MreLvlc','bosh.MreLvli','bosh.MreLvsp','bosh.MreMgef','bosh.MreMisc','bosh.MreNpc','bosh.MrePack','bosh.MreQust','bosh.MreRace','bosh.MreRefr,bosh.MreCell,bosh.MreWrld','bosh.MreRoad,bosh.MreCell,bosh.MreWrld','bosh.MreScpt','bosh.MreSgst','bosh.MreSkil','bosh.MreSlgm','bosh.MreSoun','bosh.MreSpel','bosh.MreStat','bosh.MreTes4','bosh.MreTree','bosh.MreWatr','bosh.MreWeap','bosh.MreWthr']:#,'"LAND"', '"PGRD"']:
+    for testClasses in ['bosh.MreAchr,bosh.MreCell,bosh.MreWrld','bosh.MreAcre,bosh.MreCell,bosh.MreWrld','bosh.MreActi','bosh.MreAlch','bosh.MreAmmo','bosh.MreAnio','bosh.MreAppa','bosh.MreArmo','MreBook','bosh.MreBsgn','bosh.MreCell,bosh.MreWrld','bosh.MreClas','bosh.MreClot','bosh.MreCont','bosh.MreCrea','MreDial,MreInfo','bosh.MreDoor','bosh.MreEfsh','bosh.MreEnch','bosh.MreEyes','bosh.MreFact','bosh.MreFlor','bosh.MreFurn','bosh.MreGlob','MreGmst','bosh.MreGras','bosh.MreHair','bosh.MreIngr','bosh.MreKeym','bosh.MreLigh','bosh.MreLscr','bosh.MreLvlc','bosh.MreLvli','bosh.MreLvsp','bosh.MreMgef','bosh.MreMisc','MreNpc','bosh.MrePack','bosh.MreQust','MreRace','bosh.MreRefr,bosh.MreCell,bosh.MreWrld','bosh.MreRoad,bosh.MreCell,bosh.MreWrld','MreScpt','bosh.MreSgst','MreSkil','bosh.MreSlgm','bosh.MreSoun','bosh.MreSpel','bosh.MreStat','bosh.MreTes4','bosh.MreTree','bosh.MreWatr','MreWeap','bosh.MreWthr']:#,'"LAND"', '"PGRD"']:
         test = Timer('testClasses = (%s,);loadFactory = bosh.LoadFactory(False,*testClasses);modInfo = bosh.modInfos[GPath("Oblivion.esm")];modFile = bosh.ModFile(modInfo,loadFactory);modFile.load(True)' % testClasses, "import bosh;from bolt import GPath").timeit(1)
         print testClasses, ":", test
         total += test
     print "total:", total
-    ##print Timer('testClasses = (bosh.MreAchr,bosh.MreAcre,bosh.MreActi,bosh.MreAlch,bosh.MreAmmo,bosh.MreAnio,bosh.MreAppa,bosh.MreArmo,bosh.MreBook,bosh.MreBsgn,bosh.MreCell,bosh.MreClas,bosh.MreClmt,bosh.MreClot,bosh.MreCont,bosh.MreCrea,bosh.MreCsty,bosh.MreDial,bosh.MreDoor,bosh.MreEfsh,bosh.MreEnch,bosh.MreEyes,bosh.MreFact,bosh.MreFlor,bosh.MreFurn,bosh.MreGlob,bosh.MreGmst,bosh.MreGras,bosh.MreHair,bosh.MreIdle,bosh.MreInfo,bosh.MreIngr,bosh.MreKeym,bosh.MreLigh,bosh.MreLscr,bosh.MreLtex,bosh.MreLvlc,bosh.MreLvli,bosh.MreLvsp,bosh.MreMgef,bosh.MreMisc,bosh.MreNpc ,bosh.MrePack,bosh.MreQust,bosh.MreRace,bosh.MreRefr,bosh.MreRegn,bosh.MreRoad,bosh.MreSbsp,bosh.MreScpt,bosh.MreSgst,bosh.MreSkil,bosh.MreSlgm,bosh.MreSoun,bosh.MreSpel,bosh.MreStat,bosh.MreTes4,bosh.MreTree,bosh.MreWatr,bosh.MreWeap,bosh.MreWrld,bosh.MreWthr,"LAND", "PGRD");loadFactory = bosh.LoadFactory(False,*testClasses);modInfo = bosh.modInfos[GPath("Oblivion.esm")];modFile = bosh.ModFile(modInfo,loadFactory);modFile.load(True)', "import bosh;from bolt import GPath").timeit(1)
+    ##print Timer('testClasses = (bosh.MreAchr,bosh.MreAcre,bosh.MreActi,bosh.MreAlch,bosh.MreAmmo,bosh.MreAnio,bosh.MreAppa,bosh.MreArmo,MreBook,bosh.MreBsgn,bosh.MreCell,bosh.MreClas,bosh.MreClmt,bosh.MreClot,bosh.MreCont,bosh.MreCrea,bosh.MreCsty,MreDial,bosh.MreDoor,bosh.MreEfsh,bosh.MreEnch,bosh.MreEyes,bosh.MreFact,bosh.MreFlor,bosh.MreFurn,bosh.MreGlob,MreGmst,bosh.MreGras,bosh.MreHair,bosh.MreIdle,MreInfo,bosh.MreIngr,bosh.MreKeym,bosh.MreLigh,bosh.MreLscr,bosh.MreLtex,bosh.MreLvlc,bosh.MreLvli,bosh.MreLvsp,bosh.MreMgef,bosh.MreMisc,MreNpc ,bosh.MrePack,bosh.MreQust,MreRace,bosh.MreRefr,MreRegn,bosh.MreRoad,bosh.MreSbsp,MreScpt,bosh.MreSgst,MreSkil,bosh.MreSlgm,bosh.MreSoun,bosh.MreSpel,bosh.MreStat,bosh.MreTes4,bosh.MreTree,bosh.MreWatr,MreWeap,bosh.MreWrld,bosh.MreWthr,"LAND", "PGRD");loadFactory = bosh.LoadFactory(False,*testClasses);modInfo = bosh.modInfos[GPath("Oblivion.esm")];modFile = bosh.ModFile(modInfo,loadFactory);modFile.load(True)', "import bosh;from bolt import GPath").timeit(1)
     sys.exit()
 
 #------------------------------------------------------------------------------
@@ -775,7 +777,7 @@ def gmstIds(fileName=None):
     if fileName:
         init(3)
         sorter = lambda a: a.eid
-        loadFactory = bosh.LoadFactory(False,bosh.MreGmst)
+        loadFactory = bosh.LoadFactory(False,MreGmst)
         modInfo = bosh.modInfos[GPath(fileName)]
         modFile = bosh.ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -845,7 +847,7 @@ def modCheck(fileName=None):
     """Reports on various problems with mods."""
     reBadVarName = re.compile('^[_0-9]')
     init(3)
-    loadFactory = bosh.LoadFactory(False,bosh.MreWeap)
+    loadFactory = bosh.LoadFactory(False,MreWeap)
     for modInfo in bosh.modInfos.data.values():
         print '\n',modInfo.name
         modFile = bosh.ModFile(modInfo,loadFactory)
@@ -919,7 +921,7 @@ def uncontinue():
 @mainfunc
 def parseTest(srcName=None,dstName='Wrye Test.esp'):
     init(3)
-    testClasses = (bosh.MreSkil,)
+    testClasses = (MreSkil,)
     loadFactory = bosh.LoadFactory(False,*testClasses)
     #--Src file
     srcInfo = bosh.modInfos[GPath(srcName)]
@@ -948,7 +950,7 @@ def parseTest(srcName=None,dstName='Wrye Test.esp'):
 @mainfunc
 def parseDials(srcName=None,dstName='Wrye Test.esp'):
     init(3)
-    testClasses = (bosh.MreDial,bosh.MreInfo)
+    testClasses = (MreDial,MreInfo)
     loadFactory = bosh.LoadFactory(False,*testClasses)
     #--Src file
     srcInfo = bosh.modInfos[GPath(srcName)]
@@ -987,7 +989,7 @@ def parseRecords(fileName='Oblivion.esm'):
 ##    testClasses = [bosh.MreRecord.type_class[x] for x in bosh.MreRecord.simpleTypes]
     #All Records
 ##    testClasses = bosh.MreRecord.type_class.values() + ['LAND','PGRD']
-    testClasses = [bosh.MreRegn,]
+    testClasses = [MreRegn,]
 ##    testClasses = [bosh.MreRefr,bosh.MreCell,bosh.MreWrld]
     loadFactory = bosh.LoadFactory(False,*testClasses)
     modInfo = bosh.modInfos[GPath(fileName)]
@@ -1405,7 +1407,7 @@ def createLSCR(*args):
 def balancer(fileName=None):
     """Generates part of the balancing scripts for Cobl Races Balanced."""
     init(3)
-    loadFactory = bosh.LoadFactory(False,bosh.MreRace)
+    loadFactory = bosh.LoadFactory(False,MreRace)
     modInfo = bosh.modInfos[GPath('Cobl Races.esp')]
     balInfo = bosh.modInfos[GPath('Cobl Races - Balanced.esp')]
     modFile = bosh.ModFile(modInfo,loadFactory)
