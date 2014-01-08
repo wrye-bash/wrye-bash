@@ -15824,6 +15824,9 @@ class CBash_MultiTweakItem(MultiTweakItem):
     iiMode = False
     scanRequiresChecked = False
     applyRequiresChecked = False
+    # the default scan and edit orders - override as needed
+    scanOrder = 32
+    editOrder = 32
 
 #------------------------------------------------------------------------------
 class MultiTweaker(Patcher):
@@ -20209,8 +20212,6 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
 
 class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     """Fix armor to show amulets/rings."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Armor Tweaks')
 
     #--Config Phase -----------------------------------------------------------
@@ -20294,8 +20295,6 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
 
 class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Clothing Tweaks')
 
     #--Config Phase -----------------------------------------------------------
@@ -20381,8 +20380,6 @@ class AssortedTweak_BowReach(MultiTweakItem):
 
 class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
     """Fix bows to have reach = 1.0."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Bow Reach Fix')
 
     #--Config Phase -----------------------------------------------------------
@@ -20474,8 +20471,6 @@ class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
 
 class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
     """Sets all one handed weapons as blades, two handed weapons as blunt."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Skyrim-style Weapons')
 
     #--Config Phase -----------------------------------------------------------
@@ -20566,8 +20561,6 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
 
 class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
     """Sets rings to all work on same finger."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Right Hand Rings')
 
     #--Config Phase -----------------------------------------------------------
@@ -20899,8 +20892,6 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
 
 class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
     """DarNifies books."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Books DarNified')
 
     #--Config Phase -----------------------------------------------------------
@@ -21029,8 +21020,6 @@ class AssortedTweak_FogFix(MultiTweakItem):
 
 class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
     """Fix fog in cell to be non-zero."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Nvidia Fog Fix')
 
     #--Config Phase -----------------------------------------------------------
@@ -21130,8 +21119,6 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
 
 class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
     """Remove light flickering for low end machines."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'No Light Flicker')
 
     #--Config Phase -----------------------------------------------------------
@@ -21230,8 +21217,6 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
 
 class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
     """Reweighs standard potions down to 0.1."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Reweigh: Potions (Maximum)")
 
     #--Config Phase -----------------------------------------------------------
@@ -21336,8 +21321,6 @@ class AssortedTweak_IngredientWeight(MultiTweakItem):
 
 class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
     """Reweighs standard ingredients down to 0.1."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Reweigh: Ingredients')
 
     #--Config Phase -----------------------------------------------------------
@@ -21549,8 +21532,6 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
 
 class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
     """Reweighs staffs."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Reweigh: Staffs/Staves')
 
     #--Config Phase -----------------------------------------------------------
@@ -21657,8 +21638,6 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
 
 class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
     """Reweighs standard arrows down to 0.1."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Reweigh: Arrows')
 
     #--Config Phase -----------------------------------------------------------
@@ -21766,8 +21745,6 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
 
 class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
     """Silences the script magic effect and gives it an extremely high speed."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Magic: Script Effect Silencer')
 
     #--Config Phase -----------------------------------------------------------
@@ -21872,8 +21849,6 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
 
 class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
     """Adjust Harvest Chances."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Harvest Chance')
 
     #--Config Phase -----------------------------------------------------------
@@ -21975,8 +21950,6 @@ class AssortedTweak_WindSpeed(MultiTweakItem):
 
 class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
     """Disables Weather winds."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Disable Wind')
 
     #--Config Phase -----------------------------------------------------------
@@ -22064,8 +22037,6 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
 
 class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
     """Eliminates random variation in groundcover."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Uniform Groundcover')
 
     #--Config Phase -----------------------------------------------------------
@@ -22170,8 +22141,6 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
 
 class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Set Enchantment Number of Uses')
 
     #--Config Phase -----------------------------------------------------------
@@ -22406,8 +22375,6 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
 
 class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Default Icons')
     type_defaultIcon = {
                 'ALCH': u"Clutter\\Potions\\IconPotion01.dds",
@@ -22606,8 +22573,6 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Set Sound Attenuation Levels')
 
     #--Config Phase -----------------------------------------------------------
@@ -22710,8 +22675,6 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTweakItem):
     """Sets Sound Attenuation Levels for Nirnroots."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Set Sound Attenuation Levels: Nirnroots Only')
 
     #--Config Phase -----------------------------------------------------------
@@ -22807,8 +22770,6 @@ class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
 
 class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
     """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Faction crime Gold Multiplier Fix')
 
     #--Config Phase -----------------------------------------------------------
@@ -22894,8 +22855,6 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
 
 class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
     """Remove light flickering for low end machines."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'No Light Fade Value Fix')
 
     #--Config Phase -----------------------------------------------------------
@@ -22982,8 +22941,6 @@ class AssortedTweak_TextlessLSCRs(MultiTweakItem):
 
 class CBash_AssortedTweak_TextlessLSCRs(CBash_MultiTweakItem):
     """Remove light flickering for low end machines."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"No Description Loading Screens")
 
     #--Config Phase -----------------------------------------------------------
@@ -23875,8 +23832,6 @@ class NamesTweak_Body(MultiTweakItem):
 
 class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
-    scanOrder = 32
-    editOrder = 32
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
         CBash_MultiTweakItem.__init__(self,label,tip,key,*choices)
@@ -24007,8 +23962,6 @@ class NamesTweak_Potions(MultiTweakItem):
 
 class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
     """Names tweaker for potions."""
-    scanOrder = 32
-    editOrder = 32
     reOldLabel = re.compile(u'^(-|X) ',re.U)
     reOldEnd = re.compile(u' -$',re.U)
     #--Config Phase -----------------------------------------------------------
@@ -24174,8 +24127,6 @@ class NamesTweak_Scrolls(MultiTweakItem):
 
 class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
-    scanOrder = 32
-    editOrder = 32
     reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
 
     #--Config Phase -----------------------------------------------------------
@@ -24335,8 +24286,6 @@ class NamesTweak_Spells(MultiTweakItem):
 
 class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
     """Names tweaker for spells."""
-    scanOrder = 32
-    editOrder = 32
     reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
 
     #--Config Phase -----------------------------------------------------------
@@ -24480,8 +24429,6 @@ class NamesTweak_Weapons(MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
     """Names tweaker for weapons and ammo."""
-    scanOrder = 32
-    editOrder = 32
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -24683,8 +24630,6 @@ class TextReplacer(MultiTweakItem):
 
 class CBash_TextReplacer(CBash_MultiTweakItem):
     """Base class for replacing any text via regular expressions."""
-    scanOrder = 32
-    editOrder = 32
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self, reMatch, reReplace, label, tip, key, choices):
@@ -25148,8 +25093,6 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
 
 class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"MAO Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
@@ -25266,8 +25209,6 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
 
 class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
     """Changes all NPCs to use the diverse skeletons for different look."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"VORB Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
@@ -25481,8 +25422,6 @@ class RedguardNPCPatcher(BasalNPCTweaker):
 
 class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
     """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Redguard FGTS Patcher")
 
     #--Config Phase -----------------------------------------------------------
@@ -25556,8 +25495,6 @@ class NoBloodCreaturesPatcher(BasalCreatureTweaker):
 
 class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
     """Set all creatures to have no blood records."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"No Bloody Creatures")
 
     #--Config Phase -----------------------------------------------------------
@@ -25650,8 +25587,6 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
 
 class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"As Intended: Imps")
     reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
     reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
@@ -25755,8 +25690,6 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
 
 class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
     """Set all boars to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"As Intended: Boars")
     reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
     reBoar  = re.compile(ur'(boar)',re.I|re.U)
@@ -25838,8 +25771,6 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
 
 class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Sexy Walk for female NPCs")
 
     #--Config Phase -----------------------------------------------------------
@@ -25907,8 +25838,6 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
 
 class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Real Walk for female NPCs")
 
     #--Config Phase -----------------------------------------------------------
@@ -25991,8 +25920,6 @@ class QuietFeetPatcher(BasalCreatureTweaker):
 
 class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
     """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Quiet Feet")
 
     #--Config Phase -----------------------------------------------------------
@@ -26083,8 +26010,6 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
 
 class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
     """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Irresponsible Creatures")
 
     #--Config Phase -----------------------------------------------------------
@@ -28351,8 +28276,6 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 
 class CBash_RaceTweaker_BiggerOrcsandNords(CBash_MultiTweakItem):
     """Changes all Orcs and Nords to be bigger."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Bigger Nords and Orcs")
 
     #--Config Phase -----------------------------------------------------------
@@ -28405,8 +28328,6 @@ class CBash_RaceTweaker_BiggerOrcsandNords(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_AllHairs(CBash_MultiTweakItem):
     """Gives all races ALL hairs."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Races Have All Hairs")
 
     #--Config Phase -----------------------------------------------------------
@@ -28446,8 +28367,6 @@ class CBash_RaceTweaker_AllHairs(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
     """Gives all races ALL eyes."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Races Have All Eyes")
 
     #--Config Phase -----------------------------------------------------------
@@ -28487,8 +28406,6 @@ class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
     """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Merge Hairs from similar races")
 
     #--Config Phase -----------------------------------------------------------
@@ -28563,8 +28480,6 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
     """Merges similar race's eyes."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Merge Eyes from similar races")
 
     #--Config Phase -----------------------------------------------------------
@@ -28639,8 +28554,6 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
     """Sets all eyes to be playable."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Playable Eyes")
 
     #--Config Phase -----------------------------------------------------------
@@ -28680,8 +28593,6 @@ class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
     """Sets all hairs to be playable."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Playable Hairs")
 
     #--Config Phase -----------------------------------------------------------
@@ -28721,8 +28632,6 @@ class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
 
 class CBash_RaceTweaker_SexlessHairs(CBash_MultiTweakItem):
     """Sets all hairs to be playable by both males and females."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u"Sexless Hairs")
 
     #--Config Phase -----------------------------------------------------------
