@@ -21017,17 +21017,22 @@ class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_NoLightFlicker(MultiTweakItem):
+class AAssortedTweak_NoLightFlicker(AMultiTweakItem):
     """Remove light flickering for low end machines."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"No Light Flicker"),
+        super(AAssortedTweak_NoLightFlicker, self).__init__(_(u"No Light Flicker"),
             _(u'Remove flickering from lights. For use on low-end machines.'),
             u'NoLightFlicker',
             (u'1.0',  u'1.0'),
             )
-        try:
+
+class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,MultiTweakItem):
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        super(AssortedTweak_NoLightFlicker, self).__init__()
+        try: # TODO : NEEDED ? move to AAssortedTweak_NoLightFlicker ?
             self.flags = flags = MreRecord.type_class['LIGH']._flags()
             flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
         except:
@@ -21072,19 +21077,10 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_NoLightFlicker(CBash_MultiTweakItem):
-    """Remove light flickering for low end machines."""
+class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_MultiTweakItem):
     name = _(u'No Light Flicker')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"No Light Flicker"),
-            _(u'Remove flickering from lights. For use on low-end machines.'),
-            u'NoLightFlicker',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['LIGH']
 
