@@ -1,0 +1,1037 @@
+BrokenSteel.esm
+ TAG: {{BASH: Actors.ACBS, Actors.AIPackages, Relev}}
+Lings.esm
+ TAG: {{BASH: Hair}}
+Unofficial Fallout 3 Patch.esm
+ TAG: {{BASH: C.Music, Deflst, Delev, Relev, Factions, Invent, Names, Relations, Stats}}
+LingsDLC.esm
+ TAG: {{BASH: Hair, Eyes}}
+HairPack.esm
+ TAG: {{BASH: Hair, Eyes}}
+FNNsys.esm
+ TAG: {{BASH: Scripts}}
+FaceMe.esm
+ TAG: {{BASH: NPC.Race, NpcFaces, Hair, Eyes}}
+Destruction.esm
+ TAG: {{BASH: Destructible, Scripts}}
+xCALIBR.esm
+ TAG: {{BASH: Names, Graphics, Stats}}
+xCALIBRuniverse.esm
+ TAG: {{BASH: Names, Graphics, Invent, Sound, Stats}}
+Project Beauty.esm
+ TAG: {{BASH: NPC.Race, NpcFaces, Hair, Eyes, Voice-M, Voice-F, Body-M, Body-F, R.Teeth, R.Mouth}}
+FACE3.esm
+ TAG: {{BASH: NPC.Race, NpcFaces, Hair, Eyes, Voice-M, Voice-F, Body-M, Body-F, R.Teeth, R.Mouth}}
+CFWRv4.esm
+ TAG: {{BASH: Deflst, Delev, Invent, Names, Graphics, Scripts, Stats}}
+[DC RANGER ARSENAL v3 MASTER].esm
+ TAG: {{BASH: Deflst}}
+CFWR.esm
+ TAG: {{BASH: Delev, Graphics, Stats, Relev}}
+GNRBuilding_BoS.esm
+ TAG: {{BASH: Invent}}
+RoadWardens.esm
+ TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackages, Actors.CombatStyle, Actors.Stats, Factions, Invent, Scripts, ScriptContents}}
+EVE.esm
+ TAG: {{BASH: Graphics, Invent, Sound, Scripts}}
+EWE Energy Weapons Enhanced.esm
+ TAG: {{BASH: Deflst, Graphics, Invent, Relev, Stats, Scripts}}
+FOOK2 - Main.esm
+ TAG: {{BASH: Invent, Stats, Relations, Factions}}
+FO3 Wanderers Edition - Main File.esm
+ TAG: {{BASH: Actors.ACBS, Actors.Stats, Deflst, Delev, Invent, Names, Relations, Relev, Stats}}
+FWE - Combat Overhaul_Core.esm
+ TAG: {{BASH: Graphics, Names}}
+Mart's Mutant Mod.esm
+ TAG: {{BASH: Delev, Invent, Names, Relations, Scripts}}
+Arwen_Core.esm
+ TAG: {{BASH: Actors.Animations}}
+Xepha's Dynamic Weather.esm
+ TAG: {{BASH: C.Climate, Sound}}
+Shojo Race.esm
+ TAG: {{BASH: Hair, Eyes}}
+XENH.esm
+ TAG: {{BASH: Hair, Eyes}}
+EnhancedChildren.esm
+ TAG: {{BASH: Hair, Eyes}}
+AliciasCuteShop.esm
+ TAG: {{BASH: Stats}}
+Abbreviated Effects.esm
+ TAG: {{BASH: Names}}
+DALCO Inventory Sorter - Fallout 3 & All DLCs.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Base Game).esp
+ TAG: {{BASH: NoMerge, Names}}
+Unofficial Fallout 3 Patch - Operation Anchorage.esp
+ TAG: {{BASH: Deflst, Names}}
+Unofficial Fallout 3 Patch - The Pitt.esp
+ TAG: {{BASH: Deflst, Names}}
+Unofficial Fallout 3 Patch - Broken Steel.esp
+ TAG: {{BASH: Deflst, Names}}
+ TAG: {{BASH: NoMerge, Names}}
+Unofficial Fallout 3 Patch - Point Lookout.esp
+ TAG: {{BASH: Deflst, Names, Invent, Stats}}
+Unofficial Fallout 3 Patch - Mothership Zeta.esp
+ TAG: {{BASH: Deflst, Names}}
+Error Correction.esp
+ TAG: {{BASH: Scripts}}
+FireLightFix.esp
+ TAG: {{BASH: C.Light}}
+BlackWidowBurkeFix.esp
+ TAG: {{BASH: Scripts}}
+PyromaniacFix-Burnmaster.esp
+ TAG: {{BASH: Deflst}}
+PyromaniacFix-Burnmaster-BS.esp
+ TAG: {{BASH: Deflst}}
+PyromaniacFix-Both.esp
+ TAG: {{BASH: Deflst}}
+PyromaniacFix-Both-BS.esp
+ TAG: {{BASH: Deflst}}
+PyromaniacFix-Both+Nuka.esp
+ TAG: {{BASH: Deflst}}
+PyromaniacFix-Both+Nuka-BS.esp
+ TAG: {{BASH: Deflst}}
+MS11fix.esp
+ TAG: {{BASH: Actors.AIPackages, C.Light, Invent, Scripts}}
+BetterGamePerformance.esp
+ TAG: {{BASH: Deflst, Delev}}
+Stop Insulting Me Outcasts.esp
+ TAG: {{BASH: Factions}}
+DALCO Inventory Sorter - Fallout 3 (Base Game).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Operation Anchorage.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Operation Anchorage).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - The Pitt.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Unofficial Fallout 3 Patch (The Pitt).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Broken Steel.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Point Lookout.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Point Lookout).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Mothership Zeta.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Mothership Zeta).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Fallout 3 & All DLCs).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - CALIBR.esp
+ TAG: {{BASH: NoMerge, Names}}
+Project Beauty- Broken Steel.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+Project Beauty- Point Lookout.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+Raider preset beta.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+Project Beauty HD version [Hair Fix].esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+FACE3 - NPCS.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+FACE3 - DLC04 Point Lookout.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+FACE3 NPCS - DLC03 Broken Steel.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+DALCO Inventory Sorter - Dynamic Crosshair.esp
+ TAG: {{BASH: Names}}
+FaceMe.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+FaceMe-Broken Steel.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+Shojo NPC.esp
+ TAG: {{BASH: Invent, NPC.Race, NpcFaces}}
+Moira-EXSP.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+BatteriesPlusV1_2.esp
+ TAG: {{BASH: Graphics}}
+Realistic icons.esp
+ TAG: {{BASH: Graphics}}
+DALCO Inventory Sorter - CASM.esp
+ TAG: {{BASH: NoMerge, Names}}
+EVE - RH Ironsights Patch.esp
+ TAG: {{BASH: Graphics}}
+ReneersRadioMod.esp
+ TAG: {{BASH: Scripts}}
+Despicable Dashwood v2.esp
+ TAG: {{BASH: Actors.ACBS, Invent}}
+HeirApparent.esp
+ TAG: {{BASH: Scripts}}
+IntoTheDeepWoods.esp
+ TAG: {{BASH: Scripts}}
+Lawbringer Boutnies Ver1.1.esp
+ TAG: {{BASH: Invent}}
+NotSoFast.esp
+ TAG: {{BASH: Scripts}}
+PLweightadjust.esp
+ TAG: {{BASH: Invent, Scripts, Stats}}
+The Mantis Imperative - Mantis.esp
+ TAG: {{BASH: Relev}}
+Action for men v3.0.esp
+ TAG: {{BASH: Invent}}
+FF_DestructibleRadios.esp
+ TAG: {{BASH: Destructible}}
+Angry Scientists.esp
+ TAG: {{BASH: Invent}}
+ScrapMetal.esp
+ TAG: {{BASH: Invent}}
+ScrapMetal_H.esp
+ TAG: {{BASH: Invent}}
+ScrapMetal_Q.esp
+ TAG: {{BASH: Invent}}
+CreateScrapMetal.esp
+ TAG: {{BASH: Invent}}
+MrLabTechnician - FWE.esp
+ TAG: {{BASH: Deflst, Delev}}
+Placeable Lights Basic Edition v2.1.esp
+ TAG: {{BASH: Actors.AIData, Relev}}
+Placable Lights v2.1.esp
+ TAG: {{BASH: Actors.AIData, Relev}}
+SelfSurgeryKit.esp
+ TAG: {{BASH: Relev}}
+DALCO Inventory Sorter - Sack of Holding.esp
+ TAG: {{BASH: NoMerge, Names}}
+Chems and Meds Re-Textures Pack.esp
+ TAG: {{BASH: Graphics}}
+MAXdog.esp
+ TAG: {{BASH: Graphics}}
+ShadySands.esp
+ TAG: {{BASH: Factions, Relations}}
+SuperSledgeBeatdown.esp
+ TAG: {{BASH: Scripts}}
+BA_InventorySorterVanilla.esp
+ TAG: {{BASH: Names}
+BA_InventorySorterAnchorage.esp
+ TAG: {{BASH: Names}}
+BA_InventorySorterBrokenSteel.esp
+ TAG: {{BASH: Names}}
+BA_InventorySorterGOTY.esp
+ TAG: {{BASH: Names}}
+BA_InventorySorterPointLookout.esp
+ TAG: {{BASH: Names}}
+BA_InventorySorterThePitt.esp
+ TAG: {{BASH: Names}}
+BA_InventorySorterZeta.esp
+ TAG: {{BASH: Names}}
+AmmoSorter - Start.esp
+ TAG: {{BASH: Names}}
+AmmoSorter - End.esp
+ TAG: {{BASH: Names}}
+Scenic_Loading_Background.esp
+ TAG: {{BASH: Graphics}}
+Scenic_Loading_Background_PointofLookoutDLC.esp
+ TAG: {{BASH: Graphics}}
+Scenic_Loading_Background_OperationAnchorageDLC.esp
+ TAG: {{BASH: Graphics}}
+loadingsc.esp
+ TAG: {{BASH: Graphics}}
+Destruction - Main.esp
+ TAG: {{BASH: Destructible, Scripts, Graphics}}
+Destruction - DLC.esp
+ TAG: {{BASH: Destructible, Scripts}}
+Classic Fallout Weapons BETA.esp
+ TAG: {{BASH: Invent, Relev}}
+Mannequin.esp
+ TAG: {{BASH: Actors.AIData}}
+BombayTradingCo.esp
+ TAG: {{BASH: Actors.AIPackages, Invent, Names, Scripts, Stats}}
+CarvanTrader.esp
+ TAG: {{BASH: Actors.ACBS, Actors.Stats, Invent, Names, R. Attributes-F, R. Attributes-M, R.Skills, Scripts}}
+Clothed American Soldiers.esp
+ TAG: {{BASH: Invent}}
+Clothed Sarah Lyons.esp
+ TAG: {{BASH: Invent}}
+Clothed Sarah Lyons - Sleepwear.esp
+ TAG: {{BASH: Invent}}
+Confessor Cromwell has a Break_EV.esp
+ TAG: {{BASH: Actors.AIPackages}}
+Essential Caravan Merchants.esp
+ TAG: {{BASH: Actors.ACBS}}
+Essential_Zeta_Allies.esp
+ TAG: {{BASH: Actors.ACBS}}
+Named Wastelanders.esp
+ TAG: {{BASH: Names}}
+Named Wasteland.esp
+ TAG: {{BASH: Names}}
+royphilipsevil.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData}}
+royphilipsveryevil.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData}}
+royphilipsveryevilwmask.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData}}
+royphilipsevilwmask.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData}}
+Wasteland Gigolo.esp
+ TAG: {{BASH: Scripts}}
+megaton_lighting.esp
+ TAG: {{BASH: C.Light}}
+MegatonLights.esp
+ TAG: {{BASH: C.Light}}
+Towers Hill.esp
+ TAG: {{BASH: Invent}}
+DALCO Inventory Sorter - Underground Hideout (Fallout 3 & All DLCs).esp
+ TAG: {{BASH: NoMerge, Names}}
+Vault 89 (player home) V1-35.esp
+ TAG: {{BASH: Scripts}}
+FOOK2 - Main.esp
+ TAG: {{BASH: Delev, Relev}}
+FOOK2 - [DESTRUCTION] Main.esp
+ TAG: {{BASH: Destructible, Scripts}}
+FOOK2 - [DESTRUCTION] DIK.esp
+ TAG: {{BASH: Destructible, Scripts}}
+FOOK2 - [DESTRUCTION] Mothership Zeta.esp
+ TAG: {{BASH: Destructible, Scripts}}
+Apocalypse Armory.esp
+ TAG: {{BASH: Delev, Graphics, Invent, Names, Sound, Stats, Relev}}
+Apocalypse Armory - CALIBR.esp
+ TAG: {{BASH: Delev, Relev}}
+Apocalypse Armory - xCALIBR.esp
+ TAG: {{BASH: Deflst, Names, Stats}}
+FO3 Wanderers Edition - Main File.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.AIPackages, Actors.CombatStyle, Actors.Stats, Deflst, Delev, Destructible, Graphics, Invent, Names, Relev, Scripts, Stats}}
+DALCO Inventory Sorter - FWE (Main File).esp
+ TAG: {{BASH: NoMerge, Names}}
+FO3 Wanderers Edition - DLC Anchorage.esp
+ TAG: {{BASH: Deflst}}
+DALCO Inventory Sorter - FWE (Operation Anchorage).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - FWE (The Pitt).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - FWE (Broken Steel).esp
+ TAG: {{BASH: NoMerge, Names}}
+FO3 Wanderers Edition - DLC Point Lookout.esp
+ TAG: {{BASH: Relev, Delev}}
+DALCO Inventory Sorter - FWE (Point Lookout).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - FWE (Mothership Zeta).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - FWE (Alternate Travel).esp
+ TAG: {{BASH: NoMerge, Names}}
+FO3 Wanderers Edition - Followers Enhanced.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.Stats}}
+DALCO Inventory Sorter - FWE (Followers Enh).esp
+ TAG: {{BASH: NoMerge, Names}}
+FO3 Wanderers Edition - Followers Enhanced (BrokenSteel).esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIData, Actors.Stats}}
+DALCO Inventory Sorter - FWE (Followers Enh (BrS)).esp
+ TAG: {{BASH: NoMerge, Names}}
+FO3 Wanderers Edition - Optional Worn Weapons.esp
+ TAG: {{BASH: Delev, Relev}}
+FO3 Wanderers Edition - Talon Loot Crash Fix.esp
+ TAG: {{BASH: Delev, Relev}}
+FWE_Overhaul Kit - Main.esp
+ TAG: {{BASH: Deflst, Delev, Relev, Graphics, Actors.ACBS, Invent, Names, Sound, Stats}}
+FWE_Overhaul Kit - Equipment .esp
+ TAG: {{BASH: Deflst, Delev, Relev, Graphics, Actors.ACBS, Invent, Names, Sound, Stats, Scripts}}
+FWE - Combat Overhaul_Equipment.esp
+ TAG: {{BASH: Deflst, Delev, Relev, Graphics, Actors.ACBS, Invent, Names, Sound, Stats, Scripts}}
+WeaponModKits.esp
+ TAG: {{BASH: Actors.AIData, Delev, Invent, Names, Relev}}
+DALCO Inventory Sorter - Weapon Mod Kits (Base).esp
+ TAG: {{BASH: NoMerge, Names}}
+WeaponModKits - FWE Master Release.esp
+ TAG: {{BASH: Deflst, Relev, Names}}
+WeaponModKits - FWE Optional Worn Weapons.esp
+ TAG: {{BASH: Delev}}
+DALCO Inventory Sorter - WMK - FWE Master Release.esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Weapon Mod Kits (DLC Anchorage).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - WMK - FWE (DLC Anchorage).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Weapon Mod Kits (DLC ThePitt).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - WMK - FWE (DLC ThePitt).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Weapon Mod Kits (DLC BrS).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - WMK - FWE (DLC BrS).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Weapon Mod Kits (DLC PointLookout).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - WMK - FWE (DLC PointLookout).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - Weapon Mod Kits (DLC Zeta).esp
+ TAG: {{BASH: NoMerge, Names}}
+DALCO Inventory Sorter - WMK - FWE (DLC Zeta).esp
+ TAG: {{BASH: NoMerge, Names}}
+CRAFTable_WMKs_skill_requirements_lead_pipe_no_assault_rifle_and_laser_pistol_.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs_skill_requirements_no_assault_rifle_and_laser_pistol.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs_skill_requirements_lead_pipe.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs_no_assault_rifle_and_laser_pistol.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs_lead_pipe_no_assault_rifle_and laser_pistol.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs_lead_pipe.esp
+ TAG: {{BASH: Invent}}
+CRAFTable_WMKs_skill_req_Amodeus.esp
+ TAG: {{BASH: Invent}}
+T3T_WMK1.esp
+ TAG: {{BASH: Deflst, Stats}}
+3EFskewer.esp
+ TAG: {{BASH: Stats}}
+44Magnum.esp
+ TAG: {{BASH: Deflst, Stats}}
+7_HolsterForHandGunsV1_1.esp
+ TAG: {{BASH: Invent}}
+Accurate Assault Rifles 1.2.esp
+ TAG: {{BASH: Stats}}
+AddWanda_v2_blk_eot.esp
+ TAG: {{BASH: Invent}}
+AlexScorpion's  and Weijiesen's Smoking Fun.esp
+ TAG: {{BASH: Invent}}
+AlexScorpion's and Weijiesen's Smoking Fun.esp
+ TAG: {{BASH: Invent}}
+alienblasterammo.esp
+ TAG: {{BASH: Stats}}
+ColtM4Carbines_RHIronSights.esp
+ TAG: {{BASH: Graphics}}
+Drone Cannon Fix.esp
+ TAG: {{BASH: Graphics}}
+EWE Supermutant Energy Weapons.esp
+ TAG: {{BASH: Relev}}
+laserPistolRetextured-IronSightsPatch.esp
+ TAG: {{BASH: Graphics}}
+laserRifleRetexturedScoped.esp
+ TAG: {{BASH: Graphics}}
+laserRifleRetextured-IronSightsPatch.esp
+ TAG: {{BASH: Graphics}}
+laserScatterGunRetextured.esp
+ TAG: {{BASH: Graphics}}
+More308Ammo.esp
+ TAG: {{BASH: Relev}}
+Silenced DKS-501.esp
+ TAG: {{BASH: Deflst, Invent, Names, Relev, Stats}}
+Tactical Weapons by gRs Frederyck.esp
+ TAG: {{BASH: Invent}}
+Tactical Weapons-Calibr-V3 762 fix.esp
+ TAG: {{BASH: Invent}}
+frederyck calibr fix-excalibrified.esp
+ TAG: {{BASH: Invent}}
+WattzLasers.esp
+ TAG: {{BASH: Delev, Stats, Relev}}
+WMKAA12Shotgun.esp
+ TAG: {{BASH: Graphics}}
+DALCO Inventory Sorter - WMKAA12Shotgun.esp
+ TAG: {{BASH: NoMerge, Names}}
+xCALIBRmunitions.esp
+ TAG: {{BASH: Delev, Relev}}
+[DC RANGER ARSENAL v3] - DLC GEAR.esp
+ TAG: {{BASH: Deflst}}
+BBBackpacks-v1-1.esp
+ TAG: {{BASH: Stats}}
+BnB special armors.esp
+ TAG: {{BASH: Invent, Relev}}
+BoS_DX.esp
+ TAG: {{BASH: Graphics}}
+BoSDX.esp
+ TAG: {{BASH: Graphics}}
+WinterizedT51bDX.esp
+ TAG: {{BASH: Graphics}}
+Outcast DX.esp
+ TAG: {{BASH: Graphics}}
+Outcast DX - FWE patch.esp
+ TAG: {{BASH: Graphics}}
+Tribal_DX.esp
+ TAG: {{BASH: Deflst, Graphics}}
+BoS_FOOKedition_Armor.esp
+ TAG: {{BASH: Graphics}}
+Cat Outfit Fanged.esp
+ TAG: {{BASH: Eyes}}
+Cat Outfit Only.esp
+ TAG: {{BASH: Eyes}}
+clearhelmets4radsuits.esp
+ TAG: {{BASH: Graphics}}
+COL Enclave VER2.esp
+ TAG: {{BASH: Graphics}}
+COL Enclave Hell.esp
+ TAG: {{BASH: Graphics}}
+K2_ArmorsRedone_Raiders.esp
+ TAG: {{BASH: Graphics}}
+K2_GirlieGirlVaultBabe.esp
+ TAG: {{BASH: Invent}}
+ModBetterPArmorVanilla.esp
+ TAG: {{BASH: Stats}}
+ModBetterPArmorAnchorage.esp
+ TAG: {{BASH: Stats}}
+ModBetterPArmorPitt.esp
+ TAG: {{BASH: Stats}}
+ModBetterPArmorSteel.esp
+ TAG: {{BASH: Stats}}
+DALCO Inventory Sorter - IGM.esp
+ TAG: {{BASH: NoMerge, Names}}
+RD_ElderLyonsRobe.esp
+ TAG: {{BASH: Graphics}}
+SimpleEyePatch.esp
+ TAG: {{BASH: Eyes, Invent}}
+Test-Weapon_additional armor.esp
+ TAG: {{BASH: Invent}}
+vaultgirlrp.esp
+ TAG: {{BASH: Graphics, Invent}}
+WasteWearGloves.esp
+ TAG: {{BASH: Relev}}
+LingsPrettyThings.esp
+ TAG: {{BASH: Eyes, Hair, Invent, Names, NPC.Class, NPC.Race, NpcFaces, R.Attributes-F, R.Attributes-M, R.Description, R.Head, R.Mouth, R.Teeth, Voice-F}}
+xCALIBRuniverse_LingsBrokenSteel.esp
+ TAG: {{BASH: Actors.ACBS, Hair, NpcFaces}}
+xCALIBRuniverse_LingsPrettyThings.esp
+ TAG: {{BASH: Actors.ACBS, Invent, NPC.Class, Voice-F}}
+Goth Girls Multipack.esp
+ TAG: {{BASH: Eyes, Hair, Invent, NPC.Race, NpcFaces}}
+moirared.esp
+ TAG: {{BASH: Invent}}
+Reclothing For LPT and Flash.esp
+ TAG: {{BASH: Invent}}
+AutoGates.esp
+ TAG: {{BASH: Scripts}}
+Bobbleheads Begone.esp
+ TAG: {{BASH: Scripts}}
+CantaburyCommonsGuards.esp
+ TAG: {{BASH: Actors.ACBS}}
+CantaburyCommonsGuards - DTO.esp
+ TAG: {{BASH: Actors.ACBS, Invent}}
+cyber_meat.esp
+ TAG: {{BASH: Graphics}}
+Dread Dogmeat.esp
+ TAG: {{BASH: Scripts}}
+OverMightyGold.esp
+ TAG: {{BASH: Invent}}
+More Ammo.esp
+ TAG: {{BASH: Relev}}
+More Ammo (Explosive).esp
+ TAG: {{BASH: Relev}}
+Slightly More Ammo.esp
+ TAG: {{BASH: Relev}}
+Slightly More Ammo (Explosive).esp
+ TAG: {{BASH: Relev}}
+Everso Slightly More Ammo.esp
+ TAG: {{BASH: Relev}}
+Scavenger World - Updated v0.07.esp
+ TAG: {{BASH: Relev}}
+Scavenger World - Updated v0.08.esp
+ TAG: {{BASH: Relev}}
+Scavenger World - FWE Edition v0.07.esp
+ TAG: {{BASH: Relev}}
+Scavenger World - FWE Edition v0.08.esp
+ TAG: {{BASH: Relev}}
+ScavengerWasteland.esp
+ TAG: {{BASH: Actors.AIData, Invent, Relev, Scripts}}
+SimpleSmokeo.esp
+ TAG: {{BASH: Actors.AIPackages, Actors.Animations, Delev, Invent, Names, Relev}}
+Start_Energy_Weapon.esp
+ TAG: {{BASH: Invent}}
+WRK - Plugin.esp
+ TAG: {{BASH: Invent, Relev}}
+ZORTS - Custom HP.esp
+ TAG: {{BASH: Scripts}}
+ZORTS - Custom HP - FOOK2.esp
+ TAG: {{BASH: Scripts}}
+ZORTS - Custom HP - FWE.esp
+ TAG: {{BASH: Scripts}}
+Replenishment.esp
+ TAG: {{BASH: Scripts}}
+UWWUT.esp
+ TAG: {{BASH: Graphics}}
+UWWUT - The Pitt Addon.esp
+ TAG: {{BASH: Graphics}}
+UWWUT - Broken Steel Addon.esp
+ TAG: {{BASH: Graphics}}
+UWWUT - WMK Addon.esp
+ TAG: {{BASH: Graphics}}
+UWWUT_WT.esp
+ TAG: {{BASH: Graphics, Stats}}
+UWWUT_WT - TP Addon.esp
+ TAG: {{BASH: Graphics, Stats}}
+UWWUT_WT - BS Addon.esp
+ TAG: {{BASH: Graphics, Stats}}
+UWWUT_WT - WMK Addon.esp
+ TAG: {{BASH: Graphics, Stats}}
+WeaponModKits-Unique.esp
+ TAG: {{BASH: Graphics}}
+unique_uniques.esp
+ TAG: {{BASH: Graphics}}
+unique_uniquesCut.esp
+ TAG: {{BASH: Graphics}}
+unique_uniquesDLC.esp
+ TAG: {{BASH: Graphics}}
+unique_uniquesCutDLC.esp
+ TAG: {{BASH: Graphics}}
+Less Useless Karma Gifts.esp
+ TAG: {{BASH: Relev, Delev}}
+Less Useless Karma Gifts 2.0.esp
+ TAG: {{BASH: Relev, Delev}}
+AfrosNukaCola.esp
+ TAG: {{BASH: Graphics, Stats}}
+Nuka Cola Enhanced.esp
+ TAG: {{BASH: Graphics, Stats}}
+Nuka Cola Enhanced - FWE.esp
+ TAG: {{BASH: Graphics, Stats}}
+Bottle That Water Alternative.esp
+ TAG: {{BASH: Scripts, Stats}}
+Bottle That Water Alternative - Broken Steel.esp
+ TAG: {{BASH: Scripts, Stats}}
+Empty Nuka-Cola Quantum Bottles.esp
+ TAG: {{BASH: Names}}
+PlasmaWeaponsRedesignRebalance.esp
+ TAG: {{BASH: Graphics, Sound}}
+PlasmaRifleRedesign.esp
+ TAG: {{BASH: Graphics, Sound}}
+PlasmaRifleRedesign_A321only.esp
+ TAG: {{BASH: Graphics, Sound}}
+PlasmaRifleRedesign_standardonly.esp
+ TAG: {{BASH: Graphics, Sound}}
+PlasmaPistolRedesign.esp
+ TAG: {{BASH: Graphics, Sound}}
+Water Bottles 3000.esp
+ TAG: {{BASH: Graphics, NoMerge, Deactivate}}
+schematics2.esp
+ TAG: {{BASH: Graphics, NoMerge}}
+Item Descriptions Img.esp
+ TAG: {{BASH: Graphics, NoMerge}}
+Gunfire Sound Range Increased.esp
+ TAG: {{BASH: Sound, NoMerge, Deactivate}}
+Weld - Badge.esp
+ TAG: {{BASH: Graphics, Actors.Anims, Invent}}
+Weld - Badge and Hat.esp
+ TAG: {{BASH: Graphics, Actors.Anims, Invent}}
+Weld and Steel - Badges.esp
+ TAG: {{BASH: Graphics, Actors.Anims, Invent}}
+Weld and Steel - Badges, only Weld hat.esp
+ TAG: {{BASH: Graphics, Actors.Anims, Invent}}
+Deputy Weld and Steel - Badges and Hats.esp
+ TAG: {{BASH: Graphics, Actors.Anims, Invent}}
+Deputy Weld and Steel - Badges Steel Hat.esp
+ TAG: {{BASH: Graphics, Actors.Anims, Invent}}
+GaryHoloTape.esp
+ TAG: {{BASH: Names}}
+Trucker Holotapes.esp
+ TAG: {{BASH: Names}}
+EVE.esp
+ TAG: {{BASH: Delev, Graphics, Relev, Stats, Sound, Scripts}}
+EVE Operation Anchorage.esp
+ TAG: {{BASH: Graphics, Sound}}
+EVE - FWE Master Release.esp
+ TAG: {{BASH: Actors.ACBS, Graphics, Invent, Stats, Sound}}
+EVE - FWE Master Release (Follower Enhanced).esp
+ TAG: {{BASH: Graphics, Sound}}
+EVE - FWE Master Release (pulse fix).esp
+ TAG: {{BASH: Actors.ACBS, Graphics, Invent, Stats, Stats}}
+EVE Anchorage - FWE DLC Anchorage.esp
+ TAG: {{BASH: Graphics, Sound}}
+EVE - FWE with WeaponModKits.esp
+ TAG: {{BASH: Graphics, Sound}}
+Apocalypse Armory + EVE.esp
+ TAG: {{BASH: Delev, Relev}}
+Mart's Mutant Mod.esp
+ TAG: {{BASH: Delev, Relev}}
+DALCO Inventory Sorter - Mart's Mutant Mod (Main).esp
+ TAG: {{BASH: NoMerge, Names}}
+Mart's Mutant Mod - UF3P.esp
+ TAG: {{BASH: Invent}}
+Mart's Mutant Mod - DLC Anchorage.esp
+ TAG: {{BASH: Scripts}}
+Mart's Mutant Mod - DLC The Pitt.esp
+ TAG: {{BASH: Delev, Relev, Scripts}}
+Mart's Mutant Mod - DLC Broken Steel.esp
+ TAG: {{BASH: Delev, Relev, Scripts}}
+DALCO Inventory Sorter - Mart's Mutant Mod (DLC Broken Steel).esp
+ TAG: {{BASH: NoMerge, Names}}
+Mart's Mutant Mod - DLC Point Lookout.esp
+ TAG: {{BASH: Delev, Relev, Scripts}}
+Project Beauty- Point Lookout MMM.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge, Deactivate}}
+Mart's Mutant Mod - DLC Zeta.esp
+ TAG: {{BASH: Scripts}}
+DangerousRadroaches_MMM.esp
+ TAG: {{BASH: Actors.CombatStyle}}
+Mart's Mutant Mod - No Abominable Mutants.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - No Corpse Flies.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - No Floaters.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - No Geckos.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - No Iguanas.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - No Stalker Creatures.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - No Wanamingos.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - Feral Ghoul Rampage.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - Increased Increased Spawns.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - Increased Spawns.esp
+ TAG: {{BASH: Relev}}
+Mart's Mutant Mod - Reduced Wasteland Spawns.esp
+ TAG: {{BASH: Delev, Relev}}
+Mart's Mutant Mod - Tougher Traders.esp
+ TAG: {{BASH: Actors.Stats, Factions, Relations}}
+Mart's Mutant Mod - Natural Selection.esp
+ TAG: {{BASH: Relations}}
+Mart's Mutant Mod - Project Beauty (HD Addition).esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+Mart's Mutant Mod - Project Beauty.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+Mart's Mutant Mod - Project Beauty + FWE.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+CP - FACE3 NPCS [MMM].esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+CP - FACE3 [MMM] Racefix.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+Mart's Mutant Mod - FOOK2.esp
+ TAG: {{BASH: Relations}}
+Mart's Mutant Mod - FOOK2 - DIK.esp
+ TAG: {{BASH: Relations}}
+Mart's Mutant Mod - FWE Master Release.esp
+ TAG: {{BASH: Invent, Relations}}
+DALCO Inventory Sorter - MMM - FWE.esp
+ TAG: {{BASH: NoMerge, Names}}
+Mart's Mutant Mod - FWE Master Release + DLCs.esp
+ TAG: {{BASH: Invent, Relations, Scripts}}
+Mart's Mutant Mod - FWE Master Release + Project Beauty.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+Mart's Mutant Mod - FWE with EVE.esp
+ TAG: {{BASH: Invent, Relations}}
+Mart's Mutant Mod - Project Beauty + FWE.esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+Mart's Mutant Mod - Project Beauty (HD Addition).esp
+ TAG: {{BASH: NPC.Race, NpcFaces, NoMerge}}
+MMM - FWE_Combat Overhaul Master Release.esp
+ TAG: {{BASH: Actors.ACBS, Actors.Stats, Factions, Graphics, Invent, Relations, Scripts, Stats}}
+ARC - Assembled Robotic Companions.esp
+ TAG: {{BASH: Invent, Stats}}
+slaveraider_newlook.esp
+ TAG: {{BASH: Graphics}}
+CharonImproved.esp
+ TAG: {{BASH: Actors.AIPackages}}
+llama's Vanilla Followers for Charon Improved.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIPackages, Stats}}
+Get Your Cherry Back.esp
+ TAG: {{BASH: Actors.ACBS, Actors.AIPackages}}
+CompanionCherry.esp
+ TAG: {{BASH: Actors.Stats}}
+MTC RealWildnessLife.esp
+ TAG: {{BASH: Relations}}
+mesme.esp
+ TAG: {{BASH: Actors.ACBS}}
+RI_LootTableRI.esp
+ TAG: {{BASH: Delev}}
+RI_LootTablePN.esp
+ TAG: {{BASH: Delev}}
+Imp's More Complex Needs.esp
+ TAG: {{BASH: Delev, Relev, Stats}}
+IMCN - 5 DLC Merged.esp
+ TAG: {{BASH: Stats}}
+IMCN - Operation Anchorage.esp
+ TAG: {{BASH: Stats}}
+IMCN - The Pitt.esp
+ TAG: {{BASH: Stats}}
+IMCN - Broken Steel.esp
+ TAG: {{BASH: Stats}}
+IMCN - Point Lookout.esp
+ TAG: {{BASH: Stats}}
+IMCN - Mothership Zeta.esp
+ TAG: {{BASH: Stats}}
+IMCN - FWE Compatibility and Ingestibles.esp
+ TAG: {{BASH: Stats}}
+IMCN - FOOK2 Ingestibles.esp
+ TAG: {{BASH: Stats}}
+IMCN - BLTC Compatibility and Ingestibles.esp
+ TAG: {{BASH: Stats}}
+IMCN - RiPnO Compatibility and Ingestibles.esp
+ TAG: {{BASH: Stats}}
+IMCN - MMM Meats, Bloods, and Eyeballs.esp
+ TAG: {{BASH: Delev, Relev, Stats}}
+All Companions Essential.esp
+ TAG: {{BASH: Actors.ACBS}}
+AMPUTATE!.esp
+ TAG: {{BASH: Scripts}}
+Attentater's Wasteland Economy.esp
+ TAG: {{BASH: Names}}
+BA_RepairVanilla.esp
+ TAG: {{BASH: Deflst}}
+BA_RepairThePitt.esp
+ TAG: {{BASH: Deflst}}
+BA_RepairGOTY.esp
+ TAG: {{BASH: Deflst}}
+bittercup_6.esp
+ TAG: {{BASH: Delev, Relev, ScriptContents}}
+ChildKiller.esp
+ TAG: {{BASH: Actors.ACBS, Scripts}}
+EWE DLC Addon.esp
+ TAG: {{BASH: Deflst, Graphics, Stats}}
+Ghouls Cohabitate.esp
+ TAG: {{BASH: ScriptContents}}
+infiltrations.esp
+ TAG: {{BASH: Scripts}}
+Laboratory.esp
+ TAG: {{BASH: Scripts}}
+QuantumLab.esp
+ TAG: {{BASH: Scripts}}
+Laboratory (BS).esp
+ TAG: {{BASH: Scripts}}
+Laboratory (PL).esp
+ TAG: {{BASH: Scripts}}
+QuantumLab (PL).esp
+ TAG: {{BASH: Scripts}}
+Laboratory (MZ).esp
+ TAG: {{BASH: Scripts}}
+QuantumLab (MZ).esp
+ TAG: {{BASH: Scripts}}
+Laboratory (BS & PL).esp
+ TAG: {{BASH: Scripts}}
+Laboratory (BS & MZ).esp
+ TAG: {{BASH: Scripts}}
+Laboratory (PL & MZ).esp
+ TAG: {{BASH: Scripts}}
+QuantumLab (PL & MZ).esp
+ TAG: {{BASH: Scripts}}
+LightweightFoodSanitizer.esp
+ TAG: {{BASH: Stats}}
+MiscWeightFix.esp
+ TAG: {{BASH: Stats}}
+Owned!.esp
+ TAG: {{BASH: Factions}}
+RRRU +4 UFP.esp
+ TAG: {{BASH: Deflst}}
+RRRU +4.esp
+ TAG: {{BASH: Deflst}}
+Skill Modification Assignment.esp
+ TAG: {{BASH: Scripts, Stats}}
+DALCO Inventory Sorter - SMA.esp
+ TAG: {{BASH: NoMerge, Names}}
+SuperStim.esp
+ TAG: {{BASH: Scripts}}
+SpiderAnts.esp
+ TAG: {{BASH: Relev}}
+TenpennyGhoulsAtPeace.esp
+ TAG: {{BASH: ScriptContents}}
+ThePittReforged.esp
+ TAG: {{Actors.ACBS, Scripts}}
+Weapon Repair Kits.esp
+ TAG: {{BASH: Relev}}
+WRK Final - Plugin.esp
+ TAG: {{BASH: Invent, Relev}}
+WRK Final - Point Lookout.esp
+ TAG: {{BASH: Invent}}
+Arwen_Realism_Core.esp
+ TAG: {{BASH: Actors.CombatStyle, Actors.Stats, Destructible, Names, Relev, Sound, Stats}}
+Arwen_GOTY_Realism_Core.esp
+ TAG: {{BASH: NoMerge}}
+Arwen_Hard-Core.esp
+ TAG: {{BASH: Actors.CombatStyle, Actors.Stats, Destructible, Names, Relev, Stats}}
+Arwen_GOTY_Hard-Core.esp
+ TAG: {{BASH: NoMerge}}
+Arwen_Med-Tec.esp
+ TAG: {{BASH: Names}}
+Arwen_GOTY_Med-Tec.esp
+ TAG: {{BASH: Names, Relev, Stats}}
+Arwen_MMM_Med-Tec_Patch.esp
+ TAG: {{BASH: Relev, Scripts}}
+Arwen_MMM_Patch.esp
+ TAG: {{BASH: Scripts}}
+Arwen_EVE_Patch.esp
+ TAG: {{BASH: Graphics, Sound, Stats}}
+Phalanx-MainFollowerModule.esp
+ TAG: {{BASH: Actors.AIPackages, Actors.ACBS}}
+GH-HealingRebalanceMod_Infirmary+Lab.esp
+ TAG: {{BASH: Scripts}}
+DALCO Inventory Sorter - Max Level Workaround.esp
+ TAG: {{BASH: Names}}
+DALCO Inventory Sorter - Max Level Workaround (BS).esp
+ TAG: {{BASH: Names}}
+DALCO Inventory Sorter - Max Level Workaround (HP).esp
+ TAG: {{BASH: Names}}
+DALCO Inventory Sorter - Max Level Workaround (HP-BS).esp
+ TAG: {{BASH: Names}}
+FelloutWithLightingOverhual-1.0.esp
+ TAG: {{BASH: C.Light}}
+Realistic Interior Lighting.esp
+ TAG: {{BASH: C.Light}}
+Realistic Interior Lighting - BS.esp
+ TAG: {{BASH: C.Light}}
+Realistic Interior Lighting - OA.esp
+ TAG: {{BASH: C.Light}}
+Realistic Interior Lighting - PL.esp
+ TAG: {{BASH: C.Light}}
+DarkerInteriorsFallOut3.esp
+ TAG: {{BASH: C.Light}}
+DarkerInteriorsAnchorage.esp
+ TAG: {{BASH: C.Light}}
+DarkerInteriorsThePitt.esp
+ TAG: {{BASH: C.Light}}
+DarkerInteriorsBrokenSteel.esp
+ TAG: {{BASH: C.Light}}
+DarkerInteriorsPointLookout.esp
+ TAG: {{BASH: C.Light}}
+DarkerInteriorsZeta.esp
+ TAG: {{BASH: C.Light}}
+URWL47.esp
+ TAG: {{BASH: C.Light}}
+URWL48.esp
+ TAG: {{BASH: C.Light}}
+URWL.esp
+ TAG: {{BASH: C.Light}}
+URWL-Normal Color Saturation.esp
+ TAG: {{BASH: C.Light}}
+URWLRain.esp
+ TAG: {{BASH: C.Climate, C.Light}}
+NColorDCInteriors.esp
+ TAG: {{BASH: C.Light}}
+Xepha's Darkened Interiors.esp
+ TAG: {{BASH: C.Light}}
+Xepha's Darkened Interiors - OA.esp
+ TAG: {{BASH: C.Light}}
+Xepha's Darkened Interiors - BS.esp
+ TAG: {{BASH: C.Light}}
+Xepha's Darkened Interiors - PL.esp
+ TAG: {{BASH: C.Light}}
+Xepha's Dynamic Weather - Main.esp
+ TAG: {{BASH: C.Climate}}
+Xepha's Dynamic Weather - Anchorage.esp
+ TAG: {{BASH: C.Climate}}
+Xepha's Dynamic Weather - The Pitt.esp
+ TAG: {{BASH: C.Climate}}
+Xepha's Dynamic Weather - Broken Steel.esp
+ TAG: {{BASH: C.Climate}}
+Xepha's Dynamic Weather - Point Lookout.esp
+ TAG: {{BASH: C.Climate}}
+Xepha's Dynamic Weather - Main + DLC Merged.esp
+ TAG: {{BASH: C.Climate}}
+20th Century v4 ALIVE (Vendor).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (NPC_Settler).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (Raider).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (RivetCity).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (Brotherhood_Outcast).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (SuperMutant).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (Vault 101).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (Chinese Ghoul).esp
+ TAG: {{BASH: Invent}}
+20th Century v4 ALIVE (Talon_Regulator).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Vendor).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Containers).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (NPC_Settler).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Vault 101).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (RivetCity).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Raider).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Slaver).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Chinese Ghoul).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (SuperMutant).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Talon_Regulator).esp
+ TAG: {{BASH: Invent}}
+20th Century v5 ALIVE (Brotherhood_Outcast).esp
+ TAG: {{BASH: Invent}}
+FWE-20thCent Ammo Weight in Names.esp
+ TAG: {{BASH: Names}}
+FWE Realistic Ammo Weight in Names inc. 20th Cent.esp
+ TAG: {{BASH: Names}}
+CFWR_EVE_LoadLast.esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+Dog lover's mod.es
+ TAG: {{BASH: Deflst, Delev}}
+Dog lover's mod NO ANCHORAGE.esp
+ TAG: {{BASH: Deflst, Delev}}
+MMM dog lover's mod.esp
+ TAG: {{BASH: Deflst, Delev}}
+AinzBeautifuleEyes.esp
+ TAG: {{BASH: Eyes}}
+CUSTOM RACES.esp
+ TAG: {{BASH: Eyes, Hair}}
+DIM CUSTOM RACES V2.esp
+ TAG: {{BASH: Eyes, Hair}}
+EwwGhoulyBody.esp
+ TAG: {{BASH: Body-F}}
+HairPack_2chPlus.esp
+ TAG: {{BASH: Hair}}
+HairPack_2chPlus+.esp
+ TAG: {{BASH: Hair}}
+HairPack_2chPlus+EYE.esp
+ TAG: {{BASH: Hair, eyes}}
+VB_Hair_Shojo+CotW_15.esp
+ TAG: {{BASH: Hair}}
+Shojo Race.esp
+ TAG: {{BASH: Hair, Eyes}}
+XENH.esp
+ TAG: {{BASH: Hair, Eyes}}
+[Nukomimi-San] Starter.esp
+ TAG: {{BASH: Hair, Eyes}}
+EZCompanion_Type-N.esp
+ TAG: {{BASH: Hair, Eyes}}
+AAAAlbino_LingsBOG.esp
+ TAG: {{BASH: Hair, Eyes}}
+Mez's Merged Patch 5-0 - DLC-FWE-WMK-MMM.esp
+ TAG: {{BASH: Deflst, Delev, Factions, Invent, Relations, Relev, Scripts}}
+FNNsys - FWE.esp
+ TAG: {{BASH: Scripts}}
+xCALIBRuniverse.esp
+ TAG: {{BASH: Actors.DeathItems, Delev, Names, Graphics, Invent, Relev, Sound, Stats}}
+xCALIBRUniverse - WMK.esp
+ TAG: {{BASH: Names, Graphics, Sound, Stats}}
+xCALIBRUniverse_FWE_FPS.esp
+ TAG: {{BASH: Names, Graphics, Invent, Sound, Stats}}
+xCALIBRUniverse_FWE_Tactical.esp
+ TAG: {{BASH: Names, Graphics, Invent, Sound, Stats}}
+xCALIBR_override.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBR_override_unsorted.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBR_override_FWE5.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBR_FWE5_Override.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBRammo_FWE.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBR_2CW_CP.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBR_2CW_CP_Sorted.esp
+ TAG: {{BASH: Names, Graphics}}
+xCALIBR_20CW_v5.12.esp
+ TAG: {{BASH: Names, Graphics}}
+FWE+WMK_weapons_xCALIBRified.esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+FWE(v.5.04)+WMK_weapons_xCALIBRified.esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+FWE+WMKexcalibrified(Anch).esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+FWE+WMKexcalibrified(Pitt).esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+FWE+WMKexcalibrified(Lkout).esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+frederyck+FWE+xCALIBR.esp
+ TAG: {{BASH: Names, Graphics, Stats}}
+Compatibility_Plugin_TalonExtraArmor_FWE_BrokenSteel.esp
+ TAG: {{BASH: Delev, Relev}}
+Choose your own hairstyle (load this last on FOMM).esp
+ TAG: {{BASH: NPC.Race, NpcFaces, Hair, Eyes}}
+Merged.esp
+ TAG: {{BASH: NoMerge}}
+Merged Patch.esp
+ TAG: {{BASH: NoMerge}}
+xCALIBRammo_override.esp
+ TAG: {{BASH: Names, Graphics}}

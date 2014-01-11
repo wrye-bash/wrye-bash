@@ -2124,6 +2124,8 @@ FCOM_Archery_Deadly_Artifacts.esp
  TAG: {{BASH: Stats}}
 FCOM_FriendlierFactions.esp
  TAG: {{BASH: NoMerge, Relations}}
+Cobl Patch - MMM Gems and Gem Dust.esp
+ TAG: {{BASH: Delev, Invent}}
 WAC - ItemLootFix4v1.0bTIE.esp
  TAG: {{BASH: Delev, Invent, Relev, Stats}}
 AFK_Tweaks.esp
@@ -4711,6 +4713,8 @@ Half Elves.esp
 Half Orcs.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
 Hidden_Elves.esp
+ TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
+High Rock's Sorcerers.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
 kaleen.esp
  TAG: {{BASH: NpcFaces, Hair, Eyes, R.Relations}}
