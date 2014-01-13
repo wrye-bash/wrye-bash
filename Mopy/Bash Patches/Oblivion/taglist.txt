@@ -1,3 +1,10 @@
+// Masterlist variable setup for BOSS v1.7+.
+  IF FILE("Oscuro's_Oblivion_Overhaul.esm") SET: OOO
+  IF FILE("Better Cities Resources.esm") SET: BC
+  IF FILE("FCOM_Convergence.esm") SET: FCOM
+  IF REGEX("Bashed Patch.*\.esp") SET: BP
+  IF FILE("Cosmetic Compilation.esp") SET: CC1
+  
 Hammerfell.esm
  IFCHECKSUM("Hammerfell.esm",7D22F9DF) DIRTY: 0 ITM, 4 UDR records. Needs TES4Edit cleaning: "http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide"
 Beautiful People 2ch-Ed.esm
