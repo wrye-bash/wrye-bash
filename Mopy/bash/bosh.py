@@ -6562,12 +6562,7 @@ class ConfigHelpers:
         deprint(u'Using BOSS API version:', bapi.version)
 
         global boss
-        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
-            boss = bapi.BossDb(dirs['app'].s,u'Nehrim')
-        else:
-            boss = bapi.BossDb(dirs['app'].s,bush.game.name)
-        bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
-                              ConfigHelpers.libloLOMismatchCallback)
+        boss = bapi.BossDb(dirs['app'].s,bush.game.name)
                               
         global lo
         lo = liblo.LibloHandle(dirs['app'].s,bush.game.name)
@@ -6619,15 +6614,15 @@ class ConfigHelpers:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
-        taglist = dirs['defaultPatches'].join(u'taglist.txt')
+        taglist = dirs['defaultPatches'].join(u'taglist.yaml')
         if not taglist.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
         except bapi.BossError:
-            deprint(u'An error occured while parsing taglist.txt with the BOSS API.', traceback=True)
-            raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
+            deprint(u'An error occured while parsing taglist.yaml with the BOSS API.', traceback=True)
+            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the BOSS API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
@@ -6649,7 +6644,7 @@ class ConfigHelpers:
 
     def getDirtyMessage(self,modName):
         message,clean = boss.GetDirtyMessage(modName)
-        cleanIt = clean == bapi.BOSS_API_CLEAN_YES
+        cleanIt = clean == bapi.boss_needs_cleaning_yes
         return (cleanIt,message)
 
     #--Mod Checker ------------------------------------------------------------
