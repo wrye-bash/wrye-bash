@@ -1,3 +1,90 @@
+// Language setup. Only for BOSS 2.1+
+// Language conditional 'IF VAR(EN)' need only for translated messages. Do not add '&& IF VAR(EN) ' conditional for messages without translation.
+IF LANG("chinese") SET: EN
+  // Not translated. Set default EN.
+IF LANG("english") SET: EN
+  // Default EN.
+IF LANG("german") SET: EN
+  // Not translated. Set default EN.
+IF LANG("russian") SET: RU
+  // Translated. Set RU.
+IF LANG("spanish") SET: ES
+  // Translated. Set ES.
+
+// Masterlist variable setup for BOSS v1.7+.
+//
+// Dlls
+IF FILE("SKSE_Elys_Uncapper.dll") SET: SKCU
+IF FILE("..\ScriptDragon.dll") SET: SCDR
+IF FILE("Fuz Ro D'oh.dll") SET: FuzRoDoh
+//
+// DLC variable setup for BOSS v1.7+.
+// Added as many plugins are likely to require DLC.
+IF ACTIVE("Dawnguard.esm") SET: Dawnguard
+IF ACTIVE("Hearthfires.esm") SET: Hearthfire
+IF ACTIVE("Dragonborn.esm") SET: Dragonborn
+//
+// Plugins
+IF ACTIVE("ApachiiHair.esm") SET: ApachiiHair
+IF ACTIVE("ApachiiHairFemales.esm") SET: ApachiiHairF
+IF ACTIVE("ApachiiHairMales.esm") SET: ApachiiHairM
+IF FILE("BandolierForNPCsImmersiveArmorsPatch.esp") SET: BFNIAP
+IF ACTIVE("BBLuxurySuite.esm") SET: BBLS
+IF REGEX("(0001)?BertsBreezehome.+\.es[pm]") SET: BertsBHInst
+IF REGEX("Complete Crafting Overhaul( - BS version)?\.esp") SET: CCO
+IF REGEX("DragonSwarms.*\.esp") SET: DSwarmInst
+IF FILE("DS-MoreAgressionForRemover.esp") SET: IncDSwarmMorAgress
+IF FILE("EpicGloryByMadmole.esp") SET: EpicGloryInst
+IF REGEX("Extended Colors - (Less Selection|Lite Selection|Selection|Hair Only)?\.esp") || IF FILE("Extended Slider Colors.esp") SET: ExtSlider
+IF ACTIVE("GeneralStores.esm") SET: GS
+IF FILE("GM-ForgeAdditions.esp") || IF FILE("GM-ForgeAdditionsLAotB.esp") SET: GMForgeAdd
+IF FILE("GM-ForgeAdditionsLevelledOutfits.esp") && IF FILE("GM-ForgeAdditionsLAotBLevelledOutfits.esp") SET: DualGMLevList
+IF FILE("GM-ForgeAdditions.esp") && IF FILE("GM-ForgeAdditionsLAotB.esp") SET: DualGMForgeAdd
+IF ACTIVE("Imp's More Complex Needs.esm") SET: ICMN
+IF FILE("Lady Body.esp") || IF FILE("Lady Body.esm") SET: LB
+IF REGEX("Noble_Artifacts_For_Skyrim_(Eng|Rus|Deu)?\.esp") SET: NobleArtInst
+IF ACTIVE("RaceCompatibility.esm") SET: RaceComp
+IF FILE("SkyMoMod.esm") SET: SkyMoMod
+IF REGEX("SkyRe_.+\.esp") SET: SkyRe
+IF FILE("SkyRe_Main.esp") || IF FILE("SkyRe_Main_NoDawnguard.esp") SET: SkyReM
+IF ACTIVE("SkyUI.esp") SET: SkyUI
+IF ACTIVE("TheEyesOfBeauty.esp") SET: EOB
+IF FILE("tools\GenerateFNIS_for_Users\GenerateFNISforUsers.exe") SET: FNIS
+IF FILE("UFO - Ultimate Follower Overhaul.esp") SET: UFO
+// Ultimate Follower Overhaul Version 1.2i
+IF CHECKSUM("UFO - Ultimate Follower Overhaul.esp", 396AE69F) SET: UFOVI
+IF FILE("Update.esm") SET: Update
+//
+// Unofficial Patch variables
+IF ACTIVE("Unofficial Skyrim Patch.esp") SET: USKP
+IF ACTIVE("Unofficial Dawnguard Patch.esp") SET: UDGP
+IF ACTIVE("Unofficial Hearthfire Patch.esp") SET: UHFP
+IF ACTIVE("Unofficial Dragonborn Patch.esp") SET: UDBP
+IF ACTIVE("Unofficial High Resolution Patch.esp") SET: UHRP
+// Unofficial Patch 2.0 variables
+IF CHECKSUM("Unofficial Skyrim Patch.esp", 10A6C650) SET: USKP20
+IF CHECKSUM("Unofficial Skyrim Patch.esp", 29D2C7DF) SET: USKP20
+IF CHECKSUM("Unofficial Skyrim Patch.esp", 840E444C) SET: USKP20
+IF CHECKSUM("Unofficial Skyrim Patch.esp", 7F2BBDA0) SET: USKP20
+IF CHECKSUM("Unofficial Dawnguard Patch.esp", C2880009) SET: UDGP20
+IF CHECKSUM("Unofficial Dawnguard Patch.esp", 65A320C3) SET: UDGP20
+IF CHECKSUM("Unofficial Dawnguard Patch.esp", 2C9880ED) SET: UDGP20
+IF CHECKSUM("Unofficial Dawnguard Patch.esp", 35AAD3CA) SET: UDGP20
+IF CHECKSUM("Unofficial Dawnguard Patch.esp", FF134167) SET: UDGP20
+IF CHECKSUM("Unofficial Dawnguard Patch.esp", 7B84DB0F) SET: UDGP20
+IF CHECKSUM("Unofficial Hearthfire Patch.esp", F913F25E) SET: UHFP20
+IF CHECKSUM("Unofficial Hearthfire Patch.esp", 7B3D122F) SET: UHFP20
+IF CHECKSUM("Unofficial Hearthfire Patch.esp", A5D121AA) SET: UHFP20
+IF CHECKSUM("Unofficial Dragonborn Patch.esp", DA46F3C8) SET: UDBP20
+IF CHECKSUM("Unofficial Dragonborn Patch.esp", E72B837B) SET: UDBP20
+IF CHECKSUM("Unofficial Dragonborn Patch.esp", 427B8910) SET: UDBP20
+//
+// Sounds of Skyrim
+IF REGEX("SoS - (The Dungeons|The Wilds|Civilization)?\.esp") SET: SoS
+//
+// Bashed Patch variable
+IF REGEX("Bashed Patch.*\.esp") SET: BP
+
 Update.esm
  TAG: {{BASH: Delev, Relev}}
  IFCHECKSUM("Update.esm",E5B67BDA)&&IFVAR(EN) DIRTY: 92 ITM, 3 UDR records. Needs "http://www.nexusmods.com/skyrim/mods/25859 TES5Edit" cleaning. A cleaning guide is available "http://www.creationkit.com/TES5Edit_Cleaning_Guide_-_TES5Edit here".
