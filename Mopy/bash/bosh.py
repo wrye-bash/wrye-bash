@@ -6572,7 +6572,11 @@ class ConfigHelpers:
                               ConfigHelpers.libloLOMismatchCallback)
 
         self.bossVersion = dirs['boss'].join(u'BOSS.exe').version
-        if self.bossVersion >= (2,0,0,0):
+        if self.bossVersion >= (3,0,0,0):
+            # BOSS 3+ stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
+            self.bossMasterPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'masterlist.yaml')
+            self.bossUserPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'userlist.yaml')
+        elif self.bossVersion >= (2,0,0,0):
             # BOSS 2.0+ stores the masterlist/userlist in a subdirectory
             self.bossMasterPath = dirs['boss'].join(bush.game.name,u'masterlist.txt')
             self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
