@@ -39,9 +39,9 @@ def Init(path):
 
     # If path is a directory, auto choose DLL based on platform
     if os.path.isdir(path):
-        if '64bit' in platform.architecture():
-            path = os.path.join(path,u'libloadorder64.dll')
-        else:
+        #if '64bit' in platform.architecture():
+        #    path = os.path.join(path,u'libloadorder64.dll')
+        #else:
             path = os.path.join(path,u'libloadorder32.dll')
 
     global liblo
