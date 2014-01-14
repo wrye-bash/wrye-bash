@@ -7,7 +7,7 @@ echo. Building Wrye Bash packages, patience Avatar....
 echo.
 echo.
 
-"C:\Python27\python.exe" "C:\Code Repositories\Wrye Bash\scripts\package_for_release.py"
+"C:\Python27\python.exe" ".\package_for_release.py"
 
 echo.
 echo.
