@@ -20743,8 +20743,6 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_Multi
 #------------------------------------------------------------------------------
 class AssortedTweak_DarnBooks(MultiTweakItem):
     """DarNifies books."""
-    scanOrder = 32
-    editOrder = 32
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -20766,7 +20764,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        # maxWeight = self.choiceValues[self.chosen][0] # TODO: is this suposed to be used ?
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.BOOK
         id_records = patchBlock.id_records
@@ -20801,7 +20799,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
                 text = record.text
                 text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
                 if reHead2.match(text):
-                    inBold = False
+                    self.inBold = False
                     text = reHead2.sub(ur'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
                     text = reHead3.sub(ur'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
                     text = reAlign.sub(replaceAlign,text)
