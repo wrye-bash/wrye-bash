@@ -15835,7 +15835,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         self.mod_count = {} # extra CBash_MultiTweakItem instance variable
 
 #------------------------------------------------------------------------------
-class MultiTweaker(Patcher):
+class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
     group = _(u'Tweakers')
@@ -15860,13 +15860,9 @@ class MultiTweaker(Patcher):
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
 
-class CBash_MultiTweaker(CBash_Patcher):
-    """Combines a number of sub-tweaks which can be individually enabled and
-    configured through a choice menu."""
-    group = _(u'Tweakers')
-    scanOrder = 20
-    editOrder = 20
+class MultiTweaker(AMultiTweaker,Patcher): pass
 
+class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
     #--Config Phase -----------------------------------------------------------
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -15874,23 +15870,6 @@ class CBash_MultiTweaker(CBash_Patcher):
         for tweak in self.enabledTweaks:
             for type_ in tweak.getTypes():
                 group_patchers.setdefault(type_,[]).append(tweak)
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        config['isEnabled'] = self.isEnabled
-        for tweak in self.tweaks:
-            tweak.saveConfig(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
-        self.isActive = len(self.enabledTweaks) > 0
 
 class ADoublePatcher(AListPatcher):
     """docs - what's this about ?""" # TODO
