@@ -23623,10 +23623,14 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class NamesTweak_Potions(MultiTweakItem):
+class ANamesTweak_Potions(AMultiTweakItem):
+    """Names tweaker for potions."""
+    reOldLabel = re.compile(u'^(-|X) ',re.U)
+    reOldEnd = re.compile(u' -$',re.U)
+
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Potions"),
+        super(ANamesTweak_Potions, self).__init__(_(u"Potions"),
             _(u'Label potions to sort by type and effect.'),
             'ALCH',
             (_(u'XD Illness'),  u'%s '),
@@ -23635,7 +23639,7 @@ class NamesTweak_Potions(MultiTweakItem):
             (_(u'(XD) Illness'),u'(%s) '),
             )
 
-    #--Config Phase -----------------------------------------------------------
+class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -23662,8 +23666,8 @@ class NamesTweak_Potions(MultiTweakItem):
         format = self.choiceValues[self.chosen][0]
         hostileEffects = patchFile.getMgefHostiles()
         keep = patchFile.getKeeper()
-        reOldLabel = re.compile(u'^(-|X) ',re.U)
-        reOldEnd = re.compile(u' -$',re.U)
+        reOldLabel = self.__class__.reOldLabel
+        reOldEnd = self.__class__.reOldEnd
         mgef_school = patchFile.getMgefSchool()
         for record in patchFile.ALCH.records:
             if not record.full: continue
@@ -23700,22 +23704,8 @@ class NamesTweak_Potions(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
-    """Names tweaker for potions."""
-    reOldLabel = re.compile(u'^(-|X) ',re.U)
-    reOldEnd = re.compile(u' -$',re.U)
+class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Potions"),
-            _(u'Label potions to sort by type and effect.'),
-            'ALCH',
-            (_(u'XD Illness'),  u'%s '),
-            (_(u'XD. Illness'), u'%s. '),
-            (_(u'XD - Illness'),u'%s - '),
-            (_(u'(XD) Illness'),u'(%s) '),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['ALCH']
 
@@ -23773,10 +23763,12 @@ class CBash_NamesTweak_Potions(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class NamesTweak_Scrolls(MultiTweakItem):
+reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once (TODO : should be faster ? name ?)
+class ANamesTweak_Scrolls(AMultiTweakItem):
+    reOldLabel = reSpell
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Notes and Scrolls"),
+        super(ANamesTweak_Scrolls,self).__init__(_(u"Notes and Scrolls"),
             _(u'Mark notes and scrolls to sort separately from books'),
             u'scrolls',
             (_(u'~Fire Ball'),    u'~'),
@@ -23792,14 +23784,14 @@ class NamesTweak_Scrolls(MultiTweakItem):
             (_(u'.(D) Fire Ball'),u'.(%s) '),
             )
 
-    #--Config Phase -----------------------------------------------------------
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
-        MultiTweakItem.saveConfig(self,configs)
+        super(ANamesTweak_Scrolls,self).saveConfig(configs)
         rawFormat = self.choiceValues[self.chosen][0]
         self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
 
+class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -23834,7 +23826,7 @@ class NamesTweak_Scrolls(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
+        reOldLabel = self.__class__.reOldLabel
         orderFormat, magicFormat = self.orderFormat, self.magicFormat
         keep = patchFile.getKeeper()
         id_ench = patchFile.ENCH.id_records
@@ -23865,38 +23857,13 @@ class NamesTweak_Scrolls(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
+class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
-    reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Notes and Scrolls"),
-            _(u'Mark notes and scrolls to sort separately from books'),
-            u'scrolls',
-            (_(u'~Fire Ball'),    u'~'),
-            (_(u'~D Fire Ball'),  u'~%s '),
-            (_(u'~D. Fire Ball'), u'~%s. '),
-            (_(u'~D - Fire Ball'),u'~%s - '),
-            (_(u'~(D) Fire Ball'),u'~(%s) '),
-            (u'----',u'----'),
-            (_(u'.Fire Ball'),    u'.'),
-            (_(u'.D Fire Ball'),  u'.%s '),
-            (_(u'.D. Fire Ball'), u'.%s. '),
-            (_(u'.D - Fire Ball'),u'.%s - '),
-            (_(u'.(D) Fire Ball'),u'.(%s) '),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['BOOK']
 
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        CBash_MultiTweakItem.saveConfig(self,configs)
-        rawFormat = self.choiceValues[self.chosen][0]
-        self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
-        self.magicFormat = rawFormat[1:]
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -23923,7 +23890,7 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
                             schoolType = effect.schoolType
                         else:
                             schoolType = self.patchFile.mgef_school.get(effect.name,6)
-                newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
+                newFull = self.__class__.reOldLabel.sub(u'',newFull) #--Remove existing label
                 newFull = magicFormat % u'ACDIMRU'[schoolType] + newFull
             #--Ordering
             newFull = self.orderFormat[isEnchanted] + newFull
@@ -23948,10 +23915,11 @@ class CBash_NamesTweak_Scrolls(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class NamesTweak_Spells(MultiTweakItem):
+class ANamesTweak_Spells(AMultiTweakItem):
     #--Config Phase -----------------------------------------------------------
+    reOldLabel = reSpell
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Spells"),
+        super(ANamesTweak_Spells, self).__init__(_(u"Spells"),
             _(u'Label spells to sort by school and level.'),
             'SPEL',
             (_(u'Fire Ball'),  u'NOTAGS'),
@@ -23967,7 +23935,7 @@ class NamesTweak_Spells(MultiTweakItem):
             (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
 
-    #--Config Phase -----------------------------------------------------------
+class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -23992,11 +23960,11 @@ class NamesTweak_Spells(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        format = self.choiceValues[self.chosen][0]
-        removeTags = u'%s' not in format
-        showLevel = u'%d' in format
+        format_ = self.choiceValues[self.chosen][0]
+        removeTags = u'%s' not in format_
+        showLevel = u'%d' in format_
         keep = patchFile.getKeeper()
-        reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
+        reOldLabel = self.__class__.reOldLabel
         mgef_school = patchFile.getMgefSchool()
         for record in patchFile.SPEL.records:
             if record.spellType != 0 or not record.full: continue
@@ -24011,9 +23979,9 @@ class NamesTweak_Spells(MultiTweakItem):
             newFull = reOldLabel.sub(u'',record.full) #--Remove existing label
             if not removeTags:
                 if showLevel:
-                    newFull = format % (u'ACDIMRU'[school],record.level) + newFull
+                    newFull = format_ % (u'ACDIMRU'[school],record.level) + newFull
                 else:
-                    newFull = format % u'ACDIMRU'[school] + newFull
+                    newFull = format_ % u'ACDIMRU'[school] + newFull
             if newFull != record.full:
                 record.full = newFull
                 keep(record.fid)
@@ -24024,35 +23992,16 @@ class NamesTweak_Spells(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
+class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
     """Names tweaker for spells."""
-    reOldLabel = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Spells"),
-            _(u'Label spells to sort by school and level.'),
-            'SPEL',
-            (_(u'Fire Ball'),  u'NOTAGS'),
-            (u'----',u'----'),
-            (_(u'D Fire Ball'),  u'%s '),
-            (_(u'D. Fire Ball'), u'%s. '),
-            (_(u'D - Fire Ball'),u'%s - '),
-            (_(u'(D) Fire Ball'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'D2 Fire Ball'),  u'%s%d '),
-            (_(u'D2. Fire Ball'), u'%s%d. '),
-            (_(u'D2 - Fire Ball'),u'%s%d - '),
-            (_(u'(D2) Fire Ball'),u'(%s%d) '),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['SPEL']
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
-        CBash_MultiTweakItem.saveConfig(self,configs)
+        super(CBash_NamesTweak_Spells, self).saveConfig(configs)
         self.format = self.choiceValues[self.chosen][0]
         self.removeTags = u'%s' not in self.format
         self.showLevel = u'%d' in self.format
@@ -24071,7 +24020,7 @@ class CBash_NamesTweak_Spells(CBash_MultiTweakItem):
                     schoolType = effect.schoolType
                 else:
                     schoolType = self.patchFile.mgef_school.get(effect.name,6)
-            newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
+            newFull = self.__class__.reOldLabel.sub(u'',newFull) #--Remove existing label
             if not self.removeTags:
                 if self.showLevel:
                     newFull = self.format % (u'ACDIMRU'[schoolType],record.levelType) + newFull
