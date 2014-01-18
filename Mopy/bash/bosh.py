@@ -26876,12 +26876,12 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class RaceTweaker_BiggerOrcsandNords(MultiTweakItem):
-    """Adjusts the Orc and Nord race records to be taller/heavier."""
+class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
+        # TODO : translate ?
+        super(ARaceTweaker_BiggerOrcsandNords, self).__init__(_(u"Bigger Nords and Orcs"),
             _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
             u'BiggerOrcsandNords',
             #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
@@ -26890,6 +26890,8 @@ class RaceTweaker_BiggerOrcsandNords(MultiTweakItem):
             (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
             )
 
+class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakItem):
+    """Adjusts the Orc and Nord race records to be taller/heavier."""
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27778,22 +27780,14 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         for tweak in self.enabledTweaks:
             tweak.log(log)
 
-class CBash_RaceTweaker_BiggerOrcsandNords(CBash_MultiTweakItem):
+class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash_MultiTweakItem):
     """Changes all Orcs and Nords to be bigger."""
     name = _(u"Bigger Nords and Orcs")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Bigger Nords and Orcs"),
-            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            u'BiggerOrcsandNords',
-            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
-            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
-            )
+        super(CBash_RaceTweaker_BiggerOrcsandNords, self).__init__()
         self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
-        self.mod_count = {}
 
     def getTypes(self):
         return ['RACE']
