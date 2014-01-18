@@ -20741,17 +20741,27 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_Multi
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_DarnBooks(MultiTweakItem):
-    """DarNifies books."""
+class AAssortedTweak_DarnBooks(AMultiTweakItem):
+    """DarNifies books.""" # TODO C and P implementations have very similar code
+    reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
+    reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
+    reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
+    reDiv = re.compile(ur'<div',re.I+re.M)
+    reFont = re.compile(ur'<font',re.I+re.M)
+    reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
+    reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
+    reBold = re.compile(ur'(__|\*\*|~~)')
+    reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"DarNified Books"),
+        super(AAssortedTweak_DarnBooks, self).__init__(_(u"DarNified Books"),
             _(u'Books will be reformatted for DarN UI.'),
             u'DarnBooks',
             (u'default',  u'default'),
             )
 
+class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -20777,16 +20787,16 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-        reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
-        reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
-        reDiv = re.compile(ur'<div',re.I+re.M)
-        reFont = re.compile(ur'<font',re.I+re.M)
+        reColor = self.__class__.reColor
+        reTagInWord = self.__class__.reTagInWord
+        reFont1 = self.__class__.reFont1
+        reDiv = self.__class__.reDiv
+        reFont = self.__class__.reFont
+        reHead2 = self.__class__.reHead2
+        reHead3 = self.__class__.reHead3
+        reBold = self.__class__.reBold
+        reAlign = self.__class__.reAlign
         keep = patchFile.getKeeper()
-        reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-        reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-        reBold = re.compile(ur'(__|\*\*|~~)')
-        reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
         align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
         self.inBold = False
         def replaceBold(mo):
@@ -20831,19 +20841,10 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
-    """DarNifies books."""
+class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,CBash_MultiTweakItem):
     name = _(u'Books DarNified')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"DarNified Books"),
-            _(u'Books will be reformatted for DarN UI.'),
-            u'DarnBooks',
-            (u'default',  u'default'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['BOOK']
 
@@ -20859,15 +20860,15 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         if record.text and not record.enchantment:
             text = record.text
             text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
-            reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-            reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
-            reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
-            reDiv = re.compile(ur'<div',re.I+re.M)
-            reFont = re.compile(ur'<font',re.I+re.M)
-            reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-            reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-            reBold = re.compile(ur'(__|\*\*|~~)')
-            reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
+            reColor = self.__class__.reColor
+            reTagInWord = self.__class__.reTagInWord
+            reFont1 = self.__class__.reFont1
+            reDiv = self.__class__.reDiv
+            reFont = self.__class__.reFont
+            reHead2 = self.__class__.reHead2
+            reHead3 = self.__class__.reHead3
+            reBold = self.__class__.reBold
+            reAlign = self.__class__.reAlign
             align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
             self.inBold = False
             if reHead2.match(text):
