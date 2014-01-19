@@ -20400,16 +20400,6 @@ class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,CBash_MultiTweakItem)
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.count = {}
-
 #------------------------------------------------------------------------------
 class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
     """Sets all one handed weapons as blades, two handed weapons as blunt."""
@@ -20481,16 +20471,6 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,C
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_ConsistentRings(AMultiTweakItem):
@@ -22427,16 +22407,6 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_Factioncrime
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
