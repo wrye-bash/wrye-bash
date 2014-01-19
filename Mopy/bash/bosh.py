@@ -20995,7 +20995,35 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_Mul
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class AAssortedTweak_PotionWeight(AMultiTweakItem):
+
+class AMultiTweakItem_Weight(AMultiTweakItem):
+
+    def __init__(self,label,tip,key,*choices,**kwargs):
+        super(AMultiTweakItem_Weight, self).__init__(label,tip,key,*choices,**kwargs)
+        self.weight = self.choiceValues[self.chosen][0]
+
+    def _patchLog(self,log,count,weight):
+        # TODO: maybe overide _patchLog and call self.weight instead of passing it ?
+        log.setHeader(self.logHeader)
+        log(self.logWeightValue % weight)
+        log(self.logMsg % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem):
+
+    def buildPatchLog(self,log):
+        """Will write to log for a class that has a weight field"""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(self.logHeader)
+        log(self.logWeightValue % self.weight)
+        log(self.logMsg % sum(mod_count.values()))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
     """Reweighs standard potions down to 0.1."""
 
     #--Config Phase -----------------------------------------------------------
@@ -21009,6 +21037,8 @@ class AAssortedTweak_PotionWeight(AMultiTweakItem):
             (u'0.6',  0.6),
             (_(u'Custom'),0.0),
             )
+        self.logWeightValue = _(u'Potions set to maximum weight of %f')
+        self.logMsg = u'* '+_(u'Potions Reweighed: %d')
 
 class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21023,7 +21053,7 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.ALCH
         id_records = patchBlock.id_records
@@ -21035,7 +21065,7 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
@@ -21044,14 +21074,9 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(_(u'Potions set to maximum weight of %f') % maxWeight)
-        log(u'* '+_(u'Potions Reweighed: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count,maxWeight)
 
-class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTweakItem):
+class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTweakItem_Weight):
     name = _(u"Reweigh: Potions (Maximum)")
 
     #--Config Phase -----------------------------------------------------------
@@ -21065,7 +21090,7 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTw
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         if (record.weight > maxWeight and record.weight < 1.0):
             for effect in record.effects:
                 if effect.name == self.SEFF:
@@ -21078,19 +21103,8 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTw
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(_(u'Potions set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(u'* '+_(u'Potions Reweighed: %d') % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_IngredientWeight(AMultiTweakItem):
+class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
     """Reweighs standard ingredients down to 0.1."""
 
     #--Config Phase -----------------------------------------------------------
@@ -21104,6 +21118,8 @@ class AAssortedTweak_IngredientWeight(AMultiTweakItem):
             (u'0.6',  0.6),
             (_(u'Custom'),0.0),
             )
+        self.logWeightValue = _(u'Ingredients set to maximum weight of %f')
+        self.logMsg = u'* '+_(u'Ingredients Reweighed: %d')
 
 class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21118,7 +21134,7 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakI
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.INGR
         id_records = patchBlock.id_records
@@ -21130,7 +21146,7 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakI
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.INGR.records:
@@ -21139,14 +21155,9 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakI
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(_(u'Ingredients set to maximum weight of %f') % maxWeight)
-        log(u'* '+_(u'Ingredients Reweighed: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count,maxWeight)
 
-class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash_MultiTweakItem):
+class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash_MultiTweakItem_Weight):
     name = _(u'Reweigh: Ingredients')
 
     #--Config Phase -----------------------------------------------------------
@@ -21160,7 +21171,7 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
 
         if record.weight > maxWeight:
             for effect in record.effects:
@@ -21174,19 +21185,8 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(_(u'Ingredients set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(u'* '+_(u'Ingredients Reweighed: %d') % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem):
+class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
     """Reweighs any potions up to 4."""
 
     #--Config Phase -----------------------------------------------------------
@@ -21200,6 +21200,8 @@ class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem):
             (u'4',  4),
             (_(u'Custom'),0.0),
             )
+        self.logWeightValue = _(u'Potions set to minimum weight of %f')
+        self.logMsg = u'* '+_(u'Potions Reweighed: %d')
 
 class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21214,7 +21216,7 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,Multi
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        minWeight = self.choiceValues[self.chosen][0]
+        minWeight = self.weight
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.ALCH
         id_records = patchBlock.id_records
@@ -21226,7 +21228,7 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,Multi
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        minWeight = self.choiceValues[self.chosen][0]
+        minWeight = self.weight
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.ALCH.records:
@@ -21235,14 +21237,9 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,Multi
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(_(u'Potions set to minimum weight of %f') % minWeight)
-        log(u'* '+_(u'Potions Reweighed: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count,minWeight)
 
-class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,CBash_MultiTweakItem):
+class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,CBash_MultiTweakItem_Weight):
     scanOrder = 33 #Have it run after the max weight for consistent results
     editOrder = 33
     name = _(u'Reweigh: Potions (Minimum)')
@@ -21254,7 +21251,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        minWeight = self.choiceValues[self.chosen][0]
+        minWeight = self.weight
         if (record.weight < minWeight):
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -21264,19 +21261,8 @@ class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(_(u'Potions set to minimum weight of %f') % self.choiceValues[self.chosen][0])
-        log(u'* '+_(u'Potions Reweighed: %d') % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_StaffWeight(AMultiTweakItem):
+class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
     """Reweighs staffs."""
 
     #--Config Phase -----------------------------------------------------------
@@ -21294,6 +21280,8 @@ class AAssortedTweak_StaffWeight(AMultiTweakItem):
             (u'8',  8.0),
             (_(u'Custom'),0.0),
             )
+        self.logWeightValue = _(u'Staffs/Staves set to maximum weight of %f')
+        self.logMsg = u'* '+_(u'Staffs/Staves Reweighed: %d')
 
 class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21308,7 +21296,7 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.WEAP
         id_records = patchBlock.id_records
@@ -21320,7 +21308,7 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.WEAP.records:
@@ -21329,14 +21317,9 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(_(u'Staffs/Staves set to maximum weight of %f') % maxWeight)
-        log(u'* '+_(u'Staffs/Staves Reweighed: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count,maxWeight)
 
-class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTweakItem):
+class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTweakItem_Weight):
     name = _(u'Reweigh: Staffs/Staves')
 
     #--Config Phase -----------------------------------------------------------
@@ -21346,7 +21329,7 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTwea
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
 
         if (record.IsStaff and record.weight > maxWeight):
             override = record.CopyAsOverride(self.patchFile)
@@ -21357,19 +21340,8 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTwea
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(_(u'Staffs/Staves set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(u'* '+_(u'Staffs/Staves Reweighed: %d') % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
-class AAssortedTweak_ArrowWeight(AMultiTweakItem):
+class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
     """Reweighs standard arrows down to 0.""" # TODO : Wha ?
 
     #--Config Phase -----------------------------------------------------------
@@ -21384,6 +21356,8 @@ class AAssortedTweak_ArrowWeight(AMultiTweakItem):
             (u'0.6',  0.6),
             (_(u'Custom'),0.0),
             )
+        self.logWeightValue = _(u'Arrows set to maximum weight of %f')
+        self.logMsg = u'* '+_(u'Arrows Reweighed: %d')
 
 class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21398,7 +21372,7 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.AMMO
         id_records = patchBlock.id_records
@@ -21410,7 +21384,7 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
         count = {}
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
@@ -21419,14 +21393,9 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(_(u'Arrows set to maximum weight of %f') % maxWeight)
-        log(u'* '+_(u'Arrows Reweighed: %d') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count,maxWeight)
 
-class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTweakItem):
+class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTweakItem_Weight):
     name = _(u'Reweigh: Arrows')
 
     #--Config Phase -----------------------------------------------------------
@@ -21436,7 +21405,7 @@ class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTwea
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.weight
 
         if record.weight > maxWeight:
             override = record.CopyAsOverride(self.patchFile)
@@ -21446,17 +21415,6 @@ class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTwea
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(_(u'Arrows set to maximum weight of %f') % self.choiceValues[self.chosen][0])
-        log(u'* '+_(u'Arrows Reweighed: %d') % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_ScriptEffectSilencer(AMultiTweakItem):
@@ -22743,7 +22701,7 @@ class ClothesTweak_MaxWeight(ClothesTweak):
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         tweakCount = 0
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
         for record in patchFile.CLOT.records:
             weight = record.weight
@@ -22774,7 +22732,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         if record.IsNonPlayable:
             return
 
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
 
         if (record.weight > maxWeight) and self.isMyType(record) and (record.weight < superWeight):
@@ -22795,7 +22753,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        maxWeight = self.choiceValues[self.chosen][0]
+        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
