@@ -15843,6 +15843,16 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         super(CBash_MultiTweakItem,self).__init__(label,tip,key,*choices,**kwargs)
         self.mod_count = {} # extra CBash_MultiTweakItem instance variable
 
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
 #------------------------------------------------------------------------------
 class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
@@ -20550,16 +20560,6 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,CBash_M
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 rePlayableSkips = re.compile(ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
@@ -20642,16 +20642,6 @@ class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,CBash
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
     """Sets all armors to be playable"""
 
@@ -20728,16 +20718,6 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_Multi
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_DarnBooks(AMultiTweakItem):
@@ -20896,16 +20876,6 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,CBash_MultiTweakIte
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_FogFix(AMultiTweakItem):
@@ -21070,16 +21040,6 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_Mul
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_PotionWeight(AMultiTweakItem):
@@ -21728,16 +21688,6 @@ class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,CBash_Multi
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AAssortedTweak_WindSpeed(AMultiTweakItem):
     """Disables Weather winds."""
@@ -21804,16 +21754,6 @@ class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,CBash_MultiTweakIte
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
     """Eliminates random variation in groundcover."""
@@ -21879,16 +21819,6 @@ class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,C
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
@@ -21981,16 +21911,6 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCast
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_DefaultIcons(AMultiTweakItem):
@@ -22294,16 +22214,6 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTw
             record.UnloadRecord()
             record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
     """Sets Sound Attenuation Levels for all records except Nirnroots."""
@@ -22379,16 +22289,6 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAtten
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
     """Sets Sound Attenuation Levels for Nirnroots."""
@@ -22463,16 +22363,6 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
@@ -22613,16 +22503,6 @@ class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,CBa
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
     """Removes the description from loading screens."""
@@ -22686,16 +22566,6 @@ class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,CBash_Multi
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
@@ -24698,16 +24568,6 @@ class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the diverse skeleton for different look."""
@@ -24835,16 +24695,6 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,CBash_MultiTweakIte
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the vanilla beast race skeleton."""
@@ -24923,16 +24773,6 @@ class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,CBash_MultiTwea
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ARedguardNPCPatcher(AMultiTweakItem):
     """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
@@ -24983,16 +24823,6 @@ class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ANoBloodCreaturesPatcher(AMultiTweakItem):
@@ -25233,16 +25063,6 @@ class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,CBash_MultiTweakItem)
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ASWALKNPCAnimationPatcher(AMultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
@@ -25345,16 +25165,6 @@ class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,CBash_MultiTweakI
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AQuietFeetPatcher(AMultiTweakItem):
