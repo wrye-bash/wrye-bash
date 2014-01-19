@@ -20223,6 +20223,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     def __init__(self,label,tip,key):
         super(CBash_AssortedTweak_ArmorShows, self).__init__(label,tip,key)
         self.hideFlag = {u'armorShowsRings':'IsHideRings',u'armorShowsAmulets':'IsHideAmulets'}[key]
+        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -20241,15 +20242,6 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Armor Pieces Tweaked: %d') % sum(self.mod_count.values()))
-        for srcMod in modInfos.getOrdered(self.mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingShows(MultiTweakItem):
@@ -20306,6 +20298,7 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     def __init__(self,label,tip,key):
         super(CBash_AssortedTweak_ClothingShows, self).__init__(label,tip,key)
         self.hideFlag = {u'ClothingShowsRings':'IsHideRings',u'ClothingShowsAmulets':'IsHideAmulets'}[key]
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
 
     def getTypes(self):
         return ['CLOT']
@@ -20323,17 +20316,6 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_BowReach(AMultiTweakItem):
@@ -21019,7 +21001,6 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_Mul
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_PotionWeight(AMultiTweakItem):
@@ -22536,7 +22517,6 @@ class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,CBash_Multi
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-
 #------------------------------------------------------------------------------
 class AssortedTweaker(MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
@@ -22863,6 +22843,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                          'gloves.unblock.rings2':('IsHideRings',),
                          'robes.unblock.pants':('IsLowerBody',)
                          }[key]
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
 
     def getTypes(self):
         return ['CLOT']
@@ -22886,15 +22867,6 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(self.mod_count.values()))
-        for srcMod in modInfos.getOrdered(self.mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ClothesTweaker(MultiTweaker):
@@ -23566,6 +23538,7 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
             (_(u'.D - Fire Ball'),u'.%s - '),
             (_(u'.(D) Fire Ball'),u'.(%s) '),
             )
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -23686,17 +23659,6 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ANamesTweak_Spells(AMultiTweakItem):
     """Names tweaker for spells."""
@@ -23718,6 +23680,7 @@ class ANamesTweak_Spells(AMultiTweakItem):
             (_(u'D2 - Fire Ball'),u'%s%d - '),
             (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
+        self.logMsg = u'* '+_(u'Spells Renamed: %d')
 
 class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -23818,17 +23781,6 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Spells Renamed: %d')
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ANamesTweak_Weapons(AMultiTweakItem):
     """Names tweaker for weapons and ammo."""
@@ -23847,6 +23799,7 @@ class ANamesTweak_Weapons(AMultiTweakItem):
             (_(u'B08 - Iron Bow'),u'%s%02d - '),
             (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
 
 class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -23935,17 +23888,6 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ATextReplacer(AMultiTweakItem):
     """Base class for replacing any text via regular expressions."""
@@ -23954,6 +23896,7 @@ class ATextReplacer(AMultiTweakItem):
         super(ATextReplacer, self).__init__(label, tip, key, choices)
         self.reMatch = reMatch
         self.reReplace = reReplace
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
 
 class TextReplacer(ATextReplacer,MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -24240,16 +24183,6 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Items Renamed: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class NamesTweaker(MultiTweaker):
@@ -24805,6 +24738,7 @@ class ANoBloodCreaturesPatcher(AMultiTweakItem):
             u'No bloody creatures',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
 
 class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -24848,17 +24782,6 @@ class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,CBash_MultiTweakIte
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AAsIntendedImpsPatcher(AMultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
@@ -24874,6 +24797,7 @@ class AAsIntendedImpsPatcher(AMultiTweakItem):
             (_(u'Only fullsize imps'), u'big'),
             (_(u'Only implings'), u'small'),
             )
+        self.logMsg = u'* '+_(u'Imps Tweaked: %d')
 
 class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -24947,17 +24871,6 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Imps Tweaked: %d')
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAsIntendedBoarsPatcher(AMultiTweakItem):
@@ -25080,15 +24993,6 @@ class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,CBash_MultiTweakI
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'NPCs Tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 #------------------------------------------------------------------------------
 class ARWALKNPCAnimationPatcher(AMultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Real Walk."""
@@ -25149,6 +25053,7 @@ class AQuietFeetPatcher(AMultiTweakItem):
             (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
             (_(u'Only Mount Foot Sounds'), u'mounts'),
             )
+        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
 
 class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -25211,16 +25116,6 @@ class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Creatures Tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class AIrresponsibleCreaturesPatcher(AMultiTweakItem):
     """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
@@ -25233,6 +25128,7 @@ class AIrresponsibleCreaturesPatcher(AMultiTweakItem):
             (_(u'All Creatures'), u'all'),
             (_(u'Only Horses'), u'mounts'),
             )
+        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
 
 class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -25278,16 +25174,6 @@ class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,CBash_M
             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
             record.UnloadRecord()
             record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Creatures Tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class TweakActors(MultiTweaker):
@@ -26627,6 +26513,7 @@ class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
             (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
             (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
             )
+        self.logMsg = u'* '+_(u'Races tweaked: %d')
 
 class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakItem):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
@@ -26712,16 +26599,6 @@ class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash
                 record._RecordID = override._RecordID
                 return
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
     """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
 
@@ -26733,6 +26610,7 @@ class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
             (_(u'Merge hairs only from vanilla races'), 1),
             (_(u'Full hair merge between similar races'), 0),
             )
+        self.logMsg = u'* '+_(u'Races tweaked: %d')
 
 class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -26851,16 +26729,6 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
     """Merges similar race's eyes."""
 
@@ -26872,6 +26740,7 @@ class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
             (_(u'Merge eyes only from vanilla races'), 1),
             (_(u'Full eye merge between similar races'), 0),
             )
+        self.logMsg = u'* '+_(u'Races tweaked: %d')
 
 class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -26991,16 +26860,6 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,C
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class ARaceTweaker_AllHairs(AMultiTweakItem):
     """Gives all races ALL hairs."""
 
@@ -27011,6 +26870,7 @@ class ARaceTweaker_AllHairs(AMultiTweakItem):
             u'hairyraces',
             (u'get down tonight',1)
             )
+        self.logMsg = u'* '+_(u'Races tweaked: %d')
 
 class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -27070,16 +26930,6 @@ class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
                 record._RecordID = override._RecordID
                 return
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class RaceTweaker_AllEyes(MultiTweakItem):
     """Gives all races ALL eyes."""
 
@@ -27090,6 +26940,7 @@ class RaceTweaker_AllEyes(MultiTweakItem):
             u'eyeyraces',
             (u'what an lot of eyes you have dear',1)
             )
+        self.logMsg = u'* '+_(u'Races tweaked: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -27157,16 +27008,6 @@ class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
                 record._RecordID = override._RecordID
                 return
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class ARaceTweaker_PlayableEyes(AMultiTweakItem):
     """Sets all eyes to be playable."""
 
@@ -27177,6 +27018,7 @@ class ARaceTweaker_PlayableEyes(AMultiTweakItem):
             u'playableeyes',
             (u'Get it done', 1),
             )
+        self.logMsg = u'* '+_(u'Eyes tweaked: %d')
 
 class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -27237,16 +27079,6 @@ class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,CBash_MultiTweakI
             record._RecordID = override._RecordID
             return
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Eyes tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class ARaceTweaker_PlayableHairs(AMultiTweakItem):
     """Sets all hairs to be playable."""
 
@@ -27257,6 +27089,7 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
             u'playablehairs',
             (u'Get it done', 1),
             )
+        self.logMsg = u'* '+_(u'Hairs tweaked: %d')
 
 class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -27317,16 +27150,6 @@ class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,CBash_MultiTwea
             record._RecordID = override._RecordID
             return
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Hairs tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 class ARaceTweaker_SexlessHairs(AMultiTweakItem):
     """Sets all hairs to be playable by both males and females."""
 
@@ -27337,6 +27160,7 @@ class ARaceTweaker_SexlessHairs(AMultiTweakItem):
             u'sexlesshairs',
             (u'Get it done', 1),
             )
+        self.logMsg = u'* '+_(u'Hairs tweaked: %d')
 
 class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -27397,16 +27221,6 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakI
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
                 return
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'Hairs tweaked: %d') % (sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 class RacePatcher(SpecialPatcher,DoublePatcher):
     """Merged leveled lists mod file."""
