@@ -20176,6 +20176,7 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     def __init__(self,label,tip,key):
         super(AssortedTweak_ArmorShows, self).__init__(label,tip,key)
         self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
+        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -20208,12 +20209,7 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     """Fix armor to show amulets/rings."""
@@ -20251,6 +20247,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
     def __init__(self,label,tip,key):
         super(AssortedTweak_ClothingShows, self).__init__(label,tip,key)
         self.hidesBit = {u'ClothingShowsRings':16,u'ClothingShowsAmulets':17}[key]
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -20283,12 +20280,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
@@ -22772,6 +22764,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
                          }[key]
+        self.logMsg = u'* '+_(u'Clothes Reweighed: %d')
 
     def getTypes(self):
         return ['CLOT']
@@ -22804,7 +22797,6 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         mod_count = self.mod_count
         maxWeight = self.choiceValues[self.chosen][0]
         log.setHeader(self.logHeader)
-        self.logMsg = u'* '+_(u'Clothes Reweighed: %d')
         log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,mod_count[srcMod]))
@@ -24531,12 +24523,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
                         keep(record.fid)
                         srcMod = record.fid[0]
                         count[srcMod] = count.get(srcMod,0) + 1
-
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,CBash_MultiTweakItem):
     name = _(u"VORB Skeleton Setter")
@@ -24829,11 +24816,7 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%d Imps Tweaked') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
@@ -25078,11 +25061,7 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%d Creatures Tweaked') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
     name = _(u"Quiet Feet")
@@ -25149,11 +25128,7 @@ class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,BasalCreature
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%d Creatures Tweaked') % (sum(count.values()),))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,CBash_MultiTweakItem):
     name = _(u"Irresponsible Creatures")
