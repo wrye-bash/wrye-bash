@@ -18110,16 +18110,6 @@ class App_BOSS(App_Button):
 
     def Execute(self,event,extraArgs=None):
         if self.IsPresent():
-            if bosh.dirs['boss'].join(u'BOSS.exe').version >= (3,0,0,0):
-                App_Button.Execute(self,event,tuple([]))
-                if settings['BOSS.ClearLockTimes']:
-                    # Clear the saved times from before
-                    bosh.modInfos.mtimes.clear()
-                    # And refresh to get the new times so WB will keep the order that BOSS specifies
-                    bosh.modInfos.refresh(doInfos=False)
-                    # Refresh UI, so WB is made aware of the changes to loadorder.txt
-                    modList.RefreshUI('ALL')
-                return
             exeObse = bosh.dirs['app'].join(bush.game.se.exe)
             exeArgs = self.exeArgs
             if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
