@@ -101,7 +101,7 @@ class MobBase(object):
         else:
             numSubRecords = 0
             reader = self.getReader()
-            errLabel = bush.groupTypes[self.groupType]
+            errLabel = bash.bush.groupTypes[self.groupType]
             readerAtEnd = reader.atEnd
             readerRecHeader = reader.unpackRecHeader
             readerSeek = reader.seek
@@ -241,7 +241,7 @@ class MobObjects(MobBase):
             self.indexRecords()
         record_id = record.fid
         if record.isKeyedByEid:
-            if record_id == (GPath(bosh.modInfos.masterName),0):
+            if record_id == (GPath(bash.bosh.modInfos.masterName),0):
                 record_id = record.eid
         if record_id in self.id_records:
             oldRecord = self.id_records[record_id]
@@ -253,7 +253,7 @@ class MobObjects(MobBase):
 
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
-        self.records = [record for record in self.records if (record.fid == (record.isKeyedByEid and GPath(bosh.modInfos.masterName),0) and record.eid in keepIds) or record.fid in keepIds]
+        self.records = [record for record in self.records if (record.fid == (record.isKeyedByEid and GPath(bash.bosh.modInfos.masterName),0) and record.eid in keepIds) or record.fid in keepIds]
         self.id_records.clear()
         self.setChanged()
 
