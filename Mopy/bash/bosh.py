@@ -15861,7 +15861,7 @@ class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class AliasesPatcher(Patcher):
+class AAliasesPatcher(Abstract_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
@@ -15874,41 +15874,25 @@ class AliasesPatcher(Patcher):
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        Patcher.getConfig(self,configs)
+        super(AAliasesPatcher, self).getConfig(configs)
         #--Update old configs to use Paths instead of strings.
         self.aliases = dict(map(GPath,item) for item in self.aliases.iteritems())
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(AAliasesPatcher, self).initPatchFile(patchFile,loadMods)
         if self.isEnabled:
             self.patchFile.aliases = self.aliases
 
-class CBash_AliasesPatcher(CBash_Patcher):
-    """Specify mod aliases for patch files."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
-    name = _(u"Alias Mod Names")
-    text = _(u"Specify mod aliases for reading CSV source files.")
-    tip = None
-    defaultConfig = {'isEnabled':False,'aliases':{}}
+class AliasesPatcher(AAliasesPatcher,Patcher): pass
 
+class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        CBash_Patcher.getConfig(self,configs)
-        #--Update old configs to use Paths instead of strings.
-        self.aliases = dict(map(GPath,item) for item in self.aliases.iteritems())
+        super(CBash_AliasesPatcher,self).getConfig(configs)
         self.srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
-        if self.isEnabled:
-            self.patchFile.aliases = self.aliases
 
 #------------------------------------------------------------------------------
 class PatchMerger(ListPatcher):
