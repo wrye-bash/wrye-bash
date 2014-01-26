@@ -11921,21 +11921,7 @@ class ItemStats:
 
 class CBash_ItemStats:
     """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
-    class_attrs = {
-        'ALCH':('eid', 'weight', 'value'),
-        'AMMO':('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
-        'APPA':('eid', 'weight', 'value', 'quality'),
-        'ARMO':('eid', 'weight', 'value', 'health', 'strength'),
-        'BOOK':('eid', 'weight', 'value', 'enchantPoints'),
-        'CLOT':('eid', 'weight', 'value', 'enchantPoints'),
-        'INGR':('eid', 'weight', 'value'),
-        'KEYM':('eid', 'weight', 'value'),
-        'LIGH':('eid', 'weight', 'value', 'duration'),
-        'MISC':('eid', 'weight', 'value'),
-        'SGST':('eid', 'weight', 'value', 'uses'),
-        'SLGM':('eid', 'weight', 'value'),
-        'WEAP':('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints'),
-        }
+    class_attrs = bush.game.statsTypes
 
     @staticmethod
     def sstr(value):
@@ -12052,63 +12038,7 @@ class CBash_ItemStats:
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
-            for group,header in (
-                #--Alch
-                ('ALCH',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),
-                    _(u'ObjectIndex'),_(u'Editor Id'),_(u'Weight'),
-                    _(u'Value'))) + u'"\n')),
-                #Ammo
-                ('AMMO',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),
-                    _(u'ObjectIndex'),_(u'Editor Id'),_(u'Weight'),_(u'Value'),
-                    _(u'Damage'),_(u'Speed'),_(u'EPoints'))) + u'"\n')),
-                #--Apparatus
-                ('APPA',
-                    (u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Quality'))) + u'"\n')),
-                #--Armor
-                ('ARMO',
-                    (u'"' + '","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'))) + u'"\n')),
-                #Books
-                ('BOOK',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
-                #Clothing
-                ('CLOT',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'EPoints'))) + u'"\n')),
-                #Ingredients
-                ('INGR',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #--Keys
-                ('KEYM',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #Lights
-                ('LIGH',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
-                #--Misc
-                ('MISC',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #Sigilstones
-                ('SGST',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Uses'))) + u'"\n')),
-                #Soulgems
-                ('SLGM',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #--Weapons
-                ('WEAP',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
-                    _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
-                ):
+            for group,header in bush.game.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
