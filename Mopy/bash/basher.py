@@ -14007,6 +14007,178 @@ class Mod_FullNames_Import(Link):
                 balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+class Mod_SkyProc_Run(Link):
+    """Rebuild a SkyProc based patcher, optional command line arguements."""
+    def AppendToMenu(self,menu,window,data):
+        if len(data) != 1:
+            return
+        plugin = data[0]
+        if bosh.modInfos[plugin].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS'):
+            # Bashed Patches can't be SkyProc patches
+            return
+        # See if it has a SkyProc patcher associated
+        self.config = config = bosh.modInfos.table.getItem(plugin, 'bash.skyproc.config', {})
+        if not config:
+            return
+        # Verify specified patcher exists still
+        patcher = config.get('patcher',None)
+        if not patcher:
+            return
+        Link.AppendToMenu(self,menu,window,data)
+        patcher = GPath(patcher)
+        if not patcher.exists():
+            enable = False
+            title = _('Rebuild Patch (SkyProc Patcher Missing!)')
+        else:
+            enable = True
+            title = _('Rebuild Patch (%(fileName)s)...') % {'fileName': patcher.stail}
+        menuItem = wx.MenuItem(menu,self.id,title)
+        menuItem.Enable(enable)
+        menu.AppendItem(menuItem)
+
+    def Execute(self, event):
+        """Run the SkyProc patch"""
+        config = self.config
+        args = config.get('args', u'')
+        # Run it
+        jar = GPath(config.get('patcher'))
+        java = App_Button.getJava()
+        if not java.exists():
+            # Couldn't find it
+            balt.showError(self.window,
+                           _(u'Could not locate Java.'),
+                           _(u"Could not launch '%s'") % jar.stail)
+            return
+        cwd = bolt.Path.getcwd()
+        jar.head.setcwd()
+        try:
+            cmd = [java.stail, u'-jar', jar.stail, args]
+            subprocess.Popen(cmd,
+                             executable=java.s,
+                             close_fds=bolt.close_fds)
+        except UnicodeError:
+            balt.showError(self.window,
+                           _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
+                           _(u"Could not launch '%s'") % jar.stail)
+        except Exception as error:
+            balt.showError(self.window,
+                           (u'%s'%error + u'\n\n' +
+                            _(u'Used Path: ') + java.s + u'\n' +
+                            _(u'Used Arguments: ') + u'-jar %s %s\n' % (jar.stail, args) +
+                            _(u'Working Directory: ') + bolt.Path.getcwd().s),
+                           _(u"Could not launch '%s'") % jar.stail)
+        finally:
+            cwd.setcwd()
+
+#------------------------------------------------------------------------------
+class Mod_SkyProc_Config(Link):
+    """Configure SkyProc settings for a plugin."""
+    def AppendToMenu(self,menu,window,data):
+        if len(data) != 1:
+            return
+        self.plugin = plugin = data[0]
+        if bosh.modInfos[plugin].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS'):
+            # Bashed Patches can't be SkyProc patchers
+            return
+        Link.AppendToMenu(self,menu,window,data)
+        config = bosh.modInfos.table.getItem(plugin,'bash.skyproc.config', {})
+        if not config:
+            # No config, this is for adding one
+            title = _('Assign SkyProc Patcher...')
+        else:
+            title = _('Configure SkyProc Patcher...')
+        menuItem = wx.MenuItem(menu,self.id,title)
+        menu.AppendItem(menuItem)
+
+    def Execute(self, event):
+        """Add or edit a SkyProc Patcher settings for this plugin."""
+        config = bosh.modInfos.table.getItem(self.plugin, 'bash.skyproc.config', {})
+        patcher = config.get('patcher',u'')
+        args = config.get('args',u'')
+        # Build a dialog for configuring
+        self.dialog = dialog = wx.Dialog(self.window, wx.ID_ANY,
+                           _(u'Configure SkyProc Patcher'),
+                           size=(700, 150),
+                           style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.MAXIMIZE_BOX)
+        dialog.SetIcons(bashBlue)
+        dLabelPath = staticText(dialog, _(u'Patcher Path:'))
+        dLabelArgs = staticText(dialog, _(u'Patcher Arguments:'))
+        self.dTxtPath = textCtrl(dialog, wx.ID_ANY, patcher)
+        dTxtArgs = textCtrl(dialog, wx.ID_ANY, args)
+        dBtnBrowse = button(dialog, _(u'Browse...'))
+        self.dBtnOk = wx.Button(dialog, wx.ID_OK)
+        self.dBtnOk.SetDefault()
+        if not GPath(patcher).exists():
+            self.dBtnOk.Enable(False)
+        dBtnCancel = wx.Button(dialog, wx.ID_CANCEL)
+        dBtnRemove = button(dialog, _(u'Remove'))
+        sizer = vSizer(
+            (hSizer(
+                (dLabelPath, 0, wx.ALIGN_CENTER_VERTICAL),
+                (self.dTxtPath, 1, wx.EXPAND|wx.LEFT|wx.RIGHT, 5),
+                (dBtnBrowse, 0, wx.ALIGN_CENTER_VERTICAL),
+                ), 0, wx.EXPAND|wx.ALL, 5),
+            (hSizer(
+                (dLabelArgs, 0, wx.ALIGN_CENTER_VERTICAL),
+                (dTxtArgs, 1, wx.EXPAND|wx.LEFT, 5),
+                ), 0, wx.EXPAND|wx.LEFT|wx.RIGHT, 5),
+            spacer,
+            (hSizer(
+                spacer,
+                self.dBtnOk,
+                dBtnCancel,
+                dBtnRemove,
+                ), 0, wx.EXPAND|wx.ALL|wx.ALIGN_BOTTOM|wx.ALIGN_RIGHT, 5),
+            )
+        dialog.SetSizer(sizer)
+        sizer.SetMinSize((350,50))
+        sizer.SetSizeHints(dialog)
+        dBtnBrowse.Bind(wx.EVT_BUTTON, self.OnBrowse)
+        dBtnRemove.Bind(wx.EVT_BUTTON, self.OnRemove)
+        # Do the dialog
+        result = dialog.ShowModal()
+        path = self.dTxtPath.GetValue()
+        args = dTxtArgs.GetValue()
+        dialog.Destroy()
+        # Edit/Add Canceled
+        if result == wx.ID_CANCEL:
+            return
+        # Config removed
+        if result == wx.ID_NO:
+            bosh.modInfos.table.delItem(self.plugin, 'bash.skyproc.config')
+            return
+        # Config edited/added
+        config = {
+            'patcher': path,
+            'args': args,
+            }
+        bosh.modInfos.table.setItem(self.plugin, 'bash.skyproc.config', config)
+
+    def OnRemove(self, event):
+        """Remove button clicked on config dialog."""
+        self.dialog.EndModal(wx.ID_NO)
+
+    def OnBrowse(self, event):
+        """Browse button clicked on config dialog."""
+        path = bosh.dirs['mods'].join(u'SkyProc Patchers')
+        if not path.exists():
+            path = bosh.dirs['mods']
+        fileName = balt.askOpen(self.window,
+                                _(u'SkyProc Patcher'),
+                                path,
+                                self.dTxtPath.GetValue(),
+                                u'*.jar',
+                                mustExist=True)
+        if fileName is not False:
+            self.dTxtPath.SetValue(fileName.s)
+            if not fileName.exists():
+                self.dBtnOk.Enable(False)
+            else:
+                self.dBtnOk.Enable(True)
+
+#------------------------------------------------------------------------------
 class Mod_Patch_Update(Link):
     """Updates a Bashed Patch."""
     def __init__(self,doCBash=False):
@@ -18561,6 +18733,9 @@ def InitModLinks():
     ModList.itemMenu.append(Mod_Ghost())
     if bush.game.esp.canBash:
         ModList.itemMenu.append(SeparatorLink())
+        if bush.game.name == u'Skyrm':
+            ModList.itemMenu.append(Mod_SkyProc_Run())
+            ModList.itemMenu.append(Mod_SkyProc_Config())
         ModList.itemMenu.append(Mod_MarkMergeable(False))
         if CBash:
             ModList.itemMenu.append(Mod_MarkMergeable(True))
