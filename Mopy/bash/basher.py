@@ -17807,6 +17807,28 @@ class App_Button(StatusBar_Button):
             else: return self._obseTip % (dict(version=self.version))
         else: return None
 
+    @staticmethod
+    def getJava():
+        # Locate Java executable
+        win = GPath(os.environ['SYSTEMROOT'])
+        # Default location: Windows\System32\javaw.exe
+        java = win.join(u'system32', u'javaw.exe')
+        if not java.exists():
+            # 1st possibility:
+            #  - Bash is running as 32-bit
+            #  - The only Java installed is 64-bit
+            # Because Bash is 32-bit, Windows\System32 redirects to
+            # Windows\SysWOW64.  So look in the ACTUAL System32 folder
+            # by using Windows\SysNative
+            java = win.join(u'sysnative', u'javaw.exe')
+        if not java.exists():
+            # 2nd possibility
+            #  - Bash is running as 64-bit
+            #  - The only Java installed is 32-bit
+            # So javaw.exe would actually be in Windows\SysWOW64
+            java = win.join(u'syswow64', u'javaw.exe')
+        return java
+
     def __init__(self,exePathArgs,images,tip,obseTip=None,obseArg=None,workingDir=None,uid=None,canHide=True):
         """Initialize
         exePathArgs (string): exePath
@@ -17846,7 +17868,7 @@ class App_Button(StatusBar_Button):
         #--Java stuff
         if self.exePath and self.exePath.cext == u'.jar': #Sometimes exePath is "None"
             self.isJava = True
-            self.java = GPath(os.environ['SYSTEMROOT']).join(u'system32',u'javaw.exe')
+            self.java = self.getJava()
             self.jar = self.exePath
             self.appArgs = u''.join(self.exeArgs)
         else:
