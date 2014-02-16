@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<link rel="shortcut icon" href="../../bash/images/bash_32.ico"/>
+<link rel="shortcut icon" href="../bash/images/bash_32.ico"/>
 <title>Wrye Bash General Readme</title>
 <style>
 	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
@@ -155,16 +155,17 @@
 
 <h2 id="install">Installation</h2>
 <p>The simplest way to install Wrye Bash is using the installer. The installer will handle the installation of Wrye Bash's dependencies and Wrye Bash itself automatically. However, the instructions below are provided if a manual install method is preferred.
-<p><b>Note:</b> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people. The Python version requires the installation of some Python libraries, and the Standalone version requires the installation of the MSVC++ 2008 Redistributable.
+<p><b>Note:</b> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people. The Python version requires the installation of some Python libraries, and the Standalone version requires the installation of the MSVC++ 2008 Redistributable. Both require the MSVC++ 2013 Redistributable.
 <p><b>Windows Vista &amp; Windows 7 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Install:
 <ol>
-	<li>Download and install the <a href="http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2">MSVC++ 2008 Redistributable</a>.
+	<li>Download and install the <a href="http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2">MSVC++ 2008 Redistributable</a> and the <a href="http://www.microsoft.com/en-gb/download/details.aspx?id=40784">MSVC++ 2013 Redistributable</a>.
 	<li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q> or <q>skyrim</q> depending on the game) so that the Mopy directory appears in the game folder.
 	<li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
 </ol>
 <p>Manual Python Version Install:
 <ol>
+    <li>Download and install the <a href="http://www.microsoft.com/en-gb/download/details.aspx?id=40784">MSVC++ 2013 Redistributable</a>.
 	<li>Download and install the Wrye Python package from the location Wrye Bash was downloaded from. This package contains all the required Python libraries. If you have previously installed Python and any Python libraries, or the Wrye Python package itself, you may not need to install it again. See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install">Advanced Installation</a> section for the list of included libraries and their versions to check if you need to install any of the libraries bundled in the Wrye Python package.
 	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q> or <q>skyrim</q> depending on the game) so that the Mopy directory appears in your game folder.
 	<li>Run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q> in the new Mopy folder.
@@ -349,20 +350,19 @@
 <p>Wrye Bash displays your installed plugins in its <q>Mods</q> tab. Your load order consists of active installed plugins, which Wrye Bash marks with a ticked checkbox. The load order is important as it decides what plugin 'wins' any conflict between plugins, with later loading plugins overriding those that change the same thing. <b>Load order is not the same thing as install order!</b> Install order determines which mods' files overwrite other mods' files when they conflict. Load order determines which plugins' effects override other plugins' effects in-game when they conflict.
 <p>Plugins may be activated by clicking their checkbox so that the checkbox is ticked, or by selecting a plugin or group of plugins and pressing the space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
 <p>Some plugins are explicitly dependent on other plugins - they have these plugins as <q>masters</q>. When a plugin is activated, its masters are also activated. Conversely, when a plugin upon which other plugins depend is deactivated, those plugins are also deactivated.</p>
-<p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FF, which is 0 to 255 in decimal. (This number also forms the first two digits of a record's Form ID.)
-<p>Note that you can only have a maximum of 255 plugins, not including your game's master file (eg. Oblivion.esm, Skyrim.esm), active at any one time. Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
+<p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
+<p>Note that you can only have a maximum of 255 plugins, including your game's master file (eg. Oblivion.esm, Skyrim.esm), active at any one time. Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
 
 <h3 id="load-set">Setting The Load Order</h3>
-<p>The load order of plugins is decided by their relative modification dates, with the exception that .esm plugins always load before all the .esp plugins.
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as TES4Edit is required.
-<p><a href="http://oblivion.nexusmods.com/mods/20516">BOSS</a> can be used to greatly simplify the process of setting the load order, as it can correctly position thousands of plugins automatically. However, if you use any plugins it does not recognise, you will still need to order them manually.
+<p><a href="http://boss-developers.github.io">BOSS</a> can be used to greatly simplify the process of setting the load order, as it can correctly position thousands of plugins automatically. However, you may still need to order some plugins manually.
 <p>Wrye Bash provides a number of ways for you to set up your load order:
 <ul>
-	<li><i>Oblivion only.</i> Editing plugin modification dates in the right-hand details panel.
 	<li>Alphabetical sorting by selecting a group of plugins and choosing File->Sort from the right-click menu.
 	<li>Moving plugins up or down the load order by selecting them and using Ctrl-Up or Ctrl-Down respectively. This also works with groups of plugins and preserves the group's internal order.
-	<li><i>Oblivion only.</i> Selecting a group of plugins and choosing File->Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
 	<li>Dragging and dropping plugins will also change the load order if the plugins are being sorted by Load Order.
+	<li><i>Oblivion only.</i> Selecting a group of plugins and choosing File->Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
+	<li><i>Oblivion only.</i> Editing plugin modification dates in the right-hand details panel.
 </ul>
 <p>When running Wrye Bash for Oblivion, you can also lock your load order in place to prevent unintended changes to it by selecting the <a href="#modsLockLoadOrder">Lock Load Order</a> option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure <a href="#launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
 <p>The <q>Lock Load Order</q> feature is not implemented for Skyrim as Wrye Bash will automatically undo any changes to load order done made by the Skyrim launcher or any utility that does not follow the textfile-based load order standard in order to maintain a fully coherent load order. This effectively means that unintended changes are prevented.
@@ -613,15 +613,17 @@
 <h3 id="launchers-game">Game &amp; Editor Launchers</h3>
 <p>The game and editor icons displayed will depend on which supported game you have Wrye Bash installed for. Using Wrye Bash's game launcher opens the game itself, rather than the game's launcher.
 <table>
-	<thead><tr><th>Icon<th>Application
+	<thead>
+		<tr><th colspan="2">Oblivion<th colspan="2">Skyrim
+        <tr><th>Icon<th>Application<th>Icon<th>Application
 	<tbody>
 		<tr><td><img src="../bash/images/oblivion32.png" width="32" height="32" alt="Oblivion icon"/><td>Oblivion
+            <td><img src="../bash/images/skyrim32.png" width="32" height="32" alt="Skyrim icon"/><td>Skyrim
 		<tr><td><img src="../bash/images/tescs32.png" width="32" height="32" alt="Oblivion CS icon"/><td><a href="http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set">TES Construction Set</a>
-		<tr><td><img src="../bash/images/skyrim32.png" width="32" height="32" alt="Skyrim icon"/><td>Skyrim
-		<tr><td><img src="../bash/images/creationkit32.png" width="32" height="32" alt="Creation Kit icon"/><td><a href="http://www.creationkit.com/">Skyrim Creation Kit</a>
+            <td><img src="../bash/images/creationkit32.png" width="32" height="32" alt="Creation Kit icon"/><td><a href="http://www.creationkit.com/">Skyrim Creation Kit</a>
 </table>
 <h3 id="launchers-utils">Game-Specific Utilities</h3>
-<p>Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available. Tes4Gecko &amp; Oblivion Book Creator will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory. The BOSS launcher has some options:
+<p>Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available. Tes4Gecko &amp; Oblivion Book Creator will be available if the javaw.exe is present in Windows\System32 and their .jar file is present in Oblivion install directory or for OBC in the data directory. The BOSS launcher has some options if BOSS v2 is installed:
 <ul>
  <li>Right-clicking the BOSS icon and selecting <q id="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</q> will cause Wrye Bash to temporarily disable Lock Load Order when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS is run from outside Wrye Bash, or when Wrye Bash is running for Skyrim.
  <li>Right-clicking the BOSS icon and selecting the <q>Launch BOSS GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
@@ -1006,7 +1008,7 @@ MemoryError</code>
 		<li>Sativarg: Proofreading.
 		<li>Kmacg94: Additional power exhaustion coverage.
 		<li>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.
-		<li>WrinklyNinja: The BOSS API and the rewritten documentation included in v297 and later.
+		<li>WrinklyNinja: The BOSS API, libloadorder and libbsa, and the rewritten documentation included in v297 and later.
   <li>Alt3rn1ty: For supplying the screenshot images used in the documentation, many INI tweaks for Skyrim, and being an all-round bon oeuf and snappy dresser.
   <li>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, trira, WrinklyNinja, and many others.
 	</ul>
@@ -1066,10 +1068,22 @@ MemoryError</code>
 	</ul>
 	<li>BOSS API
 	<ul>
-		<li>Website: <a href="http://code.google.com/p/better-oblivion-sorting-software/">Google Code</a>
-		<li>License: API - <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>, Documentation - <a href="http://www.gnu.org/licenses/fdl.html">GNU FDL 1.3</a>.
-		<li>Usage: Wrye Bash uses this libarary to modify Load Order, and retrieve Bash Tag suggestions and Dirty mod information from BOSS's plugin databases.
+		<li>Website: <a href="https://github.com/boss-developers/boss-code/">GitHub</a>
+		<li>License: <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>
+		<li>Usage: Wrye Bash uses this libarary to retrieve Bash Tag suggestions and Dirty mod information from BOSS's plugin databases.
 	</ul>
+    <li>libloadorder
+    <ul>
+        <li>Website: <a href="https://github.com/WrinklyNinja/libloadorder">GitHub</a>
+        <li>License: <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>
+        <li>Usage: Wrye Bash uses this library to read and write plugin load order.
+    </ul>
+    <li>libbsa
+    <ul>
+        <li>Website: <a href="https://github.com/WrinklyNinja/libbsa">GitHub</a>
+        <li>License: <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>
+        <li>Usage: Wrye Bash uses this library to read the contents of BSA files.
+    </ul>
 	<li>CBash
 	<ul>
 		<li>Website: <a href="http://sourceforge.net/projects/cbash/">SourceForge</a>
