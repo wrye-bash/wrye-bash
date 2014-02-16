@@ -6562,12 +6562,7 @@ class ConfigHelpers:
         deprint(u'Using BOSS API version:', bapi.version)
 
         global boss
-        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
-            boss = bapi.BossDb(dirs['app'].s,u'Nehrim')
-        else:
-            boss = bapi.BossDb(dirs['app'].s,bush.game.name)
-        bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
-                              ConfigHelpers.libloLOMismatchCallback)
+        boss = bapi.BossDb(dirs['app'].s,bush.game.name)
                               
         global lo
         lo = liblo.LibloHandle(dirs['app'].s,bush.game.name)
@@ -6577,7 +6572,11 @@ class ConfigHelpers:
                               ConfigHelpers.libloLOMismatchCallback)
 
         self.bossVersion = dirs['boss'].join(u'BOSS.exe').version
-        if self.bossVersion >= (2,0,0,0):
+        if self.bossVersion >= (3,0,0,0):
+            # BOSS 3+ stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
+            self.bossMasterPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'masterlist.yaml')
+            self.bossUserPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'userlist.yaml')
+        elif self.bossVersion >= (2,0,0,0):
             # BOSS 2.0+ stores the masterlist/userlist in a subdirectory
             self.bossMasterPath = dirs['boss'].join(bush.game.name,u'masterlist.txt')
             self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
@@ -6611,23 +6610,27 @@ class ConfigHelpers:
                 (userpath.exists() and userpath.mtime != utime)):
                 self.tagCache = {}
                 try:
-                    boss.Load(path.s,userpath.s)
-                    self.bossMasterTime = path.mtime
-                    self.bossUserTime = userpath.mtime
+                    if userpath.exists():
+                        boss.Load(path.s,userpath.s)
+                        self.bossMasterTime = path.mtime
+                        self.bossUserTime = userpath.mtime
+                    else:
+                        boss.Load(path.s)
+                        self.bossMasterTime = path.mtime
                     return
                 except bapi.BossError:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
-        taglist = dirs['defaultPatches'].join(u'taglist.txt')
+        taglist = dirs['defaultPatches'].join(u'taglist.yaml')
         if not taglist.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
         except bapi.BossError:
-            deprint(u'An error occured while parsing taglist.txt with the BOSS API.', traceback=True)
-            raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
+            deprint(u'An error occured while parsing taglist.yaml with the BOSS API.', traceback=True)
+            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the BOSS API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
@@ -6649,7 +6652,7 @@ class ConfigHelpers:
 
     def getDirtyMessage(self,modName):
         message,clean = boss.GetDirtyMessage(modName)
-        cleanIt = clean == bapi.BOSS_API_CLEAN_YES
+        cleanIt = clean == bapi.boss_needs_cleaning_yes
         return (cleanIt,message)
 
     #--Mod Checker ------------------------------------------------------------
