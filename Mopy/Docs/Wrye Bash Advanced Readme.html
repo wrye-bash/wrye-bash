@@ -462,16 +462,16 @@
         <tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><i>Oblivion only.</i> Rebuild the selected Bashed Patch using the CBash patcher.
         <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
         <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
-        <tr><td rowspan="14">Export<td>Cell Block Info...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+        <tr><td rowspan="14">Export<td>Cell Block Info...<td><i>Oblivion only.</i> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
         <tr><td id="modsExportEditorIDs">Editor Ids...<td><b>For advanced mod authors only.</b> Exports the Editor IDs of the records in the selected plugin to a CSV file.
         <tr><td>Groups...<td>Exports the selected plugin's groups to a CSV file.
         <tr><td id="modsExportFactions">Factions...<td><b>For advanced mod authors only.</b> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
         <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
         <tr><td id="modsExportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
-        <tr><td>Map Markers...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+        <tr><td>Map Markers...<td><i>Oblivion only.</i> Exports information about the map marker data in the plugin.
         <tr><td>Prices...<td>Exports the prices of objects in the selected plugin to a CSV file.
         <tr><td id="modsExportRelations">Relations...<td><b>For advanced mod authors only.</b> Exports the faction relationships in the selected plugin to a CSV file. This does not export race relationships. The CSV file can also be used in the Bashed Patch's Import Relations option.
-        <tr><td id="modsExportIngredients">Ingredients...<td class="missing">This item has not yet been documented.
+        <tr><td id="modsExportIngredients">Ingredients...<td>Exports alchemy ingredient record data from the selected plugin to a CSV file.
         <tr><td>Scripts...<td>Exports the scripts in the selected plugin to a series of text files. The scripts may then be edited in the text files and re-imported. <b>Warning:</b> Do not change the first three lines of each text file exported when editing unless you know what you're doing.
         <tr><td id="modsExportSigilStones">Sigil Stones...<td>Exports the stats of sigil stones from the selected plugin to a CSV file.
         <tr><td id="modsExportSpellStats">Spells...<td>Exports spell stats in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option. There are two modes of export, Basic and Detailed. The spell stats exported in Basic mode are as follows.
@@ -511,10 +511,10 @@
                 <li>The next three columns are the levelling info.
                 <li>The last four columns are the original NPC levels from the game's master file. If the NPCs are mod-added, these will be blank. These columns are ignored on import.
             </ul>
-        <tr><td>Map Markers...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+        <tr><td>Map Markers...<td><i>Oblivion only.</i> Imports map marker data from a CSV file into the selected plugin.
         <tr><td>Prices...<td>Imports the prices of objects from a CSV file into the selected plugin.
         <tr><td id="modsImportRelations">Relations...<td><b>For advanced mod authors only.</b> Imports faction relationships from a CSV file into the selected plugin.
-        <tr><td id="modsImportIngredients">Ingredients...<td class="missing">This item has not yet been documented.
+        <tr><td id="modsImportIngredients">Ingredients...<td>Imports alchemy ingredient record data from a CSV file into the selected plugin.
         <tr><td>Scripts...<td>Imports scripts from a series of text files into the selected plugin. <b>Note:</b> You must recompile any altered or new scripts in the Construction Set.
         <tr><td id="modsImportSigilStones">Sigil Stones...<td>Imports the stats of sigil stones from a CSV file into the selected plugin.
         <tr><td id="modsImportSpellStats">Spells...<td>Imports spell stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their spell stats change, no records will be added. The spell stats supported are those exported by <a href="#modsExportSpellStats">Export Spell Stats...</a>, and importing uses the same Basic and Detailed mode distinctions.
