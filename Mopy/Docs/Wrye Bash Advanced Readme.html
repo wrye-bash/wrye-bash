@@ -270,11 +270,12 @@
         <tr><td colspan="2" id="bainAutoAnnealInstallWizards">Auto-Anneal/Install Wizards<td>Toggles whether or not to automatically install/anneal a package when finished with its wizard.
         <tr><td colspan="2" id="bainAutoRefreshProjects">Auto-Refresh Projects<td>Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
-        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td class="missing">This item has not yet been documented.
+        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td>If checked, archives that contain Bain Conversion Files will have them automatically applied when BAIN refreshes.
         <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
+        <tr><td colspan="2">Show BSA Conflicts<td>If checked, the contents of BSAs are compared and any conflicting resources found are displayed in the conflicts list.
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
         <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td><i>Oblivion only.</i> If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed.
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
@@ -285,7 +286,7 @@
         <tr><td colspan="2" id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
         <tr><td colspan="2" id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
         <tr><td colspan="2" id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td class="missing"><i>Skyrim only.</i> This item has not yet been documented.
+        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 <table id="bainPackageCommands">
     <thead>
@@ -443,7 +444,7 @@
         <tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
         <tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
         <tr><td colspan="2">Group<td>Set a group for the selected plugin(s). This group is not an <a href="#mods-exclusion">Exlusion Group</a>, but is instead a leftover from a feature known as <abbr title="Bash Auto Load Ordering">BALO</abbr> that has been disabled, as it was superceded by BOSS. Some references to these groups still remain, but they provide no functionality other than to place hidden plugins in group folders provided those folders already exist.
-        <tr><td colspan="2">Rating<td class="missing">This item has not yet been documented.
+        <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
         <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
         <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
         <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
