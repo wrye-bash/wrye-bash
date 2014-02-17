@@ -7273,7 +7273,7 @@ class Installer(object):
     reReadMe = re.compile(ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
     skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
                     u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.fomod',
-                    u'.tb2',u'.lzma',
+                    u'.tb2',u'.lzma',u'.bsl',
                     ))
     skipExts.update(set(readExts))
     docExts = set((u'.txt',u'.rtf',u'.htm',u'.html',u'.doc',u'.docx',u'.odt',
