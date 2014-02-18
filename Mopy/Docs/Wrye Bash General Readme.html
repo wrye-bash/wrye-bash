@@ -44,7 +44,6 @@
 	<li><a href="#intro">Introduction</a>
 	<ol>
 		<li><a href="#intro-glossary">Glossary</a>
-		<li><a href="#intro-title">Title Bar Info</a>
 	</ol>
 	<li><a href="#install">Installation</a>
 	<li><a href="#uninstall">Uninstallation</a>
@@ -116,7 +115,7 @@
 	<li>Many, many more features
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
-<p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document. There is also a summary of the contents of the Advanced Readme near the end of this readme.
+<p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.
 
 <h3 id="intro-glossary">Glossary</h3>
 <p>Modding for Oblivion and Skyrim has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
@@ -140,21 +139,9 @@
 </ul>
 <p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q> or <q>Skyrim</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
 
-<h3 id="intro-title">Title Bar Info</h3>
-<p>As a quick note that doesn't really belong anywhere else, Wrye Bash's title bar contains some useful information. The title is formatted as:
-<p><code>Wrye Bash [Bash Version] [Install Type] [Game Modifier], Cbash v[CBash Version]: [Save Profile] [Version Indicator]</code>
-<p>The square bracketed information is:
-<ul>
-	<li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
-	<li><code>[Install Type]</code>: If the Python version is running, this will read <q>Python</q>. If the Standalone version is running, it will read <q>(Standalone)</q>. See the <a href="#install">Installation</a> section for more information.
-	<li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>, this will display <q>for Oblivion</q> or <q>for Skyrim</q> depending on the game it is being run for.
-	<li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
-	<li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profile">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
-	<li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
-</ul>
 
 <h2 id="install">Installation</h2>
-<p>The simplest way to install Wrye Bash is using the installer. The installer will handle the installation of Wrye Bash's dependencies and Wrye Bash itself automatically. However, the instructions below are provided if a manual install method is preferred.
+<p>The simplest way to install Wrye Bash is using the installer, as it installs Wrye Bash and its dependencies automatically. However, the instructions below are provided if a manual install method is preferred.
 <p><b>Note:</b> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people. The Python version requires the installation of some Python libraries, and the Standalone version requires the installation of the MSVC++ 2008 Redistributable. Both require the MSVC++ 2013 Redistributable.
 <p><b>Windows Vista &amp; Windows 7 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Install:
