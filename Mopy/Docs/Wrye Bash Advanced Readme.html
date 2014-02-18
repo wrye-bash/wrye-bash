@@ -42,6 +42,9 @@
 <h2 style="margin-top:0;margin-bottom:1em;">Contents</h2>
 <ol style="float:left;margin:0;margin-right:4em;">
     <li><a href="#intro">Introduction</a>
+	<ol>
+        <li><a href="#intro-title">Title Bar Info</a>
+	</ol>
     <li><a href="#install">Advanced Installation</a>
     <ol>
         <li><a href="#install-alternate">Alternative Install Locations</a>
@@ -135,6 +138,19 @@
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and many area geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on how Wrye Bash functions. It assumes the reader has previously read the General Readme.
 <p>Note that the <a href="#people">People</a> and <a href="#pm">PM Archive</a> tabs are hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
+
+<h3 id="intro-title">Title Bar Info</h3>
+<p>As a quick note that doesn't really belong anywhere else, Wrye Bash's title bar contains some useful information. The title is formatted as:
+<p><code>Wrye Bash [Bash Version] [Install Type] [Game Modifier], Cbash v[CBash Version]: [Save Profile] [Version Indicator]</code>
+<p>The square bracketed information is:
+<ul>
+	<li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
+	<li><code>[Install Type]</code>: If the Python version is running, this will read <q>Python</q>. If the Standalone version is running, it will read <q>(Standalone)</q>. See the <a href="#install">Installation</a> section for more information.
+	<li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>, this will display <q>for Oblivion</q> or <q>for Skyrim</q> depending on the game it is being run for.
+	<li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
+	<li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profile">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
+	<li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
+</ul>
 
 <h2 id="install">Advanced Installation</h2>
 <h3 id="install-alternate">Alternative Install Locations</h3>
@@ -560,7 +576,7 @@
 <h3 id="patch-tags">Bash Tags</h3>
 <p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from three sources:
 <ul>
-    <li>BOSS's <code>masterlist.txt</code> and <code>userlist.txt</code> files. If BOSS is installed, then Wrye Bash will apply its Bash Tag suggestions. You do not need to use BOSS to benefit from this, it just needs to be installed. REPLACE lines in the userlist will replace Bash Tags suggested in the masterlist, but will not affect Bash Tags specified in plugin description fields.
+    <li>BOSS's masterlist and userlist files. If BOSS is installed, then Wrye Bash will apply its Bash Tag suggestions. You do not need to use BOSS to benefit from this, it just needs to be installed. REPLACE lines in the userlist will replace Bash Tags suggested in the masterlist, but will not affect Bash Tags specified in plugin description fields.
     <li>The <code>Bash Patches\Leveled Lists.csv</code> file. This file contains a small list that is useful if BOSS is not installed.
     <li>The <code>Bash Patches\taglist.txt</code> file. This is a stripped-down version of the BOSS masterlist as it was when the version of Wrye Bash installed was released.
 </ul>
@@ -1711,24 +1727,28 @@
 			<td><code>-L&nbsp;LANGUAGE, --language=LANGUAGE</code>
 			<td>Specify the user language overriding the system language
 				settings.
+    <thead>
 		<tr>
 			<th>Path Arguments
 			<th>All path arguments must be absolute paths and use either
 				forward slashes (/) or two backward slashes (\\). All of these can
 				also be set in the ini (where you can also use relative paths) and
 				if set in both cmd line takes pecedence.
+    <tbody>
 		<tr>
 			<td><code>-o&nbsp;OBLIVIONPATH,
 					--oblivionPath=OBLIVIONPATH</code>
 			<td>Specifies the game directory (the one containing the game's
 				exe). Use this argument if Bash is located outside of the game
 				directory, and the <code>--game</code> argument failed to find it.
+    <thead>
 		<tr>
 			<th>User Directory Arguments
 			<th>These arguments allow you to specify your user directories
 				in several wasy. These are only useful if the regular procedure for
 				geting the user directory fails. And even in that case, the user is
 				probably better off installing win32com.
+    <tbody>
 		<tr>
 			<td><code>-p&nbsp;PERSONALPATH,
 					--personalPath=PERSONALPATH</code>
@@ -1744,11 +1764,12 @@
 					--localAppDataPath=LOCALAPPDATAPATH</code>
 			<td>Specify the user's local application data directory. If you
 				need to set this then you probably need to set <code>-p</code> too.
-			
+    <thead>
 		<tr>
 			<th>Backup and Restore Arguments
 			<th>These arguments allow you to do backup and restore settings
 				operations.
+    <tbody>
 		<tr>
 			<td><code>-b, --backup</code>
 			<td>Backup all Bash settings to an archive file before the app
