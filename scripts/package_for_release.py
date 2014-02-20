@@ -230,7 +230,7 @@ def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
 
     try:
         if nsis is None:
-            nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r'Software\NSIS')
+            nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r'Software\NSIS\Unicode')
         nsis = os.path.join(nsis, 'makensis.exe')
         subprocess.call([nsis, '/NOCD', '/DWB_NAME=Wrye Bash %s' % version, '/DWB_FILEVERSION=%s' % file_version, script], shell=True, stdout=pipe, stderr=pipe)
     except:
