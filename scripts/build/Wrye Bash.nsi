@@ -1273,11 +1273,10 @@
             ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86" "Installed"
         ${EndIf}
 
-        ${If} ${Errors}
-            DetailPrint "Visual C++ 2013 Redistributable registry key was not found; assumed to be uninstalled."
-        ${ElseIf} $R0 == "1"
+        ${If} $R0 == "1"
             DetailPrint "Visual C++ 2013 Redistributable is already installed; skipping!"
         ${Else}
+            DetailPrint "Visual C++ 2013 Redistributable registry key was not found; assumed to be uninstalled."
             DetailPrint "Downloading Visual C++ 2013 Redistributable Setup..."
             NSISdl::download "http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe" "vcredist_x86.exe"
 
