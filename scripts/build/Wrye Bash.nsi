@@ -1278,12 +1278,16 @@
         ${Else}
             DetailPrint "Visual C++ 2013 Redistributable registry key was not found; assumed to be uninstalled."
             DetailPrint "Downloading Visual C++ 2013 Redistributable Setup..."
+            SetOutPath $TEMP
             NSISdl::download "http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe" "vcredist_x86.exe"
 
             Pop $R0 ;Get the return value
             ${If} $R0 == "success"
                 DetailPrint "Running Visual C++ 2013 Redistributable Setup..."
+                Sleep 2000
+                HideWindow
                 ExecWait '"$TEMP\vcredist_x86.exe" /qb'
+                BringToFront
                 DetailPrint "Finished Visual C++ 2013 SP1 Redistributable Setup"
                 
                 Delete "$TEMP\vcredist_x86.exe"
@@ -1303,12 +1307,16 @@
                 ; MSVC 2008 (x86): http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe
                 DetailPrint "Visual C++ 2008 Redistributable was not found; assumed to be uninstalled."
                 DetailPrint "Downloading Visual C++ 2008 Redistributable Setup..."
-                NSISdl::download "http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe" "vcredist_x86.exe"
+                SetOutPath $TEMP
+                NSISdl::download "http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe" "vcredist_x86.exe"
                 
                 Pop $R0 ;Get the return value
                 ${If} $R0 == "success"
                     DetailPrint "Running Visual C++ 2008 Redistributable Setup..."
+                    Sleep 2000
+                    HideWindow
                     ExecWait '"$TEMP\vcredist_x86.exe" /qb'
+                    BringToFront
                     DetailPrint "Finished Visual C++ 2008 SP1 Redistributable Setup"
                     
                     Delete "$TEMP\vcredist_x86.exe"
