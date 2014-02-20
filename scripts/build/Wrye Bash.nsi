@@ -2,6 +2,7 @@
 
 ;-------------------------------- Includes:
     !include "MUI2.nsh"
+    !include "x64.nsh"
     !include "LogicLib.nsh"
     !include "nsDialogs.nsh"
     !include "WordFunc.nsh"
@@ -86,14 +87,6 @@
     Var Reg_Value_Skyrim_Exe
     Var Reg_Value_Ex1_Exe
     Var Reg_Value_Ex2_Exe
-    Var Check_Python
-    Var Check_wx
-    Var Check_pywin32
-    Var Check_Comtypes
-    Var CheckState_Python
-    Var CheckState_wx
-    Var CheckState_pywin32
-    Var CheckState_Comtypes
     Var PathDialogue_OB
     Var PathDialogue_Nehrim
     Var PathDialogue_Skyrim
@@ -114,15 +107,8 @@
     Var Python_Comtypes
     Var Python_pywin32
     Var Python_wx
-    Var Requirements
     Var PythonVersionInstall
     Var ExeVersionInstall
-    Var Check_msvc
-    Var Link_Python
-    Var Link_Comtypes
-    Var Link_vcredist
-    Var Link_wx
-    Var Link_pywin32
     Var MinVersion_Comtypes
     Var MinVersion_wx
     Var MinVersion_pywin32
@@ -137,7 +123,6 @@
     !insertmacro MUI_PAGE_WELCOME
     Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
     Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
-    Page custom PAGE_REQUIREMENTS PAGE_REQUIREMENTS_Leave
     !insertmacro MUI_PAGE_COMPONENTS
     !insertmacro MUI_PAGE_INSTFILES
     Page custom PAGE_FINISH PAGE_FINISH_Leave
@@ -538,225 +523,6 @@
 
     Function PAGE_CHECK_LOCATIONS_Leave
     FunctionEnd
-
-
-;-------------------------------- Requirements Page
-    Function PAGE_REQUIREMENTS
-        !insertmacro MUI_HEADER_TEXT $(PAGE_REQUIREMENTS_TITLE) $(PAGE_REQUIREMENTS_SUBTITLE)
-
-        nsDialogs::Create 1018
-            Pop $Dialog
-        ${If} $Dialog == error
-            Abort
-        ${EndIf}
-
-        IntOp $0 0 + 0
-        ${If} $PythonVersionInstall == $True
-            ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
-            ${If} $Python_Path == $Empty
-                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
-            ${EndIf}
-            ${If} $Python_Path == $Empty
-                ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
-            ${EndIf}
-            ${If} $Python_Path == $Empty
-                ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
-            ${EndIf}
-
-            ;Detect Python Components:
-            ${If} $Python_Path != $Empty
-                ;Detect Comtypes:
-                IfFileExists "$Python_Path\Lib\site-packages\comtypes\__init__.py" +2 +1
-                    Goto NoComTypes
-                    FileOpen $2 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
-                    FileRead $2 $1
-                    FileRead $2 $1
-                    FileRead $2 $1
-                    FileRead $2 $1
-                    FileRead $2 $1
-                    FileRead $2 $1
-                    FileClose $2
-                    StrCpy $Python_Comtypes $1 5 -8
-                    ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
-                    ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
-NoComTypes:
-                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
-                ${If} $Python_wx == $Empty
-                    ReadRegStr $Python_wx HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
-                ${EndIf}
-                ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
-                ${If} $1 == $Empty
-                    ReadRegStr $1         HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
-                ${EndIf}
-                StrCpy $Python_pywin32 $1 3 -3
-                ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
-                ${VersionConvert} $Python_wx "+" $Python_wx
-                ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
-            ${EndIf}
-            ${If} $Python_Path != $Empty
-            ${AndIf} $Python_Comtypes != "1"
-            ${AndIf} $Python_pywin32 != "1"
-            ${AndIf} $Python_wx != "1"
-                StrCpy $Requirements "Met"
-                ${NSD_CreateLabel} 0 $0u 100% 16u "Python Version: Congratulations!  All prerequisites detected!"
-                    Pop $Label
-                IntOp $0 $0 + 24
-            ${Else}
-                ${NSD_CreateLabel} 0 $0u 100% 40u "The installer cannot find the following required components. Please check the component(s) that you would like this installer to download and install or use the provided links to manually download and install.  The installer may become unresponsive while the requested files are downloading.  Please be patient."
-                    Pop $Label
-                IntOp $0 $0 + 41
-                ${If} $Python_Path == $Empty
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python 2.7.3"
-                        Pop $Check_Python
-                        ${NSD_SetState} $Check_Python ${BST_CHECKED}
-                    IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 65% 8u  "Python webpage" ;http://www.python.org/download/releases/2.7.3/
-                        Pop $Link_Python
-                        ${NSD_OnClick} $Link_Python onClick_Link
-                    IntOp $0 $0 + 11
-                ${EndIf}
-                ${If} $Python_wx == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "wxPython 2.8.12.1-unicode"
-                        Pop $Check_wx
-                        ${NSD_SetState} $Check_wx ${BST_CHECKED}
-                    IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u  "wxPython webpage" ;http://www.wxpython.org/download.php#stable
-                        Pop $Link_wx
-                        ${NSD_OnClick} $Link_wx onClick_Link
-                    IntOp $0 $0 + 11
-                ${EndIf}
-                ${If} $Python_Comtypes == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "Python Comtypes 0.6.2"
-                        Pop $Check_Comtypes
-                        ${NSD_SetState} $Check_Comtypes ${BST_CHECKED}
-                    IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u "Comtypes webpage" ;http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/
-                        Pop $Link_Comtypes
-                        ${NSD_OnClick} $Link_Comtypes onClick_Link
-                    IntOp $0 $0 + 11
-                ${EndIf}
-                ${If} $Python_pywin32 == "1"
-                    ${NSD_CreateCheckBox} 0 $0u 60% 13u "PyWin32 218"
-                        Pop $Check_pywin32
-                        ${NSD_SetState} $Check_pywin32 ${BST_CHECKED}
-                    IntOp $0 $0 + 2
-                    ${NSD_CreateLink} 60% $0u 40% 8u  "PyWin32 webpage" ;https://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/
-                        Pop $Link_pywin32
-                        ${NSD_OnClick} $Link_pywin32 onClick_Link
-                    IntOp $0 $0 + 11
-                ${EndIf}
-            ${EndIf}
-        IntOp $0 $0 + 10
-        ${EndIf}
-
-        ${If} $ExeVersionInstall == $True
-            StrCpy $9 $Empty
-            IfFileExists "$SYSDIR\MSVCR90.DLL" 0 +2
-                StrCpy $9 "Installed"
-            IfFileExists "$COMMONFILES\Microsoft Shared\VC\msdia90.dll" 0 +2
-                StrCpy $9 "Installed"
-            ${If} $9 == $Empty
-                ${NSD_CreateLabel} 0 $0u 60% 17u "Standalone Version: MSVC Redistributable 2008$\n(must manually download && install)"
-                    Pop $Check_msvc
-                IntOp $0 $0 + 2
-                ${NSD_CreateLink} 60% $0u 40% 8u  "MSVC 2008 Redist webpage" ;http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2
-                    Pop $Link_vcredist
-                    ${NSD_OnClick} $Link_vcredist onClick_Link
-                IntOp $0 $0 + 11
-            ${Else}
-                ${NSD_CreateLabel} 0 $0u 100% 17u "Standalone Version: Congratulations!  All prerequisites detected!"
-                    Pop $Check_msvc
-            ${EndIf}
-        ${EndIf}
-        nsDialogs::Show
-    FunctionEnd
-
-    Function PAGE_REQUIREMENTS_Leave
-        ${If} $Requirements != "Met"
-            ${NSD_GetState} $Check_Python $CheckState_Python
-            ${NSD_GetState} $Check_wx $CheckState_wx
-            ${NSD_GetState} $Check_Comtypes $CheckState_Comtypes
-            ${NSD_GetState} $Check_pywin32 $CheckState_pywin32
-
-            ${If} $CheckState_Python == ${BST_CHECKED}
-                SetOutPath "$TEMP\PythonInstallers"
-                ${NSD_GetText} $Check_Python $0
-                ${NSD_SetText} $Check_Python "$0 - Downloading..."
-                NSISdl::download http://python.org/ftp/python/2.7.3/python-2.7.3.msi "$TEMP\PythonInstallers\python-2.7.3.msi"
-                Pop $R0
-                ${If} $R0 == "success"
-                    ${NSD_SetText} $Check_Python "$0 - Installing..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.3.msi"'
-                    BringToFront
-                    ${NSD_SetText} $Check_Python "$0 - Installed."
-                ${Else}
-                    ${NSD_SetText} $Check_Python "$0 - Download Failed!"
-                    MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
-                    Abort
-                ${EndIf}
-            ${EndIf}
-            ${If} $CheckState_wx == ${BST_CHECKED}
-                SetOutPath "$TEMP\PythonInstallers"
-                ${NSD_GetText} $Check_wx $0
-                ${NSD_SetText} $Check_wx "$0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-unicode-2.8.12.1-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
-                Pop $R0
-                ${If} $R0 == "success"
-                    ${NSD_SetText} $Check_wx "$0 - Installing..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait '"$TEMP\PythonInstallers\wxPython.exe"'; /VERYSILENT'
-                    BringToFront
-                    ${NSD_SetText} $Check_wx "$0 - Installed."
-                ${Else}
-                    ${NSD_SetText} $Check_wx "$0 - Download Failed!"
-                    MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
-                    Abort
-                ${EndIf}
-            ${EndIf}
-            ${If} $CheckState_Comtypes == ${BST_CHECKED}
-                SetOutPath "$TEMP\PythonInstallers"
-                ${NSD_GetText} $Check_Comtypes $0
-                ${NSD_SetText} $Check_Comtypes "$0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\PythonInstallers\comtypes.exe"
-                Pop $R0
-                ${If} $R0 == "success"
-                    ${NSD_SetText} $Check_Comtypes "$0 - Installing..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait  '"$TEMP\PythonInstallers\comtypes.exe"'
-                    BringToFront
-                    ${NSD_SetText} $Check_Comtypes "$0 - Installed."
-                ${Else}
-                    ${NSD_SetText} $Check_Comtypes "$0 - Download Failed!"
-                    MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading: $0."
-                    Abort
-                ${EndIf}
-            ${EndIf}
-            ${If} $CheckState_pywin32 == ${BST_CHECKED}
-                SetOutPath "$TEMP\PythonInstallers"
-                ${NSD_GetText} $Check_pywin32 $0
-                ${NSD_SetText} $Check_pywin32 "$0 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe?r=&ts=1352752073&use_mirror=iweb "$TEMP\PythonInstallers\pywin32.exe"
-                Pop $R0
-                ${If} $R0 == "success"
-                    ${NSD_SetText} $Check_pywin32 "$0 - Installing..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait  '"$TEMP\PythonInstallers\pywin32.exe"'
-                    BringToFront
-                    ${NSD_SetText} $Check_pywin32 "$0 - Installed."
-                ${Else}
-                    ${NSD_SetText} $Check_pywin32 "$0 - Download Failed!"
-                    MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
-                    Abort
-                ${EndIf}
-            ${EndIf}
-        ${EndIf}
-    FunctionEnd
-
 
 ;-------------------------------- Finish Page
     Function PAGE_FINISH
@@ -1202,7 +968,7 @@ NoComTypes:
                 RMDir  "$Path_Skyrim\Mopy\macro"
                 RMDir  "$Path_Skyrim\Mopy\bash\images\stc"
                 ; As of 303 the below are obsolete locations or files.
-                Delete "$Path_Skryim\Mopy\templates\Bashed Patch, Skyrim.esp"
+                Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Skyrim.esp"
                 Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Oblivion.esp"
                 Delete "$Path_Skyrim\Mopy\templates\Blank.esp"
             ${EndIf}
@@ -1483,28 +1249,212 @@ NoComTypes:
         ${EndIf}
     FunctionEnd
 
-    Function OnClick_Link
-        Pop $0
-        ${If} $0 == $Link_Comtypes
-            ExecShell "open" "http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/"
-        ${ElseIf} $0 == $Link_wx
-            ExecShell "open" "http://www.wxpython.org/download.php#stable"
-        ${ElseIf} $0 == $Link_Python
-            ExecShell "open" "http://www.python.org/download/releases/2.7.3/"
-        ${ElseIf} $0 == $Link_pywin32
-            ExecShell "open" "https://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/"
-        ${ElseIf} $0 == $Link_vcredist
-            ExecShell "open" "http://www.microsoft.com/downloads/details.aspx?familyid=a5c84275-3b97-4ab7-a40d-3802b2af5fc2"
-        ${EndIf}
-
-        ${If} $0 == error
-            Abort
-        ${EndIf}
-    FunctionEnd
-
 
 ;-------------------------------- The Installation Sections:
-    Section "Wrye Bash (required)" Main
+
+    Section "Prerequisites" Prereq
+        SectionIn RO
+        ; Both Python and Standalone versions require the MSVC 2013 redist, so check for that and download/install if necessary.
+        ; Thanks to the pcsx2 installer for providing this!
+
+        ; Detection made easy: Unlike previous redists, VC2013 now generates a platform
+        ; independent key for checking availability.
+        ; HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86  for x64 Windows
+        ; HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86  for x86 Windows
+
+        ; Download from:
+        ; http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe
+
+        ClearErrors
+
+        ${If} ${RunningX64}
+            ReadRegDword $R0 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\12.0\VC\Runtimes\x86" "Installed"
+        ${Else}
+            ReadRegDword $R0 HKLM "SOFTWARE\Microsoft\VisualStudio\12.0\VC\Runtimes\x86" "Installed"
+        ${EndIf}
+
+        ${If} ${Errors}
+            DetailPrint "Visual C++ 2013 Redistributable registry key was not found; assumed to be uninstalled."
+        ${ElseIf} $R0 == "1"
+            DetailPrint "Visual C++ 2013 Redistributable is already installed; skipping!"
+        ${Else}
+            DetailPrint "Downloading Visual C++ 2013 Redistributable Setup..."
+            NSISdl::download "http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe" "vcredist_x86.exe"
+
+            Pop $R0 ;Get the return value
+            ${If} $R0 == "success"
+                DetailPrint "Running Visual C++ 2013 Redistributable Setup..."
+                ExecWait '"$TEMP\vcredist_x86.exe" /qb'
+                DetailPrint "Finished Visual C++ 2013 SP1 Redistributable Setup"
+                
+                Delete "$TEMP\vcredist_x86.exe"
+            ${Else}
+                DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
+            ${EndIf}
+        ${EndIf}
+        
+        ; Standalone version also requires the MSVC 2008 redist.
+        ${If} $ExeVersionInstall == $True
+            StrCpy $9 $Empty
+            ${If} ${FileExists} "$SYSDIR\MSVCR90.DLL"
+            ${OrIf} ${FileExists} "$COMMONFILES\Microsoft Shared\VC\msdia90.dll"
+                StrCpy $9 "Installed"
+            ${EndIf}
+            ${If} $9 == $Empty
+                ; MSVC 2008 (x86): http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe
+                DetailPrint "Visual C++ 2008 Redistributable was not found; assumed to be uninstalled."
+                DetailPrint "Downloading Visual C++ 2008 Redistributable Setup..."
+                NSISdl::download "http://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x86.exe" "vcredist_x86.exe"
+                
+                Pop $R0 ;Get the return value
+                ${If} $R0 == "success"
+                    DetailPrint "Running Visual C++ 2008 Redistributable Setup..."
+                    ExecWait '"$TEMP\vcredist_x86.exe" /qb'
+                    DetailPrint "Finished Visual C++ 2008 SP1 Redistributable Setup"
+                    
+                    Delete "$TEMP\vcredist_x86.exe"
+                ${Else}
+                    DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
+                ${EndIf}
+            ${Else}
+                DetailPrint "Visual C++ 2008 Redistributable is already installed; skipping!"
+            ${EndIf}
+        ${EndIf}
+        
+        ; Python version also requires Python, wxPython, Python Comtypes and PyWin32.
+        ${If} $PythonVersionInstall == $True
+            ; Look for Python.
+            ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
+
+            ;Detect Python Components:
+            ${If} $Python_Path != $Empty
+                ;Detect Comtypes:
+                ${If} ${FileExists} "$Python_Path\Lib\site-packages\comtypes\__init__.py"
+                    FileOpen $2 "$Python_Path\Lib\site-packages\comtypes\__init__.py" r
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileRead $2 $1
+                    FileClose $2
+                    StrCpy $Python_Comtypes $1 5 -8
+                    ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
+                    ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
+                ${EndIf}
+                
+                ; Detect wxPython.
+                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                ${If} $Python_wx == $Empty
+                    ReadRegStr $Python_wx HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                ${EndIf}
+                ; Detect PyWin32.
+                ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                ${If} $1 == $Empty
+                    ReadRegStr $1         HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                ${EndIf}
+                StrCpy $Python_pywin32 $1 3 -3
+                
+                ; Compare versions.
+                ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
+                ${VersionConvert} $Python_wx "+" $Python_wx
+                ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
+            ${EndIf}
+        
+            ; Download and install missing requirements.
+            ${If} $Python_Path == $Empty
+                SetOutPath "$TEMP\PythonInstallers"
+                DetailPrint "Python 2.7.3 - Downloading..."
+                NSISdl::download http://python.org/ftp/python/2.7.3/python-2.7.3.msi "$TEMP\PythonInstallers\python-2.7.3.msi"
+                Pop $R0
+                ${If} $R0 == "success"
+                    DetailPrint "Python 2.7.3 - Installing..."
+                    Sleep 2000
+                    HideWindow
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.3.msi"'
+                    BringToFront
+                    DetailPrint "Python 2.7.3 - Installed."
+                ${Else}
+                    DetailPrint "Python 2.7.3 - Download Failed!"
+                    MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
+                    Abort
+                ${EndIf}
+            ${Else}
+                DetailPrint "Python 2.7.3 is already installed; skipping!"
+            ${EndIf}
+            ${If} $Python_wx == "1"
+                SetOutPath "$TEMP\PythonInstallers"
+                DetailPrint "wxPython 2.8.12.1 - Downloading..."
+                NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-unicode-2.8.12.1-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
+                Pop $R0
+                ${If} $R0 == "success"
+                    DetailPrint "wxPython 2.8.12.1 - Installing..."
+                    Sleep 2000
+                    HideWindow
+                    ExecWait '"$TEMP\PythonInstallers\wxPython.exe"'; /VERYSILENT'
+                    BringToFront
+                    DetailPrint "wxPython 2.8.12.1 - Installed."
+                ${Else}
+                    DetailPrint "wxPython 2.8.12.1 - Download Failed!"
+                    MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
+                    Abort
+                ${EndIf}
+            ${Else}
+                DetailPrint "wxPython 2.8.12.1 is already installed; skipping!"
+            ${EndIf}
+            ${If} $Python_Comtypes == "1"
+                SetOutPath "$TEMP\PythonInstallers"
+                DetailPrint "Comtypes 0.6.2 - Downloading..."
+                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\PythonInstallers\comtypes.exe"
+                Pop $R0
+                ${If} $R0 == "success"
+                    DetailPrint "Comtypes 0.6.2 - Installing..."
+                    Sleep 2000
+                    HideWindow
+                    ExecWait  '"$TEMP\PythonInstallers\comtypes.exe"'
+                    BringToFront
+                    DetailPrint "Comtypes 0.6.2 - Installed."
+                ${Else}
+                    DetailPrint "Comtypes 0.6.2 - Download Failed!"
+                    MessageBox MB_OK "Comtypes download failed, please try running installer again or manually downloading: $0."
+                    Abort
+                ${EndIf}
+            ${Else}
+                DetailPrint "Comtypes 0.6.2 is already installed; skipping!"
+            ${EndIf}
+            ${If} $Python_pywin32 == "1"
+                SetOutPath "$TEMP\PythonInstallers"
+                DetailPrint "PyWin32 - Downloading..."
+                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe?r=&ts=1352752073&use_mirror=iweb "$TEMP\PythonInstallers\pywin32.exe"
+                Pop $R0
+                ${If} $R0 == "success"
+                    DetailPrint "PyWin32 - Installing..."
+                    Sleep 2000
+                    HideWindow
+                    ExecWait  '"$TEMP\PythonInstallers\pywin32.exe"'
+                    BringToFront
+                    DetailPrint "PyWin32 - Installed."
+                ${Else}
+                    DetailPrint "PyWin32 - Download Failed!"
+                    MessageBox MB_OK "PyWin32 download failed, please try running installer again or manually downloading."
+                    Abort
+                ${EndIf}
+            ${Else}
+                DetailPrint "PyWin32 is already installed; skipping!"
+            ${EndIf}
+        ${EndIf}
+    SectionEnd
+    
+    Section "Wrye Bash" Main
         SectionIn RO
 
         ${If} $CheckState_OB == ${BST_CHECKED}
@@ -3051,6 +3001,7 @@ NoComTypes:
   !insertmacro MUI_LANGUAGE "English"
   LangString DESC_Main ${LANG_ENGLISH} "The main Wrye Bash files."
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
+  LangString DESC_Prereq ${LANG_ENGLISH} "The files that Wrye Bash requires to run."
   LangString PAGE_INSTALLLOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location(s)"
   LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select main installation path for Wrye Bash and, if desired, extra locations in which to install Wrye Bash."
   LangString PAGE_CHECK_LOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location Check"
@@ -3065,4 +3016,5 @@ NoComTypes:
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
         !insertmacro MUI_DESCRIPTION_TEXT ${Main} $(DESC_Main)
         !insertmacro MUI_DESCRIPTION_TEXT ${Shortcuts_SM} $(DESC_Shortcuts_SM)
+        !insertmacro MUI_DESCRIPTION_TEXT ${Prereq} $(DESC_Prereq)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
