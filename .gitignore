@@ -1,2 +1,20 @@
+# svn
+.svn/
+
+# binaries
 *.pyc
+*.pyo
+__pycache__/
+*.exe
+
+# tmp
+*.log
+*.patch
+*.diff
 *.tmp
+
+# the user ini
+Mopy/bash.ini
+
+# I add a top level folder for dumping local files
+~/*
