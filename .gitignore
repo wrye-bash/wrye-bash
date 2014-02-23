@@ -18,3 +18,7 @@ Mopy/bash.ini
 
 # I add a top level folder for dumping local files
 ~/*
+
+# Release archives.
+scripts/dist/*.7z
+scripts/dist/*.7z
