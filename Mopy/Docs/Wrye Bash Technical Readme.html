@@ -27,7 +27,7 @@
 	figcaption {font-style:italic; margin-bottom:2em;}
  .missing {background:red; color:white; border:0.25em solid black;}
 	abbr {cursor:help;}
-	
+
 	.indent {margin-left:2em;}
 	td > code.box {margin:0;}
 </style>
@@ -86,10 +86,10 @@
 	<li><code>=== text</code> generates a level 3 header.
 	<li><code>__text__</code>, <code>~~text~~</code> and <code>**text**</code> generate emphasised text.
 </ul>
-	
+
 <h2 id="wizards">BAIN Wizards</h2>
 <h3 id="wizards-overview">Overview</h3>
-<p>Bain Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and esps/esms will be selected, and any INI tweaks that will be applied. 
+<p>Bain Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and esps/esms will be selected, and any INI tweaks that will be applied.
 <p>Those using Notepad++ to write their install scripts may want to use utumno's <a href="http://oblivion.nexusmods.com/mods/32654">BAIN wizard Script Highlighter for Notepad plus plus</a> as it features code folding and syntax highlighting to make spotting mistakes easier.
 <p>There is a similar <a href="http://oblivion.nexusmods.com/mods/34240">BAIN Wizard Syntax for EmEditor</a> syntax highlighter for EmEditor created by broken85.
 
@@ -179,7 +179,7 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existance of a file in the Data directory. If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file. 
+<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existance of a file in the Data directory. If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file.
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
 	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example using "test.esp" would test for "<var>[path to game]</var>\Data\test.esp"
@@ -202,7 +202,7 @@
 	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_on.png" alt="Active"/>.
 	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_inc.png" alt="Merged"/>.
 </ul>
-<p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually. 
+<p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
 <code class="box">EditINI(file_name, section, setting, value [,comment])</code>
 <ul>
 	<li><var>file_name</var> - The name of the ini file you wish to edit, relative to the Data directory.
@@ -211,12 +211,12 @@
 	<li><var>value</var> - The value to set the setting to.
 	<li><var>comment</var> - Optional comment to include with this tweak.
 </ul>
-<p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is usefull for creating dynamically generated menus. 
+<p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is usefull for creating dynamically generated menus.
 <code class="box">Exec(lines)</code>
 <ul>
 	<li><var>lines</var> - A string containing lines to execute, seperated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. Eg. <code>\'</code> should be written <code>\\\'</code>.
 </ul>
-<p><dfn>str</dfn> - Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string. 
+<p><dfn>str</dfn> - Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 <code class="box">str(value)</code>
 <ul>
 	<li><var>value</var> - Any value. An integer, decimal, variable, constant or string.
@@ -225,7 +225,7 @@
 <ul class="indent">
 	<li>String representation of <var>value</var>. For example, <code>str(5)</code> would return <code>"5"</code>.
 </ul>
-<p><dfn>int</dfn> - Used to convert a value to an integer, for example converting a value held in a string to a integer value. 
+<p><dfn>int</dfn> - Used to convert a value to an integer, for example converting a value held in a string to a integer value.
 <code class="box">int(value)</code>
 <ul>
 	<li><var>value</var> - Any value. An integer, decimal, variable, constant or string.
@@ -255,7 +255,7 @@
 	<li>Length of the string if possible.
 	<li><code>0</code> - If length calculation was not possible.
 </ul>
-<p><dfn id="wizardsendswith">endswith</dfn> - Test what a string ends with. 
+<p><dfn id="wizardsendswith">endswith</dfn> - Test what a string ends with.
 <code class="box">endswith(string, ending_1 [, ..., ending_n])</code>
 <ul>
 	<li><var>string</var> - A string, variable or constant.
@@ -266,7 +266,7 @@
 	<li><code>True</code> - If the string ends in any of the endings specified.
 	<li><code>False</code> - If the string does not end in any of the endings specified.
 </ul>
-<p><dfn id="wizardsstartswith">startswith</dfn> - Test what a string starts with. 
+<p><dfn id="wizardsstartswith">startswith</dfn> - Test what a string starts with.
 <code class="box">startswith(string, prefix_1 [, ..., prefix_n])</code>
 <ul>
 	<li><var>string</var> - A string, variable or constant.
@@ -277,7 +277,7 @@
 	<li><code>True</code> - If the string begin with any of the prefixes specified.
 	<li><code>False</code> - If the string does not begin with any of the prefixes specified.
 </ul>
-<p><dfn id="wizardslower">lower</dfn> - Convert a string to lower case. 
+<p><dfn id="wizardslower">lower</dfn> - Convert a string to lower case.
 <code class="box">lower(string)</code>
 <ul>
 	<li><var>string</var> - A string or variable.
@@ -313,7 +313,7 @@
 	<li>The index of the last occurance of <var>substring</var> in <var>string</var>.
 	<li><code>-1</code> - If <var>substring</var> could not be found.
 </ul>
-<p><dfn id="wizardsGetFilename">GetFilename</dfn> - For a string that contains a path, returns the filename part of the string. 
+<p><dfn id="wizardsGetFilename">GetFilename</dfn> - For a string that contains a path, returns the filename part of the string.
 <code class="box">GetFilename(path_string)</code>
 <ul>
 	<li><var>path_string</var> - A string or variable of the path to work with.
@@ -323,7 +323,7 @@
 	<li>The filename in <var>path_string</var>.
 	<li>An empty string, if <var>path_string</var> is not a path.
 </ul>
-<p><dfn id="wizardsGetFolder">GetFolder</dfn> - For a string that contains a path, returns the folder part of the string. 
+<p><dfn id="wizardsGetFolder">GetFolder</dfn> - For a string that contains a path, returns the folder part of the string.
 <code class="box">GetFolder(path_string)</code>
 <ul>
 	<li><var>path_string</var> - A string or variable of the path to work with.
@@ -336,60 +336,60 @@
 
 <h3 id="wizards-keywords">Keywords</h3>
 <p>Keywords are like functions, but don't require brackets around their arguments, and are used for controlling the flow of a wizard or performing special tasks.
-<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window. 
+<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
 <code class="box">SelectSubPackage name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the sub-package to select.
 </ul>
-<p><dfn>DeSelectSubPackage</dfn> - Cause the specified sub-package to be de-selected from installation. This is equivilant to un-checking the sub-package in the BAIN window. 
+<p><dfn>DeSelectSubPackage</dfn> - Cause the specified sub-package to be de-selected from installation. This is equivilant to un-checking the sub-package in the BAIN window.
 <code class="box">DeSelectSubPackage name</code>
 <ul>
 	<li><code>name</code> - A string or variable holding the name of the sub-package to de-select.
 </ul>
-<p><dfn>SelectEspm</dfn> - Cause the specified esp or esm to be selected for installation. This is equivilant to checking the esp or esm from the BAIN window. 
+<p><dfn>SelectEspm</dfn> - Cause the specified esp or esm to be selected for installation. This is equivilant to checking the esp or esm from the BAIN window.
 <code class="box">SelectEspm name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the esp or esm to select.
 </ul>
-<p><dfn>DeSelectEspm</dfn> - Cause the specified esp or esm to be deselected from installation. This is equivilant to un-checking the esp or esm from the BAIN window. 
+<p><dfn>DeSelectEspm</dfn> - Cause the specified esp or esm to be deselected from installation. This is equivilant to un-checking the esp or esm from the BAIN window.
 <code class="box">DeSelectEspm name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the esp or esm to de-select.
 </ul>
-<p><dfn>SelectAll</dfn> - Cause all sub-packages, esps, and esms to be selected for installation. This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window. 
+<p><dfn>SelectAll</dfn> - Cause all sub-packages, esps, and esms to be selected for installation. This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
 <code class="box">SelectAll</code>
-<p><dfn>DeSelectAll</dfn> - Cause all sub-packages, esps, and esms to be de-selected from installation. This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window. 
+<p><dfn>DeSelectAll</dfn> - Cause all sub-packages, esps, and esms to be de-selected from installation. This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
 <code class="box">DeSelectAll</code>
 <p><dfn>SelectAllEspms</dfn> - Cause all esps and esms to be selected for installation. This is equivilant to checking all esps and esms in the BAIN window.
 <code class="box">SelectAllEspms</code>
-<p><dfn>DeSelectAllEspms</dfn> - Cause all esps and esms to be de-selected from installation. This is equivilant to un-checking all esps and esms in the BAIN window. 
+<p><dfn>DeSelectAllEspms</dfn> - Cause all esps and esms to be de-selected from installation. This is equivilant to un-checking all esps and esms in the BAIN window.
 <code class="box">DeSelectAllEspms</code>
-<p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - Change the installed name of an esp or esm. 
+<p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - Change the installed name of an esp or esm.
 <code class="box">RenameEspm original_name, new_name</code>
 <ul>
 	<li><var>original_name</var> - The name of the esp or esm, as it appears in the BAIN package.
 	<li><var>new_name</var> - The new name you want to have the esp or esm installed as.
 </ul>
-<p><dfn>ResetEspmName</dfn> - Resets the name of an esp or esm back to its default name. 
+<p><dfn>ResetEspmName</dfn> - Resets the name of an esp or esm back to its default name.
 <code class="box">ResetEspmName original_name</code>
 <ul>
 	<li><var>original_name</var> - The name of the esp or esm, as it appears in the BAIN package.
 </ul>
-<p><dfn>ResetAllEspmNames</dfn> - Resets the names of all the esps and esms back to their default names. 
+<p><dfn>ResetAllEspmNames</dfn> - Resets the names of all the esps and esms back to their default names.
 <code class="box">ResetAllEspmNames</code>
-<p><dfn>Note</dfn> - Add a note to the user to be displayed at the end of the wizard, on the finish page. The <code>'- '</code> will be added automatically. 
+<p><dfn>Note</dfn> - Add a note to the user to be displayed at the end of the wizard, on the finish page. The <code>'- '</code> will be added automatically.
 <code class="box">Note text</code>
 <ul>
 	<li><var>text</var> - A string, string variable, or expression that evalutates to a string, to be displayed on the finish page.
 </ul>
-<p><dfn>Return</dfn> - Signals completion of the wizard. This will jump right to the finish page. 
+<p><dfn>Return</dfn> - Signals completion of the wizard. This will jump right to the finish page.
 <code class="box">Return</code>
-<p><dfn>Cancel</dfn> - Cancels the wizard, with an optional text to display in a dialog as to why the wizard was canceled. 
+<p><dfn>Cancel</dfn> - Cancels the wizard, with an optional text to display in a dialog as to why the wizard was canceled.
 <code class="box">Cancel [text]</code>
 <ul>
-	<li><var>text</var> - Optional. Text to display in a dialog as to why the wizard was canceled. 
+	<li><var>text</var> - Optional. Text to display in a dialog as to why the wizard was canceled.
 </ul>
-<p><dfn id="wizardsRequireVersions">RequireVersions</dfn> - Tests the users system agains version requirements you specify. If the requirements are not met, a warning dialog will be shown asking if you wish to continue anyway. 
+<p><dfn id="wizardsRequireVersions">RequireVersions</dfn> - Tests the users system agains version requirements you specify. If the requirements are not met, a warning dialog will be shown asking if you wish to continue anyway.
 <code class="box">RequireVersions game_version [, se_version, ge_version, wrye_bash_version]</code>
 <ul>
 	<li><var>game_version</var> - Version of the game to test for. See <a href="#wizardsCompareGameVersion">CompareGameVersion</a> for the proper format of the string.
@@ -474,7 +474,7 @@ EndFor</code>
 	<li><code>Break</code> - Signals the for loop to end execution, skipping to after the <code>EndFor</code>.
 	<li><code>EndFor</code> - Ends the for loop.
 </ul>
-<p><dfn id="wizardsSelectOne">SelectOne</dfn> - Shows a dialog where the user can select one option from a list of options. 
+<p><dfn id="wizardsSelectOne">SelectOne</dfn> - Shows a dialog where the user can select one option from a list of options.
 <code class="box">SelectOne 'description', \
         'option 1', 'description 1', 'image 1', \
         'option 2', 'description 2', 'image 2', \
@@ -486,7 +486,7 @@ Case 'option 1'
 Case 'option 2'
     lines
     Break
- 
+
 Case 'option n'
     lines
     Break
@@ -495,9 +495,9 @@ Default
     Break
 EndSelect</code>
 <ul>
-	<li><code>SelectOne</code> - After the user presses the "Next" button, this begins a Select control block. 
+	<li><code>SelectOne</code> - After the user presses the "Next" button, this begins a Select control block.
 	<ul>
-		<li><var>description</var> - The text that will be displayed at the top of the dialog. 
+		<li><var>description</var> - The text that will be displayed at the top of the dialog.
 		<li><var>option n</var> - The text of the specific option. If the text begins with a "|", this is considered the default option and will be selected by default.
 		<li><var>description n</var> - The description to display when <var>option n</var> is selected.
 		<li><var>image n</var> - The image to display when <var>option n</var> is selected. An empty string will make no image display.
@@ -510,7 +510,7 @@ EndSelect</code>
 	<li><code>Break</code> - Stops running lines in the current <code>Case</code> or <code>Default</code> block.
 	<li><code>EndSelect</code> - Signals the end of the Select control block.
 </ul>
-<p><dfn id="wizardsSelectMany">SelectMany</dfn> - Shows a dialog where the user can select multiple options from a list. After the user presses the "Next" button, this begins a Select control block. See SelectOne for usage. 
+<p><dfn id="wizardsSelectMany">SelectMany</dfn> - Shows a dialog where the user can select multiple options from a list. After the user presses the "Next" button, this begins a Select control block. See SelectOne for usage.
 <code class="box">SelectMany 'description', \
         'option 1', 'description 1', 'image 1', \
         'option 2', 'description 2', 'image 2', \
@@ -522,7 +522,7 @@ Case 'option 1'
 Case 'option 2'
     lines
     Break
- 
+
 Case 'option n'
     lines
     Break
@@ -836,7 +836,7 @@ For Each Plugin &lt;Variable&gt; &lt;FolderPath&gt; [RecurseSubFolders] [SearchS
 			<code class="box">file.lower().endswith(".esp")
 GetFilename(file)
 GetFolder(file)</code>
-			<p>and other string manipulation functions to test file names and folders. 
+			<p>and other string manipulation functions to test file names and folders.
 </table>
 <h4>Functions in OBMM without equivalent methods in Wizards</h4>
 <code class="box">SelectVar &lt;Variable&gt;
@@ -986,8 +986,8 @@ e Plugin4.esp  //[comment]
 <h4>ASSUME</h4>
 <p>The <code>ASSUME</code> command inserts the assumption that the given plugin exists into any <code>IF</code> statements following the command.
 <ul>
-	<li><code>ASSUME</code> commands last until the next <code>ASSUME</code> command or until the end of the file, whichever occurs first. 
-	<li><code>ASSUME</code> commands are <b>not</b> additive: each <code>ASSUME</code> command completely replaces the previous one. 
+	<li><code>ASSUME</code> commands last until the next <code>ASSUME</code> command or until the end of the file, whichever occurs first.
+	<li><code>ASSUME</code> commands are <b>not</b> additive: each <code>ASSUME</code> command completely replaces the previous one.
 	<li>To cancel the effect of an <code>ASSUME</code> command, use an <code>ASSUME</code> command with no mod listed for it.
 	<li>To assume the existence of multiple plugins, list them on separate lines after the <code>ASSUME</code> command, like how is done for the <code>IF</code> command.
 </ul>
@@ -1032,7 +1032,7 @@ o Cobl Filter Late.esp // Adds foods from various mods to the Dinner Plate. (Req
 ## Required
 e meshes\Cobl\StaticApp\apparatusalembics.nif // __Missing meshes [StaticApp].__ Try reinstalling full Cobl package (including all textures/meshes).
 ## Obsolete components
-- Cobl Glue MW Ingred.esp // **Deactivate.** Obsolete. (Merged into Cobl Glue.esp.) 
+- Cobl Glue MW Ingred.esp // **Deactivate.** Obsolete. (Merged into Cobl Glue.esp.)
 ## Superceded mods.
 - Beer! for Oblivion.esp [1.2.3:]-- **Deactivate.** Included in Cobl Main.esm.
 - DaggerfallBooks.esp // **Deactivate.** Included in Cobl Main.esm.
@@ -1080,7 +1080,7 @@ x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
 		html{
 			overflow-x: auto;
 		}
-		
+
 		body{
 			background-color: #fff;
 			color: #000;
@@ -1090,84 +1090,84 @@ x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
 			padding:0px;
 			text-align:center;
 		   }
-		   
+
 		a:link, a:visited, a:active{
 			color: #000;
 			text-decoration: underline;
 		}
-		
+
 		a:hover{
 			color: #465584;
 			text-decoration:underline;
 		}
-		
+
 		img{
 			border: 0;
 			vertical-align: middle;
 		}
-				
+
 		#ipbwrapper{
 			margin: 0 auto 0 auto;
 			text-align: left;
 			width: 95%;
 		}
-		
+
 		.post1{
 			background-color: #F5F9FD;
 		}
-		
+
 		.post2{
 			background-color: #EEF2F7;
 		}
-	
+
 		/* Common elements */
 		.row1{
 			background-color: #F5F9FD;
 		}
-		
+
 		.row1{
 			background-color: #DFE6EF;
 		}
-		
+
 		.row3{
 			background-color: #EEF2F7;
 		}
-		
+
 		.row2{
 			background-color: #E4EAF2;
 		}
-	
+
 		/* tableborders gives the white column / row lines effect */
 		.plainborder{
 			background-color: #F5F9FD
 			border: 1px solid #345487;
 		}
-		
+
 		.tableborder{
 			background-color: #FFF;
 			border: 1px solid #345487;
 			margin: 0;
 			padding: 0;
 		}
-		
+
 		.tablefill{
 			background-color: #F5F9FD;
 			border: 1px solid #345487;
 			padding: 6px;
 		}
-		
+
 		.tablepad{
 			background-color: #F5F9FD;
 			padding:6px;
 		}
-		
+
 		.tablebasic{
 			border: 0;
 			margin: 0;
 			padding: 0;
 			width:100%;
 		}
-	
+
 		.pformstrip{
 			background-color: #D1DCEB;
 			color: #3A4F6C;
@@ -1175,7 +1175,7 @@ x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
 			margin-top:1px
 			padding:7px;
 		}
-		
+
 		#QUOTE{
 			background-color: #FAFCFE;
 			border: 1px solid #000;
@@ -1184,7 +1184,7 @@ x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
 			font-size: 11px;
 			padding: 2px;
 		}
-		
+
 		#CODE{
 			background-color: #FAFCFE;
 			border: 1px solid #000;
@@ -1202,27 +1202,27 @@ x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
 			padding:8px 0px 8px 5px;
 			vertical-align:middle;
 		}
-		
+
 		.maintitle a:link, .maintitle  a:visited, .maintitle  a:active{
 			color: #fff;
 			text-decoration: none;
 		}
-		
+
 		.maintitle a:hover{
 			text-decoration: underline;
 		}
-		
+
 		/* Topic View elements */
 		.signature{
 			color: #339;
 			font-size: 10px;
 			line-height:150%;
 		}
-		
+
 		.postdetails{
 			font-size: 10px;
 		}
-		
+
 		.postcolor{
 			font-size: 12px;
 			line-height: 160%;
@@ -1290,8 +1290,3 @@ for (var i=0; i < codes.length; i++) {
 	}
 }
 </script>
-
-
-
-
-
