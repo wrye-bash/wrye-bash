@@ -4,6 +4,7 @@
     !include "MUI2.nsh"
     !include "x64.nsh"
     !include "LogicLib.nsh"
+    !include "WinVer.nsh"
     !include "nsDialogs.nsh"
     !include "WordFunc.nsh"
     !include "StrFunc.nsh"
@@ -1295,6 +1296,31 @@
                 DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
             ${EndIf}
         ${EndIf}
+        ; Some Windows XP users may need to install MSVC 2005 SP1 Redist ATL
+        ; Security Update at http://download.microsoft.com/download/6/B/B/6BB661D6-A8AE-4819-B79F-236472F6070C/vcredist_x86.exe
+        ; There's no reliable way that I can see of checking for the update, so
+        ; just download it and run it. If the user doesn't need it, the
+        ; installer won't do anything, and it's only 2.6 MB.
+        ${If} ${IsWinXP}
+            DetailPrint "Windows XP detected; downloading MSVC 2005 SP 1 Redistributable Package ATL Security Update..."
+            SetOutPath $TEMP
+            NSISdl::download "http://download.microsoft.com/download/6/B/B/6BB661D6-A8AE-4819-B79F-236472F6070C/vcredist_x86.exe" "vcredist_x86.exe"
+
+            Pop $R0 ;Get the return value
+            ${If} $R0 == "success"
+                DetailPrint "Running MSVC 2005 SP 1 Redistributable Package ATL Security Update..."
+                Sleep 2000
+                HideWindow
+                ExecWait '"$TEMP\vcredist_x86.exe" /qb'
+                BringToFront
+                DetailPrint "Finished MSVC 2005 SP 1 Redistributable Package ATL Security Update"
+
+                Delete "$TEMP\vcredist_x86.exe"
+            ${Else}
+                DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
+            ${EndIf}
+        ${EndIf}
+
 
         ; Standalone version also requires the MSVC 2008 redist.
         ${If} $ExeVersionInstall == $True
@@ -1380,23 +1406,23 @@
             ; Download and install missing requirements.
             ${If} $Python_Path == $Empty
                 SetOutPath "$TEMP\PythonInstallers"
-                DetailPrint "Python 2.7.3 - Downloading..."
-                NSISdl::download http://python.org/ftp/python/2.7.3/python-2.7.3.msi "$TEMP\PythonInstallers\python-2.7.3.msi"
+                DetailPrint "Python 2.7.6 - Downloading..."
+                NSISdl::download http://python.org/ftp/python/2.7.6/python-2.7.6.msi "$TEMP\PythonInstallers\python-2.7.6.msi"
                 Pop $R0
                 ${If} $R0 == "success"
-                    DetailPrint "Python 2.7.3 - Installing..."
+                    DetailPrint "Python 2.7.6 - Installing..."
                     Sleep 2000
                     HideWindow
-                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.3.msi"'
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.6.msi"'
                     BringToFront
-                    DetailPrint "Python 2.7.3 - Installed."
+                    DetailPrint "Python 2.7.6 - Installed."
                 ${Else}
-                    DetailPrint "Python 2.7.3 - Download Failed!"
+                    DetailPrint "Python 2.7.6 - Download Failed!"
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
                     Abort
                 ${EndIf}
             ${Else}
-                DetailPrint "Python 2.7.3 is already installed; skipping!"
+                DetailPrint "Python 2.7.6 is already installed; skipping!"
             ${EndIf}
             ${If} $Python_wx == "1"
                 SetOutPath "$TEMP\PythonInstallers"
