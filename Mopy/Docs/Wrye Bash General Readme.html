@@ -27,8 +27,8 @@
 	figcaption {font-style:italic; margin-bottom:2em;}
  .missing {background:red; color:white; border:0.25em solid black;}
 	abbr {cursor:help;}
- 
-	.slideshow img {opacity:0; 
+
+	.slideshow img {opacity:0;
 		position:absolute;
 		transition: opacity 1.5s;
 		-moz-transition: opacity 1.5s;
@@ -159,7 +159,7 @@
 </ol>
 
 <h2 id="uninstall">Uninstallation</h2>
-<p>The ease with which Wrye Bash can be removed is dependent on how much you use it to manage your modded game. 
+<p>The ease with which Wrye Bash can be removed is dependent on how much you use it to manage your modded game.
 <ul>
 	<li>If you use a Bashed Patch, you will need to remove any dependencies on it from your saves before uninstalling Wrye Bash in order to avoid in-game issues. This may be near-impossible to do, depending on what is in your Bashed Patch.
 	<li>If you use BAIN to manage your installed mods, you will need to ensure that you have an adequate alternative management system ready, as although uninstalling Wrye Bash will not uninstall your mods, you will no longer be able to use BAIN's conflict resolution features.
@@ -275,7 +275,7 @@
 		<tr><td style="color:#BEBEBE;">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
 		<tr><td style="background:#FFBB33;">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
 		<tr><td style="background:yellow;">Yellow Background<td>The package has "underrides" i.e. some of its installed files <i>should</i> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-		<tr><td style="background:#E0E0E0;">Grey Background<td>Some files present in the package will <i><b>not</b></i> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="#bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu. 
+		<tr><td style="background:#E0E0E0;">Grey Background<td>Some files present in the package will <i><b>not</b></i> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="#bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu.
 </table>
 
 <h3 id="bain-commands">Useful Context Menu Commands</h3>
@@ -291,7 +291,7 @@
 		<tr><td>List Packages<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
 		<tr><td>Uninstall All Packages<td>Uninstalls all the packages in the package list.
 		<tr><td>Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
-			<ul>	
+			<ul>
 				<li>Vanilla game content.
 				<li>Official DLC content.
 				<li>Wrye Bash.
@@ -385,7 +385,7 @@
 		<tr><td style="font-style:italic;">Slanted text<td>A plugin that is recommended to be imported and deactivated (ie. tagged with Deactivate).
 		<tr><td style="text-decoration:underline;">Underlined text<td>A plugin identified as having dirty edits (Identical to Master, Deleted References, or otherwise necessary cleaning).
 </table>
-	
+
 <h3 id="load-commands">Useful Context Menu Commands</h3>
 <p>The context menus for the column headers and plugins contain a large number of commands, most of which are unlikely to be of use to the average user so are not detailed here.
 <table>
@@ -431,7 +431,7 @@
 	<li>Applying tweaks to the game. This avoids the need to use other mods to apply the same tweaks.
 </ul>
 <p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><b>Bashed Patch, 0.esp</b></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
-<p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked. 
+<p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
 <p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
 <p><b>Note:</b> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.
 <table>
@@ -519,7 +519,7 @@
 </figure>
 
 <h3 id="ini-overview">Overview</h3>
-<p>The Ini Edits tab allows the user to quickly apply edits to Oblivion.ini or Skyrim.ini, depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually. 
+<p>The Ini Edits tab allows the user to quickly apply edits to Oblivion.ini or Skyrim.ini, depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
 <p>The drop-down box allows you to select the current ini file. The <q>Browse...</q> option in the drop-down box can be used to select an ini file not listed.
 <p>Selecting a tweak will display its contents in the middle column, and highlights the changes it applies to the current ini file in the right column. To apply a tweak, right click it and select <a href="#tweakApply">Apply</a>.
 <p><b>Warning:</b> Incorrect Oblivion.ini or Skyrim.ini settings can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.
@@ -555,8 +555,8 @@
 		<tr><th colspan="2">Column Header Context Menu
 		<tr><th>Command<th>Description
 	<tbody>
-		<tr><td>Sort By<td>This submenu allows you to choose by which column the save list is sorted. This is equivalent to clicking on a column header. 
-		<tr><td>Columns<td>This submenu allows you to choose which columns are visible in the save list. 
+		<tr><td>Sort By<td>This submenu allows you to choose by which column the save list is sorted. This is equivalent to clicking on a column header.
+		<tr><td>Columns<td>This submenu allows you to choose which columns are visible in the save list.
 		<tr><td>Allow Tweaks with New Lines<td>
 		<tr><td>Open...<td>
 		<tr><td>List Active INIs...<td>
@@ -907,7 +907,7 @@
 		<tr><td>Can't Find User Directory<td>The PyWin32 Python module is not installed correctly.<td>Install the Wrye Python package correctly.
 		<tr><td>Can't Find wxversion<td>Unknown<td>Uninstall then reinstall Python and wxPython (in that order).
 		<tr><td>No module named wx<td>You haven't installed wxPython successfully or you haven't installed it in the right place.<td>Install the Wrye Python package correctly.
-		<tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download">download PyWin32 separately</a> and install it after installing Wrye Bash. 
+		<tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20217/pywin32-217.win32-py2.7.exe/download">download PyWin32 separately</a> and install it after installing Wrye Bash.
 		<tr><td>Generating comtypes<td>Launching Wrye Bash for the first time after installing ComTypes (part of the Wrye Python bundle).<td>Not an error. Close the popup produced.
 		<tr><td>Memory Error. This causes a debug output like the following to appear.
 			<code class="box">Traceback (most recent call last):
