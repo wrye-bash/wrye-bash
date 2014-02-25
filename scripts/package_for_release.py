@@ -39,7 +39,7 @@ try:
     have_winreg = True
 except ImportError:
     have_winreg = False
-    
+
 try:
     #--Needed for the StandAlone version
     import py2exe
@@ -167,7 +167,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     # Copy the files needed for l10n
     shutil.copy(msgfmt,msgfmtTo)
     shutil.copy(pygettext,pygettextTo)
-    
+
     # Call the setup script
     os.chdir(mopy)
     subprocess.call([setup, 'py2exe', '-q'], shell=True, stdout=pipe, stderr=pipe)
@@ -181,11 +181,11 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     dist = os.path.join(mopy, 'dist')
     mv(os.path.join(dist, 'Wrye Bash Launcher.exe'), exe)
     mv(os.path.join(dist, 'w9xpopen.exe'), w9xexe)
-    
+
     # Clean up the py2exe directories
     shutil.rmtree(dist)
     shutil.rmtree(os.path.join(mopy, 'build'))
-    
+
     # Insert the icon
     subprocess.call([reshacker, '-addoverwrite', exe+',', exe+',',
                      icon+',', 'icon,', '101,', '0'], stdout=pipe, stderr=pipe)
@@ -193,7 +193,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     # Compress with UPX
     subprocess.call([upx, '-9', exe], stdout=pipe, stderr=pipe)
     subprocess.call([upx, '-9', w9xexe], stdout=pipe, stderr=pipe)
-    
+
     # Clean up left over files
     rm(os.path.join(wbsa, 'ResHacker.ini'))
     rm(os.path.join(wbsa, 'ResHacker.log'))
@@ -203,7 +203,7 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     return True
 
 
-#--Package up all the files for the StandAlone version    
+#--Package up all the files for the StandAlone version
 def PackStandaloneVersion(version, pipe=None):
     archive = os.path.join(dest, 'Wrye Bash %s - Standalone Executable.7z' % version)
     cmd_7z = [exe7z, 'a', '-mx9',
@@ -222,7 +222,7 @@ def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
         print >> pipe, " Could not find python module '_winreg', aborting Installer creation."
         return
 
-    script = os.path.join(scripts, 'build', 'Wrye Bash.nsi')
+    script = os.path.join(scripts, 'build', 'installer', 'main.nsi')
     if not os.path.exists(script):
         print " Could not find nsis script '%s', aborting Installer creation." % script
         print >> pipe, " Could not find nsis script '%s', aborting Installer creation." % script
