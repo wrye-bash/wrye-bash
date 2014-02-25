@@ -1289,13 +1289,13 @@
                 ExecWait '"$TEMP\vcredist_x86.exe" /qb'
                 BringToFront
                 DetailPrint "Finished Visual C++ 2013 SP1 Redistributable Setup"
-                
+
                 Delete "$TEMP\vcredist_x86.exe"
             ${Else}
                 DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
             ${EndIf}
         ${EndIf}
-        
+
         ; Standalone version also requires the MSVC 2008 redist.
         ${If} $ExeVersionInstall == $True
             StrCpy $9 $Empty
@@ -1309,7 +1309,7 @@
                 DetailPrint "Downloading Visual C++ 2008 Redistributable Setup..."
                 SetOutPath $TEMP
                 NSISdl::download "http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe" "vcredist_x86.exe"
-                
+
                 Pop $R0 ;Get the return value
                 ${If} $R0 == "success"
                     DetailPrint "Running Visual C++ 2008 Redistributable Setup..."
@@ -1318,7 +1318,7 @@
                     ExecWait '"$TEMP\vcredist_x86.exe" /qb'
                     BringToFront
                     DetailPrint "Finished Visual C++ 2008 SP1 Redistributable Setup"
-                    
+
                     Delete "$TEMP\vcredist_x86.exe"
                 ${Else}
                     DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
@@ -1327,7 +1327,7 @@
                 DetailPrint "Visual C++ 2008 Redistributable is already installed; skipping!"
             ${EndIf}
         ${EndIf}
-        
+
         ; Python version also requires Python, wxPython, Python Comtypes and PyWin32.
         ${If} $PythonVersionInstall == $True
             ; Look for Python.
@@ -1358,7 +1358,7 @@
                     ${VersionConvert} $Python_Comtypes "" $Python_Comtypes
                     ${VersionCompare} $MinVersion_Comtypes $Python_Comtypes $Python_Comtypes
                 ${EndIf}
-                
+
                 ; Detect wxPython.
                 ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
                 ${If} $Python_wx == $Empty
@@ -1370,13 +1370,13 @@
                     ReadRegStr $1         HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${EndIf}
                 StrCpy $Python_pywin32 $1 3 -3
-                
+
                 ; Compare versions.
                 ${VersionCompare} $MinVersion_pywin32 $Python_pywin32 $Python_pywin32
                 ${VersionConvert} $Python_wx "+" $Python_wx
                 ${VersionCompare} $MinVersion_wx $Python_wx $Python_wx
             ${EndIf}
-        
+
             ; Download and install missing requirements.
             ${If} $Python_Path == $Empty
                 SetOutPath "$TEMP\PythonInstallers"
@@ -1460,7 +1460,7 @@
             ${EndIf}
         ${EndIf}
     SectionEnd
-    
+
     Section "Wrye Bash" Main
         SectionIn RO
 
