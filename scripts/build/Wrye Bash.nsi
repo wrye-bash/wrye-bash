@@ -1421,7 +1421,7 @@
             ${If} $Python_Comtypes == "1"
                 SetOutPath "$TEMP\PythonInstallers"
                 DetailPrint "Comtypes 0.6.2 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fcomtypes%2F&ts=1291561083&use_mirror=softlayer "$TEMP\PythonInstallers\comtypes.exe"
+                NSISdl::download http://downloads.sourceforge.net/project/comtypes/comtypes/0.6.2/comtypes-0.6.2.win32.exe "$TEMP\PythonInstallers\comtypes.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     DetailPrint "Comtypes 0.6.2 - Installing..."
@@ -1441,7 +1441,7 @@
             ${If} $Python_pywin32 == "1"
                 SetOutPath "$TEMP\PythonInstallers"
                 DetailPrint "PyWin32 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe?r=&ts=1352752073&use_mirror=iweb "$TEMP\PythonInstallers\pywin32.exe"
+                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe "$TEMP\PythonInstallers\pywin32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     DetailPrint "PyWin32 - Installing..."
