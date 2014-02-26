@@ -43,6 +43,16 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
 
+# Globals ---------------------------------------------------------------------
+#--wxPython Classic/Phoenix Compatability
+# When wrye bash migrates to Phoenix only, then remove the Classic wx code and
+# this PHOENIX global.
+if 'phoenix' in wx.version():
+    PHOENIX = True
+    import wx.adv
+else:
+    PHOENIX = False
+
 # Basics ---------------------------------------------------------------------
 class IdList:
     """Provides sequences of semi-unique ids. Useful for choice menus.
@@ -79,9 +89,14 @@ defSize = wx.DefaultSize
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
 def fonts():
-    font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    if PHOENIX:
+        font_default = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font_bold = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font_italic = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+    else: # CLASSIC
+        font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     try:
         font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
         font_italic.SetStyle(wx.FONTSTYLE_SLANT)
@@ -156,7 +171,10 @@ class Image:
         if not self.bitmap:
             if self.type == wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
-                self.bitmap = wx.EmptyBitmap(self.iconSize,self.iconSize)
+                if PHOENIX:
+                    self.bitmap = wx.Bitmap(self.iconSize,self.iconSize)
+                else: # CLASSIC
+                    self.bitmap = wx.EmptyBitmap(self.iconSize,self.iconSize)
                 self.bitmap.CopyFromIcon(self.icon)
             else:
                 self.bitmap = wx.Bitmap(self.file.s,self.type)
@@ -172,8 +190,11 @@ class Image:
                     self.iconSize = 16
                     self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
             else:
-                self.icon = wx.EmptyIcon()
-                self.icon.CopyFromBitmap(self.GetBitmap())
+                if PHOENIX:
+                    self.icon = wx.Icon(self.GetBitmap())
+                else: # CLASSIC
+                    self.icon = wx.EmptyIcon()
+                    self.icon.CopyFromBitmap(self.GetBitmap())
         return self.icon
 
 #------------------------------------------------------------------------------
@@ -282,6 +303,7 @@ class textCtrl(wx.TextCtrl):
     def OnTextChange(self,event):
         self.UpdateToolTip(event.GetString())
         event.Skip()
+
     def OnSizeChange(self, event):
         self.UpdateToolTip(self.GetValue())
         event.Skip()
@@ -413,8 +435,12 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
         result = result[0]
     else:
         dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        icon = wx.StaticBitmap(dialog,defId,
-            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        if PHOENIX:
+            icon = wx.StaticBitmap(dialog,defId,
+                wx.ArtProvider.GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        else: # CLASSIC
+            icon = wx.StaticBitmap(dialog,defId,
+                wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
         gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
         #--Layout
         sizer = vSizer(
@@ -462,8 +488,12 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         result = result[0]
     else:
         dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        icon = wx.StaticBitmap(dialog,defId,
-            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        if PHOENIX:
+            icon = wx.StaticBitmap(dialog,defId,
+                wx.ArtProvider.GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        else: # CLASSIC
+            icon = wx.StaticBitmap(dialog,defId,
+                wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
         gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
         #--Layout
         buttonSizer = hSizer(spacer)
@@ -677,16 +707,24 @@ def showLogClose(evt=None):
     """Handle log message closing."""
     window = evt.GetEventObject()
     if not window.IsIconized() and not window.IsMaximized():
-        _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-        _settings['balt.LogMessage.size'] = window.GetSizeTuple()
+        if PHOENIX:
+            _settings['balt.LogMessage.pos'] = window.GetPosition()
+            _settings['balt.LogMessage.size'] = window.GetSize()
+        else: # CLASSIC
+            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
+            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
 
 def showQuestionLogCloseYes(Event,window):
     """Handle log message closing."""
     if window:
         if not window.IsIconized() and not window.IsMaximized():
-            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
+            if PHOENIX:
+                _settings['balt.LogMessage.pos'] = window.GetPosition()
+                _settings['balt.LogMessage.size'] = window.GetSize()
+            else: # CLASSIC
+                _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
+                _settings['balt.LogMessage.size'] = window.GetSizeTuple()
         window.Destroy()
     bosh.question = True
 
@@ -694,8 +732,12 @@ def showQuestionLogCloseNo(Event,window):
     """Handle log message closing."""
     if window:
         if not window.IsIconized() and not window.IsMaximized():
-            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
+            if PHOENIX:
+                _settings['balt.LogMessage.pos'] = window.GetPosition()
+                _settings['balt.LogMessage.size'] = window.GetSize()
+            else: # CLASSIC
+                _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
+                _settings['balt.LogMessage.size'] = window.GetSizeTuple()
         window.Destroy()
     bosh.question = False
 
@@ -717,10 +759,13 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
     window.Bind(wx.EVT_CLOSE,showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
-    textCtrl = wx.TextCtrl(window,defId,logText,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
+    textCtrl = wx.TextCtrl(window,defId,logText,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.BORDER_SUNKEN)
     textCtrl.SetValue(logText)
     if fixedFont:
-        fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
+        if PHOENIX:
+            fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
+        else: # CLASSIC
+            fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT)
         fixedFont.SetPointSize(8)
         fixedStyle = wx.TextAttr()
         #fixedStyle.SetFlags(0x4|0x80)
@@ -806,9 +851,15 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
         logText = logPath
     textCtrl.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
-    bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+    if PHOENIX:
+        bitmap = wx.ArtProvider.GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+    else: # CLASSIC
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
     gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoBack())
-    bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+    if PHOENIX:
+        bitmap = wx.ArtProvider.GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+    else: # CLASSIC
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
     gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoForward())
     gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
     gOkButton.SetDefault()
@@ -830,19 +881,31 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     if asDialog:
         window.ShowModal()
         if window:
-            _settings['balt.WryeLog.pos'] = window.GetPositionTuple()
-            _settings['balt.WryeLog.size'] = window.GetSizeTuple()
+            if PHOENIX:
+                _settings['balt.WryeLog.pos'] = window.GetPosition()
+                _settings['balt.WryeLog.size'] = window.GetSize()
+            else: # CLASSIC
+                _settings['balt.WryeLog.pos'] = window.GetPositionTuple()
+                _settings['balt.WryeLog.size'] = window.GetSizeTuple()
             window.Destroy()
     else:
         window.Show()
 
 def playSound(parent,sound):
-    if not sound: return
-    sound = wx.Sound(sound)
-    if sound.IsOk():
-        sound.Play(wx.SOUND_ASYNC)
-    else:
-        showError(parent,_(u"Invalid sound file %s.") % sound)
+    if not sound:
+        return
+    if PHOENIX:
+        sound = wx.adv.Sound(sound)
+        if sound.IsOk():
+            sound.Play(wx.adv.SOUND_ASYNC)
+        else:
+            showError(parent,_(u"Invalid sound file %s.") % sound)
+    else: # CLASSIC
+        sound = wx.Sound(sound)
+        if sound.IsOk():
+            sound.Play(wx.SOUND_ASYNC)
+        else:
+            showError(parent,_(u"Invalid sound file %s.") % sound)
 
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1107,7 +1170,7 @@ class ListEditor(wx.Dialog):
         #--GUI
         wx.Dialog.__init__(self,parent,id,title,
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         #--Caption
         if data.caption:
             captionText = staticText(self,data.caption)
@@ -1118,7 +1181,7 @@ class ListEditor(wx.Dialog):
             self.list = wx.CheckListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
             for index,checked in enumerate(self.data.getChecks()):
                 self.list.Check(index,checked)
-            self.Bind(wx.EVT_CHECKLISTBOX, self.DoCheck, self.list)
+            self.Bind(wx.EVT_CHECKLISTBOX, self.DoCheck, id=self.list.GetId())
         else:
             self.list = wx.ListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
         self.list.SetSizeHints(125,150)
@@ -1126,7 +1189,7 @@ class ListEditor(wx.Dialog):
         #--Infobox
         if data.showInfo:
             self.gInfoBox = wx.TextCtrl(self,wx.ID_ANY,u" ",size=(130,-1),
-                style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.SUNKEN_BORDER)
+                style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.BORDER_SUNKEN)
             if not self.data.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         else:
@@ -1255,13 +1318,19 @@ class ListEditor(wx.Dialog):
     def DoSave(self,event):
         """Handle save button."""
         self.data.save()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        if PHOENIX:
+            sizes[self.data.__class__.__name__] = self.GetSize()
+        else: #CLASSIC
+            sizes[self.data.__class__.__name__] = self.GetSizeTuple()
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
         """Handle save button."""
         self.data.cancel()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        if PHOENIX:
+            sizes[self.data.__class__.__name__] = self.GetSize()
+        else: #CLASSIC
+            sizes[self.data.__class__.__name__] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
 
     #--Window Closing
@@ -1269,7 +1338,10 @@ class ListEditor(wx.Dialog):
         """Handle window close event.
         Remember window size, position, etc."""
         self.data.close()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        if PHOENIX:
+            sizes[self.data.__class__.__name__] = self.GetSize()
+        else: #CLASSIC
+            sizes[self.data.__class__.__name__] = self.GetSizeTuple()
         self.Destroy()
 
 #------------------------------------------------------------------------------
@@ -1299,29 +1371,39 @@ class TabDragMixin(object):
         if self.__dragging != wx.NOT_FOUND:
             self.__dragX = pos[0]
             self.__justSwapped = wx.NOT_FOUND
+            if self.HasCapture():
+                self.ReleaseMouse()
             self.CaptureMouse()
         event.Skip()
 
     def __OnDragEndForced(self, event):
         self.__dragging = wx.NOT_FOUND
-        self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        if PHOENIX:
+            self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+        else: # CLASSIC
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
         event.Skip()
 
     def __OnDragEnd(self, event):
         if self.__dragging != wx.NOT_FOUND:
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            if PHOENIX:
+                self.SetCursor(wx.Cursor(wx.CURSOR_ARROW))
+            else: # CLASSIC
+                self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
             self.__dragging = wx.NOT_FOUND
-            try:
+            if self.HasCapture():
                 self.ReleaseMouse()
-            except:
-                pass
+
         event.Skip()
 
     def __OnDragging(self, event):
         if self.__dragging != wx.NOT_FOUND:
             pos = event.GetPosition()
             if abs(pos[0] - self.__dragX) > 5:
-                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+                if PHOENIX:
+                    self.SetCursor(wx.Cursor(wx.CURSOR_HAND))
+                else: # CLASSIC
+                    self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
             tabId = self.HitTest(pos)
             if tabId == wx.NOT_FOUND or tabId[0] in (wx.NOT_FOUND,self.__dragging[0]):
                 self.__justSwapped = wx.NOT_FOUND
@@ -1359,7 +1441,10 @@ class Picture(wx.Window):
     def __init__(self, parent,width,height,scaling=1,style=0,background=wx.MEDIUM_GREY_BRUSH):
         """Initialize."""
         wx.Window.__init__(self, parent, defId,size=(width,height),style=style)
-        self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
+        if PHOENIX:
+            self.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+        else: # CLASSIC. This probably works also, but probably should be removed.
+            self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.bitmap = None
         if background is not None:
             if isinstance(background, tuple):
@@ -1371,6 +1456,7 @@ class Picture(wx.Window):
             self.background = wx.Brush(self.GetBackgroundColour())
         #self.SetSizeHints(width,height,width,height)
         #--Events
+        self.Bind(wx.EVT_ERASE_BACKGROUND,self.OnEraseBackground)
         self.Bind(wx.EVT_PAINT,self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.OnSize()
@@ -1391,7 +1477,10 @@ class Picture(wx.Window):
     def OnSize(self,event=None):
         x, y = self.GetSize()
         if x <= 0 or y <= 0: return
-        self.buffer = wx.EmptyBitmap(x,y)
+        if PHOENIX:
+            self.buffer = wx.Bitmap(x,y)
+        else: # CLASSIC
+            self.buffer = wx.EmptyBitmap(x,y)
         dc = wx.MemoryDC()
         dc.SelectObject(self.buffer)
         # Draw
@@ -1406,10 +1495,16 @@ class Picture(wx.Window):
             pos_y = max(0,y-new_y)/2
             image = self.bitmap.ConvertToImage()
             image.Rescale(new_x, new_y, wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(wx.BitmapFromImage(image), pos_x, pos_y)
+            if PHOENIX:
+                dc.DrawBitmap(wx.Bitmap(image), pos_x, pos_y)
+            else: # CLASSIC
+                dc.DrawBitmap(wx.BitmapFromImage(image), pos_x, pos_y)
         del dc
         self.Refresh()
         self.Update()
+
+    def OnEraseBackground(self, event):
+        pass # Reduce flicker trick with buffered paint
 
     def OnPaint(self, event):
         dc = wx.BufferedPaintDC(self, self.buffer)
@@ -1449,7 +1544,7 @@ class Progress2(bolt.Progress):
         return self.parent
 
     def setCancel(self,enabled=True):
-        print 'setCancel not implemented'
+        print('setCancel not implemented')
         pass
 
     def doProgress(self,state,message):
@@ -1545,7 +1640,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     class DropFileOrList(wx.DropTarget):
 
         def __init__(self, window, dndFiles, dndList):
-            wx.PyDropTarget.__init__(self)
+            wx.DropTarget.__init__(self)
             self.window = window
 
             self.data = wx.DataObjectComposite()
@@ -1698,6 +1793,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.fnDndAllow: return self.fnDndAllow()
             return True
         return False
+
 #------------------------------------------------------------------------------
 class Tank(wx.Panel):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
@@ -1857,17 +1953,44 @@ class Tank(wx.Panel):
         item = item or self.GetItem(index)
         for iColumn,column in enumerate(self.cols):
             colDex = self.GetColumnDex(column)
-            gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
+            if PHOENIX:
+                gList.SetItem(index,iColumn,data.getColumns(item)[colDex])
+            else: # CLASSIC
+                gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
         gItem = gList.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
         self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
-        if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
-        if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(gList.GetTextColour())
-        if backKey: gItem.SetBackgroundColour(colors[backKey])
-        else: gItem.SetBackgroundColour(self.defaultTextBackground)
-##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
-        gItem.SetData(self.GetId(item))
+        if iconKey and self.icons:
+            if PHOENIX:
+                gItem.SetItemImage(self.icons[iconKey])
+            else: # CLASSIC
+                gItem.SetImage(self.icons[iconKey])
+        if textKey:
+            if PHOENIX:
+                gItem.SetItemTextColour(colors[textKey])
+            else: # CLASSIC
+                gItem.SetTextColour(colors[textKey])
+        else:
+            if PHOENIX:
+                gItem.SetItemTextColour(gList.GetTextColour())
+            else: # CLASSIC
+                gItem.SetTextColour(gList.GetTextColour())
+        if backKey:
+            if PHOENIX:
+                gItem.SetItemBackgroundColour(colors[backKey])
+            else: # CLASSIC
+                gItem.SetBackgroundColour(colors[backKey])
+        else:
+            if PHOENIX:
+                gItem.SetItemBackgroundColour(self.defaultTextBackground)
+            else: # CLASSIC
+                gItem.SetBackgroundColour(self.defaultTextBackground)
+        if PHOENIX:
+##            gItem.SetItemState((0,wx.LIST_STATE_SELECTED)[item in selected])
+            gItem.SetItemData(self.GetId(item))
+        else: # CLASSIC
+##            gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
+            gItem.SetData(self.GetId(item))
         gList.SetItem(gItem)
 
     def GetColumnDex(self,column):
@@ -1891,10 +2014,16 @@ class Tank(wx.Panel):
                 items.remove(item)
                 index += 1
         #--Add remaining new items
-        for item in items:
-            gList.InsertStringItem(index,u'')
-            self.UpdateItem(index,item,selected)
-            index += 1
+        if PHOENIX:
+            for item in items:
+                gList.InsertItem(index,u'')
+                self.UpdateItem(index,item,selected)
+                index += 1
+        else: # CLASSIC
+            for item in items:
+                gList.InsertStringItem(index,u'')
+                self.UpdateItem(index,item,selected)
+                index += 1
         #--Cleanup
         self.UpdateIds()
         self.SortItems()
@@ -1933,6 +2062,7 @@ class Tank(wx.Panel):
 
     def SetColumnReverse(self,column,reverse):
         pass
+
     def SetSort(self,sort):
         pass
 
@@ -2011,7 +2141,10 @@ class Tank(wx.Panel):
 
     def OnSize(self, event):
         """Panel size was changed. Change gList size to match."""
-        size = self.GetClientSizeTuple()
+        if PHOENIX:
+            size = self.GetClientSize()
+        else: # CLASSIC
+            size = self.GetClientSizeTuple()
         self.gList.SetSize(size)
 
     def OnScroll(self,event):
@@ -2142,9 +2275,9 @@ class Link:
         #--Generate self.id if necessary (i.e. usually)
         if not self.id: self.id = wx.NewId()
         Link.Popup = menu
-        wx.EVT_MENU(Link.Frame,self.id,self.Execute)
-        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,Link.ShowHelp)
-        wx.EVT_MENU_OPEN(Link.Frame,Link.OnMenuOpen)
+        Link.Frame.Bind(wx.EVT_MENU, self.Execute, id=self.id)
+        Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, Link.ShowHelp)
+        Link.Frame.Bind(wx.EVT_MENU_OPEN, Link.OnMenuOpen)
 
     def Execute(self, event):
         """Event: link execution."""
@@ -2201,7 +2334,10 @@ class Tanks_Open(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Open...'),_(u"Open '%s'") % self.data.dir.tail)
-        menu.AppendItem(menuItem)
+        if PHOENIX:
+            menu.Append(menuItem)
+        else: # CLASSIC
+            menu.AppendItem(menuItem)
 
     def Execute(self,event):
         """Handle selection."""
@@ -2215,7 +2351,10 @@ class Tank_Delete(Link):
     """Deletes selected file from tank."""
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete')))
+        if PHOENIX:
+            menu.Append(wx.MenuItem(menu,self.id,_(u'Delete')))
+        else: # CLASSIC
+            menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete')))
 
     def Execute(self,event):
         try:
@@ -2233,7 +2372,10 @@ class Tank_Open(Link):
         else:
             help = _(u"Open selected files.")
         menuItem = wx.MenuItem(menu,self.id,_(u'Open...'),help)
-        menu.AppendItem(menuItem)
+        if PHOENIX:
+            menu.Append(menuItem)
+        else: # CLASSIC
+            menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.selected))
 
     def Execute(self,event):
@@ -2250,7 +2392,10 @@ class Tank_Duplicate(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Duplicate...'))
-        menu.AppendItem(menuItem)
+        if PHOENIX:
+            menu.Append(menuItem)
+        else: # CLASSIC
+            menu.AppendItem(menuItem)
         menuItem.Enable(len(self.selected) == 1)
 
     def Execute(self,event):
