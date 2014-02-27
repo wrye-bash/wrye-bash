@@ -23,7 +23,6 @@
 # =============================================================================
 
 """This module starts the Wrye Bash application in GUI mode."""
-import multiprocessing
 
 # Hacky workarounds so import still work, even when Bash is installed to a
 # directory that has non encodable (MBCS) characters in the name.  This is
@@ -83,9 +82,5 @@ if not hasattr(sys,'frozen'):
     sys.meta_path = [UnicodeImporter()]
 
 if __name__ == '__main__':
-    # Need to call freeze_support before importing bash,
-    # so the arg parsing doesn't complain about how
-    # freeze_support does multiprocessing
-    multiprocessing.freeze_support()
     from bash import bash
     bash.main()
