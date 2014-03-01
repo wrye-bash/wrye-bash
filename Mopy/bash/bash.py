@@ -589,7 +589,7 @@ def main():
                     readme = u'file:///'+readme.s.replace(u'\\',u'/').replace(u' ',u'%20')
                 else:
                     # Fallback to SVN repository
-                    readme = u"http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html"
+                    readme = u"http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html"
                 readme += '#trouble-permissions'
                 uacRestart = balt.vistaDialog(None,
                     message=message,
