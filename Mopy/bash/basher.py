@@ -12099,6 +12099,8 @@ class StatusBar_Hide(Link):
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ActorLevels, CBash_ActorLevels
+
 class Mod_ActorLevels_Export(Link):
     """Export actor levels from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -12129,9 +12131,9 @@ class Mod_ActorLevels_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Factions')) as progress:
             if CBash:
-                actorLevels = bosh.CBash_ActorLevels()
+                actorLevels = CBash_ActorLevels()
             else:
-                actorLevels = bosh.ActorLevels()
+                actorLevels = ActorLevels()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -12178,9 +12180,9 @@ class Mod_ActorLevels_Import(Link):
         changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
             if CBash:
-                actorLevels = bosh.CBash_ActorLevels()
+                actorLevels = CBash_ActorLevels()
             else:
-                actorLevels = bosh.ActorLevels()
+                actorLevels = ActorLevels()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorLevels.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13208,6 +13210,8 @@ class Mod_FactionRelations_Import(Link):
             balt.showLog(self.window,text,_(u'Import Relations'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ActorFactions, CBash_ActorFactions
+
 class Mod_Factions_Export(Link):
     """Export factions from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13230,9 +13234,9 @@ class Mod_Factions_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Factions')) as progress:
             if CBash:
-                actorFactions = bosh.CBash_ActorFactions()
+                actorFactions = CBash_ActorFactions()
             else:
-                actorFactions = bosh.ActorFactions()
+                actorFactions = ActorFactions()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13278,9 +13282,9 @@ class Mod_Factions_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Factions')) as progress:
             if CBash:
-                actorFactions = bosh.CBash_ActorFactions()
+                actorFactions = CBash_ActorFactions()
             else:
-                actorFactions = bosh.ActorFactions()
+                actorFactions = ActorFactions()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorFactions.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
