@@ -37,7 +37,8 @@ from bash.bolt import GPath, _unicode, deprint
 from bash.bosh import LoadFactory, ModFile, dirs, inisettings
 from bash.brec import MreRecord, MelObject, _coerce, genFid, ModReader
 from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, MGEFCode, \
-    ActorValue, ValidateList, pickupables, ExtractExportList, ValidateDict, IUNICODE
+    ActorValue, ValidateList, pickupables, ExtractExportList, ValidateDict, IUNICODE, \
+    getattr_deep, setattr_deep
 
 class ActorFactions:
     """Factions for npcs and creatures with functions for
@@ -3101,5 +3102,297 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
                         u'"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out,attrs,map(attr_value.get,attrs))
+
+#------------------------------------------------------------------------------
+class SpellRecords(UsesEffectsMixin):
+    """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None,detailed=False):
+        """Initialize."""
+        self.fid_stats = {}
+        self.aliases = aliases or {} #--For aliasing mod names
+        self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
+        self.detailed = detailed
+        if detailed:
+            self.attrs = self.attrs + ('flags.noAutoCalc', 'flags.startSpell', 'flags.immuneToSilence',
+                                       'flags.ignoreLOS', 'flags.scriptEffectAlwaysApplies',
+                                       'flags.disallowAbsorbReflect',
+                                       'flags.touchExplodesWOTarget') #, 'effects_list' is special cased
+        self.spellTypeNumber_Name = {None : 'NONE',
+                                     0 : 'Spell',
+                                     1 : 'Disease',
+                                     2 : 'Power',
+                                     3 : 'LesserPower',
+                                     4 : 'Ability',
+                                     5 : 'Poison',}
+        self.spellTypeName_Number = dict([(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if x is not None])
+
+        self.levelTypeNumber_Name = {None : 'NONE',
+                                     0 : 'Novice',
+                                     1 : 'Apprentice',
+                                     2 : 'Journeyman',
+                                     3 : 'Expert',
+                                     4 : 'Master',}
+        self.levelTypeName_Number = dict([(y.lower(),x) for x,y in self.levelTypeNumber_Name.iteritems() if x is not None])
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
+        detailed = self.detailed
+        loadFactory= LoadFactory(False,MreRecord.type_class['SPEL'])
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        modFile.convertToLongFids(['SPEL'])
+        for record in modFile.SPEL.getActiveRecords():
+            fid_stats[record.fid] = [getattr_deep(record, attr) for attr in attrs]
+            if detailed:
+                effects = []
+                for effect in record.effects:
+                    effectlist = [effect.name, effect.magnitude, effect.area, effect.duration, effect.recipient, effect.actorValue]
+                    if effect.scriptEffect:
+                        effectlist.append([effect.scriptEffect.script, effect.scriptEffect.school, effect.scriptEffect.visual,
+                                           effect.scriptEffect.flags.hostile, effect.scriptEffect.full])
+                    else: effectlist.append([])
+                    effects.append(effectlist)
+                fid_stats[record.fid].append(effects)
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
+        detailed = self.detailed
+        loadFactory= LoadFactory(True,MreRecord.type_class['SPEL'])
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        shortMapper = modFile.getShortMapper()
+
+        changed = [] #eids
+        for record in modFile.SPEL.getActiveRecords():
+            newStats = fid_stats.get(mapper(record.fid), None)
+            if not newStats: continue
+            oldStats = [getattr_deep(record, attr) for attr in attrs]
+            if detailed:
+                effects = []
+                for effect in record.effects:
+                    effectlist = [effect.name, effect.magnitude, effect.area, effect.duration, effect.recipient, effect.actorValue]
+                    if effect.scriptEffect:
+                        effectlist.append([mapper(effect.scriptEffect.script), effect.scriptEffect.school, effect.scriptEffect.visual,
+                                           effect.scriptEffect.flags.hostile, effect.scriptEffect.full])
+                    else: effectlist.append([])
+                    effects.append(effectlist)
+                oldStats.append(effects)
+            if oldStats != newStats:
+                changed.append(oldStats[0]) #eid
+                for attr, value in zip(attrs, newStats):
+                    setattr_deep(record, attr, value)
+                if detailed and len(newStats) > len(attrs):
+                    effects = newStats[-1]
+                    record.effects = []
+                    for effect in effects:
+                        neweffect = record.getDefault('effects')
+                        neweffect.name, neweffect.magnitude, neweffect.area, neweffect.duration, neweffect.recipient, neweffect.actorValue, scripteffect = effect
+                        if len(scripteffect):
+                            scriptEffect = record.getDefault('effects.scriptEffect')
+                            script, scriptEffect.school, scriptEffect.visual, scriptEffect.flags.hostile, scriptEffect.full = scripteffect
+                            scriptEffect.script = shortMapper(script)
+                            neweffect.scriptEffect = scriptEffect
+                        record.effects.append(neweffect)
+                record.setChanged()
+        if changed: modFile.safeSave()
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports stats from specified text file."""
+        detailed,aliases,spellTypeName_Number,levelTypeName_Number = self.detailed,self.aliases,self.spellTypeName_Number,self.levelTypeName_Number
+        fid_stats = self.fid_stats
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 8 or fields[2][:2] != u'0x': continue
+                group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
+                fields = fields[8:]
+                group = _coerce(group, unicode)
+                if group.lower() != u'spel': continue
+                mmod = _coerce(mmod, unicode)
+                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
+                cost = _coerce(cost, int)
+                levelType = _coerce(levelType, unicode)
+                levelType = levelTypeName_Number.get(levelType.lower(),_coerce(levelType,int) or 0)
+                spellType = _coerce(spellType, unicode)
+                spellType = spellTypeName_Number.get(spellType.lower(),_coerce(spellType,int) or 0)
+                if not detailed or len(fields) < 7:
+                    fid_stats[mid] = [eid,full,cost,levelType,spellType]
+                    continue
+                mc,ss,its,aeil,saa,daar,tewt = fields[:7]
+                fields = fields[7:]
+                mc = _coerce(mc, bool)
+                ss = _coerce(ss, bool)
+                its = _coerce(its, bool)
+                aeil = _coerce(aeil, bool)
+                saa = _coerce(saa, bool)
+                daar = _coerce(daar, bool)
+                tewt = _coerce(tewt, bool)
+
+                effects = self.readEffects(fields, aliases, False)
+                fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
+
+    def writeToText(self,textPath):
+        """Exports stats to specified text file."""
+        detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = self.detailed,self.fid_stats,self.spellTypeNumber_Name,self.levelTypeNumber_Name
+        header = (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
+                  _(u'Name'),_(u'Cost'),_(u'Level Type'),_(u'Spell Type'))
+        rowFormat = u'"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
+        if detailed:
+            header = header + (_(u'Manual Cost'),_(u'Start Spell'),_(u'Immune To Silence'),_(u'Area Effect Ignores LOS'),_(u'Script Always Applies'),_(u'Disallow Absorb and Reflect'),_(u'Touch Explodes Without Target'),) + UsesEffectsMixin.headers * 2 + (_(u'Additional Effects (Same format)'),)
+            rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
+
+        headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
+
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            out.write(headFormat % header)
+            for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0].lower(),x[0])):
+                if detailed:
+                    eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
+                    levelType = levelTypeNumber_Name.get(levelType,levelType)
+                    spellType = spellTypeNumber_Name.get(spellType,spellType)
+                    output = rowFormat % (u'SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                    output += self.writeEffects(effects, False)
+                else:
+                    eid,name,cost,levelType,spellType = fid_stats[fid]
+                    levelType = levelTypeNumber_Name.get(levelType,levelType)
+                    spellType = spellTypeNumber_Name.get(spellType,spellType)
+                    output = rowFormat % (u'SPEL',fid[0].s,fid[1],eid,name,cost,levelType,spellType)
+                output += u'\n'
+                out.write(output)
+
+class CBash_SpellRecords(UsesEffectsMixin):
+    """Statistics for spells, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None,detailed=False):
+        """Initialize."""
+        self.fid_stats = {}
+        self.aliases = aliases or {} #--For aliasing mod names
+        self.attrs = ('eid', 'full', 'cost', 'levelType', 'spellType')
+        self.detailed = detailed
+        if detailed:
+            self.attrs = self.attrs + ('IsManualCost', 'IsStartSpell', 'IsSilenceImmune',
+                                       'IsAreaEffectIgnoresLOS', 'IsScriptAlwaysApplies',
+                                       'IsDisallowAbsorbReflect',
+                                       'IsTouchExplodesWOTarget', 'effects_list')
+        self.spellTypeNumber_Name = {None : u'NONE',
+                                     0 : u'Spell',
+                                     1 : u'Disease',
+                                     2 : u'Power',
+                                     3 : u'LesserPower',
+                                     4 : u'Ability',
+                                     5 : u'Poison',}
+        self.spellTypeName_Number = dict([(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if x is not None])
+
+        self.levelTypeNumber_Name = {None : u'NONE',
+                                     0 : u'Novice',
+                                     1 : u'Apprentice',
+                                     2 : u'Journeyman',
+                                     3 : u'Expert',
+                                     4 : u'Master',}
+        self.levelTypeName_Number = dict([(y.lower(),x) for x,y in self.levelTypeNumber_Name.iteritems() if x is not None])
+
+    def readFromMod(self,modInfo):
+        """Reads stats from specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            for record in modFile.SPEL:
+                fid_stats[record.fid] = map(record.__getattribute__, attrs)
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        fid_stats, attrs = self.fid_stats, self.attrs
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            changed = []
+            for record in modFile.SPEL:
+                newStats = fid_stats.get(record.fid, None)
+                if not newStats: continue
+                if not ValidateList(newStats, modFile): continue
+                oldStats = map(record.__getattribute__,attrs)
+                if oldStats != newStats:
+                    changed.append(oldStats[0]) #eid
+                    map(record.__setattr__,attrs,newStats)
+
+            #--Done
+            if changed: modFile.save()
+            return changed
+
+    def readFromText(self,textPath):
+        """Imports stats from specified text file."""
+        detailed,aliases,spellTypeName_Number,levelTypeName_Number = self.detailed,self.aliases,self.spellTypeName_Number,self.levelTypeName_Number
+        fid_stats = self.fid_stats
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 8 or fields[2][:2] != u'0x': continue
+                group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
+                fields = fields[8:]
+                group = _coerce(group, unicode)
+                if group.lower() != u'spel': continue
+                mmod = _coerce(mmod, unicode)
+                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                eid = _coerce(eid, unicode, AllowNone=True)
+                full = _coerce(full, unicode, AllowNone=True)
+                cost = _coerce(cost, int)
+                levelType = _coerce(levelType, unicode)
+                levelType = levelTypeName_Number.get(levelType.lower(),_coerce(levelType,int) or 0)
+                spellType = _coerce(spellType, unicode)
+                spellType = spellTypeName_Number.get(spellType.lower(),_coerce(spellType,int) or 0)
+                if not detailed or len(fields) < 7:
+                    fid_stats[mid] = [eid,full,cost,levelType,spellType]
+                    continue
+                mc,ss,its,aeil,saa,daar,tewt = fields[:7]
+                fields = fields[7:]
+                mc = _coerce(mc, bool)
+                ss = _coerce(ss, bool)
+                its = _coerce(its, bool)
+                aeil = _coerce(aeil, bool)
+                saa = _coerce(saa, bool)
+                daar = _coerce(daar, bool)
+                tewt = _coerce(tewt, bool)
+
+                effects = self.readEffects(fields, aliases, True)
+                fid_stats[mid] = [eid, full, cost, levelType, spellType, mc, ss, its, aeil, saa, daar, tewt, effects]
+
+    def writeToText(self,textPath):
+        """Exports stats to specified text file."""
+        detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = self.detailed,self.fid_stats,self.spellTypeNumber_Name,self.levelTypeNumber_Name
+        header = (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
+                  _(u'Name'),_(u'Cost'),_(u'Level Type'),_(u'Spell Type'))
+        rowFormat = u'"%s","%s","0x%06X","%s","%s","%d","%s","%s"'
+        if detailed:
+            header = header + (_(u'Manual Cost'),_(u'Start Spell'),_(u'Immune To Silence'),_(u'Area Effect Ignores LOS'),_(u'Script Always Applies'),_(u'Disallow Absorb and Reflect'),_(u'Touch Explodes Without Target'),) + UsesEffectsMixin.headers * 2 + (_(u'Additional Effects (Same format)'),)
+            rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
+
+        headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
+
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            out.write(headFormat % header)
+            for fid in sorted(fid_stats,key = lambda x: (fid_stats[x][0],x[0])):
+                if detailed:
+                    eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt,effects = fid_stats[fid]
+                    levelType = levelTypeNumber_Name.get(levelType,levelType)
+                    spellType = spellTypeNumber_Name.get(spellType,spellType)
+                    output = rowFormat % (u'SPEL',fid[0],fid[1],eid,name,cost,levelType,spellType,mc,ss,its,aeil,saa,daar,tewt)
+                    output += self.writeEffects(effects, True)
+                else:
+                    eid,name,cost,levelType,spellType = fid_stats[fid]
+                    levelType = levelTypeNumber_Name.get(levelType,levelType)
+                    spellType = spellTypeNumber_Name.get(spellType,spellType)
+                    output = rowFormat % (u'SPEL',fid[0],fid[1],eid,name,cost,levelType,spellType)
+                output += u'\n'
+                out.write(output)
 
 #------------------------------------------------------------------------------

@@ -15097,6 +15097,8 @@ class Mod_SigilStoneDetails_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import SpellRecords, CBash_SpellRecords
+
 class Mod_SpellRecords_Export(Link):
     """Export Spell details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15123,9 +15125,9 @@ class Mod_SpellRecords_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Spell details')) as progress:
             if CBash:
-                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+                spellRecords = CBash_SpellRecords(detailed=doDetailed)
             else:
-                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+                spellRecords = SpellRecords(detailed=doDetailed)
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15175,9 +15177,9 @@ class Mod_SpellRecords_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Spell details')) as progress:
             if CBash:
-                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+                spellRecords = CBash_SpellRecords(detailed=doDetailed)
             else:
-                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+                spellRecords = SpellRecords(detailed=doDetailed)
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             spellRecords.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
