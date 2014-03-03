@@ -13730,6 +13730,8 @@ class Mod_Groups_Import(Link):
             _(u"Import Groups"))
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import EditorIds, CBash_EditorIds
+
 class Mod_EditorIds_Export(Link):
     """Export editor ids from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13751,9 +13753,9 @@ class Mod_EditorIds_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Editor Ids")) as progress:
             if CBash:
-                editorIds = bosh.CBash_EditorIds()
+                editorIds = CBash_EditorIds()
             else:
-                editorIds = bosh.EditorIds()
+                editorIds = EditorIds()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13798,9 +13800,9 @@ class Mod_EditorIds_Import(Link):
             changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
                 if CBash:
-                    editorIds = bosh.CBash_EditorIds()
+                    editorIds = CBash_EditorIds()
                 else:
-                    editorIds = bosh.EditorIds()
+                    editorIds = EditorIds()
                 progress(0.1,_(u"Reading %s.") % (textName.s,))
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2,_(u"Applying to %s.") % (fileName.s,))
