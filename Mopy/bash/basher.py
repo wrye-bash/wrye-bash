@@ -13946,6 +13946,9 @@ class Mod_Fids_Replace(Link):
             balt.showLog(self.window,changed,_(u'Objects Changed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+
+from patcher.oblivion.utilities import FullNames, CBash_FullNames
+
 class Mod_FullNames_Export(Link):
     """Export full names from mod to text file."""
     def AppendToMenu(self,menu,window,data):
