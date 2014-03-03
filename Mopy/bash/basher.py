@@ -14784,6 +14784,8 @@ class Mod_ItemData_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ItemPrices, CBash_ItemPrices
+
 class Mod_Prices_Export(Link):
     """Export item prices from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14806,9 +14808,9 @@ class Mod_Prices_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Prices')) as progress:
             if CBash:
-                itemPrices = bosh.CBash_ItemPrices()
+                itemPrices = CBash_ItemPrices()
             else:
-                itemPrices = bosh.ItemPrices()
+                itemPrices = ItemPrices()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14851,9 +14853,9 @@ class Mod_Prices_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Prices')) as progress:
             if CBash:
-                itemPrices = bosh.CBash_ItemPrices()
+                itemPrices = CBash_ItemPrices()
             else:
-                itemPrices = bosh.ItemPrices()
+                itemPrices = ItemPrices()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemPrices.readFromText(textPath)

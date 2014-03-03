@@ -2086,3 +2086,156 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
                 outWrite(output)
 
 #------------------------------------------------------------------------------
+class ItemPrices:
+    """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.class_fid_stats = bush.game.pricesTypes
+        self.attrs = ('value', 'eid', 'full')
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self,modInfo):
+        """Reads data from specified mod."""
+        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
+        loadFactory = LoadFactory(False,*typeClasses)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+        attrs = self.attrs
+        for group, fid_stats in class_fid_stats.iteritems():
+            for record in getattr(modFile,group).getActiveRecords():
+                fid_stats[mapper(record.fid)] = map(record.__getattribute__,attrs)
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
+        loadFactory= LoadFactory(True,*typeClasses)
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+
+        changed = {} #--changed[modName] = numChanged
+        for group, fid_stats in class_fid_stats.iteritems():
+            for record in getattr(modFile,group).getActiveRecords():
+                longid = mapper(record.fid)
+                stats = fid_stats.get(longid,None)
+                if not stats: continue
+                value = stats[0]
+                if record.value != value:
+                    record.value = value
+                    changed[longid[0]] = changed.get(longid[0],0) + 1
+                    record.setChanged()
+        if changed: modFile.safeSave()
+        return changed
+
+
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        class_fid_stats, aliases = self.class_fid_stats, self.aliases
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or fields[1][:2] != u'0x': continue
+                mmod,mobj,value,eid,name,group = fields[:6]
+                mmod = GPath(_coerce(mmod, unicode))
+                longid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                value = _coerce(value, int)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                name = _coerce(name, unicode, AllowNone=True)
+                group = _coerce(group, unicode)
+                class_fid_stats[group][longid] = [value,eid,name]
+
+    def writeToText(self,textPath):
+        """Writes stats to specified text file."""
+        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        def getSortedIds(stats):
+            longids = stats.keys()
+            longids.sort(key=lambda a: stats[a][0])
+            longids.sort(key=itemgetter(0))
+            return longids
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
+            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+                if not fid_stats: continue
+                out.write(header)
+                for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1].lower(),fid_stats[x][0])):
+                    out.write(u'"%s","0x%06X",' % (fid[0].s,fid[1]))
+                    out.write(format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
+
+class CBash_ItemPrices:
+    """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.class_fid_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
+        self.attrs = ('value', 'eid', 'full')
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self,modInfo):
+        """Reads data from specified mod."""
+        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            for group, fid_stats in class_fid_stats.iteritems():
+                for record in getattr(modFile,group):
+                    fid_stats[record.fid] = map(record.__getattribute__,attrs)
+
+    def writeToMod(self,modInfo):
+        """Writes stats to specified mod."""
+        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            changed = {} #--changed[modName] = numChanged
+            for group, fid_stats in class_fid_stats.iteritems():
+                fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
+                for fid, stats in fid_stats.iteritems():
+                    record = modFile.LookupRecord(fid)
+                    if record and record._Type == group:
+                        value = stats[0]
+                        if record.value != value:
+                            record.value = value
+                            changed[fid[0]] = changed.get(fid[0],0) + 1
+            if changed: modFile.save()
+            return changed
+
+    def readFromText(self,textPath):
+        """Reads stats from specified text file."""
+        class_fid_stats, aliases = self.class_fid_stats, self.aliases
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or fields[1][:2] != u'0x': continue
+                mmod,mobj,value,eid,name,group = fields[:6]
+                mmod = GPath(_coerce(mmod, unicode))
+                longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                value = _coerce(value, int)
+                eid = _coerce(eid, unicode, AllowNone=True)
+                name = _coerce(name, unicode, AllowNone=True)
+                group = _coerce(group, unicode)
+                class_fid_stats[group][longid] = [value,eid,name]
+
+    def writeToText(self,textPath):
+        """Writes stats to specified text file."""
+        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        def getSortedIds(stats):
+            longids = stats.keys()
+            longids.sort(key=lambda a: stats[a][0])
+            longids.sort(key=itemgetter(0))
+            return longids
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
+            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+                if not fid_stats: continue
+                out.write(header)
+                for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
+                    out.write(u'"%s","0x%06X",' % (fid[0],fid[1]))
+                    out.write(format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
+
+#------------------------------------------------------------------------------
