@@ -13899,7 +13899,6 @@ class Mod_DecompileAll(Link):
                 balt.showOk(self.window,_(u"No changes required."),fileName.s)
 
 #------------------------------------------------------------------------------
-
 from patcher.oblivion.utilities import FidReplacer, CBash_FidReplacer
 
 class Mod_Fids_Replace(Link):
@@ -13946,7 +13945,6 @@ class Mod_Fids_Replace(Link):
             balt.showLog(self.window,changed,_(u'Objects Changed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-
 from patcher.oblivion.utilities import FullNames, CBash_FullNames
 
 class Mod_FullNames_Export(Link):
@@ -14606,7 +14604,6 @@ class Mod_Scripts_Import(Link):
             balt.showLog(self.window,report,_(u'Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-
 from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
 
 class Mod_Stats_Export(Link):
@@ -14998,6 +14995,8 @@ class CBash_Mod_CellBlockInfo(Link):
             progress(1.0,_(u"Done."))
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import SigilStoneDetails, CBash_SigilStoneDetails
+
 class Mod_SigilStoneDetails_Export(Link):
     """Export Sigil Stone details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15021,9 +15020,9 @@ class Mod_SigilStoneDetails_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Sigil Stone details')) as progress:
             if CBash:
-                sigilStones = bosh.CBash_SigilStoneDetails()
+                sigilStones = CBash_SigilStoneDetails()
             else:
-                sigilStones = bosh.SigilStoneDetails()
+                sigilStones = SigilStoneDetails()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15068,9 +15067,9 @@ class Mod_SigilStoneDetails_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Sigil Stone details')) as progress:
             if CBash:
-                sigilStones = bosh.CBash_SigilStoneDetails()
+                sigilStones = CBash_SigilStoneDetails()
             else:
-                sigilStones = bosh.SigilStoneDetails()
+                sigilStones = SigilStoneDetails()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             sigilStones.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
