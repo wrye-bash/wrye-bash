@@ -13120,6 +13120,8 @@ class Mods_CleanDummyMasters(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FactionRelations, CBash_FactionRelations
+
 class Mod_FactionRelations_Export(Link):
     """Export faction relations from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13142,9 +13144,9 @@ class Mod_FactionRelations_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Relations')) as progress:
             if CBash:
-                factionRelations = bosh.CBash_FactionRelations()
+                factionRelations = CBash_FactionRelations()
             else:
-                factionRelations = bosh.FactionRelations()
+                factionRelations = FactionRelations()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13189,9 +13191,9 @@ class Mod_FactionRelations_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Relations')) as progress:
             if CBash:
-                factionRelations = bosh.CBash_FactionRelations()
+                factionRelations = CBash_FactionRelations()
             else:
-                factionRelations = bosh.FactionRelations()
+                factionRelations = FactionRelations()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             factionRelations.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13963,9 +13965,9 @@ class Mod_FullNames_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Names")) as progress:
             if CBash:
-                fullNames = bosh.CBash_FullNames()
+                fullNames = CBash_FullNames()
             else:
-                fullNames = bosh.FullNames()
+                fullNames = FullNames()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14008,9 +14010,9 @@ class Mod_FullNames_Import(Link):
         renamed = None
         with balt.Progress(_(u"Import Names")) as progress:
             if CBash:
-                fullNames = bosh.CBash_FullNames()
+                fullNames = CBash_FullNames()
             else:
-                fullNames = bosh.FullNames()
+                fullNames = FullNames()
             progress(0.1,_(u"Reading %s.") % textName.s)
             if ext == u'.csv':
                 fullNames.readFromText(textPath)
