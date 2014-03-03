@@ -617,6 +617,7 @@ class EditorIds:
             if not script.scriptText: continue
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
+                # FIXME header below is unused
                 header = u'\r\n\r\n; %s %s\r\n' % (
                     script.eid,u'-' * (77 - len(script.eid)))
                 script.scriptText = newText
