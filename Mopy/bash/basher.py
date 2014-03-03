@@ -14695,6 +14695,8 @@ class Mod_Stats_Import(Link):
                 buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CompleteItemData, CBash_CompleteItemData
+
 class Mod_ItemData_Export(Link):
     """Export pretty much complete item data from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14717,9 +14719,9 @@ class Mod_ItemData_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Item Data")) as progress:
             if CBash:
-                itemStats = bosh.CBash_CompleteItemData()
+                itemStats = CBash_CompleteItemData()
             else:
-                itemStats = bosh.CompleteItemData()
+                itemStats = CompleteItemData()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14761,7 +14763,7 @@ class Mod_ItemData_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Item Data')) as progress:
-            itemStats = bosh.CompleteItemData()
+            itemStats = CompleteItemData() # FIXME - why not if CBash: ?
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemStats.readFromText(textPath)
