@@ -14477,6 +14477,8 @@ class Mod_ShowReadme(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ScriptText, CBash_ScriptText
+
 class Mod_Scripts_Export(Link):
     """Export scripts from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14537,9 +14539,9 @@ class Mod_Scripts_Export(Link):
         #--Export
         #try:
         if CBash:
-            ScriptText = bosh.CBash_ScriptText()
+            ScriptText = CBash_ScriptText()
         else:
-            ScriptText = bosh.ScriptText()
+            ScriptText = ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = ScriptText.writeToText(fileInfo,settings['bash.mods.export.skip'],textDir,settings['bash.mods.export.deprefix'],fileName.s,settings['bash.mods.export.skipcomments'])
         #finally:
@@ -14575,9 +14577,9 @@ class Mod_Scripts_Import(Link):
                    )
         makeNew = balt.askYes(self.window,message,_(u'Import Scripts'),icon=wx.ICON_QUESTION)
         if CBash:
-            ScriptText = bosh.CBash_ScriptText()
+            ScriptText = CBash_ScriptText()
         else:
-            ScriptText = bosh.ScriptText()
+            ScriptText = ScriptText()
         ScriptText.readFromText(textDir.s,fileInfo)
         changed, added = ScriptText.writeToMod(fileInfo,makeNew)
     #--Log

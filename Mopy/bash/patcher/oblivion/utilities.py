@@ -32,12 +32,12 @@ from operator import attrgetter, itemgetter
 import re
 import struct
 
-from bash import bolt, bush
-from bash.bolt import GPath, _unicode
-from bash.bosh import LoadFactory, ModFile, dirs
-from bash.brec import MreRecord, MelObject, _coerce
+from bash import bolt, bush, balt
+from bash.bolt import GPath, _unicode, deprint
+from bash.bosh import LoadFactory, ModFile, dirs, inisettings
+from bash.brec import MreRecord, MelObject, _coerce, genFid, ModReader
 from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, MGEFCode, \
-    ActorValue, ValidateList, pickupables, ExtractExportList, ValidateDict
+    ActorValue, ValidateList, pickupables, ExtractExportList, ValidateDict, IUNICODE
 
 class ActorFactions:
     """Factions for npcs and creatures with functions for
@@ -1668,6 +1668,246 @@ class CBash_ItemStats:
                         u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
+
+#------------------------------------------------------------------------------
+class ScriptText:
+    """import & export functions for script text."""
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.eid_data = {}
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self, modInfo, file_):
+        """Reads stats from specified mod."""
+        eid_data = self.eid_data
+        loadFactory= LoadFactory(False,MreRecord.type_class['SCPT'])
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+        mapper = modFile.getLongMapper()
+
+        with balt.Progress(_(u"Export Scripts")) as progress:
+            records = modFile.SCPT.getActiveRecords()
+            y = len(records)
+            z = 0
+            for record in records:
+                z += 1
+                progress((0.5/y*z),_(u"Reading scripts in %s.")%(file_))
+                eid_data[record.eid] = (record.scriptText, mapper(record.fid))
+
+    def writeToMod(self, modInfo, makeNew=False):
+        """Writes scripts to specified mod."""
+        eid_data = self.eid_data
+        changed = []
+        added = []
+        loadFactory = LoadFactory(True,MreRecord.type_class['SCPT'])
+        modFile = ModFile(modInfo,loadFactory)
+        modFile.load(True)
+
+        for record in modFile.SCPT.getActiveRecords():
+            eid = record.eid
+            data = eid_data.get(eid,None)
+            if data is not None:
+                newText, longid = data
+                oldText = record.scriptText
+                if oldText.lower() != newText.lower():
+                    record.scriptText = newText
+                    record.setChanged()
+                    changed.append(eid)
+                del eid_data[eid]
+        if makeNew and eid_data:
+            tes4 = modFile.tes4
+            for eid, data in eid_data.iteritems():
+                newText, longid = data
+                scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
+                newScript = MreRecord.type_class['SCPT'](ModReader.recHeader('SCPT',0,0x40000,scriptFid,0))
+                newScript.eid = eid
+                newScript.scriptText = newText
+                newScript.setChanged()
+                modFile.SCPT.records.append(newScript)
+                added.append(eid)
+        if changed or added: modFile.safeSave()
+        return (changed, added)
+
+    def readFromText(self,textPath,modInfo):
+        """Reads scripts from files in specified mods' directory in bashed patches folder."""
+        eid_data, aliases = self.eid_data, self.aliases
+        textPath = GPath(textPath)
+        with balt.Progress(_(u"Import Scripts")) as progress:
+            for root, dirs, files in textPath.walk():
+                y = len(files)
+                z = 0
+                for name in files:
+                    z += 1
+                    if(name.cext != inisettings['ScriptFileExt']):
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
+                        continue
+                    progress(((1/y)*z),_(u"Reading file %s.") % name.s)
+                    with root.join(name).open('r',encoding='utf-8-sig') as text:
+                        lines = text.readlines()
+                    try:
+                        modName,FormID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
+                    except:
+                        deprint(_(u"%s has malformed script header lines - was skipped") % name)
+                        continue
+                    scriptText = u''.join(lines[3:])
+                    eid_data[eid] = (scriptText, FormID)
+        if eid_data: return True
+        return False
+
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
+        """Writes stats to specified text file."""
+        eid_data = self.eid_data
+        x = len(skip)
+        exportedScripts = []
+        y = len(eid_data)
+        z = 0
+        num = 0
+        r = len(deprefix)
+        with balt.Progress(_(u"Export Scripts")) as progress:
+            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
+                text, longid = eid_data[eid]
+                if skipcomments:
+                    tmp = u''
+                    for line in text.split(u'\n'):
+                        pos = line.find(u';')
+                        if pos == -1:
+                                tmp += line + u'\n'
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + u'\n'
+                    text = tmp
+                z += 1
+                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % (eid))
+                if x == 0 or skip.lower() != eid[:x].lower():
+                    fileName = eid
+                    if r >= 1 and deprefix == fileName[:r]:
+                        fileName = fileName[r:]
+                    num += 1
+                    outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
+                    with outpath.open('wb',encoding='utf-8-sig') as out:
+                        formid = u'0x%06X' % longid[1]
+                        out.write(u';'+longid[0].s+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
+                    exportedScripts.append(eid)
+        return (_(u'Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
+
+class CBash_ScriptText:
+    """import & export functions for script text."""
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.eid_data = {}
+        self.aliases = aliases or {} #--For aliasing mod names
+
+    def readFromMod(self, modInfo, file_):
+        """Reads stats from specified mod."""
+        eid_data = self.eid_data
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            with balt.Progress(_(u"Export Scripts")) as progress:
+                records = modFile.SCPT
+                y = len(records)
+                z = 0
+                for record in records:
+                    z += 1
+                    progress((0.5/y*z),_(u"Reading scripts in %s.") % (file_))
+                    eid_data[record.eid] = (record.scriptText, record.fid)
+
+    def writeToMod(self, modInfo, makeNew=False):
+        """Writes scripts to specified mod."""
+        eid_data = self.eid_data
+        changed = []
+        added = []
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            for record in modFile.SCPT:
+                eid = record.eid
+                data = eid_data.get(eid,None)
+                if data is not None:
+                    newText, longid = data
+                    oldText = record.scriptText
+                    if oldText != newText:
+                        record.scriptText = newText
+                        changed.append(eid)
+                    del eid_data[eid]
+            if makeNew and eid_data:
+                for eid, data in eid_data.iteritems():
+                    newText, longid = data
+                    newScript = modFile.create_SCPT()
+                    if newScript is not None:
+                        newScript.eid = eid
+                        newScript.scriptText = newText
+                        added.append(eid)
+            if changed or added: modFile.save()
+            return (changed, added)
+
+    def readFromText(self,textPath,modInfo):
+        """Reads scripts from files in specified mods' directory in bashed patches folder."""
+        eid_data, aliases = self.eid_data, self.aliases
+        textPath = GPath(textPath)
+        with balt.Progress(_(u"Import Scripts")) as progress:
+            for root, dirs, files in textPath.walk():
+                y = len(files)
+                z = 0
+                for name in files:
+                    z += 1
+                    if(name.cext != inisettings['ScriptFileExt']):
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
+                        continue
+                    progress(((1/y)*z),_(u"Reading file %s.") % name.s)
+                    with root.join(name).open('r',encoding='utf-8-sig') as text:
+                        lines = text.readlines()
+                    if not lines: continue
+                    modName,formID,eid = lines[0][1:-2],lines[1][1:-2],lines[2][1:-2]
+                    scriptText = u''.join(lines[3:])
+                    eid_data[IUNICODE(eid)] = (IUNICODE(scriptText), formID) #script text is case insensitive
+        if eid_data: return True
+        return False
+
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
+        """Writes stats to specified text file."""
+        eid_data = self.eid_data
+        x = len(skip)
+        exportedScripts = []
+        y = len(eid_data)
+        z = 0
+        num = 0
+        r = len(deprefix)
+        with balt.Progress(_(u"Export Scripts")) as progress:
+            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
+                text, longid = eid_data[eid]
+                text = _unicode(text)
+                if skipcomments:
+                    tmp = u''
+                    for line in text.split(u'\n'):
+                        pos = line.find(u';')
+                        if pos == -1:
+                                tmp += line + u'\n'
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + u'\n'
+                    text = tmp
+                z += 1
+                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % eid)
+                if x == 0 or skip.lower() != eid[:x].lower():
+                    fileName = eid
+                    if r >= 1 and deprefix == fileName[:r]:
+                        fileName = fileName[r:]
+                    num += 1
+                    outpath = dirs['patches'].join(folder).join(fileName+inisettings['ScriptFileExt'])
+                    with outpath.open('wb', encoding='utf-8-sig') as out:
+                        formid = u'0x%06X' % longid[1]
+                        out.write(u';'+longid[0].s+u'\r\n;'+formid+u'\r\n;'+eid+u'\r\n'+text)
+                    exportedScripts.append(eid)
+        return (_(u'Exported %d scripts from %s:')+u'\n') % (num,esp)+u'\n'.join(exportedScripts)
 
 #------------------------------------------------------------------------------
 class UsesEffectsMixin(object):
