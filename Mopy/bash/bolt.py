@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
 #
 # GPL License and Copyright Notice ============================================
-#  This file is part of Wrye Bolt.
+#  This file is part of Wrye Bash.
 #
-#  Wrye Bolt is free software; you can redistribute it and/or
+#  Wrye Bash is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
 #
-#  Wrye Bolt is distributed in the hope that it will be useful,
+#  Wrye Bash is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bolt; if not, write to the Free Software Foundation,
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bolt copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  https://github.com/wrye-bash
 #
 # =============================================================================
 
