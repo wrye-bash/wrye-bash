@@ -129,7 +129,7 @@ class ActorFactions:
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
-        type_id_factions,id_eid = self.type_id_factions,self.id_eid
+        type_id_factions = self.type_id_factions
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -209,7 +209,7 @@ class CBash_ActorFactions:
 
     def writeToMod(self,modInfo):
         """Exports faction data to specified mod."""
-        group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
+        group_fid_factions = self.group_fid_factions
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -247,7 +247,7 @@ class CBash_ActorFactions:
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
-        group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
+        group_fid_factions = self.group_fid_factions
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -861,7 +861,7 @@ class FactionRelations:
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
-        id_relations,id_eid = self.id_relations, self.id_eid
+        id_relations = self.id_relations
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -884,7 +884,7 @@ class FactionRelations:
 
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
-        id_relations,id_eid = self.id_relations, self.id_eid
+        id_relations = self.id_relations
         loadFactory= LoadFactory(True,MreRecord.type_class['FACT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -973,7 +973,7 @@ class CBash_FactionRelations:
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
-        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
+        fid_faction_mod = self.fid_faction_mod
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -991,7 +991,7 @@ class CBash_FactionRelations:
 
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
-        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
+        fid_faction_mod = self.fid_faction_mod
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -1937,7 +1937,6 @@ class _UsesEffectsMixin(object):
         schoolTypeName_Number = _UsesEffectsMixin.schoolTypeName_Number
         recipientTypeName_Number = _UsesEffectsMixin.recipientTypeName_Number
         actorValueName_Number = _UsesEffectsMixin.actorValueName_Number
-        schoolTypeNumber_Name = _UsesEffectsMixin.schoolTypeNumber_Name
         effects = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
@@ -2332,7 +2331,7 @@ class ItemPrices:
 
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
@@ -2346,7 +2345,7 @@ class ItemPrices:
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
         loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
@@ -2383,7 +2382,7 @@ class ItemPrices:
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a: stats[a][0])
@@ -2427,7 +2426,7 @@ class CBash_ItemPrices:
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -2462,7 +2461,7 @@ class CBash_ItemPrices:
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a: stats[a][0])
