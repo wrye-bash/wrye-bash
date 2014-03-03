@@ -14606,6 +14606,9 @@ class Mod_Scripts_Import(Link):
             balt.showLog(self.window,report,_(u'Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+
+from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
+
 class Mod_Stats_Export(Link):
     """Export armor and weapon stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14628,9 +14631,9 @@ class Mod_Stats_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Stats")) as progress:
             if CBash:
-                itemStats = bosh.CBash_ItemStats()
+                itemStats = CBash_ItemStats()
             else:
-                itemStats = bosh.ItemStats()
+                itemStats = ItemStats()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14673,9 +14676,9 @@ class Mod_Stats_Import(Link):
         changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
             if CBash:
-                itemStats = bosh.CBash_ItemStats()
+                itemStats = CBash_ItemStats()
             else:
-                itemStats = bosh.ItemStats()
+                itemStats = ItemStats()
             progress(0.1,_(u"Reading %s.") % textName.s)
             itemStats.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
