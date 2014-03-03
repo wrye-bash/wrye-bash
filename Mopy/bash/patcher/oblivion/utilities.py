@@ -1060,7 +1060,7 @@ class FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
+            pack,unpack = struct.pack,struct.unpack   # FIXME BOTH unused
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1143,7 +1143,7 @@ class CBash_FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
+            pack,unpack = struct.pack,struct.unpack  # FIXME BOTH unused
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1170,7 +1170,7 @@ class CBash_FidReplacer:
         old_new = dict((oldId,newId) for oldId,newId in old_new.iteritems() if
                        oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
-        old_count = {}
+        old_count = {} # FIXME unused
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             for newId in set(old_new.values()):
                 Current.addMod(modInfos[newId[0]].getPath().stail,
