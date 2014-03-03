@@ -3724,3 +3724,163 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
                 outWrite(output)
 
 #------------------------------------------------------------------------------
+# CBASH ONLY
+#------------------------------------------------------------------------------
+class CBash_MapMarkers:
+    """Map marker references, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.fid_markerdata = {}
+        self.aliases = aliases or {}
+        self.markerFid = FormID(GPath(u'Oblivion.esm'), 0x000010)
+        self.attrs = ['eid','markerName','markerType','IsVisible','IsCanTravelTo','posX','posY','posZ','rotX','rotY','rotZ']
+        self.markerTypeNumber_Name = {
+            None : u'NONE',
+            0 : u'NONE',
+            1 : u'Camp',
+            2 : u'Cave',
+            3 : u'City',
+            4 : u'Elven Ruin',
+            5 : u'Fort Ruin',
+            6 : u'Mine',
+            7 : u'Landmark',
+            8 : u'Tavern',
+            9 : u'Settlement',
+            10 : u'Daedric Shrine',
+            11 : u'Oblivion Gate',
+            12 : u'?',
+            13 : u'Ayleid Well',
+            14 : u'Wayshrine',
+            15 : u'Magical Stone',
+            16 : u'Spire',
+            17 : u'Obelisk of Order',
+            18 : u'House',
+            19 : u'Player marker (flag)',
+            20 : u'Player marker (Q flag)',
+            21 : u'Player marker (i flag)',
+            22 : u'Player marker (? flag)',
+            23 : u'Harbor/dock',
+            24 : u'Stable',
+            25 : u'Castle',
+            26 : u'Farm',
+            27 : u'Chapel',
+            28 : u'Merchant',
+            29 : u'Ayleid Step (old Ayleid ruin icon)',}
+        self.markerTypeName_Number = dict([(y.lower(),x) for x,y in self.markerTypeNumber_Name.iteritems() if x is not None])
+
+    def readFromMod(self,modInfo):
+        """Imports type_id_name from specified mod."""
+        fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+
+            for record in modFile.REFRS:
+                if record.base == markerFid:
+                    fid_markerdata[record.fid] = [getattr(record, attr) for attr in attrs]
+                record.UnloadRecord()
+
+    def writeToMod(self,modInfo):
+        """Imports type_id_name to specified mod."""
+        fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,self.attrs
+        changed = []
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            Current.load()
+
+            fid_markerdata = FormID.FilterValidDict(fid_markerdata, modFile, True, False)
+            for record in modFile.REFRS:
+                fid = record.fid
+                if not fid in fid_markerdata or record.base != markerFid:
+                    record.UnloadRecord()
+                    continue
+                oldValues = [getattr(record, attr) for attr in attrs]
+                newValues = fid_markerdata[fid]
+                if oldValues == newValues:
+                    record.UnloadRecord()
+                    continue
+                changed.append(oldValues[0]) #eid
+                for attr, value in zip(attrs, newValues):
+                    setattr(record, attr, value)
+
+            if changed: modFile.save()
+            return changed
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        fid_markerdata,aliases,markerTypeName_Number = self.fid_markerdata,self.aliases,self.markerTypeName_Number
+        with bolt.CsvReader(GPath(textPath)) as ins:
+            for fields in ins:
+                if len(fields) < 13 or fields[1][:2] != u'0x': continue
+                mod,objectIndex,eid,markerName,_markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fields[:13]
+                mod = GPath(_coerce(mod, unicode))
+                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex, int, 16))
+                eid = _coerce(eid, unicode, AllowNone=True)
+                markerName = _coerce(markerName, unicode, AllowNone=True)
+                markerType = _coerce(_markerType, int)
+                if markerType is None: #coercion failed
+                    markerType = markerTypeName_Number.get(_markerType.lower(), 0)
+                IsVisible = _coerce(IsVisible, bool)
+                IsCanTravelTo = _coerce(IsCanTravelTo, bool)
+                posX = _coerce(posX, float)
+                posY = _coerce(posY, float)
+                posZ = _coerce(posZ, float)
+                rotX = _coerce(rotX, float)
+                rotY = _coerce(rotY, float)
+                rotZ = _coerce(rotZ, float)
+                fid_markerdata[longid] = [eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ]
+
+    def writeToText(self,textPath):
+        """Exports markers to specified text file."""
+        fid_markerdata,markerTypeNumber_Name = self.fid_markerdata,self.markerTypeNumber_Name
+        textPath = GPath(textPath)
+        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        rowFormat = u'"%s","0x%06X","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            outWrite = out.write
+            outWrite(headFormat % (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),_(u'Type'),_(u'IsVisible'),_(u'IsCanTravelTo'),_(u'posX'),_(u'posY'),_(u'posZ'),_(u'rotX'),_(u'rotY'),_(u'rotZ')))
+            longids = fid_markerdata.keys()
+            longids.sort(key=lambda a: fid_markerdata[a][0])
+            longids.sort(key=itemgetter(0))
+            for longid in longids:
+                eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ = fid_markerdata[longid]
+                markerType = markerTypeNumber_Name.get(markerType,markerType)
+                outWrite(rowFormat % (longid[0],longid[1],eid,markerName,markerType,IsVisible,IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
+
+#------------------------------------------------------------------------------
+class CBash_CellBlockInfo:
+    """Map marker references, with functions for importing/exporting from/to mod/text file."""
+
+    def __init__(self,types=None,aliases=None):
+        """Initialize."""
+        self.celldata = {}
+        self.aliases = aliases or {}
+
+    def readFromMod(self,modInfo):
+        """Imports type_id_name from specified mod."""
+        celldata = self.celldata
+
+        with ObCollection(ModsPath=dirs['mods'].s) as Current:
+            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            Current.load()
+
+            for record in modFile.CELLS:
+                celldata[record.eid] = record.bsb
+                record.UnloadRecord()
+
+    def writeToText(self,textPath):
+        """Exports markers to specified text file."""
+        celldata = self.celldata
+        textPath = GPath(textPath)
+        headFormat = u'"%s","%s","%s",\n'
+        rowFormat  = u'"%s","%s","%s",\n'
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            out.write(headFormat % (_(u'Editor Id'),_(u'Block'),_(u'Sub-Block')))
+            eids = celldata.keys()
+            eids.sort()
+            for eid in eids:
+                block, subblock = celldata[eid]
+                out.write(rowFormat % (eid, block, subblock))

@@ -14883,6 +14883,8 @@ class Mod_Prices_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CBash_MapMarkers
+
 class CBash_Mod_MapMarkers_Export(Link):
     """Export map marker stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14904,7 +14906,7 @@ class CBash_Mod_MapMarkers_Export(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u'Export Map Markers')) as progress:
-            mapMarkers = bosh.CBash_MapMarkers()
+            mapMarkers = CBash_MapMarkers()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14946,7 +14948,7 @@ class CBash_Mod_MapMarkers_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Map Markers')) as progress:
-            MapMarkers = bosh.CBash_MapMarkers()
+            MapMarkers = CBash_MapMarkers()
             progress(0.1,_(u'Reading')+u' '+textName.s)
             MapMarkers.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s)
@@ -14967,6 +14969,8 @@ class CBash_Mod_MapMarkers_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CBash_CellBlockInfo
+
 class CBash_Mod_CellBlockInfo(Link):
     """Export Cell Block Info to text file.
     (in the form of Cell, block, subblock"""
@@ -14989,7 +14993,7 @@ class CBash_Mod_CellBlockInfo(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u"Export Cell Block Info")) as progress:
-            cellblocks = bosh.CBash_CellBlockInfo()
+            cellblocks = CBash_CellBlockInfo()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
