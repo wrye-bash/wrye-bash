@@ -13899,6 +13899,9 @@ class Mod_DecompileAll(Link):
                 balt.showOk(self.window,_(u"No changes required."),fileName.s)
 
 #------------------------------------------------------------------------------
+
+from patcher.oblivion.utilities import FidReplacer, CBash_FidReplacer
+
 class Mod_Fids_Replace(Link):
     """Replace fids according to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13928,9 +13931,9 @@ class Mod_Fids_Replace(Link):
         changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
             if CBash:
-                replacer = bosh.CBash_FidReplacer()
+                replacer = CBash_FidReplacer()
             else:
-                replacer = bosh.FidReplacer()
+                replacer = FidReplacer()
             progress(0.1,_(u"Reading %s.") % textName.s)
             replacer.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)

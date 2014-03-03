@@ -9107,133 +9107,6 @@ class InstallersData(bolt.TankData, DataDict):
 
 # Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class FidReplacer:
-    """Replaces one set of fids with another."""
-
-    def __init__(self,types=None,aliases=None):
-        """Initialize."""
-        self.types = types or MreRecord.simpleTypes
-        self.aliases = aliases or {} #--For aliasing mod names
-        self.old_new = {} #--Maps old fid to new fid
-        self.old_eid = {} #--Maps old fid to old editor id
-        self.new_eid = {} #--Maps new fid to new editor id
-
-    def readFromText(self,textPath):
-        """Reads replacement data from specified text file."""
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
-            for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
-                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod = _coerce(oldMod, unicode)
-                oldEid = _coerce(oldEid, unicode, AllowNone=True)
-                newEid = _coerce(newEid, unicode, AllowNone=True)
-                newMod = _coerce(newMod, unicode)
-                oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-                newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
-                old_new[oldId] = newId
-                old_eid[oldId] = oldEid
-                new_eid[newId] = newEid
-
-    def updateMod(self, modInfo,changeBase=False):
-        """Updates specified mod file."""
-        types = self.types
-        classes = [MreRecord.type_class[type] for type in types]
-        loadFactory= LoadFactory(True,*classes)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        #--Create  filtered versions of mappers.
-        mapper = modFile.getShortMapper()
-        masters = modFile.tes4.masters+[modFile.fileInfo.name]
-        short = dict((oldId,mapper(oldId)) for oldId in self.old_eid if oldId[0] in masters)
-        short.update((newId,mapper(newId)) for newId in self.new_eid if newId[0] in masters)
-        old_eid = dict((short[oldId],eid) for oldId,eid in self.old_eid.iteritems() if oldId in short)
-        new_eid = dict((short[newId],eid) for newId,eid in self.new_eid.iteritems() if newId in short)
-        old_new = dict((short[oldId],short[newId]) for oldId,newId in self.old_new.iteritems()
-            if (oldId in short and newId in short))
-        if not old_new: return False
-        #--Swapper function
-        old_count = {}
-        def swapper(oldId):
-            newId = old_new.get(oldId,None)
-            if newId:
-                old_count.setdefault(oldId,0)
-                old_count[oldId] += 1
-                return newId
-            else:
-                return oldId
-        #--Do swap on all records
-        for type in types:
-            for record in getattr(modFile,type).getActiveRecords():
-                if changeBase: record.fid = swapper(record.fid)
-                record.mapFids(swapper,True)
-                record.setChanged()
-        #--Done
-        if not old_count: return False
-        modFile.safeSave()
-        entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for oldId,count in
-                old_count.iteritems()]
-        entries.sort(key=itemgetter(1))
-        return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
-
-class CBash_FidReplacer:
-    """Replaces one set of fids with another."""
-
-    def __init__(self,types=None,aliases=None):
-        """Initialize."""
-        self.aliases = aliases or {} #--For aliasing mod names
-        self.old_new = {} #--Maps old fid to new fid
-        self.old_eid = {} #--Maps old fid to old editor id
-        self.new_eid = {} #--Maps new fid to new editor id
-
-    def readFromText(self,textPath):
-        """Reads replacement data from specified text file."""
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
-            for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
-                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod = _coerce(oldMod, unicode)
-                oldEid = _coerce(oldEid, unicode)
-                newEid = _coerce(newEid, unicode, AllowNone=True)
-                newMod = _coerce(newMod, unicode, AllowNone=True)
-                oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = FormID(GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-                newId = FormID(GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
-                old_new[oldId] = newId
-                old_eid[oldId] = oldEid
-                new_eid[newId] = newEid
-
-    def updateMod(self, modInfo,changeBase=False):
-        """Updates specified mod file."""
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        #Filter the fid replacements to only include existing mods
-        existing = modInfos.keys()
-        old_new = dict((oldId, newId) for oldId, newId in old_new.iteritems() if oldId[0] in existing and newId[0] in existing)
-        if not old_new: return False
-        old_count = {}
-
-        with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            for newId in set(old_new.values()):
-                Current.addMod(modInfos[newId[0]].getPath().stail, Saveable=False)
-            modFile = Current.addMod(modInfo.getPath().stail)
-            Current.load()
-
-            counts = modFile.UpdateReferences(old_new)
-
-            #--Done
-            if not sum(counts): return False
-            modFile.save()
-            entries = [(count,old_eid[oldId],new_eid[newId]) for count, oldId, newId in zip(counts, old_new.keys(), old_new.values())]
-            entries.sort(key=itemgetter(1))
-            return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
-
-#------------------------------------------------------------------------------
 class FullNames:
     """Names for records, with functions for importing/exporting from/to mod/text file."""
     defaultTypes = bush.game.namesTypes
@@ -14278,6 +14151,8 @@ class UpdateReferences(ListPatcher):
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
+
+from patcher.oblivion.utilities import CBash_FidReplacer
 
 class CBash_UpdateReferences(CBash_ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
