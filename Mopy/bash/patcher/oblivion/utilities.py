@@ -846,7 +846,7 @@ class FactionRelations:
             #--Following is a bit messy. If already have relations for a
             # given mod, want to do an in-place update. Otherwise do an append.
             relations = self.id_relations.get(record.fid)
-            if relations == None:
+            if relations is None:
                 relations = self.id_relations[record.fid] = []
             other_index = dict((y[0],x) for x,y in enumerate(relations))
             for relation in record.relations:
@@ -2513,7 +2513,8 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                            'SLGM':('eid','full','weight','value','iconPath'),
                            'WEAP':('eid','full','weight','value','health',
                                    'damage','speed','reach','enchantPoints',
-                                   'iconPath'),}
+                                   'iconPath'),
+        }
         self.aliases = aliases or {} #--For aliasing mod fulls
 
     def readFromMod(self,modInfo):
