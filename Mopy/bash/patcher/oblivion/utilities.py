@@ -32,6 +32,8 @@ from operator import attrgetter, itemgetter
 import re
 import struct
 
+from gettext import gettext as _
+
 from bash import bolt, bush, balt
 from bash.bolt import GPath, _unicode, deprint
 from bash.bosh import LoadFactory, ModFile, dirs, inisettings
