@@ -6556,14 +6556,13 @@ class BashApp(wx.App):
         progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
              style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
         #   Any users who prefer the progress dialog can rename or delete wryesplash.png
-        if bosh.dirs['images'].join(u'wryesplash.png').exists():
-            try:
-                    splashScreen = WryeBashSplashScreen()
-                    splashScreen.Show()
-            except:
-                    pass
-        else:
-                pass
+        if bosh.inisettings['EnableSplashScreen']:
+            if bosh.dirs['images'].join(u'wryesplash.png').exists():
+                try:
+                        splashScreen = WryeBashSplashScreen()
+                        splashScreen.Show()
+                except:
+                        pass
         #--Constants
         self.InitResources()
         #--Init Data

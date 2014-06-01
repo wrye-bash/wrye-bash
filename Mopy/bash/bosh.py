@@ -30363,6 +30363,7 @@ def initDefaultSettings():
     inisettings['AutoSizeListColumns'] = 0
     inisettings['SoundSuccess'] = GPath(u'')
     inisettings['SoundError'] = GPath(u'')
+    inisettings['EnableSplashScreen'] = True
 
 def initOptions(bashIni):
     initDefaultTools()
