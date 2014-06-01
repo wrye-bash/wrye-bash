@@ -10947,8 +10947,8 @@ class Mods_LoadListData(balt.ListEditorData):
         """Initialize."""
         self.data = settings['bash.loadLists.data']
         self.data['Bethesda ESMs'] = [
-            GPath(x) for x in bush.game.masterFiles
-            if x.lower() in bush.game.bethDataFiles
+            GPath(x) for x in bush.game.bethDataFiles
+            if x.endswith(u'.esm')
             ]
         #--GUI
         balt.ListEditorData.__init__(self,parent)
@@ -10984,8 +10984,8 @@ class Mods_LoadList:
     def __init__(self):
         self.data = settings['bash.loadLists.data']
         self.data['Bethesda ESMs'] = [
-            GPath(x) for x in bush.game.masterFiles
-            if x.lower() in bush.game.bethDataFiles
+            GPath(x) for x in bush.game.bethDataFiles
+            if x.endswith(u'.esm')
             ]
 
     def GetItems(self):
@@ -11027,17 +11027,20 @@ class Mods_LoadList:
             # first select the bashed patch(es) and their masters
             for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in (u'BASHED PATCH',u'BASHED LISTS')]:
                 if not modInfos.isSelected(bashedPatch):
-                    modInfos.select(bashedPatch)
+                    modInfos.select(bashedPatch, False)
             # then activate mods that are not tagged NoMerge or Deactivate or Filter
             for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and u'Deactivate' not in modInfos[modName].getBashTags() and u'Filter' not in modInfos[modName].getBashTags()]:
                 if not modInfos.isSelected(mod):
-                    modInfos.select(mod)
+                    modInfos.select(mod, False)
             # then activate as many of the remaining mods as we can
             for mod in modInfos.mergeable:
                 if u'Deactivate' in modInfos[mod].getBashTags(): continue
                 if u'Filter' in modInfos[mod].getBashTags(): continue
                 if not modInfos.isSelected(mod):
-                    modInfos.select(mod)
+                    modInfos.select(mod, False)
+            modInfos.plugins.save()
+            modInfos.refreshInfoLists()
+            modInfos.autoGhost()
         except bosh.PluginsFullError:
             balt.showError(self.window, _(u"Mod list is full, so some mods were skipped"), _(u'Select All'))
         modList.RefreshUI()
@@ -11045,7 +11048,7 @@ class Mods_LoadList:
     def DoList(self,event):
         """Select mods in list."""
         item = self.GetItems()[event.GetId()-ID_LOADERS.BASE]
-        selectList = [GPath(modName) for modName in self.data[item]]
+        selectList = [GPath(modName) for modName in modList.items if GPath(modName) in self.data[item]]
         errorMessage = bosh.modInfos.selectExact(selectList)
         modList.RefreshUI()
         if errorMessage:

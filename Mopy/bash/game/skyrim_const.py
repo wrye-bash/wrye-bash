@@ -33,6 +33,8 @@ bethDataFiles = set((
     u'dawnguard.bsa',
     u'hearthfires.bsa',
     u'hearthfires.esm',
+    u'dragonborn.esm',
+    u'dragonborn.bsa',
     u'skyrim - animations.bsa',
     u'skyrim - interface.bsa',
     u'skyrim - meshes.bsa',

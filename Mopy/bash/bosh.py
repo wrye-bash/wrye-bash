@@ -5777,6 +5777,11 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
+        #--Ensure plugins that cannot be deselected stay selected
+        for path in map(GPath, bush.game.nonDeactivatableFiles):
+            if path not in modNames:
+                modNames.append(path)
+        #--Deselect/select plugins
         missing,extra = [],[]
         self.plugins.selected = list(modNames)
         for modName in modNames:
