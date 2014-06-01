@@ -988,6 +988,14 @@ def shellMakeDirs(dirName,parent=None):
         return
     elif not isinstance(dirName,(list,tuple,set)):
         dirName = [dirName]
+    #--Skip dirs that already exist
+    dirName = [x for x in dirName if not x.exists()]
+    #--Check for dirs that are impossible to create (the drive they are
+    #  supposed to be on doesn't exist
+    errorPaths = [dir for dir in dirName if not dir.drive().exists()]
+    if errorPaths:
+        raise BoltError(errorPaths)
+    #--Checks complete, start working
     tempDirs = []
     tempDirsAppend = tempDirs.append
     fromDirs = []
@@ -996,22 +1004,33 @@ def shellMakeDirs(dirName,parent=None):
     toDirsAppend = toDirs.append
     try:
         for dir in dirName:
-            tempDir = bolt.Path.tempDir(u'WryeBash_')
-            tempDirsAppend(tempDir)
-            toMake = []
-            toMakeAppend = toMake.append
-            while not dir.exists():
-                toMakeAppend(dir.tail)
-                dir = dir.head
-            if not toMake:
-                continue
-            toMake.reverse()
-            base = tempDir.join(toMake[0])
-            toDir = dir.join(toMake[0])
-            tempDir.join(*toMake).makedirs()
-            fromDirsAppend(base)
-            toDirsAppend(toDir)
-        shellMove(fromDirs,toDirs,parent,False,False,False)
+            # Attempt creating the directory via normal methods,
+            # only, fall back to shellMove if UAC or something else
+            # stopped it
+            try:
+                dir.makedirs()
+            except:
+                # Failed, try the UAC workaround
+                tempDir = bolt.Path.tempDir(u'WryeBash_')
+                tempDirsAppend(tempDir)
+                toMake = []
+                toMakeAppend = toMake.append
+                while not dir.exists() and dir != dir.head:
+                    # Need to test agains dir == dir.head to prevent
+                    # infinite recursion if the final bit doesn't exist
+                    toMakeAppend(dir.tail)
+                    dir = dir.head
+                if not toMake:
+                    continue
+                toMake.reverse()
+                base = tempDir.join(toMake[0])
+                toDir = dir.join(toMake[0])
+                tempDir.join(*toMake).makedirs()
+                fromDirsAppend(base)
+                toDirsAppend(toDir)
+        if fromDirs:
+            # fromDirs will only get filled if dir.makedirs() failed
+            shellMove(fromDirs,toDirs,parent,False,False,False)
     finally:
         for tempDir in tempDirs:
             tempDir.rmtree(safety=tempDir.stail)
