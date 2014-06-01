@@ -990,6 +990,12 @@ def shellMakeDirs(dirName,parent=None):
         dirName = [dirName]
     #--Skip dirs that already exist
     dirName = [x for x in dirName if not x.exists()]
+    #--Check for dirs that are impossible to create (the drive they are
+    #  supposed to be on doesn't exist
+    errorPaths = [dir for dir in dirName if not dir.drive().exists()]
+    if errorPaths:
+        raise BoltError(errorPaths)
+    #--Checks complete, start working
     tempDirs = []
     tempDirsAppend = tempDirs.append
     fromDirs = []

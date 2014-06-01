@@ -30091,29 +30091,40 @@ def getLocalAppDataPath(bashIni, path):
 def getOblivionModsPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sOblivionMods'):
         path = GPath(bashIni.get(u'General',u'sOblivionMods').strip())
+        src = [u'[General]', u'sOblivionMods']
     else:
         path = GPath(u'..\\%s Mods' % bush.game.name)
+        src = u'Relative Path'
     if not path.isabs(): path = dirs['app'].join(path)
-    return path
+    return path, src
 
 def getBainDataPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sInstallersData'):
         path = GPath(bashIni.get(u'General',u'sInstallersData').strip())
+        src = [u'[General]', u'sInstallersData']
         if not path.isabs(): path = dirs['app'].join(path)
     else:
         path = dirs['installers'].join(u'Bash')
-    return path
+        src = u'Relative Path'
+    return path, src
 
 def getBashModDataPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sBashModData'):
         path = GPath(bashIni.get(u'General',u'sBashModData').strip())
         if not path.isabs(): path = dirs['app'].join(path)
+        src = [u'[General]', u'sBashModData']
     else:
-        path = getOblivionModsPath(bashIni).join(u'Bash Mod Data')
-    return path
+        path, src = getOblivionModsPath(bashIni).join(u'Bash Mod Data')
+    return path, src
 
-def getLegacyPath(newPath, oldPath):
+def getLegacyPath(newPath, oldPath, srcNew=None, srcOld=None):
     return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
+
+def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
+    if newPath.isdir() or not oldPath.isdir():
+        return newPath, newSrc
+    else:
+        return oldPath, oldSrc
 
 def testUAC(oblivionPath):
     print 'testing UAC'
@@ -30192,14 +30203,16 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         pass
 
     #--Mod Data, Installers
-    oblivionMods = getOblivionModsPath(bashIni)
-    dirs['modsBash'] = getBashModDataPath(bashIni)
-    dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join(u'Data',u'Bash'))
+    oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni)
+    dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni)
+    dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
+        dirs['modsBash'], dirs['app'].join(u'Data',u'Bash'),
+        modsBashSrc, u'Relative Path')
 
     dirs['installers'] = oblivionMods.join(u'Bash Installers')
     dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join(u'Installers'))
 
-    dirs['bainData'] = getBainDataPath(bashIni)
+    dirs['bainData'], bainDataSrc = getBainDataPath(bashIni)
 
     dirs['bsaCache'] = dirs['bainData'].join(u'BSA Cache')
 
@@ -30225,7 +30238,57 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
-    balt.shellMakeDirs([dirs[key] for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData','bsaCache')])
+    try:
+        keys = ('modsBash', 'installers', 'converters', 'dupeBCFs',
+                'corruptBCFs', 'bainData', 'bsaCache')
+        balt.shellMakeDirs([dirs[key] for key in keys])
+    except BoltError as e:
+        # BoltError is thrown by shellMakeDirs if any of the directories
+        # cannot be created due to residing on a non-existing drive.
+        # Find which keys are causing the errors
+        badKeys = set()     # List of dirs[key] items that are invalid
+        # First, determine which dirs[key] items are causing it
+        for key in keys:
+            if dirs[key] in e.message:
+                badKeys.add(key)
+        # Now, work back from those to determine which setting created those
+        msg = (_(u'Error creating required Wrye Bash directories.') + u'  ' +
+               _(u'Please check the settings for the following paths in your bash.ini, the drive does not exist')
+               + u':\n\n')
+        relativePathError = []
+        if 'modsBash' in badKeys:
+            if isinstance(modsBashSrc, list):
+                msg += (u' '.join(modsBashSrc) + u'\n    '
+                        + dirs['modsBash'].s + u'\n')
+            else:
+                relativePathError.append(dirs['modsBash'])
+        if {'installers', 'converters', 'dupeBCFs', 'corruptBCFs'} & badKeys:
+            # All derived from oblivionMods -> getOblivionModsPath
+            if isinstance(oblivionModsSrc, list):
+                msg += (u' '.join(oblivionModsSrc) + u'\n    '
+                        + oblivionMods.s + u'\n')
+            else:
+                relativePathError.append(oblivionMods)
+        if {'bainData', 'bsaCache'} & badKeys:
+            # Both derived from 'bainData' -> getBainDataPath
+            # Sometimes however, getBainDataPath falls back to oblivionMods,
+            # So check to be sure we haven't already added a message about that
+            if bainDataSrc != oblivionModsSrc:
+                if isinstance(bainDataSrc, list):
+                    msg += (u' '.join(bainDataSrc) + u'\n    '
+                            + dirs['bainData'].s + u'\n')
+                else:
+                    relativePathError.append(dirs['bainData'])
+        if relativePathError:
+            msg += (u'\n' +
+                    _(u'A path error was the result of relative paths.')
+                    + u'  ' +
+                    _(u'The following paths are causing the errors, however usually a relative path should be fine.')
+                    + u'  ' +
+                    _(u'Check your setup to see if you are using symbolic links or NTFS Junctions')
+                    + u':\n\n')
+            msg += u'\n'.join(relativePathError)
+        raise BoltError(msg)
 
     # Setup BOSS API
     global configHelpers
