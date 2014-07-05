@@ -434,8 +434,8 @@ def main():
         ShowTutorial()
         return
     if not args.release:
-        print 'A release version must be specified with the --release option.'
-        return
+        print 'No release version specified, please enter it now.'
+        args.release = raw_input('>')
 
     try:
         # If no build arguments passed, it's the same as --all
