@@ -1,4 +1,5 @@
 ; Wrye Bash.nsi
+Unicode true
 
 ;-------------------------------- Includes:
     !addincludedir "scripts\build\installer"
@@ -27,11 +28,11 @@
     ; Request application privileges for Windows Vista
     RequestExecutionLevel admin
     VIProductVersion ${WB_FILEVERSION}
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "Wrye Bash"
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "Wrye Bash development team"
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "© Wrye"
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "Installer for ${WB_NAME}"
-    VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WB_FILEVERSION}"
+    VIAddVersionKey /LANG=1033 "ProductName" "Wrye Bash"
+    VIAddVersionKey /LANG=1033 "CompanyName" "Wrye Bash development team"
+    VIAddVersionKey /LANG=1033 "LegalCopyright" "© Wrye"
+    VIAddVersionKey /LANG=1033 "FileDescription" "Installer for ${WB_NAME}"
+    VIAddVersionKey /LANG=1033 "FileVersion" "${WB_FILEVERSION}"
     SetCompressor /SOLID lzma
 
 
