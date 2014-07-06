@@ -437,6 +437,9 @@ def main():
         print 'No release version specified, please enter it now.'
         args.release = raw_input('>')
 
+    import sys
+    print (sys.version)
+
     try:
         # If no build arguments passed, it's the same as --all
         if (not args.wbsa and not args.manual
