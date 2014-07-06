@@ -1015,8 +1015,8 @@ class Path(object):
     @staticmethod
     def getNorm(name):
         """Return the normpath for specified name/path object."""
-        if not name: return name
-        elif isinstance(name,Path): return name._s
+        if isinstance(name,Path): return name._s
+        elif not name: return name
         elif isinstance(name,str): name = _unicode(name)
         return os.path.normpath(name)
 
