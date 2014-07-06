@@ -294,17 +294,21 @@ def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
 
     try:
         if nsis is None:
+            # Need NSIS version 3.0+, so we can use the Inetc plugin
             # Older versions of NSIS 2.x key was located here:
-            try:
-                nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r'Software\NSIS\Unicode')
-            except:
-                # Newer versions are here:
-                nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r'Software\NSIS')
+            nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r'Software\NSIS')
+        inetc = os.path.join(nsis, u'Plugins', u'x86-unicode', u'inetc.dll')
         nsis = os.path.join(nsis, u'makensis.exe')
         if not os.path.isfile(nsis):
             msg = " Could not find 'makensis.exe', aborting installer creation."
             print msg
             print >> pipe, msg
+            return
+        if not os.path.isfile(inetc):
+            msg = " Could not find NSIS Inetc plugin, aborting installer creation."
+            print msg
+            print >> pipe, msg
+            return
         subprocess.call([nsis, '/NOCD',
                          '/DWB_NAME=Wrye Bash %s' % version,
                          '/DWB_FILEVERSION=%s' % file_version, script],
@@ -323,23 +327,28 @@ def ShowTutorial():
        that would be too much to fit into the default --help page."""
     wrapper = textwrap.TextWrapper()
     list = textwrap.TextWrapper(initial_indent=' * ',
-                                subsequent_indent='   ')
+                                subsequent_indent='   ',
+                                replace_whitespace=False)
+    listExt = textwrap.TextWrapper(initial_indent='   ',
+                                   subsequent_indent='   ',
+                                   replace_whitespace=False)
     lines = [
-        [''],
-        wrapper.wrap(
-            '''This is the packaging script for Wrye Bash. It can be used to build all versions of Wrye Bash that are released:'''
-            ),
-        list.wrap('''Manual install (archive) of the Python version'''),
-        list.wrap('''Manual install (archive) of the Standalone version'''),
-        list.wrap('''Automated Installer'''),
-        [''],
-        wrapper.wrap(
-            '''In addition to the default requirements to run Wrye Bash in Python mode, you will need three additional things:'''),
-        list.wrap('''NSIS: Used to create the Automated Installer. The latest 2.x release will work, the 3.x builds have not been tested.'''),
-        list.wrap('''py2exe: Used to create the Standalone EXE.'''),
-        list.wrap('''Modified zipextimporter.py:  Copy the modified version from this directory into your Python's Lib\\site-packages directory.  This is needed for custom zipextimporter functionality that the Wrye Bash Standalone uses.'''),
+        '',
+        wrapper.fill('''This is the packaging script for Wrye Bash. It can be used to build all versions of Wrye Bash that are released:'''),
+        list.fill('''Manual install (archive) of the Python version'''),
+        list.fill('''Manual install (archive) of the Standalone version'''),
+        list.fill('''Automated Installer'''),
+        '',
+        wrapper.fill('''In addition to the default requirements to run Wrye Bash in Python mode, you will need four additional things:'''),
+        list.fill('''NSIS: Used to create the Automated Installer. The latest 3.x release is recommended, as the instructions below for Inetc are based on 3.0.'''),
+        list.fill('''Inetc: An NSIS plugin for downloading files, this is needed due to the Python website using redirects that the built in NSISdl plugin can not handle.  Get it from:'''),
+        '',
+        '   http://nsis.sourceforge.net/Inetc_plugin-in',
+        '',
+        listExt.fill('''And install by copying the provided unicode dll into your NSIS/Plugins/x86-unicode directory.'''),
+        list.fill('''py2exe: Used to create the Standalone EXE.'''),
+        list.fill('''Modified zipextimporter.py:  Copy the modified version from this directory into your Python's Lib\\site-packages directory.  This is needed for custom zipextimporter functionality that the Wrye Bash Standalone uses.'''),
         ]
-    lines = [x for sublist in lines for x in sublist]
     print '\n'.join(lines)
 
 
