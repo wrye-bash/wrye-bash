@@ -27,7 +27,7 @@
 	figcaption {font-style:italic; margin-bottom:2em;}
  .missing {background:red; color:white; border:0.25em solid black;}
 	abbr {cursor:help;}
-	
+
 	h2 {margin-left:0; padding:0; background:inherit; font-size:1.1em; margin-top:3em;}
  li {margin-bottom:0.2em;}
 </style>
@@ -36,12 +36,37 @@
 
 <p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
 
+<h2>304.4 Move to git  [2014/07/06] [Various community members]</h2>
+<ul>
+<li>Moved to GitHub from Sourceforge: <a href="https://github.com/wrye-bash">https://github.com/wrye-bash</a>. [Lojack, Utumno, Wrinklyninja]
+<li>Make splash screen optional [lojack5]</li>
+<li>Installers.bat is not backed up when prompting user to backup settings on version change [lojack5]</li>
+<li>Mods Tab: Load -> All throws an exception [lojack5]</li>
+<li>sort order reverses [lojack5]</li>
+<li>shellMakeDirs may fall into an infinite loop [lojack5]</li>
+<li>Fixed error when copying files from an archive in BAIN. [bluesky404]
+<li>Fixed load order changes outside of Bash not being detected. [wrinklyninja]
+<li>Fixed unnecessary timestamp changes when setting load order. [wrinklyninja]
+<li>Updated BOSS API to v3.0.0. [wrinklyninja]
+<li>Implemented support for launching BOSS v3.0.0. [wrinklyninja]
+<li>Documentation updates. [wrinklyninja]
+<li>Streamlined installer's handling of requirements. [wrinklyninja]
+<li>Optimize PNGs [Metallicow]</li>
+<li>Remove the auto-updater [lojack5]</li>
+<li>Skip .bsl files for BAIN [lojack5]</li>
+<li>BOSSv3 support, installer and readme updates [WrinklyNinja]</li>
+<li>Installer Improvements [WrinklyNinja]</li>
+<li>Installer MSVC 2013 Redist Support [WrinklyNinja]</li>
+<li>Missing context menu items [WrinklyNinja]</li>
+<li>Show BSA Conflicts undocumented [WrinklyNinja]</li>
+</ul>
+
 <h2>304.3 Beta [2013/11/21] [Various community members]</h2>
 <ul>
-<li>275 Wrye Bash crashes on startup if there are no .esp files in the Data directory. [Daidalos]</li>
-<li>274	Bash throws an error when deleting esm files in the mods tab. [Daidalos]</li>
-<li>273	Order of masters on a file does not match mod list view	Current. [Daidalos]</li>
-<li>272	Bash throws an error when renaming files using the mods tab. [Daidalos]</li>
+<li>Fix for Bug #275: Wrye Bash crashes on startup if there are no .esp files in the Data directory. [Daidalos]</li>
+<li>Fix for Bug #274: Bash throws an error when deleting esm files in the mods tab. [Daidalos]</li>
+<li>Fix for Bug #273: Order of masters on a file does not match mod list view	Current. [Daidalos]</li>
+<li>Fix for Bug #272: Bash throws an error when renaming files using the mods tab. [Daidalos]</li>
 </ul>
 
 <h2>304.2 Beta [2013/10/5] [Various community members]</h2>
@@ -74,7 +99,7 @@
 <li>Changes to the restart button tool-tip to make it translatable. [d4id4los]</li>
 <li>Make Headlines in getModList translatable. [d4id4los]</li>
 <li>Fix renaming/deleting mod files outside of Wrye Bash causing load order issues. [d4id4los]</li>
-<li>Fix for an exception in bain wizzards, introduced in rev. 2966 [d4id4los]</li>
+<li>Fix for an exception in bain wizards, introduced in rev. 2966 [d4id4los]</li>
 <li>Fix for Bug #246 'Better naming scheme for backups' [Mr_and_Mrs_D]</li>
 <li>Fix for Bug #247 'Do not report 0 KB for non empty files, plugins, BCFs etc' [Mr_and_Mrs_D]</li>
 <li>Fix for Bash not installing more than one mod at a time for Oblivion. [d4id4los]</li>
@@ -90,7 +115,7 @@
 <ul>
 <li>[Oblivion] Fixed issues with CBash saying that files don't exist during the patch building process. [Lojack]</li>
 <li>Uninstalling a mod in BAIN should no longer throw an error that the ESP/ESM could not be found if it was removed. [Lojack]</li>
-<li>Encoding format for INI Tweak files has been fixed. [Lokack]</li>
+<li>Encoding format for INI Tweak files has been fixed. [Lojack]</li>
 <li>Typo corrections, unused variables, and other minor issues cleaned up. [Various]</li>
 <li>The bash_default.ini file has been cleaned up to remove unused entries and tidy up documentation. [Lojack]</li>
 <li>BAIN should now properly inform the user if an archive being installed is corrupted. [Lojack]</li>
@@ -280,7 +305,7 @@
 			<li>Races have All Hairs
 			<li>Sexless Hairs
 		</ul>
-		<li>Globals Patcher has been merge into Tweak Settings.   
+		<li>Globals Patcher has been merge into Tweak Settings.
 		<li>Python Mode Only: new but deleted records won't affect mergeability.
 		<li>In CBash mode instead of merging deleted REFR, ACRE, ACHR records they will be merged as and undeleted (disabled and moved -1000 units on the z axis). (doesn't affect Python mode since Python mode doesn't merge cells)
 		<li>Tweak Settings Patcher:
@@ -304,7 +329,7 @@
  <li>Fixed load order not being resorted when it requires a refresh.
  <li>Fixed scanning for UDRs failing on report generation when running for Skyrim.
 </ul>
- 
+
 <h2>295.5 [2012/01/17] [Lojack,PacificMorrowind]</h2>
 <ul>
 	<li>Bugfix release:
@@ -515,7 +540,7 @@
 	<li>New command line argument '-g' or '--game'.  Used to specify which game Wrye Bash should manage.  For example, using:
 <ul>
 	  <li><code><span style="color:brown;">"Wrye Bash.exe"</span> -<i>g</i> <i>oblivion</i></code>
-	  <li>Will tell Wrye Bash to manage your Oblivion installation.  
+	  <li>Will tell Wrye Bash to manage your Oblivion installation.
 </ul>
 </ul>
 
@@ -575,7 +600,7 @@
 	  <li>Installer->open readme command added.
 	  <li>Modified <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command so that it doesn't remove DLC content or Wrye Bash-related files
 	  <li>It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
-	  <li>Don't reset subpackage selections if a wizard is started but canceled
+	  <li>Don't reset subpackage selections if a wizard is started but cancelled
 	  <li>Speed improvement; readonly status for files in the data folder only changed if/when needed. (and removed bClearRO option from ini since it'll only occur on individual files/subfolder and only if needed now)
 </ul>
 	<li>Unicode Mode:
@@ -588,7 +613,7 @@
 	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsLoadAll">Load All</a> will activate all mods (up to 255 of them, at least)
 	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateBOSSReport">Create BOSS Report</a> will automatically gather the information you need to report a mod to the BOSS thread.
 	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCopyModInfo">Copy Mod Info</a> will automatically gather the displayed info on a mod.
-	  <li>Ghost will ghost just the selected mod(s) 
+	  <li>Ghost will ghost just the selected mod(s)
 	  <li><a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportPatchConfig">Export Patch Config...</a> exports the selected patch's configuration to a file.
 	  <li>File-><a href="Wrye%20Bash%20Advanced%20Readme.html#modsCreateDummyMasters">Create Dummy Masters</a> will generate empty plugins for each missing master a plugin has.  This is useful for loading a Filter patch in TES4Edit.
 	  <li>File-><a href="Wrye%20Bash%20Advanced%20Readme.html#modsNewBashedPatch">New Bashed Patch</a> will generate a new, empty bashed patch with the next name in the sequence (Bashed Patch, 1.esp, etc.)
@@ -624,9 +649,9 @@
 	<li>Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#launchers-custom">Custom launcher buttons</a> now support launching of msi created shortcuts.
 	<li>Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
-	<li>CBash no longer causes random occurances of googly eyes
+	<li>CBash no longer causes random occurrences of googly eyes
 </ul>
-	
+
 <h2>294.2 [2011/08/01] [Lojack,myk002,PacificMorrowind]</h2>
 <ul>
 <li>Small fix to the Python race patcher for dremora records
@@ -647,7 +672,7 @@
 <ul>
   <li>Added bash.ini options to play a sound on successful completion or fail. (based on code contributed by Metallicow)
   <li>All multitweakers with choices now autoselect the default value if not user selected.
-  <li>Race Patcher: 
+  <li>Race Patcher:
 <ul>
     <li>Added Npc.HairOnly, Npc.EyesOnly tags
     <li>Enabled Race Patcher to work on Dremora race and Dremora NPCs (only if the NPC name includes one of the following: dremora, akaos, lathulet, orthe, or ranyu).
@@ -689,7 +714,7 @@
 <ul>
   <li>List Esp/ms command added to esp/m pane r-click menu.
   <li>Open at Google regex improved so better automatic search terms.
-  <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainUninstallAll">Uninstall All</a> command. 
+  <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainUninstallAll">Uninstall All</a> command.
   <li>New <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command
   <li>Fixed markers disappearing on edit
   <li>Fixed a processing error when subpackages have ampersands in their names
@@ -874,7 +899,7 @@
   <li>New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   <li>Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
   <li>new ini option <b>bClearRO</b> to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
-  <li>new ini option <b>sOblivionTexturesBSAName</b> incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
+  <li>new ini option <b>sOblivionTexturesBSAName</b> in case you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
 </ul>
 <li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves">Saves Tab</a>:
 <ul>
@@ -993,7 +1018,7 @@
   <li>Esp/ms can now be renamed via the Esp/m Filter box (just right click them).
   <li>Changed the rename installer dialog for in place renaming.
   <li>Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
-  <li>Widgets on installers tab made resizable (contributed by myk002).
+  <li>Widgets on installers tab made resizeable (contributed by myk002).
   <li>Added a sub-packages r-click menu:
 <ul>
     <li>added Select All Sub-packages command.

@@ -17,7 +17,8 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  https://github.com/wrye-bash
 #
 # =============================================================================
 

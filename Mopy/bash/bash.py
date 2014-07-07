@@ -17,7 +17,8 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  https://github.com/wrye-bash
 #
 # =============================================================================
 
@@ -192,42 +193,34 @@ def exit():
         from basher import appRestart
         from basher import uacRestart
         if appRestart:
-            if isinstance(appRestart,set):
-                # Special case for applying updates
-                special = True
-                sys.argv = list(appRestart)
-                exePath = GPath(u'')
-            else:
-                # Normal restart
-                special = False
-                if not hasattr(sys,'frozen'):
-                    exePath = GPath(sys.executable)
-                    sys.argv = [exePath.stail] + sys.argv
-                if u'--restarting' not in sys.argv:
-                    sys.argv += [u'--restarting']
-                #--Assume if we're restarting that they don't want to be
-                #  prompted again about UAC
-                if u'--no-uac' not in sys.argv:
-                    sys.argv += [u'--no-uac']
-                def updateArgv(args):
-                    if isinstance(args,(list,tuple)):
-                        if len(args) > 0 and isinstance(args[0],(list,tuple)):
-                            for arg in args:
-                                updateArgv(arg)
+            if not hasattr(sys,'frozen'):
+                exePath = GPath(sys.executable)
+                sys.argv = [exePath.stail] + sys.argv
+            if u'--restarting' not in sys.argv:
+                sys.argv += [u'--restarting']
+            #--Assume if we're restarting that they don't want to be
+            #  prompted again about UAC
+            if u'--no-uac' not in sys.argv:
+                sys.argv += [u'--no-uac']
+            def updateArgv(args):
+                if isinstance(args,(list,tuple)):
+                    if len(args) > 0 and isinstance(args[0],(list,tuple)):
+                        for arg in args:
+                            updateArgv(arg)
+                    else:
+                        found = 0
+                        for i in xrange(len(sys.argv)):
+                            if not found and sys.argv[i] == args[0]:
+                                found = 1
+                            elif found:
+                                if found < len(args):
+                                    sys.argv[i] = args[found]
+                                    found += 1
+                                else:
+                                    break
                         else:
-                            found = 0
-                            for i in xrange(len(sys.argv)):
-                                if not found and sys.argv[i] == args[0]:
-                                    found = 1
-                                elif found:
-                                    if found < len(args):
-                                        sys.argv[i] = args[found]
-                                        found += 1
-                                    else:
-                                        break
-                            else:
-                                sys.argv.extend(args)
-                updateArgv(appRestart)
+                            sys.argv.extend(args)
+            updateArgv(appRestart)
             try:
                 if uacRestart:
                     if not hasattr(sys,'frozen'):
@@ -241,9 +234,7 @@ def exit():
                     return
                 else:
                     import subprocess
-                    if special:
-                        subprocess.Popen(sys.argv,close_fds=True,startupinfo=bolt.startupinfo)
-                    elif hasattr(sys,'frozen'):
+                    if hasattr(sys,'frozen'):
                         subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
                     else:
                         subprocess.Popen(sys.argv, executable=exePath.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
@@ -257,7 +248,7 @@ def exit():
 def dump_environment():
     import locale
     print u"Wrye Bash starting"
-    print u"Using Wrye Bash Version 304.4 Beta"
+    print u"Using Wrye Bash Version 304.4"
     print u"Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
     try:
         import wx
@@ -599,7 +590,7 @@ def main():
                     readme = u'file:///'+readme.s.replace(u'\\',u'/').replace(u' ',u'%20')
                 else:
                     # Fallback to SVN repository
-                    readme = u"http://oblivionworks.svn.sourceforge.net/viewvc/oblivionworks/Programs/Wrye%20Bash/Mopy/Docs/Wrye%20Bash%20General%20Readme.html"
+                    readme = u"http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html"
                 readme += '#trouble-permissions'
                 uacRestart = balt.vistaDialog(None,
                     message=message,

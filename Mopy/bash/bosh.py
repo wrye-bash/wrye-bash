@@ -17,7 +17,8 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  https://github.com/wrye-bash
 #
 # =============================================================================
 
@@ -5776,6 +5777,11 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
+        #--Ensure plugins that cannot be deselected stay selected
+        for path in map(GPath, bush.game.nonDeactivatableFiles):
+            if path not in modNames:
+                modNames.append(path)
+        #--Deselect/select plugins
         missing,extra = [],[]
         self.plugins.selected = list(modNames)
         for modName in modNames:
@@ -6562,12 +6568,7 @@ class ConfigHelpers:
         deprint(u'Using BOSS API version:', bapi.version)
 
         global boss
-        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
-            boss = bapi.BossDb(dirs['app'].s,u'Nehrim')
-        else:
-            boss = bapi.BossDb(dirs['app'].s,bush.game.name)
-        bapi.RegisterCallback(bapi.BOSS_API_WARN_LO_MISMATCH,
-                              ConfigHelpers.libloLOMismatchCallback)
+        boss = bapi.BossDb(dirs['app'].s,bush.game.name)
                               
         global lo
         lo = liblo.LibloHandle(dirs['app'].s,bush.game.name)
@@ -6577,7 +6578,11 @@ class ConfigHelpers:
                               ConfigHelpers.libloLOMismatchCallback)
 
         self.bossVersion = dirs['boss'].join(u'BOSS.exe').version
-        if self.bossVersion >= (2,0,0,0):
+        if self.bossVersion >= (3,0,0,0):
+            # BOSS 3+ stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
+            self.bossMasterPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'masterlist.yaml')
+            self.bossUserPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'userlist.yaml')
+        elif self.bossVersion >= (2,0,0,0):
             # BOSS 2.0+ stores the masterlist/userlist in a subdirectory
             self.bossMasterPath = dirs['boss'].join(bush.game.name,u'masterlist.txt')
             self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
@@ -6611,23 +6616,27 @@ class ConfigHelpers:
                 (userpath.exists() and userpath.mtime != utime)):
                 self.tagCache = {}
                 try:
-                    boss.Load(path.s,userpath.s)
-                    self.bossMasterTime = path.mtime
-                    self.bossUserTime = userpath.mtime
+                    if userpath.exists():
+                        boss.Load(path.s,userpath.s)
+                        self.bossMasterTime = path.mtime
+                        self.bossUserTime = userpath.mtime
+                    else:
+                        boss.Load(path.s)
+                        self.bossMasterTime = path.mtime
                     return
                 except bapi.BossError:
                     deprint(u'An error occured while using the BOSS API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
-        taglist = dirs['defaultPatches'].join(u'taglist.txt')
+        taglist = dirs['defaultPatches'].join(u'taglist.yaml')
         if not taglist.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.txt could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             boss.Load(taglist.s)
         except bapi.BossError:
-            deprint(u'An error occured while parsing taglist.txt with the BOSS API.', traceback=True)
-            raise bolt.BoltError(u'An error occured while parsing taglist.txt with the BOSS API.')
+            deprint(u'An error occured while parsing taglist.yaml with the BOSS API.', traceback=True)
+            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the BOSS API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
@@ -6649,7 +6658,7 @@ class ConfigHelpers:
 
     def getDirtyMessage(self,modName):
         message,clean = boss.GetDirtyMessage(modName)
-        cleanIt = clean == bapi.BOSS_API_CLEAN_YES
+        cleanIt = clean == bapi.boss_needs_cleaning_yes
         return (cleanIt,message)
 
     #--Mod Checker ------------------------------------------------------------
@@ -7270,7 +7279,7 @@ class Installer(object):
     reReadMe = re.compile(ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
     skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
                     u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.fomod',
-                    u'.tb2',u'.lzma',
+                    u'.tb2',u'.lzma',u'.bsl',
                     ))
     skipExts.update(set(readExts))
     docExts = set((u'.txt',u'.rtf',u'.htm',u'.html',u'.doc',u'.docx',u'.odt',
@@ -30087,29 +30096,41 @@ def getLocalAppDataPath(bashIni, path):
 def getOblivionModsPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sOblivionMods'):
         path = GPath(bashIni.get(u'General',u'sOblivionMods').strip())
+        src = [u'[General]', u'sOblivionMods']
     else:
         path = GPath(u'..\\%s Mods' % bush.game.name)
+        src = u'Relative Path'
     if not path.isabs(): path = dirs['app'].join(path)
-    return path
+    return path, src
 
 def getBainDataPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sInstallersData'):
         path = GPath(bashIni.get(u'General',u'sInstallersData').strip())
+        src = [u'[General]', u'sInstallersData']
         if not path.isabs(): path = dirs['app'].join(path)
     else:
         path = dirs['installers'].join(u'Bash')
-    return path
+        src = u'Relative Path'
+    return path, src
 
 def getBashModDataPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sBashModData'):
         path = GPath(bashIni.get(u'General',u'sBashModData').strip())
         if not path.isabs(): path = dirs['app'].join(path)
+        src = [u'[General]', u'sBashModData']
     else:
-        path = getOblivionModsPath(bashIni).join(u'Bash Mod Data')
-    return path
+        path, src = getOblivionModsPath(bashIni)
+        path = path.join(u'Bash Mod Data')
+    return path, src
 
-def getLegacyPath(newPath, oldPath):
+def getLegacyPath(newPath, oldPath, srcNew=None, srcOld=None):
     return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
+
+def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
+    if newPath.isdir() or not oldPath.isdir():
+        return newPath, newSrc
+    else:
+        return oldPath, oldSrc
 
 def testUAC(oblivionPath):
     print 'testing UAC'
@@ -30188,14 +30209,16 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         pass
 
     #--Mod Data, Installers
-    oblivionMods = getOblivionModsPath(bashIni)
-    dirs['modsBash'] = getBashModDataPath(bashIni)
-    dirs['modsBash'] = getLegacyPath(dirs['modsBash'],dirs['app'].join(u'Data',u'Bash'))
+    oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni)
+    dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni)
+    dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
+        dirs['modsBash'], dirs['app'].join(u'Data',u'Bash'),
+        modsBashSrc, u'Relative Path')
 
     dirs['installers'] = oblivionMods.join(u'Bash Installers')
     dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join(u'Installers'))
 
-    dirs['bainData'] = getBainDataPath(bashIni)
+    dirs['bainData'], bainDataSrc = getBainDataPath(bashIni)
 
     dirs['bsaCache'] = dirs['bainData'].join(u'BSA Cache')
 
@@ -30221,7 +30244,57 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
-    balt.shellMakeDirs([dirs[key] for key in ('modsBash','installers','converters','dupeBCFs','corruptBCFs','bainData','bsaCache')])
+    try:
+        keys = ('modsBash', 'installers', 'converters', 'dupeBCFs',
+                'corruptBCFs', 'bainData', 'bsaCache')
+        balt.shellMakeDirs([dirs[key] for key in keys])
+    except BoltError as e:
+        # BoltError is thrown by shellMakeDirs if any of the directories
+        # cannot be created due to residing on a non-existing drive.
+        # Find which keys are causing the errors
+        badKeys = set()     # List of dirs[key] items that are invalid
+        # First, determine which dirs[key] items are causing it
+        for key in keys:
+            if dirs[key] in e.message:
+                badKeys.add(key)
+        # Now, work back from those to determine which setting created those
+        msg = (_(u'Error creating required Wrye Bash directories.') + u'  ' +
+               _(u'Please check the settings for the following paths in your bash.ini, the drive does not exist')
+               + u':\n\n')
+        relativePathError = []
+        if 'modsBash' in badKeys:
+            if isinstance(modsBashSrc, list):
+                msg += (u' '.join(modsBashSrc) + u'\n    '
+                        + dirs['modsBash'].s + u'\n')
+            else:
+                relativePathError.append(dirs['modsBash'])
+        if {'installers', 'converters', 'dupeBCFs', 'corruptBCFs'} & badKeys:
+            # All derived from oblivionMods -> getOblivionModsPath
+            if isinstance(oblivionModsSrc, list):
+                msg += (u' '.join(oblivionModsSrc) + u'\n    '
+                        + oblivionMods.s + u'\n')
+            else:
+                relativePathError.append(oblivionMods)
+        if {'bainData', 'bsaCache'} & badKeys:
+            # Both derived from 'bainData' -> getBainDataPath
+            # Sometimes however, getBainDataPath falls back to oblivionMods,
+            # So check to be sure we haven't already added a message about that
+            if bainDataSrc != oblivionModsSrc:
+                if isinstance(bainDataSrc, list):
+                    msg += (u' '.join(bainDataSrc) + u'\n    '
+                            + dirs['bainData'].s + u'\n')
+                else:
+                    relativePathError.append(dirs['bainData'])
+        if relativePathError:
+            msg += (u'\n' +
+                    _(u'A path error was the result of relative paths.')
+                    + u'  ' +
+                    _(u'The following paths are causing the errors, however usually a relative path should be fine.')
+                    + u'  ' +
+                    _(u'Check your setup to see if you are using symbolic links or NTFS Junctions')
+                    + u':\n\n')
+            msg += u'\n'.join(relativePathError)
+        raise BoltError(msg)
 
     # Setup BOSS API
     global configHelpers
@@ -30359,6 +30432,7 @@ def initDefaultSettings():
     inisettings['AutoSizeListColumns'] = 0
     inisettings['SoundSuccess'] = GPath(u'')
     inisettings['SoundError'] = GPath(u'')
+    inisettings['EnableSplashScreen'] = True
 
 def initOptions(bashIni):
     initDefaultTools()

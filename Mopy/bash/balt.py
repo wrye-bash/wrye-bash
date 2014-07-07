@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #
 # GPL License and Copyright Notice ============================================
-#  This file is part of Wrye Bolt.
+#  This file is part of Wrye Bash.
 #
-#  Wrye Bolt is free software; you can redistribute it and/or
+#  Wrye Bash is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
@@ -14,10 +14,11 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bolt; if not, write to the Free Software Foundation,
+#  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bolt copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  https://github.com/wrye-bash
 #
 # =============================================================================
 
@@ -987,6 +988,14 @@ def shellMakeDirs(dirName,parent=None):
         return
     elif not isinstance(dirName,(list,tuple,set)):
         dirName = [dirName]
+    #--Skip dirs that already exist
+    dirName = [x for x in dirName if not x.exists()]
+    #--Check for dirs that are impossible to create (the drive they are
+    #  supposed to be on doesn't exist
+    errorPaths = [dir for dir in dirName if not dir.drive().exists()]
+    if errorPaths:
+        raise BoltError(errorPaths)
+    #--Checks complete, start working
     tempDirs = []
     tempDirsAppend = tempDirs.append
     fromDirs = []
@@ -995,22 +1004,33 @@ def shellMakeDirs(dirName,parent=None):
     toDirsAppend = toDirs.append
     try:
         for dir in dirName:
-            tempDir = bolt.Path.tempDir(u'WryeBash_')
-            tempDirsAppend(tempDir)
-            toMake = []
-            toMakeAppend = toMake.append
-            while not dir.exists():
-                toMakeAppend(dir.tail)
-                dir = dir.head
-            if not toMake:
-                continue
-            toMake.reverse()
-            base = tempDir.join(toMake[0])
-            toDir = dir.join(toMake[0])
-            tempDir.join(*toMake).makedirs()
-            fromDirsAppend(base)
-            toDirsAppend(toDir)
-        shellMove(fromDirs,toDirs,parent,False,False,False)
+            # Attempt creating the directory via normal methods,
+            # only, fall back to shellMove if UAC or something else
+            # stopped it
+            try:
+                dir.makedirs()
+            except:
+                # Failed, try the UAC workaround
+                tempDir = bolt.Path.tempDir(u'WryeBash_')
+                tempDirsAppend(tempDir)
+                toMake = []
+                toMakeAppend = toMake.append
+                while not dir.exists() and dir != dir.head:
+                    # Need to test agains dir == dir.head to prevent
+                    # infinite recursion if the final bit doesn't exist
+                    toMakeAppend(dir.tail)
+                    dir = dir.head
+                if not toMake:
+                    continue
+                toMake.reverse()
+                base = tempDir.join(toMake[0])
+                toDir = dir.join(toMake[0])
+                tempDir.join(*toMake).makedirs()
+                fromDirsAppend(base)
+                toDirsAppend(toDir)
+        if fromDirs:
+            # fromDirs will only get filled if dir.makedirs() failed
+            shellMove(fromDirs,toDirs,parent,False,False,False)
     finally:
         for tempDir in tempDirs:
             tempDir.rmtree(safety=tempDir.stail)

@@ -42,6 +42,9 @@
 <h2 style="margin-top:0;margin-bottom:1em;">Contents</h2>
 <ol style="float:left;margin:0;margin-right:4em;">
     <li><a href="#intro">Introduction</a>
+	<ol>
+        <li><a href="#intro-title">Title Bar Info</a>
+	</ol>
     <li><a href="#install">Advanced Installation</a>
     <ol>
         <li><a href="#install-alternate">Alternative Install Locations</a>
@@ -136,6 +139,19 @@
 <p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and many area geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on how Wrye Bash functions. It assumes the reader has previously read the General Readme.
 <p>Note that the <a href="#people">People</a> and <a href="#pm">PM Archive</a> tabs are hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
 
+<h3 id="intro-title">Title Bar Info</h3>
+<p>As a quick note that doesn't really belong anywhere else, Wrye Bash's title bar contains some useful information. The title is formatted as:
+<p><code>Wrye Bash [Bash Version] [Install Type] [Game Modifier], Cbash v[CBash Version]: [Save Profile] [Version Indicator]</code>
+<p>The square bracketed information is:
+<ul>
+	<li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
+	<li><code>[Install Type]</code>: If the Python version is running, this will read <q>Python</q>. If the Standalone version is running, it will read <q>(Standalone)</q>. See the <a href="#install">Installation</a> section for more information.
+	<li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>, this will display <q>for Oblivion</q> or <q>for Skyrim</q> depending on the game it is being run for.
+	<li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
+	<li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profile">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
+	<li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
+</ul>
+
 <h2 id="install">Advanced Installation</h2>
 <h3 id="install-alternate">Alternative Install Locations</h3>
 <p>Wrye Bash can be installed in any folder, but if it is installed outside of the game's folder, then the OblivionPath bash.ini option must be adjusted.
@@ -151,7 +167,7 @@
 <h3 id="install-components">Python Components</h3>
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.
 <ul>
-    <li><a href="http://www.python.org/ftp/python/2.7.3/python-2.7.3.msi">Python 2.7.3</a>
+    <li><a href="http://www.python.org/ftp/python/2.7.6/python-2.7.6.msi">Python 2.7.6</a>
     <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 unicode for Python 2.7</a>
     <li><a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20218/pywin32-218.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
     <li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, only required for users of the PM Archives tab. If Comtypes is not installed, the PM Archives tab will not be visible.
@@ -270,11 +286,12 @@
         <tr><td colspan="2" id="bainAutoAnnealInstallWizards">Auto-Anneal/Install Wizards<td>Toggles whether or not to automatically install/anneal a package when finished with its wizard.
         <tr><td colspan="2" id="bainAutoRefreshProjects">Auto-Refresh Projects<td>Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
-        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td class="missing">This item has not yet been documented.
+        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td>If checked, archives that contain Bain Conversion Files will have them automatically applied when BAIN refreshes.
         <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
+        <tr><td colspan="2">Show BSA Conflicts<td>If checked, the contents of BSAs are compared and any conflicting resources found are displayed in the conflicts list.
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
         <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td><i>Oblivion only.</i> If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed.
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
@@ -285,7 +302,7 @@
         <tr><td colspan="2" id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
         <tr><td colspan="2" id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
         <tr><td colspan="2" id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td class="missing"><i>Skyrim only.</i> This item has not yet been documented.
+        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 <table id="bainPackageCommands">
     <thead>
@@ -443,7 +460,7 @@
         <tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
         <tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
         <tr><td colspan="2">Group<td>Set a group for the selected plugin(s). This group is not an <a href="#mods-exclusion">Exlusion Group</a>, but is instead a leftover from a feature known as <abbr title="Bash Auto Load Ordering">BALO</abbr> that has been disabled, as it was superceded by BOSS. Some references to these groups still remain, but they provide no functionality other than to place hidden plugins in group folders provided those folders already exist.
-        <tr><td colspan="2">Rating<td class="missing">This item has not yet been documented.
+        <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
         <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
         <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
         <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
@@ -461,16 +478,16 @@
         <tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><i>Oblivion only.</i> Rebuild the selected Bashed Patch using the CBash patcher.
         <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
         <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
-        <tr><td rowspan="14">Export<td>Cell Block Info...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+        <tr><td rowspan="14">Export<td>Cell Block Info...<td><i>Oblivion only.</i> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
         <tr><td id="modsExportEditorIDs">Editor Ids...<td><b>For advanced mod authors only.</b> Exports the Editor IDs of the records in the selected plugin to a CSV file.
         <tr><td>Groups...<td>Exports the selected plugin's groups to a CSV file.
         <tr><td id="modsExportFactions">Factions...<td><b>For advanced mod authors only.</b> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
         <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
         <tr><td id="modsExportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
-        <tr><td>Map Markers...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+        <tr><td>Map Markers...<td><i>Oblivion only.</i> Exports information about the map marker data in the plugin.
         <tr><td>Prices...<td>Exports the prices of objects in the selected plugin to a CSV file.
         <tr><td id="modsExportRelations">Relations...<td><b>For advanced mod authors only.</b> Exports the faction relationships in the selected plugin to a CSV file. This does not export race relationships. The CSV file can also be used in the Bashed Patch's Import Relations option.
-        <tr><td id="modsExportIngredients">Ingredients...<td class="missing">This item has not yet been documented.
+        <tr><td id="modsExportIngredients">Ingredients...<td>Exports alchemy ingredient record data from the selected plugin to a CSV file.
         <tr><td>Scripts...<td>Exports the scripts in the selected plugin to a series of text files. The scripts may then be edited in the text files and re-imported. <b>Warning:</b> Do not change the first three lines of each text file exported when editing unless you know what you're doing.
         <tr><td id="modsExportSigilStones">Sigil Stones...<td>Exports the stats of sigil stones from the selected plugin to a CSV file.
         <tr><td id="modsExportSpellStats">Spells...<td>Exports spell stats in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option. There are two modes of export, Basic and Detailed. The spell stats exported in Basic mode are as follows.
@@ -510,10 +527,10 @@
                 <li>The next three columns are the levelling info.
                 <li>The last four columns are the original NPC levels from the game's master file. If the NPCs are mod-added, these will be blank. These columns are ignored on import.
             </ul>
-        <tr><td>Map Markers...<td class="missing"><i>Oblivion only.</i> This item has not yet been documented.
+        <tr><td>Map Markers...<td><i>Oblivion only.</i> Imports map marker data from a CSV file into the selected plugin.
         <tr><td>Prices...<td>Imports the prices of objects from a CSV file into the selected plugin.
         <tr><td id="modsImportRelations">Relations...<td><b>For advanced mod authors only.</b> Imports faction relationships from a CSV file into the selected plugin.
-        <tr><td id="modsImportIngredients">Ingredients...<td class="missing">This item has not yet been documented.
+        <tr><td id="modsImportIngredients">Ingredients...<td>Imports alchemy ingredient record data from a CSV file into the selected plugin.
         <tr><td>Scripts...<td>Imports scripts from a series of text files into the selected plugin. <b>Note:</b> You must recompile any altered or new scripts in the Construction Set.
         <tr><td id="modsImportSigilStones">Sigil Stones...<td>Imports the stats of sigil stones from a CSV file into the selected plugin.
         <tr><td id="modsImportSpellStats">Spells...<td>Imports spell stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their spell stats change, no records will be added. The spell stats supported are those exported by <a href="#modsExportSpellStats">Export Spell Stats...</a>, and importing uses the same Basic and Detailed mode distinctions.
@@ -559,7 +576,7 @@
 <h3 id="patch-tags">Bash Tags</h3>
 <p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from three sources:
 <ul>
-    <li>BOSS's <code>masterlist.txt</code> and <code>userlist.txt</code> files. If BOSS is installed, then Wrye Bash will apply its Bash Tag suggestions. You do not need to use BOSS to benefit from this, it just needs to be installed. REPLACE lines in the userlist will replace Bash Tags suggested in the masterlist, but will not affect Bash Tags specified in plugin description fields.
+    <li>BOSS's masterlist and userlist files. If BOSS is installed, then Wrye Bash will apply its Bash Tag suggestions. You do not need to use BOSS to benefit from this, it just needs to be installed. REPLACE lines in the userlist will replace Bash Tags suggested in the masterlist, but will not affect Bash Tags specified in plugin description fields.
     <li>The <code>Bash Patches\Leveled Lists.csv</code> file. This file contains a small list that is useful if BOSS is not installed.
     <li>The <code>Bash Patches\taglist.txt</code> file. This is a stripped-down version of the BOSS masterlist as it was when the version of Wrye Bash installed was released.
 </ul>
@@ -1203,19 +1220,12 @@
         <tr><th colspan="3">Default CSV Files
         <tr><th colspan="2">CSV File<th>Description
     <tbody>
-        <tr><td rowspan="2">Replace Form IDs<td>P1DCandles_Formids<td class="missing">This item has not yet been documented.
-        <tr><td>TI to Cobl_Formids<td class="missing">This item has not yet been documented.
-        <tr><td rowspan="15">Import Names<td>Crowded Cities 15_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Crowded Cities 15_Alternate_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Crowded Cities 30_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Crowded Cities 30_Alternate_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Crowded Roads Revamped_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Crowded Roads Revisited_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Crowded Roads Revisited_Alternate_Names<td class="missing">This item has not yet been documented.
-        <tr><td>Guard_Names<td>Based on <a href="http://oblivion.nexusmods.com/mods/2326">Flak's Complete Names Project</a>, this CSV file gives unique names to guards, legion soldiers, couriers and a few other NPCs and creatures with generic names. It covers both vanilla Oblivion and Oscuro's Oblivion Overhaul.
+        <tr><td rowspan="2">Replace Form IDs<td>P1DCandles_Formids<td>Replaces the Form IDs of various candles to reference equivalents supplied by P1D's Candles For Kleptos.
+        <tr><td>TI to Cobl_Formids<td>Replaces ingredients added by Tamrielic Ingredients with equivalents added by Cobl.
+        <tr><td rowspan="5">Import Names<td>Guard_Names<td>Based on <a href="http://oblivion.nexusmods.com/mods/2326">Flak's Complete Names Project</a>, this CSV file gives unique names to guards, legion soldiers, couriers and a few other NPCs and creatures with generic names. It covers both vanilla Oblivion and Oscuro's Oblivion Overhaul.
         <tr><td>OOO_Potion_Names<td>Renames the alcoholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
-        <tr><td>PTRoamingNPCs_Names<td class="missing">This item has not yet been documented.
-        <tr><td id="patchRandomNPCNames">Random NPC Names<td>Gives unique names to generically named NPCs and renames some others from the following mods:
+        <tr><td>Random_NPC_Alternate_Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> above, but using different names.
+        <tr><td id="patchRandomNPCNames">Random_NPC_Names<td>Gives unique names to generically named NPCs and renames some others from the following mods:
             <ul>
                 <li>Crowded Roads Revamped by Spotty42
                 <li>Crowded Roads Revisited by Smooth
@@ -1223,13 +1233,10 @@
                 <li>Crowded Cities 15/30 by Gratis_monsta
                 <li>PT_RoamingNPCs by Gratis_monsta
             </ul>
-        <tr><td>Random NPC Alternate Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> above, but using different names.
-        <tr><td>Rational Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shiveriing Isles, Oscuro's Oblivion Overhaul and a few more mods.
-        <tr><td>ShiveringIsleTravellers_Names<td class="missing">This item has not yet been documented.
-        <tr><td>TamrielTravellers_Names<td class="missing">This item has not yet been documented.
-        <tr><td rowspan="2">Cobl Exhaustion<td>Assorted_Exhaust<td class="missing">This item has not yet been documented.
-        <tr><td>Kmacg94_Exhaust<td class="missing">This item has not yet been documented.
-        <tr><td>Morph Factions<td>Bash_MFact<td class="missing">This item has not yet been documented.
+        <tr><td>Rational_Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shiveriing Isles, Oscuro's Oblivion Overhaul and a few more mods.
+        <tr><td rowspan="2">Cobl Exhaustion<td>Assorted_Exhaust<td>Defines power exhaustion levels for greater powers from Oblivion, the Orrery DLC and Cobl.
+        <tr><td>Kmacg94_Exhaust<td>Defines power exhaustion levels for greater powers from Race Balancing Project, Oblivion WarCry, Oscuro's Oblivion Overhaul and several other mods.
+        <tr><td>Morph Factions<td>Bash_MFact<td>Used with Wrye Morph to provide faction morphing.
 </table>
 
 
@@ -1539,7 +1546,6 @@
 <img src="../bash/images/readme/settings-4-language_highlighted.png" alt="Colors Dialog"/>
 <img src="../bash/images/readme/settings-5-plugin_encoding_highlighted.png" alt="Colors Dialog"/>
 <img src="../bash/images/readme/settings-6-game_highlighted.png" alt="Colors Dialog"/>
-<img src="../bash/images/readme/settings-7-check_for_updates_highlighted.png" alt="Colors Dialog"/>
 <figcaption style="padding-top:400px;">Wrye Bash's Settings menu.</figcaption>
 </figure>
 <p>The Settings menu is where Wrye Bash's global settings may be accessed. The Settings menu can be opened by clicking on the <a href="Wrye%20Bash%20General%20Readme.html#launchersSettingsMenu">Settings button</a> in the status bar. The Settings menu's items are detailed in the table below.
@@ -1578,7 +1584,6 @@
         <tr><td colspan="2">Use Alternate Wrye Bash Name<td>If checked, displays in the title bar <q>Wrye Bash</q> when running for Oblivion and <q>Wrye Smash</q> when running for Skyrim. If unchecked, the title bar will contain <q>Wrye Bash for [Game]</q> instead.
   <tr><td colspan="2">Debug Mode<td>Opens up a window to which debugging information is written.
   <tr><td colspan="2" id="settingsDumpTranslator">Dump Translator<td>Generates a new translation file for your locale. See <a href="#international">Internationalisation</a> for more information.
-        <tr><td colspan="2">Check for Updates...<td>Checks the TESNexus download page to see if there are newer versions of Wrye Bash available.
 </table>
 <figure class="slideshow">
 <img src="../bash/images/readme/settings-1-colours-dialogue-1.png" alt="Colors Dialog"/>
@@ -1720,24 +1725,28 @@
 			<td><code>-L&nbsp;LANGUAGE, --language=LANGUAGE</code>
 			<td>Specify the user language overriding the system language
 				settings.
+    <thead>
 		<tr>
 			<th>Path Arguments
 			<th>All path arguments must be absolute paths and use either
 				forward slashes (/) or two backward slashes (\\). All of these can
 				also be set in the ini (where you can also use relative paths) and
 				if set in both cmd line takes pecedence.
+    <tbody>
 		<tr>
 			<td><code>-o&nbsp;OBLIVIONPATH,
 					--oblivionPath=OBLIVIONPATH</code>
 			<td>Specifies the game directory (the one containing the game's
 				exe). Use this argument if Bash is located outside of the game
 				directory, and the <code>--game</code> argument failed to find it.
+    <thead>
 		<tr>
 			<th>User Directory Arguments
 			<th>These arguments allow you to specify your user directories
 				in several wasy. These are only useful if the regular procedure for
 				geting the user directory fails. And even in that case, the user is
 				probably better off installing win32com.
+    <tbody>
 		<tr>
 			<td><code>-p&nbsp;PERSONALPATH,
 					--personalPath=PERSONALPATH</code>
@@ -1753,23 +1762,24 @@
 					--localAppDataPath=LOCALAPPDATAPATH</code>
 			<td>Specify the user's local application data directory. If you
 				need to set this then you probably need to set <code>-p</code> too.
-			
+    <thead>
 		<tr>
 			<th>Backup and Restore Arguments
 			<th>These arguments allow you to do backup and restore settings
 				operations.
+    <tbody>
 		<tr>
 			<td><code>-b, --backup</code>
 			<td>Backup all Bash settings to an archive file before the app
 				launches. Either specify the filepath with the <code>-f/--filename</code>
 				options or Wrye Bash will prompt the user for the backup file path.
-			
+
 		<tr>
 			<td><code>-r, --restore</code>
 			<td>Backup all Bash settings to an archive file before the app
 				launches. Either specify the filepath with the <code>-f/--filname</code>
 				options or Wrye Bash will prompt the user for the backup file path.
-			
+
 		<tr>
 			<td><code>-f FILENAME, --filename=FILENAME</code>
 			<td>The file to use with the <code>-r</code> or <code>-b</code>

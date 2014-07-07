@@ -17,7 +17,8 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005, 2006, 2007, 2008, 2009 Wrye
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  https://github.com/wrye-bash
 #
 # =============================================================================
 
@@ -116,8 +117,8 @@ class BackupSettings(BaseBackupSettings):
               (dirs['mods'].join(u'Docs'),        u'wtxt_teal.css',        game+u'\\Data\\Docs'),
               (dirs['modsBash'],                  u'Table',                game+u' Mods\\Bash Mod Data'),
               (dirs['modsBash'].join(u'INI Data'),u'Table',                game+u' Mods\\Bash Mod Data\\INI Data'),
-              (dirs['installers'].join(u'Bash'),  u'Converters',           game+u' Mods\\Bash Installers\\Bash'),
-              (dirs['installers'].join(u'Bash'),  u'Installers',           game+u' Mods\\Bash Installers\\Bash'),
+              (dirs['bainData'],                  u'Converters',           game+u' Mods\\Bash Installers\\Bash'),
+              (dirs['bainData'],                  u'Installers',           game+u' Mods\\Bash Installers\\Bash'),
               (dirs['userApp'],                   u'Profiles',             u'LocalAppData\\'+game),
               (dirs['userApp'],                   u'bash config',          u'LocalAppData\\'+game),
               (dirs['saveBase'],                  u'BashProfiles',         u'My Games\\'+game),
@@ -318,7 +319,7 @@ class RestoreSettings(BaseBackupSettings):
                 (dirs['mods'].join(u'INI Tweaks'),  game+u'\\Data\\INI Tweaks'),
                 (dirs['modsBash'],                  game+u' Mods\\Bash Mod Data'),
                 (dirs['modsBash'].join(u'INI Data'),game+u' Mods\\Bash Mod Data\\INI Data'),
-                (dirs['installers'].join(u'Bash'),  game+u' Mods\\Bash Installers\\Bash'),
+                (dirs['bainData'],                  game+u' Mods\\Bash Installers\\Bash'),
                 (dirs['userApp'],                   u'LocalAppData\\'+game),
                 (dirs['saveBase'],                  u'My Games\\'+game),
                 )
