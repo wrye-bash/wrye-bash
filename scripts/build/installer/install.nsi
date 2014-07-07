@@ -62,7 +62,7 @@
                 DetailPrint "Running MSVC 2005 SP 1 Redistributable Package ATL Security Update..."
                 Sleep 2000
                 HideWindow
-                ExecWait '"$TEMP\vcredist_x86.exe" /qb'
+                ExecWait '"$TEMP\vcredist_x86.exe" /q'
                 BringToFront
                 DetailPrint "Finished MSVC 2005 SP 1 Redistributable Package ATL Security Update"
 
@@ -157,23 +157,23 @@
             ; Download and install missing requirements.
             ${If} $Python_Path == $Empty
                 SetOutPath "$TEMP\PythonInstallers"
-                DetailPrint "Python 2.7.6 - Downloading..."
-                NSISdl::download http://python.org/ftp/python/2.7.6/python-2.7.6.msi "$TEMP\PythonInstallers\python-2.7.6.msi"
+                DetailPrint "Python 2.7.8 - Downloading..."
+                inetc::get /NOCANCEL /RESUME "" "https://www.python.org/ftp/python/2.7.8/python-2.7.8.msi" "$TEMP\PythonInstallers\python-2.7.8.msi"
                 Pop $R0
-                ${If} $R0 == "success"
-                    DetailPrint "Python 2.7.6 - Installing..."
+                ${If} $R0 == "OK"
+                    DetailPrint "Python 2.7.8 - Installing..."
                     Sleep 2000
                     HideWindow
-                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.6.msi"'
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.8.msi"'
                     BringToFront
-                    DetailPrint "Python 2.7.6 - Installed."
+                    DetailPrint "Python 2.7.8 - Installed."
                 ${Else}
-                    DetailPrint "Python 2.7.6 - Download Failed!"
+                    DetailPrint "Python 2.7.8 - Download Failed!"
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
                     Abort
                 ${EndIf}
             ${Else}
-                DetailPrint "Python 2.7.6 is already installed; skipping!"
+                DetailPrint "Python 2.7 is already installed; skipping!"
             ${EndIf}
             ${If} $Python_wx == "1"
                 SetOutPath "$TEMP\PythonInstallers"

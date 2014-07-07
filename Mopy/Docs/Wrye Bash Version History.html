@@ -36,8 +36,14 @@
 
 <p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
 
-<h2>304.4 [2014/02/22] [Various community members]</h2>
+<h2>304.4 Move to git  [2014/07/06] [Various community members]</h2>
 <ul>
+<li>Moved to GitHub from Sourceforge: <a href="https://github.com/wrye-bash">https://github.com/wrye-bash</a>. [Lojack, Utumno, Wrinklyninja]
+<li>Make splash screen optional [lojack5]</li>
+<li>Installers.bat is not backed up when prompting user to backup settings on version change [lojack5]</li>
+<li>Mods Tab: Load -> All throws an exception [lojack5]</li>
+<li>sort order reverses [lojack5]</li>
+<li>shellMakeDirs may fall into an infinite loop [lojack5]</li>
 <li>Fixed error when copying files from an archive in BAIN. [bluesky404]
 <li>Fixed load order changes outside of Bash not being detected. [wrinklyninja]
 <li>Fixed unnecessary timestamp changes when setting load order. [wrinklyninja]
@@ -45,6 +51,14 @@
 <li>Implemented support for launching BOSS v3.0.0. [wrinklyninja]
 <li>Documentation updates. [wrinklyninja]
 <li>Streamlined installer's handling of requirements. [wrinklyninja]
+<li>Optimize PNGs [Metallicow]</li>
+<li>Remove the auto-updater [lojack5]</li>
+<li>Skip .bsl files for BAIN [lojack5]</li>
+<li>BOSSv3 support, installer and readme updates [WrinklyNinja]</li>
+<li>Installer Improvements [WrinklyNinja]</li>
+<li>Installer MSVC 2013 Redist Support [WrinklyNinja]</li>
+<li>Missing context menu items [WrinklyNinja]</li>
+<li>Show BSA Conflicts undocumented [WrinklyNinja]</li>
 </ul>
 
 <h2>304.3 Beta [2013/11/21] [Various community members]</h2>
@@ -85,7 +99,7 @@
 <li>Changes to the restart button tool-tip to make it translatable. [d4id4los]</li>
 <li>Make Headlines in getModList translatable. [d4id4los]</li>
 <li>Fix renaming/deleting mod files outside of Wrye Bash causing load order issues. [d4id4los]</li>
-<li>Fix for an exception in bain wizzards, introduced in rev. 2966 [d4id4los]</li>
+<li>Fix for an exception in bain wizards, introduced in rev. 2966 [d4id4los]</li>
 <li>Fix for Bug #246 'Better naming scheme for backups' [Mr_and_Mrs_D]</li>
 <li>Fix for Bug #247 'Do not report 0 KB for non empty files, plugins, BCFs etc' [Mr_and_Mrs_D]</li>
 <li>Fix for Bash not installing more than one mod at a time for Oblivion. [d4id4los]</li>
@@ -101,7 +115,7 @@
 <ul>
 <li>[Oblivion] Fixed issues with CBash saying that files don't exist during the patch building process. [Lojack]</li>
 <li>Uninstalling a mod in BAIN should no longer throw an error that the ESP/ESM could not be found if it was removed. [Lojack]</li>
-<li>Encoding format for INI Tweak files has been fixed. [Lokack]</li>
+<li>Encoding format for INI Tweak files has been fixed. [Lojack]</li>
 <li>Typo corrections, unused variables, and other minor issues cleaned up. [Various]</li>
 <li>The bash_default.ini file has been cleaned up to remove unused entries and tidy up documentation. [Lojack]</li>
 <li>BAIN should now properly inform the user if an archive being installed is corrupted. [Lojack]</li>
@@ -586,7 +600,7 @@
 	  <li>Installer->open readme command added.
 	  <li>Modified <a href="Wrye%20Bash%20Advanced%20Readme.html#bainCleanData">Clean Data</a> command so that it doesn't remove DLC content or Wrye Bash-related files
 	  <li>It also ignores other files that are commonly installed outside of Wrye Bash, such as Construction Set Extender and Sensual Walks animation files
-	  <li>Don't reset subpackage selections if a wizard is started but canceled
+	  <li>Don't reset subpackage selections if a wizard is started but cancelled
 	  <li>Speed improvement; readonly status for files in the data folder only changed if/when needed. (and removed bClearRO option from ini since it'll only occur on individual files/subfolder and only if needed now)
 </ul>
 	<li>Unicode Mode:
@@ -635,7 +649,7 @@
 	<li>Save->Edit Spells will now work with corrupted/malformed/unexpectedly formed mod files; will just skip those mod files rather than fatally choking (and if in debug mode will say the mod is skipped and why).
 	<li><a href="Wrye%20Bash%20Advanced%20Readme.html#launchers-custom">Custom launcher buttons</a> now support launching of msi created shortcuts.
 	<li>Mod->Export Script has new option to skip export of comments (and a spiffy new export dialogue).
-	<li>CBash no longer causes random occurances of googly eyes
+	<li>CBash no longer causes random occurrences of googly eyes
 </ul>
 
 <h2>294.2 [2011/08/01] [Lojack,myk002,PacificMorrowind]</h2>
@@ -885,7 +899,7 @@
   <li>New option 'Auto-Refresh Bethsoft Content' will tell BAIN to also scan Vanilla Oblivion BSAs, ESMs, and ESPs.
   <li>Extracting OMODs to projects:  If you drag and drop omod(s) into the BAIN window, they will be extracted into projects.
   <li>new ini option <b>bClearRO</b> to enable/disable automatic clearing of readOnly flags from mods directory - will speed things up to disable but risk error on uninstalling in older installs/non-BAIN installed installations
-  <li>new ini option <b>sOblivionTexturesBSAName</b> incase you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
+  <li>new ini option <b>sOblivionTexturesBSAName</b> in case you've for some reason renamed you oblivion - textures - compressed.bsa to something else.
 </ul>
 <li><a href="Wrye%20Bash%20Advanced%20Readme.html#saves">Saves Tab</a>:
 <ul>
@@ -1004,7 +1018,7 @@
   <li>Esp/ms can now be renamed via the Esp/m Filter box (just right click them).
   <li>Changed the rename installer dialog for in place renaming.
   <li>Moved the 'enter' pressed detection so it doesn't get activated after pressing enter in other dialogs.
-  <li>Widgets on installers tab made resizable (contributed by myk002).
+  <li>Widgets on installers tab made resizeable (contributed by myk002).
   <li>Added a sub-packages r-click menu:
 <ul>
     <li>added Select All Sub-packages command.

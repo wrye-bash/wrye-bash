@@ -30119,7 +30119,8 @@ def getBashModDataPath(bashIni):
         if not path.isabs(): path = dirs['app'].join(path)
         src = [u'[General]', u'sBashModData']
     else:
-        path, src = getOblivionModsPath(bashIni).join(u'Bash Mod Data')
+        path, src = getOblivionModsPath(bashIni)
+        path = path.join(u'Bash Mod Data')
     return path, src
 
 def getLegacyPath(newPath, oldPath, srcNew=None, srcOld=None):
