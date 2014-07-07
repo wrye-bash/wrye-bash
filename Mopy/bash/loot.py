@@ -23,7 +23,7 @@
 # =============================================================================
 
 
-"""Python wrapper around BOSS's API libraries"""
+"""Python wrapper around LOOT's API library."""
 
 
 from ctypes import *
@@ -39,11 +39,11 @@ except:
         pass
     def GPath(x): return x
 
-BAPI = None
+LootApi = None
 version = None
 
-# Version of BOSS API this Python script is written for.
-PythonAPIVersion = (3,0)
+# Version of LOOT this Python script is written for.
+PythonAPIVersion = (0,6)
 
 DebugLevel = 0
 # DebugLevel
@@ -51,28 +51,28 @@ DebugLevel = 0
 #  0 - (default) no additional feedback
 #  1 - print information about all return codes found
 
-class BossVersionError(Exception):
-    """Exception thrown if the BOSS API loaded is not
-       compatible with bapi.py"""
+class LootVersionError(Exception):
+    """Exception thrown if the LOOT API loaded is not
+       compatible with loot.py"""
     pass
 
 def Init(path):
-    """Called automatically by importing bapi.  Can also be called manually
-       by the user to reload BAPI, pointing to a different path to the dll.
+    """Called automatically by importing loot.  Can also be called manually
+       by the user to reload the LOOT API, pointing to a different path to the dll.
    """
 
     # If path is a directory, auto choose DLL based on platform
     if os.path.isdir(path):
         #if '64bit' in platform.architecture():
-        #    path = os.path.join(path,u'boss64.dll')
+        #    path = os.path.join(path,u'loot64.dll')
         #else:
-            path = os.path.join(path,u'boss32.dll')
+            path = os.path.join(path,u'loot32.dll')
 
-    global BAPI
+    global LootApi
 
-    # First unload any BOSS dll previously loaded
-    del BAPI
-    BAPI = None
+    # First unload any LOOT dll previously loaded
+    del LootApi
+    LootApi = None
 
     if not os.path.exists(path):
         return
@@ -84,15 +84,15 @@ def Init(path):
         if isinstance(path,unicode) and os.name in ('nt','ce'):
             LoadLibrary = windll.kernel32.LoadLibraryW
             handle = LoadLibrary(path)
-        BAPI = CDLL(path,handle=handle)
+        LootApi = CDLL(path,handle=handle)
     except Exception as e:
-        BAPI = None
+        LootApi = None
         raise
 
     # Some types
-    boss_db = c_void_p
-    boss_db_p = POINTER(boss_db)
-    class boss_message(Structure):
+    loot_db = c_void_p
+    loot_db_p = POINTER(loot_db)
+    class loot_message(Structure):
         _fields_ = [('type', c_uint),
                     ('message', c_char_p),
                     ]
@@ -102,8 +102,8 @@ def Init(path):
     c_uint_p_p = POINTER(c_uint_p)
     c_size_t_p = POINTER(c_size_t)
     c_bool_p = POINTER(c_bool)
-    boss_message_p = POINTER(boss_message)
-    boss_message_p_p = POINTER(boss_message_p)
+    loot_message_p = POINTER(loot_message)
+    loot_message_p_p = POINTER(loot_message_p)
 
     # utility unicode functions
     def _uni(x): return u'' if x is None else unicode(x,'utf8')
@@ -114,8 +114,8 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## bool boss_is_compatible(const unsigned int versionMajor, const unsigned int versionMinor, const unsigned int versionPatch)
-    _CIsCompatibleVersion = BAPI.boss_is_compatible
+    ## bool loot_is_compatible(const unsigned int versionMajor, const unsigned int versionMinor, const unsigned int versionPatch)
+    _CIsCompatibleVersion = LootApi.loot_is_compatible
     _CIsCompatibleVersion.restype = c_bool
     _CIsCompatibleVersion.argtypes = [c_uint, c_uint, c_uint]
     def IsCompatibleVersion(majorVersion, minorVersion, patchVersion=0):
@@ -126,9 +126,9 @@ def Init(path):
         verMinor = c_uint()
         verPatch = c_uint()
         try:
-            BAPI.boss_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
+            LootApi.loot_is_compatible(byref(verMajor), byref(verMinor), byref(verPatch))
         except:
-            raise BossVersionError('bapi.py is not compatible with the specified BOSS API DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
+            raise LootVersionError('loot.py is not compatible with the specified LOOT DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
 
     # =========================================================================
     # API Constants - Return codes
@@ -149,65 +149,62 @@ def Init(path):
                  'error_windows_error',
                  'error_sorting_error',
                  ]:
-        name = 'boss_'+name
-        errors[name] = c_uint.in_dll(BAPI,name).value
+        name = 'loot_'+name
+        errors[name] = c_uint.in_dll(LootApi,name).value
         ErrorCallbacks[errors[name]] = None
-    boss_return_max = c_uint.in_dll(BAPI,'boss_return_max').value
+    loot_return_max = c_uint.in_dll(LootApi,'loot_return_max').value
     globals().update(errors)
 
     # =========================================================================
     # API Constants - Games
     # =========================================================================
-    boss_game_tes4 = c_uint.in_dll(BAPI,'boss_game_tes4').value
-    boss_game_tes5 = c_uint.in_dll(BAPI,'boss_game_tes5').value
-    boss_game_fo3 = c_uint.in_dll(BAPI,'boss_game_fo3').value
-    boss_game_fonv = c_uint.in_dll(BAPI,'boss_game_fonv').value
+    loot_game_tes4 = c_uint.in_dll(LootApi,'loot_game_tes4').value
+    loot_game_tes5 = c_uint.in_dll(LootApi,'loot_game_tes5').value
+    loot_game_fo3 = c_uint.in_dll(LootApi,'loot_game_fo3').value
+    loot_game_fonv = c_uint.in_dll(LootApi,'loot_game_fonv').value
     games = {
-        'Oblivion':boss_game_tes4,
-        boss_game_tes4:boss_game_tes4,
-        'Skyrim':boss_game_tes5,
-        boss_game_tes5:boss_game_tes5,
-        'Fallout 3':boss_game_fo3,
-        boss_game_fo3:boss_game_fo3,
-        'Fallout: New Vegas':boss_game_fonv,
-        boss_game_fonv:boss_game_fonv,
+        'Oblivion':loot_game_tes4,
+        loot_game_tes4:loot_game_tes4,
+        'Skyrim':loot_game_tes5,
+        loot_game_tes5:loot_game_tes5,
+        'Fallout 3':loot_game_fo3,
+        loot_game_fo3:loot_game_fo3,
+        'Fallout: New Vegas':loot_game_fonv,
+        loot_game_fonv:loot_game_fonv,
         }
-        
+
     # =========================================================================
     # API Constants - Message Types
     # =========================================================================
-    boss_message_say = c_uint.in_dll(BAPI,'boss_message_say').value
-    boss_message_warn = c_uint.in_dll(BAPI,'boss_message_warn').value
-    boss_message_error = c_uint.in_dll(BAPI,'boss_message_error').value
-    boss_message_tag = c_uint.in_dll(BAPI,'boss_message_tag').value
-        
+    loot_message_say = c_uint.in_dll(LootApi,'loot_message_say').value
+    loot_message_warn = c_uint.in_dll(LootApi,'loot_message_warn').value
+    loot_message_error = c_uint.in_dll(LootApi,'loot_message_error').value
+
     # =========================================================================
     # API Constants - Languages
     # =========================================================================
-    boss_lang_any = c_uint.in_dll(BAPI,'boss_lang_any').value
-    boss_lang_english = c_uint.in_dll(BAPI,'boss_lang_english').value
-    boss_lang_spanish = c_uint.in_dll(BAPI,'boss_lang_spanish').value
-    boss_lang_russian = c_uint.in_dll(BAPI,'boss_lang_russian').value
-        
+    loot_lang_any = c_uint.in_dll(LootApi,'loot_lang_any').value
+    # Other language constants are unused by Bash, so omitted here.
+
     # =========================================================================
     # API Constants - Cleanliness
     # =========================================================================
-    boss_needs_cleaning_no = c_uint.in_dll(BAPI,'boss_needs_cleaning_no').value
-    boss_needs_cleaning_yes = c_uint.in_dll(BAPI,'boss_needs_cleaning_yes').value
-    boss_needs_cleaning_unknown = c_uint.in_dll(BAPI,'boss_needs_cleaning_unknown').value
+    loot_needs_cleaning_no = c_uint.in_dll(LootApi,'loot_needs_cleaning_no').value
+    loot_needs_cleaning_yes = c_uint.in_dll(LootApi,'loot_needs_cleaning_yes').value
+    loot_needs_cleaning_unknown = c_uint.in_dll(LootApi,'loot_needs_cleaning_unknown').value
 
     # =========================================================================
     # API Functions - Error Handling
     # =========================================================================
-    ## unsigned int boss_get_error_message(const char ** const message)
-    _CGetLastErrorDetails = BAPI.boss_get_error_message
+    ## unsigned int loot_get_error_message(const char ** const message)
+    _CGetLastErrorDetails = LootApi.loot_get_error_message
     _CGetLastErrorDetails.restype = c_uint
     _CGetLastErrorDetails.argtypes = [c_char_p_p]
     def GetLastErrorDetails():
         details = c_char_p()
         ret = _CGetLastErrorDetails(byref(details))
-        if ret != boss_ok:
-            raise Exception(u'An error occurred while getting the details of a BOSS API error: %i' % (ret))
+        if ret != loot_ok:
+            raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % (ret))
         return unicode(details.value,'utf8')
 
     def RegisterCallback(errorCode,callback):
@@ -215,7 +212,7 @@ def Init(path):
            are encountered"""
         ErrorCallbacks[errorCode] = callback
 
-    class BossError(Exception):
+    class LootError(Exception):
         def __init__(self,value):
             self.code = value
             msg = 'UNKNOWN(%i)' % value
@@ -231,23 +228,23 @@ def Init(path):
             self.msg = msg
             Exception.__init__(self,msg)
 
-        def __repr__(self): return '<BossError: %s>' % self.msg
-        def __str__(self): return 'BossError: %s' % self.msg
+        def __repr__(self): return '<LootError: %s>' % self.msg
+        def __str__(self): return 'LootError: %s' % self.msg
 
-    def BossErrorCheck(result):
+    def LootErrorCheck(result):
         callback = ErrorCallbacks.get(result,None)
         if callback: callback()
-        if result == boss_ok: return result
+        if result == loot_ok: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()
-        raise BossError(result)
+        raise LootError(result)
 
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## unsigned int boss_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
-    _CGetVersionString = BAPI.boss_get_version
-    _CGetVersionString.restype = BossErrorCheck
+    ## unsigned int loot_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
+    _CGetVersionString = LootApi.loot_get_version
+    _CGetVersionString.restype = LootErrorCheck
     _CGetVersionString.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
     version = c_char_p()
@@ -257,67 +254,67 @@ def Init(path):
         verPatch = c_uint()
         _CGetVersionString(byref(verMajor),byref(verMinor),byref(verPatch))
         version = u'%i.%i.%i' % (verMajor.value,verMinor.value,verPatch.value)
-    except BossError as e:
-        print u'Error getting BOSS API version:', e
+    except LootError as e:
+        print u'Error getting LOOT API version:', e
         version = u'Error'
 
     # =========================================================================
     # API Functions - Lifecycle Management
     # =========================================================================
-    ## unsigned int boss_create_db (boss_db * const db, const unsigned int clientGame, const char * const gamePath)
-    _CCreateBossDb = BAPI.boss_create_db
-    _CCreateBossDb.restype = BossErrorCheck
-    _CCreateBossDb.argtypes = [boss_db_p, c_uint, c_char_p]
-    ## void boss_destroy_db(boss_db db)
-    _CDestroyBossDb = BAPI.boss_destroy_db
-    _CDestroyBossDb.restype = None
-    _CDestroyBossDb.argtypes = [boss_db]
+    ## unsigned int loot_create_db (loot_db * const db, const unsigned int clientGame, const char * const gamePath)
+    _CCreateLootDb = LootApi.loot_create_db
+    _CCreateLootDb.restype = LootErrorCheck
+    _CCreateLootDb.argtypes = [loot_db_p, c_uint, c_char_p]
+    ## void loot_destroy_db(loot_db db)
+    _CDestroyLootDb = LootApi.loot_destroy_db
+    _CDestroyLootDb.restype = None
+    _CDestroyLootDb.argtypes = [loot_db]
 
     # =========================================================================
     # API Functions - Database Loading
     # =========================================================================
-    ## unsigned int boss_load_lists (boss_db db, const char * const masterlistPath,
+    ## unsigned int loot_load_lists (loot_db db, const char * const masterlistPath,
     ##                                const char * const userlistPath)
-    _CLoad = BAPI.boss_load_lists
-    _CLoad.restype = BossErrorCheck
-    _CLoad.argtypes = [boss_db, c_char_p, c_char_p]
-    ## unsigned int boss_eval_lists (boss_db db, const unsigned int language)
-    _CEvalConditionals = BAPI.boss_eval_lists
-    _CEvalConditionals.restype = BossErrorCheck
-    _CEvalConditionals.argtypes = [boss_db, c_uint]
+    _CLoad = LootApi.loot_load_lists
+    _CLoad.restype = LootErrorCheck
+    _CLoad.argtypes = [loot_db, c_char_p, c_char_p]
+    ## unsigned int loot_eval_lists (loot_db db, const unsigned int language)
+    _CEvalConditionals = LootApi.loot_eval_lists
+    _CEvalConditionals.restype = LootErrorCheck
+    _CEvalConditionals.argtypes = [loot_db, c_uint]
 
     # =========================================================================
     # API Functions - Database Access
     # =========================================================================
-    ## unsigned int boss_get_tag_map (boss_db db, char *** const tagMap, size_t * const numTags)
-    _CGetBashTagMap = BAPI.boss_get_tag_map
-    _CGetBashTagMap.restype = BossErrorCheck
-    _CGetBashTagMap.argtypes = [boss_db, c_char_p_p_p, c_size_t_p]
-    ## unsigned int boss_get_plugin_tags (boss_db db, const char * const plugin,
+    ## unsigned int loot_get_tag_map (loot_db db, char *** const tagMap, size_t * const numTags)
+    _CGetBashTagMap = LootApi.loot_get_tag_map
+    _CGetBashTagMap.restype = LootErrorCheck
+    _CGetBashTagMap.argtypes = [loot_db, c_char_p_p_p, c_size_t_p]
+    ## unsigned int loot_get_plugin_tags (loot_db db, const char * const plugin,
     ##                                        unsigned int ** const tags_added,
     ##                                        size_t * const numTags_added,
     ##                                        unsigned int ** const tags_removed,
     ##                                        size_t * const numTags_removed,
     ##                                        bool * const userlistModified)
-    _CGetModBashTags = BAPI.boss_get_plugin_tags
-    _CGetModBashTags.restype = BossErrorCheck
-    _CGetModBashTags.argtypes = [boss_db, c_char_p, c_uint_p_p, c_size_t_p, c_uint_p_p, c_size_t_p, c_bool_p]
-    ## boss_get_dirty_info (boss_db db, const char * const plugin,
+    _CGetModBashTags = LootApi.loot_get_plugin_tags
+    _CGetModBashTags.restype = LootErrorCheck
+    _CGetModBashTags.argtypes = [loot_db, c_char_p, c_uint_p_p, c_size_t_p, c_uint_p_p, c_size_t_p, c_bool_p]
+    ## loot_get_dirty_info (loot_db db, const char * const plugin,
     ##                                          unsigned int * const needsCleaning)
-    _CGetDirtyMessage = BAPI.boss_get_dirty_info
-    _CGetDirtyMessage.restype = BossErrorCheck
-    _CGetDirtyMessage.argtypes = [boss_db, c_char_p, c_uint_p]
-    ## unsigned int boss_write_minimal_list (boss_db db, const char * const outputFile, const bool overwrite)
-    _CDumpMinimal = BAPI.boss_write_minimal_list
-    _CDumpMinimal.restype = BossErrorCheck
-    _CDumpMinimal.argtypes = [boss_db, c_char_p, c_bool]
+    _CGetDirtyMessage = LootApi.loot_get_dirty_info
+    _CGetDirtyMessage.restype = LootErrorCheck
+    _CGetDirtyMessage.argtypes = [loot_db, c_char_p, c_uint_p]
+    ## unsigned int loot_write_minimal_list (loot_db db, const char * const outputFile, const bool overwrite)
+    _CDumpMinimal = LootApi.loot_write_minimal_list
+    _CDumpMinimal.restype = LootErrorCheck
+    _CDumpMinimal.argtypes = [loot_db, c_char_p, c_bool]
 
     # =========================================================================
     # Class Wrapper
     # =========================================================================
-    class BossDb(object):
+    class LootDb(object):
         def __init__(self,gamePath,game='Oblivion'):
-            """ game can be one of the boss_game_*** codes, or one of the
+            """ game can be one of the loot_game_*** codes, or one of the
                 aliases defined above in the 'games' dictionary."""
             if isinstance(game,basestring):
                 if game in games:
@@ -325,13 +322,13 @@ def Init(path):
                 else:
                     raise Exception('Game "%s" is not recognized' % game)
             self.tags = {}   # BashTag map
-            self._DB = boss_db()
+            self._DB = loot_db()
             print gamePath
-            _CCreateBossDb(byref(self._DB),game,_enc(gamePath))
+            _CCreateLootDb(byref(self._DB),game,_enc(gamePath))
 
         def __del__(self):
             if self._DB is not None:
-                _CDestroyBossDb(self._DB)
+                _CDestroyLootDb(self._DB)
                 self._DB = None
 
         # 'with' statement
@@ -344,14 +341,14 @@ def Init(path):
         def Load(self, masterlist, userlist=None):
             # Load masterlist/userlist
             _CLoad(self._DB, _enc(masterlist), _enc(userlist) if userlist else None)
-            _CEvalConditionals(self._DB, boss_lang_any)
+            _CEvalConditionals(self._DB, loot_lang_any)
             self._GetBashTags()
-            
+
         def PlainLoad(self, masterlist, userlist=None):
             _CLoad(self._DB, _enc(masterlist), _enc(userlist) if userlist else None)
 
         def EvalConditionals(self):
-            _CEvalConditionals(self._DB, boss_lang_any)
+            _CEvalConditionals(self._DB, loot_lang_any)
             self._GetBashTags()
 
         def _GetBashTags(self):
@@ -381,11 +378,11 @@ def Init(path):
         def GetDirtyMessage(self,plugin):
             clean = c_uint()
             _CGetDirtyMessage(self._DB,_enc(plugin),byref(clean))
-            if clean.value == boss_needs_cleaning_yes:
+            if clean.value == loot_needs_cleaning_yes:
                 return ('Contains dirty edits, needs cleaning.',clean.value)
             else:
                 return ('',clean.value)
-            
+
         def DumpMinimal(self,file,overwrite):
             _CDumpMinimal(self._DB,_enc(file),overwrite)
 
@@ -393,19 +390,19 @@ def Init(path):
         # Utility Functions (not added by the API, pure Python)
         # ---------------------------------------------------------------------
 
-        def FilterDirty(self,plugins,cleanCode=boss_needs_cleaning_yes):
+        def FilterDirty(self,plugins,cleanCode=loot_needs_cleaning_yes):
             """Given a list of plugins, returns the subset of that list,
-               consisting of plugins that meet the given boss_needs_cleaning_*
+               consisting of plugins that meet the given loot_needs_cleaning_*
                code"""
             return [x for x in plugins if self.GetDirtyMessage(x)[1] == cleanCode]
 
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())
 
-# Initialize BAPI, assuming that boss32.dll and boss64.dll are in the same directory
+# Initialize the LOOT API, assuming that loot32.dll and loot64.dll are in the same directory
 # Call Init again with the path to these dll's if this assumption is incorrect.
-# BAPI will be None if this is the case.
+# LootApi will be None if this is the case.
 try:
     Init(os.getcwdu())
-except BossVersionError:
+except LootVersionError:
     pass

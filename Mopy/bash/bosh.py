@@ -66,7 +66,7 @@ from cint import *
 from brec import *
 from brec import _coerce # Since it wont get imported by the import * (it begins with _)
 from chardet.universaldetector import UniversalDetector
-import bapi
+import loot
 import libbsa
 import liblo
 
@@ -151,8 +151,8 @@ trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
 bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
-configHelpers = None #--Config Helper files (Boss Master List, etc.)
-boss = None #--BossDb singleton
+configHelpers = None #--Config Helper files (LOOT Master List, etc.)
+lootDb = None #--LootDb singleton
 lo = None #--LibloHandle singleton
 links = None
 
@@ -3962,8 +3962,8 @@ class PluginsFullError(BoltError):
 #------------------------------------------------------------------------------
 class Plugins:
     """Plugins.txt and loadorder.txt file. Owned by modInfos.  Almost nothing
-       else should access it directly.  Since migrating to the BOSS API, this
-       class now only really is used to detect if a refresh from the BOSS API
+       else should access it directly.  Since migrating to libloadorder, this
+       class now only really is used to detect if a refresh from libloadorder
        is required."""
     def __init__(self):
         """Initialize."""
@@ -4072,7 +4072,7 @@ class Plugins:
         if refresh:
             self.saveLoadOrder()
             self.save()
-            
+
     def addMods(self, plugins, index=None, refresh=False):
         """Adds the specified mods to load order at the given index or at the bottom if none is given."""
         # Remove any duplicates
@@ -4089,7 +4089,7 @@ class Plugins:
         if refresh:
             self.saveLoadOrder()
             self.save()
-            
+
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = self.hasChanged()
@@ -4126,11 +4126,11 @@ class Plugins:
         if removedFiles or addedFiles:
             self.saveLoadOrder()
             self.save()
-    
+
     def cleanLoadOrderFiles(self):
         """Cleans all files relevant to the load ordering of non existant entries"""
         # This is primarily used to mask what is probably a bug in liblo that makes it fail if loadorder.txt contains a non existing .esm file entry.
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE: 
+        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
             loFiles = [x.s for x in (self.pathPlugins, self.pathOrder) if x.exists()]
             for loFile in loFiles:
                 f = open(loFile, 'r')
@@ -4141,8 +4141,8 @@ class Plugins:
                     if dirs['mods'].join(line.strip()).exists():
                         f.write(line)
                 f.close()
-                
-    
+
+
 #------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
@@ -4652,7 +4652,7 @@ class ModInfo(FileInfo):
             return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
 
     def reloadBashTags(self):
-        """Reloads bash tags from mod description and BOSS"""
+        """Reloads bash tags from mod description and LOOT"""
         tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
         tags -= (configHelpers.getBashRemoveTags(self.name) or set())
         # Filter and remove old tags
@@ -4663,7 +4663,7 @@ class ModInfo(FileInfo):
         self.setBashTags(tags)
 
     def getDirtyMessage(self):
-        """Returns a dirty message from BOSS."""
+        """Returns a dirty message from LOOT."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
             return (False,u'')
         return configHelpers.getDirtyMessage(self.name)
@@ -5162,7 +5162,7 @@ class FileInfos(DataDict):
                     if not filePath.exists():
                         self.table.delRow(tableUpdate[filePath])
             #--Refresh
-            if doRefresh: 
+            if doRefresh:
                 self.refresh()
 
     #--Move Exists
@@ -5889,13 +5889,13 @@ class ModInfos(FileInfos):
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
                 if modInfo.getBashTags():
                     if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
-                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/BOSS sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
+                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/LOOT sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
                     if modInfo.getBashTagsDesc():
                         tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
                     if configHelpers.getBashTags(modInfo.name):
-                        tagList += u'  * '+_(u'From BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
+                        tagList += u'  * '+_(u'From LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
+                        tagList += u'  * '+_(u'Removed by LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
                     tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
                 else: tagList += u'    '+_(u'No tags')
         else:
@@ -5904,13 +5904,13 @@ class ModInfos(FileInfos):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
                     if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
-                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/BOSS sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
+                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/LOOT sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
                     if modInfo.getBashTagsDesc():
                         tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
                     if configHelpers.getBashTags(modInfo.name):
-                        tagList += u'  * '+_(u'From BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
+                        tagList += u'  * '+_(u'From LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
                     if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by BOSS Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
+                        tagList += u'  * '+_(u'Removed by LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
                     tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
         tagList += u'[/xml][/spoiler]'
         return tagList
@@ -6515,61 +6515,33 @@ class ModRuleSet:
 #------------------------------------------------------------------------------
 
 class ConfigHelpers:
-    """Encapsulates info from mod configuration helper files (BOSS masterlist, etc.)"""
+    """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
     def __init__(self):
         """Initialialize."""
-        #--Boss Master List or if that doesn't exist use the taglist
-        # version notes:
-        #  Support for < 1.8 is dropped. Support is for 1.8+.
-
-        # Detect locally installed (into game folder) BOSS
-        if dirs['app'].join(u'BOSS',u'BOSS.exe').exists():
-            dirs['boss'] = dirs['app'].join(u'BOSS')
-        else:
-            dirs['boss'] = GPath(u'C:\\**DNE**')
-        # Detect globally installed (into Program Files) BOSS
-        try:
-            import _winreg
-            for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
-                for wow6432 in (u'',u'Wow6432Node\\'):
-                    try:
-                        key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
-                        value = _winreg.QueryValueEx(key,u'Installed Path')
-                    except:
-                        continue
-                    if value[1] != _winreg.REG_SZ: continue
-                    installedPath = GPath(value[0])
-                    if not installedPath.exists(): continue
-                    dirs['boss'] = installedPath
-                    break
-                else:
-                    continue
-                break
-        except ImportError:
-            pass
+        #--LOOT masterlist or if that doesn't exist use the taglist
 
         libbsa.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not libbsa.libbsa:
             raise bolt.BoltError(u'The libbsa API could not be loaded.')
         deprint(u'Using libbsa API version:', libbsa.version)
-        
+
         liblo.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not liblo.liblo:
             raise bolt.BoltError(u'The libloadorder API could not be loaded.')
         deprint(u'Using libloadorder API version:', liblo.version)
-        
-        bapi.Init(dirs['compiled'].s)
-        # That didn't work - Wrye Bash isn't installed correctly
-        if not bapi.BAPI:
-            raise bolt.BoltError(u'The BOSS API could not be loaded.')
-        deprint(u'Using BOSS API version:', bapi.version)
 
-        global boss
-        boss = bapi.BossDb(dirs['app'].s,bush.game.name)
-                              
+        loot.Init(dirs['compiled'].s)
+        # That didn't work - Wrye Bash isn't installed correctly
+        if not loot.LootApi:
+            raise bolt.BoltError(u'The LOOT API could not be loaded.')
+        deprint(u'Using LOOT API version:', loot.version)
+
+        global lootDb
+        lootDb = loot.LootDb(dirs['app'].s,bush.game.name)
+
         global lo
         lo = liblo.LibloHandle(dirs['app'].s,bush.game.name)
         if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
@@ -6577,20 +6549,11 @@ class ConfigHelpers:
         liblo.RegisterCallback(liblo.LIBLO_WARN_LO_MISMATCH,
                               ConfigHelpers.libloLOMismatchCallback)
 
-        self.bossVersion = dirs['boss'].join(u'BOSS.exe').version
-        if self.bossVersion >= (3,0,0,0):
-            # BOSS 3+ stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
-            self.bossMasterPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'masterlist.yaml')
-            self.bossUserPath = dirs['userApp'].join(os.pardir,u'BOSS',bush.game.name,u'userlist.yaml')
-        elif self.bossVersion >= (2,0,0,0):
-            # BOSS 2.0+ stores the masterlist/userlist in a subdirectory
-            self.bossMasterPath = dirs['boss'].join(bush.game.name,u'masterlist.txt')
-            self.bossUserPath = dirs['boss'].join(bush.game.name,u'userlist.txt')
-        else:
-            self.bossMasterPath = dirs['boss'].join(u'masterlist.txt')
-            self.bossUserPath = dirs['boss'].join(u'userlist.txt')
-        self.bossMasterTime = None
-        self.bossUserTime = None
+        # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
+        self.lootMasterPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.name,u'masterlist.yaml')
+        self.lootUserPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.name,u'userlist.yaml')
+        self.lootMasterTime = None
+        self.lootUserTime = None
         #--Bash Tags
         self.tagCache = {}
         #--Mod Rules
@@ -6609,7 +6572,7 @@ class ConfigHelpers:
 
     def refresh(self,firstTime=False):
         """Reloads tag info if file dates have changed."""
-        path,userpath,mtime,utime = (self.bossMasterPath, self.bossUserPath, self.bossMasterTime, self.bossUserTime)
+        path,userpath,mtime,utime = (self.lootMasterPath, self.lootUserPath, self.lootMasterTime, self.lootUserTime)
         #--Masterlist is present, use it
         if path.exists():
             if (path.mtime != mtime or
@@ -6617,15 +6580,15 @@ class ConfigHelpers:
                 self.tagCache = {}
                 try:
                     if userpath.exists():
-                        boss.Load(path.s,userpath.s)
-                        self.bossMasterTime = path.mtime
-                        self.bossUserTime = userpath.mtime
+                        lootDb.Load(path.s,userpath.s)
+                        self.lootMasterTime = path.mtime
+                        self.lootUserTime = userpath.mtime
                     else:
-                        boss.Load(path.s)
-                        self.bossMasterTime = path.mtime
+                        lootDb.Load(path.s)
+                        self.lootMasterTime = path.mtime
                     return
-                except bapi.BossError:
-                    deprint(u'An error occured while using the BOSS API:',traceback=True)
+                except loot.LootError:
+                    deprint(u'An error occured while using the LOOT API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
         taglist = dirs['defaultPatches'].join(u'taglist.yaml')
@@ -6633,15 +6596,15 @@ class ConfigHelpers:
             raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
-            boss.Load(taglist.s)
-        except bapi.BossError:
-            deprint(u'An error occured while parsing taglist.yaml with the BOSS API.', traceback=True)
-            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the BOSS API.')
+            lootDb.Load(taglist.s)
+        except loot.LootError:
+            deprint(u'An error occured while parsing taglist.yaml with the LOOT API.', traceback=True)
+            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the LOOT API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName not in self.tagCache:
-            tags = boss.GetModBashTags(modName)
+            tags = lootDb.GetModBashTags(modName)
             self.tagCache[modName] = tags
             return tags[0]
         else:
@@ -6650,15 +6613,15 @@ class ConfigHelpers:
     def getBashRemoveTags(self,modName):
         """Retrieves bash tags for given file."""
         if modName not in self.tagCache:
-            tags = boss.GetModBashTags(modName)
+            tags = lootDb.GetModBashTags(modName)
             self.tagCache[modName] = tags
             return tags[1]
         else:
             return self.tagCache[modName][1]
 
     def getDirtyMessage(self,modName):
-        message,clean = boss.GetDirtyMessage(modName)
-        cleanIt = clean == bapi.boss_needs_cleaning_yes
+        message,clean = lootDb.GetDirtyMessage(modName)
+        cleanIt = clean == loot.loot_needs_cleaning_yes
         return (cleanIt,message)
 
     #--Mod Checker ------------------------------------------------------------
@@ -8716,8 +8679,8 @@ class InstallerArchive(Installer):
             if count:
                 # TODO: Find the operation that does not properly close the Oblivion\Data dir.
                 # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
-                # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened 
-                # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to 
+                # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
+                # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
                 # install a mod for Obilivon.
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir = stageDataDir + u'\\*'
@@ -9983,7 +9946,7 @@ class InstallersData(bolt.TankData, DataDict):
                 # It's not imperative that files get moved, so if errors happen, just ignore them.
                 # Would could put a deprint in here so that when debug mode is enabled we at least
                 # see that some files failed for some reason.
-                pass            
+                pass
             data_sizeCrcDate.pop(file,None)
             emptyDirs.add(path.head)
         for emptyDir in emptyDirs:
@@ -10024,9 +9987,9 @@ class InstallersData(bolt.TankData, DataDict):
                 deprint(u'   Error loading BSA srcFiles: ',activeSrcBSAFiles,traceback=True)
             # Create list of all assets in BSA files for srcInstaller
             srcBSAContents = []
-            for x,y in bsas: srcBSAContents.extend(y.GetAssets('.+')) 
+            for x,y in bsas: srcBSAContents.extend(y.GetAssets('.+'))
 #            print("srcBSAContents: {}".format(srcBSAContents))
-            
+
             # Create a list of all active BSA Files except the ones in srcInstaller
             activeBSAFiles = []
             for package in self.data:
@@ -20951,7 +20914,7 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
 
 class AssortedTweak_ArmorPlayable(MultiTweakItem):
     """Sets all armors to be playable"""
-    
+
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         MultiTweakItem.__init__(self,_(u"All Armor Playable"),
@@ -30296,7 +30259,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             msg += u'\n'.join(relativePathError)
         raise BoltError(msg)
 
-    # Setup BOSS API
+    # Setup LOOT API
     global configHelpers
     configHelpers = ConfigHelpers()
 

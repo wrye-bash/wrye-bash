@@ -42,7 +42,7 @@ has its own data store)."""
 import bush
 import bosh
 import bolt
-import bapi
+import loot
 import barb
 import bass
 import bweb
@@ -1089,7 +1089,7 @@ class List(wx.Panel):
             self.colWidths[colName] = width
             self.checkcol = []
         event.Skip()
-        
+
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
@@ -1124,7 +1124,7 @@ class List(wx.Panel):
         column is being edited and process after in OnUpdateUI()"""
         self.checkcol = [event.GetColumn()]
         event.Skip()
-        
+
     #--Item Sort
     def DoItemSort(self, event):
         self.PopulateItems(self.cols[event.GetColumn()],-1)
@@ -1985,7 +1985,7 @@ class ModList(List):
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
         #set column sort image
-        try: 
+        try:
             try: self.list.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
             if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
@@ -3727,7 +3727,7 @@ class InstallersPanel(SashTankPanel):
             event = wx.CommandEvent()
             event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
             wx.PostEvent(self.GetEventHandler(), event)
-            
+
             settings['bash.installers.isFirstRun'] = False
             message = (_(u'Do you want to enable Installers?')
                        + u'\n\n\t' +
@@ -3877,15 +3877,15 @@ class InstallersPanel(SashTankPanel):
         splitter = event.GetEventObject()
         sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
         settings['bash.installers.commentsSplitterSashPos'] = sashPos
-    
+
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
-        
+
         Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
-        
+
         """
         pass
-    
+
     #--Details view (if it exists)
     def SaveDetails(self):
         """Saves details if they need saving."""
@@ -5151,7 +5151,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             bolt.GPathPurge()
             self.GetPage(event.GetSelection()).OnShow()
             event.Skip()
- 
+
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
         Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
@@ -5567,7 +5567,7 @@ class BashFrame(wx.Frame):
         self.notebook.GetPage(self.notebook.GetSelection()).OnShow()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
-        ## Not applicable now with BOSS API - perhaps find a way to simulate this warning
+        ## Not applicable now with libloadorder - perhaps find a way to simulate this warning
         #if bosh.modInfos.plugins.selectedBad:
         #    message = [u'',_(u'Missing files have been removed from load list:')]
         #    message.extend(sorted(bosh.modInfos.plugins.selectedBad))
@@ -5579,7 +5579,7 @@ class BashFrame(wx.Frame):
         #    del bosh.modInfos.plugins.selectedBad[:]
         #    bosh.modInfos.plugins.save()
         #--Was load list too long? or bad filenames?
-        ## Net to recode this with the BOSS API as well
+        ## Net to recode this with libloadorder as well
         #if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
         #    message = []
         #    ## Disable this message for now, until we're done testing if
@@ -6157,7 +6157,7 @@ class DocBrowser(wx.Frame):
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
         docPath = docPath or GPath(self.data.get(self.modName,u''))
-        if not docPath.exists(): 
+        if not docPath.exists():
             return False
         try:
             with docPath.open('r',encoding='utf-8-sig') as textFile:
@@ -7262,10 +7262,10 @@ class PatchDialog(wx.Dialog):
             self.gPatchers.Check(index,False)
             patcher.isEnabled = False
             if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
-            if hasattr(patcher, 'gList'): 
+            if hasattr(patcher, 'gList'):
                 patcher.gList.SetChecked([])
                 patcher.OnListCheck()
-            if hasattr(patcher, 'gTweakList'): 
+            if hasattr(patcher, 'gTweakList'):
                 patcher.gTweakList.SetChecked([])
         self.gExecute.Enable(False)
 
@@ -7953,7 +7953,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.SetItems(self.getAutoItems())
         self.SetTweaks()
         return gConfigPanel
-       
+
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
@@ -9104,7 +9104,7 @@ class Installers_ConflictsReportShowBSAConflicts(BoolLink):
                           _(u'Show BSA Conflicts'),
                           'bash.installers.conflictsReport.showBSAConflicts',
                           )
-        
+
     def Execute(self,event):
         BoolLink.Execute(self, event)
         self.gTank.RefreshUI()
@@ -11887,7 +11887,7 @@ class Settings_Language(Link):
         u'russian': _(u'Russian') + u' (ру́сский язы́к)',
         u'english': _(u'English') + u' (English)',
         }
-        
+
     def __init__(self,language):
         Link.__init__(self)
         self.language = language
@@ -12871,9 +12871,9 @@ class Mod_SkipDirtyCheckAll(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if self.skip:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
         else:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_(u"Check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         for fileName in self.data:
             if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
@@ -12891,7 +12891,7 @@ class Mod_SkipDirtyCheckAll(Link):
 class Mod_SkipDirtyCheckInvert(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Invert checking against BOSS's dirty mod list"))
+        menuItem = wx.MenuItem(menu,self.id,_(u"Invert checking against LOOT's dirty mod list"))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -12908,7 +12908,7 @@ class Mod_SkipDirtyCheck(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if len(data) == 1:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
             menu.AppendItem(menuItem)
             self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
             menuItem.Check(self.ignoreDirty)
