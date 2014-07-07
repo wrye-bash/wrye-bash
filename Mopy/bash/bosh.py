@@ -30290,6 +30290,33 @@ def initDefaultTools():
     pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
     def pathlist(*args): return [x.join(*args) for x in pf]
 
+    # BOSS can be in any number of places.
+    # Detect locally installed (into game folder) BOSS
+    if dirs['app'].join(u'BOSS',u'BOSS.exe').exists():
+        tooldirs['boss'] = dirs['app'].join(u'BOSS').join(u'BOSS GUI.exe')
+    else:
+        tooldirs['boss'] = GPath(u'C:\\**DNE**')
+    # Detect globally installed (into Program Files) BOSS
+    try:
+        import _winreg
+        for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+            for wow6432 in (u'',u'Wow6432Node\\'):
+                try:
+                    key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
+                    value = _winreg.QueryValueEx(key,u'Installed Path')
+                except:
+                    continue
+                if value[1] != _winreg.REG_SZ: continue
+                installedPath = GPath(value[0])
+                if not installedPath.exists(): continue
+                tooldirs['boss'] = installedPath.join(u'BOSS GUI.exe')
+                break
+            else:
+                continue
+            break
+    except ImportError:
+        pass
+
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools',u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
