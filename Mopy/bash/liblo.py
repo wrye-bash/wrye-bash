@@ -43,7 +43,7 @@ liblo = None
 version = None
 
 # Version of libloadorder this Python script is written for.
-PythonLibloVersion = (3,0)
+PythonLibloVersion = (4,0)
 
 DebugLevel = 0
 # DebugLevel
@@ -66,7 +66,7 @@ def Init(path):
         #if '64bit' in platform.architecture():
         #    path = os.path.join(path,u'libloadorder64.dll')
         #else:
-            path = os.path.join(path,u'libloadorder32.dll')
+            path = os.path.join(path,u'loadorder32.dll')
 
     global liblo
 
@@ -557,7 +557,7 @@ def Init(path):
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())
 
-# Initialize libloadorder, assuming that libloadorder32.dll and libloadorder64.dll are in the same directory
+# Initialize libloadorder, assuming that loadorder32.dll and loadorder64.dll are in the same directory
 # Call Init again with the path to these dll's if this assumption is incorrect.
 # liblo will be None if this is the case.
 try:
