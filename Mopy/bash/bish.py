@@ -793,7 +793,7 @@ def gmstIds(fileName=None):
 #------------------------------------------------------------------------------
 @mainfunc
 def createTagList(inPath='masterlist.txt',outPath='taglist.txt'):
-    tags, bossDirtyMods = {}, {}
+    tags, lootDirtyMods = {}, {}
     reFcomSwitch = re.compile('^[<>]')
     reComment = re.compile(r'^\\.*')
     reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
@@ -829,12 +829,12 @@ def createTagList(inPath='masterlist.txt',outPath='taglist.txt'):
         elif line.startswith(r"? Masterlist Information: $Revision: "):
             revision = int(line[37:42])
     ins.close()
-    tagList = '\ Taglist for Wrye Bash; derived from BOSS Masterlist revision %i.\n' % (revision) + '\% A Bashed Patch suggestion for the mod above.\n\n'
+    tagList = '\ Taglist for Wrye Bash; derived from LOOT Masterlist revision %i.\n' % (revision) + '\% A Bashed Patch suggestion for the mod above.\n\n'
     for mod in sorted(tags,key=str.lower):
         tagList += mod + '\n'
         tagList += tags[mod] + '\n'
-        if mod in bossDirtyMods:
-            tagList += bossDirtyMods[mod] + '\n'
+        if mod in lootDirtyMods:
+            tagList += lootDirtyMods[mod] + '\n'
     out = GPath(outPath).open('w')
     out.write(tagList[:-1])
     out.close()

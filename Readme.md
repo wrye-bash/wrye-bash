@@ -7,7 +7,7 @@ Wrye Bash is a mod management utility for Oblivion and Skyrim with a rich set
  [the SVN repository](http://sourceforge.net/p/oblivionworks/code/HEAD/tree/).
  We are in the process of finalizing the move and then we aim to refactor the
  code to eventually support more games, offering the same feature set for all of
- them. Please read the _Contributing_ section below if interested in
+ them. Please read the [Contributing](#contributing) section below if interested in
  contributing.
 
 Docs are included in the download but we are setting them up also online
@@ -28,6 +28,8 @@ To run Wrye Bash from the latest `dev` code (download from [here]
 * comtypes 0.6.2 or later for your Python:
  https://sourceforge.net/projects/comtypes/files/comtypes/
 
+If you are running Windows XP, you will also need to install the [Microsoft Visual C++ 2005 SP 1 Redistributable Package ATL Security Update](http://www.microsoft.com/download/en/details.aspx?id=14431).
+
 Refer to the readmes for [detailed instructions][1]. In short:
 
 1. Install one of the supported games. Oblivion, Skyrim.
@@ -40,22 +42,9 @@ Refer to the readmes for [detailed instructions][1]. In short:
 
 Please read at least:
 
-<ul>
-    <li> <strong><a
-	href="/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&amp;-Using-The-Repository">
-	[github] Branching Model &amp; Using The Repository</a></strong>
-    </li>
-    <li>
-      <strong><a
-	  href="/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase">
-	  [github] Branching and merging to dev using rebase</a></strong>
-    </li>
-    <li>
-      <strong><a
-	  href="/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style">
-	  [dev] Coding Style</a></strong>
-    </li>
-  </ul>
+* **[[github] Branching Model & Using The Repository] (https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository)**
+* **[[github] Branching and merging to dev using rebase] (https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase)**
+* **[[dev] Coding Style](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style)**
 
 The `dev` branch forks at the [SVN 3177 trunk revision]
 (http://sourceforge.net/p/oblivionworks/code/3177/tree/).
