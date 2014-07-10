@@ -1444,51 +1444,6 @@ class BusyCursor(object):
         wx.EndBusyCursor()
 
 #------------------------------------------------------------------------------
-class Progress2(bolt.Progress):
-    def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
-            style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_SMOOTH,
-            abort=False,onAbort=None):
-        self.parent = parent
-        buttons = [(wx.CANCEL,'cancel')] if abort else []
-        self.dialog = windows.TaskDialog(parenthwnd=parent.GetHandle() if parent else None,
-                                         title=title,
-                                         content=message,
-                                         buttons=buttons,
-                                         heading=u'')
-        self.dialog.set_progress_bar(None)
-        self.dialog.show()
-        self.message = message
-        self.prevState = -1
-        self.prevTime = 0
-
-    def __enter__(self): return self
-    def __exit__(self,type,value,traceback):
-        self.Destroy()
-
-    def getParent():
-        return self.parent
-
-    def setCancel(self,enabled=True):
-        print 'setCancel not implemented'
-        pass
-
-    def doProgress(self,state,message):
-        if not self.dialog:
-            raise StateError(u'Dialog already destroyed.')
-        elif (state == 0 or state == 1 or (message != self.prevMessage) or
-              (state != self.prevState or (time.time() - self.prevTime) > 0.5)):
-            if message != self.prevMessage:
-                self.dialog.set_content(message)
-            self.dialog.set_progress_bar(None,pos=int(state*100))
-            self.prevMessage = message
-            self.prevState = state
-            self.prevTime = time.time()
-
-    def Destroy(self):
-        if self.dialog:
-            self.dialog.close()
-            self.dialog = None
-
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
