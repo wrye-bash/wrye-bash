@@ -157,7 +157,7 @@ lo = None #--LibloHandle singleton
 links = None
 
 def listArchiveContents(fileName):
-    command = ur'"%s" l -slt "%s"' % (exe7z, fileName)
+    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     return ins
 
@@ -3764,7 +3764,7 @@ class OmodFile:
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
         with self.path.unicodeSafe() as tempOmod:
-            cmd7z = [exe7z, u'l', u'-r', tempOmod.s]
+            cmd7z = [exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
                     line = unicode(line,'utf8')
@@ -3798,7 +3798,7 @@ class OmodFile:
             subprogress = bolt.SubProgress(progress, 0, 0.4)
             current = 0
             with self.path.unicodeSafe() as tempOmod:
-                cmd7z = [exe7z,u'e',u'-r',tempOmod.s,u'-o%s' % extractDir.s]
+                cmd7z = [exe7z,u'e',u'-r',u'-sccUTF-8',tempOmod.s,u'-o%s' % extractDir.s]
                 with subprocess.Popen(cmd7z, stdout=subprocess.PIPE, startupinfo=startupinfo).stdout as ins:
                     for line in ins:
                         line = unicode(line,'utf8')
@@ -3872,7 +3872,7 @@ class OmodFile:
 
         # Extracted data stream is saved as a file named 'a'
         progress(0,self.path.tail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
-        cmd = [exe7z,u'e',u'-r',dataPath.s,u'-o%s' % outPath.s]
+        cmd = [exe7z,u'e',u'-r',u'-sccUTF-u',dataPath.s,u'-o%s' % outPath.s]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
@@ -8127,7 +8127,7 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
         with self.fullPath.unicodeSafe() as path:
             # Temp rename if it's name wont encode correctly
-            command = ur'"%s" x "%s" BCF.dat -y -so' % (exe7z, path.s)
+            command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (exe7z, path.s)
             try:
                 ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             except:
@@ -8173,7 +8173,7 @@ class InstallerConverter(object):
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         #--Extract BCF
         with self.fullPath.unicodeSafe() as tempPath:
-            command = u'"%s" x "%s" -y -o"%s"' % (exe7z,tempPath,tempDir.s)
+            command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (exe7z,tempPath,tempDir.s)
             ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
             ins = sio(ins)
             #--Error checking
@@ -8181,6 +8181,7 @@ class InstallerConverter(object):
             regMatch = reError.match
             errorLine = []
             for line in ins:
+                line = unicode(line, 'utf8')
                 if len(errorLine) or regMatch(line):
                     errorLine.append(line)
             result = ins.close()
@@ -8403,7 +8404,7 @@ class InstallerConverter(object):
                 solid = u' %s' % inisettings['7zExtraCompressionArguments']
             else: solid += u' %s' % inisettings['7zExtraCompressionArguments']
 
-        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % srcFolder.s)
+        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -scsUTF-8 -sccUTF-8 "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % srcFolder.s)
 
         progress(0,destArchive.s+u'\n'+_(u'Compressing files...'))
         progress.setFull(1+length)
@@ -8417,6 +8418,7 @@ class InstallerConverter(object):
         errorLine = []
         index = 0
         for line in ins:
+            line = unicode(line, 'utf8')
             maCompressing = regMatch(line)
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
@@ -8458,7 +8460,7 @@ class InstallerConverter(object):
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
-        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8' % (exe7z, apath.s, subTempDir.s, tempList.s)
+        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (exe7z, apath.s, subTempDir.s, tempList.s)
         #--Extract files
         ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
         #--Error Checking, and progress feedback
@@ -8475,7 +8477,7 @@ class InstallerConverter(object):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maExtracting:
-                extracted = GPath(maExtracting.group(1).strip())
+                extracted = unicode(GPath(maExtracting.group(1).strip()), 'utf8')
                 if progress:
                     progress(index,srcInstaller.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
                 if extracted.cext in readExts:
@@ -8570,7 +8572,7 @@ class InstallerArchive(Installer):
         #--Ensure temp dir empty
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
-            args = u'"%s" -y -o%s @%s -scsUTF8' % (arch.s, self.getTempDir().s, self.tempList.s)
+            args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (arch.s, self.getTempDir().s, self.tempList.s)
             if recurse:
                 args += u' -r'
             command = u'"%s" l %s' % (exe7z, args)
@@ -8912,7 +8914,7 @@ class InstallerProject(Installer):
                     out.write(u'*desktop.ini\n')
                     out.write(u'--*\\')
             #--Compress
-            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsWIN' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
             progress(0,archive.s+u'\n'+_(u'Compressing files...'))
             progress.setFull(1+length)
             ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
