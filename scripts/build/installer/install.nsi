@@ -9,39 +9,7 @@
 
         ClearErrors
         
-        ; Standalone version requires the MSVC 2008 redist.
-        ${If} $ExeVersionInstall == $True
-            StrCpy $9 $Empty
-            ${If} ${FileExists} "$SYSDIR\MSVCR90.DLL"
-            ${OrIf} ${FileExists} "$COMMONFILES\Microsoft Shared\VC\msdia90.dll"
-                StrCpy $9 "Installed"
-            ${EndIf}
-            ${If} $9 == $Empty
-                ; MSVC 2008 (x86): http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe
-                DetailPrint "Visual C++ 2008 Redistributable was not found; assumed to be uninstalled."
-                DetailPrint "Downloading Visual C++ 2008 Redistributable Setup..."
-                SetOutPath $TEMP
-                NSISdl::download "http://download.microsoft.com/download/d/d/9/dd9a82d0-52ef-40db-8dab-795376989c03/vcredist_x86.exe" "vcredist_x86.exe"
-
-                Pop $R0 ;Get the return value
-                ${If} $R0 == "success"
-                    DetailPrint "Running Visual C++ 2008 Redistributable Setup..."
-                    Sleep 2000
-                    HideWindow
-                    ExecWait '"$TEMP\vcredist_x86.exe" /qb'
-                    BringToFront
-                    DetailPrint "Finished Visual C++ 2008 SP1 Redistributable Setup"
-
-                    Delete "$TEMP\vcredist_x86.exe"
-                ${Else}
-                    DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
-                ${EndIf}
-            ${Else}
-                DetailPrint "Visual C++ 2008 Redistributable is already installed; skipping!"
-            ${EndIf}
-        ${EndIf}
-
-        ; Python version also requires Python, wxPython, Python Comtypes and PyWin32.
+        ; Python version requires Python, wxPython, Python Comtypes and PyWin32.
         ${If} $PythonVersionInstall == $True
             ; Look for Python.
             ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""

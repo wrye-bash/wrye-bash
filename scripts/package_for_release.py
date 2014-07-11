@@ -354,7 +354,11 @@ def main():
         Packaging script for Wrye Bash, used to create the release modules.
 
         If you need more detailed help beyond what is listed below, use the
-        --tutorial or -t switch.''',
+        --tutorial or -t switch.
+
+        This script requires at least Python 2.7.8 to run, due to improvements
+        made to py2exe executables in regards to MSVC redistributable packages.
+        ''',
         )
     parser.add_argument(
         '-r', '--release',
@@ -438,11 +442,14 @@ def main():
     if args.tutorial:
         ShowTutorial()
         return
+    if sys.version_info[0:3] < (2,7,8):
+        print 'You must run at least Python 2.7.8 to use this script.'
+        print 'Your Python:', sys.version
+        return
     if not args.release:
         print 'No release version specified, please enter it now.'
         args.release = raw_input('>')
 
-    import sys
     print (sys.version)
 
     try:
