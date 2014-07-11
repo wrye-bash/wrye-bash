@@ -129,8 +129,6 @@ def BuildManualVersion(version, pipe=None):
     cmd_7z = [exe7z, 'a', '-mx9',
               # Skip repo management files
               '-xr!.svn', '-xr!.git*',
-              # Skip MSVC runtime files
-              '-xr!Microsoft.VC80.CRT',
               # Skip compiled Python files
               '-xr!*.pyc', '-xr!*.pyo',
               # Skip other files that may get sucked in
@@ -263,8 +261,6 @@ def PackStandaloneVersion(version, pipe=None):
     cmd_7z = [exe7z, 'a', '-mx9',
               # Skip repo management files
               '-xr!.svn', '-xr!.git*',
-              # Skip MSVC runtime files
-              '-xr!Microsoft.VC80.CRT',
               # Skip compiled Python files
               '-xr!*.pyc', '-xr!*.pyo',
               # Skip other files that may get sucked in
