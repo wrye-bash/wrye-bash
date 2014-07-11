@@ -7881,7 +7881,7 @@ class TweakPatcher(Patcher):
         try:
             for index, item in enumerate(self.tweaks):
                 self.gTweakList.Check(index,True)
-            self.OnListCheck()
+            self.TweakOnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
@@ -7890,7 +7890,7 @@ class TweakPatcher(Patcher):
         """'Deselect All' Button was pressed, update all configChecks states."""
         try:
             self.gTweakList.SetChecked([])
-            self.OnListCheck()
+            self.TweakOnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
