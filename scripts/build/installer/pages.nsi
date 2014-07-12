@@ -497,6 +497,14 @@
                 Delete "$Path_OB\Mopy\templates\Bashed Patch, Skyrim.esp"
                 Delete "$Path_OB\Mopy\templates\Bashed Patch, Oblivion.esp"
                 Delete "$Path_OB\Mopy\templates\Blank.esp"
+                ; As of 305  the below are obsolete locations or files.
+                Delete "$Path_OB\Mopy\bash\compiled\7z.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7zUnicode.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7z.dll"
+                Delete "$Path_OB\Mopy\bash\compiled\7zCon.sfx"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\Microsoft.VC80.CTR.manifest"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\msvcr80.dll"
+                RMDir  "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT"
             ${EndIf}
             ${If} $Path_Nehrim != $Empty
                 Delete "$Path_Nehrim\Mopy\Data\Actor Levels\*"
@@ -606,6 +614,14 @@
                 Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Skyrim.esp"
                 Delete "$Path_Nehrim\Mopy\templates\Bashed Patch, Oblivion.esp"
                 Delete "$Path_Nehrim\Mopy\templates\Blank.esp"
+                ; As of 305  the below are obsolete locations or files.
+                Delete "$Path_OB\Mopy\bash\compiled\7z.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7zUnicode.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7z.dll"
+                Delete "$Path_OB\Mopy\bash\compiled\7zCon.sfx"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\Microsoft.VC80.CTR.manifest"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\msvcr80.dll"
+                RMDir  "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT"
             ${EndIf}
             ${If} $Path_Skyrim != $Empty
                 Delete "$Path_Skyrim\Mopy\Data\Actor Levels\*"
@@ -716,6 +732,14 @@
                 Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Skyrim.esp"
                 Delete "$Path_Skyrim\Mopy\templates\Bashed Patch, Oblivion.esp"
                 Delete "$Path_Skyrim\Mopy\templates\Blank.esp"
+                ; As of 305  the below are obsolete locations or files.
+                Delete "$Path_OB\Mopy\bash\compiled\7z.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7zUnicode.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7z.dll"
+                Delete "$Path_OB\Mopy\bash\compiled\7zCon.sfx"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\Microsoft.VC80.CTR.manifest"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\msvcr80.dll"
+                RMDir  "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT"
             ${EndIf}
             ${If} $Path_Ex1 != $Empty
                 Delete "$Path_Ex1\Mopy\Data\Actor Levels\*"
@@ -825,6 +849,15 @@
                 Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Skyrim.esp"
                 Delete "$Path_Ex1\Mopy\templates\Bashed Patch, Oblivion.esp"
                 Delete "$Path_Ex1\Mopy\templates\Blank.esp"
+                ; As of 305  the below are obsolete locations or files.
+                Delete "$Path_OB\Mopy\bash\compiled\7z.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7zUnicode.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7z.dll"
+                Delete "$Path_OB\Mopy\bash\compiled\7zCon.sfx"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\Microsoft.VC80.CTR.manifest"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\msvcr80.dll"
+                RMDir  "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT"
+
             ${EndIf}
             ${If} $Path_Ex2 != $Empty
                 Delete "$Path_Ex2\Mopy\Data\Actor Levels\*"
@@ -936,7 +969,15 @@
                 Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Skyrim.esp"
                 Delete "$Path_Ex2\Mopy\templates\Bashed Patch, Oblivion.esp"
                 Delete "$Path_Ex2\Mopy\templates\Blank.esp"
-            ${EndIf}
+                ; As of 305  the below are obsolete locations or files.
+                Delete "$Path_OB\Mopy\bash\compiled\7z.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7zUnicode.exe"
+                Delete "$Path_OB\Mopy\bash\compiled\7z.dll"
+                Delete "$Path_OB\Mopy\bash\compiled\7zCon.sfx"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\Microsoft.VC80.CTR.manifest"
+                Delete "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT\msvcr80.dll"
+                RMDir  "$Path_OB\Mopy\bash\compiled\Microsoft.VC80.CRT"
+                ${EndIf}
         ${EndIf}
     FunctionEnd
 

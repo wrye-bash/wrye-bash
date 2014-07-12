@@ -10718,7 +10718,7 @@ class InstallerConverter_Apply(InstallerLink):
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
-            if not self.converter.hasBCF:
+            if hasattr(self.converter, 'hasBCF') and not self.converter.hasBCF:
                 deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
                 balt.showWarning(self.gTank,
                     _(u'%s: An error occured while applying an Auto-BCF.' %

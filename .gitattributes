@@ -6,7 +6,6 @@
 
 # M$ files
 *.bat text eol=crlf
-Mopy/bash/compiled/Microsoft.VC80.CRT/Microsoft.VC80.CRT.manifest text eol=crlf
 
 # UNIX files
 **/generate_second_post text eol=lf
