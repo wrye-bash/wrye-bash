@@ -28,8 +28,6 @@ To run Wrye Bash from the latest `dev` code (download from [here]
 * comtypes 0.6.2 or later for your Python:
  https://sourceforge.net/projects/comtypes/files/comtypes/
 
-If you are running Windows XP, you will also need to install the [Microsoft Visual C++ 2005 SP 1 Redistributable Package ATL Security Update](http://www.microsoft.com/download/en/details.aspx?id=14431).
-
 Refer to the readmes for [detailed instructions][1]. In short:
 
 1. Install one of the supported games. Oblivion, Skyrim.
