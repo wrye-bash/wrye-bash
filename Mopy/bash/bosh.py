@@ -3872,7 +3872,7 @@ class OmodFile:
 
         # Extracted data stream is saved as a file named 'a'
         progress(0,self.path.tail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
-        cmd = [exe7z,u'e',u'-r',u'-sccUTF-u',dataPath.s,u'-o%s' % outPath.s]
+        cmd = [exe7z,u'e',u'-r',u'-sccUTF-8',dataPath.s,u'-o%s' % outPath.s]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
