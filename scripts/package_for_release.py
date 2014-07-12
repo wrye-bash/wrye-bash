@@ -60,6 +60,13 @@ try:
 except:
     have_py2exe = False
 
+try:
+    #--Needed to ensure non-repo file don't get packaged
+    import git
+    have_git = True
+except:
+    have_git = False
+
 
 # ensure we are in the correct directory so relative paths will work properly
 scriptDir = os.path.dirname(unicode(sys.argv[0], sys.getfilesystemencoding()))
@@ -123,18 +130,18 @@ def VerifyPy2Exe():
     return crcGood == crcTest
 
 
-def BuildManualVersion(version, pipe=None):
+def BuildManualVersion(version, all_files, pipe=None):
     """Creates the standard python manual install version"""
-    archive = os.path.join(dest, 'Wrye Bash %s - Python Source.7z' % version)
-    cmd_7z = [exe7z, 'a', '-mx9',
-              # Skip repo management files
-              '-xr!.svn', '-xr!.git*',
-              # Skip compiled Python files
-              '-xr!*.pyc', '-xr!*.pyo',
-              # Skip other files that may get sucked in
-              '-xr!bash.ini', '-xr!*.log', '-xr!desktop.ini', '-xr!thumbs.db',
-              archive, 'Mopy']
+    archive = os.path.join(dest, u'Wrye Bash %s - Python Source.7z' % version)
+    listFile = os.path.join(dest, u'manual_list.txt')
+    with open(listFile, 'wb') as out:
+        # We want every file for the manual version
+        for file in all_files:
+            out.write(file)
+            out.write('\n')
+    cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
+    rm(listFile)
 
 
 def BuildStandaloneVersion(version, file_version, pipe=None):
@@ -255,22 +262,28 @@ def CreateStandaloneExe(version, file_version, pipe=None):
     return True
 
 
-def PackStandaloneVersion(version, pipe=None):
+def PackStandaloneVersion(version, all_files, pipe=None):
     """Packages the standalone manual install version"""
     archive = os.path.join(dest, u'Wrye Bash %s - Standalone Executable.7z' % version)
-    cmd_7z = [exe7z, 'a', '-mx9',
-              # Skip repo management files
-              '-xr!.svn', '-xr!.git*',
-              # Skip compiled Python files
-              '-xr!*.pyc', '-xr!*.pyo',
-              # Skip other files that may get sucked in
-              '-xr!bash.ini', '-xr!*.log', '-xr!desktop.ini', '-xr!thumbs.db',
-              # WBSA: skip all Python files and batch files
-              '-xr!*.py', '-xr!*.pyw', '-xr!*.bat',
-              archive,
-              'Mopy',
-              ]
+
+    listFile = os.path.join(dest, u'standalone_list.txt')
+    with open(listFile, 'wb') as out:
+        # We do not want any python files with the standalone
+        # version, and we need to include the built EXEs
+        all_files = [x for x in all_files
+                     if os.path.splitext(x)[1] not in (u'.py',
+                                                       u'.pyw',
+                                                       u'.bat')
+                     ]
+        all_files.extend([u'Mopy\\Wrye Bash.exe',
+                          u'Mopy\\w9xPopen.exe'])
+        for file in all_files:
+            #print os.path.splitext(file)[1], os.path.splitext(file)[1] not in (u'.py', u'.pyw', u'.bat')
+            out.write(file)
+            out.write('\n')
+    cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
+    rm(listFile)
 
 
 def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
@@ -335,7 +348,7 @@ def ShowTutorial():
         list.fill('''Manual install (archive) of the Standalone version'''),
         list.fill('''Automated Installer'''),
         '',
-        wrapper.fill('''In addition to the default requirements to run Wrye Bash in Python mode, you will need four additional things:'''),
+        wrapper.fill('''In addition to the default requirements to run Wrye Bash in Python mode, you will need five additional things:'''),
         list.fill('''NSIS: Used to create the Automated Installer. The latest 3.x release is recommended, as the instructions below for Inetc are based on 3.0.'''),
         list.fill('''Inetc: An NSIS plugin for downloading files, this is needed due to the Python website using redirects that the built in NSISdl plugin can not handle.  Get it from:'''),
         '',
@@ -344,8 +357,102 @@ def ShowTutorial():
         listExt.fill('''And install by copying the provided unicode dll into your NSIS/Plugins/x86-unicode directory.'''),
         list.fill('''py2exe: Used to create the Standalone EXE.'''),
         list.fill('''Modified zipextimporter.py:  Copy the modified version from this directory into your Python's Lib\\site-packages directory.  This is needed for custom zipextimporter functionality that the Wrye Bash Standalone uses.'''),
+        list.fill('''GitPython: This is used to parse the repository information to ensure non-repo files are not included in the built packages.  Get version 0.2.0, not a newer one, because those introduce additional dependencies.'''),
+        '',
+        '   https://pypi.python.org/pypi/GitPython/0.2.0-beta1',
+        ''
         ]
     print '\n'.join(lines)
+
+
+def GetGitFiles(gitDir):
+    """Using git.exe, parses the repository information to get a list of all
+       files that belong in the repository.  Returns a list of files with paths
+       relative to the Mopy directory, which can be used to ensure no non-repo
+       files get included in the installers.  This function will also print a
+       warning if there are non-committed changes."""
+    # First, ensure GitPython will be able to call git.  On windows, this means
+    # ensuring that the Git/bin directory is in the PATH variable.
+    if not have_git:
+        print 'WARNING: Could not locate GitPython.  This script cannot:'
+        print ' * Verify your repo is clean (no uncommitted changes)'
+        print ' * Ensure non-repo files are not included'
+        return GetAllFiles()
+
+    try:
+        if sys.platform == 'win32':
+            # Windows, check all the PATH options first
+            for path in os.environ['PATH'].split(u';'):
+                if os.path.isfile(os.path.join(path, u'git.exe')):
+                    # Found, no changes necessary
+                    break
+            else:
+                # Not found in PATH, try user supplied directory, as well as common
+                # install paths
+                pfiles = os.path.join(os.path.expandvars(u'%PROGRAMFILES%'),
+                                      u'Git', u'bin')
+                if u'(x86)' in pfiles:
+                    # On a 64-bit system, running 32-bit Python, there is
+                    # no environment variable that expands to the 64-bit
+                    # program files location, so do a hacky workaround
+                    pfilesx64 = pfiles.replace(u'Program Files (x86)',
+                                               u'Program Files')
+                else:
+                    pfilesx64 = None
+                for path in (gitDir, pfiles, pfilesx64):
+                    if path is None:
+                        continue
+                    if os.path.isfile(os.path.join(path, u'git.exe')):
+                        # Found it, put the path into PATH
+                        os.environ['PATH'] += u';' + path
+                        break
+        # Test out if git can be launched now
+        try:
+            with open(os.devnull, 'wb') as devnull:
+                subprocess.Popen('git', stdout=devnull, stderr=devnull)
+        except:
+            print 'WARNING: Could not locate git.  This script cannot:'
+            print ' * Verify your repo is clean (no uncommitted changes)'
+            print ' * Ensure non-repo files are not included'
+            return GetAllFiles()
+
+        # Git is working good, now use it
+        repo = git.Repo()
+        if repo.is_dirty():
+            print 'WARNING: Your wrye-bash repository is dirty (you have uncommitted changes).'
+        files = [os.path.normpath(os.path.normcase(x.path))
+                 for x in repo.tree().traverse()
+                 if x.path.lower().startswith(u'mopy') and os.path.isfile(x.path)
+                 ]
+        return files
+    except:
+        print 'WARNING: An error occured while attempting to interface with git.'
+        return GetAllFiles()
+
+
+def GetAllFiles():
+    """Returns a list of every file in the Mopy folder.  Use this as a fallback
+       in case the files cannot be determined by interfacing with git"""
+    # First, build a list of every file
+    all_files = []
+    for root, dirs, files in os.walk(u'Mopy'):
+        for file in files:
+            if file.lower()[-4:] in (u'.pyc', u'.pyo'):
+                continue
+            all_files.append(
+                os.path.normpath(
+                    os.path.normcase(os.path.join(root, file))))
+    # Now filter out known unwanted files
+    all_files = [x for x in all_files
+                 if (os.path.splitext(x)[1] not in (u'.pyc',
+                                                    u'.pyo',
+                                                    u'.log')
+                     and os.path.basename(x) not in (u'desktop.ini',
+                                                     u'thumbs.db',
+                                                     u'bash.ini')
+                     )
+                 ]
+    return all_files
 
 
 def main():
@@ -415,6 +522,13 @@ def main():
                 script cannot locate NSIS automatically.''',
         )
     parser.add_argument(
+        '-g', '--git',
+        default=None,
+        dest='git',
+        help='''Specify the path to the git bin directory.  Use this if the
+                script cannot locate git automatically.''',
+        )
+    parser.add_argument(
         '-v', '--verbose',
         default=False,
         action='store_true',
@@ -452,6 +566,8 @@ def main():
 
     print (sys.version)
 
+    all_files = GetGitFiles(args.git)
+
     try:
         # If no build arguments passed, it's the same as --all
         if (not args.wbsa and not args.manual
@@ -478,7 +594,7 @@ def main():
             msg = 'Creating Python archive distributable...'
             print msg
             print >> pipe, msg
-            BuildManualVersion(args.release, pipe)
+            BuildManualVersion(args.release, all_files, pipe)
 
         exe_made = False
         if args.exe or args.wbsa or args.installer:
@@ -491,14 +607,14 @@ def main():
             msg = 'Creating standalone distributable...'
             print msg
             print >> pipe, msg
-            PackStandaloneVersion(args.release, pipe)
+            PackStandaloneVersion(args.release, all_files, pipe)
 
         if args.installer:
             msg = 'Creating installer distributable...'
             print msg
             print >> pipe, msg
             if exe_made:
-                BuildInstallerVersion(args.release, file_version, args.nsis, pipe)
+                BuildInstallerVersion(args.release, all_files, file_version, args.nsis, pipe)
             else:
                 msg = ' Standalone exe not found, aborting installer creation.'
                 print msg
