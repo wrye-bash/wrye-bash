@@ -22681,7 +22681,6 @@ class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,CBa
 #------------------------------------------------------------------------------
 class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
     """Removes the description from loading screens."""
-
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AAssortedTweak_TextlessLSCRs,self).__init__(_(u"No Description Loading Screens"),
@@ -22944,37 +22943,7 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
             log(u'  * '+_(u'%s set to: %4.2f') % (self.label,self.value))
 
 #------------------------------------------------------------------------------
-class ClothesTweak(MultiTweakItem):
-    flags = {
-        u'hoods':   1<<1,
-        u'shirts':  1<<2,
-        u'pants':   1<<3,
-        u'gloves':  1<<4,
-        u'amulets': 1<<8,
-        u'rings2':  1<<16,
-        u'amulets2': 1<<17,
-        #--Multi
-        u'robes':   (1<<2) + (1<<3),
-        u'rings':   (1<<6) + (1<<7),
-        }
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        MultiTweakItem.__init__(self,label,tip,key,*choices)
-        typeKey = key[:key.find(u'.')]
-        self.orTypeFlags = typeKey == u'rings'
-        self.typeFlags = self.__class__.flags[typeKey]
-
-    def isMyType(self,record):
-        """Returns true to save record for late processing."""
-        if record.flags.notPlayable: return False #--Ignore non-playable items.
-        recTypeFlags = int(record.flags) & 0xFFFF
-        myTypeFlags = self.typeFlags
-        return (
-            (recTypeFlags == myTypeFlags) or
-            (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags))
-            )
-class CBash_ClothesTweak(CBash_MultiTweakItem):
+class AClothesTweak(AMultiTweakItem):
     flags = {
         u'hoods':    0x00000002,
         u'shirts':   0x00000004,
@@ -22987,10 +22956,12 @@ class CBash_ClothesTweak(CBash_MultiTweakItem):
         u'robes':    0x0000000C,
         u'rings':    0x000000C0,
         }
+        # u'robes':   (1<<2) + (1<<3),
+        # u'rings':   (1<<6) + (1<<7),
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
-        CBash_MultiTweakItem.__init__(self,label,tip,key,*choices)
+        super(AClothesTweak,self).__init__(label,tip,key,*choices)
         typeKey = key[:key.find(u'.')]
         self.orTypeFlags = typeKey == u'rings'
         self.typeFlags = self.__class__.flags[typeKey]
@@ -23001,6 +22972,15 @@ class CBash_ClothesTweak(CBash_MultiTweakItem):
         myTypeFlags = self.typeFlags
         return ((recTypeFlags == myTypeFlags) or
                 (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags)))
+
+class ClothesTweak(AClothesTweak,MultiTweakItem):
+    def isMyType(self,record):
+        """Returns true to save record for late processing."""
+        # TODO : needed in CBash ?
+        if record.flags.notPlayable: return False #--Ignore non-playable items.
+        return super(ClothesTweak,self).isMyType(record)
+
+class CBash_ClothesTweak(AClothesTweak,CBash_MultiTweakItem): pass
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeight(ClothesTweak):
@@ -23019,22 +22999,17 @@ class ClothesTweak_MaxWeight(ClothesTweak):
                 tweakCount += 1
         log(u'* %s: [%4.2f]: %d' % (self.label,maxWeight,tweakCount))
 
-
 class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
     """Enforce a max weight for specified clothes."""
-    scanOrder = 32
-    editOrder = 32
     name = _(u'Reweigh Clothes')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
-        CBash_ClothesTweak.__init__(self,label,tip,key,*choices)
+        super(CBash_ClothesTweak_MaxWeight,self).__init__(label,tip,key,*choices)
         self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
                          }[key]
-        self.mod_count = {}
-
 
     def getTypes(self):
         return ['CLOT']
@@ -23077,7 +23052,7 @@ class ClothesTweak_Unblock(ClothesTweak):
     """Unlimited rings, amulets."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
-        ClothesTweak.__init__(self,label,tip,key,*choices)
+        super(ClothesTweak_Unblock,self).__init__(label,tip,key,*choices)
         self.unblockFlags = self.__class__.flags[key[key.rfind('.')+1:]]
 
     #--Patch Phase ------------------------------------------------------------
@@ -23090,6 +23065,7 @@ class ClothesTweak_Unblock(ClothesTweak):
                 keep(record.fid)
                 tweakCount += 1
         log(u'* %s: %d' % (self.label,tweakCount))
+
 class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     """Unlimited rings, amulets."""
     scanOrder = 31
@@ -23097,15 +23073,13 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
-        CBash_ClothesTweak.__init__(self,label,tip,key)
+        super(CBash_ClothesTweak_Unblock,self).__init__(label,tip,key)
         self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
                          'robes.show.amulets2':('IsHideAmulets',),
                          'rings.unblock.rings':('IsRightRing','IsLeftRing'),
                          'gloves.unblock.rings2':('IsHideRings',),
                          'robes.unblock.pants':('IsLowerBody',)
                          }[key]
-        self.mod_count = {}
-
 
     def getTypes(self):
         return ['CLOT']
@@ -23500,16 +23474,18 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
             tweak.buildPatchLog(log)
 
 #------------------------------------------------------------------------------
-class NamesTweak_BodyTags(MultiTweakItem):
+class ANamesTweak_BodyTags(AMultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Body Part Codes"),
+        # TODO added u'ARGHTCCPBS' etc - correct ?
+        super(ANamesTweak_BodyTags,self).__init__(_(u"Body Part Codes"),
             _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
             u'bodyTags',
-            ('ARGHTCCPBS','ARGHTCCPBS'),
-            ('ABGHINOPSL','ABGHINOPSL'),
+            (u'ARGHTCCPBS',u'ARGHTCCPBS'),
+            (u'ABGHINOPSL',u'ABGHINOPSL'),
             )
 
+class NamesTweak_BodyTags(ANamesTweak_BodyTags,MultiTweakItem):
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         return tuple()
@@ -23527,18 +23503,8 @@ class NamesTweak_BodyTags(MultiTweakItem):
         """Edits patch file as desired. Will write to log."""
         patchFile.bodyTags = self.choiceValues[self.chosen][0]
 
-class CBash_NamesTweak_BodyTags(CBash_MultiTweakItem):
-    scanOrder = 32
-    editOrder = 32
+class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Body Part Codes"),
-            _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
-            u'bodyTags',
-            (u'ARGHTCCPBS',u'ARGHTCCPBS'),
-            (u'ABGHINOPSL',u'ABGHINOPSL'),
-            )
-
     def getTypes(self):
         return []
 
@@ -23611,10 +23577,6 @@ class NamesTweak_Body(MultiTweakItem):
 class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
     #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        CBash_MultiTweakItem.__init__(self,label,tip,key,*choices)
-        self.mod_count = {}
-
     def getTypes(self):
         return [self.key]
 
