@@ -21575,18 +21575,23 @@ class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTwea
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
-    """Silences and invisibleates the Script Effect."""
+class AAssortedTweak_ScriptEffectSilencer(AMultiTweakItem):
+    """Silences the script magic effect and gives it an extremely high speed."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Magic: Script Effect Silencer"),
+        super(AAssortedTweak_ScriptEffectSilencer, self).__init__(_(u"Magic: Script Effect Silencer"),
             _(u'Script Effect will be silenced and have no graphics.'),
             u'SilentScriptEffect',
             (u'0',    0),
             )
         self.defaultEnabled = True
 
+    def _patchLog(self,log):
+        log.setHeader(u'=== '+_(u'Magic: Script Effect Silencer'))
+        log(_(u'Script Effect silenced.'))
+
+class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21631,27 +21636,22 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
                 if getattr(record,attr) != silentattrs[attr]:
                     setattr(record,attr,silentattrs[attr])
                     keep(record.fid)
-        #--Log
-        log.setHeader(u'=== '+_(u'Magic: Script Effect Silencer'))
-        log(_(u'Script Effect silenced.'))
+        self._patchLog(log)
 
-class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
-    """Silences the script magic effect and gives it an extremely high speed."""
+class CBash_AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,CBash_MultiTweakItem):
     name = _(u'Magic: Script Effect Silencer')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Magic: Script Effect Silencer"),
-             _(u'Script Effect will be silenced and have no graphics.'),
-            u'SilentScriptEffect',
-            (u'0',    0),
-            )
+        super(CBash_AssortedTweak_ScriptEffectSilencer, self).__init__()
         self.attrs = ['modPath','modb','modt_p','projectileSpeed','light','effectShader',
                       'enchantEffect','castingSound','boltSound','hitSound','areaSound',
                       'IsNoHitEffect']
         self.newValues = [None,None,None,9999,None,None,None,None,None,None,None,True]
-        self.defaultEnabled = True
         self.SEFF = MGEFCode('SEFF')
+        # TODO THIS IS ONE OF THE FEW THAT HAS no self.mod_count = {} - maybe
+        # should call the contructor directly ? (space overhead but very small)
+        self.buildPatchLog=self._patchLog # TODO : maybe a simple override ?
 
     def getTypes(self):
         return ['MGEF']
@@ -21670,19 +21670,13 @@ class CBash_AssortedTweak_ScriptEffectSilencer(CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        log.setHeader(u'=== '+_(u'Magic: Script Effect Silencer'))
-        log(_(u'Script Effect silenced.'))
-
 #------------------------------------------------------------------------------
-class AssortedTweak_HarvestChance(MultiTweakItem):
-    """Sets Harvest Chances."""
+class AAssortedTweak_HarvestChance(AMultiTweakItem):
+    """Adjust Harvest Chances."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Harvest Chance"),
+        super(AAssortedTweak_HarvestChance, self).__init__(_(u"Harvest Chance"),
             _(u'Harvest chances on all plants will be set to the chosen percentage.'),
             u'HarvestChance',
             (u'10%',  10),
@@ -21698,6 +21692,7 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
             (_(u'Custom'),0),
             )
 
+class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21739,29 +21734,13 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
-    """Adjust Harvest Chances."""
+class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,CBash_MultiTweakItem):
     name = _(u'Harvest Chance')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Harvest Chance"),
-            _(u'Harvest chances on all plants will be set to the chosen percentage.'),
-            u'HarvestChance',
-            (u'10%',  10),
-            (u'20%',  20),
-            (u'30%',  30),
-            (u'40%',  40),
-            (u'50%',  50),
-            (u'60%',  60),
-            (u'70%',  70),
-            (u'80%',  80),
-            (u'90%',  90),
-            (u'100%', 100),
-            (_(u'Custom'),0),
-            )
+        super(CBash_AssortedTweak_HarvestChance, self).__init__()
         self.attrs = ['spring','summer','fall','winter']
-        self.mod_count = {}
 
     def getTypes(self):
         return ['FLOR']
@@ -21792,17 +21771,18 @@ class CBash_AssortedTweak_HarvestChance(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_WindSpeed(MultiTweakItem):
-    """Disables WTHR winds."""
+class AAssortedTweak_WindSpeed(AMultiTweakItem):
+    """Disables Weather winds."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Disable Wind"),
+        super(AAssortedTweak_WindSpeed, self).__init__(_(u"Disable Wind"),
             _(u'Disables the wind on all weathers.'),
             u'windSpeed',
             (_(u'Disable'),  0),
             )
 
+class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21840,19 +21820,10 @@ class AssortedTweak_WindSpeed(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
-    """Disables Weather winds."""
+class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,CBash_MultiTweakItem):
     name = _(u'Disable Wind')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Disable Wind"),
-            _(u'Disables the wind on all weathers.'),
-            u'windSpeed',
-            (_(u'Disable'),  0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['WTHR']
 
@@ -21879,17 +21850,18 @@ class CBash_AssortedTweak_WindSpeed(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_UniformGroundcover(MultiTweakItem):
+class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
     """Eliminates random variation in groundcover."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Uniform Groundcover"),
+        super(AAssortedTweak_UniformGroundcover,self).__init__(_(u"Uniform Groundcover"),
             _(u'Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
             u'UniformGroundcover',
             (u'1.0', u'1.0'),
             )
 
+class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21927,19 +21899,10 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
-    """Eliminates random variation in groundcover."""
+class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,CBash_MultiTweakItem):
     name = _(u'Uniform Groundcover')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Uniform Groundcover"),
-            _(u'Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
-            u'UniformGroundcover',
-            (u'1.0', u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['GRAS']
 
@@ -21966,12 +21929,11 @@ class CBash_AssortedTweak_UniformGroundcover(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
+class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
     """Sets Cast When Used Enchantment number of uses."""
-#info: 'itemType','chargeAmount','enchantCost'
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Number of uses for pre-enchanted weapons and Staffs/Staves"),
+        super(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,self).__init__(_(u"Number of uses for pre-enchanted weapons and Staffs/Staves"),
             _(u'The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
             u'Number of uses:',
             (u'1', 1),
@@ -21989,6 +21951,8 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
             (_(u'Custom'),0),
             )
 
+class AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,MultiTweakItem):
+#info: 'itemType','chargeAmount','enchantCost'
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22031,31 +21995,10 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
-    """Sets Cast When Used Enchantment number of uses."""
+class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,CBash_MultiTweakItem):
     name = _(u'Set Enchantment Number of Uses')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Number of uses for pre-enchanted weapons and Staffs/Staves"),
-            _(u'The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
-            u'Number of uses:',
-            (u'1', 1),
-            (u'5', 5),
-            (u'10', 10),
-            (u'20', 20),
-            (u'30', 30),
-            (u'40', 40),
-            (u'50', 50),
-            (u'80', 80),
-            (u'100', 100),
-            (u'250', 250),
-            (u'500', 500),
-            (_(u'Unlimited'), 0),
-            (_(u'Custom'),0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['ENCH']
 
@@ -22090,20 +22033,24 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_DefaultIcons(MultiTweakItem):
+class AAssortedTweak_DefaultIcons(AMultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                            'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
-                            'MISC','QUST','SGST','SLGM','WEAP']
-        MultiTweakItem.__init__(self,_(u"Default Icons"),
+        super(AAssortedTweak_DefaultIcons,self).__init__(_(u"Default Icons"),
             _(u"Sets a default icon for any records that don't have any icon assigned"),
             u'icons',
             (u'1', 1),
             )
         self.defaultEnabled = True
 
+class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self):
+        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
+                            'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
+                            'MISC','QUST','SGST','SLGM','WEAP']
+        super(AssortedTweak_DefaultIcons,self).__init__()
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22265,7 +22212,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
+class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
     name = _(u'Default Icons')
     type_defaultIcon = {
@@ -22310,15 +22257,6 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
                 }
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Default Icons"),
-            _(u"Sets a default icon for any records that don't have any icon assigned"),
-            u'icons',
-            (u'1', 1),
-            )
-        self.mod_count = {}
-        self.defaultEnabled = True
-
     def getTypes(self):
         return [_type for _type in self.type_defaultIcon.keys()]
 
@@ -22410,11 +22348,11 @@ class CBash_AssortedTweak_DefaultIcons(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
-    """Sets Cast When Used Enchantment number of uses."""
+class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
+    """Sets Sound Attenuation Levels for all records except Nirnroots."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels"),
+        super(AAssortedTweak_SetSoundAttenuationLevels,self).__init__(_(u"Set Sound Attenuation Levels"),
             _(u'The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
             u'Attenuation%:',
             (u'0%', 0),
@@ -22426,6 +22364,7 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
             (_(u'Custom'),0),
             )
 
+class AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuationLevels,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22463,25 +22402,10 @@ class AssortedTweak_SetSoundAttenuationLevels(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
-    """Sets Sound Attenuation Levels for all records except Nirnroots."""
+class CBash_AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuationLevels,CBash_MultiTweakItem):
     name = _(u'Set Sound Attenuation Levels')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels"),
-            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
-            u'Attenuation%:',
-            (u'0%', 0),
-            (u'5%', 5),
-            (u'10%', 10),
-            (u'20%', 20),
-            (u'50%', 50),
-            (u'80%', 80),
-            (_(u'Custom'),0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['SOUN']
 
@@ -22512,12 +22436,12 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
-    """Sets Cast When Used Enchantment number of uses."""
+class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
+    """Sets Sound Attenuation Levels for Nirnroots."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels: Nirnroots Only"),
-            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
+        super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,self).__init__(_(u"Set Sound Attenuation Levels: Nirnroots Only"),
+            _(u'The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
             u'Nirnroot Attenuation%:',
             (u'0%', 0),
             (u'5%', 5),
@@ -22528,6 +22452,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
             (_(u'Custom'),0),
             )
 
+class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22565,25 +22490,10 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTweakItem):
-    """Sets Sound Attenuation Levels for Nirnroots."""
+class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,CBash_MultiTweakItem):
     name = _(u'Set Sound Attenuation Levels: Nirnroots Only')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Set Sound Attenuation Levels: Nirnroots Only"),
-            _(u'The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
-            u'Nirnroot Attenuation%:',
-            (u'0%', 0),
-            (u'5%', 5),
-            (u'10%', 10),
-            (u'20%', 20),
-            (u'50%', 50),
-            (u'80%', 80),
-            (_(u'Custom'),0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['SOUN']
 
@@ -22614,17 +22524,18 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(CBash_MultiTwea
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
+class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
     """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Faction crime Gold Multiplier Fix"),
+        super(AAssortedTweak_FactioncrimeGoldMultiplier,self).__init__(_(u"Faction crime Gold Multiplier Fix"),
             _(u'Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
             u'FactioncrimeGoldMultiplier',
             (u'1.0',  u'1.0'),
             )
 
+class AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMultiplier,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22660,19 +22571,10 @@ class AssortedTweak_FactioncrimeGoldMultiplier(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
-    """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
+class CBash_AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMultiplier,CBash_MultiTweakItem):
     name = _(u'Faction crime Gold Multiplier Fix')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Faction crime Gold Multiplier Fix"),
-            _(u'Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
-            u'FactioncrimeGoldMultiplier',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['FACT']
 
@@ -22699,17 +22601,19 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(CBash_MultiTweakItem):
         self.count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_LightFadeValueFix(MultiTweakItem):
-    """Sets light fade value when not set to 1.0."""
+class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
+    """Remove light flickering for low end machines."""
+    # TODO : was """Sets light fade value when not set to 1.0."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"No Light Fade Value Fix"),
+        super(AAssortedTweak_LightFadeValueFix,self).__init__(_(u"No Light Fade Value Fix"),
             _(u"Sets Light's Fade values to default of 1.0 if not set."),
             u'NoLightFadeValueFix',
             (u'1.0',  u'1.0'),
             )
 
+class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22745,19 +22649,10 @@ class AssortedTweak_LightFadeValueFix(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
-    """Remove light flickering for low end machines."""
+class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,CBash_MultiTweakItem):
     name = _(u'No Light Fade Value Fix')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"No Light Fade Value Fix"),
-            _(u"Sets Light's Fade values to default of 1.0 if not set."),
-            u'NoLightFadeValueFix',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['LIGH']
 
@@ -22773,7 +22668,6 @@ class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
@@ -22785,17 +22679,18 @@ class CBash_AssortedTweak_LightFadeValueFix(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_TextlessLSCRs(MultiTweakItem):
-    """Sets light fade value when not set to 1.0."""
+class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
+    """Removes the description from loading screens."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"No Description Loading Screens"),
+        super(AAssortedTweak_TextlessLSCRs,self).__init__(_(u"No Description Loading Screens"),
             _(u"Removes the description from loading screens."),
             u'NoDescLSCR',
             (u'1.0',  u'1.0'),
             )
 
+class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -22831,19 +22726,10 @@ class AssortedTweak_TextlessLSCRs(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_TextlessLSCRs(CBash_MultiTweakItem):
-    """Remove light flickering for low end machines."""
+class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,CBash_MultiTweakItem):
     name = _(u"No Description Loading Screens")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"No Description Loading Screens"),
-            _(u"Removes the description from loading screens."),
-            u'NoDescLSCR',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['LSCR']
 
