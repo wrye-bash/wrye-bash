@@ -24610,15 +24610,6 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
 class BasalNPCTweaker(MultiTweakItem):
     """Base for all NPC tweakers"""
 
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        # Override this segment with real info.
-        MultiTweakItem.__init__(self,_(u"Title"),
-            _(u'Description'),
-            u'Ignored',
-            (u'1.0',  u'1.0'),
-            )
-
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -24637,31 +24628,11 @@ class BasalNPCTweaker(MultiTweakItem):
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        # override this section too!
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            continue
-        #--Log suggestions:
-        #log.setHeader(u'==='+_(u'TITLE'))
-        #log(u'* '+_(u'%d X Tweaked') % sum(count.values()))
-        #for srcMod in modInfos.getOrdered(count.keys()):
-        #    log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+    def buildPatch(self,log,progress,patchFile): raise AbstractError
 
 #------------------------------------------------------------------------------
 class BasalCreatureTweaker(MultiTweakItem):
     """Base for all Creature tweakers"""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        # Override this segment with real info.
-        MultiTweakItem.__init__(self,_(u"Title"),
-            _(u'Description'),
-            u'Ignored',
-            (u'1.0',  u'1.0'),
-            )
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -24681,26 +24652,15 @@ class BasalCreatureTweaker(MultiTweakItem):
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
 
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        # override this section too!
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            continue
-        #--Log suggestions:
-        #log.setHeader(u'==='+_(u'TITLE'))
-        #log(u'* '+_(u'%d X Tweaked') % sum(count.values()))
-        #for srcMod in modInfos.getOrdered(count.keys()):
-        #    log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+    def buildPatch(self,log,progress,patchFile): raise AbstractError
 
 #------------------------------------------------------------------------------
-class MAONPCSkeletonPatcher(BasalNPCTweaker):
+class AMAONPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Mayu's Animation Overhaul Skeleton Tweaker"),
+        super(AMAONPCSkeletonPatcher, self).__init__(_(u"Mayu's Animation Overhaul Skeleton Tweaker"),
             _(u'Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
             u'MAO Skeleton',
             (_(u'All NPCs'), 0),
@@ -24708,6 +24668,7 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
             (_(u'Only Male NPCs'), 2),
             )
 
+class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -24737,20 +24698,12 @@ class MAONPCSkeletonPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
-    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
+class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
     name = _(u"MAO Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Mayu's Animation Overhaul Skeleton Tweaker"),
-            _(u'Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
-            u'MAO Skeleton',
-            (_(u'All NPCs'),  0),
-            (_(u'Only Female NPCs'),  1),
-            (_(u'Only Male NPCs'),  2),
-            )
-        self.mod_count = {}
+        super(CBash_MAONPCSkeletonPatcher, self).__init__()
         self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     def getTypes(self):
@@ -24790,11 +24743,11 @@ class CBash_MAONPCSkeletonPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
+class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the diverse skeleton for different look."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
+        super(AVORB_NPCSkeletonPatcher, self).__init__(_(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
             _(u"Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
             u'VORB',
             (_(u'All NPCs'), 0),
@@ -24802,6 +24755,7 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
             (_(u'Only Male NPCs'), 2),
             )
 
+class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired.  Will write to log."""
         count = {}
@@ -24853,20 +24807,12 @@ class VORB_NPCSkeletonPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
-class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
-    """Changes all NPCs to use the diverse skeletons for different look."""
+class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,CBash_MultiTweakItem):
     name = _(u"VORB Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _(u"Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
-            u'VORB',
-            (_(u'All NPCs'),  0),
-            (_(u'Only Female NPCs'),  1),
-            (_(u'Only Male NPCs'),  2),
-            )
-        self.mod_count = {}
+        super(CBash_VORB_NPCSkeletonPatcher, self).__init__()
         self.modSkeletonDir = GPath(u'Characters').join(u'_male')
         self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
         self.skeletonList = None
@@ -24932,26 +24878,19 @@ class CBash_VORB_NPCSkeletonPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class VanillaNPCSkeletonPatcher(MultiTweakItem):
+class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
     """Changes all NPCs to use the vanilla beast race skeleton."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Vanilla Beast Skeleton Tweaker"),
+        super(AVanillaNPCSkeletonPatcher, self).__init__(_(u"Vanilla Beast Skeleton Tweaker"),
             _(u'Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
             u'Vanilla Skeleton',
             (u'1.0',  u'1.0'),
             )
 
+class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('NPC_',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('NPC_',)
-
     def scanModFile(self,modFile,progress,patchFile):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it."""
@@ -24990,21 +24929,12 @@ class VanillaNPCSkeletonPatcher(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
-    """Changes all NPCs to use the vanilla beast race skeleton."""
+class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,CBash_MultiTweakItem):
     scanOrder = 31 #Run before MAO
     editOrder = 31
     name = _(u"Vanilla Beast Skeleton")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Vanilla Beast Skeleton Tweaker"),
-            _(u'Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
-            u'Vanilla Skeleton',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['NPC_']
 
@@ -25038,17 +24968,18 @@ class CBash_VanillaNPCSkeletonPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class RedguardNPCPatcher(BasalNPCTweaker):
-    """Changes all Redguard NPCs texture symetry for Better Redguard Compatibility."""
+class ARedguardNPCPatcher(AMultiTweakItem):
+    """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Redguard FGTS Nuller"),
+        super(ARedguardNPCPatcher, self).__init__(_(u"Redguard FGTS Nuller"),
             _(u'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
             u'RedguardFGTSPatcher',
             (u'1.0',  u'1.0'),
             )
 
+class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25066,27 +24997,18 @@ class RedguardNPCPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
-    """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
+class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
     name = _(u"Redguard FGTS Patcher")
+    redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Redguard FGTS Nuller"),
-            _(u'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
-            u'RedguardFGTSPatcher',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-        self.redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
-
     def getTypes(self):
         return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-        if record.race == self.redguardId: #Only affect npc's with the Redguard race
+        if record.race == self.__class__.redguardId: #Only affect npc's with the Redguard race
             oldFGTS_p = record.fgts_p
             newFGTS_p = [0x00] * 200
             if newFGTS_p != oldFGTS_p:
@@ -25109,17 +25031,18 @@ class CBash_RedguardNPCPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class NoBloodCreaturesPatcher(BasalCreatureTweaker):
+class ANoBloodCreaturesPatcher(AMultiTweakItem):
     """Set all creatures to have no blood records."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"No Bloody Creatures"),
+        super(ANoBloodCreaturesPatcher, self).__init__(_(u"No Bloody Creatures"),
             _(u"Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
             u'No bloody creatures',
             (u'1.0',  u'1.0'),
             )
 
+class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25139,19 +25062,10 @@ class NoBloodCreaturesPatcher(BasalCreatureTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
-    """Set all creatures to have no blood records."""
+class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,CBash_MultiTweakItem):
     name = _(u"No Bloody Creatures")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"No Bloody Creatures"),
-            _(u"Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
-            u'No bloody creatures',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['CREA']
 
@@ -25181,14 +25095,14 @@ class CBash_NoBloodCreaturesPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AsIntendedImpsPatcher(BasalCreatureTweaker):
+class AAsIntendedImpsPatcher(AMultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
     reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
     reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u'As Intended: Imps'),
+        super(AAsIntendedImpsPatcher, self).__init__(_(u'As Intended: Imps'),
             _(u"Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
             u'vicious imps!',
             (_(u'All imps'), u'all'),
@@ -25196,6 +25110,7 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
             (_(u'Only implings'), u'small'),
             )
 
+class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25231,24 +25146,12 @@ class AsIntendedImpsPatcher(BasalCreatureTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
+class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
     name = _(u"As Intended: Imps")
-    reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
-    reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
+    spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u'As Intended: Imps'),
-            _(u"Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
-            u'vicious imps!',
-            (_(u'All imps'), u'all'),
-            (_(u'Only fullsize imps'), u'big'),
-            (_(u'Only implings'), u'small'),
-            )
-        self.mod_count = {}
-        self.spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
-
     def getTypes(self):
         return ['CREA']
 
@@ -25291,19 +25194,20 @@ class CBash_AsIntendedImpsPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AsIntendedBoarsPatcher(BasalCreatureTweaker):
-    """Set all imps to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+class AAsIntendedBoarsPatcher(AMultiTweakItem):
+    """Set all boars to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
     reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
     reBoar  = re.compile(ur'(boar)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u'As Intended: Boars'),
+        super(AAsIntendedBoarsPatcher, self).__init__(_(u'As Intended: Boars'),
             _(u"Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
             u'vicious boars!',
             (u'1.0',  u'1.0'),
             )
 
+class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25334,22 +25238,11 @@ class AsIntendedBoarsPatcher(BasalCreatureTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
-    """Set all boars to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
+class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,CBash_MultiTweakItem):
     name = _(u"As Intended: Boars")
-    reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
-    reBoar  = re.compile(ur'(boar)',re.I|re.U)
+    spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u'As Intended: Boars'),
-            _(u"Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
-            u'vicious boars!',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-        self.spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
-
     def getTypes(self):
         return ['CREA']
 
@@ -25388,17 +25281,18 @@ class CBash_AsIntendedBoarsPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class SWALKNPCAnimationPatcher(BasalNPCTweaker):
+class ASWALKNPCAnimationPatcher(AMultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Sexy Walk for female NPCs"),
+        super(ASWALKNPCAnimationPatcher, self).__init__(_(u"Sexy Walk for female NPCs"),
             _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
             u'Mur Zuk SWalk',
             (u'1.0',  u'1.0'),
             )
 
+class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25415,20 +25309,11 @@ class SWALKNPCAnimationPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
-    """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
+class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,CBash_MultiTweakItem):
     name = _(u"Sexy Walk for female NPCs")
+    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Sexy Walk for female NPCs"),
-            _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
-            u'Mur Zuk SWalk',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
     def getTypes(self):
         return ['NPC_']
 
@@ -25455,17 +25340,18 @@ class CBash_SWALKNPCAnimationPatcher(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 #------------------------------------------------------------------------------
-class RWALKNPCAnimationPatcher(BasalNPCTweaker):
+class ARWALKNPCAnimationPatcher(AMultiTweakItem):
     """Changes all female NPCs to use Mur Zuk's Real Walk."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Real Walk for female NPCs"),
+        super(ARWALKNPCAnimationPatcher, self).__init__(_(u"Real Walk for female NPCs"),
             _(u"Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
             u'Mur Zuk RWalk',
             (u'1.0',  u'1.0'),
             )
 
+class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25482,20 +25368,11 @@ class RWALKNPCAnimationPatcher(BasalNPCTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
-    """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
+class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,CBash_MultiTweakItem):
     name = _(u"Real Walk for female NPCs")
+    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Real Walk for female NPCs"),
-            _(u"Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
-            u'Mur Zuk RWalk',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
     def getTypes(self):
         return ['NPC_']
 
@@ -25523,12 +25400,12 @@ class CBash_RWALKNPCAnimationPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class QuietFeetPatcher(BasalCreatureTweaker):
+class AQuietFeetPatcher(AMultiTweakItem):
     """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u'Quiet Feet'),
+        super(AQuietFeetPatcher, self).__init__(_(u'Quiet Feet'),
             _(u"Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
             u'silent n sneaky!',
             (_(u'All Creature Foot Sounds'), u'all'),
@@ -25536,6 +25413,7 @@ class QuietFeetPatcher(BasalCreatureTweaker):
             (_(u'Only Mount Foot Sounds'), u'mounts'),
             )
 
+class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25564,21 +25442,10 @@ class QuietFeetPatcher(BasalCreatureTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
-    """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
+class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
     name = _(u"Quiet Feet")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u'Quiet Feet'),
-            _(u"Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
-            u'silent n sneaky!',
-            (_(u'All Creature Foot Sounds'), u'all'),
-            (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
-            (_(u'Only Mount Foot Sounds'), u'mounts'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['CREA']
 
@@ -25618,18 +25485,19 @@ class CBash_QuietFeetPatcher(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
+class AIrresponsibleCreaturesPatcher(AMultiTweakItem):
     """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u'Irresponsible Creatures'),
+        super(AIrresponsibleCreaturesPatcher, self).__init__(_(u'Irresponsible Creatures'),
             _(u"Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
             u'whatbadguarddogs',
             (_(u'All Creatures'), u'all'),
             (_(u'Only Horses'), u'mounts'),
             )
 
+class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
@@ -25654,20 +25522,10 @@ class IrresponsibleCreaturesPatcher(BasalCreatureTweaker):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_IrresponsibleCreaturesPatcher(CBash_MultiTweakItem):
-    """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
+class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,CBash_MultiTweakItem):
     name = _(u"Irresponsible Creatures")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u'Irresponsible Creatures'),
-            _(u"Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
-            u'whatbadguarddogs',
-            (_(u'All Creatures'), u'all'),
-            (_(u'Only Horses'), u'mounts'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['CREA']
 
