@@ -15782,6 +15782,8 @@ class AMultiTweakItem(object):
         self.isEnabled = False
         self.defaultEnabled = kwargs.get('defaultEnabled', False)
         self.chosen = 0
+        #--Log
+        self.logHeader = u'=== '+ label
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
@@ -20190,8 +20192,9 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+self.label)
-        log(u'* '+_(u'Armor Pieces Tweaked: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20225,7 +20228,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
-        log.setHeader(u'=== '+self.label)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Armor Pieces Tweaked: %d') % sum(self.mod_count.values()))
         for srcMod in modInfos.getOrdered(self.mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
@@ -20272,8 +20275,9 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+self.label)
-        log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20307,8 +20311,9 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.label)
-        log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -20325,6 +20330,7 @@ class AAssortedTweak_BowReach(AMultiTweakItem):
             (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
+        self.logMsg = u'* '+_(u'Bows fixed: %d')
 
 class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -20357,8 +20363,8 @@ class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Bow Reach Fix'))
-        log(u'* '+_(u'Bows fixed: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20385,8 +20391,8 @@ class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,CBash_MultiTweakItem)
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Bow Reach Fix'))
-        log(u'* '+_(u'Bows fixed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
@@ -20402,6 +20408,7 @@ class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
             u'skyrimweaponsstyle',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Weapons Adjusted: %d')
 
 class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -20439,8 +20446,8 @@ class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,MultiTw
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Skyrim Style Weapons'))
-        log(u'* '+_(u'Weapons adjusted: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20470,8 +20477,8 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,C
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Skyrim Style Weapons'))
-        log(u'* '+_(u'Weapons Adjusted: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
@@ -20488,6 +20495,7 @@ class AAssortedTweak_ConsistentRings(AMultiTweakItem):
             (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
+        self.logMsg = u'* '+_(u'Rings fixed: %d')
 
 class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,MultiTweakItem):
 
@@ -20522,8 +20530,8 @@ class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,MultiTweakIte
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Right Hand Rings'))
-        log(u'* '+_(u'Rings fixed: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20551,8 +20559,8 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,CBash_M
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Right Hand Rings'))
-        log(u'* '+_(u'Rings fixed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -20570,6 +20578,8 @@ class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
             u'PlayableClothing',
             (u'1.0',  u'1.0'),
             )
+        self.logHeader = u'=== '+_(u'Playable Clothes')
+        self.logMsg = u'* '+_(u'Clothes set as playable: %d')
 
 class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,MultiTweakItem):
 
@@ -20609,8 +20619,8 @@ class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,MultiTweakI
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Playable Clothes'))
-        log(u'* '+_(u'Clothes set as playable: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20645,8 +20655,8 @@ class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,CBash
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Playable Clothes'))
-        log(u'* '+_(u'Clothes set as playable: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -20661,6 +20671,8 @@ class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
             u'PlayableArmor',
             (u'1.0',  u'1.0'),
             )
+        self.logHeader = u'=== '+_(u'Playable Armor')
+        self.logMsg = u'* '+_(u'Armor pieces set as playable: %d')
 
 class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -20699,8 +20711,8 @@ class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Playable Armor'))
-        log(u'* '+_(u'Armor pieces set as playable: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20734,8 +20746,8 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_Multi
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Playable Armor'))
-        log(u'* '+_(u'Armor pieces set as playable: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -20760,6 +20772,7 @@ class AAssortedTweak_DarnBooks(AMultiTweakItem):
             u'DarnBooks',
             (u'default',  u'default'),
             )
+        self.logMsg = u'* '+_(u'Books DarNified: %d')
 
 class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -20836,8 +20849,8 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+self.label)
-        log(u'* '+_(u'Books DarNified: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20905,8 +20918,8 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,CBash_MultiTweakIte
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.label)
-        log(u'* '+_(u'Books DarNified: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -20957,7 +20970,7 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
                     count.setdefault(cell.fid[0],0)
                     count[cell.fid[0]] += 1
         #--Log
-        log.setHeader(u'=== '+_(u'Nvidia Fog Fix'))
+        log.setHeader(self.logHeader)
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -20989,7 +21002,7 @@ class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Nvidia Fog Fix'))
+        log.setHeader(self.logHeader)
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -21005,6 +21018,7 @@ class AAssortedTweak_NoLightFlicker(AMultiTweakItem):
             u'NoLightFlicker',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Lights unflickered: %d')
 
 class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -21050,8 +21064,8 @@ class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,MultiTweakItem)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'No Light Flicker'))
-        log(u'* '+_(u'Lights unflickered: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -21082,8 +21096,8 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_Mul
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'No Light Flicker'))
-        log(u'* '+_(u'Lights unflickered: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -21139,7 +21153,7 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Reweigh: Potions (Maximum)'))
+        log.setHeader(self.logHeader)
         log(_(u'Potions set to maximum weight of %f') % maxWeight)
         log(u'* '+_(u'Potions Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -21176,7 +21190,7 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTw
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Reweigh: Potions (Maximum)'))
+        log.setHeader(self.logHeader)
         log(_(u'Potions set to maximum weight of %f') % self.choiceValues[self.chosen][0])
         log(u'* '+_(u'Potions Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21234,7 +21248,7 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakI
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Reweigh: Ingredients'))
+        log.setHeader(self.logHeader)
         log(_(u'Ingredients set to maximum weight of %f') % maxWeight)
         log(u'* '+_(u'Ingredients Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -21272,7 +21286,7 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Reweigh: Ingredients'))
+        log.setHeader(self.logHeader)
         log(_(u'Ingredients set to maximum weight of %f') % self.choiceValues[self.chosen][0])
         log(u'* '+_(u'Ingredients Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21330,7 +21344,7 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,Multi
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Reweigh: Potions (Minimum)'))
+        log.setHeader(self.logHeader)
         log(_(u'Potions set to minimum weight of %f') % minWeight)
         log(u'* '+_(u'Potions Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -21362,7 +21376,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Reweigh: Potions (Minimum)'))
+        log.setHeader(self.logHeader)
         log(_(u'Potions set to minimum weight of %f') % self.choiceValues[self.chosen][0])
         log(u'* '+_(u'Potions Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21424,7 +21438,7 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Reweigh: Staffs/Staves'))
+        log.setHeader(self.logHeader)
         log(_(u'Staffs/Staves set to maximum weight of %f') % maxWeight)
         log(u'* '+_(u'Staffs/Staves Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -21455,7 +21469,7 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTwea
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Reweigh: Staffs/Staves'))
+        log.setHeader(self.logHeader)
         log(_(u'Staffs/Staves set to maximum weight of %f') % self.choiceValues[self.chosen][0])
         log(u'* '+_(u'Staffs/Staves Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21514,7 +21528,7 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Reweigh: Arrows'))
+        log.setHeader(self.logHeader)
         log(_(u'Arrows set to maximum weight of %f') % maxWeight)
         log(u'* '+_(u'Arrows Reweighed: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -21545,7 +21559,7 @@ class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTwea
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Reweigh: Arrows'))
+        log.setHeader(self.logHeader)
         log(_(u'Arrows set to maximum weight of %f') % self.choiceValues[self.chosen][0])
         log(u'* '+_(u'Arrows Reweighed: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
@@ -21566,7 +21580,7 @@ class AAssortedTweak_ScriptEffectSilencer(AMultiTweakItem):
         self.defaultEnabled = True
 
     def _patchLog(self,log):
-        log.setHeader(u'=== '+_(u'Magic: Script Effect Silencer'))
+        log.setHeader(self.logHeader)
         log(_(u'Script Effect silenced.'))
 
 class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,MultiTweakItem):
@@ -21669,6 +21683,7 @@ class AAssortedTweak_HarvestChance(AMultiTweakItem):
             (u'100%', 100),
             (_(u'Custom'),0),
             )
+        self.logMsg = u'* '+_(u'Harvest Chances Changed: %d')
 
 class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21707,8 +21722,8 @@ class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Harvest Chance'))
-        log(u'* '+_(u'Harvest Chances Changed: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -21742,8 +21757,8 @@ class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,CBash_Multi
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Harvest Chance'))
-        log(u'* '+_(u'Harvest Chances Changed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -21759,6 +21774,7 @@ class AAssortedTweak_WindSpeed(AMultiTweakItem):
             u'windSpeed',
             (_(u'Disable'),  0),
             )
+        self.logMsg = u'* '+_(u'Winds Disabled: %d')
 
 class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21793,8 +21809,8 @@ class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Disable Wind'))
-        log(u'* '+_(u'Winds Disabled: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -21821,8 +21837,8 @@ class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,CBash_MultiTweakIte
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Disable Wind'))
-        log(u'* '+_(u'Winds Disabled: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -21838,6 +21854,7 @@ class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
             u'UniformGroundcover',
             (u'1.0', u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Grasses Normalized: %d')
 
 class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -21872,8 +21889,8 @@ class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,MultiTw
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Uniform Groundcover'))
-        log(u'* '+_(u'Grasses Normalized: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -21900,8 +21917,8 @@ class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,C
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Uniform Groundcover'))
-        log(u'* '+_(u'Grasses Normalized: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -21928,6 +21945,8 @@ class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
             (_(u'Unlimited'), 0),
             (_(u'Custom'),0),
             )
+        self.logHeader = u'=== '+_(u'Set Enchantment Number of Uses')
+        self.logMsg = u'* '+_(u'Enchantments set: %d')
 
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,MultiTweakItem):
 #info: 'itemType','chargeAmount','enchantCost'
@@ -21968,8 +21987,8 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUs
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Set Enchantment Number of Uses'))
-        log(u'* '+_(u'Enchantments set: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22004,8 +22023,8 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCast
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Set Enchantment Number of Uses'))
-        log(u'* '+_(u'Enchantments set: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -22021,6 +22040,7 @@ class AAssortedTweak_DefaultIcons(AMultiTweakItem):
             (u'1', 1),
             )
         self.defaultEnabled = True
+        self.logMsg = u'* '+_(u'Default Icons set: %d')
 
 class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -22185,8 +22205,8 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Default Icons'))
-        log(u'* '+_(u'Default Icons set: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22319,8 +22339,8 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTw
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Default Icons'))
-        log(u'* '+_(u'Default Icons set: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -22341,6 +22361,7 @@ class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
             (u'80%', 80),
             (_(u'Custom'),0),
             )
+        self.logMsg = u'* '+_(u'Sounds Modified: %d')
 
 class AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuationLevels,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -22375,8 +22396,8 @@ class AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuation
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels'))
-        log(u'* '+_(u'Sounds Modified: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22407,8 +22428,8 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAtten
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels'))
-        log(u'* '+_(u'Sounds modified: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -22429,6 +22450,7 @@ class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
             (u'80%', 80),
             (_(u'Custom'),0),
             )
+        self.logMsg = u'* '+_(u'Sounds Modified: %d')
 
 class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -22463,8 +22485,8 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSou
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels: Nirnroots Only'))
-        log(u'* '+_(u'Sounds Modified: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22495,8 +22517,8 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Set Sound Attenuation Levels: Nirnroots Only'))
-        log(u'* '+_(u'Sounds modified: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -22512,6 +22534,7 @@ class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
             u'FactioncrimeGoldMultiplier',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Factions fixed: %d')
 
 class AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMultiplier,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -22544,8 +22567,8 @@ class AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMu
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'Faction crime Gold Multiplier Fix'))
-        log(u'* '+_(u'Factions fixed: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22572,8 +22595,8 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_Factioncrime
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'Faction crime Gold Multiplier Fix'))
-        log(u'* '+_(u'Factions fixed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.count = {}
@@ -22590,6 +22613,7 @@ class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
             u'NoLightFadeValueFix',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Lights with fade values added: %d')
 
 class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -22622,8 +22646,8 @@ class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,MultiTwea
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'No Light Fade Value Fix'))
-        log(u'* '+_(u'Lights with fade values added: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22650,8 +22674,8 @@ class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,CBa
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'No Light Fade Value Fix'))
-        log(u'* '+_(u'Lights with fade values added: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -22666,6 +22690,7 @@ class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
             u'NoDescLSCR',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Loading screens tweaked: %d')
 
 class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -22698,8 +22723,8 @@ class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'=== '+_(u'No Description Loading Screens'))
-        log(u'* '+_(u'Loading screens tweaked: %d') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -22727,8 +22752,8 @@ class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,CBash_Multi
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+_(u'No Description Loading Screens'))
-        log(u'* '+_(u'Loading screens tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -23019,8 +23044,9 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         #--Log
         mod_count = self.mod_count
         maxWeight = self.choiceValues[self.chosen][0]
-        log.setHeader(u'=== %s' % self.label)
-        log(u'* '+_(u'Clothes Reweighed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Clothes Reweighed: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,mod_count[srcMod]))
         self.mod_count = {}
@@ -23085,7 +23111,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
     def buildPatchLog(self,log):
         """Will write to log."""
         #--Log
-        log.setHeader(u'=== '+self.label)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(self.mod_count.values()))
         for srcMod in modInfos.getOrdered(self.mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,self.mod_count[srcMod]))
@@ -23594,7 +23620,7 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== %s' % self.label)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -23734,7 +23760,7 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== %s' % self.label)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -23885,8 +23911,9 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== %s' % self.label)
-        log(u'* '+_(u'Items Renamed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -24016,8 +24043,9 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== %s' % self.label)
-        log(u'* '+_(u'Spells Renamed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Spells Renamed: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -24132,8 +24160,9 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== %s' % self.label)
-        log(u'* '+_(u'Items Renamed: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -24437,7 +24466,7 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== %s' % self.label)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Items Renamed: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -24667,6 +24696,8 @@ class AMAONPCSkeletonPatcher(AMultiTweakItem):
             (_(u'Only Female NPCs'), 1),
             (_(u'Only Male NPCs'), 2),
             )
+        self.logHeader = u'=== '+_(u'MAO Skeleton Setter')
+        self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
 
 class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -24693,8 +24724,8 @@ class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'MAO Skeleton Setter'))
-        log(u'* '+_(u'%d Skeletons Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -24736,8 +24767,8 @@ class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Skeletons Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -24754,6 +24785,8 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
             (_(u'Only Female NPCs'), 1),
             (_(u'Only Male NPCs'), 2),
             )
+        self.logHeader = u'=== '+_(u"VadersApp's Oblivion Real Bodies")
+        self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
 
 class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -24802,8 +24835,8 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
                         count[srcMod] = count.get(srcMod,0) + 1
 
         #--Log
-        log.setHeader(u'==='+_(u"VadersApp's Oblivion Real Bodies"))
-        log(u'* '+_(u'%d Skeletons Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
@@ -24871,8 +24904,8 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,CBash_MultiTweakIte
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Skeletons Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -24888,6 +24921,8 @@ class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
             u'Vanilla Skeleton',
             (u'1.0',  u'1.0'),
             )
+        self.logHeader = u'=== '+_(u'Vanilla Beast Skeleton')
+        self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
 
 class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
     #--Patch Phase ------------------------------------------------------------
@@ -24924,8 +24959,8 @@ class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'Vanilla Beast Skeleton'))
-        log(u'* '+_(u'%d Skeletons Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -24961,8 +24996,8 @@ class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,CBash_MultiTwea
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Skeletons Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -24978,6 +25013,8 @@ class ARedguardNPCPatcher(AMultiTweakItem):
             u'RedguardFGTSPatcher',
             (u'1.0',  u'1.0'),
             )
+        self.logHeader = u'=== '+_(u'Redguard FGTS Patcher')
+        self.logMsg = u'* '+_(u'Redguard NPCs Tweaked: %d')
 
 class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -24992,8 +25029,8 @@ class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'Redguard FGTS Patcher'))
-        log(u'* '+_(u'%d Redguard NPCs Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -25024,8 +25061,8 @@ class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Redguard NPCs Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25088,8 +25125,9 @@ class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,CBash_MultiTweakIte
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Creatures Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25141,7 +25179,7 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'As Intended: Imps'))
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'%d Imps Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -25187,8 +25225,9 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Imps Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        self.logMsg = u'* '+_(u'Imps Tweaked: %d')
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25206,6 +25245,7 @@ class AAsIntendedBoarsPatcher(AMultiTweakItem):
             u'vicious boars!',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'Boars Tweaked: %d')
 
 class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -25233,8 +25273,8 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'As Intended: Boars'))
-        log(u'* '+_(u'%d Boars Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -25274,8 +25314,8 @@ class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,CBash_MultiTweakItem)
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'Boars Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25291,6 +25331,7 @@ class ASWALKNPCAnimationPatcher(AMultiTweakItem):
             u'Mur Zuk SWalk',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'NPCs Tweaked : %d')
 
 class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -25304,8 +25345,8 @@ class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'SWalk for Female NPCs'))
-        log(u'* '+_(u'%d NPCs Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -25334,7 +25375,7 @@ class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,CBash_MultiTweakI
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'NPCs Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -25350,6 +25391,7 @@ class ARWALKNPCAnimationPatcher(AMultiTweakItem):
             u'Mur Zuk RWalk',
             (u'1.0',  u'1.0'),
             )
+        self.logMsg = u'* '+_(u'NPCs Tweaked: %d')
 
 class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
@@ -25363,8 +25405,8 @@ class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'RWalk for Female NPCs'))
-        log(u'* '+_(u'%d NPCs Tweaked') % sum(count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -25393,8 +25435,8 @@ class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,CBash_MultiTweakI
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
-        log(u'* '+_(u'NPCs Tweaked: %d') % sum(mod_count.values()))
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -25437,7 +25479,7 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'Quiet Feet'))
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'%d Creatures Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -25478,7 +25520,7 @@ class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Creatures Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -25517,7 +25559,7 @@ class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,BasalCreature
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'Irresponsible Creatures'))
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'%d Creatures Tweaked') % (sum(count.values()),))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -25546,7 +25588,7 @@ class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,CBash_M
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Creatures Tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -26935,7 +26977,7 @@ class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakI
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u'Bigger Nords and Orcs'))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -26979,7 +27021,7 @@ class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27054,7 +27096,7 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,Multi
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Merge Hairs from similar races"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27118,7 +27160,7 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27193,7 +27235,7 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTw
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Merge Eyes from similar races"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27258,7 +27300,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,C
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27307,7 +27349,7 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Races Have All Hairs"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27337,7 +27379,7 @@ class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27385,7 +27427,7 @@ class RaceTweaker_AllEyes(MultiTweakItem):
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Races Have All Eyes"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27424,7 +27466,7 @@ class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Races tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27473,7 +27515,7 @@ class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Playable Eyes"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Eyes tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27504,7 +27546,7 @@ class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,CBash_MultiTweakI
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Eyes tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27553,7 +27595,7 @@ class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Playable Hairs"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Hairs tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27584,7 +27626,7 @@ class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,CBash_MultiTwea
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Hairs tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -27634,7 +27676,7 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
 
     def log(self,log):
         """Will write to log."""
-        log.setHeader(u'==='+_(u"Sexless Hairs"))
+        log.setHeader(self.logHeader)
         count = self.count
         log(u'* '+_(u'%d Hairs tweaked.') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
@@ -27665,7 +27707,7 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakI
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        log.setHeader(u'=== '+self.__class__.name)
+        log.setHeader(self.logHeader)
         log(u'* '+_(u'Hairs tweaked: %d') % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
