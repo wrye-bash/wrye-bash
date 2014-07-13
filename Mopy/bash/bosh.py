@@ -15821,6 +15821,13 @@ class AMultiTweakItem(object):
         else: value = None
         configs[self.key] = self.isEnabled,value
 
+    def _patchLog(self,log,count):
+        #--Log - must define self.logMsg in subclasses - TODO: move up ? down ?
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
+        for srcMod in modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
 class MultiTweakItem(AMultiTweakItem): pass
 
 class CBash_MultiTweakItem(AMultiTweakItem):
@@ -20362,11 +20369,7 @@ class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,CBash_MultiTweakItem):
     name = _(u'Bow Reach Fix')
@@ -20445,11 +20448,7 @@ class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,MultiTw
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,CBash_MultiTweakItem):
     name = _(u'Skyrim-style Weapons')
@@ -20529,11 +20528,7 @@ class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,MultiTweakIte
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,CBash_MultiTweakItem):
     name = _(u'Right Hand Rings')
@@ -20618,11 +20613,7 @@ class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,MultiTweakI
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
@@ -20710,11 +20701,7 @@ class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
@@ -20848,11 +20835,7 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,CBash_MultiTweakItem):
     name = _(u'Books DarNified')
@@ -21063,11 +21046,7 @@ class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,MultiTweakItem)
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_MultiTweakItem):
     name = _(u'No Light Flicker')
@@ -21721,11 +21700,7 @@ class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,CBash_MultiTweakItem):
     name = _(u'Harvest Chance')
@@ -21808,11 +21783,7 @@ class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,CBash_MultiTweakItem):
     name = _(u'Disable Wind')
@@ -21888,11 +21859,7 @@ class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,MultiTw
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,CBash_MultiTweakItem):
     name = _(u'Uniform Groundcover')
@@ -21986,11 +21953,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUs
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,CBash_MultiTweakItem):
     name = _(u'Set Enchantment Number of Uses')
@@ -22204,11 +22167,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTweakItem):
     """Sets a default icon for any records that don't have any icon assigned."""
@@ -22395,11 +22354,7 @@ class AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuation
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuationLevels,CBash_MultiTweakItem):
     name = _(u'Set Sound Attenuation Levels')
@@ -22484,11 +22439,7 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSou
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,CBash_MultiTweakItem):
     name = _(u'Set Sound Attenuation Levels: Nirnroots Only')
@@ -22566,11 +22517,7 @@ class AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMu
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMultiplier,CBash_MultiTweakItem):
     name = _(u'Faction crime Gold Multiplier Fix')
@@ -22645,11 +22592,7 @@ class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,MultiTwea
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,CBash_MultiTweakItem):
     name = _(u'No Light Fade Value Fix')
@@ -22722,11 +22665,7 @@ class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,CBash_MultiTweakItem):
     name = _(u"No Description Loading Screens")
@@ -24723,11 +24662,7 @@ class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
     name = _(u"MAO Skeleton Setter")
@@ -24958,11 +24893,7 @@ class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,CBash_MultiTweakItem):
     scanOrder = 31 #Run before MAO
@@ -25028,11 +24959,7 @@ class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
     name = _(u"Redguard FGTS Patcher")
@@ -25272,11 +25199,7 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,CBash_MultiTweakItem):
     name = _(u"As Intended: Boars")
@@ -25344,11 +25267,7 @@ class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,CBash_MultiTweakItem):
     name = _(u"Sexy Walk for female NPCs")
@@ -25404,11 +25323,7 @@ class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log,count)
 
 class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,CBash_MultiTweakItem):
     name = _(u"Real Walk for female NPCs")
