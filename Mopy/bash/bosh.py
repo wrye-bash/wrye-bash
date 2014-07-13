@@ -26682,17 +26682,19 @@ class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
                 record._RecordID = override._RecordID
                 return
 
-class RaceTweaker_AllEyes(MultiTweakItem):
+class ARaceTweaker_AllEyes(AMultiTweakItem):
     """Gives all races ALL eyes."""
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Races Have All Eyes"),
+    def __init__(self,opt=(u'what a lot of eyes you have dear',1)):
+        super(ARaceTweaker_AllEyes, self).__init__(_(u"Races Have All Eyes"),
             _(u'Gives all races every available eye.'),
             u'eyeyraces',
-            (u'what an lot of eyes you have dear',1)
+            opt
             )
         self.logMsg = u'* '+_(u'Races tweaked: %d')
+
+class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -26723,18 +26725,14 @@ class RaceTweaker_AllEyes(MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
-    """Gives all races ALL eyes."""
+class CBash_RaceTweaker_AllEyes(ARaceTweaker_AllEyes,CBash_MultiTweakItem):
     name = _(u"Races Have All Eyes")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Races Have All Eyes"),
-            _(u'Gives all races every available eye.'),
-            u'eyeyraces',
-            (u'them races are a real eye full',1)
-            )
-        self.mod_count = {}
+        super(CBash_RaceTweaker_AllEyes, self).__init__(
+            opt=(u'them races are a real eye full', 1)
+        )
 
     def getTypes(self):
         return ['RACE']
