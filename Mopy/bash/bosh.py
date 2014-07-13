@@ -21111,21 +21111,22 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_Mul
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_PotionWeight(MultiTweakItem):
+class AAssortedTweak_PotionWeight(AMultiTweakItem):
     """Reweighs standard potions down to 0.1."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Maximum)"),
+        super(AAssortedTweak_PotionWeight, self).__init__(_(u"Reweigh: Potions (Maximum)"),
             _(u'Potion weight will be capped.'),
             u'MaximumPotionWeight',
             (u'0.1',  0.1),
             (u'0.2',  0.2),
             (u'0.4',  0.4),
             (u'0.6',  0.6),
-            (_(u'Custom'),0),
+            (_(u'Custom'),0.0),
             )
 
+class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21166,23 +21167,13 @@ class AssortedTweak_PotionWeight(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
-    """Reweighs standard potions down to 0.1."""
+class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTweakItem):
     name = _(u"Reweigh: Potions (Maximum)")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Maximum)"),
-            _(u'Potion weight will be capped.'),
-            u'MaximumPotionWeight',
-            (u'0.1',  0.1),
-            (u'0.2',  0.2),
-            (u'0.4',  0.4),
-            (u'0.6',  0.6),
-            (_(u'Custom'),0.0),
-            )
-        self.mod_count = {}
-        self.SEFF = MGEFCode('SEFF')
+        super(CBash_AssortedTweak_PotionWeight, self).__init__()
+        self.SEFF = MGEFCode('SEFF') # TODO : class variable ?
 
     def getTypes(self):
         return ['ALCH']
@@ -21215,21 +21206,22 @@ class CBash_AssortedTweak_PotionWeight(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_IngredientWeight(MultiTweakItem):
+class AAssortedTweak_IngredientWeight(AMultiTweakItem):
     """Reweighs standard ingredients down to 0.1."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Reweigh: Ingredients"),
+        super(AAssortedTweak_IngredientWeight, self).__init__(_(u"Reweigh: Ingredients"),
             _(u'Ingredient weight will be capped.'),
             u'MaximumIngredientWeight',
             (u'0.1',  0.1),
             (u'0.2',  0.2),
             (u'0.4',  0.4),
             (u'0.6',  0.6),
-            (_(u'Custom'),0),
+            (_(u'Custom'),0.0),
             )
 
+class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21270,23 +21262,13 @@ class AssortedTweak_IngredientWeight(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
-    """Reweighs standard ingredients down to 0.1."""
+class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash_MultiTweakItem):
     name = _(u'Reweigh: Ingredients')
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Ingredients"),
-            _(u'Ingredient weight will be capped.'),
-            u'MaximumIngredientWeight',
-            (u'0.1',  0.1),
-            (u'0.2',  0.2),
-            (u'0.4',  0.4),
-            (u'0.6',  0.6),
-            (_(u'Custom'),0.0),
-            )
-        self.mod_count = {}
-        self.SEFF = MGEFCode('SEFF')
+        super(CBash_AssortedTweak_IngredientWeight, self).__init__()
+        self.SEFF = MGEFCode('SEFF') # TODO: again what's this ???
 
     def getTypes(self):
         return ['INGR']
@@ -21320,21 +21302,22 @@ class CBash_AssortedTweak_IngredientWeight(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
+class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem):
     """Reweighs any potions up to 4."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Minimum)"),
+        super(AAssortedTweak_PotionWeightMinimum, self).__init__(_(u"Reweigh: Potions (Minimum)"),
             _(u'Potion weight will be floored.'),
             u'MinimumPotionWeight',
             (u'1',  1),
             (u'2',  2),
             (u'3',  3),
             (u'4',  4),
-            (_(u'Custom'),0),
+            (_(u'Custom'),0.0),
             )
 
+class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21375,25 +21358,12 @@ class AssortedTweak_PotionWeightMinimum(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
-    """Reweighs any potions up to 4."""
+class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,CBash_MultiTweakItem):
     scanOrder = 33 #Have it run after the max weight for consistent results
     editOrder = 33
     name = _(u'Reweigh: Potions (Minimum)')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Potions (Minimum)"),
-            _(u'Potion weight will be floored.'),
-            u'MinimumPotionWeight',
-            (u'1',  1),
-            (u'2',  2),
-            (u'3',  3),
-            (u'4',  4),
-            (_(u'Custom'),0.0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['ALCH']
 
@@ -21422,25 +21392,26 @@ class CBash_AssortedTweak_PotionWeightMinimum(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_StaffWeight(MultiTweakItem):
+class AAssortedTweak_StaffWeight(AMultiTweakItem):
     """Reweighs staffs."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Reweigh: Staffs/Staves"),
+        super(AAssortedTweak_StaffWeight, self).__init__(_(u"Reweigh: Staffs/Staves"),
             _(u'Staff weight will be capped.'),
             u'StaffWeight',
-            (u'1',  1),
-            (u'2',  2),
-            (u'3',  3),
-            (u'4',  4),
-            (u'5',  5),
-            (u'6',  6),
-            (u'7',  7),
-            (u'8',  8),
-            (_(u'Custom'),0),
+            (u'1',  1.0),
+            (u'2',  2.0),
+            (u'3',  3.0),
+            (u'4',  4.0),
+            (u'5',  5.0),
+            (u'6',  6.0),
+            (u'7',  7.0),
+            (u'8',  8.0),
+            (_(u'Custom'),0.0),
             )
 
+class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21481,27 +21452,10 @@ class AssortedTweak_StaffWeight(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
-    """Reweighs staffs."""
+class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTweakItem):
     name = _(u'Reweigh: Staffs/Staves')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Staffs/Staves"),
-            _(u'Staff weight will be capped.'),
-            u'StaffWeight',
-            (u'1',  1.0),
-            (u'2',  2.0),
-            (u'3',  3.0),
-            (u'4',  4.0),
-            (u'5',  5.0),
-            (u'6',  6.0),
-            (u'7',  7.0),
-            (u'8',  8.0),
-            (_(u'Custom'),0.0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['WEAP']
 
@@ -21531,15 +21485,15 @@ class CBash_AssortedTweak_StaffWeight(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ArrowWeight(MultiTweakItem):
-    """Reweighs standard arrows down to 0."""
+class AAssortedTweak_ArrowWeight(AMultiTweakItem):
+    """Reweighs standard arrows down to 0.""" # TODO : Wha ?
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Reweigh: Arrows"),
+        super(AAssortedTweak_ArrowWeight, self).__init__(_(u"Reweigh: Arrows"),
             _(u'Arrow weights will be capped.'),
             u'MaximumArrowWeight',
-            (u'0',    0),
+            (u'0',    0.0),
             (u'0.1',  0.1),
             (u'0.2',  0.2),
             (u'0.4',  0.4),
@@ -21547,6 +21501,7 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
             (_(u'Custom'),0.0),
             )
 
+class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21587,24 +21542,10 @@ class AssortedTweak_ArrowWeight(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_ArrowWeight(CBash_MultiTweakItem):
-    """Reweighs standard arrows down to 0.1."""
+class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTweakItem):
     name = _(u'Reweigh: Arrows')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Reweigh: Arrows"),
-            _(u'Arrow weights will be capped.'),
-            u'MaximumArrowWeight',
-            (u'0', 0.0),
-            (u'0.1',  0.1),
-            (u'0.2',  0.2),
-            (u'0.4',  0.4),
-            (u'0.6',  0.6),
-            (_(u'Custom'),0.0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['AMMO']
 
